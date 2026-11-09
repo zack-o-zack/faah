@@ -180,6 +180,20 @@ func TestGatherExplainWorkspaceSymbol(t *testing.T) {
 	if !strings.Contains(ev.Packet, "data") {
 		t.Errorf("packet should say workspace content is data:\n%s", ev.Packet)
 	}
+	for _, want := range []string{"5| \tNewIndex(v)\n", "3| func Caller() {\n", "9| func NewIndex(n int) int {\n", "10| \treturn n\n"} {
+		if !strings.Contains(ev.Packet, want) {
+			t.Errorf("packet lacks numbered line %q:\n%s", want, ev.Packet)
+		}
+	}
+}
+
+func TestExplainPacketNumbersBlockFromItsFirstLine(t *testing.T) {
+	root, abs, lines := explainFixtureRoot(t)
+	target := explainTarget{Abs: abs, Rel: "main.go", L1: 4, L2: 5, Col: -1, Text: "\tv := 1\n\tNewIndex(v)"}
+	ev := gatherExplain(context.Background(), explainFixtureDeps(t, root, explainFixtureIntel()), target, lines)
+	if !strings.Contains(ev.Packet, "4| \tv := 1\n5| \tNewIndex(v)\n") {
+		t.Fatalf("packet:\n%s", ev.Packet)
+	}
 }
 
 // closedFileIntel answers from out-of-date text until the file has been opened,
