@@ -250,6 +250,37 @@ let lastPaintKey = '';
 export function invalidatePaint() {
   lastPaintKey = '';
 }
+/* Briefly shades the lines a followed reference points at, in whichever of the
+   source and diff views the file opened. Diff rows are not repainted, and a file
+   opened just now redraws its diff once it loads, so they are marked repeatedly. */
+let refRangeTimer = 0;
+let refRangeRows = [];
+
+function clearRefRangeRows() {
+  for (const el of refRangeRows) el.classList.remove('ref-range');
+  refRangeRows = [];
+}
+
+export function highlightRange(path, l1, l2) {
+  S.refRange = { path, l1, l2 };
+  render();
+  clearTimeout(refRangeTimer);
+  clearRefRangeRows();
+  const started = Date.now();
+  const mark = () => {
+    if (Date.now() - started >= 1800) { S.refRange = null; render(); clearRefRangeRows(); return; }
+    const diff = $('#diffview');
+    if (diff && !diff.hidden) {
+      const rows = [...diff.querySelectorAll('[data-l]')].filter(el => +el.dataset.l >= l1 && +el.dataset.l <= l2);
+      rows.forEach(el => el.classList.add('ref-range'));
+      if (rows[0] && rows[0] !== refRangeRows[0]) rows[0].scrollIntoView({ block: 'center', behavior: 'auto' });
+      refRangeRows = rows;
+    }
+    refRangeTimer = setTimeout(mark, 100);
+  };
+  mark();
+}
+
 export function render() {
   if (raf) return;
   raf = requestAnimationFrame(() => { raf = 0; paint(); });
@@ -281,6 +312,8 @@ export function paint() {
   const gut = d.gutter || null;
   const agentRanges = (S.agentTargets || []).filter(t => t.path === d.path);
   const agentKey = agentRanges.map(r => r.l1 + ':' + r.l2).join(',');
+  const refRange = S.refRange && S.refRange.path === d.path ? S.refRange : null;
+  const refKey = refRange ? refRange.l1 + ':' + refRange.l2 : '';
   const findKey = S.find && S.find.hits.length ? S.find.q + ':' + S.find.cs + ':' + S.find.active + ':' + S.find.hits.length : '';
   const linkKey = S.link ? S.link.line + ':' + S.link.col + ':' + S.link.word : '';
   const gutKey = gut ? gut.marks.size + ':' + gut.dels.size : '';
@@ -288,7 +321,7 @@ export function paint() {
   const diagKey = diagList.length ? diagList.length + ':' + diagList[0].line + ':' + diagList[0].message : '';
   const paintKey = [
     d.path, d.gen || 0, first, last, d.cur, S.occ || '',
-    findKey, linkKey, gutKey, diagKey, agentKey, S.selAll === d ? 1 : 0, S.wrap ? 1 : 0
+    findKey, linkKey, gutKey, diagKey, agentKey, refKey, S.selAll === d ? 1 : 0, S.wrap ? 1 : 0
   ].join('|');
 
   if (paintKey === lastPaintKey && rowsEl.children.length === Math.max(0, last - first)) {
@@ -315,6 +348,7 @@ export function paint() {
     if (n === d.cur) rc += ' cur';
     if (agentRanges.some(r => n >= r.l1 && n <= r.l2)) rc += ' agent-sel';
     if (agentRanges.some(r => n === r.l1)) rc += ' agent-anchor';
+    if (refRange && n >= refRange.l1 && n <= refRange.l2) rc += ' ref-range';
     if (gut) {
       const m = gut.marks.get(n);
       if (m) gc += m === 'add' ? ' gut-add' : ' gut-mod';

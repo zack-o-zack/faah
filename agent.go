@@ -1052,6 +1052,9 @@ type threadTurn struct {
 	Model     string   `json:"model,omitempty"`
 	Started   int64    `json:"started"` // unix ms
 	Ms        int64    `json:"ms"`
+	// Refs holds the citations in an explanation's reply that passed checking,
+	// by target as written.
+	Refs map[string]validatedRef `json:"refs,omitempty"`
 }
 
 // thread is the persisted conversation. Path and lines are where it was
@@ -1077,6 +1080,15 @@ type thread struct {
 	SessionHarness string        `json:"sessionHarness,omitempty"` // harness that owns SessionID
 	SessionLive    bool          `json:"sessionLive,omitempty"`    // that harness has really started the session
 	Turns          []*threadTurn `json:"turns"`
+	// An explanation (Kind "explain"). ExplainKey identifies the code it describes
+	// and EvidenceHash what surrounded that code; see explain.go. The packet the
+	// harness reads is kept beside the store and loaded here for a turn.
+	ExplainKey   string          `json:"explainKey,omitempty"`
+	ExplainKind  string          `json:"explainKind,omitempty"`
+	EvidenceHash string          `json:"evidenceHash,omitempty"`
+	Evidence     *explainSummary `json:"evidence,omitempty"`
+	ExplainReq   *explainRequest `json:"explainReq,omitempty"`
+	packet       string
 }
 
 type threadSummary struct {
@@ -1392,7 +1404,9 @@ func threadArgv(name string, template []string, sessionID string, resume bool) [
 func threadPrompt(t *thread, prior []*threadTurn, message string, replay bool, prCtx string, scopeChanged bool) string {
 	var b strings.Builder
 	if len(prior) == 0 || replay {
-		if t.Kind == "edit" || t.Kind == "batch" {
+		if t.Kind == "explain" {
+			b.WriteString(explainInstructions(t.ExplainKind))
+		} else if t.Kind == "edit" || t.Kind == "batch" {
 			b.WriteString("Carry out the edit request below by editing files in place. ")
 			b.WriteString("Change only what it asks for; you may touch other files if the change needs it. ")
 			b.WriteString("When done, reply in a sentence or two saying what you changed and in which files. ")
@@ -1406,7 +1420,10 @@ func threadPrompt(t *thread, prior []*threadTurn, message string, replay bool, p
 			b.WriteString(prCtx)
 			b.WriteString("\n\n")
 		}
-		if t.Path != "" && t.Kind != "batch" { // a batch carries its own snippets
+		if t.Kind == "explain" {
+			b.WriteString(t.packet)
+			b.WriteString("\n\n")
+		} else if t.Path != "" && t.Kind != "batch" { // a batch carries its own snippets
 			ext := strings.TrimPrefix(filepath.Ext(t.Path), ".")
 			lineStr := fmt.Sprintf("lines %d-%d", t.L1, t.L2)
 			if t.L1 == t.L2 {
@@ -1476,6 +1493,14 @@ func (tm *threadManager) Send(id, message string) (*thread, error) {
 		tm.mu.Unlock()
 		return nil, errThreadBusy
 	}
+	if t.Kind == "explain" {
+		readOnly, err := readOnlyArgv(name, base)
+		if err != nil {
+			tm.mu.Unlock()
+			return nil, err
+		}
+		base = readOnly
+	}
 	// A session id belongs to the harness that made it. Switching harness
 	// starts a fresh session there, primed by replaying the transcript.
 	if t.SessionHarness != name {
@@ -1537,6 +1562,10 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 		return
 	}
 	sessionID, live := t.SessionID, t.SessionLive
+	explaining := t.Kind == "explain"
+	if explaining && t.packet == "" {
+		t.packet = tm.readExplainPacket(t.ID)
+	}
 	tm.mu.Unlock()
 
 	if sessionID == "" {
@@ -1607,6 +1636,10 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 		afterSHA = gitSnapshotWorktree(tm.root)
 	}
 	tm.agent.settle(changed)
+	var refs map[string]validatedRef
+	if explaining {
+		refs = validateExplainRefs(tm.root, sink.reply())
+	}
 
 	tm.mu.Lock()
 	if t := tm.threads[r.tid]; t != nil {
@@ -1621,6 +1654,7 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 		r.turn.Changed = changed
 		r.turn.BeforeSHA = beforeSHA
 		r.turn.AfterSHA = afterSHA
+		r.turn.Refs = refs
 		if err != nil {
 			msg := err.Error()
 			if tail := strings.TrimSpace(stderr.String()); tail != "" && strings.TrimSpace(r.turn.Reply) == "" {
@@ -1669,6 +1703,7 @@ func (tm *threadManager) Delete(id string) bool {
 		cancel()
 	}
 	delete(tm.threads, id)
+	tm.removeExplainPacket(id)
 	tm.saveLocked()
 	tm.publishLocked(id, "deleted", map[string]string{"id": id})
 	tm.publishLocked("", "deleted", map[string]string{"id": id})
@@ -2114,7 +2149,7 @@ func (s *Server) threadsOrFail(w http.ResponseWriter) bool {
 
 func threadStatus(err error) int {
 	switch {
-	case errors.Is(err, errThreadBusy):
+	case errors.Is(err, errThreadBusy), errors.Is(err, errHarnessNotReadOnly):
 		return http.StatusConflict
 	case errors.Is(err, errThreadGone):
 		return http.StatusNotFound

@@ -965,6 +965,7 @@ body.threads-hidden #threads-side, body.threads-hidden #threads-resizer { displa
 }
 .row.cur { background: var(--cur); }
 .row.cur .g { color: var(--fg); }
+.row.ref-range, .row.ref-range .g, [data-l].ref-range .diff-code { background: var(--sel); }
 .g {
   position: sticky; left: 0; z-index: 2; flex: none; text-align: right;
   width: calc(var(--gw, 1) * 1ch + 30px);
@@ -3272,6 +3273,11 @@ body.hide-git-gutter .g-git, body.hide-git-gutter [class*="git-"] { display: non
   flex: none; font: 600 9.5px/1 var(--mono); text-transform: uppercase; letter-spacing: .04em;
   color: var(--faint); border: 1px solid var(--line); border-radius: var(--r); padding: 2px 4px;
 }
+.thr-evidence { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font: 11px var(--mono); color: var(--faint); }
+.thr-evidence-btn { padding: 0; border: 0; background: none; font: inherit; color: var(--accent); cursor: pointer; }
+.thr-evidence-btn:hover { text-decoration: underline; }
+.thr-evidence-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.thr-stale { color: var(--fg); }
 .thr-fail { flex: none; color: var(--err); font-weight: 700; }
 .thr-anchor {
   padding: 5px 12px; border-bottom: 1px solid var(--line); font: 11px var(--mono); color: var(--faint);

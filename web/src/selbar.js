@@ -25,6 +25,7 @@ export const SEL_KEYS = {
   KeyE: 'agent-edit',
   KeyR: 'review-comment',
   KeyT: 'thread',
+  KeyX: 'explain',
   KeyM: 'copy-markdown',
   KeyS: 'copy-source',
 };
@@ -38,6 +39,10 @@ export function setAgentHandler(fn) { agentHandler = fn; }
 /* Threads (thread.js) hook in the same way. */
 let threadHandler = null;
 export function setThreadHandler(fn) { threadHandler = fn; }
+
+/* Explain (thread.js) too. Unset until threads are known to be available. */
+let explainHandler = null;
+export function setExplainHandler(fn) { explainHandler = fn; }
 
 /* Same one-way registration for PR review comments (pr.js), active only in a
    `faah pr ...` session. */
@@ -115,7 +120,7 @@ function extractEditorSelection(range, d) {
   const text = parts.join('\n');
   if (!text) return null;
 
-  return { text, l1, l2, path: d.path, isEditor: true };
+  return { text, l1, c1, l2, c2, path: d.path, isEditor: true };
 }
 
 function extractMarkdownSelection(range, d) {
@@ -216,6 +221,9 @@ function diffSelection(range, d) {
   return { text, l1, l2, delL1, delL2, path: d.path, fromDiff: true, side };
 }
 
+// Explanations read the file on disk, which holds neither preview text nor deleted lines.
+const canExplain = info => !!explainHandler && !!info && !info.isMarkdownPreview && info.side !== 'LEFT';
+
 const selectionRef = ({ path, l1, l2 }) => path + ':' + (l1 === l2 ? l1 : l1 + '-' + l2);
 
 function showSelectionBar(info) {
@@ -230,6 +238,8 @@ function showSelectionBar(info) {
     const btnSource = footerSel.querySelector('[data-sel="copy-source"]');
     const btnPreviewText = footerSel.querySelector('[data-sel="copy-preview-text"]');
     const btnMarkdown = footerSel.querySelector('[data-sel="copy-markdown"]');
+    const btnExplain = footerSel.querySelector('[data-sel="explain"]');
+    if (btnExplain) btnExplain.hidden = !canExplain(info);
 
     if (info.isMarkdownPreview) {
       if (btnSource) btnSource.hidden = true;
@@ -373,6 +383,9 @@ export function runSelectionAction(act, triggerBtn = null, override = null) {
   } else if (act === 'thread') {
     if (!threadHandler) return false;
     threadHandler(target);
+  } else if (act === 'explain') {
+    if (!canExplain(target)) return false;
+    explainHandler(target);
   } else if (act === 'review-comment') {
     if (!reviewHandler) return false;
     reviewHandler(target);
@@ -406,6 +419,7 @@ export function openLineMenu(info, x, y) {
 // without selbar needing to know PR review exists.
 export const SEL_MENU_ITEMS = [
   { sel: 'thread', label: 'Start Agent Thread', keys: 'Alt+T' },
+  { sel: 'explain', label: 'Explain', keys: 'Alt+X', forCode: true },
   { sel: 'agent-edit', label: 'Edit Inline', keys: 'Alt+E' },
   { sel: 'copy-source', label: 'Copy Source', keys: 'Mod+C', forCode: true },
   { sel: 'copy-preview-text', label: 'Copy Formatted Text', keys: 'Mod+C', forPreview: true },
@@ -428,6 +442,7 @@ function openSelMenu(x, y, keep = (item) => true) {
     if (isPreview && item.forCode) continue;
     if (!isPreview && item.forPreview) continue;
     if (item.forMarkdown && !isMdDoc && !isPreview) continue;
+    if (item.sel === 'explain' && !canExplain(info)) continue;
 
     const btn = document.createElement('button');
     btn.className = 'sel-menu-item';
