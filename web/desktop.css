@@ -64,6 +64,29 @@
   outline: 0; box-shadow: var(--ring);
 }
 
+/* Fields: one height, surface, and focus state. Find, palette, and filter fields
+   stay borderless because their surrounding bar already draws the edge. */
+[data-shell] :is(.settings-input, .settings-select, .search-form input, .pr-merge-input, .fs-modal-input, .review-inline-input, .review-config-field input) {
+  height: var(--ctl-md); padding: 0 10px; font: var(--t-13)/1.45 var(--ui); color: var(--fg);
+  background: var(--bg); border: 1px solid var(--line); border-radius: var(--r); box-sizing: border-box;
+}
+[data-shell] :is(.settings-textarea, .pr-merge-body, .agent-input, .git-commit-msg, .review-inline-textarea, .review-config-field textarea) {
+  height: auto; padding: 6px 10px; font: var(--t-13)/1.45 var(--ui); color: var(--fg);
+  background: var(--bg); border: 1px solid var(--line); border-radius: var(--r); box-sizing: border-box;
+}
+/* Commit messages are wrapped by column, so they stay monospaced. */
+[data-shell] textarea.git-commit-msg { font-family: var(--mono); }
+[data-shell] :is(.agent-harness-select, .agent-model-select) {
+  height: var(--ctl-sm); padding: 0 6px; font-family: var(--ui); font-size: var(--t-12); box-sizing: border-box;
+}
+[data-shell] .wb-field input {
+  height: var(--ctl-lg); padding: 0 12px; font: var(--t-14)/1.45 var(--ui);
+  background: var(--bg); border-radius: var(--r-lg); box-sizing: border-box;
+}
+[data-shell] :is(.settings-input, .settings-select, .search-form input, .pr-merge-input, .fs-modal-input, .review-inline-input, .review-inline-textarea, .review-config-field input, .review-config-field textarea, .agent-input, .git-commit-msg, .agent-harness-select, .agent-model-select, .wb-field input):focus {
+  outline: 0; border-color: var(--accent); box-shadow: var(--ring);
+}
+
 :root[data-titlebar] {
   --titlebar-h: 38px;
   --titlebar-left: 0px;
