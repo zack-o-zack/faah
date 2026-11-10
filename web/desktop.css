@@ -156,6 +156,35 @@
 [data-shell] .thr-item:hover { background: color-mix(in srgb, var(--bg3) 55%, transparent); }
 [data-shell] .thr-item.sel { background: var(--bg3); box-shadow: none; }
 
+/* Menus: one raised surface, rounded items inset by the surface padding, and a
+   neutral highlight. Popover panels such as the LSP and metrics menus keep
+   their own padding. */
+[data-shell] :is(.wb-suggest, .wb-menu, .diff-menu, #sel-menu, #tab-menu, #tree-menu, .pr-merge-menu) {
+  padding: 4px; gap: 1px; background: var(--bg3); border: 1px solid var(--line);
+  border-radius: var(--r-lg); box-shadow: var(--shadow);
+}
+[data-shell] :is(.wb-suggest li, .wb-menu li, .diff-menu-item, .sel-menu-item, .pr-merge-menu button) {
+  min-height: var(--ctl-md); padding: 4px 8px; box-sizing: border-box;
+  font-family: var(--ui); font-size: var(--t-13); color: var(--fg); border-radius: var(--r);
+}
+[data-shell] :is(.wb-suggest li[aria-selected="true"], .wb-suggest li:hover, .wb-menu li[aria-selected="true"],
+  .diff-menu-item:hover, .sel-menu-item:hover, .pr-merge-menu button:hover) {
+  background: var(--bg4); color: var(--fg);
+}
+/* The check marks the current choice, so the highlight is left to the pointer. */
+[data-shell] .diff-menu-item.active:not(:hover) { background: none; }
+[data-shell] .diff-menu { min-width: 220px; }
+[data-shell] .diff-item-desc { white-space: nowrap; }
+[data-shell] .sel-menu-item:disabled:hover { background: none; color: var(--faint); }
+[data-shell] .sel-menu-item:focus-visible { outline: 0; box-shadow: var(--ring); }
+[data-shell] .diff-item-title { font-size: var(--t-13); font-weight: 500; }
+[data-shell] .diff-item-desc { font-size: var(--t-12); }
+[data-shell] .diff-menu-item.active .diff-item-check { color: var(--fg); }
+[data-shell] .diff-menu-item.active .diff-item-badge { background: var(--bg3); color: var(--dim); }
+[data-shell] :is(.diff-menu-header, .lsp-menu-head) {
+  font-size: var(--t-12); font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--dim);
+}
+
 :root[data-titlebar] {
   --titlebar-h: 38px;
   --titlebar-left: 0px;
