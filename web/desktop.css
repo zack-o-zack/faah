@@ -87,6 +87,28 @@
   outline: 0; border-color: var(--accent); box-shadow: var(--ring);
 }
 
+/* Segmented controls: a sunken track with the selected segment raised in a
+   neutral, so the accent stays for primary actions. The sidebar's file and
+   changes switch keeps its icon size to fit the crowded header. */
+[data-shell] :is(.view-switch, .settings-mode-switch, .calls-dir, .sidebar-toggle) {
+  height: var(--ctl-md); gap: 2px; padding: 2px;
+  background: var(--bg3); border: 0; border-radius: var(--r); box-sizing: border-box;
+}
+[data-shell] :is(.view-switch, .settings-mode-switch, .calls-dir) > button,
+[data-shell] .diff-seg > button {
+  height: 100%; padding: 0 10px; font: var(--t-12)/1 var(--ui);
+  color: var(--dim); background: transparent; border: 0; border-radius: 4px; box-shadow: none;
+}
+[data-shell] .sidebar-toggle { height: var(--ctl-sm); }
+[data-shell] .sidebar-toggle .toggle-btn { width: 20px; height: 100%; border-radius: 4px; box-shadow: none; }
+[data-shell] :is(.view-switch, .settings-mode-switch, .calls-dir, .sidebar-toggle) button:hover:not(:disabled) { color: var(--fg); }
+[data-shell] :is(.view-switch, .settings-mode-switch, .calls-dir, .sidebar-toggle) button:is(.on, .active) {
+  background: var(--bg4); color: var(--fg); font-weight: 500;
+}
+[data-shell] :is(.view-switch, .settings-mode-switch, .calls-dir, .sidebar-toggle) button:focus-visible {
+  outline: 0; box-shadow: var(--ring);
+}
+
 :root[data-titlebar] {
   --titlebar-h: 38px;
   --titlebar-left: 0px;
