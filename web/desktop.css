@@ -19,6 +19,17 @@
   --t-18: 20px;
 }
 
+/* Shape: two radii, three control heights, one spacing scale. Components adopt
+   the heights and spacing when each one moves to the design system. */
+:root[data-shell] {
+  --r: 6px;
+  --r-lg: 10px;
+  --ctl-sm: 24px; --ctl-md: 28px; --ctl-lg: 36px;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px;
+}
+/* At this size the control radius would turn the checkbox into a circle. */
+[data-shell] .tr .stage-tick { border-radius: 3px; }
+
 :root[data-titlebar] {
   --titlebar-h: 38px;
   --titlebar-left: 0px;
