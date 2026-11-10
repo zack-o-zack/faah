@@ -52,7 +52,8 @@ export async function drawTree(dir, container, depth, isCurrent) {
       const ydc = c.yourDirty ? ' your-dirty' : '';
       return '<div class="tw"><div class="tr dir' + ig + dc + ydc + '" data-dir="' + esc(c.path) + '" style="padding-left:' + pad + 'px" title="Folder: ' + esc(c.path) + note + '">' +
         '<span class="ar"></span><span class="nm">' + esc(c.name) + '</span>' + menuBtn + '</div>' +
-        '<div class="kids" data-kids="' + esc(c.path) + '"></div></div>';
+        // --guide is where the folder's chevron sits, for the desktop app's indent guide.
+        '<div class="kids" data-kids="' + esc(c.path) + '" style="--guide:' + (pad + 6) + 'px"></div></div>';
     }
     const g = GIT_STATUS[c.status];
     const gc = g ? ' dirty ' + g[0] : '';

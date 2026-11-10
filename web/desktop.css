@@ -135,6 +135,27 @@
 [data-shell] .panel-head { height: 38px; padding: 0 12px; color: var(--fg); box-sizing: border-box; flex: none; }
 [data-shell] :is(.unpushed-title, .git-recent-title, .review-section-title) { color: var(--dim); }
 
+/* Rows: chrome lists inset their rows from the panel edge and round them, so a
+   hovered or selected row reads as an item. Rows that show code, such as search
+   results and diff lines, stay full width. */
+[data-shell] :is(.tr, .sym) { height: var(--ctl-sm); margin: 0 6px; border-radius: var(--r); }
+/* Tree: a stroked chevron, and a guide line under each open folder's chevron. */
+[data-shell] .tr .ar::before {
+  left: 3px; top: 3.5px; width: 4px; height: 4px;
+  border: solid var(--dim); border-width: 0 1.5px 1.5px 0; transform: rotate(-45deg);
+}
+[data-shell] .kids.open { position: relative; }
+[data-shell] .kids.open::before {
+  content: ""; position: absolute; top: 0; bottom: 0; left: calc(6px + var(--guide, 0px)); width: 1px;
+  background: color-mix(in srgb, var(--fg) 12%, transparent); pointer-events: none;
+}
+[data-shell] .rfile { margin: 0 6px; padding-inline: 6px; border-radius: var(--r); }
+[data-shell] .wb-list { padding: 4px; }
+[data-shell] .wb-row { padding: 8px; border-radius: var(--r); }
+[data-shell] .thr-item { margin: 2px 6px; padding: 8px; border-bottom: 0; border-radius: var(--r); }
+[data-shell] .thr-item:hover { background: color-mix(in srgb, var(--bg3) 55%, transparent); }
+[data-shell] .thr-item.sel { background: var(--bg3); box-shadow: none; }
+
 :root[data-titlebar] {
   --titlebar-h: 38px;
   --titlebar-left: 0px;
