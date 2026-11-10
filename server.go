@@ -216,6 +216,7 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc(s.routePath("/api/threads/delete"), s.handleThreadDelete)
 	s.mux.HandleFunc(s.routePath("/api/threads/revert"), s.handleThreadRevert)
 	s.mux.HandleFunc(s.routePath("/api/threads/stream"), s.handleThreadStream)
+	s.mux.HandleFunc(s.routePath("/api/explain"), s.handleExplain)
 	s.mux.HandleFunc(s.routePath("/api/review-workflow/config"), s.handleReviewWorkflowConfig)
 	s.mux.HandleFunc(s.routePath("/api/review-workflow/run"), s.handleReviewWorkflowRun)
 	s.mux.HandleFunc(s.routePath("/api/review-workflow/stop"), s.handleReviewWorkflowStop)

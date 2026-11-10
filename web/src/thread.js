@@ -3,7 +3,9 @@ import { $, $$, S, esc, doc_, api, apiPost, apiPostJson, applyKeyLabels } from '
 import { on } from './bus.js';
 import { showToast, copyToClipboard } from './ui.js';
 import { openFile } from './tabs.js';
-import { setThreadHandler, hideSelectionBar } from './selbar.js';
+import { setThreadHandler, setExplainHandler, hideSelectionBar } from './selbar.js';
+import { highlightRange } from './renderer.js';
+import { linkTarget, explainEvidenceLine, explainStaleLabel } from './threadrefs.js';
 import { hideRightInspector } from './inspector.js';
 import { layout, render } from './renderer.js';
 import { registerAgentPicker, reloadWorkspace } from './agent.js';
@@ -36,6 +38,7 @@ const thr = {
   threadId: null,     // id of the thread whose live events we follow
   releaseThread: null,
   sending: false,
+  stale: null,        // {id, reason} when /api/explain found the open explanation's surroundings changed
 };
 
 const thrRefText = t => t.path ? t.path + ':' + (t.l1 === t.l2 ? t.l1 : t.l1 + '-' + t.l2) : 'Workspace';
@@ -60,9 +63,19 @@ function thrDur(ms) {
 function thrSafeUrl(u) {
   u = u.trim();
   if (/^(?:https?|mailto):/i.test(u)) return esc(u);
-  if (/^[a-zA-Z0-9_\-./]+(?::\d+)?(?:#.*)?$/.test(u)) return esc(u);
+  if (/^[a-zA-Z0-9_\-./]+(?::\d+(?:-\d+)?)?(?:#.*)?$/.test(u)) return esc(u);
   if (u.startsWith('#')) return esc(u);
   return '';
+}
+
+/* Set while rendering a finished explanation: only citations the server checked
+   become links. Null everywhere else, which links anything path-shaped. */
+let thrRefs = null;
+
+function thrLinkAttrs(target, path, line, end) {
+  const r = linkTarget(thrRefs, target, path, line, end);
+  if (!r) return '';
+  return `data-path="${esc(r.path)}"` + (r.line ? ` data-line="${r.line}"` : '') + (r.end ? ` data-end="${r.end}"` : '');
 }
 
 function thrInline(src) {
@@ -72,8 +85,9 @@ function thrInline(src) {
   let s = src.replace(/(`+)([\s\S]*?[^`])\1(?!`)/g, (_, q, code) => {
     const trimmed = code.trim();
     const m = /^([a-zA-Z0-9_.\-/]+\.[a-zA-Z0-9]+)(?::(\d+)(?:-(\d+))?)?$/.exec(trimmed);
-    if (m) {
-      codes.push(`<code class="thr-code-ref"><a href="#" class="thr-link" data-path="${esc(m[1])}"` + (m[2] ? ` data-line="${m[2]}"` : '') + `>${esc(trimmed)}</a></code>`);
+    const attrs = m ? thrLinkAttrs(trimmed, m[1], m[2], m[3]) : '';
+    if (attrs) {
+      codes.push(`<code class="thr-code-ref"><a href="#" class="thr-link" ${attrs}>${esc(trimmed)}</a></code>`);
     } else {
       codes.push('<code>' + esc(trimmed) + '</code>');
     }
@@ -108,16 +122,19 @@ function thrInline(src) {
   s = s.replace(/\[([^\]]+)\]\(((?:[^()]|\([^()]*\))*)\)/g, (_, text, url) => {
     const u = thrSafeUrl(url);
     if (!u) return text;
-    const m = /^([a-zA-Z0-9_.\-/]+\.[a-zA-Z0-9]+)(?::(\d+)(?:-\d+)?)?$/.exec(url.trim());
+    const m = /^([a-zA-Z0-9_.\-/]+\.[a-zA-Z0-9]+)(?::(\d+)(?:-(\d+))?)?$/.exec(url.trim());
     if (m && !url.includes('://')) {
-      return pushLink(`<a href="#" class="thr-link" data-path="${esc(m[1])}"` + (m[2] ? ` data-line="${m[2]}"` : '') + `>${text}</a>`);
+      const attrs = thrLinkAttrs(url.trim(), m[1], m[2], m[3]);
+      return attrs ? pushLink(`<a href="#" class="thr-link" ${attrs}>${text}</a>`) : text;
     }
     return pushLink(`<a href="${u}" target="_blank" rel="noopener noreferrer">${text}</a>`);
   });
 
   // Bare file:line in prose: e.g. "at agent.go:120"
-  s = s.replace(/(^|[\s(])([a-zA-Z0-9_.\-/]+\.[a-zA-Z0-9]+):(\d+)(?:-(\d+))?(?=[\s),.;:!?]|$)/g, (_, prefix, path, line) => {
-    return prefix + pushLink(`<a href="#" class="thr-link" data-path="${esc(path)}" data-line="${line}">${esc(path)}:${line}</a>`);
+  s = s.replace(/(^|[\s(])([a-zA-Z0-9_.\-/]+\.[a-zA-Z0-9]+):(\d+)(?:-(\d+))?(?=[\s),.;:!?]|$)/g, (_, prefix, path, line, end) => {
+    const shown = path + ':' + line + (end ? '-' + end : '');
+    const attrs = thrLinkAttrs(shown, path, line, end);
+    return prefix + (attrs ? pushLink(`<a href="#" class="thr-link" ${attrs}>${esc(shown)}</a>`) : esc(shown));
   });
 
   // 4. Bracketed autolinks: <https://...>
@@ -421,7 +438,7 @@ function thrDrawList() {
   thrEl.list.innerHTML = items.map(t =>
     '<div class="thr-item' + (thr.cur && thr.cur.id === t.id ? ' sel' : '') + '" data-id="' + esc(t.id) + '" role="button" tabindex="0">' +
     '<div class="thr-item-title">' + (t.running ? '<span class="thr-spin" title="Working"></span>' : t.failed ? '<span class="thr-fail" title="Last reply failed">!</span>' : '') +
-    '<span class="thr-item-title-text">' + esc(t.title) + '</span>' + (t.kind ? '<span class="thr-kind">' + (t.kind === 'batch' ? 'batch' : 'inline') + '</span>' : '') +
+    '<span class="thr-item-title-text">' + esc(t.title) + '</span>' + (t.kind ? '<span class="thr-kind">' + (t.kind === 'batch' || t.kind === 'explain' ? t.kind : 'inline') + '</span>' : '') +
     '<button class="thr-item-del mini" data-del="' + esc(t.id) + '" title="Delete this thread" aria-label="Delete thread"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>' +
     '</div>' +
     '<div class="thr-item-meta"><span class="thr-item-ref">' + esc(thrRefText(t)) + '</span>' +
@@ -478,6 +495,24 @@ function thrRenderAnchor() {
   el.title = 'Jump to this code';
 }
 
+// The evidence an explanation rests on, and how to get a new one.
+function thrExplainFoot() {
+  const t = thr.cur;
+  let h = '<div class="thr-evidence"><span>' + esc(explainEvidenceLine(t.evidence)) + '</span>';
+  if (thr.stale && thr.stale.id === t.id) {
+    h += '<span class="thr-stale">' + esc(explainStaleLabel(thr.stale.reason)) + '</span>' +
+      '<button type="button" class="thr-evidence-btn" data-explain-again>Refresh</button>';
+  } else if (t.explainReq) {
+    h += '<button type="button" class="thr-evidence-btn" data-explain-again>Re-explain</button>';
+  }
+  return h + '</div>';
+}
+
+function thrReplyHtml(turn) {
+  thrRefs = thr.cur?.kind === 'explain' && !turn.running ? (turn.refs || {}) : null;
+  try { return thrMd(turn.reply || ''); } finally { thrRefs = null; }
+}
+
 function thrTurnHtml(turn) {
   let h = '<div class="thr-msg thr-user"><div class="thr-who">You</div><div class="thr-body">' + thrMd(turn.prompt) + '</div></div>';
   h += '<div class="thr-msg thr-agent" data-turn="' + turn.id + '"><div class="thr-who">' + esc(turn.harness || 'agent') +
@@ -487,8 +522,9 @@ function thrTurnHtml(turn) {
     h += '<details class="thr-steps"' + (turn.running ? ' open' : '') + '><summary>' + turn.tools.length + (turn.tools.length === 1 ? ' step' : ' steps') + '</summary>' +
       '<div class="thr-step-list">' + turn.tools.map(x => '<div>' + esc(x) + '</div>').join('') + '</div></details>';
   }
-  h += '<div class="thr-body thr-reply">' + thrMd(turn.reply || '') + '</div>';
+  h += '<div class="thr-body thr-reply">' + thrReplyHtml(turn) + '</div>';
   if (turn.error) h += '<div class="thr-err">' + esc(turn.error) + '</div>';
+  if (thr.cur?.kind === 'explain' && turn.id === 1 && !turn.running) h += thrExplainFoot();
   if (!turn.running) {
     if (turn.changed && turn.changed.length) {
       const revertHtml = turn.beforeSha
@@ -496,7 +532,7 @@ function thrTurnHtml(turn) {
           ? '<span class="thr-reverted-badge">Reverted</span>'
           : '<button type="button" class="thr-revert-btn" data-revert-turn="' + turn.id + '" title="Revert files modified in this turn back to pre-turn snapshot">Revert turn</button>')
         : '';
-      h += '<div class="thr-changed"><div class="thr-changed-head"><span class="thr-changed-label">Changed ' + turn.changed.length + (turn.changed.length === 1 ? ' file' : ' files') + '</span>' + revertHtml + '</div>' +
+      h += '<div class="thr-changed"><div class="thr-changed-head"><span class="thr-changed-label">' + (thr.cur?.kind === 'explain' ? 'Files changed during this explanation' : 'Changed ' + turn.changed.length + (turn.changed.length === 1 ? ' file' : ' files')) + '</span>' + revertHtml + '</div>' +
         turn.changed.map(p => '<button class="thr-file" data-path="' + esc(p) + '" data-turn-id="' + turn.id + '" title="Review changes in ' + esc(p) + '">' + esc(p) + '</button>').join('') + '</div>';
     } else if (turn.tracked === false) {
       h += '<div class="thr-changed"><span class="thr-changed-label">Changes unknown outside a git repository; the workspace was reloaded.</span></div>';
@@ -673,6 +709,43 @@ export function newThread(info) {
   thrEl.input.focus();
 }
 
+/* Asks the server for an explanation of this selection. It answers with a saved
+   thread when the code has not changed, or a new one already running. */
+async function thrExplain(body) {
+  const token = 'explain:' + Date.now();
+  thr.opening = token;
+  thr.draft = null;
+  thr.cur = null;
+  thr.stale = null;
+  thrCloseStream();
+  showThreadsSidebar();
+  thrShow('thread');
+  thrEl.title.textContent = 'Explain';
+  thrEl.del.hidden = true;
+  thrEl.anchor.hidden = true;
+  thrEl.msgs.innerHTML = '<div class="hint">Reading code…</div>';
+  try {
+    const j = await apiPostJson('/api/explain', body);
+    if (thr.opening !== token) return;
+    thr.opening = null;
+    thr.cur = j.thread;
+    if (j.stale) thr.stale = { id: j.thread.id, reason: j.staleReason };
+    thrRenderState();
+    if (thrRunning() || !j.thread.turns.length) thrOpenStream(j.thread.id);
+  } catch (e) {
+    if (thr.opening !== token) return;
+    thr.opening = null;
+    thrEl.msgs.innerHTML = '<div class="hint">' + esc(e.message) + '</div>';
+  }
+}
+
+export function explainSelection(info) {
+  const d = doc_();
+  if (d && d.path === info.path && d.dirty) { showToast('!', 'Save the file to explain the current code'); return; }
+  const { path, l1, c1, l2, c2, text } = info;
+  thrExplain({ path, l1, c1, l2, c2, text });
+}
+
 async function thrSend() {
   const message = thrEl.input.value.trim();
   if (!message || thr.sending || thrRunning()) return;
@@ -793,7 +866,12 @@ export function initThreads() {
     const link = /** @type {HTMLElement|null} */ (e.target)?.closest('a.thr-link');
     if (link && link.dataset.path) {
       e.preventDefault();
-      openFile(link.dataset.path, { line: +link.dataset.line || 1 });
+      const { path, line, end } = link.dataset;
+      openFile(path, { line: +line || 1 }).then(() => { if (end) highlightRange(path, +line, +end); });
+      return;
+    }
+    if (/** @type {HTMLElement|null} */ (e.target)?.closest('[data-explain-again]') && thr.cur?.explainReq) {
+      thrExplain({ ...thr.cur.explainReq, force: true });
       return;
     }
     const rev = /** @type {HTMLElement|null} */ (e.target)?.closest('[data-revert-turn]');
@@ -874,6 +952,7 @@ export function initThreads() {
   // Threads exist whenever a harness manager does; -no-agent removes them.
   api('/api/threads').then(j => {
     thr.avail = true;
+    setExplainHandler(explainSelection);
     $('#btn-top-threads')?.removeAttribute('hidden');
     thr.list = j.threads || [];
     thrDrawList();
@@ -882,5 +961,6 @@ export function initThreads() {
   }).catch(() => {
     $('#btn-top-threads')?.setAttribute('hidden', '');
     $('[data-sel="thread"]')?.setAttribute('hidden', '');
+    $('[data-sel="explain"]')?.setAttribute('hidden', '');
   });
 }

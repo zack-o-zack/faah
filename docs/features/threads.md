@@ -45,6 +45,21 @@ In a [PR review](github-pr-review.md) a thread has a scope, picked with the **Ab
 
 The default comes from where you started: the editor section a selection was made in (PR changes or Your changes), then the sidebar's **PR changes / Yours** switch, otherwise the whole PR. You can change it at any time; the assistant is told on the next message. The assistant is given the exact git range for the scope and the diff saved as a file, so it reads the whole change instead of guessing.
 
+## Explaining Code
+
+Select code and press `Alt+X`, click **Explain** in the selection bar, or right-click and choose **Explain**. faah decides what you selected:
+
+- **One identifier** explains that symbol: what it is, why it exists, and who uses it. A local variable is explained within its function.
+- **Anything else, up to 400 lines,** explains what the code does, its inputs, and its effects.
+
+The answer is one paragraph in the thread panel, and you can ask follow-up questions below it. A line under the answer shows its evidence, for example `gopls · definition · 14 references in 5 files · 3 callers`. `text match` means no language server could resolve the code, so the evidence is weaker.
+
+References to files, lines, and named symbols are links. faah checks each one when the answer finishes, and anything it cannot confirm stays plain text.
+
+Explaining the same code again reopens the earlier conversation, even if the code moved in the file. When the code changes, faah writes a new explanation. When only its callers or references change, the old one opens with a **Refresh** action. **Re-explain** always writes a new one.
+
+Explanations never change your files. They need a harness with a read-only mode, and they read the saved file, so save your edits first.
+
 ## The Thread List
 
 The list shows every thread for the workspace, most recently active first, with its anchor, turn count and age. A spinner marks a thread that is working, and `!` marks one whose last reply failed. **This file** filters to threads started in the open file. The **Threads** tab shows a pulsing dot while any thread is working, so you can leave it and come back.

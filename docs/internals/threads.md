@@ -110,6 +110,17 @@ To provide instant visual review and safe rollbacks of code modifications genera
 3. **Turn Diff Review**: The frontend allows users to click any changed file chip to view the exact diff introduced during that specific turn.
 4. **Turn Reversion**: `POST /api/threads/revert` with `{ id, turn }` restores only the files modified during that turn using `gitCheckoutSnapshotPaths(root, turn.BeforeSHA, changedPaths)`. The turn is flagged with `reverted: true`, preserving history and transcript context while cleanly reverting working-tree files.
 
+## 6c. Explanations
+
+`POST /api/explain` (`explain.go`) creates a thread of `Kind: "explain"`. A harness cannot reach the language server, so faah gathers the evidence first and passes it in the prompt.
+
+- **Classification:** `classifyExplain` rereads the selection from disk and answers 409 if it differs. One whole identifier is a symbol, and anything else is a block.
+- **Evidence:** `gatherExplain` builds a packet of at most 16 KB within an 8-second budget, through the `codeIntel` interface. Without a ready server it falls back to the regex outline and whole-word search. Packets live in `<store>.explain/<thread>.md`, so the thread store stays small.
+- **Read-only:** `Send` passes every explain turn through `readOnlyArgv`, which refuses a harness or command it has no rewrite for. `explain_conformance_test.go`, behind the `harness` build tag, is the check that each allowed harness honors it.
+- **Reuse:** `ExplainKey` hashes the content that defines the explanation and leaves out line numbers. `EvidenceHash` covers callers and references and only marks a reused explanation as stale.
+- **Freshness:** gathering first syncs every open document with disk. Faah sends no file-watch events, so a change in a file the server has never opened can be missing from references and callers until that file is opened.
+- **Citations:** at the end of a turn `validateExplainRefs` fills `threadTurn.Refs`. `thrInline` then links only those targets. `Reply` is left as written.
+
 ## 7. HTTP Surface
 
 | Endpoint | Method | Purpose |

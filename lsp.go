@@ -1472,16 +1472,16 @@ func (m *lspManager) Symbols(ctx context.Context, abs, rel string) ([]symbols.Sy
 	var walk func(syms []lspDocumentSymbol, depth int)
 	walk = func(syms []lspDocumentSymbol, depth int) {
 		for _, s := range syms {
-			rng := s.SelectionRange
+			rng, end := s.SelectionRange, s.Range.End.Line+1
 			if s.Location != nil {
-				rng = s.Location.Range // symbolInformation form
+				rng, end = s.Location.Range, s.Location.Range.End.Line+1 // symbolInformation form
 			}
 			kind := lspSymbolKind[s.Kind]
 			if kind == "" {
 				kind = "sym"
 			}
 			out = append(out, symbols.Symbol{
-				Name: s.Name, Kind: kind, Line: rng.Start.Line + 1, Indent: depth * 2,
+				Name: s.Name, Kind: kind, Line: rng.Start.Line + 1, End: end, Indent: depth * 2,
 			})
 			if len(s.Children) > 0 {
 				walk(s.Children, depth+1)
