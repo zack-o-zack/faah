@@ -72,6 +72,7 @@ test('desktop backend owns its port, serves workspaces and streams, and stops on
   } finally {
     await reader?.cancel().catch(() => {});
     await backend.stop();
-    fs.rmSync(temp, { recursive: true, force: true });
+    // Windows can briefly retain the exited backend's working-directory lock.
+    fs.rmSync(temp, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });
