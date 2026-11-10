@@ -109,6 +109,24 @@
   outline: 0; box-shadow: var(--ring);
 }
 
+/* Tabs: rounded items floating in their bar instead of cells joined by
+   dividers. Hover is a lighter wash than the selected tab so the two never match. */
+[data-shell] #tabs {
+  height: 36px; padding: 4px; gap: 2px; align-items: center; box-sizing: border-box;
+  background: var(--bg2); box-shadow: inset 0 -1px 0 var(--line);
+}
+[data-shell] .tab {
+  height: var(--ctl-md); line-height: normal; padding: 0 6px 0 10px; box-sizing: border-box;
+  font-size: var(--t-12); color: var(--dim); border-right: 0; border-radius: var(--r); box-shadow: none;
+}
+[data-shell] .tab:hover { background: color-mix(in srgb, var(--bg3) 55%, transparent); color: var(--fg); }
+[data-shell] .tab.active { background: var(--bg3); color: var(--fg); font-weight: 500; box-shadow: none; }
+[data-shell] .tab .x { width: 16px; height: 16px; border-radius: 4px; }
+[data-shell] .inspector-tab { height: var(--ctl-sm); padding: 0 8px; color: var(--dim); border-radius: var(--r); }
+[data-shell] .inspector-tab:hover { color: var(--fg); background: color-mix(in srgb, var(--bg3) 55%, transparent); }
+[data-shell] .inspector-tab.active { color: var(--fg); background: var(--bg3); font-weight: 500; }
+[data-shell] :is(.tab .x, .inspector-tab):focus-visible { outline: 0; box-shadow: var(--ring); }
+
 :root[data-titlebar] {
   --titlebar-h: 38px;
   --titlebar-left: 0px;
