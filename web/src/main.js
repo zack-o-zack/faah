@@ -123,6 +123,12 @@ initPRScope();
       stVerEl.title = `faah v${S.meta.version} (Click for shortcuts & help)`;
     }
   }
+  // The desktop app drops the sidebar footer: the version sits on the title row
+  // and Settings joins the status bar.
+  if (document.documentElement.hasAttribute('data-shell')) {
+    $('#side .panel-actions').before($('#st-ver'));
+    $('#status').append($('#btn-settings'));
+  }
   updateStatus();
   setAutoRevealSuppressed(true);
   await refreshTree();

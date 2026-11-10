@@ -2647,6 +2647,9 @@ body.hide-git-gutter .g-git, body.hide-git-gutter [class*="git-"] { display: non
   background: var(--sel);
 }
 
+.settings-card-error { margin-top: 6px; font-size: var(--t-11-5); color: var(--err); }
+.settings-reset-btn { margin-right: 8px; flex: none; }
+
 .settings-card.settings-card-textarea,
 .settings-card:has(.settings-textarea) {
   flex-direction: column;

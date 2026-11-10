@@ -1,6 +1,6 @@
 /* Desktop app only. desktop/preload.cjs sets the data-* attributes on <html>,
    so every rule here is inert in a browser tab. */
-.desktop-menu-btn { display: none; }
+.desktop-menu-btn, .shell-ico { display: none; }
 :root:is([data-platform="win"], [data-platform="linux"]) .desktop-menu-btn { display: inline-flex; }
 
 /* Inter 5.3.0 from Fontsource, SIL Open Font License (fonts/LICENSE-Inter.txt). */
@@ -283,3 +283,74 @@
   -webkit-app-region: no-drag;
 }
 .wb .desktop-menu-btn:hover { background: var(--bg3); color: var(--fg); }
+
+/* Chrome: the sidebar footer is gone. The version sits on the title row, the
+   tree's actions get a row of their own, and the status bar keeps icons whose
+   name and shortcut show on hover. */
+[data-shell] .shell-ico { display: block; }
+[data-shell] .side-foot { display: none; }
+[data-shell] #side > .panel-head { flex-wrap: wrap; height: auto; padding-bottom: 6px; }
+[data-shell] #side > .panel-head #root-name { flex: 1; min-width: 0; line-height: 38px; }
+[data-shell] #side > .panel-head .status-ver {
+  flex: none; font: var(--t-11) var(--ui); color: var(--faint); -webkit-app-region: no-drag;
+}
+/* The second row starts at the panel edge, under the window buttons. */
+[data-shell] #side > .panel-head .panel-actions {
+  flex: 0 0 calc(100% + var(--titlebar-left, 0px)); margin-left: calc(-1 * var(--titlebar-left, 0px));
+  height: var(--ctl-sm);
+}
+[data-shell] .panel-actions .sidebar-toggle { margin-right: auto; }
+
+[data-shell] #footer-actions .footer-btn:not([data-action="search"], [data-action="quick-open"]),
+[data-shell] #footer-actions :is(.footer-btn-label, .footer-kbd),
+[data-shell] .status-metrics > :not(.shell-ico) { display: none; }
+[data-shell] #footer-actions .footer-btn, [data-shell] .status-metrics {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: var(--ctl-sm); height: var(--ctl-sm); padding: 0; box-sizing: border-box;
+  color: var(--dim); background: none; border: 0; border-radius: var(--r); opacity: 1;
+}
+[data-shell] #footer-actions .footer-btn:hover, [data-shell] .status-metrics:hover { color: var(--fg); background: var(--bg3); }
+[data-shell] .status-metrics:focus-visible { outline: 0; box-shadow: var(--ring); }
+
+/* Disclosure arrows: the tree's stroked chevron in place of a filled triangle. */
+[data-shell] :is(.pr-comments-collapse, .pr-merge-caret, .rfile .ar, .car:is(.open, .shut)) { font-size: 0; }
+[data-shell] :is(.pr-comments-collapse, .rfile .ar, .car:is(.open, .shut)) {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 16px; height: 16px; padding: 0; color: var(--dim); transition: transform .12s ease;
+}
+[data-shell] :is(.pr-comments-collapse, .pr-merge-caret, .rfile .ar, .car:is(.open, .shut))::before {
+  content: ""; width: 4px; height: 4px; margin-top: -2px;
+  border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg);
+}
+[data-shell] :is(.rfile.closed .ar, .car.shut) { transform: rotate(-90deg); }
+
+/* Settings: a card is its title, description, and control. The control already
+   shows the value and its choices, so the tags that repeated them are gone. */
+/* Settings are rows divided by a line, not boxes. */
+[data-shell] .settings-list { gap: 0; padding: 4px 28px 24px 24px; }
+/* The native arrow sits against the border, so selects draw their own. */
+[data-shell] select:is(.settings-select, .agent-harness-select, .agent-model-select) {
+  appearance: none; padding-right: 28px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8a93' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 9px center;
+}
+[data-shell] .settings-card, [data-shell] .settings-card.is-modified {
+  padding: 14px 0; background: none; border: 0; border-bottom: 1px solid var(--line); border-radius: 0;
+}
+[data-shell] .settings-card:last-child { border-bottom: 0; }
+[data-shell] :is(.settings-tag:is(.tag-cat, .tag-type), .settings-apt-bar:not(.settings-apt-suggest), .settings-card-meta) { display: none; }
+[data-shell] .settings-card-right { gap: var(--space-2); }
+[data-shell] .settings-card-textarea .settings-card-right { flex-wrap: wrap; justify-content: flex-end; }
+[data-shell] .settings-card-textarea .settings-textarea { flex: 1 0 100%; }
+[data-shell] .settings-reset-btn {
+  height: var(--ctl-sm); padding: 0 var(--space-2); font: var(--t-12) var(--ui);
+  color: var(--dim); background: none; border-radius: var(--r);
+}
+[data-shell] .settings-reset-btn:hover { color: var(--fg); background: var(--bg4); }
+[data-shell] .settings-reset-btn:focus-visible { outline: 0; box-shadow: var(--ring); }
+[data-shell] .settings-switch { width: 32px; height: 18px; }
+[data-shell] .settings-slider { border: 0; border-radius: 9px; background: color-mix(in srgb, var(--fg) 22%, var(--bg3)); }
+[data-shell] .settings-slider:before { left: 2px; bottom: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; }
+[data-shell] .settings-switch input:checked + .settings-slider { background: var(--accent); }
+[data-shell] .settings-switch input:checked + .settings-slider:before { transform: translateX(14px); }
+[data-shell] .settings-switch input:focus-visible + .settings-slider { box-shadow: var(--ring); }

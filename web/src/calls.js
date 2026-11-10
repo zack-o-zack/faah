@@ -120,7 +120,7 @@ function draw() {
     const calls = n.sites && n.sites.length > 1 ? ' &times;' + n.sites.length : '';
     const tip = t.path + ':' + t.line + (node.cycle ? '\n(recursive, already in this trail)' : '') + (n.detail ? '\n' + n.detail : '');
     html += '<div class="sym cnode" data-i="' + i + '" style="padding-left:' + (6 + depth * 14) + 'px" title="' + esc(tip) + '">' +
-      '<span class="car' + (node.cycle ? ' cyc' : '') + '">' + arrow + '</span>' +
+      '<span class="car' + (node.cycle ? ' cyc' : node.loading ? '' : node.open ? ' open' : ' shut') + '">' + arrow + '</span>' +
       '<span class="kd" data-k="' + esc(n.kind) + '">' + esc(n.kind) + '</span>' +
       '<span class="sn">' + esc(n.name) + '</span>' +
       '<span class="sl">' + esc(base(t.path)) + ':' + t.line + calls + '</span></div>';
