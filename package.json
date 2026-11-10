@@ -8,6 +8,10 @@
     "build": "node ./scripts/build-web.js",
     "build-web": "node ./scripts/build-web.js",
     "check": "node ./scripts/check-web.js",
+    "desktop": "node ./scripts/build-desktop.js --run",
+    "desktop:smoke": "node ./scripts/build-desktop.js --smoke",
+    "desktop:package": "node ./scripts/build-desktop.js --package",
+    "desktop:dist": "node ./scripts/build-desktop.js --dist",
     "test": "bun test web/src/"
   }
 }

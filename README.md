@@ -8,13 +8,14 @@
 
 > faah is a fork of [px0](https://github.com/px0-ai/px0) by Arpit Bhayani, used under the MIT License.
 
-faah is a review workbench and speed-first IDE built for AI-generated code. It turns your browser into a zero-latency console with native Git and GitHub integrations, instant search across massive codebases, in-place quick fixes, and seamless handoff to local AI coding harnesses.
+faah is a review workbench and speed-first IDE built for AI-generated code. Run it as a desktop app with its own window, or use the CLI to serve it in a browser. Both provide native Git and GitHub integrations, instant search across massive codebases, in-place quick fixes, and handoff to local AI coding harnesses.
 
 As AI agents author more code directly from the terminal, engineering productivity is no longer constrained by how fast you type - it is constrained by how fast you can review, navigate, and verify changes. faah replaces heavy, multi-gigabyte editing suites with an instant, distraction-free environment built specifically for this review loop.
 
-- < 1 ms cold start
-- ~20–30 MB server daemon RAM (~100–180 MB total with browser tab, vs. VS Code's ~1,440 MB)
-- Single static Go binary with zero runtime dependencies (no Electron, no Node, no CGO)
+- < 1 ms CLI server cold start
+- ~20–30 MB server daemon RAM (~100–180 MB total in browser mode)
+- CLI: single static Go binary with zero runtime dependencies (no Node or CGO)
+- Desktop: a packaged Electron app for macOS, Windows, and Linux, isolated from browser extensions and browser chrome
 - ~280 languages tokenized natively via Chroma
 
 See full performance benchmarks and comparisons in [BENCHMARKS.md](BENCHMARKS.md).
@@ -33,13 +34,35 @@ See full performance benchmarks and comparisons in [BENCHMARKS.md](BENCHMARKS.md
 
 ## Installation
 
+### Desktop app
+
+Build a local app with Go 1.25+, Node.js 22.12+, and npm:
+
+```bash
+npm ci --prefix desktop
+npm run desktop:package
+```
+
+The app is written to `dist/desktop/` (`mac-arm64/faah.app` on Apple Silicon).
+Open it directly; no terminal server or browser is required. Use **File → Open Folder**
+(`Cmd/Ctrl+O`) or paste a PR URL into the workbench.
+
+`npm run desktop:dist` creates a macOS ZIP, Windows installer, or Linux
+AppImage and Debian package on the corresponding OS. The
+[Desktop apps workflow](.github/workflows/desktop.yml) builds macOS ARM64 and
+x64, Windows x64, and Linux x64 artifacts. These builds are unsigned;
+public distribution still needs platform signing and macOS notarization.
+See the [desktop guide](docs/features/desktop-app.md) for details and tradeoffs.
+
+### CLI and headless server
+
 Quick install (macOS, Linux, BSD):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/zack-o-zack/faah/main/install.sh | sh
 ```
 
-Build from source (requires Go 1.24+ and Node.js or Bun):
+Build from source (requires Go 1.25+ and Node.js or Bun):
 
 ```bash
 git clone https://github.com/zack-o-zack/faah.git
@@ -120,6 +143,10 @@ go run . -dev .
 
 # Build binary
 make build
+
+# Run the desktop app (builds the embedded UI and Go backend first)
+npm ci --prefix desktop
+npm run desktop
 ```
 
 ## Benchmarks

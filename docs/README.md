@@ -11,6 +11,7 @@ This directory houses the comprehensive documentation for faah, split into user-
 ### 1. [Feature Guides](features/README.md)
 Detailed walkthroughs of all faah features, capabilities, developer workflows, and configuration options without low-level implementation noise.
 - **[Features Overview & Catalog](features/README.md)**: Master index of all feature areas.
+- **[Desktop App](features/desktop-app.md)**: Build and run the standalone macOS, Windows, and Linux app.
 - **[Review Workbench](features/workbench.md)**: Single-port launcher (`faah`), folder completion, filesystem browser, worktree-backed PRs, and pinned/recent workspaces.
 - **[Fuzzy File Search & Quick Open](features/fuzzy-file-search.md)**: Rapid multi-file discovery with recency weighting (`Cmd/Ctrl+P`, `Cmd/Ctrl+K`).
 - **[Workspace Text & Regex Search](features/workspace-search.md)**: Full-repository pattern matching and symbol exploration (`Cmd/Ctrl+Shift+F`).
@@ -40,6 +41,7 @@ Detailed walkthroughs of all faah features, capabilities, developer workflows, a
 In-depth technical write-ups covering faah's Go server runtime, concurrency pipelines, AST manipulation, custom virtual DOM scroller, and data structures.
 - **[Subsystem Architecture Map](internals/README.md#1-subsystem-architecture-map)**
 - **[System Architecture & Runtime Lifecycle](internals/architecture.md)**
+- **[Desktop Runtime & Packaging](internals/desktop.md)**
 - **[Review Workbench Architecture](internals/workbench.md)**
 - **[Filesystem Indexing & Ignore Engine](internals/indexing-and-ignore.md)**
 - **[Fuzzy Path Matching Algorithm](internals/fuzzy-search.md)**
