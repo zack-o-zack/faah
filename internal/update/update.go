@@ -235,7 +235,7 @@ func downloadVerifiedAsset(client *http.Client, assetURL, checksumURL, assetName
 // to restart faah. Any failure (network, permissions, verification) is non-fatal:
 // faah continues running on the current binary.
 func AutoUpdate(currentVersion string) {
-	if ui.Quiet {
+	if ui.Quiet || isNightly(currentVersion) {
 		return
 	}
 
@@ -304,9 +304,20 @@ func AutoUpdate(currentVersion string) {
 	ui.Status("ok", fmt.Sprintf("faah has been updated to v%s", latestVer), "restart faah to see the latest changes", 0, os.Stdout)
 }
 
+// isNightly reports whether version is a nightly build. Updates come from the
+// latest stable release, which compareSemver cannot order against a nightly,
+// so nightly builds are replaced by hand instead.
+func isNightly(version string) bool {
+	return strings.Contains(version, "-nightly")
+}
+
 // RunSelfUpdate implements faah --update.
 func RunSelfUpdate(currentVer string) error {
 	repo := getRepoName()
+	if isNightly(currentVer) {
+		ui.Status("info", fmt.Sprintf("nightly builds do not self-update (v%s)", currentVer), fmt.Sprintf("download a newer one from https://github.com/%s/releases/tag/nightly", repo), 0, os.Stdout)
+		return nil
+	}
 	ui.Status("step", fmt.Sprintf("checking for updates from %s...", repo), "", 0, os.Stdout)
 
 	rel, err := fetchLatestRelease(repo)

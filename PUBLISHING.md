@@ -78,6 +78,14 @@ git push origin v0.2.0
 
 This method publishes CLI binaries only. A tag created by the workflow does not start the Desktop apps workflow, so use Method 1 or 2 to ship desktop packages.
 
+### Nightly Builds
+
+The [Nightly workflow](.github/workflows/nightly.yml) runs daily at 02:00 UTC and skips days when `main` has not changed. To build right away, run it from the Actions tab.
+
+Each run replaces the single `nightly` prerelease with new CLI binaries and desktop packages, versioned one patch above `VERSION` (for example `0.1.23-nightly.20261110`).
+
+The installer and self-updater read the latest stable release, so nightlies never reach stable users. Nightly builds do not self-update.
+
 ## 4. Post-Release Verification
 
 1. Verify GitHub Actions workflow completion on the Actions tab.
