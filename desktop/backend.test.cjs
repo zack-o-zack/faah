@@ -54,7 +54,8 @@ test('desktop backend owns its port, serves workspaces and streams, and stops on
       await response.text();
       await new Promise(resolve => setTimeout(resolve, 50));
     }
-    assert.equal(meta?.root, fs.realpathSync(workspace));
+    // The native call expands Windows 8.3 names such as RUNNER~1, as Go does.
+    assert.equal(meta?.root, fs.realpathSync.native(workspace));
     assert.equal(meta.workbench, '/');
     const stream = await fetch(origin + opened.href + 'api/stream', { signal: AbortSignal.timeout(10_000) });
     assert.equal(stream.headers.get('content-type'), 'text/event-stream');

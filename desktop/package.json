@@ -3,6 +3,7 @@
   "productName": "faah",
   "version": "0.1.21",
   "description": "Code review workbench for the desktop",
+  "homepage": "https://github.com/zack-o-zack/faah",
   "author": "faah contributors",
   "license": "MIT",
   "private": true,
