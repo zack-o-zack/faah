@@ -127,6 +127,14 @@
 [data-shell] .inspector-tab.active { color: var(--fg); background: var(--bg3); font-weight: 500; }
 [data-shell] :is(.tab .x, .inspector-tab):focus-visible { outline: 0; box-shadow: var(--ring); }
 
+/* Headers: sentence-weight labels in place of small spaced capitals. Panel
+   headers read as titles; section titles inside a panel stay secondary. */
+[data-shell] :is(.panel-head, .threads-head-title, .threads-head-label, .unpushed-title, .git-recent-title, .diff-section-head, .review-section-title) {
+  font-size: var(--t-12); font-weight: 500; letter-spacing: 0; text-transform: none;
+}
+[data-shell] .panel-head { height: 38px; padding: 0 12px; color: var(--fg); box-sizing: border-box; flex: none; }
+[data-shell] :is(.unpushed-title, .git-recent-title, .review-section-title) { color: var(--dim); }
+
 :root[data-titlebar] {
   --titlebar-h: 38px;
   --titlebar-left: 0px;
