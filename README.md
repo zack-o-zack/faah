@@ -36,7 +36,21 @@ See full performance benchmarks and comparisons in [BENCHMARKS.md](BENCHMARKS.md
 
 ### Desktop app
 
-Build a local app with Go 1.25+, Node.js 22.12+, and npm:
+Download the file for your system from the [latest release](https://github.com/zack-o-zack/faah/releases/latest):
+
+| System | File |
+| --- | --- |
+| macOS (Apple Silicon) | `faah-desktop-<version>-mac-arm64.zip` |
+| macOS (Intel) | `faah-desktop-<version>-mac-x64.zip` |
+| Windows | `faah-desktop-<version>-win-x64.exe` |
+| Linux | `faah-desktop-<version>-linux-x86_64.AppImage` or `faah-desktop-<version>-linux-amd64.deb` |
+
+The apps are not signed yet, so your system may block the first launch:
+
+- **macOS:** Unzip the file, move `faah.app` to Applications, then run `xattr -dr com.apple.quarantine /Applications/faah.app`.
+- **Windows:** In the SmartScreen dialog, select **More info**, then **Run anyway**.
+
+To build the app yourself, use Go 1.25+, Node.js 22.12+, and npm:
 
 ```bash
 npm ci --prefix desktop
@@ -76,6 +90,20 @@ To update an existing installation:
 ```bash
 faah --update
 ```
+
+### Nightly builds
+
+Nightly builds contain the latest code from `main` and may be unstable.
+
+Install the CLI:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/zack-o-zack/faah/main/install.sh | VERSION=nightly sh
+```
+
+For the desktop app, download the same file for your system from the [nightly release](https://github.com/zack-o-zack/faah/releases/tag/nightly). It replaces a stable desktop install.
+
+Nightly builds do not self-update. Repeat the install to get a newer one, or run the regular install command to return to stable.
 
 ## Usage
 

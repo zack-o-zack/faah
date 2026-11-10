@@ -5,7 +5,7 @@
 #   curl -fsSL https://raw.githubusercontent.com/zack-o-zack/faah/main/install.sh | sh
 #
 # Environment variables:
-#   VERSION      - target version to install (e.g. "0.1.0" or "latest", default: "latest")
+#   VERSION      - target version to install (e.g. "0.1.0", "latest" or "nightly", default: "latest")
 #   INSTALL_DIR  - target directory for binary (default: /usr/local/bin or ~/.local/bin)
 #   FAAH_REPO     - GitHub repository (default: zack-o-zack/faah)
 
@@ -98,10 +98,19 @@ if [ "$VERSION" = "latest" ]; then
   if [ -n "$RELEASE_JSON" ]; then
     VERSION=$(printf '%s' "$RELEASE_JSON" | grep '"tag_name":' | head -n 1 | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/' | sed 's/^v//')
   fi
-  # Fallback to VERSION file in master if release API returned empty/rate-limited
+  # Fallback to VERSION file in main if release API returned empty/rate-limited
   if [ -z "$VERSION" ] || [ "$VERSION" = "latest" ]; then
-    VERSION=$(fetch "https://raw.githubusercontent.com/${REPO}/master/VERSION" 2>/dev/null | tr -d ' \r\n' || true)
+    VERSION=$(fetch "https://raw.githubusercontent.com/${REPO}/main/VERSION" 2>/dev/null | tr -d ' \r\n' || true)
   fi
+elif [ "$VERSION" = "nightly" ]; then
+  # The nightly release keeps one tag while its assets carry each build's version.
+  RELEASE_JSON=$(fetch "https://api.github.com/repos/${REPO}/releases/tags/nightly" 2>/dev/null || true)
+  VERSION=$(printf '%s' "$RELEASE_JSON" | grep -oE 'faah-[0-9.]+-nightly\.[0-9]+' | head -n 1 | sed 's/^faah-//')
+  if [ -z "$VERSION" ]; then
+    log_error "Could not find a nightly build. See https://github.com/${REPO}/releases/tag/nightly"
+    exit 1
+  fi
+  RELEASE_TAG="nightly"
 fi
 
 if [ -z "$VERSION" ]; then
@@ -200,7 +209,7 @@ if [ -f "$TARGET_BIN" ] || [ -L "$TARGET_BIN" ]; then
 fi
 
 BINARY_NAME="faah-${VERSION}-${OS}-${ARCH}${BINARY_EXT}"
-DOWNLOAD_URL="https://github.com/${REPO}/releases/download/v${VERSION}/${BINARY_NAME}"
+DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${RELEASE_TAG:-v${VERSION}}/${BINARY_NAME}"
 
 # Fallback download url without 'v' prefix in tag if needed
 FALLBACK_URL="https://github.com/${REPO}/releases/download/${VERSION}/${BINARY_NAME}"
