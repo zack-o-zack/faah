@@ -203,10 +203,14 @@ func (s *Server) scavenge() {
 
 ### Client-Server Memory Split & Total Footprint
 
-Because faah uses a client-server architecture rather than embedding Electron:
+In CLI browser mode, faah uses a client-server architecture:
 - **Host Server**: The Go backend daemon occupies ~20–30 MB RSS, handling indexing, symbol discovery, regex search, and git operations.
 - **Client Browser Tab**: The frontend web client runs in the user's existing browser, allocating ~80–150 MB for the DOM, V8 runtime, and GPU compositing. Memory is kept strictly bounded because faah's bespoke virtualized scroller mounts only ~60 active rows regardless of file size.
 - **Combined Impact**: Total system footprint is ~100–180 MB (~85–90% lower than the ~1,400 MB footprint of desktop Electron IDEs). On remote devboxes and containers, the host pays strictly the ~20–30 MB server cost.
+
+The optional [desktop app](desktop.md) packages this backend with Electron.
+Its Chromium and shell overhead are additional; the browser-mode memory and
+startup benchmarks do not apply to the desktop app.
 
 ### Gzip Buffer Pooling
 

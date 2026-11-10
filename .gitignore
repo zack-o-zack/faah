@@ -19,6 +19,8 @@ Thumbs.db
 
 # Build artifacts
 build/
+node_modules/
+desktop/bin/
 web/app.js
 web/workbench.js
 web/vendor/*.min.js

@@ -36,6 +36,8 @@ var version = strings.TrimSpace(rawVersion)
 // posthogKey can be injected at build time: go build -ldflags="-X main.posthogKey=phc_..."
 var posthogKey string
 
+const desktopReadyPrefix = "faah-desktop-ready "
+
 func main() {
 	var (
 		port         = flag.Int("port", 7777, "port to listen on (0 picks a free one)")
@@ -57,12 +59,20 @@ func main() {
 		_            = flag.Bool("yes", false, "answer yes to prompts (alias for -y)")
 		basePathFlag = flag.String("base-path", "", "base URL path prefix to serve endpoints and assets from (e.g. /rev-123/)")
 		wbChild      = flag.Bool("workbench-child", false, "internal: run as a workspace of the faah workbench")
+		desktopHost  = flag.Bool("desktop-host", false, "internal: serve a private workbench for the desktop app until stdin closes")
 	)
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "faah %s - a code navigator\n\nusage:\n  faah [flags]                      open the workbench\n  faah [flags] <file or directory>\n  faah [flags] <pr-url>\n\nflags:\n", version)
 		flag.PrintDefaults()
 	}
 	flag.Parse()
+	if *desktopHost {
+		if flag.NArg() != 0 || *wbChild {
+			fatal(fmt.Errorf("-desktop-host requires a workbench without a target"))
+		}
+		*host, *port, *basePathFlag = "127.0.0.1", 0, "/"
+		*noOpen, *noUpdate = true, true
+	}
 
 	if *noColor {
 		f := false
@@ -105,7 +115,7 @@ func main() {
 		if *agentCmd != "" {
 			childArgs = append(childArgs, "-agent", *agentCmd)
 		}
-		runWorkbench(*host, *port, *basePathFlag, !*noOpen, !*noUpdate, childArgs)
+		runWorkbench(*host, *port, *basePathFlag, !*noOpen, !*noUpdate, childArgs, *desktopHost)
 		return
 	}
 
@@ -370,13 +380,15 @@ func main() {
 
 // runWorkbench serves the workbench until interrupted, then stops every
 // workspace it started.
-func runWorkbench(host string, port int, basePathFlag string, open, doAutoUpdate bool, childArgs []string) {
-	if u := runningWorkbench(); u != "" {
-		ui.Status("ok", "workbench already running", u, 0, os.Stdout)
-		if open {
-			openBrowser(u)
+func runWorkbench(host string, port int, basePathFlag string, open, doAutoUpdate bool, childArgs []string, desktop bool) {
+	if !desktop {
+		if u := runningWorkbench(); u != "" {
+			ui.Status("ok", "workbench already running", u, 0, os.Stdout)
+			if open {
+				openBrowser(u)
+			}
+			return
 		}
-		return
 	}
 	exe, err := os.Executable()
 	if err != nil {
@@ -405,8 +417,12 @@ func runWorkbench(host string, port int, basePathFlag string, open, doAutoUpdate
 
 	u := viewerURL(addr, "", 0, basePath)
 	_, boundPort, _ := net.SplitHostPort(addr)
-	writeWorkbenchLock(viewerURL(net.JoinHostPort("127.0.0.1", boundPort), "", 0, basePath))
-	defer removeWorkbenchLock()
+	// A desktop app owns its backend and must not attach to, or replace the
+	// instance lock of, an independently running CLI workbench.
+	if !desktop {
+		writeWorkbenchLock(viewerURL(net.JoinHostPort("127.0.0.1", boundPort), "", 0, basePath))
+		defer removeWorkbenchLock()
+	}
 
 	ui.Heading("faah "+version, nil, os.Stdout)
 	ui.KV("workbench", ui.Accent(u, os.Stdout), 11, os.Stdout)
@@ -428,6 +444,7 @@ func runWorkbench(host string, port int, basePathFlag string, open, doAutoUpdate
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+	shutDown := make(chan struct{})
 	interrupted := false
 	go func() {
 		<-stop
@@ -443,15 +460,31 @@ func runWorkbench(host string, port int, basePathFlag string, open, doAutoUpdate
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
 		_ = srv.Shutdown(ctx)
+		close(shutDown)
 	}()
+	if desktop {
+		// EOF is portable to Windows, unlike signalling the process. It also
+		// stops workspaces if the desktop shell crashes or is force-quit.
+		go func() {
+			_, _ = io.Copy(io.Discard, os.Stdin)
+			stop <- os.Interrupt
+		}()
+		fmt.Printf("%s%s\n", desktopReadyPrefix, u)
+	}
 	err = srv.Serve(ln)
+	if err == http.ErrServerClosed {
+		<-shutDown
+	}
+	signal.Stop(stop)
 	wb.Close()
-	if interrupted {
+	if interrupted && !desktop {
 		removeWorkbenchLock()
 		os.Exit(130)
 	}
 	if err != nil && err != http.ErrServerClosed {
-		removeWorkbenchLock()
+		if !desktop {
+			removeWorkbenchLock()
+		}
 		fatal(err)
 	}
 }

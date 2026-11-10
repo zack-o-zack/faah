@@ -1,4 +1,4 @@
-.PHONY: all build update install web build-web test dist publish clean help
+.PHONY: all build update install web build-web test dist publish clean help desktop desktop-package desktop-dist
 
 VERSION ?= $(shell cat VERSION 2>/dev/null | tr -d ' \r\n')
 # Support 'make publish 0.2.0' where target argument is passed as next goal
@@ -27,6 +27,15 @@ endif
 
 all: build
 
+desktop:
+	node scripts/build-desktop.js --run
+
+desktop-package:
+	node scripts/build-desktop.js --package
+
+desktop-dist:
+	node scripts/build-desktop.js --dist
+
 help:
 	@echo "faah make targets:"
 	@echo "  make build             - build faah binary and replace local installed binary"
@@ -42,6 +51,9 @@ help:
 	@echo "  make bench             - run root Go micro-benchmarks"
 	@echo "  make benchmark         - run real repository macroscopic benchmarks"
 	@echo "  make dist              - compile cross-platform binaries into dist/"
+	@echo "  make desktop           - build and run the desktop app"
+	@echo "  make desktop-package   - build a local desktop app into dist/desktop/"
+	@echo "  make desktop-dist      - create desktop installers for the current OS"
 	@echo "  make publish <version> - bump VERSION, commit, tag, and build dist binaries"
 	@echo "  make clean             - remove build artifacts"
 

@@ -10,6 +10,7 @@ This directory provides comprehensive documentation for all faah user-facing fea
 
 | Feature Area | Primary Shortcut | Core Capability | Detailed Guide |
 | :--- | :--- | :--- | :--- |
+| **Desktop App** | `Cmd/Ctrl+O` | Standalone windows, native folder picker, and cross-platform packaging | [Desktop App](desktop-app.md) |
 | **Fuzzy File Search** | `Cmd/Ctrl+P`, `Cmd/Ctrl+K` | Instant fuzzy path finding across 100,000+ files with recency ranking | [Fuzzy File Search](fuzzy-file-search.md) |
 | **Workspace Search** | `Cmd/Ctrl+Shift+F` | Full-repository literal and regex text search with match previews | [Workspace Search](workspace-search.md) |
 | **Symbol Outline** | `Cmd/Ctrl+Shift+O` | In-file function, class, and struct hierarchy with regex fallback | [Symbol Outline](symbol-outline.md) |

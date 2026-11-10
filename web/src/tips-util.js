@@ -7,6 +7,13 @@ export const TIPS_STORAGE_KEY_INDEX = 'faah.tips.lastIndex';
 
 export const DEFAULT_TIPS = [
   {
+    id: "desktop-app",
+    title: "Standalone Desktop App",
+    category: "Workbench",
+    tag: "Desktop",
+    content: "Use the desktop app to keep browser extensions out of your workspace. In the app, **File → Open Folder** (`Cmd/Ctrl+O`) opens a native folder picker."
+  },
+  {
     id: "file-navigation",
     title: "Quick File Navigation",
     category: "Navigation",

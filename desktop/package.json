@@ -1,0 +1,42 @@
+{
+  "name": "faah-desktop",
+  "productName": "faah",
+  "version": "0.1.21",
+  "description": "Code review workbench for the desktop",
+  "homepage": "https://github.com/zack-o-zack/faah",
+  "author": "faah contributors",
+  "license": "MIT",
+  "private": true,
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test backend.test.cjs navigation.test.cjs",
+    "package": "electron-builder --dir --publish never",
+    "dist": "electron-builder --publish never"
+  },
+  "devDependencies": {
+    "electron": "45.2.3",
+    "electron-builder": "26.18.0"
+  },
+  "engines": { "node": ">=22.12.0" },
+  "build": {
+    "appId": "dev.faah.desktop",
+    "artifactName": "faah-desktop-${version}-${os}-${arch}.${ext}",
+    "directories": { "output": "../dist/desktop" },
+    "files": ["main.cjs", "backend.cjs", "navigation.cjs"],
+    "extraResources": [{ "from": "bin", "to": "bin", "filter": ["faah", "faah.exe"] }],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": ["zip"],
+      "icon": "icons/icon.icns"
+    },
+    "win": { "target": ["nsis"], "icon": "icons/icon.ico" },
+    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Development",
+      "icon": "icons/icon.png",
+      "maintainer": "faah contributors"
+    }
+  }
+}
