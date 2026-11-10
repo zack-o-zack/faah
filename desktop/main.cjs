@@ -14,6 +14,14 @@ let pendingTarget;
 
 app.setName('faah');
 
+const devRoot = !app.isPackaged && process.env.FAAH_DEV_ROOT;
+if (devRoot) {
+  // A separate profile keeps an installed faah from holding the
+  // single-instance lock and turning the dev run into a no-op.
+  app.setPath('userData', `${app.getPath('userData')}-dev`);
+  app.commandLine.appendSwitch('disable-http-cache');
+}
+
 function openExternal(url) {
   if (isExternalURL(url)) void shell.openExternal(url).catch(error => {
     dialog.showErrorBox('Could not open link', error.message);
@@ -167,6 +175,7 @@ if (!app.requestSingleInstanceLock()) {
     });
     installMenu();
     createWindow(workbenchURL(origin, pendingTarget));
+    if (devRoot) require('./dev-reload.cjs').watchAssets(devRoot, () => BrowserWindow.getAllWindows());
   }).catch(async error => {
     dialog.showErrorBox('Could not start faah', error.message);
     await backend?.stop();

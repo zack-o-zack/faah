@@ -45,8 +45,17 @@ import (
 //go:embed web/app.js web/logo-dark.svg web/logo-light.svg web/favicon.svg
 var embedded embed.FS
 
-// assets is the embedded web/ directory.
-var assets fs.FS = embedded
+// devRoot is a source checkout whose web/ replaces the embedded assets, so
+// `npm run dev:desktop` can reload the UI without recompiling.
+var devRoot = os.Getenv("FAAH_DEV_ROOT")
+
+// assets is the web/ directory the UI is served from.
+var assets = func() fs.FS {
+	if devRoot != "" {
+		return os.DirFS(devRoot)
+	}
+	return embedded
+}()
 
 func cleanBasePath(p string) string {
 	p = strings.TrimSpace(p)
@@ -692,34 +701,41 @@ var (
 	themesCSSErr  error
 )
 
-// handleThemes joins web/themes/*.css into one stylesheet in file name order, so
+// joinThemesCSS joins web/themes/*.css into one stylesheet in file name order, so
 // adding a theme means adding a file: there is no list to keep in sync.
-func (s *Server) handleThemes(w http.ResponseWriter, r *http.Request) {
-	themesCSSOnce.Do(func() {
-		names, err := fs.Glob(assets, "web/themes/*.css")
+func joinThemesCSS() (string, error) {
+	names, err := fs.Glob(assets, "web/themes/*.css")
+	if err != nil {
+		return "", err
+	}
+	var css strings.Builder
+	for _, name := range names {
+		b, err := fs.ReadFile(assets, name)
 		if err != nil {
-			themesCSSErr = err
-			return
+			return "", err
 		}
-		var css strings.Builder
-		for _, name := range names {
-			b, err := fs.ReadFile(assets, name)
-			if err != nil {
-				themesCSSErr = err
-				return
-			}
-			css.WriteString("/* " + strings.TrimPrefix(name, "web/") + " */\n")
-			css.Write(b)
-			css.WriteString("\n")
-		}
-		themesCSSBody = css.String()
-	})
-	if themesCSSErr != nil {
-		fail(w, 500, themesCSSErr.Error())
+		css.WriteString("/* " + strings.TrimPrefix(name, "web/") + " */\n")
+		css.Write(b)
+		css.WriteString("\n")
+	}
+	return css.String(), nil
+}
+
+func (s *Server) handleThemes(w http.ResponseWriter, r *http.Request) {
+	var body string
+	var err error
+	if devRoot != "" {
+		body, err = joinThemesCSS()
+	} else {
+		themesCSSOnce.Do(func() { themesCSSBody, themesCSSErr = joinThemesCSS() })
+		body, err = themesCSSBody, themesCSSErr
+	}
+	if err != nil {
+		fail(w, 500, err.Error())
 		return
 	}
 	w.Header().Set("Content-Type", "text/css; charset=utf-8")
-	io.WriteString(w, themesCSSBody)
+	io.WriteString(w, body)
 }
 
 func staticContentType(p string) string {
