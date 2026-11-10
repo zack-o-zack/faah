@@ -77,13 +77,19 @@ export const keyLabel = combo => {
 
 export const keyCaps = combo => keyParts(combo).map(k => '<kbd>' + esc(k) + '</kbd>').join('');
 
+// The contents of a shortcut's <kbd>: one cap per key in the desktop app, which
+// styles nested caps, and the single label everywhere else.
+export const shortcutHtml = combo =>
+  document.documentElement.hasAttribute('data-shell') ? keyCaps(combo) : esc(keyLabel(combo));
+
 // "Go to File ({Mod+P})" -> "Go to File (⌘P)"
 export const withKeys = text => text.replace(/\{([^}]+)\}/g, (_, combo) => keyLabel(combo));
 
-/* Static markup names shortcuts the same way: data-keys fills a label, data-caps
-   fills key caps, and {combo} in a title is replaced. */
+/* Static markup names shortcuts the same way: data-keys fills a label (a <kbd>
+   gets shortcutHtml), data-caps fills key caps, and {combo} in a title is replaced. */
 export function applyKeyLabels(root = document) {
-  for (const el of $$('[data-keys]', root)) el.textContent = keyLabel(el.dataset.keys);
+  for (const el of $$('kbd[data-keys]', root)) el.innerHTML = shortcutHtml(el.dataset.keys);
+  for (const el of $$(':not(kbd)[data-keys]', root)) el.textContent = keyLabel(el.dataset.keys);
   for (const el of $$('[data-caps]', root)) el.innerHTML = keyCaps(el.dataset.caps);
   for (const el of $$('[title*="{"]', root)) el.title = withKeys(el.title);
 }
