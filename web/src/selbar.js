@@ -1,5 +1,5 @@
 // web/src/selbar.js
-import { $, S, doc_, keyLabel } from './state.js';
+import { $, S, doc_, keyLabel, shortcutHtml } from './state.js';
 import { on } from './bus.js';
 import { vp, rowsEl, copyToClipboard, copyRichToClipboard, showToast } from './ui.js';
 import { render, toPos, rowFor } from './renderer.js';
@@ -440,7 +440,7 @@ function openSelMenu(x, y, keep = (item) => true) {
     if (item.keys) {
       const kbd = document.createElement('kbd');
       kbd.className = 'footer-kbd';
-      kbd.textContent = keyLabel(item.keys);
+      kbd.innerHTML = shortcutHtml(item.keys);
       btn.append(kbd);
     }
     menu.append(btn);

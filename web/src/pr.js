@@ -6,7 +6,7 @@
 // comment. Everything here talks to /api/pr/*; nothing is stored client-side
 // beyond what's needed to repaint -- a page refresh re-fetches the server's
 // in-memory draft list (pr.go's prSession), which is the only source of truth.
-import { $, S, doc_, esc, api, apiPostJson, keyLabel, withKeys } from './state.js';
+import { $, S, doc_, esc, api, apiPostJson, keyLabel, shortcutHtml, withKeys } from './state.js';
 import { showToast } from './ui.js';
 import { setReviewHandler, SEL_MENU_ITEMS } from './selbar.js';
 import { diffview, setPRSyncHandler } from './diff.js';
@@ -867,6 +867,6 @@ function injectFooterButton() {
   btn.className = 'footer-btn';
   btn.dataset.sel = 'review-comment';
   btn.title = withKeys('Add a review comment on this selection ({Alt+R})');
-  btn.innerHTML = '<span class="footer-btn-label">Comment</span><kbd class="footer-kbd">' + esc(keyLabel('Alt+R')) + '</kbd>';
+  btn.innerHTML = '<span class="footer-btn-label">Comment</span><kbd class="footer-kbd">' + shortcutHtml('Alt+R') + '</kbd>';
   sel.append(btn);
 }

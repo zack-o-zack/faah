@@ -189,6 +189,7 @@ export function initInspector() {
       g.style.display = hidden ? '' : 'none';
       const ar = $('.ar', t);
       if (ar) ar.innerHTML = hidden ? '&#9660;' : '&#9654;';
+      t.classList.toggle('closed', !hidden);
       return;
     }
     const r = e.target.closest('.rline');

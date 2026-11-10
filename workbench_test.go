@@ -14,6 +14,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"faah/internal/settings"
 )
 
 func newTestStore(t *testing.T) *wbStore {
@@ -543,6 +545,57 @@ func TestWorkbenchSettingsOnlyTakesTheme(t *testing.T) {
 	}
 }
 
+func TestWorkbenchPagesResolveMissingThemes(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	newTestStore(t)
+	wb := newWorkbench("/", t.TempDir(), "", nil)
+	for _, tc := range []struct{ theme, want string }{
+		{"faah", "catppuccin-mocha"},
+		{"missing-theme", "catppuccin-mocha"},
+		{"", "catppuccin-mocha"},
+		{"nord", "nord"},
+		{"catppuccin-latte", "catppuccin-latte"},
+	} {
+		t.Run(tc.theme, func(t *testing.T) {
+			if err := settings.UpdateMap(map[string]any{"workbench.colorTheme": tc.theme}); err != nil {
+				t.Fatal(err)
+			}
+			for _, page := range []struct {
+				name string
+				hold *holdingPage
+			}{
+				{"launcher", nil},
+				{"loading", &holdingPage{Title: "test repo", Starting: true, Self: "/w/test/"}},
+				{"error", &holdingPage{Title: "test repo", Error: "Could not open repository", Retry: "/w/test/"}},
+			} {
+				t.Run(page.name, func(t *testing.T) {
+					w := httptest.NewRecorder()
+					if page.hold == nil {
+						wb.handleIndex(w, httptest.NewRequest(http.MethodGet, "/", nil))
+					} else {
+						wb.renderHolding(w, *page.hold)
+					}
+					body := w.Body.String()
+					if !strings.Contains(body, `data-theme="`+tc.want+`"`) {
+						t.Fatalf("page does not use available theme %q", tc.want)
+					}
+					if !strings.Contains(body, `href="static/desktop.css"`) {
+						t.Fatal("page is missing desktop typography and controls")
+					}
+					if page.hold != nil && page.hold.Starting {
+						if !strings.Contains(body, `<script defer src="static/holding.js"></script>`) {
+							t.Fatal("loading page is missing background polling")
+						}
+						if !strings.Contains(body, `<noscript><meta http-equiv="refresh"`) {
+							t.Fatal("page refresh must be limited to browsers without JavaScript")
+						}
+					}
+				})
+			}
+		})
+	}
+}
+
 func TestWorkbenchPinAndRemove(t *testing.T) {
 	st := newTestStore(t)
 	wb := newWorkbench("/", t.TempDir(), "", nil)
@@ -615,4 +668,3 @@ func TestWorkbenchLockLifecycle(t *testing.T) {
 		t.Errorf("runningWorkbench after remove = %q, want empty", u)
 	}
 }
-

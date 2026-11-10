@@ -48,7 +48,7 @@ try {
   }
 }
 
-for (const bundle of ['web/app.js', 'web/workbench.js']) {
+for (const bundle of ['web/app.js', 'web/workbench.js', 'web/holding.js']) {
   const bundlePath = path.join(rootDir, bundle);
   if (fs.existsSync(bundlePath)) {
     try {

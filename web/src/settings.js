@@ -680,7 +680,7 @@ function renderSettingsList() {
       const opts = item.options || item.Options || [];
       const optHtml = opts.map(o => {
         const sel = String(o) === String(val) ? 'selected' : '';
-        return `<option value="${esc(o)}" ${sel}>${esc(o)}</option>`;
+        return `<option value="${esc(o)}" ${sel}>${esc(o)}${String(o) === String(def) ? ' (default)' : ''}</option>`;
       }).join('');
       controlHtml = `<select class="settings-select" data-key="${esc(key)}">${optHtml}</select>`;
       const pills = opts.map(o => {
@@ -738,7 +738,7 @@ function renderSettingsList() {
         stringPresets = ['claude', 'gemini', 'cursor-agent', 'agy', 'aider'];
       }
       const presetPills = stringPresets.length ? `
-        <div class="settings-apt-bar">
+        <div class="settings-apt-bar settings-apt-suggest">
           <span class="settings-apt-label">Suggestions:</span>
           <div class="settings-apt-pills">
             ${stringPresets.map(s => {
@@ -780,10 +780,10 @@ function renderSettingsList() {
             ${(type !== 'textarea' && key !== 'git.commitMessageInstruction') ? `<span class="settings-tag tag-current">Current: <b>${esc(String(val))}</b></span>` : ''}
             <span class="settings-tag tag-default">Default: <code>${esc(String(def))}</code></span>
             ${modified ? `<span class="settings-tag tag-modified">Modified</span>` : ''}
-            ${resetBtn}
           </div>
         </div>
         <div class="settings-card-right">
+          ${resetBtn}
           ${controlHtml}
         </div>
       </div>
@@ -1074,6 +1074,22 @@ function initSettingsDOM() {
         value = target.checked;
       } else if (target.type === 'number') {
         value = parseFloat(target.value);
+        // An out-of-range number is reported on the card and never saved.
+        const card = target.closest('.settings-card');
+        card?.querySelector('.settings-card-error')?.remove();
+        const v = target.validity;
+        if (isNaN(value) || v.rangeUnderflow || v.rangeOverflow) {
+          delete pendingSettingsChanges[key];
+          target.setAttribute('aria-invalid', 'true');
+          const err = document.createElement('div');
+          err.className = 'settings-card-error';
+          err.setAttribute('role', 'alert');
+          err.textContent = target.min && target.max
+            ? `Enter a number from ${target.min} to ${target.max}.`
+            : target.validationMessage || 'Enter a valid number.';
+          card?.querySelector('.settings-card-left')?.append(err);
+          return;
+        }
       } else {
         value = target.value;
       }

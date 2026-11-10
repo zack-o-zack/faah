@@ -17,11 +17,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 const srcDir = path.join(rootDir, 'web', 'src');
-// Each entry is bundled on its own: the app, and the workbench page that a
-// bare `faah` serves (workbench.go), which shares only a few small modules.
+// Keep the app, launcher, and loading page separate so opening a workspace
+// does not load the editor before it is ready.
 const bundles = [
   { entry: path.join(srcDir, 'main.js'), out: path.join(rootDir, 'web', 'app.js') },
   { entry: path.join(srcDir, 'workbench.js'), out: path.join(rootDir, 'web', 'workbench.js') },
+  { entry: path.join(srcDir, 'holding.js'), out: path.join(rootDir, 'web', 'holding.js') },
 ];
 
 function hasBun() {

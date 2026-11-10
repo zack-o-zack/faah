@@ -23,6 +23,7 @@ node_modules/
 desktop/bin/
 web/app.js
 web/workbench.js
+web/holding.js
 web/vendor/*.min.js
 web/vendor/*.min.js.gz
 
