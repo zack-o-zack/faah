@@ -14,3 +14,10 @@ test('prefers explicit non-default server setting over stored theme', () => {
 test('falls back to default when nothing else is set', () => {
   assert.equal(chooseThemePreference(null, null), DEFAULT_THEME);
 });
+
+test('ignores removed faah theme preferences while preserving other choices', () => {
+  assert.equal(chooseThemePreference('faah', 'faah'), DEFAULT_THEME);
+  assert.equal(chooseThemePreference('faah', DEFAULT_THEME), DEFAULT_THEME);
+  assert.equal(chooseThemePreference('nord', 'faah'), 'nord');
+  assert.equal(chooseThemePreference('faah', 'dracula'), 'dracula');
+});

@@ -14,12 +14,11 @@ faah provides instant theme switching with zero browser reloading. Themes are im
 
 ## Built-In Themes
 
-faah ships with 15 curated themes ready for immediate use:
+faah ships with 14 curated themes ready for immediate use:
 
 | Theme Name | Identifier | Aesthetic & Style |
 | :--- | :--- | :--- |
-| **faah** | `faah` | Quiet neutral grays with one blue accent (Default) |
-| **Catppuccin Mocha** | `catppuccin-mocha` | Soothing, low-contrast dark pastel palette |
+| **Catppuccin Mocha** | `catppuccin-mocha` | Soothing, low-contrast dark pastel palette (Default) |
 | **Catppuccin Latte** | `catppuccin-latte` | Warm, low-contrast light pastel palette |
 | **GitHub Dark** | `github-dark` | Classic GitHub Dark theme |
 | **Tokyo Night** | `tokyo-night` | Celebrated deep blue and neon palette |
