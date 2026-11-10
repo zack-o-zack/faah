@@ -181,6 +181,28 @@
 [data-shell] .diff-item-desc { font-size: var(--t-12); }
 [data-shell] .diff-menu-item.active .diff-item-check { color: var(--fg); }
 [data-shell] .diff-menu-item.active .diff-item-badge { background: var(--bg3); color: var(--dim); }
+/* Modals: header and footer sit on the dialog surface, divided by lines, instead
+   of on a second gray band. Settings navigation uses the inset row pattern. */
+[data-shell] :is(.settings-header, .settings-footer, .fs-modal-header, .fs-modal-footer) { background: transparent; }
+[data-shell] :is(.settings-title-group h2, .fs-modal-title) { font-size: var(--t-14); font-weight: 600; }
+[data-shell] .help-header h2 { font-size: var(--t-14); letter-spacing: 0; text-transform: none; color: var(--fg); }
+/* Dialog actions borrow the status bar's button class; give them the medium size. */
+[data-shell] .fs-modal-footer .footer-btn {
+  height: var(--ctl-md); padding: 0 var(--space-3); font: 500 var(--t-13) var(--ui);
+  color: var(--fg); background: var(--bg3); border: 1px solid var(--line); border-radius: var(--r);
+}
+[data-shell] .fs-modal-footer .footer-btn:hover { background: var(--bg4); }
+[data-shell] .fs-modal-footer .footer-btn.primary { color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
+[data-shell] .fs-modal-footer .footer-btn.primary:hover { background: var(--accent); filter: brightness(1.08); }
+[data-shell] .settings-nav { padding: 8px; gap: 1px; }
+[data-shell] .settings-nav-item {
+  height: var(--ctl-md); padding: 0 10px; flex: none; box-sizing: border-box;
+  font-size: var(--t-13); border-left: 0; border-radius: var(--r);
+}
+[data-shell] .settings-nav-item:hover { background: color-mix(in srgb, var(--bg3) 55%, transparent); }
+[data-shell] .settings-nav-item.active { color: var(--fg); background: var(--bg3); font-weight: 500; }
+[data-shell] .settings-nav-item:focus-visible { outline: 0; box-shadow: var(--ring); }
+
 [data-shell] :is(.diff-menu-header, .lsp-menu-head) {
   font-size: var(--t-12); font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--dim);
 }
