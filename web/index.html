@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="static/style.css">
 <!-- Every web/themes/*.css joined by the server. See docs/internals/styling-and-themes.md. -->
 <link rel="stylesheet" href="static/themes.css">
+<link rel="stylesheet" href="static/desktop.css">
 </head>
 <body class="right-hidden threads-hidden">
 <div id="app">
@@ -133,6 +134,10 @@
   <main id="main">
     <!-- Top Control Bar (Level 1 Menu): Mode toggle + View actions -->
     <header id="main-top-bar" class="main-top-bar">
+      <!-- Desktop app on Windows and Linux only (web/desktop.css, desktop/preload.cjs) -->
+      <button class="top-bar-btn desktop-menu-btn" data-desktop-menu title="Menu" aria-label="Application menu">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
       <!-- Workplace mode switch: Code Mode vs Review Mode -->
       <div id="mode-switch" class="view-switch mode-switch" role="group" aria-label="Workplace Mode">
         <button id="btn-mode-code" class="active" title="Code Mode ({Mod+Shift+C})">

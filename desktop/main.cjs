@@ -1,9 +1,10 @@
-const { app, BrowserWindow, dialog, Menu, session, shell } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, Menu, session, shell } = require('electron');
 const path = require('node:path');
 const os = require('node:os');
 const { execFile } = require('node:child_process');
 const { promisify } = require('node:util');
 const { startBackend } = require('./backend.cjs');
+const { chromeOptions, chromeColors, menuPoint } = require('./chrome.cjs');
 const { isInternalURL, isExternalURL, workbenchURL } = require('./navigation.cjs');
 
 let backend;
@@ -32,7 +33,9 @@ function createWindow(url = workbenchURL(origin)) {
   const window = new BrowserWindow({
     title: 'faah', width: 1440, height: 960, minWidth: 800, minHeight: 560,
     backgroundColor: '#111113', show: false, autoHideMenuBar: true,
+    ...chromeOptions(process.platform),
     webPreferences: {
+      preload: path.join(__dirname, 'preload.cjs'),
       nodeIntegration: false, contextIsolation: true, sandbox: true,
       webSecurity: true, spellcheck: false, partition: 'faah-desktop',
     },
@@ -84,6 +87,25 @@ async function chooseFolder() {
   const window = BrowserWindow.getFocusedWindow();
   const result = await (window ? dialog.showOpenDialog(window, options) : dialog.showOpenDialog(options));
   if (!result.canceled) openTarget(result.filePaths[0]);
+}
+
+function senderWindow(event) {
+  return isInternalURL(event.senderFrame?.url, origin) ? BrowserWindow.fromWebContents(event.sender) : null;
+}
+
+function installChromeHandlers() {
+  ipcMain.on('faah:chrome', (event, value) => {
+    const window = senderWindow(event);
+    const colors = chromeColors(value);
+    if (!window || !colors) return;
+    window.setBackgroundColor(colors.color);
+    if (process.platform === 'win32') window.setTitleBarOverlay(colors);
+  });
+  ipcMain.on('faah:menu', (event, value) => {
+    const window = senderWindow(event);
+    const point = menuPoint(value);
+    if (window && point) Menu.getApplicationMenu()?.popup({ window, ...point });
+  });
 }
 
 function installMenu() {
@@ -174,6 +196,7 @@ if (!app.requestSingleInstanceLock()) {
       app.quit();
     });
     installMenu();
+    installChromeHandlers();
     createWindow(workbenchURL(origin, pendingTarget));
     if (devRoot) require('./dev-reload.cjs').watchAssets(devRoot, () => BrowserWindow.getAllWindows());
   }).catch(async error => {
