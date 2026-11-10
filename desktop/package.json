@@ -10,7 +10,7 @@
   "main": "main.cjs",
   "scripts": {
     "start": "electron .",
-    "test": "node --test backend.test.cjs navigation.test.cjs",
+    "test": "node --test backend.test.cjs navigation.test.cjs dev-reload.test.cjs chrome.test.cjs",
     "package": "electron-builder --dir --publish never",
     "dist": "electron-builder --publish never"
   },
@@ -23,7 +23,7 @@
     "appId": "dev.faah.desktop",
     "artifactName": "faah-desktop-${version}-${os}-${arch}.${ext}",
     "directories": { "output": "../dist/desktop" },
-    "files": ["main.cjs", "backend.cjs", "navigation.cjs"],
+    "files": ["main.cjs", "backend.cjs", "navigation.cjs", "chrome.cjs", "preload.cjs"],
     "extraResources": [{ "from": "bin", "to": "bin", "filter": ["faah", "faah.exe"] }],
     "mac": {
       "category": "public.app-category.developer-tools",

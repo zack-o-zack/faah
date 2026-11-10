@@ -21,8 +21,19 @@ These folders contain everything needed to run the app; end users do not need
 Go, Node.js, npm, or a separate faah installation. Git, coding harnesses, and
 language servers must still be installed to use their respective features.
 
-Use `npm run desktop` during development. It rebuilds the UI and backend before
-opening the app; restart it to pick up changes.
+Use `npm run dev:desktop` during development. CSS changes apply in place, UI
+changes reload the open windows, and changes to the Go backend or `desktop/*.cjs`
+relaunch the app. It uses its own Electron profile, so it can run next to an
+installed faah. `npm run desktop` builds once and opens the app without reloading.
+
+## Window frame
+
+macOS and Windows draw their window controls over faah's own top bar. Linux keeps
+the system frame, because tiling window managers and Wayland compositors treat
+custom title bars differently. On Windows and Linux a menu button in the top bar
+opens the application menu. `desktop/preload.cjs` marks `<html>` with `data-shell`,
+`data-platform`, and `data-titlebar`, and `web/desktop.css` is scoped to them, so a
+browser tab never gets these styles.
 
 ## Use the app
 

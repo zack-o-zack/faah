@@ -1,9 +1,10 @@
-const { app, BrowserWindow, dialog, Menu, session, shell } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, Menu, session, shell } = require('electron');
 const path = require('node:path');
 const os = require('node:os');
 const { execFile } = require('node:child_process');
 const { promisify } = require('node:util');
 const { startBackend } = require('./backend.cjs');
+const { chromeOptions, chromeColors, menuPoint } = require('./chrome.cjs');
 const { isInternalURL, isExternalURL, workbenchURL } = require('./navigation.cjs');
 
 let backend;
@@ -13,6 +14,14 @@ let quitRequested = false;
 let pendingTarget;
 
 app.setName('faah');
+
+const devRoot = !app.isPackaged && process.env.FAAH_DEV_ROOT;
+if (devRoot) {
+  // A separate profile keeps an installed faah from holding the
+  // single-instance lock and turning the dev run into a no-op.
+  app.setPath('userData', `${app.getPath('userData')}-dev`);
+  app.commandLine.appendSwitch('disable-http-cache');
+}
 
 function openExternal(url) {
   if (isExternalURL(url)) void shell.openExternal(url).catch(error => {
@@ -24,7 +33,9 @@ function createWindow(url = workbenchURL(origin)) {
   const window = new BrowserWindow({
     title: 'faah', width: 1440, height: 960, minWidth: 800, minHeight: 560,
     backgroundColor: '#111113', show: false, autoHideMenuBar: true,
+    ...chromeOptions(process.platform),
     webPreferences: {
+      preload: path.join(__dirname, 'preload.cjs'),
       nodeIntegration: false, contextIsolation: true, sandbox: true,
       webSecurity: true, spellcheck: false, partition: 'faah-desktop',
     },
@@ -76,6 +87,25 @@ async function chooseFolder() {
   const window = BrowserWindow.getFocusedWindow();
   const result = await (window ? dialog.showOpenDialog(window, options) : dialog.showOpenDialog(options));
   if (!result.canceled) openTarget(result.filePaths[0]);
+}
+
+function senderWindow(event) {
+  return isInternalURL(event.senderFrame?.url, origin) ? BrowserWindow.fromWebContents(event.sender) : null;
+}
+
+function installChromeHandlers() {
+  ipcMain.on('faah:chrome', (event, value) => {
+    const window = senderWindow(event);
+    const colors = chromeColors(value);
+    if (!window || !colors) return;
+    window.setBackgroundColor(colors.color);
+    if (process.platform === 'win32') window.setTitleBarOverlay(colors);
+  });
+  ipcMain.on('faah:menu', (event, value) => {
+    const window = senderWindow(event);
+    const point = menuPoint(value);
+    if (window && point) Menu.getApplicationMenu()?.popup({ window, ...point });
+  });
 }
 
 function installMenu() {
@@ -166,7 +196,9 @@ if (!app.requestSingleInstanceLock()) {
       app.quit();
     });
     installMenu();
+    installChromeHandlers();
     createWindow(workbenchURL(origin, pendingTarget));
+    if (devRoot) require('./dev-reload.cjs').watchAssets(devRoot, () => BrowserWindow.getAllWindows());
   }).catch(async error => {
     dialog.showErrorBox('Could not start faah', error.message);
     await backend?.stop();

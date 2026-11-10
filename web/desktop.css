@@ -1,0 +1,56 @@
+/* Desktop app only. desktop/preload.cjs sets the data-* attributes on <html>,
+   so every rule here is inert in a browser tab. */
+.desktop-menu-btn { display: none; }
+:root:is([data-platform="win"], [data-platform="linux"]) .desktop-menu-btn { display: inline-flex; }
+
+:root[data-titlebar] {
+  --titlebar-h: 38px;
+  --titlebar-left: 0px;
+  --titlebar-right: 0px;
+}
+:root[data-platform="mac"] { --titlebar-left: 76px; }
+/* Width of the native min/max/close buttons, reported by Chromium. */
+:root[data-platform="win"] {
+  --titlebar-right: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw));
+}
+
+/* The three bars along the top edge share one height so their borders line up. */
+[data-titlebar] #side > .panel-head,
+[data-titlebar] .main-top-bar,
+[data-titlebar] .inspector-head {
+  height: var(--titlebar-h);
+  flex: none;
+  box-sizing: border-box;
+  -webkit-app-region: drag;
+}
+[data-titlebar] #side > .panel-head { padding: 0 12px 0 calc(12px + var(--titlebar-left)); }
+[data-titlebar] body.side-hidden .main-top-bar { padding-left: calc(8px + var(--titlebar-left)); }
+
+/* Only the rightmost bar sits under the Windows controls. */
+[data-titlebar] body.right-hidden.threads-hidden .main-top-bar,
+[data-titlebar] body:not(.threads-hidden) .threads-head,
+[data-titlebar] body.threads-hidden:not(.right-hidden) #right-side .inspector-head {
+  padding-right: calc(8px + var(--titlebar-right));
+}
+
+[data-titlebar] :is(#side > .panel-head, .main-top-bar, .inspector-head)
+  :is(button, a, input, select, label, [role="button"], [role="group"], [role="tab"], .inspector-tab) {
+  -webkit-app-region: no-drag;
+}
+
+/* Chromium ignores stacking when it collects drag regions, so anything laid
+   over the top bar has to opt out or it would move the window when clicked. */
+[data-titlebar] body > :not(#app):not(#wb-app) { -webkit-app-region: no-drag; }
+
+/* The workbench page has no top bar, so give it an empty draggable strip. */
+[data-titlebar] body.wb::before {
+  content: ""; position: fixed; inset: 0 0 auto; height: var(--titlebar-h);
+  -webkit-app-region: drag;
+}
+.wb .desktop-menu-btn {
+  position: fixed; top: 7px; left: 8px; z-index: 1; width: 24px; height: 24px;
+  align-items: center; justify-content: center; padding: 0;
+  background: transparent; border: none; border-radius: var(--r); color: var(--dim); cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+.wb .desktop-menu-btn:hover { background: var(--bg3); color: var(--fg); }

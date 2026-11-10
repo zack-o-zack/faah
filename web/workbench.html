@@ -12,10 +12,14 @@
 <link rel="stylesheet" href="static/style.css">
 <link rel="stylesheet" href="static/themes.css">
 <link rel="stylesheet" href="static/workbench.css">
+<link rel="stylesheet" href="static/desktop.css">
 </head>
 <!-- The workbench: what a bare `faah` opens. web/src/workbench.js drives it
      (bundled to static/workbench.js); the server side is workbench.go. -->
 <body class="wb">
+<button class="desktop-menu-btn" data-desktop-menu title="Menu" aria-label="Application menu">
+  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+</button>
 <div id="wb-app">
   <div class="wb-scroll">
     <main class="wb-main">
