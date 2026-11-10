@@ -76,10 +76,12 @@ git push origin v0.2.0
 1. Enter the version tag (e.g. `v0.2.0`).
 1. Trigger the workflow.
 
+This method publishes CLI binaries only. A tag created by the workflow does not start the Desktop apps workflow, so use Method 1 or 2 to ship desktop packages.
+
 ## 4. Post-Release Verification
 
 1. Verify GitHub Actions workflow completion on the Actions tab.
-1. Confirm artifacts on the [Releases](https://github.com/zack-o-zack/faah/releases) page (cross-platform binaries and `checksums.txt`). The self-updater requires this file and verifies the selected binary against it before execution.
+1. Confirm artifacts on the [Releases](https://github.com/zack-o-zack/faah/releases) page (cross-platform binaries, `faah-desktop-*` packages and `checksums.txt`). The self-updater requires this file and verifies the selected binary against it before execution.
 1. Verify the installer script:
   ```bash
   curl -fsSL https://raw.githubusercontent.com/zack-o-zack/faah/main/install.sh | sh
