@@ -30,6 +30,40 @@
 /* At this size the control radius would turn the checkbox into a circle. */
 [data-shell] .tr .stage-tick { border-radius: 3px; }
 
+/* Buttons: small and medium sizes, default and primary weights. Controls inside
+   code rows, tree rows, and the crowded sidebar header stay compact. */
+:root[data-shell] { --ring: 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent); }
+[data-shell] #status { height: 28px; }
+
+[data-shell] :is(.mini:not(.panel-actions .mini, .panel-head .wb-back), .top-bar-btn.open-right, .dcs-step:not(.dcs-hunk-btn), .tip-btn-nav) {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: var(--ctl-sm); height: var(--ctl-sm); padding: 0; flex: none; box-sizing: border-box;
+}
+[data-shell] .mini:not(.panel-actions .mini, .panel-head .wb-back) { margin-left: 0; color: var(--dim); }
+
+[data-shell] :is(.footer-btn, .top-bar-btn:not(.open-right), .dcs-hunk-btn, .dcs-viewed, .diff-hunk-btn, .tip-btn-all) {
+  height: var(--ctl-sm); padding: 0 var(--space-2); font: var(--t-12) var(--ui); box-sizing: border-box;
+}
+[data-shell] .footer-btn { color: var(--dim); opacity: 1; }
+[data-shell] .footer-btn:hover, [data-shell] .footer-btn.active { background: var(--bg3); color: var(--fg); }
+
+[data-shell] :is(.wb-btn, .git-panel-actions .footer-btn, .git-generate-btn, .settings-btn-save),
+[data-shell] #git-generate-msg {
+  height: var(--ctl-md); padding: 0 var(--space-3); font: 500 var(--t-13) var(--ui);
+  border-radius: var(--r); box-sizing: border-box;
+}
+/* Beside a text field, a button stretches to the field's height. */
+[data-shell] .wb-open .wb-btn { height: auto; }
+[data-shell] .wb-btn:not(.wb-primary), [data-shell] .git-panel-actions .footer-btn {
+  background: var(--bg3); border: 1px solid var(--line); color: var(--fg);
+}
+[data-shell] .wb-btn:not(.wb-primary):hover,
+[data-shell] .git-panel-actions .footer-btn:hover:not(:disabled) { background: var(--bg4); border-color: var(--line); }
+
+[data-shell] :is(.mini, .top-bar-btn, .footer-btn, .wb-btn, .git-generate-btn, .settings-btn-save, .dcs-step, .dcs-viewed, .diff-hunk-btn, .tip-btn-nav, .tip-btn-all):focus-visible {
+  outline: 0; box-shadow: var(--ring);
+}
+
 :root[data-titlebar] {
   --titlebar-h: 38px;
   --titlebar-left: 0px;
