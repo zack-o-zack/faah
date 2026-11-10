@@ -44,7 +44,7 @@ import (
 )
 
 const (
-	wbReadyPrefix  = "faah-ready "     // a child prints this, then its address, once it is listening
+	wbReadyPrefix  = "faah-ready "    // a child prints this, then its address, once it is listening
 	wbStartTimeout = 3 * time.Minute  // a PR checkout may clone a large repository
 	wbIdleAfter    = 30 * time.Minute // stop a child nobody has had open for this long
 	wbStopGrace    = 5 * time.Second  // how long a child gets to clean up before it is killed
@@ -710,8 +710,11 @@ func (wb *workbench) handleIndex(w http.ResponseWriter, r *http.Request) {
 }
 
 func wbTheme() string {
-	if t := settings.Read().WorkbenchColorTheme; t != nil && *t != "" {
-		return *t
+	if t := settings.Read().WorkbenchColorTheme; t != nil && *t != "" && !strings.ContainsAny(*t, `/\`) {
+		// Holding pages do not run the app's client-side theme initialization.
+		if info, err := fs.Stat(assets, "web/themes/"+*t+".css"); err == nil && !info.IsDir() {
+			return *t
+		}
 	}
 	return "catppuccin-mocha"
 }
@@ -1142,8 +1145,8 @@ func (wb *workbench) handleRemove(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleWorkspace serves /w/<id>/...: proxied to the running child, or, for
-// the page itself, a holding page that starts the child and refreshes until
-// it is ready. A bookmarked or reloaded review therefore just reopens.
+// the page itself, a holding page that starts the child and polls until it is
+// ready. A bookmarked or reloaded review therefore just reopens.
 func (wb *workbench) handleWorkspace(w http.ResponseWriter, r *http.Request) {
 	rest := strings.TrimPrefix(r.URL.Path, wb.route("/w/"))
 	id, _, hasSlash := strings.Cut(rest, "/")
@@ -1249,14 +1252,19 @@ var holdingTmpl = template.Must(template.New("holding").Parse(`<!doctype html>
 <meta charset="utf-8">
 <base href="{{.Base}}">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-{{if .Starting}}<meta http-equiv="refresh" content="1; url={{.Self}}">{{end}}
+{{if .Starting}}<noscript><meta http-equiv="refresh" content="1; url={{.Self}}"></noscript>
+<script defer src="static/holding.js"></script>{{end}}
 <title>{{if .Starting}}Opening…{{else}}faah{{end}}</title>
 <link rel="icon" type="image/svg+xml" href="static/favicon.svg">
 <link rel="stylesheet" href="static/style.css">
 <link rel="stylesheet" href="static/themes.css">
 <link rel="stylesheet" href="static/workbench.css">
+<link rel="stylesheet" href="static/desktop.css">
 </head>
 <body class="wb">
+<button class="desktop-menu-btn" data-desktop-menu title="Menu" aria-label="Application menu">
+  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+</button>
 <main class="wb-holding">
   <div class="empty-logo">
     <img class="logo-dark" src="static/logo-dark.svg" alt="faah" width="160" height="60">
@@ -1264,7 +1272,7 @@ var holdingTmpl = template.Must(template.New("holding").Parse(`<!doctype html>
   </div>
   {{if .Starting}}
   <p class="wb-holding-msg"><span class="wb-spin" aria-hidden="true"></span>Opening <b>{{.Title}}</b>…</p>
-  <p class="wb-faint">{{if .Progress}}{{.Progress}}…{{else}}Pull requests are checked out first; large repositories take a while.{{end}}</p>
+  <p id="wb-holding-progress" class="wb-faint">{{if .Progress}}{{.Progress}}…{{else}}Pull requests are checked out first; large repositories take a while.{{end}}</p>
   {{else}}
   <p class="wb-holding-msg">Could not open <b>{{.Title}}</b></p>
   <pre class="wb-error">{{.Error}}</pre>

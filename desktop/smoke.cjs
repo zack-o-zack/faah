@@ -74,6 +74,89 @@ void (async () => {
   assert.equal(external[0], 'https://example.com/faah-smoke');
   assert.equal(new URL(window.webContents.getURL()).origin, origin);
 
+  // Holding pages have no app script, so their text must be themed by the server.
+  const holding = new BrowserWindow({ show: false, webPreferences: {
+    sandbox: true, contextIsolation: true, nodeIntegration: false,
+    preload: path.join(__dirname, 'preload.cjs'),
+  } });
+  try {
+    for (const theme of ['faah', 'missing-theme', 'catppuccin-latte', 'nord']) {
+      const response = await fetch(origin + '/api/settings', {
+        method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 'workbench.colorTheme': theme }),
+      });
+      assert.equal(response.status, 200);
+      await response.text();
+      await holding.loadURL(origin + '/w/smoke-missing/');
+      const colors = await holding.webContents.executeJavaScript(`(() => {
+        const root = getComputedStyle(document.documentElement);
+        const probe = document.createElement('span');
+        document.body.append(probe);
+        const text = [
+          ['.wb-holding-msg', '--fg'], ['.wb-faint', '--faint'],
+          ['.wb-error', '--err'], ['.wb-btn', '--fg'],
+        ].filter(([selector]) => document.querySelector(selector)).map(([selector, token]) => {
+          probe.style.color = 'var(' + token + ')';
+          return {
+            selector, token: root.getPropertyValue(token).trim(),
+            actual: getComputedStyle(document.querySelector(selector)).color,
+            expected: getComputedStyle(probe).color,
+          };
+        });
+        probe.remove();
+        return { theme: document.documentElement.dataset.theme,
+          font: getComputedStyle(document.body).fontFamily, text };
+      })()`);
+      assert.equal(colors.theme, ['faah', 'missing-theme'].includes(theme) ? 'catppuccin-mocha' : theme);
+      assert.match(colors.font, /Inter/);
+      assert.ok(colors.text.length >= 3);
+      for (const text of colors.text) {
+        assert.ok(text.token, `${theme}: ${text.selector} has no theme color`);
+        assert.equal(text.actual, text.expected, `${theme}: ${text.selector} text color`);
+      }
+    }
+    // Exercise the real loading script with a slow start and a connection error.
+    await holding.webContents.executeJavaScript(`
+      window.smokePolls = 0;
+      window.smokeReady = false;
+      window.fetch = async () => {
+        if (++window.smokePolls === 1) throw new Error('Temporary connection error');
+        return { ok: true, json: async () => ({ items: [{
+          href: location.pathname, state: window.smokeReady ? 'running' : 'starting',
+          progress: 'Checking out repository',
+        }] }) };
+      };
+      window.smokeSpinner = document.createElement('span');
+      window.smokeSpinner.className = 'wb-spin';
+      document.querySelector('.wb-holding-msg').prepend(window.smokeSpinner);
+      const progress = document.createElement('p');
+      progress.id = 'wb-holding-progress';
+      document.querySelector('.wb-holding').append(progress);
+      window.smokeAnimation = window.smokeSpinner.getAnimations()[0];
+      const script = document.createElement('script');
+      script.src = 'static/holding.js';
+      document.head.append(script);
+    `);
+    await waitFor(() => holding.webContents.executeJavaScript('window.smokePolls >= 3'));
+    const animation = await holding.webContents.executeJavaScript(`({
+      same: document.querySelector('.wb-spin') === window.smokeSpinner &&
+        window.smokeSpinner.getAnimations()[0] === window.smokeAnimation,
+      elapsed: window.smokeAnimation?.currentTime,
+      reduced: matchMedia('(prefers-reduced-motion: reduce)').matches,
+      progress: document.querySelector('#wb-holding-progress').textContent,
+    })`);
+    assert.equal(animation.same, true, 'polls must preserve the document and spinner animation');
+    if (!animation.reduced) assert.ok(animation.elapsed >= 1000, 'spinner must run across polls');
+    assert.equal(animation.progress, 'Checking out repository…');
+    const navigated = new Promise(resolve => holding.webContents.once('did-finish-load', resolve));
+    await holding.webContents.executeJavaScript('window.smokeReady = true');
+    await navigated;
+    assert.equal(await holding.webContents.executeJavaScript('typeof window.smokeReady'), 'undefined');
+  } finally {
+    holding.destroy();
+  }
+  console.log('Native smoke passed: holding-page colors, typography, theme fallback, and continuous spinner through polling.');
+
   await window.webContents.executeJavaScript(`
     window.smokeGuard = event => { event.preventDefault(); event.returnValue = ''; };
     addEventListener('beforeunload', window.smokeGuard);
