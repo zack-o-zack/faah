@@ -1,0 +1,101 @@
+name: Nightly
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: nightly
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check for new commits
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.check.outputs.changed }}
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: check
+        env:
+          EVENT: ${{ github.event_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          current=$(git ls-remote "https://github.com/$REPO" refs/tags/nightly | cut -f1)
+          changed=true
+          if [ "$EVENT" = schedule ] && [ "$current" = "$GITHUB_SHA" ]; then
+            changed=false
+          fi
+          IFS=. read -r major minor patch <<< "$(cat VERSION)"
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
+          echo "version=$major.$minor.$((patch + 1))-nightly.$(date -u +%Y%m%d)" >> "$GITHUB_OUTPUT"
+
+  cli:
+    name: CLI binaries
+    needs: check
+    if: needs.check.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build binaries
+        env:
+          NIGHTLY_VERSION: ${{ needs.check.outputs.version }}
+        run: |
+          echo "$NIGHTLY_VERSION" > VERSION
+          ./build.sh
+          cd dist
+          sha256sum faah-* > checksums.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nightly-cli
+          path: dist/*
+          if-no-files-found: error
+
+  desktop:
+    name: Desktop apps
+    needs: check
+    if: needs.check.outputs.changed == 'true'
+    # The called workflow declares a tag-only job that needs write access, and
+    # GitHub rejects it unless the caller allows that. It is skipped here.
+    permissions:
+      contents: write
+    uses: ./.github/workflows/desktop.yml
+    with:
+      version: ${{ needs.check.outputs.version }}
+
+  publish:
+    name: Replace nightly release
+    needs: [check, cli, desktop]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Publish prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          NIGHTLY_VERSION: ${{ needs.check.outputs.version }}
+        run: |
+          gh release delete nightly --cleanup-tag --yes || true
+          gh release create nightly dist/* \
+            --prerelease \
+            --latest=false \
+            --target "$GITHUB_SHA" \
+            --title "Nightly $NIGHTLY_VERSION" \
+            --notes "Automated build of $GITHUB_SHA from main. May be unstable. Nightly builds do not self-update, so download a newer one from this page."

@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -306,6 +307,26 @@ func TestAutoUpdateFastPathSkipsNetwork(t *testing.T) {
 	// before any network call.
 }
 
+// TestNightlyNeverChecksForUpdates verifies that nightly builds stay off the
+// stable update path, for both the startup check and an explicit --update.
+func TestNightlyNeverChecksForUpdates(t *testing.T) {
+	var hits atomic.Int32
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+	}))
+	defer ts.Close()
+	t.Setenv("XDG_STATE_HOME", t.TempDir())
+	t.Setenv("FAAH_UPDATE_URL", ts.URL)
+
+	AutoUpdate("0.1.23-nightly.20261110")
+	if err := RunSelfUpdate("0.1.23-nightly.20261110"); err != nil {
+		t.Fatalf("RunSelfUpdate: %v", err)
+	}
+	if n := hits.Load(); n != 0 {
+		t.Fatalf("nightly build made %d update requests", n)
+	}
+}
+
 // TestAutoUpdateDueCheckSkipsInstallWhenUpToDate verifies that a due daily
 // check that finds no newer release just refreshes the cache and returns,
 // again without reaching the install path.
@@ -452,4 +473,3 @@ func BenchmarkCompareSemver(b *testing.B) {
 		_ = compareSemver(p[0], p[1])
 	}
 }
-

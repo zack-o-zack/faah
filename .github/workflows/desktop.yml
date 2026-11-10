@@ -6,6 +6,12 @@ on:
     tags: ['v*']
   pull_request:
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      version:
+        description: Overrides the VERSION file for this build
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -41,6 +47,12 @@ jobs:
           cache-dependency-path: desktop/package-lock.json
       - uses: oven-sh/setup-bun@v2
       - run: npm ci --prefix desktop
+      - name: Apply version override
+        if: inputs.version != ''
+        shell: bash
+        env:
+          OVERRIDE: ${{ inputs.version }}
+        run: echo "$OVERRIDE" > VERSION
       - name: Build native backend and desktop packages
         run: node scripts/build-desktop.js --dist --arch=${{ matrix.arch }}
       - name: Test navigation and backend lifecycle
