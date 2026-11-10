@@ -1,0 +1,27 @@
+/* The default theme: quiet neutral grays with one blue accent.
+   Token reference and how to write your own theme: docs/internals/styling-and-themes.md. */
+:root[data-theme="faah"] {
+  --theme-name: "faah";
+  color-scheme: dark;
+
+  /* surfaces, from the editor out to raised hover states */
+  --bg: #121214; --bg2: #0d0d0f; --bg3: #1b1b1f; --bg4: #26262b;
+  /* text: primary, secondary, tertiary */
+  --fg: #ececef; --dim: #a6a6ae; --faint: #7d7d86;
+  /* borders and accent */
+  --line: #232327; --accent: #7aa8ff; --accent-fg: #9dbcff; --on-accent: #0b0d12;
+  /* selection, search matches, current line */
+  --sel: #23304a; --mark: rgba(250, 204, 21, 0.22); --mark-active: #f5b94a; --cur: #18181b;
+  /* elevation */
+  --shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+
+  /* syntax */
+  --k: #b9a3f5; --kt: #7fd1d9; --nf: #8fb3ff; --nc: #e6c07b; --nb: #7fd1d9;
+  --nv: #ececef; --no: #f0a070; --na: #8fb3ff; --nt: #8fb3ff; --nd: #b9a3f5;
+  --np: #d6d6db; --s: #9ad19a; --m: #f0a070; --o: #a6a6ae; --p: #8e8e97;
+  --c: #7d7d86; --cp: #b9a3f5; --err: #f2777a;
+
+  /* diffs and status */
+  --gi: #7fd68f; --gd: #f2777a;
+  --gi-bg: rgba(127, 214, 143, 0.12); --gd-bg: rgba(242, 119, 122, 0.12);
+}

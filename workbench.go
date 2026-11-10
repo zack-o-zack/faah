@@ -704,7 +704,7 @@ func (wb *workbench) handleIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	html := strings.Replace(string(b), `<base href="/">`, fmt.Sprintf(`<base href="%s">`, template.HTMLEscapeString(wb.basePath)), 1)
-	html = strings.Replace(html, `data-theme="catppuccin-mocha"`, fmt.Sprintf(`data-theme="%s"`, template.HTMLEscapeString(wbTheme())), 1)
+	html = strings.Replace(html, `data-theme="faah"`, fmt.Sprintf(`data-theme="%s"`, template.HTMLEscapeString(wbTheme())), 1)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	io.WriteString(w, html)
 }
@@ -713,7 +713,7 @@ func wbTheme() string {
 	if t := settings.Read().WorkbenchColorTheme; t != nil && *t != "" {
 		return *t
 	}
-	return "catppuccin-mocha"
+	return "faah"
 }
 
 func (wb *workbench) handlePing(w http.ResponseWriter, r *http.Request) {

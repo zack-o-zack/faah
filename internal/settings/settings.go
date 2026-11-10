@@ -166,8 +166,9 @@ var Schema = []SchemaItem{
 		Description: "Specifies the color theme used in the workbench.",
 		Category:    "Workbench",
 		Type:        "select",
-		Default:     "catppuccin-mocha",
+		Default:     "faah",
 		Options: []string{
+			"faah",
 			"catppuccin-mocha", "catppuccin-latte",
 			"github-dark", "dark", "light",
 			"dracula", "gruvbox-dark", "gruvbox-light",
