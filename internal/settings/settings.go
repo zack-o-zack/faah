@@ -43,6 +43,9 @@ type Settings struct {
 	ServerBasePath              *string  `json:"server.basePath,omitempty"`
 	ExplorerAutoReveal          *bool    `json:"explorer.autoReveal,omitempty"`
 	TipsEnabled                 *bool    `json:"tips.enabled,omitempty"`
+	ExplainAgent                *string  `json:"explain.agent,omitempty"`
+	ExplainModel                *string  `json:"explain.model,omitempty"`
+	ExplainPrefetch             *bool    `json:"explain.prefetch,omitempty"`
 }
 
 var settingsMu sync.Mutex
@@ -427,6 +430,30 @@ var Schema = []SchemaItem{
 		Category:    "Server",
 		Type:        "string",
 		Default:     "/",
+	},
+	{
+		Key:         "explain.agent",
+		Title:       "Explain Agent",
+		Description: "The coding harness that writes explanations (claude or agy). Leave empty to use the harness selected for editing. Ignored when faah is started with -agent.",
+		Category:    "Explain",
+		Type:        "string",
+		Default:     "",
+	},
+	{
+		Key:         "explain.model",
+		Title:       "Explain Model",
+		Description: "The model explanations run on, as the explain agent names it. A smaller model answers faster. Leave empty to use that harness's own model.",
+		Category:    "Explain",
+		Type:        "string",
+		Default:     "",
+	},
+	{
+		Key:         "explain.prefetch",
+		Title:       "Prepare Explanations on Selection",
+		Description: "Gathers definitions, callers and references in the background when you select code, so Explain starts sooner.",
+		Category:    "Explain",
+		Type:        "boolean",
+		Default:     true,
 	},
 	{
 		Key:         "tips.enabled",

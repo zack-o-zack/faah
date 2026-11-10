@@ -44,6 +44,13 @@ export function setThreadHandler(fn) { threadHandler = fn; }
 let explainHandler = null;
 export function setExplainHandler(fn) { explainHandler = fn; }
 
+/* Called once a selection has rested, so thread.js can have the server gather
+   an explanation's evidence before the reader asks for one. */
+let explainPrepareHandler = null;
+let explainPrepareTimer = 0;
+const EXPLAIN_PREPARE_DELAY = 400;
+export function setExplainPrepareHandler(fn) { explainPrepareHandler = fn; }
+
 /* Same one-way registration for PR review comments (pr.js), active only in a
    `faah pr ...` session. */
 let reviewHandler = null;
@@ -272,6 +279,10 @@ export function hideSelectionBar() {
 export function updateSelectionBar() {
   const info = getSelectedRangeInfo();
   if (info) showSelectionBar(info); else hideSelectionBar();
+  clearTimeout(explainPrepareTimer);
+  if (explainPrepareHandler && canExplain(info)) {
+    explainPrepareTimer = setTimeout(() => explainPrepareHandler(info), EXPLAIN_PREPARE_DELAY);
+  }
 }
 
 /* Ctrl+A selects the open file, not the page around it. Only the rows in view

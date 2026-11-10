@@ -1052,6 +1052,7 @@ type threadTurn struct {
 	Model     string   `json:"model,omitempty"`
 	Started   int64    `json:"started"` // unix ms
 	Ms        int64    `json:"ms"`
+	FirstMs   int64    `json:"firstMs,omitempty"` // until the first words of the reply arrived
 	// Refs holds the citations in an explanation's reply that passed checking,
 	// by target as written.
 	Refs map[string]validatedRef `json:"refs,omitempty"`
@@ -1477,7 +1478,13 @@ func (tm *threadManager) Send(id, message string) (*thread, error) {
 	if message == "" {
 		return nil, errors.New("message is empty")
 	}
+	tm.mu.Lock()
+	explaining := tm.threads[id] != nil && tm.threads[id].Kind == "explain"
+	tm.mu.Unlock()
 	name, base, model := tm.agent.current()
+	if explaining {
+		name, base, model = tm.explainHarness()
+	}
 	if base == nil {
 		ui.Status("err", "thread", "dispatch refused: no coding harness selected", 0, os.Stdout)
 		return nil, errAgentNone
@@ -1615,7 +1622,7 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 	beforeSHA := gitSnapshotWorktree(tm.root)
 	started := time.Now()
 	stderr := &tailBuffer{max: agentLogBytes}
-	sink := &threadSink{tm: tm, tid: r.tid, turn: r.turn, harness: r.name}
+	sink := &threadSink{tm: tm, tid: r.tid, turn: r.turn, harness: r.name, began: started}
 
 	res := harness.Run(ctx, harness.Command{Name: r.name, Args: argv, Model: r.model}, prompt, harness.Options{
 		Dir:      tm.root,
@@ -1676,7 +1683,7 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 	if err != nil {
 		ui.Status("err", "thread", fmt.Sprintf("%s turn %d failed in %s: %s", r.tid, r.turn.ID, dur, err.Error()), 0, os.Stdout)
 	} else {
-		ui.Status("ok", "thread", fmt.Sprintf("%s turn %d · %s  (%d files changed)", r.tid, r.turn.ID, dur, len(changed)), 0, os.Stdout)
+		ui.Status("ok", "thread", fmt.Sprintf("%s turn %d · %s, first words after %s  (%d files changed)", r.tid, r.turn.ID, dur, ui.FmtDuration(time.Duration(r.turn.FirstMs)*time.Millisecond), len(changed)), 0, os.Stdout)
 	}
 }
 
@@ -1783,9 +1790,10 @@ type threadSink struct {
 	turn      *threadTurn
 	harness   string
 	buf       []byte
-	started   bool   // harness reported a session id, so --resume will work next
-	sessionID string // session id discovered from stream
-	failure   string // harness's own error result
+	began     time.Time // when the harness was started, for timing the first words
+	started   bool      // harness reported a session id, so --resume will work next
+	sessionID string    // session id discovered from stream
+	failure   string    // harness's own error result
 }
 
 func (s *threadSink) Write(p []byte) (int, error) {
@@ -1864,6 +1872,9 @@ func (s *threadSink) text(text string, block bool) {
 	defer s.tm.mu.Unlock()
 	if block && s.turn.Reply != "" && !strings.HasSuffix(s.turn.Reply, "\n\n") {
 		text = "\n\n" + text
+	}
+	if s.turn.FirstMs == 0 {
+		s.turn.FirstMs = max(1, time.Since(s.began).Milliseconds())
 	}
 	s.turn.Reply += text
 	s.tm.publishLocked(s.tid, "delta", map[string]any{"turn": s.turn.ID, "text": text})

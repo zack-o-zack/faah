@@ -269,6 +269,10 @@ The current version is the MVP. These items come next. Their order is not decide
 1. **Agent runtime.** Warm up login and startup before the first request. Set a default explain agent and model. Add other agent optimizations.
    - Measured on one `agy` explanation of 175 seconds: 10 seconds of startup and 125 seconds in one reasoning step of 17,895 output tokens.
    - Candidate fixes: run `agy` with `--effort low`, add line numbers to code in the packet so citing needs no rereads, and tell the agent the packet is sufficient for the selected code.
+   - Done: `explain.agent` and `explain.model` settings, first-words timing, a benchmark, and background evidence preparation on selection.
+   - Benchmark on this repository, first words then total: `claude` with haiku or sonnet about 7 to 8 seconds and 8 to 9 seconds; `agy` default 49 to 63 seconds and 52 to 67 seconds. Evidence gathering took 0.1 to 0.6 seconds.
+   - Decided against: per-harness effort flags, and prompt limits on reading. Correctness comes before speed.
+   - Still open: a kept-alive agent process, the only way left to cut per-run startup.
 2. **Reader context.** Let the reader give the agent specific context, for example "please explain Go-related features in depth, I have no Go experience".
 3. **Other displays.** Explore generative UI and other ways to display code information.
 4. **Walkthroughs with nested threads.** Add step-by-step walkthroughs of a flow, a diff, or a call chain. Give each stage a nested thread, similar to Slack, so a reader can explore one stage's code in depth without filling the main thread with questions.

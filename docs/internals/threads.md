@@ -119,6 +119,9 @@ To provide instant visual review and safe rollbacks of code modifications genera
 - **Read-only:** `Send` passes every explain turn through `readOnlyArgv`, which refuses a harness or command it has no rewrite for. `explain_conformance_test.go`, behind the `harness` build tag, is the check that each allowed harness honors it.
 - **Reuse:** `ExplainKey` hashes the content that defines the explanation and leaves out line numbers. `EvidenceHash` covers callers and references and only marks a reused explanation as stale.
 - **Freshness:** gathering first syncs every open document with disk. Faah sends no file-watch events, so a change in a file the server has never opened can be missing from references and callers until that file is opened.
+- **Harness:** `explainHarness` resolves `explain.agent` and `explain.model` for explain turns only. A harness pinned with `-agent` wins.
+- **Prefetch:** `POST /api/explain/prepare` answers at once and gathers in a goroutine. `explainPrefetch` holds one selection; a new one cancels the one in flight. `/api/explain` uses prepared evidence only when the key (selection plus the file's size and modification time) matches and it is under 30 seconds old.
+- **Timing:** `threadTurn.FirstMs` records when the first words arrived. `TestExplainBenchmark`, behind the `harness` build tag, times real explanations per harness and model.
 - **Citations:** at the end of a turn `validateExplainRefs` fills `threadTurn.Refs`. `thrInline` then links only those targets. `Reply` is left as written.
 
 ## 7. HTTP Surface
