@@ -19,10 +19,10 @@
   <span class="icon-[lucide--menu] size-3.5 shrink-0" aria-hidden="true"></span>
 </button>
 <div id="wb-app" class="flex h-dvh flex-col">
-  <div class="flex-1 min-h-0 overflow-auto">
-    <main class="mx-auto w-full max-w-[720px] px-4 pt-14 pb-10">
+  <div class="flex min-h-0 flex-1 flex-col">
+    <main class="mx-auto flex min-h-0 w-full max-w-[720px] flex-1 flex-col px-4 pt-14">
       <h1 class="sr-only">faah workbench</h1>
-      <form id="wb-open" class="dropdown-menu relative block" autocomplete="off">
+      <form id="wb-open" class="dropdown-menu relative block shrink-0" autocomplete="off">
         <div class="input-group group/field h-10">
           <span data-align="inline-start"><span id="wb-kind" class="icon-[lucide--search] size-4" aria-hidden="true"></span></span>
           <input id="wb-target" type="text" spellcheck="false" autocapitalize="off"
@@ -39,7 +39,7 @@
 
       <!-- Shown when a PR's repository has no known local clone: its PRs are
            always worktrees of one clone (workbench_clone.go). -->
-      <section id="wb-clone" class="mt-4 flex flex-col gap-3 rounded-lg border bg-card p-4" hidden>
+      <section id="wb-clone" class="mt-4 flex shrink-0 flex-col gap-3 rounded-lg border bg-card p-4" hidden>
         <header class="flex flex-col gap-1">
           <h2 class="text-sm font-medium">No local clone of <span id="wb-clone-repo" class="font-mono"></span> found</h2>
           <p class="text-sm text-muted-foreground">Pull requests open as git worktrees of one clone, so nothing is cloned twice. Point faah at your clone, pick it in Browse, or let faah make one.</p>
@@ -57,12 +57,12 @@
         </footer>
       </section>
 
-      <div id="wb-tabs" class="tabs mt-5 gap-2">
+      <div id="wb-tabs" class="tabs mt-5 min-h-0 flex-1 gap-2">
         <nav role="tablist" aria-orientation="horizontal" data-variant="line" aria-label="Workspaces" class="w-full justify-start border-b [&>[role=tab]]:flex-none">
           <button type="button" role="tab" id="wb-tab-recent" aria-controls="wb-panel-recent" aria-selected="true" tabindex="0">Recent</button>
           <button type="button" role="tab" id="wb-tab-browse" aria-controls="wb-panel-browse" aria-selected="false" tabindex="-1">Browse</button>
         </nav>
-        <div role="tabpanel" id="wb-panel-recent" aria-labelledby="wb-tab-recent">
+        <div role="tabpanel" id="wb-panel-recent" aria-labelledby="wb-tab-recent" class="-mx-2 min-h-0 overflow-y-auto px-2 pb-6">
           <ul id="wb-recent" class="item-group gap-0.5"></ul>
           <button id="wb-more" type="button" class="btn mx-auto mt-2 flex" data-variant="ghost" data-size="sm" hidden></button>
           <div id="wb-recent-empty" class="empty py-12" hidden>
@@ -74,8 +74,8 @@
             <footer><button id="wb-go-browse" type="button" class="btn" data-variant="outline" data-size="sm">Browse folders</button></footer>
           </div>
         </div>
-        <div role="tabpanel" id="wb-panel-browse" aria-labelledby="wb-tab-browse" hidden>
-          <div class="flex items-center gap-2 pb-2">
+        <div role="tabpanel" id="wb-panel-browse" aria-labelledby="wb-tab-browse" class="flex min-h-0 flex-col pb-4" hidden>
+          <div class="flex shrink-0 items-center gap-2 pb-2">
             <button id="wb-up" type="button" title="Parent folder" aria-label="Parent folder" class="btn" data-variant="ghost" data-size="icon-sm">
               <span class="icon-[lucide--arrow-up] size-4" aria-hidden="true"></span>
             </button>
@@ -83,8 +83,8 @@
             <label class="label shrink-0 gap-2 text-xs font-normal text-muted-foreground max-[560px]:hidden" title="Show folders whose names start with a dot"><input id="wb-hidden" type="checkbox" role="switch" class="input"> Show hidden</label>
             <button id="wb-open-here" type="button" class="btn" data-variant="secondary" data-size="sm">Open this folder</button>
           </div>
-          <ul id="wb-dirs" role="listbox" tabindex="0" aria-label="Folders" class="flex flex-col rounded-md py-1 outline-none transition-opacity focus-visible:ring-[3px] focus-visible:ring-ring/50"></ul>
-          <p class="pt-2 text-xs text-muted-foreground max-sm:hidden">Double-click or <kbd class="kbd">Enter</kbd> goes into a folder, <kbd class="kbd">Backspace</kbd> goes up, <kbd class="kbd" data-keys="Mod+Enter">Mod+Enter</kbd> opens it.</p>
+          <ul id="wb-dirs" role="listbox" tabindex="0" aria-label="Folders" class="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-md py-1 outline-none transition-opacity focus-visible:ring-[3px] focus-visible:ring-ring/50"></ul>
+          <p class="shrink-0 pt-2 text-xs text-muted-foreground max-sm:hidden">Double-click or <kbd class="kbd">Enter</kbd> goes into a folder, <kbd class="kbd">Backspace</kbd> goes up, <kbd class="kbd" data-keys="Mod+Enter">Mod+Enter</kbd> opens it.</p>
         </div>
       </div>
     </main>

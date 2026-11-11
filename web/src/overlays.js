@@ -2,7 +2,8 @@
 export function prepareMenu(panel) {
   if (!panel || panel.hasAttribute('data-popover')) return;
   const wrapper = document.createElement('div');
-  wrapper.className = 'dropdown-menu';
+  // The panel is fixed, so its wrapper takes no room in the page.
+  wrapper.className = 'dropdown-menu contents';
   panel.before(wrapper);
   wrapper.append(panel);
   panel.setAttribute('data-popover', '');

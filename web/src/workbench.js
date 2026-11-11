@@ -227,27 +227,26 @@ function rowHtml(it) {
   const title = pr ? (it.title || `#${it.number}`) : it.title || it.path;
   const failed = s === 'failed';
   const sub = s === 'starting' && it.progress ? it.progress : failed && it.error ? it.error : pr ? `${it.repo}#${it.number}` : tildify(it.path);
-  const tint = s === 'running' ? 'text-gi' : failed ? 'text-destructive' : 'text-muted-foreground';
+  // Pull requests are always green; a running workspace gets a green dot on its tile.
   const icon = s === 'starting'
     ? '<span class="icon-[lucide--loader-circle] size-4 animate-spin text-muted-foreground" aria-hidden="true"></span>'
-    : `<span class="${pr ? 'icon-[lucide--git-pull-request]' : 'icon-[lucide--folder]'} size-4 ${tint}" aria-hidden="true"></span>`;
-  // Running reads from the green icon and the stop button; only trouble gets a badge.
-  const badge = failed ? `<span class="badge" data-variant="destructive" title="${esc(it.error || 'Failed')}">Failed</span>`
-    : s === 'stopped' && it.error ? `<span class="badge" data-variant="outline" title="${esc(it.error)}">Exited</span>` : '';
+    : pr ? '<span class="icon-[lucide--git-pull-request] size-4 text-gi" aria-hidden="true"></span>'
+    : '<span class="icon-[lucide--folder] size-4 text-muted-foreground" aria-hidden="true"></span>';
+  const dot = s === 'running' ? '<span class="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-gi ring-2 ring-background" title="Running"></span>' : '';
   const act = (name, label, iconClass) => `<button type="button" data-act="${name}" title="${label}" aria-label="${label}" class="btn" data-variant="ghost" data-size="icon-xs"><span class="${iconClass}" aria-hidden="true"></span></button>`;
+  const star = it.pinned
+    ? act('pin', 'Stop keeping at the top', 'icon-[lucide--star] size-3.5 text-warn')
+    : act('pin', 'Keep at the top', 'icon-[lucide--star] size-3.5');
   return `<li><a class="item group min-w-0 hover:bg-accent/60 focus-visible:bg-accent/60" data-size="sm" href="${esc(it.href)}" data-id="${esc(it.id)}">
-    <figure class="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted">${icon}</figure>
+    <figure class="relative flex size-8 shrink-0 items-center justify-center rounded-md bg-muted">${icon}${dot}</figure>
     <section class="flex min-w-0 flex-1 flex-col">
-      <h3 class="flex min-w-0 items-center gap-1.5"><span class="truncate">${esc(title)}</span>${it.pinned ? '<span class="icon-[lucide--pin] size-3 shrink-0 text-muted-foreground" aria-label="Pinned"></span>' : ''}</h3>
-      <p class="truncate font-mono text-xs ${failed ? 'text-destructive' : 'text-muted-foreground'} [direction:rtl] text-left"><bdi>${esc(sub)}</bdi></p>
+      <h3 class="truncate">${esc(title)}</h3>
+      <p class="truncate font-mono text-xs ${failed ? 'text-destructive' : 'text-muted-foreground'} [direction:rtl] text-left" title="${esc(failed ? it.error || '' : sub)}"><bdi>${esc(sub)}</bdi></p>
     </section>
-    <aside class="flex shrink-0 items-center gap-2">
-      ${badge}
-      <span class="w-16 text-right text-xs tabular-nums text-muted-foreground group-hover:hidden group-focus-within:hidden max-[560px]:hidden">${esc(ago(it.lastOpened))}</span>
-      <span class="hidden w-16 justify-end gap-0.5 group-hover:flex group-focus-within:flex">
-        ${act('pin', it.pinned ? 'Unpin' : 'Pin to top', it.pinned ? 'icon-[lucide--pin-off] size-3.5' : 'icon-[lucide--pin] size-3.5')}
-        ${act('remove', 'Remove from the list', 'icon-[lucide--x] size-3.5')}
-      </span>
+    <aside class="flex shrink-0 items-center gap-1">
+      <span class="w-16 text-right text-xs tabular-nums text-muted-foreground group-hover:hidden group-focus-within:hidden max-sm:hidden">${esc(ago(it.lastOpened))}</span>
+      <span class="hidden gap-0.5 group-hover:flex group-focus-within:flex">${it.pinned ? '' : star}${act('remove', 'Remove from the list', 'icon-[lucide--x] size-3.5')}</span>
+      ${it.pinned ? star : ''}
       ${s === 'running' ? act('stop', 'Stop this workspace', 'icon-[lucide--square] size-3 text-destructive') : ''}
     </aside>
   </a></li>`;
