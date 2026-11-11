@@ -435,7 +435,7 @@ var Schema = []SchemaItem{
 	{
 		Key:         "explain.agent",
 		Title:       "Explain Agent",
-		Description: "The coding harness that writes explanations (claude or agy). Leave empty to use the harness selected for editing. Ignored when faah is started with -agent.",
+		Description: "The coding harness that writes explanations (claude, agy, codex or opencode). Leave empty to use the harness selected for editing. Ignored when faah is started with -agent.",
 		Category:    "Explain",
 		Type:        "string",
 		Default:     "",

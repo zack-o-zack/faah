@@ -1639,12 +1639,17 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 		err = standby.run(ctx, prompt, sink, stderr, threadTurnTimeout)
 		go tm.warmExplain() // ready for the next one
 	} else {
+		var env []string
+		if explaining {
+			env = explainEnv(r.name)
+		}
 		err = harness.Run(ctx, harness.Command{Name: r.name, Args: argv, Model: r.model}, prompt, harness.Options{
 			Dir:      tm.root,
 			Timeout:  threadTurnTimeout,
 			LogBytes: agentLogBytes,
 			Stdout:   sink,
 			Stderr:   stderr,
+			Env:      env,
 		}).Err
 	}
 	sink.flush()

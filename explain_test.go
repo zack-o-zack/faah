@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
@@ -362,7 +363,7 @@ func verifyHarnesses(t *testing.T, names ...string) {
 }
 
 func TestReadOnlyArgvRefusesUnverified(t *testing.T) {
-	for _, name := range []string{"codex", "cursor-agent"} {
+	for _, name := range []string{"cursor-agent", "gemini"} {
 		if _, err := readOnlyArgv(name, []string{name, "--sandbox", "workspace-write", "--force"}); !errors.Is(err, errHarnessNotReadOnly) {
 			t.Errorf("%s err = %v, want it refused until it passes conformance", name, err)
 		}
@@ -370,7 +371,7 @@ func TestReadOnlyArgvRefusesUnverified(t *testing.T) {
 }
 
 func TestReadOnlyArgv(t *testing.T) {
-	verifyHarnesses(t, "claude", "codex", "cursor-agent", "agy")
+	verifyHarnesses(t, "claude", "codex", "cursor-agent", "agy", "opencode")
 	cases := []struct {
 		name string
 		in   []string
@@ -380,6 +381,7 @@ func TestReadOnlyArgv(t *testing.T) {
 		{"codex", []string{"codex", "exec", "--sandbox", "workspace-write", "{prompt}"}, []string{"codex", "exec", "--sandbox", "read-only", "{prompt}"}},
 		{"cursor-agent", []string{"cursor-agent", "--force", "-p", "{prompt}"}, []string{"cursor-agent", "--mode", "ask", "-p", "{prompt}"}},
 		{"agy", []string{"agy", "--dangerously-skip-permissions", "--mode", "accept-edits", "-p", "{prompt}"}, []string{"agy", "--dangerously-skip-permissions", "--mode", "plan", "-p", "{prompt}"}},
+		{"opencode", []string{"opencode", "run", "-m", "x/y", "{prompt}"}, []string{"opencode", "run", "--standalone", "--agent", "faah-explain", "-m", "x/y", "{prompt}"}},
 	}
 	for _, c := range cases {
 		got, err := readOnlyArgv(c.name, c.in)
@@ -388,7 +390,7 @@ func TestReadOnlyArgv(t *testing.T) {
 		}
 	}
 	refused := map[string][]string{
-		"opencode": {"opencode", "run", "{prompt}"},
+		"opencode": {"opencode", "{prompt}"},
 		"claude":   {"claude", "-p", "{prompt}"},
 		"codex":    {"codex", "exec", "{prompt}"},
 		"harness":  {"/tmp/harness.sh", "{prompt}"},
@@ -654,6 +656,49 @@ func TestExplainUsesItsOwnAgentAndModel(t *testing.T) {
 	}
 	if code, _ := agentPostJSON(t, s, "/api/threads/create", map[string]any{"message": "hello"}); code == 200 {
 		t.Fatal("an ordinary thread must not borrow the explain agent")
+	}
+}
+
+func TestExplainOpencodeRunsAsReadOnlyAgent(t *testing.T) {
+	root := t.TempDir()
+	writeExplainSource(t, root, explainGoSource)
+	dir := t.TempDir()
+	body := "#!/bin/sh\nprintf '%s\\n' \"$@\" > opencode-args.txt\nprintf '%s' \"$OPENCODE_CONFIG_CONTENT\" > opencode-config.txt\nprintf 'ok\\n'\n"
+	if err := os.WriteFile(filepath.Join(dir, "opencode"), []byte(body), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
+	isolateSettings(t)
+	m, err := newAgentManager(root, "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ix := NewIndex(root)
+	ix.Build()
+	s := NewServer(ix, nil)
+	s.SetAgent(m)
+	explainSettings(t, map[string]any{"explain.agent": "opencode"})
+
+	_, res := agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "text": "helper"})
+	th := waitThreadIdle(t, s, res["thread"].(map[string]any)["id"].(string))
+	if th.Turns[0].Error != "" {
+		t.Fatal(th.Turns[0].Error)
+	}
+	args, _ := os.ReadFile(filepath.Join(root, "opencode-args.txt"))
+	if !strings.Contains(string(args), "--standalone\n--agent\nfaah-explain\n") {
+		t.Fatalf("args = %s", args)
+	}
+	var cfg struct {
+		Agent map[string]struct {
+			Permission map[string]string
+		}
+	}
+	data, _ := os.ReadFile(filepath.Join(root, "opencode-config.txt"))
+	if err := json.Unmarshal(data, &cfg); err != nil {
+		t.Fatalf("config %q: %v", data, err)
+	}
+	if p := cfg.Agent["faah-explain"].Permission; p["*"] != "deny" || p["read"] != "allow" || p["edit"] != "" {
+		t.Fatalf("permissions = %v", p)
 	}
 }
 

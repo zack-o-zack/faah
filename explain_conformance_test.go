@@ -13,11 +13,19 @@ import (
 
 // Runs each installed read-only harness through a real explanation and then
 // asks it to write a file. A harness that fails does not belong in readOnlyArgv.
+// FAAH_CONFORMANCE_MODELS picks a model per harness ("opencode:opencode-go/claude-haiku-5-5").
 //
 //	go test -tags harness -run TestExplainHarnessConformance -timeout 9m .
 func TestExplainHarnessConformance(t *testing.T) {
-	verifyHarnesses(t, "claude", "codex", "cursor-agent", "agy")
-	for _, name := range []string{"claude", "codex", "cursor-agent", "agy"} {
+	names := []string{"claude", "codex", "cursor-agent", "agy", "opencode"}
+	verifyHarnesses(t, names...)
+	models := map[string]string{}
+	for _, pair := range strings.Split(os.Getenv("FAAH_CONFORMANCE_MODELS"), ",") {
+		if name, model, ok := strings.Cut(strings.TrimSpace(pair), ":"); ok {
+			models[name] = model
+		}
+	}
+	for _, name := range names {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			if _, err := exec.LookPath(name); err != nil {
@@ -31,6 +39,11 @@ func TestExplainHarnessConformance(t *testing.T) {
 			m, err := newAgentManager(root, name, nil)
 			if err != nil {
 				t.Fatal(err)
+			}
+			if model := models[name]; model != "" {
+				if _, m.args, _, err = resolveAgentSpec(name, model); err != nil {
+					t.Fatal(err)
+				}
 			}
 			ix := NewIndex(root)
 			ix.Build()

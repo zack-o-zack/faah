@@ -116,7 +116,7 @@ To provide instant visual review and safe rollbacks of code modifications genera
 
 - **Classification:** `classifyExplain` rereads the selection from disk and answers 409 if it differs. One whole identifier is a symbol, and anything else is a block.
 - **Evidence:** `gatherExplain` builds a packet of at most 16 KB within an 8-second budget, through the `codeIntel` interface. Without a ready server it falls back to the regex outline and whole-word search. Packets live in `<store>.explain/<thread>.md`, so the thread store stays small.
-- **Read-only:** `Send` passes every explain turn through `readOnlyArgv`, which refuses a harness or command it has no rewrite for. `explain_conformance_test.go`, behind the `harness` build tag, is the check that each allowed harness honors it.
+- **Read-only:** `Send` passes every explain turn through `readOnlyArgv`, which refuses a harness or command it has no rewrite for. opencode has no read-only flag, so `runTurn` also passes `explainEnv`, which defines a read-only `faah-explain` agent in `OPENCODE_CONFIG_CONTENT`. `explain_conformance_test.go`, behind the `harness` build tag, is the check that each allowed harness honors it.
 - **Reuse:** `ExplainKey` hashes the content that defines the explanation and leaves out line numbers. `EvidenceHash` covers callers and references and only marks a reused explanation as stale.
 - **Freshness:** gathering first syncs every open document with disk. Faah sends no file-watch events, so a change in a file the server has never opened can be missing from references and callers until that file is opened.
 - **Harness:** `explainHarness` resolves `explain.agent` and `explain.model` for explain turns only. A harness pinned with `-agent` wins.
