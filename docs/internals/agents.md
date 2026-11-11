@@ -22,6 +22,8 @@ A `Session` exposes `ID`, `Prompt`, `Interrupt`, and `Close`. `Prompt` streams t
 
 Cursor requires Node.js 22.13 or later, npm 7 or later, and a Cursor login or `CURSOR_API_KEY`. faah installs the pinned SDK and embedded helper into its user cache, outside the workspace.
 
+On Unix, each agent runs in a process group with a pipe watcher that stops the group when faah exits. On Windows, each agent belongs to a Job Object with `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`; closing the session terminates the job, and faah exiting closes its handle so Windows kills the tree. Assignment happens immediately after `exec.Cmd.Start`: Go does not expose the initial thread handle needed to resume a suspended child, leaving a small start-to-assignment window. A failed assignment kills and reaps the child rather than leaving it unsupervised.
+
 ## MCP and credentials
 
 `internal/mcp` serves Streamable HTTP at `/api/mcp`, using protocol `2025-06-18`. POST requests require JSON and an Accept header listing both JSON and event streams. `initialize` returns a transport session id required on later calls; DELETE closes that transport session.

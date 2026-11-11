@@ -8,10 +8,10 @@ import (
 	"syscall"
 )
 
-func command(argv []string) (*exec.Cmd, func(), func(), error) {
+func command(argv []string) (*exec.Cmd, *processLifetime, error) {
 	read, write, err := os.Pipe()
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 	// The watcher also runs if the parent exits without closing its sessions.
 	script := `(
@@ -26,9 +26,11 @@ func command(argv []string) (*exec.Cmd, func(), func(), error) {
 	cmd := exec.Command("/bin/sh", append([]string{"-c", script, "faah-agent"}, argv...)...)
 	cmd.ExtraFiles = []*os.File{read}
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-	return cmd, func() { read.Close() }, func() { write.Close() }, nil
+	return cmd, &processLifetime{
+		attach:    func() error { return nil },
+		release:   func() { read.Close() },
+		detach:    func() { write.Close() },
+		terminate: func() { _ = syscall.Kill(-cmd.Process.Pid, syscall.SIGTERM) },
+		kill:      func() { _ = syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL) },
+	}, nil
 }
-
-func terminate(c *exec.Cmd) { _ = syscall.Kill(-c.Process.Pid, syscall.SIGTERM) }
-
-func kill(c *exec.Cmd) { _ = syscall.Kill(-c.Process.Pid, syscall.SIGKILL) }

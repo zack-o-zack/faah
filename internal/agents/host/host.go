@@ -12,16 +12,25 @@ import (
 
 // Process owns an agent and its input and output pipes.
 type Process struct {
-	Cmd     *exec.Cmd
-	Lines   chan []byte
-	Exited  chan struct{}
-	stdin   io.WriteCloser
-	mu      sync.Mutex
-	writeMu sync.Mutex
-	tail    []byte
-	err     error
-	once    sync.Once
-	stop    chan struct{}
+	Cmd      *exec.Cmd
+	Lines    chan []byte
+	Exited   chan struct{}
+	stdin    io.WriteCloser
+	mu       sync.Mutex
+	writeMu  sync.Mutex
+	tail     []byte
+	err      error
+	once     sync.Once
+	stop     chan struct{}
+	lifetime *processLifetime
+}
+
+type processLifetime struct {
+	attach    func() error
+	release   func()
+	detach    func()
+	terminate func()
+	kill      func()
 }
 
 // Start launches an agent with supervised process lifetime.
@@ -29,15 +38,15 @@ func Start(argv []string, dir string, env []string, stderr io.Writer) (*Process,
 	if len(argv) == 0 {
 		return nil, fmt.Errorf("empty agent command")
 	}
-	cmd, release, detach, err := command(argv)
+	cmd, lifetime, err := command(argv)
 	if err != nil {
 		return nil, err
 	}
-	defer release()
+	defer lifetime.release()
 	started := false
 	defer func() {
 		if !started {
-			detach()
+			lifetime.detach()
 		}
 	}()
 	cmd.Dir = dir
@@ -51,7 +60,7 @@ func Start(argv []string, dir string, env []string, stderr io.Writer) (*Process,
 		in.Close()
 		return nil, err
 	}
-	p := &Process{Cmd: cmd, stdin: in, Lines: make(chan []byte, 64), Exited: make(chan struct{}), stop: make(chan struct{})}
+	p := &Process{Cmd: cmd, lifetime: lifetime, stdin: in, Lines: make(chan []byte, 64), Exited: make(chan struct{}), stop: make(chan struct{})}
 	cmd.Stderr = tailWriter{p}
 	if stderr != nil {
 		cmd.Stderr = io.MultiWriter(tailWriter{p}, stderr)
@@ -61,9 +70,16 @@ func Start(argv []string, dir string, env []string, stderr io.Writer) (*Process,
 		out.Close()
 		return nil, err
 	}
+	if err = lifetime.attach(); err != nil {
+		cmd.Process.Kill()
+		cmd.Wait()
+		in.Close()
+		out.Close()
+		return nil, err
+	}
 	started = true
 	go func() {
-		defer detach()
+		defer lifetime.detach()
 		scan := bufio.NewScanner(out)
 		scan.Buffer(make([]byte, 65536), 16<<20)
 		for scan.Scan() {
@@ -135,7 +151,7 @@ func (p *Process) Close() error {
 			return
 		default:
 		}
-		terminate(p.Cmd)
+		p.lifetime.terminate()
 		go func() {
 			timer := time.NewTimer(5 * time.Second)
 			defer timer.Stop()
@@ -148,7 +164,7 @@ func (p *Process) Close() error {
 			case <-p.Exited:
 				return
 			default:
-				kill(p.Cmd)
+				p.lifetime.kill()
 			}
 		}()
 	})
