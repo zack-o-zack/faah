@@ -42,3 +42,12 @@ func Channel(a agents.Agent) agents.ToolChannel {
 	}
 	return agents.ToolsMCP
 }
+
+// CheckPlan checks whether the adapter can enforce a read-only turn.
+func CheckPlan(name string, base []string) error {
+	if p, ok := For(name).(*percmd.Agent); ok {
+		_, _, err := p.Legacy.ReadOnly(base)
+		return err
+	}
+	return nil
+}

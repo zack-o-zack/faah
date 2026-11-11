@@ -65,6 +65,22 @@ func TestMain(m *testing.M) {
 					enc.Encode(map[string]any{"type": "result", "is_error": true, "result": "bad key"})
 					continue
 				}
+				if text == "split" || text == "messages" {
+					for _, id := range []string{"one", "two"} {
+						enc.Encode(map[string]any{"type": "stream_event", "event": map[string]any{"type": "message_start", "message": map[string]any{"id": id}}})
+						enc.Encode(map[string]any{"type": "stream_event", "event": map[string]any{"type": "content_block_delta", "delta": map[string]any{"type": "text_delta", "text": id}}})
+						for _, content := range []any{[]map[string]any{{"type": "thinking", "thinking": "thought"}}, []map[string]any{{"type": "text", "text": id}}, []map[string]any{{"type": "tool_use", "id": "tool-" + id, "name": "Read"}}} {
+							enc.Encode(map[string]any{"type": "assistant", "message": map[string]any{"id": id, "content": content}})
+						}
+						enc.Encode(map[string]any{"type": "assistant", "message": map[string]any{"id": id, "content": []map[string]any{{"type": "tool_use", "id": "tool-" + id, "name": "Read"}}}})
+						if text == "split" {
+							break
+						}
+					}
+					enc.Encode(map[string]any{"type": "result"})
+					continue
+				}
+
 				enc.Encode(map[string]any{"type": "stream_event", "event": map[string]any{"type": "content_block_delta", "index": 0, "delta": map[string]any{"type": "text_delta", "text": "hello"}}})
 				enc.Encode(map[string]any{"type": "assistant", "message": map[string]any{"content": []map[string]any{{"type": "text", "text": "hello"}, {"type": "tool_use", "name": "Read", "input": map[string]string{"file_path": "a.go"}}}}})
 				enc.Encode(map[string]any{"type": "result", "result": "hello"})
@@ -80,10 +96,15 @@ type capture struct {
 	steps        []string
 }
 
-func (c *capture) Text(t string, _ bool) { c.text += t }
-func (c *capture) Reasoning(t string)    { c.reason += t }
-func (c *capture) Step(t string)         { c.steps = append(c.steps, t) }
-func (c *capture) Result(string)         {}
+func (c *capture) Text(t string, block bool) {
+	if block && c.text != "" {
+		c.text += "\n\n"
+	}
+	c.text += t
+}
+func (c *capture) Reasoning(t string) { c.reason += t }
+func (c *capture) Step(t string)      { c.steps = append(c.steps, t) }
+func (c *capture) Result(string)      {}
 func TestAgentSessionTurns(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -192,5 +213,26 @@ func TestAgentSessionAttachmentFailure(t *testing.T) {
 	_, err := New().Open(ctx, agents.Open{Base: []string{exe}, Env: []string{"FAAH_CLAUDE_HELPER=1", "FAAH_ATTACH_FAIL=1"}, Tools: &agents.ToolEndpoint{URL: "http://localhost/api/mcp", Authorization: "Bearer token"}})
 	if err == nil || !strings.Contains(err.Error(), "attachment refused") {
 		t.Fatal(err)
+	}
+}
+
+func TestClaudeMessageSnapshots(t *testing.T) {
+	exe, _ := os.Executable()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	s, err := New().Open(ctx, agents.Open{Base: []string{exe}, Env: []string{"FAAH_CLAUDE_HELPER=1"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	for _, tt := range []struct {
+		prompt, want string
+		steps        int
+	}{{"split", "one", 1}, {"messages", "one\n\ntwo", 2}} {
+		c := &capture{}
+		_, err := s.Prompt(ctx, tt.prompt, c)
+		if err != nil || c.text != tt.want || c.reason != "" || len(c.steps) != tt.steps {
+			t.Fatalf("%+v %v", c, err)
+		}
 	}
 }

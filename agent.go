@@ -463,7 +463,7 @@ func (m *agentManager) run(ctx context.Context, cancel context.CancelFunc, job *
 	stderrStreamer := newLineStreamer(job.stderr, ui.Dim("│", os.Stdout), os.Stdout)
 
 	a := all.For(job.Harness)
-	session, err := a.Open(ctx, agents.Open{Dir: m.root, Base: sessionBase(job.Harness, template), Mode: agents.ModePlan, Stderr: stderrStreamer})
+	session, err := a.Open(ctx, agents.Open{Dir: m.root, Base: template, Mode: agents.ModePlan, Stderr: stderrStreamer})
 	if err == nil {
 		defer session.Close()
 		_, err = session.Prompt(ctx, prompt, &writerSink{Writer: stdoutStreamer})
@@ -1127,13 +1127,14 @@ type threadManager struct {
 	cancels map[string]context.CancelFunc // one running turn per thread
 	// prContext, when set (PR review sessions), describes the pull request the
 	// workspace is a checkout of; it goes into the first prompt of a thread.
-	prContext func(scope string) string
-	jobs      map[int64]*threadJobRef // inline/batch edits, polled as agent jobs
-	subs      map[string]map[chan threadEvent]struct{}
-	lastSave  time.Time
-	sessions  map[string]*threadSession
-	closed    bool
-	tools     *explainTools // annotate and walkthrough, for explain turns
+	prContext   func(scope string) string
+	jobs        map[int64]*threadJobRef // inline/batch edits, polled as agent jobs
+	subs        map[string]map[chan threadEvent]struct{}
+	lastSave    time.Time
+	sessions    map[string]*threadSession
+	sessionIdle time.Duration
+	closed      bool
+	tools       *explainTools // annotate and walkthrough, for explain turns
 	// symbolHash is the callers and references hash of a symbol, set by the
 	// server; nil in tests that build a manager alone.
 	symbolHash func(rel string, line int, name string) string
@@ -1461,14 +1462,17 @@ func (tm *threadManager) Send(id, message string) (*thread, error) {
 		tm.mu.Unlock()
 		return nil, errThreadBusy
 	}
+	if live := tm.sessions[id]; live != nil && live.idle != nil {
+		live.idle.Stop()
+	}
 	var env []string
 	mode := agents.ModeEdit
 	if explaining {
 		mode = agents.ModePlan
 	}
-	if explaining && rNotVerified(name) {
+	if err := all.CheckPlan(name, base); explaining && err != nil {
 		tm.mu.Unlock()
-		return nil, agents.ErrNotReadOnly
+		return nil, err
 	}
 	if tm.closed {
 		tm.mu.Unlock()
@@ -1539,7 +1543,7 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 	var openErr error
 	if liveSession == nil {
 		tok := tm.tools.tokens.Issue(toolScope{tid: r.tid})
-		o := agents.Open{Dir: tm.root, Base: sessionBase(r.name, r.base), Env: r.env, Model: r.model, Mode: mode, Resume: sessionID, Tools: tm.tools.endpoint(tok), Stderr: stderr}
+		o := agents.Open{Dir: tm.root, Base: r.base, Env: r.env, Model: r.model, Mode: mode, Resume: sessionID, Tools: tm.tools.endpoint(tok), Stderr: stderr}
 		var opened agents.Session
 		opened, openErr = a.Open(ctx, o)
 		if openErr != nil && sessionID != "" {
@@ -1652,6 +1656,7 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 		if err != nil {
 			tm.closeSessionLocked(r.tid)
 		}
+		tm.idleSessionLocked(r.tid)
 		delete(tm.cancels, r.tid)
 		tm.saveLocked()
 		tm.publishThreadLocked(t)
@@ -2287,62 +2292,4 @@ func anchorSnippet(abs string, l1, l2 int) string {
 		snip = snip[:threadSnippetMax] + "\n…"
 	}
 	return snip
-}
-
-func (s *threadSink) Reasoning(text string) {
-	s.tm.mu.Lock()
-	defer s.tm.mu.Unlock()
-	s.turn.Reasoning += text
-	s.tm.publishLocked(s.tid, "reasoning", map[string]any{"turn": s.turn.ID, "text": text})
-	s.tm.maybeSaveLocked()
-}
-
-type writerSink struct {
-	io.Writer
-	wrote bool
-}
-
-func (s *writerSink) Text(t string, _ bool) { s.wrote = true; _, _ = io.WriteString(s.Writer, t) }
-func (s *writerSink) Reasoning(string)      {}
-func (s *writerSink) Step(string)           {}
-func (s *writerSink) Result(t string) {
-	if !s.wrote {
-		_, _ = io.WriteString(s.Writer, t)
-	}
-}
-
-type threadSession struct {
-	session            agents.Session
-	token, name, model string
-	mode               agents.Mode
-}
-
-func (tm *threadManager) closeSessionLocked(id string) {
-	if s := tm.sessions[id]; s != nil {
-		s.session.Close()
-		tm.tools.tokens.Revoke(s.token)
-		delete(tm.sessions, id)
-	}
-	tm.tools.tokens.RevokeScope(func(scope any) bool { sc, ok := scope.(toolScope); return ok && sc.tid == id })
-}
-func rNotVerified(name string) bool { return name != "claude" && !agents.Verified[name] }
-func sessionBase(name string, base []string) []string {
-	if name != "claude" {
-		return base
-	}
-	out := []string{base[0]}
-	for i := 1; i < len(base); i++ {
-		switch base[i] {
-		case "--permission-mode", "--model":
-			i++
-		case "-p", "--print":
-			if i+1 < len(base) && base[i+1] == "{prompt}" {
-				i++
-			}
-		case "{prompt}":
-		default:
-			out = append(out, base[i])
-		}
-	}
-	return out
 }

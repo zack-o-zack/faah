@@ -3,16 +3,23 @@ package percmd
 
 import (
 	"context"
-	"faah/internal/agents"
 	"fmt"
 	"strings"
 	"sync"
+
+	"faah/internal/agents"
 )
 
+// Agent adapts a command to the session interface.
 type Agent struct{ Legacy agents.Legacy }
 
+// Wrap exposes a legacy command as a session.
 func Wrap(a agents.Legacy) *Agent { return &Agent{a} }
-func (a *Agent) Name() string     { return a.Legacy.Name() }
+
+// Name identifies the agent.
+func (a *Agent) Name() string { return a.Legacy.Name() }
+
+// Open configures a native agent session.
 func (a *Agent) Open(ctx context.Context, o agents.Open) (agents.Session, error) {
 	base := o.Base
 	env := o.Env
@@ -44,7 +51,10 @@ type session struct {
 	turn      sync.Mutex
 }
 
+// ID returns the native conversation identifier.
 func (s *session) ID() string { s.mu.Lock(); defer s.mu.Unlock(); return s.id }
+
+// Prompt streams one turn until the agent reports completion.
 func (s *session) Prompt(ctx context.Context, text string, sink agents.Sink) (agents.Outcome, error) {
 	s.turn.Lock()
 	defer s.turn.Unlock()
@@ -75,6 +85,8 @@ func (s *session) Prompt(ctx context.Context, text string, sink agents.Sink) (ag
 	s.mu.Unlock()
 	return out, err
 }
+
+// Interrupt cancels the current turn.
 func (s *session) Interrupt(context.Context) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -83,6 +95,8 @@ func (s *session) Interrupt(context.Context) error {
 	}
 	return nil
 }
+
+// Close releases the session and stops its process.
 func (s *session) Close() error { return s.Interrupt(context.Background()) }
 
 type recordSink struct {
@@ -90,7 +104,10 @@ type recordSink struct {
 	text strings.Builder
 }
 
+// Text forwards assistant output.
 func (s *recordSink) Text(t string, b bool) { s.text.WriteString(t); s.Sink.Text(t, b) }
+
+// Result supplies an answer when no text was streamed.
 func (s *recordSink) Result(t string) {
 	if s.text.Len() == 0 {
 		s.text.WriteString(t)

@@ -10,18 +10,21 @@ import (
 	"time"
 )
 
+// Process owns an agent and its input and output pipes.
 type Process struct {
-	Cmd    *exec.Cmd
-	Lines  chan []byte
-	Exited chan struct{}
-	stdin  io.WriteCloser
-	mu     sync.Mutex
-	tail   []byte
-	err    error
-	once   sync.Once
-	stop   chan struct{}
+	Cmd     *exec.Cmd
+	Lines   chan []byte
+	Exited  chan struct{}
+	stdin   io.WriteCloser
+	mu      sync.Mutex
+	writeMu sync.Mutex
+	tail    []byte
+	err     error
+	once    sync.Once
+	stop    chan struct{}
 }
 
+// Start launches an agent with supervised process lifetime.
 func Start(argv []string, dir string, env []string, stderr io.Writer) (*Process, error) {
 	if len(argv) == 0 {
 		return nil, fmt.Errorf("empty agent command")
@@ -86,11 +89,15 @@ func Start(argv []string, dir string, env []string, stderr io.Writer) (*Process,
 	}()
 	return p, nil
 }
+
+// Write serializes a frame to stdin.
 func (p *Process) Write(b []byte) (int, error) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	p.writeMu.Lock()
+	defer p.writeMu.Unlock()
 	return p.stdin.Write(b)
 }
+
+// WriteTail retains bounded diagnostic output.
 func (p *Process) WriteTail(b []byte) (int, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -103,18 +110,42 @@ func (p *Process) WriteTail(b []byte) (int, error) {
 
 type tailWriter struct{ p *Process }
 
+// Write serializes a frame to stdin.
 func (w tailWriter) Write(b []byte) (int, error) { return w.p.WriteTail(b) }
-func (p *Process) Tail() string                  { p.mu.Lock(); defer p.mu.Unlock(); return string(p.tail) }
+
+// Tail returns the recent stderr output.
+func (p *Process) Tail() string { p.mu.Lock(); defer p.mu.Unlock(); return string(p.tail) }
+
+// Error describes an exited process with its diagnostics.
 func (p *Process) Error() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
+	if p.err == nil {
+		return fmt.Errorf("agent process exited\n%s", p.tail)
+	}
 	return fmt.Errorf("agent process exited: %v\n%s", p.err, p.tail)
 }
+
+// Close releases the session and stops its process.
 func (p *Process) Close() error {
 	p.once.Do(func() {
 		close(p.stop)
 		terminate(p.Cmd)
-		go func() { timer := time.NewTimer(5 * time.Second); defer timer.Stop(); <-timer.C; kill(p.Cmd) }()
+		go func() {
+			timer := time.NewTimer(5 * time.Second)
+			defer timer.Stop()
+			select {
+			case <-p.Exited:
+				return
+			case <-timer.C:
+			}
+			select {
+			case <-p.Exited:
+				return
+			default:
+				kill(p.Cmd)
+			}
+		}()
 	})
 	return nil
 }

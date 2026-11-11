@@ -4,8 +4,10 @@ import (
 	"bufio"
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestMain(m *testing.M) {
@@ -31,4 +33,35 @@ func TestMain(m *testing.M) {
 		os.Exit(0)
 	}
 	os.Exit(m.Run())
+}
+
+func TestThreadSessionIdleResumes(t *testing.T) {
+	root := t.TempDir()
+	fakeCLI(t, "claude")
+	s := agentServer(t, root, "claude -p {prompt}")
+	s.threads.sessionIdle = 15 * time.Millisecond
+	_, m := agentPostJSON(t, s, "/api/threads/create", map[string]any{"message": "hello"})
+	id := m["id"].(string)
+	waitThreadIdle(t, s, id)
+	deadline := time.Now().Add(3 * time.Second)
+	for {
+		s.threads.mu.Lock()
+		live := s.threads.sessions[id] != nil
+		s.threads.mu.Unlock()
+		if !live {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("session stayed open")
+		}
+		time.Sleep(time.Millisecond)
+	}
+	if _, err := s.threads.Send(id, "follow up"); err != nil {
+		t.Fatal(err)
+	}
+	th := waitThreadIdle(t, s, id)
+	b, _ := os.ReadFile(filepath.Join(root, "claude-runs.txt"))
+	if !strings.Contains(string(b), "--resume "+th.SessionID) || len(strings.Split(strings.TrimSpace(string(b)), "\n")) != 2 {
+		t.Fatalf("process args: %s", b)
+	}
 }

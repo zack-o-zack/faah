@@ -5,6 +5,7 @@ import (
 	"io"
 )
 
+// Mode selects the permissions for a session.
 type Mode int
 
 const (
@@ -12,6 +13,7 @@ const (
 	ModePlan
 )
 
+// Open configures a native agent session.
 type Open struct {
 	Dir    string
 	Model  string
@@ -22,6 +24,8 @@ type Open struct {
 	Base   []string
 	Stderr io.Writer
 }
+
+// Session holds a resumable conversation.
 type Session interface {
 	ID() string
 	Prompt(context.Context, string, Sink) (Outcome, error)

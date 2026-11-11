@@ -28,5 +28,7 @@ func command(argv []string) (*exec.Cmd, func(), func(), error) {
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	return cmd, func() { read.Close() }, func() { write.Close() }, nil
 }
+
 func terminate(c *exec.Cmd) { _ = syscall.Kill(-c.Process.Pid, syscall.SIGTERM) }
-func kill(c *exec.Cmd)      { _ = syscall.Kill(-c.Process.Pid, syscall.SIGKILL) }
+
+func kill(c *exec.Cmd) { _ = syscall.Kill(-c.Process.Pid, syscall.SIGKILL) }

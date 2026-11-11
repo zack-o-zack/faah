@@ -26,13 +26,16 @@ type session struct {
 	closed  chan struct{}
 	once    sync.Once
 }
+
 type content struct {
+	ID       string          `json:"id"`
 	Type     string          `json:"type"`
 	Text     string          `json:"text"`
 	Thinking string          `json:"thinking"`
 	Name     string          `json:"name"`
 	Input    json.RawMessage `json:"input"`
 }
+
 type frame struct {
 	Type      string `json:"type"`
 	RequestID string `json:"request_id"`
@@ -72,8 +75,10 @@ func flag(argv []string, k, v string) []string {
 	}
 	return append(argv, k, v)
 }
+
+// Open configures a native agent session.
 func (*Agent) Open(ctx context.Context, o agents.Open) (agents.Session, error) {
-	argv := append([]string(nil), o.Base...)
+	argv := sessionBase(o.Base)
 	if len(argv) == 0 {
 		argv = []string{"claude"}
 	}
@@ -120,7 +125,10 @@ func (*Agent) Open(ctx context.Context, o agents.Open) (agents.Session, error) {
 	}
 	return s, nil
 }
+
+// ID returns the native conversation identifier.
 func (s *session) ID() string { return s.id }
+
 func (s *session) send(v any) error {
 	b, err := json.Marshal(v)
 	if err != nil {
@@ -129,6 +137,7 @@ func (s *session) send(v any) error {
 	_, err = s.process.Write(append(b, '\n'))
 	return err
 }
+
 func (s *session) control(ctx context.Context, req any) error {
 	id := agents.NewUUID()
 	ch := make(chan frame, 1)
@@ -158,6 +167,7 @@ func (s *session) control(ctx context.Context, req any) error {
 		return s.process.Error()
 	}
 }
+
 func (s *session) read() {
 	defer close(s.events)
 	defer close(s.done)
@@ -205,6 +215,8 @@ func (s *session) read() {
 		}
 	}
 }
+
+// Prompt streams one turn until the agent reports completion.
 func (s *session) Prompt(ctx context.Context, text string, sink agents.Sink) (agents.Outcome, error) {
 	s.turn.Lock()
 	defer s.turn.Unlock()
@@ -212,8 +224,18 @@ func (s *session) Prompt(ctx context.Context, text string, sink agents.Sink) (ag
 	if err := s.send(map[string]any{"type": "user", "message": map[string]string{"role": "user", "content": text}, "parent_tool_use_id": nil}); err != nil {
 		return out, err
 	}
-	streamed := map[int]bool{}
-	steps := map[int]bool{}
+	streamed := map[string]bool{}
+	steps := map[string]bool{}
+	messageID, lastTextID := "", ""
+	hadText := false
+	emit := func(text, id string) {
+		if text == "" {
+			return
+		}
+		sink.Text(text, hadText && id != lastTextID)
+		hadText = true
+		lastTextID = id
+	}
 	for {
 		select {
 		case <-ctx.Done():
@@ -231,42 +253,39 @@ func (s *session) Prompt(ctx context.Context, text string, sink agents.Sink) (ag
 			case "stream_event":
 				switch f.Event.Type {
 				case "message_start":
-					streamed = map[int]bool{}
-					steps = map[int]bool{}
+					messageID = f.Event.Message.ID
 				case "content_block_start":
 					if f.Event.ContentBlock.Type == "tool_use" { /* input arrives in the assistant snapshot */
 					}
 				case "content_block_delta":
 					d := f.Event.Delta
 					if d.Type == "text_delta" {
-						sink.Text(d.Text, false)
-						streamed[f.Event.Index] = true
+						emit(d.Text, messageID)
+						streamed[messageID] = true
 					}
 					if d.Type == "thinking_delta" {
 						sink.Reasoning(d.Thinking)
-						streamed[f.Event.Index] = true
+						streamed[messageID] = true
 					}
 				}
 			case "assistant":
-				for i, c := range f.Message.Content {
+				for _, c := range f.Message.Content {
 					switch c.Type {
 					case "text":
-						if !streamed[i] {
-							sink.Text(c.Text, true)
+						if !streamed[f.Message.ID] {
+							emit(c.Text, f.Message.ID)
 						}
 					case "thinking":
-						if !streamed[i] {
+						if !streamed[f.Message.ID] {
 							sink.Reasoning(c.Thinking)
 						}
 					case "tool_use":
-						if !steps[i] {
+						if !steps[c.ID] {
 							sink.Step(agents.ToolLabel(c.Name, c.Input))
-							steps[i] = true
+							steps[c.ID] = true
 						}
 					}
 				}
-				streamed = map[int]bool{}
-				steps = map[int]bool{}
 			case "result":
 				if f.IsError {
 					msg := f.Result
@@ -286,7 +305,32 @@ func (s *session) Prompt(ctx context.Context, text string, sink agents.Sink) (ag
 		}
 	}
 }
+
+// Interrupt cancels the current turn.
 func (s *session) Interrupt(ctx context.Context) error {
 	return s.control(ctx, map[string]any{"subtype": "interrupt"})
 }
+
+// Close releases the session and stops its process.
 func (s *session) Close() error { s.once.Do(func() { close(s.closed) }); return s.process.Close() }
+
+func sessionBase(base []string) []string {
+	if len(base) == 0 {
+		return nil
+	}
+	out := []string{base[0]}
+	for i := 1; i < len(base); i++ {
+		switch base[i] {
+		case "--permission-mode", "--model":
+			i++
+		case "-p", "--print":
+			if i+1 < len(base) && base[i+1] == "{prompt}" {
+				i++
+			}
+		case "{prompt}":
+		default:
+			out = append(out, base[i])
+		}
+	}
+	return out
+}
