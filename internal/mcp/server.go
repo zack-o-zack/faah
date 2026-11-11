@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"io"
 	"mime"
@@ -36,7 +37,7 @@ type Server struct {
 	Tools         []Tool
 	Tokens        *Tokens
 	mu            sync.Mutex
-	sessions      map[string]bool
+	sessions      map[string][32]byte
 }
 
 const (
@@ -95,11 +96,9 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	sid := r.Header.Get("Mcp-Session-Id")
+	digest := sha256.Sum256([]byte(tok))
 	if r.Method == http.MethodDelete {
-		s.mu.Lock()
-		ok := s.sessions[sid]
-		delete(s.sessions, sid)
-		s.mu.Unlock()
+		ok := s.transport(sid, digest, true)
 		if sid == "" {
 			reject(400, "missing session")
 		} else if !ok {
@@ -166,22 +165,18 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			reject(400, "initialize must omit session")
 			return
 		}
-		sid = agents.NewUUID()
-		s.mu.Lock()
-		if s.sessions == nil {
-			s.sessions = map[string]bool{}
+		sid, ok = s.initializeTransport(digest)
+		if !ok {
+			unauthorized()
+			return
 		}
-		s.sessions[sid] = true
-		s.mu.Unlock()
 		w.Header().Set("Mcp-Session-Id", sid)
 	} else {
 		if sid == "" {
 			reject(400, "missing session")
 			return
 		}
-		s.mu.Lock()
-		known := s.sessions[sid]
-		s.mu.Unlock()
+		known := s.transport(sid, digest, false)
 		if !known {
 			reject(404, "unknown session")
 			return
@@ -208,6 +203,54 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	default:
 		writeJSON(w, out[0])
 	}
+}
+
+func (s *Server) initializeTransport(digest [32]byte) (string, bool) {
+	s.Tokens.mu.Lock()
+	defer s.Tokens.mu.Unlock()
+	if !s.Tokens.validLocked(digest) {
+		s.Tokens.dropSessionsLocked(digest)
+		return "", false
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.sessions == nil {
+		s.sessions = map[string][32]byte{}
+	}
+	for sid, owner := range s.sessions {
+		if !s.Tokens.validLocked(owner) {
+			delete(s.sessions, sid)
+		}
+	}
+	sid := agents.NewUUID()
+	s.sessions[sid] = digest
+	if s.Tokens.servers == nil {
+		s.Tokens.servers = map[*Server]struct{}{}
+	}
+	s.Tokens.servers[s] = struct{}{}
+	return sid, true
+}
+
+func (s *Server) transport(sid string, digest [32]byte, remove bool) bool {
+	s.Tokens.mu.Lock()
+	defer s.Tokens.mu.Unlock()
+	if !s.Tokens.validLocked(digest) {
+		s.Tokens.dropSessionsLocked(digest)
+		return false
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	owner, ok := s.sessions[sid]
+	if !ok || owner != digest {
+		return false
+	}
+	if remove {
+		delete(s.sessions, sid)
+		if len(s.sessions) == 0 {
+			delete(s.Tokens.servers, s)
+		}
+	}
+	return true
 }
 
 func (s *Server) handle(ctx context.Context, scope any, q request) (any, *rpcError) {

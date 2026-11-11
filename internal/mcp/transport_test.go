@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -99,5 +100,121 @@ func TestMCPTokenExpiryAndHashes(t *testing.T) {
 	ts.RevokeScope(func(v any) bool { return v == "thread" })
 	if _, ok := ts.Resolve(tok); ok {
 		t.Fatal("scope not revoked")
+	}
+}
+
+func transportCall(s *Server, tok, sid, method string) *httptest.ResponseRecorder {
+	r := httptest.NewRequest("POST", "/api/mcp", strings.NewReader(`{"id":1,"method":"`+method+`"}`))
+	r.Header.Set("Authorization", "Bearer "+tok)
+	r.Header.Set("Content-Type", "application/json")
+	r.Header.Set("Accept", "application/json, text/event-stream")
+	r.Header.Set("Mcp-Session-Id", sid)
+	w := httptest.NewRecorder()
+	s.ServeHTTP(w, r)
+	return w
+}
+
+func TestMCPRevokeRemovesTransports(t *testing.T) {
+	for _, scope := range []bool{false, true} {
+		t.Run(map[bool]string{false: "token", true: "scope"}[scope], func(t *testing.T) {
+			s, tok := testServer()
+			for index := 0; index < 2; index++ {
+				if w := transportCall(s, tok, "", "initialize"); w.Code != 200 {
+					t.Fatal(w.Code)
+				}
+			}
+			other := s.Tokens.Issue("t2")
+			w := transportCall(s, other, "", "initialize")
+			if w.Code != 200 {
+				t.Fatal(w.Code)
+			}
+			if scope {
+				s.Tokens.RevokeScope(func(value any) bool { return value == "t1" })
+			} else {
+				s.Tokens.Revoke(tok)
+			}
+			s.mu.Lock()
+			count := len(s.sessions)
+			s.mu.Unlock()
+			if count != 1 {
+				t.Fatalf("revoked transports remain: %d sessions", count)
+			}
+			if got := transportCall(s, other, w.Header().Get("Mcp-Session-Id"), "ping"); got.Code != 200 {
+				t.Fatalf("unrelated transport was removed: %d", got.Code)
+			}
+		})
+	}
+}
+
+func TestMCPExpiredTransportsAreDropped(t *testing.T) {
+	for _, trigger := range []string{"initialize", "request", "touch"} {
+		t.Run(trigger, func(t *testing.T) {
+			now := time.Unix(100, 0)
+			s, tok := testServer()
+			s.Tokens.now = func() time.Time { return now }
+			s.Tokens.Touch("t1")
+			w := transportCall(s, tok, "", "initialize")
+			if w.Code != 200 {
+				t.Fatal(w.Code)
+			}
+			now = now.Add(24 * time.Hour)
+			remaining := 0
+			switch trigger {
+			case "initialize":
+				other := s.Tokens.Issue("t2")
+				if w := transportCall(s, other, "", "initialize"); w.Code != 200 {
+					t.Fatal(w.Code)
+				}
+				remaining = 1
+			case "request":
+				if w := transportCall(s, tok, w.Header().Get("Mcp-Session-Id"), "ping"); w.Code != 401 {
+					t.Fatal(w.Code)
+				}
+			case "touch":
+				s.Tokens.Touch("t1")
+			}
+			s.mu.Lock()
+			count := len(s.sessions)
+			s.mu.Unlock()
+			if count != remaining {
+				t.Fatalf("expired transports remain: %d sessions", count)
+			}
+		})
+	}
+}
+
+func TestMCPTransportBelongsToCredential(t *testing.T) {
+	s, tok := testServer()
+	w := transportCall(s, tok, "", "initialize")
+	other := s.Tokens.Issue("t2")
+	if got := transportCall(s, other, w.Header().Get("Mcp-Session-Id"), "ping"); got.Code != 404 {
+		t.Fatalf("another credential used the transport: %d", got.Code)
+	}
+}
+
+func TestMCPRevokeDuringInitializeLeavesNoTransports(t *testing.T) {
+	s, _ := testServer()
+	for index := 0; index < 50; index++ {
+		tok := s.Tokens.Issue("concurrent")
+		start := make(chan struct{})
+		var group sync.WaitGroup
+		group.Add(2)
+		go func() {
+			defer group.Done()
+			<-start
+			transportCall(s, tok, "", "initialize")
+		}()
+		go func() {
+			defer group.Done()
+			<-start
+			s.Tokens.Revoke(tok)
+		}()
+		close(start)
+		group.Wait()
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if len(s.sessions) != 0 {
+		t.Fatalf("revoked initialization leaked %d transports", len(s.sessions))
 	}
 }

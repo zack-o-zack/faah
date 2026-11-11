@@ -17,9 +17,10 @@ type credential struct {
 
 // Tokens holds hashed, scoped credentials with a 24-hour idle expiry.
 type Tokens struct {
-	mu  sync.Mutex
-	m   map[[32]byte]credential
-	now func() time.Time
+	mu      sync.Mutex
+	m       map[[32]byte]credential
+	now     func() time.Time
+	servers map[*Server]struct{}
 }
 
 func (ts *Tokens) clock() time.Time {
@@ -51,7 +52,11 @@ func (ts *Tokens) Resolve(tok string) (any, bool) {
 	defer ts.mu.Unlock()
 	h := sha256.Sum256([]byte(tok))
 	c, ok := ts.m[h]
-	if !ok || tok == "" || ts.clock().Sub(c.alive) >= 24*time.Hour {
+	if !ok || tok == "" {
+		return nil, false
+	}
+	if ts.clock().Sub(c.alive) >= 24*time.Hour {
+		ts.dropSessionsLocked(h)
 		return nil, false
 	}
 	c.alive = ts.clock()
@@ -65,6 +70,9 @@ func (ts *Tokens) Touch(scope any) {
 	defer ts.mu.Unlock()
 	for h, c := range ts.m {
 		if reflect.DeepEqual(c.scope, scope) {
+			if ts.clock().Sub(c.alive) >= 24*time.Hour {
+				ts.dropSessionsLocked(h)
+			}
 			c.alive = ts.clock()
 			ts.m[h] = c
 		}
@@ -75,7 +83,9 @@ func (ts *Tokens) Touch(scope any) {
 func (ts *Tokens) Revoke(tok string) {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
-	delete(ts.m, sha256.Sum256([]byte(tok)))
+	hash := sha256.Sum256([]byte(tok))
+	delete(ts.m, hash)
+	ts.dropSessionsLocked(hash)
 }
 
 // RevokeScope invalidates credentials whose scopes match.
@@ -85,6 +95,27 @@ func (ts *Tokens) RevokeScope(match func(any) bool) {
 	for h, c := range ts.m {
 		if match(c.scope) {
 			delete(ts.m, h)
+			ts.dropSessionsLocked(h)
 		}
+	}
+}
+
+func (ts *Tokens) validLocked(hash [32]byte) bool {
+	credential, ok := ts.m[hash]
+	return ok && ts.clock().Sub(credential.alive) < 24*time.Hour
+}
+
+func (ts *Tokens) dropSessionsLocked(hash [32]byte) {
+	for server := range ts.servers {
+		server.mu.Lock()
+		for sid, owner := range server.sessions {
+			if owner == hash {
+				delete(server.sessions, sid)
+			}
+		}
+		if len(server.sessions) == 0 {
+			delete(ts.servers, server)
+		}
+		server.mu.Unlock()
 	}
 }
