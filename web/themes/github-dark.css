@@ -9,7 +9,7 @@
   /* surfaces, from the editor out to raised hover states */
   --background: #0d1117; --sidebar: #010409; --card: #010409; --popover: #161b22; --secondary: #21262d; --muted: #161b22; --sidebar-accent: #161b22; --accent: #21262d;
   /* text: primary, secondary, tertiary */
-  --foreground: #e6edf3; --card-foreground: #e6edf3; --popover-foreground: #e6edf3; --secondary-foreground: #e6edf3; --accent-foreground: #e6edf3; --sidebar-foreground: #e6edf3; --sidebar-accent-foreground: #e6edf3; --muted-foreground: #8b949e; --faint: #8b949e;
+  --foreground: #e6edf3; --card-foreground: #e6edf3; --popover-foreground: #e6edf3; --secondary-foreground: #e6edf3; --accent-foreground: #e6edf3; --sidebar-foreground: #e6edf3; --sidebar-accent-foreground: #e6edf3; --muted-foreground: #99a3ae; --faint: #99a3ae;
   /* borders and accent */
   --border: #30363d; --input: #919ba6; --sidebar-border: #30363d; --primary: #2f81f7; --ring: #2f81f7; --sidebar-primary: #2f81f7; --sidebar-ring: #2f81f7; --primary-text: #58a6ff;
   --primary-foreground: #010409; --sidebar-primary-foreground: #010409;
