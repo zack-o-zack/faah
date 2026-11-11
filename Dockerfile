@@ -1,6 +1,9 @@
 # Stage 1: Bundle frontend assets
 FROM node:20-alpine AS web-builder
 WORKDIR /build
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY workbench.go ./
 COPY scripts/ ./scripts/
 COPY web/ ./web/
 RUN node ./scripts/build-web.js
@@ -12,7 +15,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 # Copy generated bundle into web/
-COPY --from=web-builder /build/web/app.js ./web/app.js
+COPY --from=web-builder /build/web/app.js /build/web/app.css /build/web/workbench.js /build/web/holding.js ./web/
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /bin/faah .
 
 # Stage 3: Minimal runtime container

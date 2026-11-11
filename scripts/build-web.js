@@ -4,7 +4,7 @@
  *
  * Bundles modular frontend sources from `web/src/*.js` into `web/app.js`.
  * Supports execution under Bun (`bun scripts/build-web.js`) or Node (`node scripts/build-web.js`).
- * Zero external dependencies.
+ * Builds the stylesheet with Tailwind and Basecoat before bundling JavaScript.
  */
 
 import fs from 'node:fs';
@@ -159,6 +159,14 @@ function compressVendorAssets() {
 
 function run() {
   const start = Date.now();
+  const cli = path.join(rootDir, 'node_modules', '@tailwindcss', 'cli', 'dist', 'index.mjs');
+  if (!fs.existsSync(cli)) {
+    console.error('[build-web] Run npm ci at the repo root first.');
+    process.exit(1);
+  }
+  execFileSync(process.execPath, [cli, '-i', 'web/tailwind.css', '-o', 'web/app.css', '--minify'], {
+    cwd: rootDir, stdio: 'inherit',
+  });
   const bun = hasBun();
   for (const { entry, out } of bundles) {
     if (bun) buildWithBun(entry, out);

@@ -36,6 +36,8 @@ jobs:
         with:
           node-version: '20'
 
+      - run: npm ci
+
       - name: Bundle Web Assets
         run: |
           node ./scripts/build-web.js

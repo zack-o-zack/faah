@@ -1256,10 +1256,8 @@ var holdingTmpl = template.Must(template.New("holding").Parse(`<!doctype html>
 <script defer src="static/holding.js"></script>{{end}}
 <title>{{if .Starting}}Opening…{{else}}faah{{end}}</title>
 <link rel="icon" type="image/svg+xml" href="static/favicon.svg">
-<link rel="stylesheet" href="static/style.css">
+<link rel="stylesheet" href="static/app.css">
 <link rel="stylesheet" href="static/themes.css">
-<link rel="stylesheet" href="static/workbench.css">
-<link rel="stylesheet" href="static/desktop.css">
 </head>
 <body class="wb">
 <button class="desktop-menu-btn" data-desktop-menu title="Menu" aria-label="Application menu">

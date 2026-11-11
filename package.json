@@ -14,5 +14,10 @@
     "desktop:package": "node ./scripts/build-desktop.js --package",
     "desktop:dist": "node ./scripts/build-desktop.js --dist",
     "test": "bun test web/src/"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "4.3.5",
+    "basecoat-css": "1.1.0",
+    "tailwindcss": "4.3.5"
   }
 }

@@ -1,0 +1,37 @@
+@import "tailwindcss" source(none);
+@import "basecoat-css/vega";
+
+@import "./style.css" layer(components);
+@import "./workbench.css" layer(components);
+@import "./desktop.css" layer(components);
+
+@source "./index.html";
+@source "./workbench.html";
+@source "./src";
+@source "../workbench.go";
+
+@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant desktop (&:where([data-shell], [data-shell] *));
+@custom-variant win-linux (&:where([data-platform="win"], [data-platform="linux"], [data-platform="win"] *, [data-platform="linux"] *));
+
+@theme inline {
+  --font-sans: var(--ui);
+  --font-mono: var(--mono);
+  --color-faint: var(--faint);
+  --color-primary-text: var(--primary-text);
+  --color-sel: var(--sel);
+  --color-mark: var(--mark);
+  --color-mark-active: var(--mark-active);
+  --color-cur: var(--cur);
+  --color-gi: var(--gi);
+  --color-gd: var(--gd);
+  --color-gi-bg: var(--gi-bg);
+  --color-gd-bg: var(--gd-bg);
+  --color-warn: var(--warn);
+  --text-8-5: var(--t-8-5); --text-9: var(--t-9); --text-9-5: var(--t-9-5);
+  --text-10: var(--t-10); --text-10-5: var(--t-10-5); --text-11: var(--t-11);
+  --text-11-5: var(--t-11-5); --text-12: var(--t-12); --text-12-5: var(--t-12-5);
+  --text-13: var(--t-13); --text-13-5: var(--t-13-5); --text-14: var(--t-14);
+  --text-14-5: var(--t-14-5); --text-15: var(--t-15); --text-16: var(--t-16);
+  --text-18: var(--t-18);
+}

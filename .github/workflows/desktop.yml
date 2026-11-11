@@ -46,6 +46,7 @@ jobs:
           cache: npm
           cache-dependency-path: desktop/package-lock.json
       - uses: oven-sh/setup-bun@v2
+      - run: npm ci
       - run: npm ci --prefix desktop
       - name: Apply version override
         if: inputs.version != ''

@@ -579,7 +579,7 @@ func TestWorkbenchPagesResolveMissingThemes(t *testing.T) {
 					if !strings.Contains(body, `data-theme="`+tc.want+`"`) {
 						t.Fatalf("page does not use available theme %q", tc.want)
 					}
-					if !strings.Contains(body, `href="static/desktop.css"`) {
+					if !strings.Contains(body, `href="static/app.css"`) {
 						t.Fatal("page is missing desktop typography and controls")
 					}
 					if page.hold != nil && page.hold.Starting {

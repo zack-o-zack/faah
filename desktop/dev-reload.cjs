@@ -13,6 +13,7 @@ const SWAP_STYLES = `for (const link of document.querySelectorAll('link[rel="sty
 function reloadKind(file) {
   const [top] = file.split(path.sep);
   if (top === 'src' || top === 'vendor') return null;
+  if (file.endsWith('.css') && top === file && file !== 'app.css') return null;
   if (file.endsWith('.css')) return 'styles';
   return /\.(js|html|svg)$/.test(file) ? 'page' : null;
 }
