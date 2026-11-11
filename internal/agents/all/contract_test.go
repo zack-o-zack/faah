@@ -70,6 +70,16 @@ func TestAgentContract(t *testing.T) {
 					t.Fatalf("resume=%v: prompt not passed, args = %s", resume, args)
 				}
 			}
+			if strings.Join(argv, " ") != bin+" -p {prompt}" {
+				t.Fatalf("Run changed its argv: %q", argv)
+			}
+			// An agent without sessions runs the argv it is given, prompt filled in.
+			if !a.Caps().Sessions {
+				args, _ := os.ReadFile(filepath.Join(dir, "args.txt"))
+				if got := strings.TrimSpace(string(args)); got != "-p\nsay hello" {
+					t.Fatalf("args = %q, want the argv unchanged", got)
+				}
+			}
 			// Without a session, an agent that is given its ids runs the argv unchanged.
 			if c := a.Caps(); c.Sessions && !c.NamesSession {
 				if _, err := a.Run(ctx, agents.Turn{Dir: dir, Argv: argv, Prompt: "say hello", Timeout: 5 * time.Second}, &sink{}); err != nil {
