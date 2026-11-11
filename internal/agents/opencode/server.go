@@ -264,6 +264,10 @@ func (s *server) request(ctx context.Context, method, path string, body any) (*h
 }
 
 func (s *server) call(ctx context.Context, method, path string, body, out any) error {
+	return s.callCursor(ctx, method, path, body, out, nil)
+}
+
+func (s *server) callCursor(ctx context.Context, method, path string, body, out any, next *string) error {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	req, err := s.request(ctx, method, path, body)
@@ -284,10 +288,16 @@ func (s *server) call(ctx context.Context, method, path string, body, out any) e
 		return err
 	}
 	var envelope struct {
-		Data json.RawMessage `json:"data"`
+		Data   json.RawMessage `json:"data"`
+		Cursor struct {
+			Next string `json:"next"`
+		} `json:"cursor"`
 	}
 	if err = json.NewDecoder(res.Body).Decode(&envelope); err != nil {
 		return err
+	}
+	if next != nil {
+		*next = envelope.Cursor.Next
 	}
 	return json.Unmarshal(envelope.Data, out)
 }
@@ -316,6 +326,16 @@ func (s *server) events() {
 				if first {
 					close(s.ready)
 					first = false
+				} else {
+					s.mu.Lock()
+					targets := make([]*session, 0, len(s.routes))
+					for _, target := range s.routes {
+						targets = append(targets, target)
+					}
+					s.mu.Unlock()
+					for _, target := range targets {
+						target.enqueue(event{Type: "faah.events.reconnected"})
+					}
 				}
 				scan := bufio.NewScanner(res.Body)
 				scan.Buffer(make([]byte, 65536), 16<<20)

@@ -286,7 +286,8 @@ func (s *session) Prompt(ctx context.Context, text string, sink agents.Sink) (ag
 	if _, err := rand.Read(b); err != nil {
 		return out, err
 	}
-	if err := s.server.call(promptCtx, "POST", s.path()+"/prompt", map[string]string{"id": "msg_" + hex.EncodeToString(b), "text": text}, nil); err != nil {
+	promptID := "msg_" + hex.EncodeToString(b)
+	if err := s.server.call(promptCtx, "POST", s.path()+"/prompt", map[string]string{"id": promptID, "text": text}, nil); err != nil {
 		if s.server.process != nil {
 			select {
 			case <-s.server.process.Exited:
@@ -300,6 +301,7 @@ func (s *session) Prompt(ctx context.Context, text string, sink agents.Sink) (ag
 	steps := map[string]bool{}
 	last := ""
 	had, boundary := false, false
+	var streamed strings.Builder
 	for {
 		s.mu.Lock()
 		q := s.queue
@@ -308,8 +310,22 @@ func (s *session) Prompt(ctx context.Context, text string, sink agents.Sink) (ag
 		for _, e := range q {
 			d := e.Data
 			switch e.Type {
+			case "faah.events.reconnected":
+				text, done, err := s.recoverTurn(promptCtx, promptID)
+				if err != nil {
+					return out, err
+				}
+				if done {
+					if strings.HasPrefix(text, streamed.String()) {
+						sink.Text(strings.TrimPrefix(text, streamed.String()), false)
+					} else if text != "" {
+						sink.Text(text, had)
+					}
+					return out, nil
+				}
 			case "session.text.delta":
 				sink.Text(d.Delta, had && (boundary || last != d.ID))
+				streamed.WriteString(d.Delta)
 				had = true
 				boundary = false
 				last = d.ID

@@ -20,14 +20,17 @@ import (
 )
 
 type fake struct {
-	t             *testing.T
-	mu            sync.Mutex
-	calls         []request
-	streams       int
-	clients       map[chan event]bool
-	promptStarted chan struct{}
-	promptRelease chan struct{}
-	next          int
+	t               *testing.T
+	mu              sync.Mutex
+	calls           []request
+	streams         int
+	clients         map[chan event]bool
+	promptStarted   chan struct{}
+	promptRelease   chan struct{}
+	durableOutcome  string
+	durableMessages []map[string]any
+	messageNext     string
+	next            int
 }
 
 type request struct {
@@ -79,6 +82,30 @@ func (f *fake) serve(w http.ResponseWriter, r *http.Request) {
 	f.mu.Unlock()
 	w.Header().Set("Content-Type", "application/json")
 	switch {
+	case r.URL.Path == "/api/session/active":
+		f.mu.Lock()
+		active := map[string]any{}
+		if f.durableOutcome == "" {
+			for index := 1; index <= f.next; index++ {
+				active[fmt.Sprintf("ses_%d", index)] = map[string]string{"type": "running"}
+			}
+		}
+		f.mu.Unlock()
+		json.NewEncoder(w).Encode(map[string]any{"data": active})
+	case r.Method == "GET" && strings.HasSuffix(r.URL.Path, "/message"):
+		f.mu.Lock()
+		messages := f.durableMessages
+		next := ""
+		if f.messageNext != "" && len(messages) > 1 {
+			if r.URL.Query().Get("cursor") == "" {
+				messages = messages[:1]
+				next = f.messageNext
+			} else {
+				messages = messages[1:]
+			}
+		}
+		f.mu.Unlock()
+		json.NewEncoder(w).Encode(map[string]any{"data": messages, "cursor": map[string]any{"next": next}})
 	case r.URL.Path == "/api/session" && r.Method == "POST":
 		f.mu.Lock()
 		f.next++
@@ -86,7 +113,10 @@ func (f *fake) serve(w http.ResponseWriter, r *http.Request) {
 		f.mu.Unlock()
 		json.NewEncoder(w).Encode(map[string]any{"data": map[string]string{"id": id, "agent": "build"}})
 	case r.Method == "GET" && strings.HasPrefix(r.URL.Path, "/api/session/"):
-		json.NewEncoder(w).Encode(map[string]any{"data": map[string]string{"id": strings.TrimPrefix(r.URL.Path, "/api/session/"), "agent": "build"}})
+		f.mu.Lock()
+		outcome := f.durableOutcome
+		f.mu.Unlock()
+		json.NewEncoder(w).Encode(map[string]any{"data": map[string]string{"id": strings.TrimPrefix(r.URL.Path, "/api/session/"), "agent": "build", "outcome": outcome}})
 	case strings.HasSuffix(r.URL.Path, "/prompt"):
 		id := strings.Split(r.URL.Path, "/")[3]
 		text, _ := body["text"].(string)
@@ -362,6 +392,80 @@ func TestOpenCodeRoutingReconnectInterruptExit(t *testing.T) {
 		}
 	case <-time.After(time.Second):
 		t.Fatal("exit hung")
+	}
+}
+
+func TestOpenCodeReconnectRecoversCompletedTurn(t *testing.T) {
+	for _, outcome := range []string{"succeeded", "failed", "interrupted"} {
+		t.Run(outcome, func(t *testing.T) {
+			f, _, o := fixture(t)
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			s, err := New().Open(ctx, o)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer s.Close()
+			capture := &capture{}
+			done := make(chan error, 1)
+			go func() { _, err := s.Prompt(ctx, "hold", capture); done <- err }()
+			var promptID string
+			wait(t, func() bool {
+				f.mu.Lock()
+				defer f.mu.Unlock()
+				for _, call := range f.calls {
+					if strings.HasSuffix(call.Path, "/prompt") {
+						promptID, _ = call.Body["id"].(string)
+						return true
+					}
+				}
+				return false
+			})
+			f.emit(s.ID(), "session.text.delta", map[string]any{"id": "answer", "delta": "final "})
+			f.emit("", "drop", nil)
+			wait(t, func() bool { f.mu.Lock(); defer f.mu.Unlock(); return len(f.clients) == 0 })
+			f.mu.Lock()
+			f.durableOutcome = outcome
+			f.messageNext = "next-page"
+			f.durableMessages = []map[string]any{
+				{"id": "answer", "type": "assistant", "content": []map[string]string{{"type": "text", "text": "final answer"}}, "error": map[string]string{"message": "disconnected failure"}},
+				{"id": promptID, "type": "user"},
+			}
+			f.mu.Unlock()
+			select {
+			case err := <-done:
+				if outcome == "succeeded" && (err != nil || capture.text != "final answer") {
+					t.Fatalf("text=%q err=%v", capture.text, err)
+				}
+				if outcome == "failed" && (err == nil || !strings.Contains(err.Error(), "disconnected failure")) {
+					t.Fatal(err)
+				}
+				if outcome == "interrupted" && err != context.Canceled {
+					t.Fatal(err)
+				}
+			case <-time.After(time.Second):
+				cancel()
+				<-done
+				t.Fatal("turn hung after completion while SSE was disconnected")
+			}
+		})
+	}
+}
+
+func TestOpenCodeRecoveryRejectsStaleMessages(t *testing.T) {
+	f, _, o := fixture(t)
+	s, err := New().Open(context.Background(), o)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	f.mu.Lock()
+	f.durableOutcome = "succeeded"
+	f.durableMessages = []map[string]any{{"id": "old-prompt", "type": "user"}}
+	f.mu.Unlock()
+	text, _, err := s.(*session).recoverTurn(context.Background(), "current-prompt")
+	if text != "" || err == nil || !strings.Contains(err.Error(), "lost connection to opencode events") {
+		t.Fatalf("text=%q err=%v", text, err)
 	}
 }
 
