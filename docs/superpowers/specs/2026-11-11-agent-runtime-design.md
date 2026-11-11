@@ -116,18 +116,17 @@ type Session interface {
 - The `notes` checks, saving, staleness and `/api/explain/notes` stay as they are. Only the delivery changes: every agent reaches annotate and walkthrough over MCP.
 - Inline and batch edits open Edit sessions and stream into their jobs as they do today.
 
-## Phases
+## Delivery
 
-Each phase is one pull request. Each replaces one part outright, and the last one deletes what is left of the old path.
+One pull request, built in this order so each step compiles and its tests pass:
 
-1. **Foundation and claude.** The Streamable HTTP MCP endpoint and token registry, `agents.Agent` with `Open` and `Session`, `agents/host`, and the claude adapter over the control protocol. Threads, Explain and edits run claude this way, and claude's old adapter is deleted.
-2. **codex** over `app-server`.
-3. **agy** over ACP, with `faah acp-mcp-bridge`. gemini runs on the same ACP client with `gemini --acp`, following agy's rules.
-4. **opencode** over `serve`.
-5. **cursor** with the Node helper.
-6. **Cleanup.** Delete `Exec`, `Run`, the standby, tagged blocks, replay, `generic`, and the per-turn contract test. Update the docs.
+1. The MCP endpoint and token registry.
+2. `agents.Agent` with `Open` and `Session`, and `agents/host`.
+3. claude, codex, agy and gemini, opencode, and cursor, one adapter at a time.
+4. Threads, Explain and edits move onto sessions.
+5. Delete `Exec`, `Run`, the standby, tagged blocks, replay, `generic`, and the per-turn contract test. Update the docs.
 
-Explain in the Editor continues after phase 6: orb, notes in the editor, walkthrough, ways to start. Its old phase 2 (agy over ACP) is phase 3 here.
+Explain in the Editor continues after it: orb, notes in the editor, walkthrough, ways to start. Its old phase 2 (agy over ACP) is part of this change.
 
 ## Testing
 
