@@ -64,6 +64,10 @@ func TestMain(m *testing.M) {
 			}
 			respond(setup)
 		case "session/set_config_option", "session/set_mode", "session/set_model":
+			if f.Method == "session/set_mode" && os.Getenv("FAAH_ACP_MODE_FAIL") == "1" {
+				enc.Encode(map[string]any{"jsonrpc": "2.0", "id": f.ID, "error": map[string]any{"code": -32603, "message": "mode failed"}})
+				continue
+			}
 			respond(map[string]any{})
 		case "session/prompt":
 			var p struct{ Prompt []struct{ Text string } }
@@ -416,5 +420,19 @@ func TestACPMessageAfterTool(t *testing.T) {
 	}
 	if !reflect.DeepEqual(c.blocks, []bool{false, false, true, true}) {
 		t.Fatal(c.blocks)
+	}
+}
+
+func TestACPPlanModeFailure(t *testing.T) {
+	ctx, o, argv := setup(t)
+	o.Mode = agents.ModePlan
+	o.Env = append(o.Env, "FAAH_ACP_MODE_FAIL=1")
+	s, err := Open(ctx, o, argv, nil, nil, true)
+	if err == nil {
+		s.Close()
+		t.Fatal("Plan opened after set_mode failed")
+	}
+	if !strings.Contains(err.Error(), "mode failed") {
+		t.Fatal(err)
 	}
 }

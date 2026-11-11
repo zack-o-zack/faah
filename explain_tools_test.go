@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"faah/internal/agents"
 	"faah/internal/explain"
 	"faah/internal/explain/notes"
 )
@@ -67,24 +66,6 @@ curl -s -H "Mcp-Session-Id: $sid" -H "Content-Type: application/json" -H "Accept
 	}
 	if code := mcpCall(t, s, tok[1], "annotate", `{"notes":[]}`); code != http.StatusOK {
 		t.Fatalf("after the turn, a call = %d", code)
-	}
-}
-
-func TestExplainTaggedBlocksLandOnTheTurn(t *testing.T) {
-	root := t.TempDir()
-	writeExplainSource(t, root, explainGoSource)
-	verifyHarnesses(t, "opencode")
-	p := filepath.Join(t.TempDir(), "opencode")
-	body := "#!/bin/sh\nprintf '%s\\n' 'Helper.' '<faah:annotate>{\"notes\":[{\"kind\":\"line\",\"path\":\"main.go\",\"l1\":4,\"summary\":\"Calls helper.\"}]}</faah:annotate>'\n"
-	if err := os.WriteFile(p, []byte(body), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	s := agentServer(t, root, p+" run")
-	_, m := agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "text": "helper"})
-	th := waitThreadIdle(t, s, m["thread"].(map[string]any)["id"].(string))
-	tr := th.Turns[0]
-	if strings.Contains(tr.Reply, "faah:annotate") || len(tr.Notes) != 1 || tr.Notes[0].Text != "\thelper()" {
-		t.Fatalf("reply = %q, notes = %+v, error = %s", tr.Reply, tr.Notes, tr.Error)
 	}
 }
 
@@ -195,7 +176,7 @@ func TestExplainReplayCarriesWhatWasShown(t *testing.T) {
 		Notes:        []notes.Note{{Kind: "line", Path: "main.go", L1: 4, L2: 4, Summary: "Calls helper."}},
 		Walkthroughs: []notes.Walkthrough{{Title: "Flow", Steps: []notes.Step{{Path: "main.go", L1: 3, L2: 5, Title: "Main", Body: "Starts."}, {Path: "main.go", L1: 7, L2: 7, Title: "Helper", Body: "Ends."}}}},
 	}}
-	p := threadPrompt(th, prior, "expand step 2", true, "", false, agents.ToolsNone)
+	p := threadPrompt(th, prior, "expand step 2", true, "", false)
 	for _, want := range []string{"- line main.go:4: Calls helper.", `(walkthrough shown, "Flow":`, "2. main.go:7 Helper: Ends."} {
 		if !strings.Contains(p, want) {
 			t.Fatalf("replay lacks %q:\n%s", want, p)

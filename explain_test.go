@@ -292,49 +292,6 @@ func TestExplainUsesItsOwnAgentAndModel(t *testing.T) {
 	}
 }
 
-func TestExplainOpencodeRunsAsReadOnlyAgent(t *testing.T) {
-	root := t.TempDir()
-	writeExplainSource(t, root, explainGoSource)
-	dir := t.TempDir()
-	body := "#!/bin/sh\nprintf '%s\\n' \"$@\" > opencode-args.txt\nprintf '%s' \"$OPENCODE_CONFIG_CONTENT\" > opencode-config.txt\nprintf 'ok\\n'\n"
-	if err := os.WriteFile(filepath.Join(dir, "opencode"), []byte(body), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
-	isolateSettings(t)
-	m, err := newAgentManager(root, "", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	ix := NewIndex(root)
-	ix.Build()
-	s := NewServer(ix, nil)
-	s.SetAgent(m)
-	explainSettings(t, map[string]any{"explain.agent": "opencode"})
-
-	_, res := agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "text": "helper"})
-	th := waitThreadIdle(t, s, res["thread"].(map[string]any)["id"].(string))
-	if th.Turns[0].Error != "" {
-		t.Fatal(th.Turns[0].Error)
-	}
-	args, _ := os.ReadFile(filepath.Join(root, "opencode-args.txt"))
-	if !strings.Contains(string(args), "--standalone\n--agent\nfaah-explain\n") {
-		t.Fatalf("args = %s", args)
-	}
-	var cfg struct {
-		Agent map[string]struct {
-			Permission map[string]string
-		}
-	}
-	data, _ := os.ReadFile(filepath.Join(root, "opencode-config.txt"))
-	if err := json.Unmarshal(data, &cfg); err != nil {
-		t.Fatalf("config %q: %v", data, err)
-	}
-	if p := cfg.Agent["faah-explain"].Permission; p["*"] != "deny" || p["read"] != "allow" || p["edit"] != "" {
-		t.Fatalf("permissions = %v", p)
-	}
-}
-
 func TestExplainAgentSettingYieldsToPinnedHarness(t *testing.T) {
 	root := t.TempDir()
 	writeExplainSource(t, root, explainGoSource)
@@ -434,16 +391,10 @@ func TestExplainPrepareOffAndBadInput(t *testing.T) {
 
 func TestExplainPromptNamesTheTools(t *testing.T) {
 	th := &thread{Kind: "explain", ExplainKind: explain.KindBlock}
-	if p := threadPrompt(th, nil, "Explain main.go:1-2", false, "", false, agents.ToolsMCP); !strings.Contains(p, "two tools, annotate and walkthrough") {
+	if p := threadPrompt(th, nil, "Explain main.go:1-2", false, "", false); !strings.Contains(p, "two tools, annotate and walkthrough") {
 		t.Fatalf("MCP prompt = %s", p)
 	}
-	if p := threadPrompt(th, nil, "Explain main.go:1-2", false, "", false, agents.ToolsTagged); !strings.Contains(p, "<faah:annotate>") {
-		t.Fatalf("tagged prompt = %s", p)
-	}
-	if p := threadPrompt(th, nil, "Explain main.go:1-2", false, "", false, agents.ToolsNone); strings.Contains(p, "annotate") {
-		t.Fatalf("no-tools prompt = %s", p)
-	}
-	if p := threadPrompt(&thread{}, nil, "hi", false, "", false, agents.ToolsMCP); strings.Contains(p, "annotate") {
+	if p := threadPrompt(&thread{}, nil, "hi", false, "", false); strings.Contains(p, "annotate") {
 		t.Fatal("only explanations are told about the tools")
 	}
 }

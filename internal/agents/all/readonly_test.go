@@ -36,7 +36,6 @@ func TestReadOnlyArgv(t *testing.T) {
 	}{
 		{"claude", []string{"claude", "--permission-mode", "acceptEdits", "-p", "{prompt}"}, []string{"claude", "--permission-mode", "plan", "-p", "{prompt}"}},
 		{"cursor-agent", []string{"cursor-agent", "--force", "-p", "{prompt}"}, []string{"cursor-agent", "--mode", "ask", "-p", "{prompt}"}},
-		{"opencode", []string{"opencode", "run", "-m", "x/y", "{prompt}"}, []string{"opencode", "run", "--standalone", "--agent", "faah-explain", "-m", "x/y", "{prompt}"}},
 	}
 	for _, c := range cases {
 		got, err := readOnly(c.name, c.in)
@@ -45,9 +44,8 @@ func TestReadOnlyArgv(t *testing.T) {
 		}
 	}
 	refused := map[string][]string{
-		"opencode": {"opencode", "{prompt}"},
-		"claude":   {"claude", "-p", "{prompt}"},
-		"harness":  {"/tmp/harness.sh", "{prompt}"},
+		"claude":  {"claude", "-p", "{prompt}"},
+		"harness": {"/tmp/harness.sh", "{prompt}"},
 	}
 	for name, argv := range refused {
 		if _, err := readOnly(name, argv); !errors.Is(err, agents.ErrNotReadOnly) {
@@ -70,7 +68,7 @@ func readOnly(name string, argv []string) ([]string, error) {
 }
 
 func TestCheckPlanUsesNativePolicy(t *testing.T) {
-	for _, name := range []string{"claude", "codex", "agy", "gemini"} {
+	for _, name := range []string{"claude", "codex", "agy", "gemini", "opencode"} {
 		if err := CheckPlan(name, []string{name, "-p", "{prompt}"}); err != nil {
 			t.Fatal(err)
 		}

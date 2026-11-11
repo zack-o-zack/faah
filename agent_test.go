@@ -14,7 +14,6 @@ import (
 	"testing"
 	"time"
 
-	"faah/internal/agents"
 	"github.com/px0-ai/harness"
 )
 
@@ -895,15 +894,15 @@ func TestCommitMessagePrompt(t *testing.T) {
 
 func TestThreadPrompt(t *testing.T) {
 	th := &thread{Path: "main.go", L1: 3, L2: 4, Snippet: "func main() {}"}
-	first := threadPrompt(th, nil, "why?", false, "", false, agents.ToolsNone)
+	first := threadPrompt(th, nil, "why?", false, "", false)
 	if !strings.Contains(first, "@main.go lines 3-4") || !strings.Contains(first, "func main() {}") || !strings.HasSuffix(first, "why?") {
 		t.Fatalf("first prompt = %q", first)
 	}
 	prior := []*threadTurn{{Prompt: "why?", Reply: "because", Changed: []string{"a.go"}}}
-	if got := threadPrompt(th, prior, "and now?", false, "", false, agents.ToolsNone); got != "and now?" {
+	if got := threadPrompt(th, prior, "and now?", false, "", false); got != "and now?" {
 		t.Fatalf("a live session should get the bare message, got %q", got)
 	}
-	replay := threadPrompt(th, prior, "and now?", true, "", false, agents.ToolsNone)
+	replay := threadPrompt(th, prior, "and now?", true, "", false)
 	for _, want := range []string{"@main.go", "User: why?", "Assistant: because", "a.go", "and now?"} {
 		if !strings.Contains(replay, want) {
 			t.Fatalf("replay prompt missing %q:\n%s", want, replay)
@@ -1147,15 +1146,15 @@ func TestThreadPromptCarriesPRScope(t *testing.T) {
 		t.Errorf("selection context wrong:\n%s", sel)
 	}
 
-	first := threadPrompt(th, nil, "what do you think about the PR?", false, whole, false, agents.ToolsNone)
+	first := threadPrompt(th, nil, "what do you think about the PR?", false, whole, false)
 	if !strings.Contains(first, "git diff 1234567890abcdef") || !strings.HasSuffix(first, "what do you think about the PR?") {
 		t.Errorf("first prompt should carry the PR context before the question:\n%s", first)
 	}
 	prior := []*threadTurn{{Prompt: "x", Reply: "y"}}
-	if got := threadPrompt(th, prior, "and now?", false, whole, false, agents.ToolsNone); got != "and now?" {
+	if got := threadPrompt(th, prior, "and now?", false, whole, false); got != "and now?" {
 		t.Errorf("follow-up turns stay bare when the scope is unchanged, got %q", got)
 	}
-	changed := threadPrompt(th, prior, "and now?", false, mine, true, agents.ToolsNone)
+	changed := threadPrompt(th, prior, "and now?", false, mine, true)
 	if !strings.Contains(changed, "changed what this conversation is about") || !strings.Contains(changed, "OWN changes") || !strings.HasSuffix(changed, "and now?") {
 		t.Errorf("a scope change should be announced with the new context:\n%s", changed)
 	}

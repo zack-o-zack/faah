@@ -17,6 +17,8 @@ const (
 
 // Open configures a native agent session.
 type Open struct {
+	// Key identifies the faah thread independently of the native session.
+	Key     string
 	Version string
 	Dir     string
 	Model   string

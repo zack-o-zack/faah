@@ -20,7 +20,7 @@ func List() []agents.Agent {
 		claude.New(),
 		codex.New(),
 		agy.New(),
-		percmd.Wrap(opencode.New()),
+		opencode.New(),
 		percmd.Wrap(cursor.New()),
 		gemini.New(),
 	}
@@ -34,14 +34,6 @@ func For(name string) agents.Agent {
 		}
 	}
 	return percmd.Wrap(generic.New(name))
-}
-
-// Channel returns the adapter’s tool transport.
-func Channel(a agents.Agent) agents.ToolChannel {
-	if p, ok := a.(*percmd.Agent); ok {
-		return p.Legacy.Caps().Tools
-	}
-	return agents.ToolsMCP
 }
 
 // CheckPlan checks whether the adapter can enforce a read-only turn.

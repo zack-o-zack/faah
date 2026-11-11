@@ -463,7 +463,7 @@ func (m *agentManager) run(ctx context.Context, cancel context.CancelFunc, job *
 	stderrStreamer := newLineStreamer(job.stderr, ui.Dim("│", os.Stdout), os.Stdout)
 
 	a := all.For(job.Harness)
-	session, err := a.Open(ctx, agents.Open{Version: version, Dir: m.root, Base: template, Mode: agents.ModeEdit, Stderr: stderrStreamer})
+	session, err := a.Open(ctx, agents.Open{Key: fmt.Sprintf("edit-%d", job.ID), Version: version, Dir: m.root, Base: template, Mode: agents.ModeEdit, Stderr: stderrStreamer})
 	if err == nil {
 		defer session.Close()
 		_, err = session.Prompt(ctx, prompt, &writerSink{Writer: stdoutStreamer})
@@ -1359,12 +1359,12 @@ func (tm *threadManager) SetScope(id, scope string) error {
 // threadPrompt composes what the harness is told for one turn. The anchor and
 // ground rules go in only when the harness has no memory of them: the first
 // turn, or a replay after a harness switch.
-func threadPrompt(t *thread, prior []*threadTurn, message string, replay bool, prCtx string, scopeChanged bool, tools agents.ToolChannel) string {
+func threadPrompt(t *thread, prior []*threadTurn, message string, replay bool, prCtx string, scopeChanged bool) string {
 	var b strings.Builder
 	if len(prior) == 0 || replay {
 		if t.Kind == "explain" {
 			b.WriteString(explain.Instructions(t.ExplainKind, t.ExplainReader))
-			b.WriteString(notes.Prompt(tools))
+			b.WriteString(notes.Prompt())
 		} else if t.Kind == "edit" || t.Kind == "batch" {
 			b.WriteString("Carry out the edit request below by editing files in place. ")
 			b.WriteString("Change only what it asks for; you may touch other files if the change needs it. ")
@@ -1533,7 +1533,6 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 	tm.mu.Unlock()
 
 	a := all.For(r.name)
-	channel := all.Channel(a)
 	mode := agents.ModeEdit
 	if explaining {
 		mode = agents.ModePlan
@@ -1546,7 +1545,7 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 	var openErr error
 	if liveSession == nil {
 		tok := tm.tools.tokens.Issue(toolScope{tid: r.tid})
-		o := agents.Open{Version: version, Dir: tm.root, Base: r.base, Env: r.env, Model: r.model, Mode: mode, Resume: sessionID, Tools: tm.tools.endpoint(tok), Stderr: stderr}
+		o := agents.Open{Key: r.tid, Version: version, Dir: tm.root, Base: r.base, Env: r.env, Model: r.model, Mode: mode, Resume: sessionID, Tools: tm.tools.endpoint(tok), Stderr: stderr}
 		var opened agents.Session
 		opened, openErr = a.Open(ctx, o)
 		if openErr != nil && sessionID != "" {
@@ -1588,7 +1587,7 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 			tm.mu.Unlock()
 		}
 	}
-	prompt := threadPrompt(t, r.prior, r.message, replay, prCtx, scopeChanged, channel)
+	prompt := threadPrompt(t, r.prior, r.message, replay, prCtx, scopeChanged)
 
 	if ui.Verbose {
 		ui.VerbosePrompt(0, r.name, prompt, os.Stdout)
@@ -1598,28 +1597,12 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 	beforeSHA := gitSnapshotWorktree(tm.root)
 	started := time.Now()
 	sink := &threadSink{tm: tm, tid: r.tid, turn: r.turn, began: started}
-	scope := toolScope{tid: r.tid}
-	var turnSink agents.Sink = sink
-	var tagged *notes.Tagged
-	if explaining && channel == agents.ToolsTagged {
-		read := notes.DiskReader(tm.root)
-		tagged = notes.NewTagged(sink, func(name string, args json.RawMessage) {
-			if _, err := notes.Apply(read, tm, scope, name, args); err != nil {
-				ui.Status("err", "explain", fmt.Sprintf("%s %s: %v", r.tid, name, err), 0, os.Stdout)
-			}
-		})
-		turnSink = tagged
-	}
 
 	var out agents.Outcome
 	err := openErr
 	if err == nil {
-		out, err = liveSession.session.Prompt(ctx, prompt, turnSink)
+		out, err = liveSession.session.Prompt(ctx, prompt, sink)
 	}
-	if tagged != nil {
-		tagged.Flush()
-	}
-
 	changed := changedSince(tm.root, before)
 	afterSHA := ""
 	if len(changed) > 0 && beforeSHA != "" {

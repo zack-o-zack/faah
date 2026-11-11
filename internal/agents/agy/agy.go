@@ -34,7 +34,7 @@ func (*Agent) Open(ctx context.Context, o agents.Open) (agents.Session, error) {
 	if workflowQuirk(strings.TrimSpace(string(b))) {
 		meta = map[string]any{"antigravity": map[string]any{"disabledTools": []string{"run_workflow"}}}
 	}
-	return acp.Open(ctx, o, argv, []string{"AGY_ACP_FORCE_FILE_STORAGE=1", "PYTHONUNBUFFERED=1"}, meta, false)
+	return acp.Open(ctx, o, argv, []string{"AGY_ACP_FORCE_FILE_STORAGE=1", "PYTHONUNBUFFERED=1"}, meta, true)
 }
 
 func workflowQuirk(version string) bool {
