@@ -28,6 +28,9 @@ export function setMenuHidden(panel, hidden) {
   prepareMenu(panel);
   panel.hidden = hidden;
   panel.setAttribute('aria-hidden', String(hidden));
+  const triggers = { 'lsp-menu': '#st-lsp', 'metrics-menu': '#st-metrics', 'pr-merge-menu': '#pr-merge-caret', 'wb-theme-menu': '#btn-theme' };
+  const trigger = triggers[panel.id] && document.querySelector(triggers[panel.id]);
+  trigger?.setAttribute('aria-expanded', String(!hidden));
   for (const item of panel.querySelectorAll('button')) {
     if (!item.hasAttribute('role')) item.setAttribute('role', 'menuitem');
     item.classList.remove('btn');

@@ -741,19 +741,13 @@ body.word-wrap .c { white-space: pre-wrap; word-break: break-word; overflow-wrap
   border-top: 1px solid var(--border); display: flex; gap: 10px; align-items: center;
 }
 #hovercard .foot b { color: var(--muted-foreground); font-weight: 600; }
-.toast-icon svg { display: block; }
+
 /* --gi/--mark-active are the app's existing green/amber semantics (diff gutters,
    LSP state dot, .hint .warn) -- reused here so success/warn track the active
    theme instead of a fixed colour that can clash with it (or with itself: --s is
    the syntax "string" token, not a status colour, and drifts theme to theme). */
-.toast-icon-ok {
-  background: color-mix(in srgb, var(--gi) 18%, transparent);
-  color: var(--gi);
-}
-.toast-icon-warn {
-  background: color-mix(in srgb, var(--mark-active) 18%, transparent);
-  color: var(--mark-active);
-}
+
+
 
 
 /* token colours: the code view, and fenced code in the Markdown preview */

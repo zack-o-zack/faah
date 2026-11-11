@@ -1,3 +1,4 @@
+import { toastMarkup } from './toast.js';
 // web/src/ui.js
 import { $, esc } from './state.js';
 
@@ -15,7 +16,7 @@ export function showToast(accentText, text, duration = 2200) {
   clearTimeout(toastTimer);
   clearTimeout(toastLeaveTimer);
 
-  toastEl.innerHTML = '<div class="toast" role="status" aria-hidden="false"><div class="toast-content"><section><h2>' + esc(accentText || '') + '</h2><p>' + esc(text) + '</p></section></div></div>';
+  toastEl.innerHTML = toastMarkup(accentText, text);
   toastEl.hidden = false;
   toastTimer = setTimeout(() => {
     toastEl.firstElementChild?.setAttribute('aria-hidden', 'true');
