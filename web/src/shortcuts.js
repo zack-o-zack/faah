@@ -114,6 +114,9 @@ export function initShortcuts() {
 
   addEventListener('keydown', e => {
     const mod = e[MOD];
+    const menuOpen = document.querySelector('[data-popover][aria-hidden="false"]');
+    if (menuOpen && ['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return;
+    if (menuOpen && e.key === 'Escape') { e.preventDefault(); return; }
 
     if (e.key === 'Escape') {
       if (e.defaultPrevented) return;

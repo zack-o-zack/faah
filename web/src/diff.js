@@ -1208,6 +1208,7 @@ export function initDiff() {
   if (menu) {
     for (const item of menu.querySelectorAll('button')) item.classList.remove('btn');
     const group = $('#diff-switch');
+    group.addEventListener('keydown', e => { if (e.key === 'Escape') menu.setAttribute('aria-hidden', 'true'); });
     group.addEventListener('pointerenter', () => menu.setAttribute('aria-hidden', 'false'));
     group.addEventListener('pointerleave', () => menu.setAttribute('aria-hidden', 'true'));
     group.addEventListener('focusin', () => menu.setAttribute('aria-hidden', 'false'));
