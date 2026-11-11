@@ -339,8 +339,8 @@ function selectTab(name) {
 
 /* ---------- browse ---------- */
 
-// Browse works like a file manager's list: a click selects, a double-click or
-// Enter goes into the folder, Backspace goes up, and Open acts on the
+// Browse works like a file manager's list: a click or Enter goes into a
+// folder, the arrows select one, Backspace goes up, and Open acts on the
 // selection, or on the folder being shown when nothing is selected.
 let dirEntries = [];
 let dirSel = -1;
@@ -362,7 +362,7 @@ function renderPath(path) {
 }
 
 function renderDirs() {
-  $('#wb-dirs').innerHTML = dirEntries.length ? dirEntries.map((e, i) => `<li role="option" id="wb-dir-${i}" data-i="${i}" aria-selected="${i === dirSel}" class="${e.name.startsWith('.') && i !== dirSel ? 'opacity-50 ' : ''}flex h-7 cursor-default select-none items-center gap-2 rounded-md px-2 text-sm hover:bg-accent/60 aria-selected:bg-primary aria-selected:text-primary-foreground">
+  $('#wb-dirs').innerHTML = dirEntries.length ? dirEntries.map((e, i) => `<li role="option" id="wb-dir-${i}" data-i="${i}" aria-selected="${i === dirSel}" class="${e.name.startsWith('.') && i !== dirSel ? 'opacity-50 ' : ''}flex h-7 cursor-pointer select-none items-center gap-2 rounded-md px-2 text-sm hover:bg-accent/60 aria-selected:bg-primary aria-selected:text-primary-foreground">
     <span class="icon-[lucide--folder] size-4 shrink-0 ${i === dirSel ? '' : 'text-muted-foreground'}" aria-hidden="true"></span>
     <span class="min-w-0 flex-1 truncate">${esc(e.name)}</span>
     ${e.git ? '<span class="text-xs opacity-70">git</span>' : ''}
@@ -461,11 +461,7 @@ $('#wb-recent').addEventListener('click', async e => {
 
 for (const k of document.querySelectorAll('kbd[data-keys]')) k.textContent = keyLabel(k.dataset.keys);
 const selectDir = i => { dirSel = i; renderDirs(); };
-$('#wb-dirs').addEventListener('mousedown', e => {
-  const row = e.target.closest('[data-i]');
-  if (row) selectDir(Number(row.dataset.i));
-});
-$('#wb-dirs').addEventListener('dblclick', e => {
+$('#wb-dirs').addEventListener('click', e => {
   const row = e.target.closest('[data-i]');
   if (row) browse(dirEntries[Number(row.dataset.i)].path);
 });
