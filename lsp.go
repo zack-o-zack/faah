@@ -1249,18 +1249,6 @@ func uriToPath(uri string) (string, error) {
 
 // ---------------------------------------------------------------- navigation
 
-// NavHit is one navigation result, shaped exactly like a search Match so the
-// UI renders LSP answers and regex answers with the same code.
-type NavHit struct {
-	Path string `json:"path"`
-	Line int    `json:"line"`
-	Pre  string `json:"pre"`
-	Mid  string `json:"mid"`
-	Post string `json:"post"`
-	Def  bool   `json:"def,omitempty"`
-	Ext  bool   `json:"ext,omitempty"` // outside the indexed tree, e.g. stdlib
-}
-
 // utf16ToByte converts a column measured in UTF-16 code units (what JavaScript
 // string indexes count) into a byte offset into the same line.
 func utf16ToByte(line string, u16 int) int {
@@ -1497,14 +1485,6 @@ func (m *lspManager) Symbols(ctx context.Context, abs, rel string) ([]symbols.Sy
 
 // ---------------------------------------------------------------- hover
 
-// HoverInfo is what the UI shows in the hover card: a syntax-highlighted
-// signature and whatever documentation the server attached to it.
-type HoverInfo struct {
-	Signature string `json:"signature"` // pre-highlighted HTML, one line per entry
-	Doc       string `json:"doc"`
-	Empty     bool   `json:"empty"`
-}
-
 // Hover asks the server what a position is, and renders the answer.
 func (m *lspManager) Hover(ctx context.Context, abs, rel string, line, col int) (*HoverInfo, error) {
 	c, err := m.client(ctx, rel)
@@ -1697,19 +1677,6 @@ func highlightSnippet(code, rel string) string {
 }
 
 // ---------------------------------------------------------------- call trails
-
-// CallNode is one function in a call trail.
-type CallNode struct {
-	Name     string `json:"name"`
-	Detail   string `json:"detail,omitempty"`
-	Kind     string `json:"kind"`
-	Path     string `json:"path"` // where the function is declared
-	Line     int    `json:"line"`
-	Ext      bool   `json:"ext,omitempty"`
-	SitePath string `json:"sitePath,omitempty"` // file holding the call expressions
-	Sites    []int  `json:"sites,omitempty"`    // lines of those calls, ascending
-	Item     string `json:"item"`               // CallHierarchyItem, returned as-is to expand
-}
 
 // lspCallItem represents the LSP wire format for CallHierarchyItem
 // defined in the Language Server Protocol specification.

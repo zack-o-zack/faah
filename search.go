@@ -19,18 +19,6 @@ import (
 	"faah/internal/symbols"
 )
 
-// Match carries the hit already split into the text before it, the matched
-// text, and the text after. Sending offsets instead would force the client to
-// reconcile Go byte indexes with UTF-16 string indexes, and would not survive
-// the snipping we do to keep long lines readable in a narrow panel.
-type Match struct {
-	Line int    `json:"line"` // 1-based
-	Pre  string `json:"pre"`
-	Mid  string `json:"mid"`
-	Post string `json:"post"`
-	Def  bool   `json:"def,omitempty"` // line looks like a declaration
-}
-
 const (
 	snipLead = 32  // start eliding once the match sits this far into the line
 	snipKeep = 16  // runes of lead-in kept when we do elide
@@ -94,12 +82,6 @@ func snip(line []byte, from, to int) Match {
 		post = ""
 	}
 	return Match{Pre: pre, Mid: mid, Post: strings.TrimRight(post, " \t")}
-}
-
-// FileMatches groups all search hits found within a single file.
-type FileMatches struct {
-	Path    string  `json:"path"`    // Workspace-relative path to the file
-	Matches []Match `json:"matches"` // List of snippet matches within this file
 }
 
 // SearchOpts specifies the configuration for a workspace text search query.
