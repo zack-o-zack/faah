@@ -7,9 +7,9 @@ import (
 	"strings"
 )
 
-// explainResolve finds a cited file, refusing anything outside the workspace,
+// Resolve finds a cited file, refusing anything outside the workspace,
 // including through a symlink.
-func explainResolve(root, rel string) (string, bool) {
+func Resolve(root, rel string) (string, bool) {
 	clean := filepath.Clean(filepath.FromSlash(rel))
 	if filepath.IsAbs(clean) || clean == ".." || strings.HasPrefix(clean, ".."+string(filepath.Separator)) {
 		return "", false
@@ -50,7 +50,7 @@ func ValidateRefs(root, reply string) map[string]Ref {
 			return l
 		}
 		var lines []string
-		if abs, ok := explainResolve(root, rel); ok {
+		if abs, ok := Resolve(root, rel); ok {
 			lines, _ = ReadLines(abs)
 		}
 		files[rel] = lines

@@ -20,8 +20,24 @@ var Verified = map[string]bool{"claude": true, "agy": true, "codex": true, "open
 
 // Caps says what a harness can do.
 type Caps struct {
-	Sessions     bool // remembers a conversation by session id, so a follow-up needs no replay
-	NamesSession bool // picks its own session id and reports it, instead of being given one
+	Sessions     bool        // remembers a conversation by session id, so a follow-up needs no replay
+	NamesSession bool        // picks its own session id and reports it, instead of being given one
+	Tools        ToolChannel // how the agent can call faah's tools
+}
+
+// ToolChannel is how an agent can call faah's tools.
+type ToolChannel int
+
+const (
+	ToolsNone   ToolChannel = iota
+	ToolsMCP                // MCP over HTTP, given in Turn.Tools
+	ToolsTagged             // tagged blocks in the reply, see internal/explain/notes
+)
+
+// ToolEndpoint is where an MCP agent reaches faah's tools for one turn.
+type ToolEndpoint struct {
+	URL   string
+	Token string
 }
 
 // Turn is one prompt for a harness to answer.
@@ -31,8 +47,9 @@ type Turn struct {
 	Env       []string // extra KEY=VALUE entries
 	Model     string
 	Prompt    string
-	SessionID string // "" when there is no session for this turn
-	Resume    bool   // the session is live: continue it instead of starting it
+	SessionID string        // "" when there is no session for this turn
+	Resume    bool          // the session is live: continue it instead of starting it
+	Tools     *ToolEndpoint // nil when the turn has no tools
 	Timeout   time.Duration
 	LogBytes  int
 	Stderr    io.Writer
