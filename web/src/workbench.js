@@ -413,7 +413,7 @@ const useFolder = path => (pendingPR ? open(pendingPR, path) : open(path));
 const PR_LINK = /\/(pull|pulls|merge_requests)\/\d+/;
 const FIELD_KINDS = {
   empty: { icon: 'icon-[lucide--search]', label: 'Open', ok: false },
-  pr: { icon: 'icon-[lucide--git-pull-request]', label: 'Review PR', ok: true },
+  pr: { icon: 'icon-[lucide--git-pull-request]', label: 'Open PR', ok: true },
   link: { icon: 'icon-[lucide--link]', label: 'Open', ok: false },
   dir: { icon: 'icon-[lucide--folder]', label: 'Open folder', ok: true },
 };
