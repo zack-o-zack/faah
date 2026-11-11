@@ -141,7 +141,7 @@ func setup(t *testing.T) (context.Context, agents.Open) {
 		shared.Unlock()
 	})
 	exe, _ := os.Executable()
-	return ctx, agents.Open{Base: []string{exe, "exec", "-p", "{prompt}", "--sandbox", "workspace-write"}, Dir: t.TempDir(), Model: "test-model", Version: "1.2.3", Env: []string{"FAAH_CODEX_HELPER=1", "FAAH_CODEX_LOG=" + filepath.Join(t.TempDir(), "wire")}, Tools: &agents.ToolEndpoint{URL: "http://localhost/api/mcp", Authorization: "Bearer secret"}}
+	return ctx, agents.Open{Base: []string{exe}, Dir: t.TempDir(), Model: "test-model", Version: "1.2.3", Env: []string{"FAAH_CODEX_HELPER=1", "FAAH_CODEX_LOG=" + filepath.Join(t.TempDir(), "wire")}, Tools: &agents.ToolEndpoint{URL: "http://localhost/api/mcp", Authorization: "Bearer secret"}}
 }
 
 func wire(t *testing.T, o agents.Open) []map[string]any {
@@ -418,14 +418,6 @@ func TestCodexIdleProcess(t *testing.T) {
 	defer resumed.Close()
 	if resumed.(*session).server == srv {
 		t.Fatal("idle server reused")
-	}
-}
-
-func TestCodexLaunchArgs(t *testing.T) {
-	got := launchArgs([]string{"codex", "--config", "feature=true", "exec", "--json", "--skip-git-repo-check", "-p", "{prompt}", "--sandbox=workspace-write"})
-	want := []string{"codex", "--config", "feature=true", "app-server"}
-	if !reflect.DeepEqual(got, want) {
-		t.Fatal(got)
 	}
 }
 

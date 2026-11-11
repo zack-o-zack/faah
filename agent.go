@@ -29,16 +29,9 @@ import (
 	"faah/internal/ui"
 )
 
-// Editing through a coding harness. faah never authors a change itself: it
-// composes an instruction anchored to a line range, hands it to a harness
-// already installed on this machine, and reloads whatever moved once that
-// harness exits. The harness edits; faah stays the reader that knows exactly
-// when to look again.
-//
-// Harnesses are discovered and executed using github.com/px0-ai/harness.
-// Discovery alone never enables editing: running a general-purpose agent
-// over a workspace is a decision the user makes once, and it is remembered
-// in the settings file rather than a flag.
+// Agents edit the workspace through native sessions. faah supplies instructions,
+// streams their progress, and reloads changed files when each turn ends. The
+// harness package provides discovery and model lists; adapters own execution.
 
 const (
 	agentTimeout  = harness.DefaultTimeout
@@ -1076,14 +1069,12 @@ type thread struct {
 	// "mine" (the reviewer's own changes on top of it) or "selection" (just the
 	// anchored code). ScopeSent is the scope the harness was last told, so a
 	// change of scope is announced once rather than every turn.
-	Scope          string        `json:"scope,omitempty"`
-	ScopeSent      string        `json:"scopeSent,omitempty"`
-	Created        int64         `json:"created"`
-	Updated        int64         `json:"updated"`
-	SessionID      string        `json:"sessionId,omitempty"`
-	SessionHarness string        `json:"sessionHarness,omitempty"` // harness that owns SessionID
-	SessionLive    bool          `json:"sessionLive,omitempty"`    // that harness has really started the session
-	Turns          []*threadTurn `json:"turns"`
+	Scope     string        `json:"scope,omitempty"`
+	ScopeSent string        `json:"scopeSent,omitempty"`
+	Created   int64         `json:"created"`
+	Updated   int64         `json:"updated"`
+	SessionID string        `json:"sessionId,omitempty"`
+	Turns     []*threadTurn `json:"turns"`
 	// An explanation (Kind "explain"). ExplainKey identifies the code it describes
 	// and EvidenceHash what surrounded that code; see explain.go. ExplainReader
 	// is the explain.reader text it was written for. The packet the harness
@@ -1364,7 +1355,7 @@ func (tm *threadManager) SetScope(id, scope string) error {
 
 // threadPrompt composes what the harness is told for one turn. The anchor and
 // ground rules go in only when the harness has no memory of them: the first
-// turn, or a replay after a harness switch.
+// turn, or recovery in a new native session.
 func threadPrompt(t *thread, prior []*threadTurn, message string, replay bool, prCtx string, scopeChanged bool) string {
 	var b strings.Builder
 	if len(prior) == 0 || replay {
@@ -1490,8 +1481,11 @@ func (tm *threadManager) Send(id, message string) (*thread, error) {
 	if live := tm.sessions[id]; live != nil && (live.name != name || live.model != model || live.mode != mode) {
 		tm.closeSessionLocked(id)
 	}
-	if t.SessionHarness != name || (len(t.Turns) > 0 && t.Turns[len(t.Turns)-1].Model != model) {
-		t.SessionID, t.SessionLive, t.SessionHarness = "", false, name
+	if len(t.Turns) > 0 {
+		last := t.Turns[len(t.Turns)-1]
+		if last.Harness != name || last.Model != model {
+			t.SessionID = ""
+		}
 	}
 	prior := make([]*threadTurn, 0, len(t.Turns))
 	for _, tr := range t.Turns {
@@ -1624,9 +1618,6 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 	if t := tm.threads[r.tid]; t != nil {
 		if t.SessionID == "" && out.SessionID != "" {
 			t.SessionID = out.SessionID
-		}
-		if out.Live {
-			t.SessionLive = true
 		}
 		r.turn.Running = false
 		r.turn.Ms = time.Since(started).Milliseconds()

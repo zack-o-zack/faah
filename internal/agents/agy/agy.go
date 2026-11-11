@@ -24,7 +24,14 @@ func (*Agent) Name() string { return "agy" }
 
 // Open starts or resumes a persistent conversation.
 func (*Agent) Open(ctx context.Context, o agents.Open) (agents.Session, error) {
-	argv := acp.Args(o.Base, "agy")
+	binary := "agy"
+	if len(o.Base) > 0 {
+		binary = o.Base[0]
+	}
+	argv := []string{binary, "acp"}
+	if len(o.Base) > 1 {
+		argv = append(argv, o.Base[1:]...)
+	}
 	versionCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	cmd := exec.CommandContext(versionCtx, argv[0], "--version")

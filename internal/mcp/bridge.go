@@ -137,7 +137,7 @@ func Bridge(ctx context.Context, input io.Reader, output io.Writer, endpoint, au
 			Method string          `json:"method"`
 		}
 		if !json.Valid(line) {
-			failure(nil, -32700, fmt.Errorf("Parse error"))
+			failure(nil, -32700, fmt.Errorf("parse error"))
 			continue
 		}
 		if json.Unmarshal(line, &f) != nil {
@@ -147,7 +147,7 @@ func Bridge(ctx context.Context, input io.Reader, output io.Writer, endpoint, au
 		// Queuing this request would deadlock negotiation on both sides.
 		if f.Method == "server/discover" {
 			if len(f.ID) > 0 {
-				failure(f.ID, -32601, fmt.Errorf("Method not found: server/discover"))
+				failure(f.ID, -32601, fmt.Errorf("method not found: server/discover"))
 			}
 			continue
 		}

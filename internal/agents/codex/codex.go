@@ -63,6 +63,7 @@ type rpcError struct {
 	Message string `json:"message"`
 }
 
+// Error returns the native protocol error message.
 func (e *rpcError) Error() string { return e.Message }
 
 type server struct {
@@ -102,23 +103,7 @@ func launchArgs(base []string) []string {
 	if len(base) == 0 {
 		base = []string{"codex"}
 	}
-	out := []string{base[0]}
-	for i := 1; i < len(base); i++ {
-		a := base[i]
-		switch a {
-		case "exec", "resume", "app-server", "{prompt}", "--json", "--full-auto", "--skip-git-repo-check", "--ephemeral", "--dangerously-bypass-approvals-and-sandbox":
-		case "-p", "--prompt", "--sandbox", "-s", "--ask-for-approval", "-a", "--model", "-m", "--output-last-message", "-o":
-			if i+1 < len(base) {
-				i++
-			}
-		default:
-			if strings.Contains(a, "{prompt}") || strings.HasPrefix(a, "--sandbox=") || strings.HasPrefix(a, "--model=") || strings.HasPrefix(a, "--prompt=") || strings.HasPrefix(a, "--ask-for-approval=") {
-				continue
-			}
-			out = append(out, a)
-		}
-	}
-	return append(out, "app-server")
+	return append(append([]string(nil), base...), "app-server")
 }
 
 func (s *server) send(v any) error {

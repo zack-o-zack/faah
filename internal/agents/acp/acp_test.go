@@ -318,7 +318,7 @@ func TestACPCrashAndCancel(t *testing.T) {
 				time.Sleep(time.Millisecond)
 			}
 			err = s.Interrupt(ctx)
-			want := "The agent did not finish cancelling. Its process was stopped."
+			want := "agent did not finish cancelling; its process was stopped"
 			if err == nil || err.Error() != want {
 				t.Fatal(err)
 			}
@@ -347,13 +347,6 @@ func TestACPContainment(t *testing.T) {
 	}
 	if !inside(dir, "new/sub/file") {
 		t.Fatal("new path refused")
-	}
-}
-
-func TestACPArgs(t *testing.T) {
-	got := Args([]string{"agy", "-p", "{prompt}", "--output-format", "stream-json", "--mode", "plan", "--conversation", "old", "--unknown", "--sandbox"}, "agy")
-	if !reflect.DeepEqual(got, []string{"agy", "acp", "--sandbox"}) {
-		t.Fatal(got)
 	}
 }
 

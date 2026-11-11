@@ -125,6 +125,7 @@ type readyWriter struct {
 	dst  io.Writer
 }
 
+// Write captures the server address while forwarding startup diagnostics.
 func (w *readyWriter) Write(b []byte) (int, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()

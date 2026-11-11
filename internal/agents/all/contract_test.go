@@ -23,8 +23,7 @@ func (s *sink) Text(t string, _ bool) { s.text = append(s.text, t) }
 func (s *sink) Step(t string)         { s.steps = append(s.steps, t) }
 func (s *sink) Result(t string)       { s.text = append(s.text, t) }
 
-// fixture is the output each harness's fake prints: for a stream-json
-// harness, a session, a tool step and some text. Anything else prints text.
+// fixture holds Claude control-protocol output for the native session test.
 var fixture = map[string][]string{
 	"claude": {`{"type":"assistant","session_id":"s1","message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"a.go"}},{"type":"text","text":"hello"}]}}`},
 }

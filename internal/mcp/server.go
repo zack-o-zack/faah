@@ -3,7 +3,6 @@ package mcp
 import (
 	"context"
 	"encoding/json"
-	"faah/internal/agents"
 	"io"
 	"mime"
 	"net"
@@ -11,6 +10,8 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+
+	"faah/internal/agents"
 )
 
 // Tool is one tool the server offers.
@@ -61,6 +62,7 @@ type response struct {
 	Error   *rpcError       `json:"error,omitempty"`
 }
 
+// ServeHTTP validates MCP credentials and serves the transport protocol.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	reject := func(code int, msg string) {

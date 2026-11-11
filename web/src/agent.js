@@ -11,7 +11,7 @@ import { emit } from './bus.js';
 
 /* faah does not author edits. Each box composes an instruction and the range it
    is anchored to, hands both to a coding harness on this machine, and reloads
-   whatever moved once that harness exits. Because faah dispatched the run it
+   whatever moved once the turn ends. Because faah dispatched the run it
    knows when the work ended, so nothing here watches the filesystem.
 
    Several edits can run at once, one box per range: two harnesses rewriting

@@ -78,7 +78,7 @@ func flag(argv []string, k, v string) []string {
 
 // Open configures a native agent session.
 func (*Agent) Open(ctx context.Context, o agents.Open) (agents.Session, error) {
-	argv := sessionBase(o.Base)
+	argv := append([]string(nil), o.Base...)
 	if len(argv) == 0 {
 		argv = []string{"claude"}
 	}
@@ -313,24 +313,3 @@ func (s *session) Interrupt(ctx context.Context) error {
 
 // Close releases the session and stops its process.
 func (s *session) Close() error { s.once.Do(func() { close(s.closed) }); return s.process.Close() }
-
-func sessionBase(base []string) []string {
-	if len(base) == 0 {
-		return nil
-	}
-	out := []string{base[0]}
-	for i := 1; i < len(base); i++ {
-		switch base[i] {
-		case "--permission-mode", "--model":
-			i++
-		case "-p", "--print":
-			if i+1 < len(base) && base[i+1] == "{prompt}" {
-				i++
-			}
-		case "{prompt}":
-		default:
-			out = append(out, base[i])
-		}
-	}
-	return out
-}

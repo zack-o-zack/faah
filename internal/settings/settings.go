@@ -546,7 +546,7 @@ func readSettingsLocked() Settings {
 		}
 	}
 	// Bi-directional bridge between models <-> agent.models
-	if s.Models == nil || len(s.Models) == 0 {
+	if len(s.Models) == 0 {
 		if am, ok := raw["agent.models"].(map[string]any); ok {
 			s.Models = make(map[string]string, len(am))
 			for k, v := range am {
@@ -670,7 +670,7 @@ func Write(s Settings) error {
 		delete(raw, "agent.harness")
 	}
 
-	if s.Models != nil && len(s.Models) > 0 {
+	if len(s.Models) > 0 {
 		raw["models"] = s.Models
 		raw["agent.models"] = s.Models
 	} else if s.Agent == "" {

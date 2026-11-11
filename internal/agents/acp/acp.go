@@ -30,6 +30,7 @@ type rpcError struct {
 	Message string `json:"message"`
 }
 
+// Error returns the native protocol error message.
 func (e *rpcError) Error() string { return e.Message }
 
 type session struct {
@@ -506,7 +507,7 @@ func (s *session) Interrupt(ctx context.Context) error {
 	case <-ctx.Done():
 	case <-timer.C:
 	}
-	err = errors.New("The agent did not finish cancelling. Its process was stopped.")
+	err = errors.New("agent did not finish cancelling; its process was stopped")
 	s.mu.Lock()
 	s.failure = err
 	s.mu.Unlock()

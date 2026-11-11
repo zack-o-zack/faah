@@ -10,7 +10,7 @@ import (
 // ErrNotReadOnly means an adapter cannot enforce Plan mode.
 var ErrNotReadOnly = errors.New("no read-only mode")
 
-// ToolEndpoint is where an MCP agent reaches faah's tools for one turn.
+// ToolEndpoint gives a native session access to faah's MCP tools.
 type ToolEndpoint struct {
 	URL           string
 	Authorization string
