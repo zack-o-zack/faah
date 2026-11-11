@@ -4,7 +4,7 @@ import { setMenuHidden } from './overlays.js';
 // its own into web/workbench.js by scripts/build-web.js. It shares the app's
 // theme and status-bar metrics modules and nothing else, so it stays small.
 // The server side is workbench.go and workbench_clone.go.
-import { $, esc } from './state.js';
+import { $, esc, keyLabel } from './state.js';
 import { listThemes, currentTheme, setTheme, getStoredTheme, chooseThemePreference } from './theme.js';
 import { showMetrics, initMetricsMenu } from './metricsview.js';
 
@@ -18,13 +18,16 @@ const req = async (path, body) => {
   return j;
 };
 
-const ICON_DIR = '<span class="icon-[lucide--folder] size-3.5 shrink-0" aria-hidden="true"></span>';
-const ICON_PR = '<span class="icon-[lucide--git-pull-request] size-3.5 shrink-0" aria-hidden="true"></span>';
+const ICON_DIR = '<span class="icon-[lucide--folder] size-4 shrink-0" aria-hidden="true"></span>';
+// Recent rows show this many before "Show all".
+const RECENT_SHOWN = 12;
 
 let state = { items: [], cwd: '', home: '', sep: '/' };
 let browsePath = '';
 let lastSig = '';
 let pendingPR = ''; // the PR URL waiting for its clone to be chosen
+let showAll = false;
+let tabBeforeClone = '';
 
 /* ---------- theme ---------- */
 
@@ -121,6 +124,7 @@ const msg = text => {
   const el = $('#wb-msg');
   el.textContent = text || '';
   el.hidden = !text;
+  $('#wb-target').setAttribute('aria-invalid', String(!!text));
 };
 
 const ago = ms => {
@@ -150,11 +154,12 @@ function attachComplete(input, list, onFolder) {
   const close = () => { list.hidden = true; items = []; sel = -1; input.setAttribute('aria-expanded', 'false'); };
   const render = () => {
     const prefix = (input.value.match(/[^/\\]*$/) || [''])[0];
-    list.innerHTML = items.map((e, i) => `<li class="item cursor-pointer aria-selected:bg-accent hover:bg-accent" role="option" data-i="${i}" aria-selected="${i === sel}">
+    list.innerHTML = items.map((e, i) => `<li class="item cursor-pointer aria-selected:bg-accent hover:bg-accent" data-size="xs" role="option" data-i="${i}" aria-selected="${i === sel}">
       <span class="inline-flex shrink-0 text-muted-foreground">${ICON_DIR}</span>
       <span class="shrink-0 [&_b]:text-primary-text"><b>${esc(e.name.slice(0, prefix.length))}</b>${esc(e.name.slice(prefix.length))}</span>
       ${e.git ? '<span class="badge" data-variant="secondary" data-control="wb-git">git</span>' : ''}
-      <span class="flex-1 min-w-0 truncate text-right text-muted-foreground">${esc(e.path)}</span></li>`).join('');
+      <span class="flex-1 min-w-0 truncate text-right font-mono text-xs text-muted-foreground">${esc(tildify(e.path))}</span></li>`).join('') +
+      (items.length ? '<li role="presentation" class="flex gap-3 border-t px-3 py-1.5 text-xs text-muted-foreground"><span><kbd class="kbd">Tab</kbd> complete</span><span><kbd class="kbd"><span class="icon-[lucide--arrow-up-down] size-3" aria-hidden="true"></span></kbd> choose</span><span><kbd class="kbd">Enter</kbd> open</span></li>' : '');
     list.hidden = !items.length;
     input.setAttribute('aria-expanded', String(!list.hidden));
     list.children[sel]?.scrollIntoView({ block: 'nearest' });
@@ -218,33 +223,51 @@ function attachComplete(input, list, onFolder) {
 // it, so plain links work, including Cmd/Ctrl-click into a new tab.
 function rowHtml(it) {
   const pr = it.kind === 'pr';
+  const s = it.state;
   const title = pr ? (it.title || `#${it.number}`) : it.title || it.path;
-  const sub = it.state === 'starting' && it.progress ? it.progress : pr ? `${it.repo}#${it.number}` : tildify(it.path);
-  const st = it.state === 'stopped' && !it.error ? '' :
-    `<span class="badge shrink-0" data-variant="${it.state === 'failed' ? 'destructive' : 'secondary'}" title="${esc(it.error || it.state)}">${esc(it.state === 'stopped' ? 'exited' : it.state)}</span>`;
-  return `<li><a class="item group min-w-0 hover:bg-accent" data-size="xs" href="${esc(it.href)}" data-id="${esc(it.id)}">
-    <span class="${pr ? 'inline-flex shrink-0 text-gi' : 'inline-flex shrink-0 text-muted-foreground'}">${pr ? ICON_PR : ICON_DIR}</span>
-    <span class="flex flex-1 min-w-0 flex-col"><span class="truncate">${esc(title)}</span><span class="truncate font-mono text-xs text-muted-foreground">${esc(sub)}</span></span>
-    ${st}
-    <span class="shrink-0 text-xs text-muted-foreground">${esc(ago(it.lastOpened))}</span>
-    <span class="flex shrink-0 gap-0.5">
-      <button type="button" data-act="pin" aria-pressed="${it.pinned}" title="${it.pinned ? 'Unpin' : 'Pin to top'}" aria-label="${it.pinned ? 'Unpin' : 'Pin'}" class="btn opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 aria-pressed:opacity-100" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--star] size-3.5 ${it.pinned ? 'text-warn' : ''}" aria-hidden="true"></span></button>
-      ${it.state === 'running' ? '<button type="button" data-act="stop" title="Stop this workspace" aria-label="Stop" class="btn" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--square] size-3 text-destructive" aria-hidden="true"></span></button>' : ''}
-      <button type="button" data-act="remove" title="Remove from the list" aria-label="Remove" class="btn opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--x] size-3.5" aria-hidden="true"></span></button>
-    </span>
+  const failed = s === 'failed';
+  const sub = s === 'starting' && it.progress ? it.progress : failed && it.error ? it.error : pr ? `${it.repo}#${it.number}` : tildify(it.path);
+  const tint = s === 'running' ? 'text-gi' : failed ? 'text-destructive' : 'text-muted-foreground';
+  const icon = s === 'starting'
+    ? '<span class="icon-[lucide--loader-circle] size-4 animate-spin text-muted-foreground" aria-hidden="true"></span>'
+    : `<span class="${pr ? 'icon-[lucide--git-pull-request]' : 'icon-[lucide--folder]'} size-4 ${tint}" aria-hidden="true"></span>`;
+  // Running reads from the green icon and the stop button; only trouble gets a badge.
+  const badge = failed ? `<span class="badge" data-variant="destructive" title="${esc(it.error || 'Failed')}">Failed</span>`
+    : s === 'stopped' && it.error ? `<span class="badge" data-variant="outline" title="${esc(it.error)}">Exited</span>` : '';
+  const act = (name, label, iconClass) => `<button type="button" data-act="${name}" title="${label}" aria-label="${label}" class="btn" data-variant="ghost" data-size="icon-xs"><span class="${iconClass}" aria-hidden="true"></span></button>`;
+  return `<li><a class="item group min-w-0 hover:bg-accent/60 focus-visible:bg-accent/60" data-size="sm" href="${esc(it.href)}" data-id="${esc(it.id)}">
+    <figure class="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted">${icon}</figure>
+    <section class="flex min-w-0 flex-1 flex-col">
+      <h3 class="flex min-w-0 items-center gap-1.5"><span class="truncate">${esc(title)}</span>${it.pinned ? '<span class="icon-[lucide--pin] size-3 shrink-0 text-muted-foreground" aria-label="Pinned"></span>' : ''}</h3>
+      <p class="truncate font-mono text-xs ${failed ? 'text-destructive' : 'text-muted-foreground'} [direction:rtl] text-left"><bdi>${esc(sub)}</bdi></p>
+    </section>
+    <aside class="flex shrink-0 items-center gap-2">
+      ${badge}
+      <span class="w-16 text-right text-xs tabular-nums text-muted-foreground group-hover:hidden group-focus-within:hidden max-[560px]:hidden">${esc(ago(it.lastOpened))}</span>
+      <span class="hidden w-16 justify-end gap-0.5 group-hover:flex group-focus-within:flex">
+        ${act('pin', it.pinned ? 'Unpin' : 'Pin to top', it.pinned ? 'icon-[lucide--pin-off] size-3.5' : 'icon-[lucide--pin] size-3.5')}
+        ${act('remove', 'Remove from the list', 'icon-[lucide--x] size-3.5')}
+      </span>
+      ${s === 'running' ? act('stop', 'Stop this workspace', 'icon-[lucide--square] size-3 text-destructive') : ''}
+    </aside>
   </a></li>`;
 }
 
 function renderRecent() {
   const pinned = state.items.filter(i => i.pinned);
   const rest = state.items.filter(i => !i.pinned);
+  const shown = showAll ? rest : rest.slice(0, Math.max(0, RECENT_SHOWN - pinned.length));
   let html = pinned.map(rowHtml).join('');
-  if (pinned.length && rest.length) html += '<li class="my-1 border-t" role="separator"></li>';
-  html += rest.map(rowHtml).join('');
+  if (pinned.length && shown.length) html += '<li class="my-1 border-t" role="separator"></li>';
+  html += shown.map(rowHtml).join('');
   $('#wb-recent').innerHTML = html;
+  const hiddenCount = rest.length - shown.length;
+  $('#wb-more').hidden = hiddenCount <= 0;
+  $('#wb-more').textContent = `Show all ${state.items.length}`;
   $('#wb-recent-empty').hidden = state.items.length > 0;
   const n = state.items.filter(i => i.state === 'running').length;
-  $('#st-running').textContent = n ? `${n} running` : '';
+  $('#st-running').innerHTML = n ? `<span class="size-1.5 rounded-full bg-gi"></span>${n} running` : '';
+  $('#st-running').title = n ? state.items.filter(i => i.state === 'running').map(i => i.title || i.path).join('\n') : '';
 }
 
 async function refresh() {
@@ -282,53 +305,123 @@ async function open(target, clone) {
 
 function askForClone(prURL, repo, managed) {
   pendingPR = prURL;
+  tabBeforeClone = currentTab();
+  selectTab('browse');
   $('#wb-clone-repo').textContent = repo;
   $('#wb-clone-dest').textContent = `into ${managed}, once; later pull requests reuse it`;
   $('#wb-clone-dest').title = managed;
   $('#wb-clone').hidden = false;
-  $('#wb-open-here').textContent = 'Use as clone';
-  document.body.classList.add('wb-clone-mode');
   $('#wb-clone-path').value = '';
   $('#wb-clone-path').focus();
+  browse(browsePath);
 }
 
 function cancelClone() {
+  if (!pendingPR) return;
   pendingPR = '';
   $('#wb-clone').hidden = true;
-  $('#wb-open-here').textContent = 'Open this folder';
-  document.body.classList.remove('wb-clone-mode');
+  if (tabBeforeClone) selectTab(tabBeforeClone);
+  browse(browsePath);
+}
+
+/* ---------- tabs ---------- */
+
+const TABS = ['recent', 'browse'];
+const currentTab = () => TABS.find(t => $('#wb-tab-' + t).getAttribute('aria-selected') === 'true');
+
+function selectTab(name) {
+  for (const t of TABS) {
+    const on = t === name;
+    $('#wb-tab-' + t).setAttribute('aria-selected', String(on));
+    $('#wb-tab-' + t).tabIndex = on ? 0 : -1;
+    $('#wb-panel-' + t).hidden = !on;
+  }
 }
 
 /* ---------- browse ---------- */
+
+// Browse works like a file manager's list: a click selects, a double-click or
+// Enter goes into the folder, Backspace goes up, and Open acts on the
+// selection, or on the folder being shown when nothing is selected.
+let dirEntries = [];
+let dirSel = -1;
+
+function renderPath(path) {
+  const home = state.home;
+  const inHome = home && (path === home || path.startsWith(home + state.sep));
+  const rest = (inHome ? path.slice(home.length) : path).split(state.sep).filter(Boolean);
+  let at = inHome ? home : '';
+  const crumbs = [{ name: inHome ? '~' : state.sep, path: inHome ? home : state.sep }];
+  for (const part of rest) {
+    at = at + state.sep + part;
+    crumbs.push({ name: part, path: at });
+  }
+  const el = $('#wb-path');
+  el.innerHTML = crumbs.map((c, i) => (i ? '<span class="icon-[lucide--chevron-right] size-3.5 shrink-0 text-muted-foreground" aria-hidden="true"></span>' : '') +
+    `<button type="button" data-path="${esc(c.path)}" class="btn shrink-0 ${i === crumbs.length - 1 ? 'text-foreground' : 'text-muted-foreground'}" data-variant="ghost" data-size="xs"${i === crumbs.length - 1 ? ' aria-current="location"' : ''}>${esc(c.name)}</button>`).join('');
+  el.scrollLeft = el.scrollWidth;
+}
+
+function renderDirs() {
+  $('#wb-dirs').innerHTML = dirEntries.length ? dirEntries.map((e, i) => `<li role="option" id="wb-dir-${i}" data-i="${i}" aria-selected="${i === dirSel}" class="flex h-7 cursor-default select-none items-center gap-2 rounded-md px-2 text-sm hover:bg-accent/60 aria-selected:bg-primary aria-selected:text-primary-foreground">
+    <span class="icon-[lucide--folder] size-4 shrink-0 ${i === dirSel ? '' : 'text-muted-foreground'}" aria-hidden="true"></span>
+    <span class="min-w-0 flex-1 truncate">${esc(e.name)}</span>
+    ${e.git ? '<span class="text-xs opacity-70">git</span>' : ''}
+  </li>`).join('') : '<li class="py-8 text-center text-sm text-muted-foreground">No folders here.</li>';
+  const sel = dirEntries[dirSel];
+  if (sel) $('#wb-dirs').setAttribute('aria-activedescendant', 'wb-dir-' + dirSel);
+  else $('#wb-dirs').removeAttribute('aria-activedescendant');
+  $('#wb-dir-' + dirSel)?.scrollIntoView({ block: 'nearest' });
+  const verb = pendingPR ? 'Use' : 'Open';
+  $('#wb-open-here').textContent = sel ? `${verb} ${sel.name}` : pendingPR ? 'Use this folder' : 'Open this folder';
+}
 
 async function browse(path) {
   const params = new URLSearchParams({ path });
   if ($('#wb-hidden').checked) params.set('hidden', '1');
   let r;
+  // The old list stays, dimmed, until the new one arrives.
+  $('#wb-dirs').classList.add('opacity-60');
   try {
     r = await req('api/wb/browse?' + params);
   } catch (e) {
     msg(e.message);
     return;
+  } finally {
+    $('#wb-dirs').classList.remove('opacity-60');
   }
+  // Going up keeps the folder you came from selected.
+  const from = browsePath;
   browsePath = r.path;
-  // rtl keeps the end of a long path visible; the bidi isolate keeps it reading left to right.
-  $('#wb-path').innerHTML = `<bdi>${esc(tildify(r.path))}</bdi>`;
-  $('#wb-path').title = r.path;
+  renderPath(r.path);
   $('#wb-up').disabled = !r.parent;
   $('#wb-up').dataset.path = r.parent || '';
-  $('#wb-dirs').innerHTML = r.entries.length ? r.entries.map(e => `<li><div class="item group min-w-0 cursor-pointer hover:bg-accent" data-size="xs" tabindex="0" data-path="${esc(e.path)}" title="Browse ${esc(e.name)}">
-    <span class="inline-flex shrink-0 text-muted-foreground">${ICON_DIR}</span>
-    <span class="flex flex-1 min-w-0 flex-col"><span class="truncate">${esc(e.name)}</span></span>
-    ${e.git ? '<span class="badge" data-variant="secondary" data-control="wb-git">git</span>' : ''}
-    <span class="flex shrink-0 gap-1"><button type="button" data-act="open" title="Open ${esc(e.name)}" class="btn opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100" data-variant="ghost" data-size="xs">${pendingPR ? 'Use' : 'Open'}</button></span>
-  </div></li>`).join('') : '<li class="empty p-4 text-muted-foreground">No folders here.</li>';
+  dirEntries = r.entries;
+  dirSel = dirEntries.findIndex(e => e.path === from);
+  renderDirs();
 }
 
 // Opening a folder, or, while a PR waits for its clone, choosing it as that clone.
 const useFolder = path => (pendingPR ? open(pendingPR, path) : open(path));
 
 /* ---------- wiring ---------- */
+
+// The field's icon says what it recognised: a pull request, a folder, or nothing yet.
+const kindIcon = v => (looksLikeURL(v) ? 'icon-[lucide--git-pull-request]' : v.trim() ? 'icon-[lucide--folder]' : 'icon-[lucide--search]');
+$('#wb-target').addEventListener('input', e => {
+  $('#wb-kind').className = kindIcon(e.target.value) + ' size-4';
+  msg('');
+});
+
+for (const t of TABS) $('#wb-tab-' + t).addEventListener('click', () => selectTab(t));
+$('#wb-tabs [role=tablist]').addEventListener('keydown', e => {
+  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+  const next = TABS[(TABS.indexOf(currentTab()) + 1) % TABS.length];
+  selectTab(next);
+  $('#wb-tab-' + next).focus();
+});
+$('#wb-go-browse').addEventListener('click', () => selectTab('browse'));
+$('#wb-more').addEventListener('click', () => { showAll = true; renderRecent(); });
 
 attachComplete($('#wb-target'), $('#wb-suggest'), path => browse(path));
 attachComplete($('#wb-clone-path'), $('#wb-clone-suggest'), path => browse(path));
@@ -347,7 +440,7 @@ $('#wb-clone-form').addEventListener('submit', e => {
 });
 $('#wb-clone-managed').addEventListener('click', () => pendingPR && open(pendingPR, 'managed'));
 $('#wb-clone-cancel').addEventListener('click', cancelClone);
-$('#wb-open-here').addEventListener('click', () => browsePath && useFolder(browsePath));
+$('#wb-open-here').addEventListener('click', () => useFolder(dirEntries[dirSel]?.path || browsePath));
 $('#wb-up').addEventListener('click', e => { const p = e.currentTarget.dataset.path; if (p) browse(p); });
 $('#wb-hidden').addEventListener('change', () => browse(browsePath));
 
@@ -367,16 +460,41 @@ $('#wb-recent').addEventListener('click', async e => {
   refresh();
 });
 
-const dirAction = (row, act) => (act === 'open' ? useFolder(row.dataset.path) : browse(row.dataset.path));
-$('#wb-dirs').addEventListener('click', e => {
-  const row = e.target.closest('[data-path]');
-  if (!row) return;
-  const btn = e.target.closest('button[data-act]');
-  dirAction(row, btn ? btn.dataset.act : 'browse');
+for (const k of document.querySelectorAll('kbd[data-keys]')) k.textContent = keyLabel(k.dataset.keys);
+const selectDir = i => { dirSel = i; renderDirs(); };
+$('#wb-dirs').addEventListener('mousedown', e => {
+  const row = e.target.closest('[data-i]');
+  if (row) selectDir(Number(row.dataset.i));
+});
+$('#wb-dirs').addEventListener('dblclick', e => {
+  const row = e.target.closest('[data-i]');
+  if (row) browse(dirEntries[Number(row.dataset.i)].path);
 });
 $('#wb-dirs').addEventListener('keydown', e => {
-  const row = e.target.closest('[data-path]');
-  if (row && e.key === 'Enter' && e.target === row) dirAction(row, (e.metaKey || e.ctrlKey) ? 'open' : 'browse');
+  const n = dirEntries.length;
+  if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && n && !e.metaKey) {
+    e.preventDefault();
+    selectDir(dirSel < 0 ? 0 : Math.min(n - 1, Math.max(0, dirSel + (e.key === 'ArrowDown' ? 1 : -1))));
+  } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+    e.preventDefault();
+    useFolder(dirEntries[dirSel]?.path || browsePath);
+  } else if ((e.key === 'Enter' || e.key === 'ArrowRight' || (e.metaKey && e.key === 'ArrowDown')) && dirEntries[dirSel]) {
+    e.preventDefault();
+    browse(dirEntries[dirSel].path);
+  } else if ((e.key === 'Backspace' || e.key === 'ArrowLeft' || (e.metaKey && e.key === 'ArrowUp')) && $('#wb-up').dataset.path) {
+    e.preventDefault();
+    browse($('#wb-up').dataset.path);
+  } else if (e.key === 'Escape' && dirSel >= 0) {
+    selectDir(-1);
+  } else if (e.key.length === 1 && /\S/.test(e.key) && !e.metaKey && !e.ctrlKey) {
+    // Typing a letter jumps to the first folder starting with it.
+    const i = dirEntries.findIndex(d => d.name.toLowerCase().startsWith(e.key.toLowerCase()));
+    if (i >= 0) selectDir(i);
+  }
+});
+$('#wb-path').addEventListener('click', e => {
+  const b = e.target.closest('button[data-path]');
+  if (b) browse(b.dataset.path);
 });
 
 document.addEventListener('keydown', e => {

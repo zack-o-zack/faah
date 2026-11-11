@@ -17,7 +17,7 @@ let lastMetrics = null;
 let onMenuOpen = null;
 
 const row = (label, val) => `
-      <span data-ui="metrics-label" class="text-muted-foreground">${esc(label)}</span>
+      <span data-ui="metrics-label" class="min-w-0 truncate text-muted-foreground" title="${esc(label)}">${esc(label)}</span>
       <span data-ui="metrics-val" class="text-right tabular-nums">${val}</span>`;
 
 // The two numbers people open this for, large; the rest stays small beneath them.
@@ -83,11 +83,6 @@ export function showMetrics(m) {
   const lspEl = $('#st-lspmem');
   if (lspWrap) lspWrap.hidden = !m.lspEnabled;
   if (lspEl && m.lspEnabled) lspEl.textContent = fmtBytes(m.lspMemBytes || 0);
-  const contEl = $('#st-metrics');
-  if (contEl) {
-    contEl.title = 'CPU ' + fmtCpu(m) + ' · RAM ' + fmtBytes(m.rssBytes || 0) +
-      (m.lspEnabled ? ' · LSP ' + fmtBytes(m.lspMemBytes || 0) : '');
-  }
   const menuEl = $('#metrics-menu');
   if (menuEl && !menuEl.hidden) {
     renderMetricsMenu(m);
