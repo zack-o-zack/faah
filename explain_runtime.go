@@ -167,6 +167,7 @@ func (s *Server) handleExplainPrepare(w http.ResponseWriter, r *http.Request) {
 	if !localPost(w, r) || !s.threadsOrFail(w) {
 		return
 	}
+	go s.threads.warmExplain() // a selection is the first sign an explanation may follow
 	if cfg := settings.Read(); cfg.ExplainPrefetch != nil && !*cfg.ExplainPrefetch {
 		writeJSON(w, map[string]any{"prepared": false})
 		return

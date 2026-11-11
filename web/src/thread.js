@@ -517,7 +517,7 @@ function thrTurnHtml(turn) {
   let h = '<div class="thr-msg thr-user"><div class="thr-who">You</div><div class="thr-body">' + thrMd(turn.prompt) + '</div></div>';
   h += '<div class="thr-msg thr-agent" data-turn="' + turn.id + '"><div class="thr-who">' + esc(turn.harness || 'agent') +
     (turn.model ? ' · ' + esc(turn.model) : '') +
-    (turn.running ? ' · <span class="thr-live">working…</span>' : turn.ms ? ' · <span' + (turn.firstMs ? ' title="First words after ' + thrDur(turn.firstMs) + '"' : '') + '>' + thrDur(turn.ms) + '</span>' : '') + '</div>';
+    (turn.running ? ' · <span class="thr-live">working…</span>' : turn.ms ? ' · <span' + (turn.firstMs ? ' title="First words after ' + thrDur(turn.firstMs) + (turn.warm ? ', agent started ahead' : '') + '"' : '') + '>' + thrDur(turn.ms) + '</span>' : '') + '</div>';
   if (turn.tools && turn.tools.length) {
     h += '<details class="thr-steps"' + (turn.running ? ' open' : '') + '><summary>' + turn.tools.length + (turn.tools.length === 1 ? ' step' : ' steps') + '</summary>' +
       '<div class="thr-step-list">' + turn.tools.map(x => '<div>' + esc(x) + '</div>').join('') + '</div></details>';

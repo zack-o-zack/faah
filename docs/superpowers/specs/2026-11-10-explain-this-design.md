@@ -272,7 +272,8 @@ The current version is the MVP. These items come next. Their order is not decide
    - Done: `explain.agent` and `explain.model` settings, first-words timing, a benchmark, and background evidence preparation on selection.
    - Benchmark on this repository, first words then total: `claude` with haiku or sonnet about 7 to 8 seconds and 8 to 9 seconds; `agy` default 49 to 63 seconds and 52 to 67 seconds. Evidence gathering took 0.1 to 0.6 seconds.
    - Decided against: per-harness effort flags, and prompt limits on reading. Correctness comes before speed.
-   - Still open: a kept-alive agent process, the only way left to cut per-run startup.
+   - Done: warm-up. One `claude` or `agy` process is started ahead and waits for the prompt on stdin (`explain.warmup`). Measured on a small fixture, click to done: `claude` haiku 6.8 and 12.3 seconds cold, 5.7 and 11.5 warm; `agy` default 47 and 67 seconds cold, 34 and 39 warm.
+   - Not done: a warm process for follow-up turns, which resume a session and need a different command.
 2. **Reader context.** Let the reader give the agent specific context, for example "please explain Go-related features in depth, I have no Go experience".
 3. **Other displays.** Explore generative UI and other ways to display code information.
 4. **Walkthroughs with nested threads.** Add step-by-step walkthroughs of a flow, a diff, or a call chain. Give each stage a nested thread, similar to Slack, so a reader can explore one stage's code in depth without filling the main thread with questions.
