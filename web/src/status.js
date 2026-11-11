@@ -68,7 +68,7 @@ export function updateStatus() {
     }
     const menuItems = dsw.querySelectorAll('[data-control~=diff-menu-item]');
     for (const item of menuItems) {
-      setPressed(item, item.dataset.diffOpt === currentLayout);
+      item.setAttribute('aria-checked', String(item.dataset.diffOpt === currentLayout));
     }
   }
 

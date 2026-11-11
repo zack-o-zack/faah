@@ -685,7 +685,7 @@ export function showVimHelp() {
 
   modal.innerHTML = '<div class="sm:max-w-4xl overflow-auto">' +
     '<header class="flex-row! items-center justify-between">' +
-    '<div class="vim-help-title"><h2>Vim Keybindings</h2><span class="help-version">Modal Navigation</span></div>' +
+    '<h2>Vim Keybindings</h2><span class="help-version">Modal Navigation</span>' +
     '<div class="vim-toggle-row">' +
     '<label class="label vim-switch-label">' +
     '<input type="checkbox" id="vim-toggle-input" ' + isChecked + ' class="input">' +

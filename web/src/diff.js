@@ -1208,11 +1208,12 @@ export function initDiff() {
   if (menu) {
     for (const item of menu.querySelectorAll('button')) item.classList.remove('btn');
     const group = $('#diff-switch');
-    group.addEventListener('keydown', e => { if (e.key === 'Escape') menu.setAttribute('aria-hidden', 'true'); });
-    group.addEventListener('pointerenter', () => menu.setAttribute('aria-hidden', 'false'));
-    group.addEventListener('pointerleave', () => menu.setAttribute('aria-hidden', 'true'));
-    group.addEventListener('focusin', () => menu.setAttribute('aria-hidden', 'false'));
-    group.addEventListener('focusout', e => { if (!group.contains(e.relatedTarget)) menu.setAttribute('aria-hidden', 'true'); });
+    const showMenu = open => { menu.setAttribute('aria-hidden', String(!open)); $('#diff-btn')?.setAttribute('aria-expanded', String(open)); };
+    group.addEventListener('keydown', e => { if (e.key === 'Escape') showMenu(false); });
+    group.addEventListener('pointerenter', () => showMenu(true));
+    group.addEventListener('pointerleave', () => showMenu(false));
+    group.addEventListener('focusin', () => showMenu(true));
+    group.addEventListener('focusout', e => { if (!group.contains(e.relatedTarget)) showMenu(false); });
     menu.addEventListener('click', e => {
       const item = e.target.closest('[data-diff-opt]');
       if (!item) return;

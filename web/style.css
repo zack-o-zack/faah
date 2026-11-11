@@ -584,10 +584,7 @@ body.threads-hidden #threads-side, body.threads-hidden #threads-resizer { displa
 
 
 
-.diff-item-check {
-  width: 12px; font-size: var(--t-11); flex: none; text-align: center;
-  color: var(--primary); visibility: hidden;
-}
+
 
 .diff-item-content { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .diff-item-title { font-weight: 600; font-size: var(--t-11-5); color: var(--foreground); }
@@ -712,7 +709,7 @@ body.word-wrap .c { white-space: pre-wrap; word-break: break-word; overflow-wrap
 .diff-row-flash {
   animation: diffFlash 1.2s ease-out;
 }
-@keyframes hcin { from { opacity: 0; transform: translateY(-2px); } }
+
 #hovercard .sig {
   font: var(--fs)/1.55 var(--mono); white-space: pre-wrap; word-break: break-word;
   padding: 9px 12px; background: var(--background); border-bottom: 1px solid var(--border);
@@ -1413,8 +1410,8 @@ body.vim-normal-caret #caret {
   width: var(--cw, 8.5px) !important;
   opacity: 0.65;
 }
-.vim-help-title h2 { font-size: 1.5em; font-weight: bold; margin-block: .83em; }
-.vim-help-title { display: flex; align-items: baseline; gap: 8px; }
+
+
 .vim-toggle-row { display: flex; align-items: center; gap: 14px; }
 .vim-switch-label {
   display: inline-flex; align-items: center; gap: 8px;
@@ -3204,5 +3201,3 @@ body.in-review-mode .review-view {
 .review-config-del:hover {
   color: var(--red, #f85149);
 }
-
-
