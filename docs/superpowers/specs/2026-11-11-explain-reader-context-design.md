@@ -1,7 +1,7 @@
 # Explain Reader Context: Design
 
 Date: 2026-11-11
-Status: Approved design, awaiting spec review
+Status: Implemented
 
 Backlog item 2 of [Explain This](2026-11-10-explain-this-design.md).
 

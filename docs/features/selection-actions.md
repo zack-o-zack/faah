@@ -69,7 +69,7 @@ faah automatically normalizes diff selections:
 | **Find Usages** | `Alt+U` | Right-Click | `[Find Usages]` | Finds references across workspace |
 | **Edit with Agent** | `Alt+E` | Right-Click | `[Edit Agent]` | Opens agent edit composer |
 | **Start Thread** | `Alt+T` | Right-Click | `[Thread]` | Opens a long-running conversation anchored to the selection |
-| **Explain** | `Alt+X` | Right-Click | `[Explain]` | Explains the selected symbol or code in one paragraph, read-only (see [Threads](threads.md)) |
+| **Explain** | `Alt+X` | Right-Click | `[Explain]` | Explains the selected symbol or code, read-only (see [Threads](threads.md)) |
 
 ### Line Actions
 

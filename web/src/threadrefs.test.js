@@ -41,4 +41,5 @@ describe('explainEvidenceLine', () => {
 test('explainStaleLabel', () => {
   expect(explainStaleLabel('callers')).toBe('Callers changed');
   expect(explainStaleLabel('references')).toBe('References changed');
+  expect(explainStaleLabel('reader')).toBe('Written for a different reader');
 });

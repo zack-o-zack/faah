@@ -21,6 +21,14 @@ import (
 // change under it without the selection's own file changing.
 const explainPreparedTTL = 30 * time.Second
 
+// explainReader is the explain.reader setting: who is reading, in their words.
+func explainReader() string {
+	if cfg := settings.Read(); cfg.ExplainReader != nil {
+		return strings.TrimSpace(*cfg.ExplainReader)
+	}
+	return ""
+}
+
 // explainHarness picks what runs an explanation: the explain.agent and
 // explain.model settings when set, otherwise the harness selected for editing.
 // A harness pinned with -agent is fixed for the run and wins over both.

@@ -47,6 +47,7 @@ type Settings struct {
 	ExplainModel                *string  `json:"explain.model,omitempty"`
 	ExplainPrefetch             *bool    `json:"explain.prefetch,omitempty"`
 	ExplainWarmup               *bool    `json:"explain.warmup,omitempty"`
+	ExplainReader               *string  `json:"explain.reader,omitempty"`
 }
 
 var settingsMu sync.Mutex
@@ -463,6 +464,14 @@ var Schema = []SchemaItem{
 		Category:    "Explain",
 		Type:        "boolean",
 		Default:     true,
+	},
+	{
+		Key:         "explain.reader",
+		Title:       "About You",
+		Description: "Added to the explain agent's prompt to describe the reader, for example \"I'm new to Go\".",
+		Category:    "Explain",
+		Type:        "string",
+		Default:     "",
 	},
 	{
 		Key:         "tips.enabled",

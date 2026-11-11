@@ -34,6 +34,7 @@ func explainTurnOK(t *thread) bool {
 
 // explain opens the explanation matching this evidence, or starts a new one.
 func (tm *threadManager) explain(target explainTarget, req explainRequest, ev explainEvidence) (*explainResult, error) {
+	reader := explainReader()
 	tm.mu.Lock()
 	for _, t := range tm.threads {
 		if t.Kind != "explain" || t.ExplainKey != ev.Key {
@@ -42,6 +43,9 @@ func (tm *threadManager) explain(target explainTarget, req explainRequest, ev ex
 		if t.running() || (!req.Force && explainTurnOK(t)) {
 			res := &explainResult{Thread: cloneThread(t), Cached: true}
 			res.StaleReason = explainStaleReason(t.EvidenceHash, ev.Hash)
+			if t.ExplainReader != reader {
+				res.StaleReason = "reader"
+			}
 			res.Stale = res.StaleReason != ""
 			tm.mu.Unlock()
 			return res, nil
@@ -57,7 +61,7 @@ func (tm *threadManager) explain(target explainTarget, req explainRequest, ev ex
 		ID: newThreadID(), Kind: "explain", Title: threadTitle(title),
 		Path: target.Rel, L1: target.L1, L2: target.L2, Snippet: target.Text,
 		Created: now, Updated: now,
-		ExplainKey: ev.Key, ExplainKind: ev.Kind, EvidenceHash: ev.Hash,
+		ExplainKey: ev.Key, ExplainKind: ev.Kind, ExplainReader: reader, EvidenceHash: ev.Hash,
 		Evidence: &summary, ExplainReq: &stored, packet: ev.Packet,
 	}
 	tm.threads[t.ID] = t

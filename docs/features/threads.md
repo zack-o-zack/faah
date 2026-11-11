@@ -52,11 +52,13 @@ Select code and press `Alt+X`, click **Explain** in the selection bar, or right-
 - **One identifier** explains that symbol: what it is, why it exists, and who uses it. A local variable is explained within its function.
 - **Anything else, up to 400 lines,** explains what the code does, its inputs, and its effects.
 
-The answer is one paragraph in the thread panel, and you can ask follow-up questions below it. A line under the answer shows its evidence, for example `gopls · definition · 14 references in 5 files · 3 callers`. `text match` means no language server could resolve the code, so the evidence is weaker.
+The answer appears in the thread panel, and you can ask follow-up questions below it. A line under the answer shows its evidence, for example `gopls · definition · 14 references in 5 files · 3 callers`. `text match` means no language server could resolve the code, so the evidence is weaker.
 
 References to files, lines, and named symbols are links. faah checks each one when the answer finishes, and anything it cannot confirm stays plain text.
 
-Explaining the same code again reopens the earlier conversation, even if the code moved in the file. When the code changes, faah writes a new explanation. When only its callers or references change, the old one opens with a **Refresh** action. **Re-explain** always writes a new one.
+Explaining the same code again reopens the earlier conversation, even if the code moved in the file. When the code changes, faah writes a new explanation. When only its callers or references change, or you changed `explain.reader` since it was written, the old one opens with a **Refresh** action. **Re-explain** always writes a new one.
+
+`explain.reader` is added to the explain agent's prompt to describe the reader, for example `I'm new to Go`.
 
 Explanations can run on their own harness and model: claude, agy, codex or opencode. Set `explain.agent` and `explain.model` in settings, for example `claude` and `haiku`; left empty, Explain uses the harness selected for editing. When you select code, faah prepares the evidence in the background so Explain starts sooner. Turn that off with `explain.prefetch`. With claude or agy, faah also keeps one agent process started and waiting, which skips most of its start-up time: about 1 second for claude and 10 for agy. The process is stopped after 10 minutes unused. Turn that off with `explain.warmup`.
 

@@ -279,6 +279,7 @@ The current version is the MVP. These items come next. Their order is not decide
    - Done: warm-up. One `claude` or `agy` process is started ahead and waits for the prompt on stdin (`explain.warmup`). Measured on a small fixture, click to done: `claude` haiku 6.8 and 12.3 seconds cold, 5.7 and 11.5 warm; `agy` default 47 and 67 seconds cold, 34 and 39 warm.
    - Not done: a warm process for follow-up turns, which resume a session and need a different command.
 2. **Reader context.** Let the reader give the agent specific context, for example "please explain Go-related features in depth, I have no Go experience".
+   - Done: the `explain.reader` setting, and no length or format limit in the prompt. See [the reader context design](2026-11-11-explain-reader-context-design.md).
 3. **Other displays.** Explore generative UI and other ways to display code information.
 4. **Walkthroughs with nested threads.** Add step-by-step walkthroughs of a flow, a diff, or a call chain. Give each stage a nested thread, similar to Slack, so a reader can explore one stage's code in depth without filling the main thread with questions.
 5. **IDE context as harness tools.** Give the harness live access to IDE context. Compare fast delivery options first, and do not assume MCP.

@@ -1083,14 +1083,16 @@ type thread struct {
 	SessionLive    bool          `json:"sessionLive,omitempty"`    // that harness has really started the session
 	Turns          []*threadTurn `json:"turns"`
 	// An explanation (Kind "explain"). ExplainKey identifies the code it describes
-	// and EvidenceHash what surrounded that code; see explain.go. The packet the
-	// harness reads is kept beside the store and loaded here for a turn.
-	ExplainKey   string          `json:"explainKey,omitempty"`
-	ExplainKind  string          `json:"explainKind,omitempty"`
-	EvidenceHash string          `json:"evidenceHash,omitempty"`
-	Evidence     *explainSummary `json:"evidence,omitempty"`
-	ExplainReq   *explainRequest `json:"explainReq,omitempty"`
-	packet       string
+	// and EvidenceHash what surrounded that code; see explain.go. ExplainReader
+	// is the explain.reader text it was written for. The packet the harness
+	// reads is kept beside the store and loaded here for a turn.
+	ExplainKey    string          `json:"explainKey,omitempty"`
+	ExplainKind   string          `json:"explainKind,omitempty"`
+	ExplainReader string          `json:"explainReader,omitempty"`
+	EvidenceHash  string          `json:"evidenceHash,omitempty"`
+	Evidence      *explainSummary `json:"evidence,omitempty"`
+	ExplainReq    *explainRequest `json:"explainReq,omitempty"`
+	packet        string
 }
 
 type threadSummary struct {
@@ -1408,7 +1410,7 @@ func threadPrompt(t *thread, prior []*threadTurn, message string, replay bool, p
 	var b strings.Builder
 	if len(prior) == 0 || replay {
 		if t.Kind == "explain" {
-			b.WriteString(explainInstructions(t.ExplainKind))
+			b.WriteString(explainInstructions(t.ExplainKind, t.ExplainReader))
 		} else if t.Kind == "edit" || t.Kind == "batch" {
 			b.WriteString("Carry out the edit request below by editing files in place. ")
 			b.WriteString("Change only what it asks for; you may touch other files if the change needs it. ")
