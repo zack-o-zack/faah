@@ -1,3 +1,4 @@
+import { setMenuHidden } from './overlays.js';
 // web/src/tabs.js
 import { $, esc, S, doc_, api, apiPost, LH, CHUNK, withKeys } from './state.js';
 import { emit } from './bus.js';
@@ -24,7 +25,7 @@ let tabMenu = null;
 let tabMenuIndex = -1;
 
 function closeTabMenu() {
-  if (tabMenu) tabMenu.hidden = true;
+  if (tabMenu) setMenuHidden(tabMenu, true);
   tabMenuIndex = -1;
 }
 
@@ -64,7 +65,7 @@ function openTabMenu(index, x, y) {
     tabMenu.append(button);
   }
   tabMenuIndex = index;
-  tabMenu.hidden = false;
+  setMenuHidden(tabMenu, false);
   const w = tabMenu.offsetWidth, h = tabMenu.offsetHeight;
   tabMenu.style.left = Math.max(4, Math.min(x, innerWidth - w - 4)) + 'px';
   tabMenu.style.top = Math.max(4, Math.min(y, innerHeight - h - 4)) + 'px';
@@ -603,7 +604,7 @@ export function initTabs() {
   tabMenu = document.createElement('div');
   tabMenu.id = 'tab-menu';
   tabMenu.setAttribute('role', 'menu');
-  tabMenu.hidden = true;
+  setMenuHidden(tabMenu, true);
   document.body.append(tabMenu);
   tabMenu.addEventListener('click', e => {
     const button = e.target.closest('[data-tab-action]');

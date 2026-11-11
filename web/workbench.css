@@ -83,16 +83,6 @@
   .wb-keys { display: none; }
 }
 
-/* Theme picker, opened from the palette button; placed like #metrics-menu. */
-.wb-menu {
-  position: fixed; z-index: 70; min-width: 200px; max-height: 60vh; overflow: auto;
-  list-style: none; margin: 0; padding: 4px 0;
-  background: var(--popover); border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--shadow);
-}
-.wb-menu li { display: flex; align-items: center; gap: 10px; padding: 4px 12px; cursor: pointer; font: var(--t-12) var(--ui); color: var(--foreground); }
-.wb-menu li[aria-selected="true"] { background: var(--accent); }
-.wb-menu li .wb-faint { margin-left: auto; font-size: var(--t-11); }
-
 /* Holding page. */
 .wb-holding { max-width: 640px; margin: 18vh auto 0; padding: 0 16px; }
 .wb-holding .empty-logo { justify-content: flex-start; margin-bottom: 20px; }

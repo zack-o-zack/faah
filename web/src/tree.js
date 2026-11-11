@@ -1,3 +1,4 @@
+import { setMenuHidden } from './overlays.js';
 import { setPressed } from './controls.js';
 // web/src/tree.js
 import { $, $$, esc, api, apiPost, apiPostJson, S } from './state.js';
@@ -66,10 +67,11 @@ export async function drawTree(dir, container, depth, isCurrent) {
     const isStaged = !!(showTick && c.staged);
     const isPartial = isStaged && !!c.partial;
     const sc = (isStaged ? ' is-staged' : '') + (isFileViewed(c.path) ? ' file-viewed' : '');
-    const tick = showTick ? '<button type="button" data-partial="' + isPartial + '" aria-label="Stage file" data-stage="' + esc(c.path) + '" aria-pressed="' + (isStaged ? 'true' : 'false') + '" title="' + stageTickTitle(isStaged, isPartial) + '" class="btn size-[13px]! shrink-0 rounded-[4px]! p-0! ml-1 text-10! border-input! aria-pressed:bg-primary! aria-pressed:border-primary! aria-pressed:text-primary-foreground! data-[partial=true]:bg-transparent! data-[partial=true]:border-destructive! data-[partial=true]:text-destructive!" data-size="icon-xs" data-variant="' + (isStaged ? 'secondary' : 'outline') + '">' + (isPartial ? '!' : isStaged ? '✓' : '') + '</button>' : '';
+    const tick = showTick ? '<input type="checkbox" class="input size-[13px] shrink-0 ml-1" data-partial="' + isPartial + '" aria-label="Stage file" data-stage="' + esc(c.path) + '" title="' + stageTickTitle(isStaged, isPartial) + '"' + (isStaged ? ' checked' : '') + '>' : '';
     return '<div class="tr group file' + ig + gc + yc + sc + '" data-file="' + esc(c.path) + '"' + (c.status ? ' data-st="' + esc(c.status) + '"' : '') + (c.yourStatus ? ' data-yst="' + esc(c.yourStatus) + '"' : '') + ' style="padding-left:' + (pad + 12) + 'px" title="Open ' + esc(c.path) + note + '">' +
       '<span class="ic" data-t="' + fileKind(c.name) + '"></span><span class="nm">' + esc(c.name) + '</span>' + badge + tick + menuBtn + '</div>';
   }).join('');
+  for (const tick of container.querySelectorAll('[data-stage]')) tick.indeterminate = tick.dataset.partial === 'true';
   relabelTreeBadges();
   return true;
 }
@@ -418,9 +420,9 @@ export async function patchTreeGitStatus(statuses = {}, dirtyDirs = {}, staged =
       let tick = fileRow.querySelector('[data-stage]');
       if (showTick) {
         if (!tick) {
-          tick = document.createElement('button');
-          tick.type = 'button';
-          tick.className = 'btn size-[13px]! shrink-0 rounded-[4px]! p-0! ml-1 text-10! border-input! aria-pressed:bg-primary! aria-pressed:border-primary! aria-pressed:text-primary-foreground! data-[partial=true]:bg-transparent! data-[partial=true]:border-destructive! data-[partial=true]:text-destructive!';
+          tick = document.createElement('input');
+          tick.type = 'checkbox';
+          tick.className = 'input size-[13px] shrink-0 ml-1';
           tick.setAttribute('aria-label', 'Stage file');
           tick.dataset.variant = 'outline';
           tick.dataset.size = 'icon-xs';
@@ -428,9 +430,8 @@ export async function patchTreeGitStatus(statuses = {}, dirtyDirs = {}, staged =
           fileRow.appendChild(tick);
         }
         tick.dataset.partial = String(isPartial);
-        tick.dataset.variant = isStaged ? 'secondary' : 'outline';
-        tick.textContent = isPartial ? '!' : isStaged ? '✓' : '';
-        tick.setAttribute('aria-pressed', isStaged ? 'true' : 'false');
+        tick.checked = isStaged;
+        tick.indeterminate = isPartial;
         tick.title = stageTickTitle(isStaged, isPartial);
       } else if (tick) {
         tick.remove();
@@ -535,7 +536,7 @@ export async function setSidebarMode(mode, { expandDirty = true } = {}) {
 
 export function closeTreeMenu() {
   activeTreeTarget = null;
-  if (treeMenu && !treeMenu.hidden) treeMenu.hidden = true;
+  if (treeMenu && !treeMenu.hidden) setMenuHidden(treeMenu, true);
 }
 
 export function openTreeMenu(row, x, y) {
@@ -578,7 +579,7 @@ export function openTreeMenu(row, x, y) {
     treeMenu.append(btn);
   }
 
-  treeMenu.hidden = false;
+  setMenuHidden(treeMenu, false);
   const w = treeMenu.offsetWidth, h = treeMenu.offsetHeight;
   treeMenu.style.left = Math.max(4, x + w > innerWidth - 4 ? x - w : x) + 'px';
   treeMenu.style.top = Math.max(4, y + h > innerHeight - 4 ? y - h : y) + 'px';
@@ -660,17 +661,15 @@ export function initTree() {
     const tick = e.target.closest('[data-stage]');
     if (tick) {
       e.stopPropagation();
-      e.preventDefault();
       const path = tick.dataset.stage;
       const wasPartial = tick.dataset.partial === 'true';
-      const staged = wasPartial || tick.getAttribute('aria-pressed') !== 'true';
+      const staged = wasPartial || tick.checked;
       const applyOptimistic = s => {
         for (const el of $$('[data-stage="' + CSS.escape(path) + '"]')) {
           const partial = s !== staged && wasPartial; // only a rollback restores it
           el.dataset.partial = String(partial);
-          el.dataset.variant = s ? 'secondary' : 'outline';
-          el.textContent = partial ? '!' : s ? '✓' : '';
-          el.setAttribute('aria-pressed', s ? 'true' : 'false');
+          el.checked = s;
+          el.indeterminate = partial;
           el.title = stageTickTitle(s, partial);
           el.closest('.tr.file')?.classList.toggle('is-staged', s);
         }

@@ -1,3 +1,4 @@
+import { setMenuHidden } from './overlays.js';
 import { setPressed } from './controls.js';
 import { $, S, doc_, api, apiPost, esc, withKeys } from './state.js';
 import { previewing, previewKind } from './markdown.js';
@@ -277,7 +278,7 @@ export function renderLspMenu(data) {
 }
 
 export function closeLspMenu() {
-  if (lspMenuEl) lspMenuEl.hidden = true;
+  if (lspMenuEl) setMenuHidden(lspMenuEl, true);
 }
 
 function placeLspMenu() {
@@ -306,7 +307,7 @@ export async function refreshLspMenu() {
 export async function openLspMenu() {
   if (!lspMenuEl) return;
   closeMetricsMenu();
-  lspMenuEl.hidden = false;
+  setMenuHidden(lspMenuEl, false);
   placeLspMenu();
   try {
     const data = await api('/api/lsp/servers');

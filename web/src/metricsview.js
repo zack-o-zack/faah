@@ -1,3 +1,4 @@
+import { setMenuHidden } from './overlays.js';
 // web/src/metricsview.js
 // The status bar's CPU · RAM · LSP chip (#st-metrics) and the menu it opens
 // (#metrics-menu). Shared by the app (through status.js) and the workbench
@@ -42,7 +43,7 @@ function renderMetricsMenu(m) {
 
 export function closeMetricsMenu() {
   const menuEl = $('#metrics-menu');
-  if (menuEl) menuEl.hidden = true;
+  if (menuEl) setMenuHidden(menuEl, true);
 }
 
 function placeMetricsMenu() {
@@ -63,7 +64,7 @@ export function toggleMetricsMenu() {
     return;
   }
   if (lastMetrics) renderMetricsMenu(lastMetrics);
-  menuEl.hidden = false;
+  setMenuHidden(menuEl, false);
   placeMetricsMenu();
   onMenuOpen?.();
 }

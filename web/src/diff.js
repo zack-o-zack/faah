@@ -1206,6 +1206,12 @@ export function initDiff() {
   });
   const menu = $('#diff-menu');
   if (menu) {
+    for (const item of menu.querySelectorAll('button')) item.classList.remove('btn');
+    const group = $('#diff-switch');
+    group.addEventListener('pointerenter', () => menu.setAttribute('aria-hidden', 'false'));
+    group.addEventListener('pointerleave', () => menu.setAttribute('aria-hidden', 'true'));
+    group.addEventListener('focusin', () => menu.setAttribute('aria-hidden', 'false'));
+    group.addEventListener('focusout', e => { if (!group.contains(e.relatedTarget)) menu.setAttribute('aria-hidden', 'true'); });
     menu.addEventListener('click', e => {
       const item = e.target.closest('[data-diff-opt]');
       if (!item) return;

@@ -1,3 +1,4 @@
+import { setMenuHidden } from './overlays.js';
 // web/src/workbench.js
 // The workbench page (web/workbench.html), what a bare `faah` opens. Bundled on
 // its own into web/workbench.js by scripts/build-web.js. It shares the app's
@@ -54,13 +55,13 @@ function openThemeMenu() {
   themeBefore = currentTheme();
   themeSel = Math.max(0, listThemes().findIndex(t => t.id === themeBefore));
   renderThemeMenu();
-  themeMenu.hidden = false;
+  setMenuHidden(themeMenu, false);
   placeThemeMenu();
 }
 
 function closeThemeMenu(keep) {
   if (themeMenu.hidden) return;
-  themeMenu.hidden = true;
+  setMenuHidden(themeMenu, true);
   if (keep) setTheme(currentTheme());
   else if (themeBefore) setTheme(themeBefore, false);
 }

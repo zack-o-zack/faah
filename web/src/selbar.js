@@ -1,3 +1,4 @@
+import { setMenuHidden } from './overlays.js';
 // web/src/selbar.js
 import { $, S, doc_, keyLabel, shortcutHtml } from './state.js';
 import { on } from './bus.js';
@@ -414,7 +415,7 @@ const menu = $('#sel-menu');
 
 export function closeSelMenu() {
   pinnedInfo = null;
-  if (menu && !menu.hidden) menu.hidden = true;
+  if (menu && !menu.hidden) setMenuHidden(menu, true);
 }
 
 /* The gutter's thread button: the same actions as the right-click menu, aimed
@@ -474,7 +475,7 @@ function openSelMenu(x, y, keep = (item) => true) {
     }
     menu.append(btn);
   }
-  menu.hidden = false;
+  setMenuHidden(menu, false);
   // Open toward the pointer's bottom-right, flipping at the window's edges.
   const w = menu.offsetWidth, h = menu.offsetHeight;
   menu.style.left = Math.max(4, x + w > innerWidth - 4 ? x - w : x) + 'px';
