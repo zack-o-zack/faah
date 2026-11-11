@@ -16,6 +16,7 @@ function createElement(id) {
       contains(c) { return this.classes.has(c); }
     },
     dataset: {},
+    style: {},
     innerHTML: '',
     textContent: '',
     children: [],

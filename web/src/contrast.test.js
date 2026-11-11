@@ -18,7 +18,7 @@ for (const theme of ['catppuccin-mocha','light','dracula','solarized-light']) {
     const css=readFileSync(new URL(`../themes/${theme}.css`,import.meta.url),'utf8');
     const tokens=Object.fromEntries([...css.matchAll(/--([\w-]+):\s*(#[\da-f]+);/gi)].map(m=>[m[1],m[2]]));
     for (const surface of ['background','sidebar','popover','accent']) {
-      for (const text of ['foreground','muted-foreground','faint','primary-text','destructive','gi','gd','k','kt','nf','nc','nb','nv','no','na','nt','nd','np','s','m','o','p','c','cp']) {
+      for (const text of ['foreground','muted-foreground','faint','primary-text','warn','destructive','gi','gd','k','kt','nf','nc','nb','nv','no','na','nt','nd','np','s','m','o','p','c','cp']) {
         expect(contrast(tokens[text],tokens[surface]),`${theme}: ${text} on ${surface}`).toBeGreaterThanOrEqual(4.5);
       }
       expect(contrast(tokens.input,tokens[surface]),`${theme}: input on ${surface}`).toBeGreaterThanOrEqual(3);

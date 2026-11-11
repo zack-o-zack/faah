@@ -1,5 +1,6 @@
 /* Dracula: based on the Dracula palette. Token reference: docs/internals/styling-and-themes.md. */
 :root[data-theme="dracula"] {
+  --warn: #ffb86c;
   --image-dark: #121214;
   --image-light: #ffffff;
   --theme-name: "Dracula";

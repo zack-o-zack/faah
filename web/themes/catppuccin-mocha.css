@@ -1,5 +1,6 @@
 /* Catppuccin Mocha: based on the Catppuccin palette. Token reference: docs/internals/styling-and-themes.md. */
 :root[data-theme="catppuccin-mocha"] {
+  --warn: #fab387;
   --image-dark: #121214;
   --image-light: #ffffff;
   --theme-name: "Catppuccin Mocha";

@@ -3,11 +3,16 @@ import { setPressed } from './controls.js';
 import { $, S, doc_, api, apiPost, esc, withKeys } from './state.js';
 import { previewing, previewKind } from './markdown.js';
 import { layoutPref } from './diff.js';
-import { copyToClipboard, showToast } from './ui.js';
+import { vp, copyToClipboard, showToast } from './ui.js';
 import { fmtBytes, showMetrics, initMetricsMenu, closeMetricsMenu } from './metricsview.js';
 
 export function updateStatus() {
   const d = doc_();
+  // Overlays keep source geometry for line mapping, without painting or exposing
+  // a second copy of the document underneath the active view.
+  const covered = !!(d && (d.isEditing || d.isImage || d.diffMode || previewing(d)));
+  vp.style.visibility = covered ? 'hidden' : '';
+  vp.inert = covered;
   const sizeEl = $('#st-size');
   if (sizeEl) sizeEl.textContent = d ? fmtBytes(d.size) : '';
 
