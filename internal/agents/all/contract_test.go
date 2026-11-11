@@ -8,15 +8,13 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"path/filepath"
-	"runtime"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	"faah/internal/agents"
-	"faah/internal/agents/percmd"
+	"faah/internal/agents/cursor"
 )
 
 type sink struct{ text, steps []string }
@@ -31,124 +29,31 @@ var fixture = map[string][]string{
 	"claude": {`{"type":"assistant","session_id":"s1","message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"a.go"}},{"type":"text","text":"hello"}]}}`},
 }
 
-// expect is what each listed agent must do. {sid} is the id NewSession
-// returned. A follow-up resumes that id, or the id the harness reported when
-// it was given none.
-type expect struct {
-	caps          agents.Caps
-	first, resume string // the args the fake receives, joined by spaces
-	live          bool   // the session can be resumed after the first turn
-	steps         bool   // the output's tool step reaches the sink
-}
-
-var contract = map[string]expect{
-
-	"cursor-agent": {caps: agents.Caps{Sessions: true}, live: true,
-		first:  "--resume {sid} -p say hello",
-		resume: "--resume {sid} -p say hello"},
-}
-
-// Every listed agent runs a fake binary of its own name, for a first turn and
-// a follow-up, and must match its row in contract.
+// Every listed adapter has a native protocol contract.
 func TestAgentContract(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("fake harness is a shell script")
-	}
 	seen := map[string]bool{}
 	for _, a := range List() {
-		a := a
-		if a.Name() == "opencode" {
-			t.Run("opencode", func(t *testing.T) { opencodeContract(t, a) })
-			continue
+		if seen[a.Name()] || For(a.Name()).Name() != a.Name() {
+			t.Fatal(a.Name())
 		}
-		if a.Name() == "agy" || a.Name() == "gemini" {
-			t.Run(a.Name(), func(t *testing.T) { acpContract(t, a) })
-			continue
-		}
-		if a.Name() == "codex" {
-			t.Run("codex", func(t *testing.T) { codexContract(t, a) })
-			continue
-		}
-		if a.Name() == "claude" {
-			t.Run("claude", func(t *testing.T) { claudeContract(t, a) })
-			continue
-		}
+		seen[a.Name()] = true
 		t.Run(a.Name(), func(t *testing.T) {
-			want, ok := contract[a.Name()]
-			if !ok {
-				t.Fatalf("add %s to the contract table", a.Name())
-			}
-			if seen[a.Name()] {
-				t.Fatalf("%s is listed twice", a.Name())
-			}
-			seen[a.Name()] = true
-			if For(a.Name()).Name() != a.Name() {
-				t.Fatal("For does not find the listed agent")
-			}
-			if c := a.(*percmd.Agent).Legacy.Caps(); c.Sessions != want.caps.Sessions || c.NamesSession != want.caps.NamesSession {
-				t.Fatalf("caps = %+v, want %+v", c, want.caps)
-			}
-
-			dir := t.TempDir()
-			lines := fixture[a.Name()]
-			if lines == nil {
-				lines = []string{"hello"}
-			}
-			bin := filepath.Join(dir, a.Name())
-			script := "#!/bin/sh\nprintf '%s\\n' \"$@\" > args.txt\nprintf '%s\\n' '" + strings.Join(lines, "' '") + "'\n"
-			if err := os.WriteFile(bin, []byte(script), 0o755); err != nil {
-				t.Fatal(err)
-			}
-			argv := []string{bin, "-p", "{prompt}"}
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			defer cancel()
-			args := func() string {
-				b, _ := os.ReadFile(filepath.Join(dir, "args.txt"))
-				return strings.Join(strings.Fields(string(b)), " ")
-			}
-
-			session, err := a.Open(ctx, agents.Open{Dir: dir, Base: argv})
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer session.Close()
-			sid := session.ID()
-			s := &sink{}
-			out, err := session.Prompt(ctx, "say hello", s)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if got, w := args(), strings.ReplaceAll(want.first, "{sid}", sid); got != w {
-				t.Fatalf("first turn args = %q, want %q", got, w)
-			}
-			if !strings.Contains(strings.Join(s.text, ""), "hello") {
-				t.Fatalf("text = %q", s.text)
-			}
-			if out.Live != want.live {
-				t.Fatalf("live = %v, want %v", out.Live, want.live)
-			}
-			if want.steps != (len(s.steps) > 0) {
-				t.Fatalf("steps = %q, want some: %v", s.steps, want.steps)
-			}
-
-			if _, err := session.Prompt(ctx, "say hello", &sink{}); err != nil {
-				t.Fatal(err)
-			}
-
-			expected := strings.ReplaceAll(want.resume, "{sid}", sid)
-			if !want.caps.Sessions {
-				expected = "-p ### Earlier in this conversation User: say hello Assistant: hello ### Current request say hello"
-			}
-			if got, w := args(), expected; got != w {
-				t.Fatalf("follow-up args = %q, want %q", got, w)
-			}
-			if strings.Join(argv, " ") != bin+" -p {prompt}" {
-				t.Fatalf("Run changed its argv: %q", argv)
-			}
-
-			if _, _, err := a.(*percmd.Agent).Legacy.ReadOnly(argv); err != nil && !strings.Contains(err.Error(), agents.ErrNotReadOnly.Error()) {
-				t.Fatalf("ReadOnly error must wrap ErrNotReadOnly: %v", err)
+			switch a.Name() {
+			case "claude":
+				claudeContract(t, a)
+			case "codex":
+				codexContract(t, a)
+			case "agy", "gemini":
+				acpContract(t, a)
+			case "opencode":
+				opencodeContract(t, a)
+			case "cursor-agent":
+				// Cursor's package exercises the embedded helper with a stub SDK.
+				if _, ok := a.(*cursor.Agent); !ok {
+					t.Fatal("cursor must use its SDK adapter")
+				}
+			default:
+				t.Fatal("missing native contract")
 			}
 		})
 	}
@@ -221,6 +126,7 @@ func TestMain(m *testing.M) {
 	}
 	os.Exit(m.Run())
 }
+
 func claudeContract(t *testing.T, a agents.Agent) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

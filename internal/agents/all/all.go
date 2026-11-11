@@ -21,7 +21,7 @@ func List() []agents.Agent {
 		codex.New(),
 		agy.New(),
 		opencode.New(),
-		percmd.Wrap(cursor.New()),
+		cursor.New(),
 		gemini.New(),
 	}
 }
