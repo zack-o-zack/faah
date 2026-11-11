@@ -1249,30 +1249,6 @@ func uriToPath(uri string) (string, error) {
 
 // ---------------------------------------------------------------- navigation
 
-// utf16ToByte converts a column measured in UTF-16 code units (what JavaScript
-// string indexes count) into a byte offset into the same line.
-func utf16ToByte(line string, u16 int) int {
-	if u16 <= 0 {
-		return 0
-	}
-	units, bytes := 0, 0
-	for _, r := range line {
-		if units >= u16 {
-			break
-		}
-		if r >= 0x10000 {
-			units += 2
-		} else {
-			units++
-		}
-		bytes += utf8.RuneLen(r)
-	}
-	if bytes > len(line) {
-		return len(line)
-	}
-	return bytes
-}
-
 // resolve turns a set of LSP ranges into display-ready hits, reading each target
 // file through the same cache the editor uses.
 func (m *lspManager) resolve(c *lspClient, locs []lspLocation, markDef bool) []NavHit {

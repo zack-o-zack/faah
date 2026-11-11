@@ -10,3 +10,8 @@ type (
 	Match       = codeintel.Match
 	FileMatches = codeintel.FileMatches
 )
+
+var (
+	lineRef     = codeintel.LineRef
+	utf16ToByte = codeintel.UTF16ToByte
+)

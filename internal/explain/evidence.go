@@ -1,42 +1,41 @@
-package main
+package explain
 
 import (
 	"context"
 	"fmt"
 	"strings"
 
+	"faah/internal/codeintel"
 	"faah/internal/symbols"
 )
 
-type codeIntel interface {
-	Definition(ctx context.Context, abs, rel string, line, col int) ([]NavHit, error)
-	References(ctx context.Context, abs, rel string, line, col int) ([]NavHit, error)
-	Hover(ctx context.Context, abs, rel string, line, col int) (*HoverInfo, error)
+// Workspace is what gathering evidence needs from faah: code intelligence,
+// search, and file access.
+type Workspace interface {
+	Definition(ctx context.Context, abs, rel string, line, col int) ([]codeintel.NavHit, error)
+	References(ctx context.Context, abs, rel string, line, col int) ([]codeintel.NavHit, error)
+	Hover(ctx context.Context, abs, rel string, line, col int) (*codeintel.HoverInfo, error)
 	Symbols(ctx context.Context, abs, rel string) ([]symbols.Symbol, error)
-	PrepareCalls(ctx context.Context, abs, rel string, line, u16col int) ([]CallNode, error)
-	Calls(ctx context.Context, rel, item string, outgoing bool) ([]CallNode, error)
+	PrepareCalls(ctx context.Context, abs, rel string, line, u16col int) ([]codeintel.CallNode, error)
+	Calls(ctx context.Context, rel, item string, outgoing bool) ([]codeintel.CallNode, error)
+	Ready(ctx context.Context, abs, rel string) string // server name, "" when none is ready
+	Outline(abs, rel string) ([]symbols.Symbol, error)
+	Search(ctx context.Context, name string) []codeintel.FileMatches
+	Abs(rel string) (string, bool)
 }
 
-type explainDeps struct {
-	intel   codeIntel
-	ready   func(ctx context.Context, abs, rel string) string // server name, "" when none is ready
-	outline func(abs, rel string) ([]symbols.Symbol, error)
-	search  func(ctx context.Context, name string) []FileMatches
-	abs     func(rel string) (string, bool)
-}
-
-// explainEvidence is everything a target needs before the harness runs. Hash
+// Evidence is everything a target needs before the harness runs. Hash
 // is "callers|references", either side empty when it could not be gathered.
-type explainEvidence struct {
+type Evidence struct {
 	Kind    string
 	Source  string
 	Packet  string
 	Key     string
 	Hash    string
-	Summary explainSummary
+	Summary Summary
 }
 
-type explainSection struct {
+type Section struct {
 	Title string
 	Body  string
 }
@@ -49,44 +48,42 @@ type explainSpan struct {
 
 // explainGather holds one run's state, including files it has already read.
 type explainGather struct {
-	deps   explainDeps
-	target explainTarget
+	ws     Workspace
+	target Target
 	files  map[string][]string
 	syms   map[string][]symbols.Symbol
 	server string
 }
 
-func gatherExplain(ctx context.Context, deps explainDeps, t explainTarget, lines []string) explainEvidence {
+func Gather(ctx context.Context, ws Workspace, t Target, lines []string) Evidence {
 	g := &explainGather{
-		deps: deps, target: t,
+		ws: ws, target: t,
 		files: map[string][]string{t.Rel: lines},
 		syms:  map[string][]symbols.Symbol{},
 	}
-	if deps.ready != nil && deps.intel != nil {
-		g.server = deps.ready(ctx, t.Abs, t.Rel)
-	}
+	g.server = ws.Ready(ctx, t.Abs, t.Rel)
 	enc, hasEnc := g.enclosing()
 
-	var sections []explainSection
-	sections = append(sections, explainSection{"Target", targetSection(t, lines)})
+	var sections []Section
+	sections = append(sections, Section{"Target", targetSection(t, lines)})
 	// A selection that is the whole function has no surrounding code to add.
 	if hasEnc && !(t.Name == "" && t.L1 <= enc.L1 && t.L2 >= enc.L2) {
-		sections = append(sections, explainSection{fmt.Sprintf("Enclosing code: %s, %s:%s", enc.Name, t.Rel, lineRef(enc.L1, enc.L2)), numberedBlock(t.Rel, enc.Text, enc.L1, explainBodyMax)})
+		sections = append(sections, Section{fmt.Sprintf("Enclosing code: %s, %s:%s", enc.Name, t.Rel, codeintel.LineRef(enc.L1, enc.L2)), numberedBlock(t.Rel, enc.Text, enc.L1, explainBodyMax)})
 	}
 
-	var ev explainEvidence
-	var more []explainSection
+	var ev Evidence
+	var more []Section
 	if t.Name == "" {
 		ev, more = g.block(ctx, enc)
 	} else {
 		ev, more = g.symbol(ctx, enc, hasEnc)
 	}
-	ev.Packet = buildExplainPacket(append(sections, more...))
+	ev.Packet = BuildPacket(append(sections, more...))
 	return ev
 }
 
-func targetSection(t explainTarget, lines []string) string {
-	where := fmt.Sprintf("%s:%s", t.Rel, lineRef(t.L1, t.L2))
+func targetSection(t Target, lines []string) string {
+	where := fmt.Sprintf("%s:%s", t.Rel, codeintel.LineRef(t.L1, t.L2))
 	code := t.Text
 	if t.Name != "" {
 		where = fmt.Sprintf("Symbol `%s` at %s", t.Name, where)
@@ -99,19 +96,19 @@ func (g *explainGather) symbols(rel string) []symbols.Symbol {
 	if s, ok := g.syms[rel]; ok {
 		return s
 	}
-	abs, ok := g.deps.abs(rel)
+	abs, ok := g.ws.Abs(rel)
 	if !ok {
 		return nil
 	}
 	var out []symbols.Symbol
 	if g.server != "" {
 		// A deadline here is no reason to stop: the outline below needs none.
-		ctx, cancel := context.WithTimeout(context.Background(), explainBudget)
-		out, _ = g.deps.intel.Symbols(ctx, abs, rel)
+		ctx, cancel := context.WithTimeout(context.Background(), Budget)
+		out, _ = g.ws.Symbols(ctx, abs, rel)
 		cancel()
 	}
-	if len(out) == 0 && g.deps.outline != nil {
-		out, _ = g.deps.outline(abs, rel)
+	if len(out) == 0 {
+		out, _ = g.ws.Outline(abs, rel)
 	}
 	g.syms[rel] = out
 	return out
@@ -121,11 +118,11 @@ func (g *explainGather) lines(rel string) []string {
 	if l, ok := g.files[rel]; ok {
 		return l
 	}
-	abs, ok := g.deps.abs(rel)
+	abs, ok := g.ws.Abs(rel)
 	if !ok {
 		return nil
 	}
-	lines, err := explainReadLines(abs)
+	lines, err := ReadLines(abs)
 	if err != nil {
 		return nil
 	}
@@ -193,7 +190,7 @@ func enclosingSymbol(syms []symbols.Symbol, l1, l2, total int) (symbols.Symbol, 
 }
 
 // definitionBody reads the declaration starting at a definition's line.
-func (g *explainGather) definitionBody(hit NavHit) (string, int) {
+func (g *explainGather) definitionBody(hit codeintel.NavHit) (string, int) {
 	lines := g.lines(hit.Path)
 	if lines == nil {
 		return "", hit.Line
@@ -215,14 +212,14 @@ func (g *explainGather) targetLine() string {
 	return joinLines(g.files[g.target.Rel], g.target.L1, g.target.L1)
 }
 
-func (g *explainGather) block(ctx context.Context, enc explainSpan) (explainEvidence, []explainSection) {
+func (g *explainGather) block(ctx context.Context, enc explainSpan) (Evidence, []Section) {
 	t := g.target
 	source := g.server
 	if source == "" {
 		source = "text"
 	}
-	ev := explainEvidence{Kind: explainBlock, Source: source, Summary: explainSummary{Source: source}}
-	ev.Key = explainKey(ev.Kind, ev.Source, t.Rel, t.Text, enc.Text)
+	ev := Evidence{Kind: KindBlock, Source: source, Summary: Summary{Source: source}}
+	ev.Key = Key(ev.Kind, ev.Source, t.Rel, t.Text, enc.Text)
 	ev.Hash = "|"
 	if g.server == "" {
 		return ev, nil
@@ -245,12 +242,12 @@ scan:
 			}
 			seen[name] = true
 			tries++
-			col := utf16Len(line[:loc[0]])
-			hits, _ := g.deps.intel.Definition(ctx, t.Abs, t.Rel, n, col)
+			col := UTF16Len(line[:loc[0]])
+			hits, _ := g.ws.Definition(ctx, t.Abs, t.Rel, n, col)
 			if len(hits) == 0 || (hits[0].Path == t.Rel && hits[0].Line >= t.L1 && hits[0].Line <= t.L2) {
 				continue // declared by the selection itself, which is already quoted
 			}
-			info, _ := g.deps.intel.Hover(ctx, t.Abs, t.Rel, n, col)
+			info, _ := g.ws.Hover(ctx, t.Abs, t.Rel, n, col)
 			if info == nil || info.Empty {
 				continue
 			}
@@ -268,5 +265,5 @@ scan:
 	if len(entries) == 0 {
 		return ev, nil
 	}
-	return ev, []explainSection{{"Identifiers used by the selection", strings.Join(entries, "\n")}}
+	return ev, []Section{{"Identifiers used by the selection", strings.Join(entries, "\n")}}
 }

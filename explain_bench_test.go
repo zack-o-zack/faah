@@ -9,6 +9,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"faah/internal/explain"
 )
 
 // Times real explanations of fixed selections in this repository, once per
@@ -29,7 +31,7 @@ func TestExplainBenchmark(t *testing.T) {
 	}
 	selections := []struct{ label, path, find, text string }{
 		{"symbol", "main.go", "ix := NewIndex(root)", "NewIndex"},
-		{"block", "explain_refs.go", "func explainLabelName(label string) string {", ""},
+		{"block", "explain_refs.go", "func explain.LabelName(label string) string {", ""},
 	}
 
 	var mu sync.Mutex
@@ -64,7 +66,7 @@ func TestExplainBenchmark(t *testing.T) {
 				s.lsp.Close()
 			}()
 			for _, sel := range selections {
-				lines, err := explainReadLines(root + "/" + sel.path)
+				lines, err := explain.ReadLines(root + "/" + sel.path)
 				if err != nil {
 					t.Error(err)
 					return
@@ -75,7 +77,7 @@ func TestExplainBenchmark(t *testing.T) {
 						continue
 					}
 					if sel.text != "" {
-						c := utf16Len(l[:strings.Index(l, sel.text)])
+						c := explain.UTF16Len(l[:strings.Index(l, sel.text)])
 						req["l1"], req["l2"], req["c1"], req["c2"], req["text"] = i+1, i+1, c, c+len(sel.text), sel.text
 					} else {
 						end := i

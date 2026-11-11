@@ -22,6 +22,7 @@ import (
 
 	"faah/internal/agents"
 	"faah/internal/agents/all"
+	"faah/internal/explain"
 	"faah/internal/render"
 	"faah/internal/settings"
 	"faah/internal/ui"
@@ -627,13 +628,6 @@ func changedSinceMaps(before, after map[string]string) []string {
 	return out
 }
 
-func lineRef(l1, l2 int) string {
-	if l1 == l2 {
-		return strconv.Itoa(l1)
-	}
-	return strconv.Itoa(l1) + "-" + strconv.Itoa(l2)
-}
-
 // readLineRange returns lines l1..l2 of a file, 1-based and inclusive.
 func readLineRange(abs string, l1, l2 int) (string, error) {
 	data, err := os.ReadFile(abs)
@@ -1056,7 +1050,7 @@ type threadTurn struct {
 	Warm      bool     `json:"warm,omitempty"`    // the harness was started ahead of the turn
 	// Refs holds the citations in an explanation's reply that passed checking,
 	// by target as written.
-	Refs map[string]validatedRef `json:"refs,omitempty"`
+	Refs map[string]explain.Ref `json:"refs,omitempty"`
 }
 
 // thread is the persisted conversation. Path and lines are where it was
@@ -1086,12 +1080,12 @@ type thread struct {
 	// and EvidenceHash what surrounded that code; see explain.go. ExplainReader
 	// is the explain.reader text it was written for. The packet the harness
 	// reads is kept beside the store and loaded here for a turn.
-	ExplainKey    string          `json:"explainKey,omitempty"`
+	ExplainKey    string          `json:"explain.Key,omitempty"`
 	ExplainKind   string          `json:"explainKind,omitempty"`
 	ExplainReader string          `json:"explainReader,omitempty"`
 	EvidenceHash  string          `json:"evidenceHash,omitempty"`
-	Evidence      *explainSummary `json:"evidence,omitempty"`
-	ExplainReq    *explainRequest `json:"explainReq,omitempty"`
+	Evidence      *explain.Summary `json:"evidence,omitempty"`
+	ExplainReq    *explain.Request `json:"explainReq,omitempty"`
 	packet        string
 }
 
@@ -1357,7 +1351,7 @@ func threadPrompt(t *thread, prior []*threadTurn, message string, replay bool, p
 	var b strings.Builder
 	if len(prior) == 0 || replay {
 		if t.Kind == "explain" {
-			b.WriteString(explainInstructions(t.ExplainKind, t.ExplainReader))
+			b.WriteString(explain.Instructions(t.ExplainKind, t.ExplainReader))
 		} else if t.Kind == "edit" || t.Kind == "batch" {
 			b.WriteString("Carry out the edit request below by editing files in place. ")
 			b.WriteString("Change only what it asks for; you may touch other files if the change needs it. ")
@@ -1590,9 +1584,9 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 		afterSHA = gitSnapshotWorktree(tm.root)
 	}
 	tm.agent.settle(changed)
-	var refs map[string]validatedRef
+	var refs map[string]explain.Ref
 	if explaining {
-		refs = validateExplainRefs(tm.root, sink.reply())
+		refs = explain.ValidateRefs(tm.root, sink.reply())
 	}
 
 	tm.mu.Lock()

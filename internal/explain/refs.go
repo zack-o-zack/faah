@@ -1,4 +1,4 @@
-package main
+package explain
 
 import (
 	"path/filepath"
@@ -26,10 +26,10 @@ func explainResolve(root, rel string) (string, bool) {
 	return abs, true
 }
 
-// validateExplainRefs checks each citation in a finished reply and returns the
+// ValidateRefs checks each citation in a finished reply and returns the
 // ones that hold, keyed by target as written. A citation left out renders as
 // plain text. The reply itself is never changed, since it is replayed later.
-func validateExplainRefs(root, reply string) map[string]validatedRef {
+func ValidateRefs(root, reply string) map[string]Ref {
 	type citation struct{ label, target string }
 	var cites []citation
 	spans, rest := explainCodeSpans(reply)
@@ -51,13 +51,13 @@ func validateExplainRefs(root, reply string) map[string]validatedRef {
 		}
 		var lines []string
 		if abs, ok := explainResolve(root, rel); ok {
-			lines, _ = explainReadLines(abs)
+			lines, _ = ReadLines(abs)
 		}
 		files[rel] = lines
 		return lines
 	}
 
-	out := map[string]validatedRef{}
+	out := map[string]Ref{}
 	for _, c := range cites {
 		m := explainTargetRe.FindStringSubmatch(c.target)
 		if m == nil {
@@ -71,7 +71,7 @@ func validateExplainRefs(root, reply string) map[string]validatedRef {
 			continue
 		}
 		if m[2] == "" {
-			out[c.target] = validatedRef{}
+			out[c.target] = Ref{}
 			continue
 		}
 		l1, _ := strconv.Atoi(m[2])
@@ -90,7 +90,7 @@ func validateExplainRefs(root, reply string) map[string]validatedRef {
 		if !ok {
 			continue
 		}
-		ref := validatedRef{Line: l1 + delta}
+		ref := Ref{Line: l1 + delta}
 		if m[3] != "" {
 			ref.End = l2 + delta
 		}
@@ -132,9 +132,9 @@ func explainCodeSpans(s string) ([]string, string) {
 	return spans, rest.String()
 }
 
-// explainLabelName pulls the identifier out of a citation label, or returns ""
+// LabelName pulls the identifier out of a citation label, or returns ""
 // for a label that is a description rather than a name.
-func explainLabelName(label string) string {
+func LabelName(label string) string {
 	s := strings.Trim(label, "`*_ ")
 	s = strings.TrimSuffix(s, "()")
 	if i := strings.LastIndexByte(s, '.'); i >= 0 {
@@ -149,7 +149,7 @@ func explainLabelName(label string) string {
 // explainSnap returns how far a citation must move to reach its named symbol:
 // zero when it already appears there, otherwise the nearest occurrence.
 func explainSnap(lines []string, label string, l1, l2 int) (int, bool) {
-	name := explainLabelName(label)
+	name := LabelName(label)
 	if name == "" {
 		return 0, true
 	}
