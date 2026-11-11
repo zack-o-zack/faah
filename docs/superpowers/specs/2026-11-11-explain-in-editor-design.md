@@ -26,11 +26,63 @@ Out of scope:
 - IDE context tools that answer the agent (definitions, references). The MCP endpoint is built so they can be added later.
 - Harnesses other than these four.
 
+## Code structure
+
+Everything is in package `main` today, and harness-specific code is spread across `agent.go` and the `explain_*.go` files: session and resume flags, three output parsers, cursor's chat setup, `readOnlyArgv`, `explainEnv`, and the claude and agy standby. This work moves the agent and Explain code into packages first.
+
+```
+internal/
+  agents/              one interface for every harness
+    agent.go           Agent, Turn, Sink, Caps
+    all/all.go         the list of compiled-in agents, one line each
+    claude/            argv, stream-json, resume, plan mode, MCP config
+    codex/             argv, read-only sandbox, MCP config
+    agy/               one-shot, then ACP (phase 2)
+    opencode/          faah-explain agent, tagged blocks
+    cursor/
+    gemini/
+    generic/           any other harness through px0-ai/harness templates
+  mcp/                 JSON-RPC handler, HTTP endpoint, tokens, stdio bridge
+  acp/                 ACP client (phase 2)
+  explain/             evidence, packet, prompt, link checks, selection
+    notes/             annotate and walkthrough: schema, checks, store, staleness
+```
+
+### The agent interface
+
+```go
+type Agent interface {
+    Name() string
+    Caps() Caps // Sessions, ReadOnly, Tools (MCP, ACP, Tagged or None), Warm
+    Run(ctx context.Context, t Turn, sink Sink) error
+}
+
+type Turn struct {
+    Dir, Prompt, Model, SessionID string
+    Resume, ReadOnly             bool
+    Tools                        *ToolEndpoint // URL and token; nil means no tools
+    Timeout                      time.Duration
+}
+
+type Sink interface {
+    Text(s string)
+    Step(label string)
+    Session(id string)
+}
+```
+
+- Each harness is one package. Adding one is a new folder and one line in `all/all.go`, and removing one is the reverse. The list is explicit, not registered in `init`, so what is compiled in is visible in one place.
+- Harness differences stay inside the adapters. Threads and Explain call only `Agent.Run`. An adapter declares its tool channel in `Caps`, and the shared code does the rest; for example, the output of a `Tagged` agent passes through the shared block reader.
+- `explain` cannot import `main`, so it defines a `Workspace` interface (`Definition`, `References`, `Callers`, `ReadFile`) that `main` implements over its language-server and index code. Agent-facing IDE tools (backlog item 5) can use the same interface later.
+- Threads, `server.go`, `lsp.go`, `forge.go`, and `git.go` stay in `main` for now and call the new packages.
+
 ## Tools
 
 ### annotate
 
-Explains one thing in place. The agent may call it any number of times in one answer.
+Explains code in place. One call takes a list of 1 to 100 notes, so the agent can annotate a whole file, or several files, at once. It may also call the tool again later in the answer.
+
+`annotate({notes: [note, …]})`, where each note has:
 
 | Field | Meaning |
 |---|---|
@@ -75,7 +127,7 @@ faah's HTTP server serves `POST /api/mcp`, a Streamable HTTP MCP endpoint that a
 
 - **Authentication:** each turn gets a random token, sent as `Authorization: Bearer <token>`. The token names the thread and turn, and it stops working when the turn ends. Requests without a live token get 401.
 - **Address:** harnesses connect to the address faah listens on, using `127.0.0.1` when faah listens on all interfaces.
-- **Tool results:** a valid call returns `shown`. An invalid call returns an error that says what was wrong and what the nearest match is, for example `auth.go:40 is past the end of the file (27 lines)` or `checkToken is not on auth.go:12; it is on line 21`. The agent can call again with the fix.
+- **Tool results:** `annotate` checks each note on its own. Valid notes are shown even when others fail. The result says how many were shown and lists each failed note with what was wrong and what the nearest match is, for example `notes[3]: checkToken is not on auth.go:12; it is on line 21` or `notes[5]: auth.go:40 is past the end of the file (27 lines)`. The agent can send only the failed notes again. `walkthrough` is shown whole or not at all, and its error names each bad step.
 
 ### faah mcp-bridge
 
@@ -104,6 +156,7 @@ Each call is checked before it is shown. These rules match how Explain links are
 - `1 ≤ l1 ≤ l2 ≤` the file's line count.
 - For `symbol`, the name appears on `l1`. If it does not, the nearest line within 3 lines that has it is used. If there is none, the call is refused.
 - `summary` is not empty, and is cut to 120 characters. `detail` and step bodies are cut to 4,000 characters.
+- An `annotate` call has 1 to 100 notes. Each note is checked on its own, and a bad note refuses only that note.
 - A walkthrough has 2 to 20 steps, and each step passes the range checks. One bad step refuses the whole call.
 
 ## Saving and staleness
@@ -157,6 +210,7 @@ A small indicator at the top right of the editor while an explanation runs. It s
 
 Each phase is a pull request, based on the one before it.
 
+0. **Refactor, no change in behavior.** `internal/agents` with one adapter per harness, `internal/explain`, and `Workspace`. The existing tests pass unchanged, and a contract test runs every agent in `all/` against a fake binary.
 1. **Tools and the MCP endpoint.** The endpoint and tokens, the claude and codex channels, tagged blocks for opencode, the checks, saving, staleness, the prompt, and the API. Notes show as a plain list in the thread.
 2. **agy over ACP.** The ACP client, the long-running process, `faah mcp-bridge`, and the end of the agy stdin standby.
 3. **Orb,** and Explain no longer opening the sidebar.
@@ -166,7 +220,8 @@ Each phase is a pull request, based on the one before it.
 
 ## Testing
 
-- **Endpoint:** token checks, `initialize`, `tools/list`, valid and invalid calls with their error text, and the token stopping at turn end.
+- **Agent contract:** every adapter in `all/` builds a valid command for a first turn and a follow-up, parses its fixture output into text, steps, and a session id, and reports its `Caps`.
+- **Endpoint:** token checks, `initialize`, `tools/list`, valid and invalid calls with their error text, an `annotate` list with some bad notes, and the token stopping at turn end.
 - **Checks:** range limits, symbol snapping, length limits, workspace escape, and walkthrough step limits.
 - **Tagged blocks:** blocks taken out of a streamed reply, split across chunks, invalid JSON, and invalid ranges.
 - **Saving and staleness:** a note follows moved lines, a changed text marks it outdated, a changed reference hash marks a symbol note outdated, and thread deletion removes notes.
