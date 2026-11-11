@@ -44,8 +44,8 @@ function placeThemeMenu() {
 }
 
 function renderThemeMenu() {
-  themeMenu.innerHTML = listThemes().map((t, i) => `<li role="option" data-id="${esc(t.id)}" aria-selected="${i === themeSel}">
-    <span>${esc(t.name)}</span><span class="wb-faint">${esc(t.id === themeBefore ? 'current' : t.scheme)}</span></li>`).join('');
+  themeMenu.innerHTML = listThemes().map((t, i) => `<button type="button" role="menuitemradio" data-id="${esc(t.id)}" aria-checked="${i === themeSel}" class="aria-checked:bg-accent">
+    <span>${esc(t.name)}</span><span class="wb-faint">${esc(t.id === themeBefore ? 'current' : t.scheme)}</span></button>`).join('');
   themeMenu.children[themeSel]?.scrollIntoView({ block: 'nearest' });
 }
 
@@ -154,7 +154,7 @@ function attachComplete(input, list, onFolder) {
       <span class="wb-ico">${ICON_DIR}</span>
       <span class="wb-sg-name"><b>${esc(e.name.slice(0, prefix.length))}</b>${esc(e.name.slice(prefix.length))}</span>
       ${e.git ? '<span class="badge" data-variant="secondary" data-control="wb-git">git</span>' : ''}
-      <span class="wb-sg-path">${esc(e.path)}</span></li>`).join('');
+      <span class="wb-sg-path">${esc(e.path)}</span></button>`).join('');
     list.hidden = !items.length;
     input.setAttribute('aria-expanded', String(!list.hidden));
     list.children[sel]?.scrollIntoView({ block: 'nearest' });
@@ -326,7 +326,7 @@ async function browse(path) {
     <span class="wb-text"><span class="wb-title">${esc(e.name)}</span></span>
     ${e.git ? '<span class="badge" data-variant="secondary" data-control="wb-git">git</span>' : ''}
     <span class="wb-acts"><button type="button" data-act="open" title="Open ${esc(e.name)}" class="btn" data-variant="outline" data-size="xs">${pendingPR ? 'Use' : 'Open'}</button></span>
-  </div></li>`).join('') : '<li class="wb-empty">No folders here.</li>';
+  </div></button>`).join('') : '<li class="wb-empty">No folders here.</li>';
 }
 
 // Opening a folder, or, while a PR waits for its clone, choosing it as that clone.

@@ -6,7 +6,7 @@ export function prepareMenu(panel) {
   panel.before(wrapper);
   wrapper.append(panel);
   panel.setAttribute('data-popover', '');
-  panel.className = 'fixed min-w-[190px] max-w-[min(380px,95vw)] z-[70] m-0 gap-0';
+  panel.className = 'fixed min-w-[190px] max-w-[min(380px,95vw)] z-[70] top-auto left-auto m-0 gap-0';
   panel.setAttribute('aria-hidden', String(panel.hidden));
   const navigate = e => {
     if (panel.hidden || panel.getAttribute('aria-hidden') === 'true') return;

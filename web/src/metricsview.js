@@ -34,7 +34,7 @@ function renderMetricsMenu(m) {
   menuEl.innerHTML = `
     <div class="metrics-title">
       <span>Process Metrics</span>
-      <span class="toast-chip">faah</span>
+      <span class="badge" data-variant="secondary">faah</span>
     </div>
     <div class="metrics-grid">${row('Resident RAM (RSS)', fmtBytes(m.rssBytes || 0))}${row('CPU Usage', fmtCpu(m))}${row('Active Goroutines', m.goroutines || 0)}${lspRow}
     </div>${parts}
