@@ -1,7 +1,8 @@
+import { wordAtColumn } from './hover-position.js';
 // web/src/hover.js
 import { $, esc, S, doc_, api, isMac, MOD, withKeys } from './state.js';
-import { vp, editor, copyToClipboard } from './ui.js';
-import { updateLinkDecoration } from './renderer.js';
+import { vp, editor, copyToClipboard, showToast } from './ui.js';
+import { updateLinkDecoration, rowFor } from './renderer.js';
 import { setLspState } from './status.js';
 import { wordAtPoint } from './cursor.js';
 import { gotoDefinition, findReferences } from './lsp.js';
@@ -64,7 +65,7 @@ export function hoverAt(x, y) {
   if (at && at.word) showHover(at, x, y);
 }
 
-export async function showHover(at, x, y) {
+export async function showHover(at, x, y, { focus = false } = {}) {
   const d = doc_();
   if (!d || at.path !== d.path) return;
   const seq = ++hoverSeq;
@@ -73,22 +74,25 @@ export async function showHover(at, x, y) {
   catch { return; }
   if (seq !== hoverSeq || doc_() !== d) return;   // the pointer moved on
   setLspState(j);
-  if (!j || j.empty || (!j.signature && !j.doc)) return;
+  if (!j || j.empty || (!j.signature && !j.doc)) {
+    if (focus) showToast('i', 'No documentation for this symbol');
+    return;
+  }
 
   /* The request can take seconds. Open the card where the pointer is *now*,
      not where it rested when the request went out -- an anchor that far behind
      puts the card outside its own corridor and closes it on the next move. If
      the pointer has gone somewhere else entirely, drop the answer instead. */
   const live = pointerPos();
-  if (live && Math.hypot(live.x - x, live.y - y) > HOVER_DRIFT) return;
-  const ax = live ? live.x : x, ay = live ? live.y : y;
+  if (!focus && live && Math.hypot(live.x - x, live.y - y) > HOVER_DRIFT) return;
+  const ax = !focus && live ? live.x : x, ay = !focus && live ? live.y : y;
 
   S.hover = at;
   S.hoverAnchor = { x: ax, y: ay };
   const refPath = d.path + ':' + at.line;
   hovercard.innerHTML =
     (j.signature ? '<div data-ui="sig" class="font-mono whitespace-pre-wrap wrap-anywhere p-3">' + j.signature + '</div>' : '') +
-    (j.doc ? '<div data-ui="doc" class="p-3">' + esc(j.doc) + '</div>' : '') +
+    (j.doc ? '<div data-ui="doc" class="p-3 wrap-anywhere">' + esc(j.doc) + '</div>' : '') +
     '<div data-ui="actions" class="flex flex-wrap items-center gap-2 p-3">' +
       '<button id="hc-def-src" title="' + withKeys('Jump to definition in Source ({Mod+Click})') + '" class="btn" data-variant="outline" data-size="xs">Definition (Source)</button>' +
       '<button id="hc-def-diff" title="' + withKeys('Jump to definition in Diff ({Mod+Alt+Click})') + '" class="btn" data-variant="outline" data-size="xs">Definition (Diff)</button>' +
@@ -97,7 +101,7 @@ export async function showHover(at, x, y) {
       '<button id="hc-find-refs" title="Find all usages across codebase" class="btn" data-variant="outline" data-size="xs">Usages</button>' +
       '<button id="hc-calls" title="' + withKeys('Trace callers and callees ({Alt+Shift+H})') + '" class="btn" data-variant="outline" data-size="xs">Calls</button>' +
     '</div>' +
-    '<div data-ui="foot" class="flex items-center gap-2 p-3 text-muted-foreground"><b>' + esc(j.server || 'lsp') + '</b>' +
+    '<div data-ui="foot" class="flex flex-wrap items-center gap-2 p-3 text-muted-foreground"><b>' + esc(j.server || 'lsp') + '</b>' +
     '<span>' + withKeys('{Mod+Click} source') + '</span>' +
     '<span>' + withKeys('{Mod+Alt+Click} diff') + '</span>' +
     '<span>' + withKeys('{Shift+F12} usages') + '</span></div>';
@@ -146,6 +150,19 @@ export async function showHover(at, x, y) {
   hovercard.hidden = false;
   placeHover(ax, ay);
   hoverKeeper.open({ x: ax, y: ay });
+  if (focus) hovercard.focus({ preventScroll: true });
+}
+
+/** Read symbol documentation without requiring a pointer hover. */
+export function showHoverAtCaret() {
+  const d = doc_();
+  if (!d || d.isImage || d.isEditing) return;
+  const row = d.diffMode ? diffview.querySelector(`[data-l="${d.cur}"]`) : rowFor(d.cur);
+  const code = row?.querySelector(d.diffMode ? '.diff-code' : '.c');
+  const token = code && wordAtColumn(code.textContent || '', d.col || 0);
+  if (!token) { showToast('i', 'Place the caret on a symbol to read its documentation'); return; }
+  const r = code.getBoundingClientRect();
+  showHover({ ...token, line: d.cur, path: d.path }, r.left + 8, r.top, { focus: true });
 }
 
 /* Anchor below the pointer, flipping above or inward when that would overflow

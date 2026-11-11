@@ -1,3 +1,4 @@
+import { showHoverAtCaret } from './hover.js';
 import { ownsNavigationKey } from './controls.js';
 // web/src/shortcuts.js
 import { $, $$, esc, S, doc_, isMac, MOD, LH, keyCaps } from './state.js';
@@ -40,6 +41,7 @@ export const SHORTCUTS = [
   [['Mod+G'], 'Go to line'], [['Mod+D'], 'Toggle diff view (git)'], [['Alt+Z'], 'Toggle word wrap'],
   [['[c', ']c'], 'Previous / next diff hunk'], [['[f', ']f'], 'Previous / next changed file'],
   [['Alt+M'], 'Toggle Markdown / table preview'],
+  [['Shift+F1'], 'Show symbol documentation'],
   [['Enter', 'Shift+Enter'], 'Next / previous match'],
   [['F12', 'Mod+Click'], 'Go to definition'], [['Shift+F12'], 'Find all references'],
   [['Alt+Shift+H'], 'Call trail (callers / callees)'],
@@ -249,6 +251,7 @@ export function initShortcuts() {
     }
 
     if (inField(document.activeElement)) return;
+    if (e.shiftKey && e.key === 'F1') { e.preventDefault(); showHoverAtCaret(); return; }
 
     // [c / ]c (prev/next diff hunk) and [f / ]f (prev/next changed file) chords
     if (!mod && !e.altKey && !e.shiftKey) {

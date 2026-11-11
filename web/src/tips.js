@@ -1,5 +1,5 @@
 // web/src/tips.js
-import { $, $$, esc, S, api, keyCaps } from './state.js';
+import { $, $$, esc, S, api, keyCaps, doc_ } from './state.js';
 import { on, emit } from './bus.js';
 import { showToast } from './ui.js';
 import { showRightInspector } from './inspector.js';
@@ -349,7 +349,7 @@ export async function startTipsAsync() {
 
   // Non-intrusive async delay before showing the tip popup in the interface
   setTimeout(() => {
-    if (!isTipsPermanentlyHidden()) {
+    if (!isTipsPermanentlyHidden() && !doc_() && !document.querySelector('dialog[open]')) {
       showTipWidget(currentTipIndex);
       startTipAutoAdvance();
     }

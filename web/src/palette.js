@@ -1,3 +1,4 @@
+import { showHoverAtCaret } from './hover.js';
 // web/src/palette.js
 import { $, esc, S, doc_, api, debounce, withKeys } from './state.js';
 import { render, toggleWordWrap } from './renderer.js';
@@ -80,6 +81,7 @@ export const COMMANDS = [
   { name: 'Go to Line…', run: () => openPalette('line') },
   { name: 'Search in Files', run: () => showRightInspector('search') },
   { name: 'Find in Current File', run: () => openFind(S.lastWord) },
+  { name: 'Show Symbol Documentation (Shift+F1)', run: showHoverAtCaret },
   { name: 'Go to Definition', run: () => gotoDefinition() },
   { name: 'Find All References (Right Panel)', run: () => findReferences() },
   { name: withKeys('Show Call Trail: Callers / Callees ({Alt+Shift+H})'), run: () => showCalls() },
