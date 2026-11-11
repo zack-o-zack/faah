@@ -1,23 +1,16 @@
 package agy
 
-import (
-	"testing"
-)
+import "testing"
 
-func TestParseAgyEvent(t *testing.T) {
-	if evs := parse(`{"event":"init","conversation_id":"c123"}`); len(evs) != 1 || evs[0].Kind != "session" || evs[0].Text != "c123" {
-		t.Fatalf("agy init = %+v", evs)
+func TestWorkflowQuirk(t *testing.T) {
+	for _, v := range []string{"1.4.2", "1.4.3", "1.4.4", "1.4.5"} {
+		if !workflowQuirk(v) {
+			t.Fatal(v)
+		}
 	}
-	toolLine := `{"event":"step_update","step_update":{"step_type":"tool","tool_name":"view_file","state":"ACTIVE","tool_info":{"name":"view_file","parameters":{"AbsolutePath":"/path/file.go"}}}}`
-	if evs := parse(toolLine); len(evs) != 1 || evs[0].Kind != "tool" || evs[0].Text != "view_file /path/file.go" {
-		t.Fatalf("agy tool = %+v", evs)
-	}
-	deltaLine := `{"event":"step_update","step_update":{"step_type":"agent_response","text_delta":"hello world"}}`
-	if evs := parse(deltaLine); len(evs) != 1 || evs[0].Kind != "text" || evs[0].Text != "hello world" {
-		t.Fatalf("agy delta = %+v", evs)
-	}
-	resLine := `{"event":"result","result":{"status":"SUCCESS","response":"done"}}`
-	if evs := parse(resLine); len(evs) != 1 || evs[0].Kind != "result" || evs[0].Text != "done" {
-		t.Fatalf("agy result = %+v", evs)
+	for _, v := range []string{"1.4.1", "1.4.6", "1.5.5", "2.4.3", "unknown"} {
+		if workflowQuirk(v) {
+			t.Fatal(v)
+		}
 	}
 }

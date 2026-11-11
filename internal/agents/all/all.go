@@ -19,10 +19,10 @@ func List() []agents.Agent {
 	return []agents.Agent{
 		claude.New(),
 		codex.New(),
-		percmd.Wrap(agy.New()),
+		agy.New(),
 		percmd.Wrap(opencode.New()),
 		percmd.Wrap(cursor.New()),
-		percmd.Wrap(gemini.New()),
+		gemini.New(),
 	}
 }
 

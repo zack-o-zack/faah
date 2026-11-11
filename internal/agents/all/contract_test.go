@@ -25,16 +25,6 @@ func (s *sink) Result(t string)       { s.text = append(s.text, t) }
 // harness, a session, a tool step and some text. Anything else prints text.
 var fixture = map[string][]string{
 	"claude": {`{"type":"assistant","session_id":"s1","message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"a.go"}},{"type":"text","text":"hello"}]}}`},
-	"agy": {
-		`{"event":"init","conversation_id":"c123"}`,
-		`{"event":"step_update","step_update":{"step_type":"tool","tool_name":"view_file","state":"ACTIVE"}}`,
-		`{"event":"step_update","step_update":{"step_type":"agent_response","text_delta":"hello"}}`,
-	},
-	"gemini": {
-		`{"type":"init","session_id":"g1"}`,
-		`{"type":"tool_use","tool_name":"read_file","parameters":{"file_path":"a.go"}}`,
-		`{"type":"message","role":"assistant","content":"hello"}`,
-	},
 }
 
 // expect is what each listed agent must do. {sid} is the id NewSession
@@ -53,12 +43,6 @@ const toolURL = "ht" + "tp://127.0.0.1:1/api/mcp"
 
 var contract = map[string]expect{
 
-	"agy": {caps: agents.Caps{Sessions: true, NamesSession: true}, live: true, steps: true, tools: agents.ToolsTagged,
-		first:  "--output-format stream-json -p say hello",
-		resume: "--output-format stream-json --conversation c123 -p say hello"},
-	"gemini": {caps: agents.Caps{Sessions: true}, live: true, steps: true,
-		first:  "--output-format stream-json --session-id {sid} -p say hello",
-		resume: "--output-format stream-json --resume {sid} -p say hello"},
 	"cursor-agent": {caps: agents.Caps{Sessions: true}, live: true,
 		first:  "--resume {sid} -p say hello",
 		resume: "--resume {sid} -p say hello"},
@@ -74,6 +58,10 @@ func TestAgentContract(t *testing.T) {
 	seen := map[string]bool{}
 	for _, a := range List() {
 		a := a
+		if a.Name() == "agy" || a.Name() == "gemini" {
+			t.Run(a.Name(), func(t *testing.T) { acpContract(t, a) })
+			continue
+		}
 		if a.Name() == "codex" {
 			t.Run("codex", func(t *testing.T) { codexContract(t, a) })
 			continue
@@ -186,15 +174,33 @@ func TestAgentContract(t *testing.T) {
 
 // noSession is the args an agent passes for a turn with no session.
 func noSession(a agents.Agent) string {
-	if a.Name() == "agy" {
-		return "--output-format stream-json -p say hello"
-	}
 	return "-p say hello"
 }
 
 func (s *sink) Reasoning(text string) {}
 
 func TestMain(m *testing.M) {
+	if os.Getenv("FAAH_CONTRACT_ACP") == "1" {
+		scan := bufio.NewScanner(os.Stdin)
+		enc := json.NewEncoder(os.Stdout)
+		for scan.Scan() {
+			var f map[string]any
+			json.Unmarshal(scan.Bytes(), &f)
+			r := map[string]any{}
+			switch f["method"] {
+			case "initialize":
+				r["protocolVersion"] = 1
+			case "session/new":
+				r["sessionId"] = "native"
+			case "session/prompt":
+				enc.Encode(map[string]any{"jsonrpc": "2.0", "method": "session/update", "params": map[string]any{"sessionId": "native", "update": map[string]any{"sessionUpdate": "agent_message_chunk", "content": map[string]string{"type": "text", "text": "hello"}}}})
+				r["stopReason"] = "end_turn"
+			}
+			enc.Encode(map[string]any{"jsonrpc": "2.0", "id": f["id"], "result": r})
+		}
+		os.Exit(0)
+	}
+
 	if os.Getenv("FAAH_CONTRACT_CODEX") == "1" {
 		scan := bufio.NewScanner(os.Stdin)
 		enc := json.NewEncoder(os.Stdout)
@@ -205,7 +211,7 @@ func TestMain(m *testing.M) {
 			case "initialize":
 				enc.Encode(map[string]any{"id": f["id"], "result": map[string]any{}})
 			case "thread/start", "thread/resume":
-				enc.Encode(map[string]any{"id": f["id"], "result": map[string]any{"thread": map[string]string{"id": "native"}}})
+				enc.Encode(map[string]any{"id": f["id"], "result": map[string]any{"model": "test-model", "thread": map[string]string{"id": "native"}}})
 			case "turn/start":
 				enc.Encode(map[string]any{"id": f["id"], "result": map[string]any{"turn": map[string]string{"id": "turn"}}})
 				enc.Encode(map[string]any{"method": "item/agentMessage/delta", "params": map[string]string{"threadId": "native", "turnId": "turn", "delta": "hello"}})
@@ -270,6 +276,27 @@ func codexContract(t *testing.T, a agents.Agent) {
 		c := &sink{}
 		out, err := s.Prompt(ctx, "hello", c)
 		if err != nil || !out.Live || out.SessionID != "native" || strings.Join(c.text, "") != "hello" {
+			t.Fatalf("%+v %+v %v", out, c, err)
+		}
+	}
+}
+
+func acpContract(t *testing.T, a agents.Agent) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	exe, _ := os.Executable()
+	s, err := a.Open(ctx, agents.Open{Base: []string{exe}, Env: []string{"FAAH_CONTRACT_ACP=1"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	if Channel(a) != agents.ToolsMCP {
+		t.Fatal("missing MCP transport")
+	}
+	for i := 0; i < 2; i++ {
+		c := &sink{}
+		out, err := s.Prompt(ctx, "hello", c)
+		if err != nil || out.SessionID != "native" || strings.Join(c.text, "") != "hello" {
 			t.Fatalf("%+v %+v %v", out, c, err)
 		}
 	}

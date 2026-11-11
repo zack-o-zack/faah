@@ -20,7 +20,7 @@ func verifyHarnesses(t *testing.T, names ...string) {
 }
 
 func TestReadOnlyArgvRefusesUnverified(t *testing.T) {
-	for _, name := range []string{"cursor-agent", "gemini"} {
+	for _, name := range []string{"cursor-agent"} {
 		if _, err := readOnly(name, []string{name, "--sandbox", "workspace-write", "--force"}); !errors.Is(err, agents.ErrNotReadOnly) {
 			t.Errorf("%s err = %v, want it refused until it passes conformance", name, err)
 		}
@@ -36,7 +36,6 @@ func TestReadOnlyArgv(t *testing.T) {
 	}{
 		{"claude", []string{"claude", "--permission-mode", "acceptEdits", "-p", "{prompt}"}, []string{"claude", "--permission-mode", "plan", "-p", "{prompt}"}},
 		{"cursor-agent", []string{"cursor-agent", "--force", "-p", "{prompt}"}, []string{"cursor-agent", "--mode", "ask", "-p", "{prompt}"}},
-		{"agy", []string{"agy", "--dangerously-skip-permissions", "--mode", "accept-edits", "-p", "{prompt}"}, []string{"agy", "--dangerously-skip-permissions", "--mode", "plan", "-p", "{prompt}"}},
 		{"opencode", []string{"opencode", "run", "-m", "x/y", "{prompt}"}, []string{"opencode", "run", "--standalone", "--agent", "faah-explain", "-m", "x/y", "{prompt}"}},
 	}
 	for _, c := range cases {
@@ -71,12 +70,9 @@ func readOnly(name string, argv []string) ([]string, error) {
 }
 
 func TestCheckPlanUsesNativePolicy(t *testing.T) {
-	for _, name := range []string{"claude", "codex"} {
+	for _, name := range []string{"claude", "codex", "agy", "gemini"} {
 		if err := CheckPlan(name, []string{name, "-p", "{prompt}"}); err != nil {
 			t.Fatal(err)
 		}
-	}
-	if err := CheckPlan("gemini", []string{"gemini", "-p", "{prompt}"}); !errors.Is(err, agents.ErrNotReadOnly) {
-		t.Fatal(err)
 	}
 }

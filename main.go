@@ -22,6 +22,7 @@ import (
 	"syscall"
 	"time"
 
+	"faah/internal/mcp"
 	"faah/internal/settings"
 	"faah/internal/telemetry"
 	"faah/internal/ui"
@@ -39,6 +40,19 @@ var posthogKey string
 const desktopReadyPrefix = "faah-desktop-ready "
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "acp-mcp-bridge" {
+		endpoint, auth := os.Getenv("FAAH_ACP_MCP_ENDPOINT"), os.Getenv("FAAH_ACP_MCP_AUTHORIZATION")
+		if endpoint == "" || auth == "" {
+			fmt.Fprintln(os.Stderr, "acp-mcp-bridge requires FAAH_ACP_MCP_ENDPOINT and FAAH_ACP_MCP_AUTHORIZATION")
+			os.Exit(2)
+		}
+		if err := mcp.Bridge(context.Background(), os.Stdin, os.Stdout, endpoint, auth); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
+
 	var (
 		port         = flag.Int("port", 7777, "port to listen on (0 picks a free one)")
 		host         = flag.String("host", "127.0.0.1", "address to bind")
