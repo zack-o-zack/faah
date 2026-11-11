@@ -48,12 +48,12 @@ export async function drawTree(dir, container, depth, isCurrent) {
     // Ignored by .gitignore: still browsable, dimmed, and absent from search.
     const ig = c.ignored ? ' ignored' : '';
     const note = c.ignored ? ' (ignored by .gitignore, not searched)' : '';
-    const menuBtn = '<button title="Actions" aria-label="Actions" tabindex="-1" class="btn size-3.5! shrink-0 p-0! ml-auto opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-[.sel]:opacity-100" data-control="tr-menu-btn" data-variant="ghost" data-size="icon-xs"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><circle cx="2.5" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13.5" cy="8" r="1.5"/></svg></button>';
+    const menuBtn = '<button title="Actions" aria-label="Actions" tabindex="0" class="btn shrink-0 ml-auto opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-[.sel]:opacity-100" data-control="tr-menu-btn" data-variant="ghost" data-size="icon-xs"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><circle cx="2.5" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13.5" cy="8" r="1.5"/></svg></button>';
     if (c.dir) {
       const dc = c.dirty ? ' dirty' : ''; // backend marks any ancestor of a change
       const ydc = c.yourDirty ? ' your-dirty' : '';
       return '<div class="tw block"><div class="tr flex min-h-6 cursor-pointer select-none items-center gap-1.5 pr-2 text-xs whitespace-nowrap hover:bg-sidebar-accent focus-visible:outline focus-visible:outline-ring [&.sel]:bg-sidebar-accent [&.ignored]:opacity-50 [&.git-M]:text-primary-text [&.git-R]:text-primary-text [&.git-A]:text-gi [&.git-untracked]:text-gi [&.git-D]:text-gd [&.git-D_.nm]:line-through [&.your-change]:font-semibold [.scope-pr_&.your-change]:font-normal [&.file-viewed_.nm]:opacity-50 group dir' + ig + dc + ydc + '" data-dir="' + esc(c.path) + '" style="padding-left:' + pad + 'px" title="Folder: ' + esc(c.path) + note + '">' +
-        '<span data-ui="ar" class="shrink-0 text-muted-foreground size-2 shrink-0 border-r border-t border-muted-foreground rotate-45 group-[.open]:rotate-[135deg]"></span><span class="nm truncate group-[.dir.dirty]:after:ml-1 group-[.dir.dirty]:after:inline-block group-[.dir.dirty]:after:size-1 group-[.dir.dirty]:after:rounded-full group-[.dir.dirty]:after:bg-primary">' + esc(c.name) + '</span>' + menuBtn + '</div>' +
+        '<span data-ui="ar" class="shrink-0 text-muted-foreground size-2 shrink-0 border-r border-t border-muted-foreground rotate-45 group-[.open]:rotate-[135deg]"></span><button type="button" class="nm min-h-6 min-w-0 text-left focus-visible:outline focus-visible:outline-ring truncate group-[.dir.dirty]:after:ml-1 group-[.dir.dirty]:after:inline-block group-[.dir.dirty]:after:size-1 group-[.dir.dirty]:after:rounded-full group-[.dir.dirty]:after:bg-primary">' + esc(c.name) + '</button>' + menuBtn + '</div>' +
         // --guide is where the folder's chevron sits, for the desktop app's indent guide.
         '<div class="kids hidden [&.open]:block" data-kids="' + esc(c.path) + '" style="--guide:' + (pad + 6) + 'px"></div></div>';
     }
@@ -67,9 +67,9 @@ export async function drawTree(dir, container, depth, isCurrent) {
     const isStaged = !!(showTick && c.staged);
     const isPartial = isStaged && !!c.partial;
     const sc = (isStaged ? ' is-staged' : '') + (isFileViewed(c.path) ? ' file-viewed' : '');
-    const tick = showTick ? '<input type="checkbox" class="input size-[13px] shrink-0 ml-1" data-partial="' + isPartial + '" aria-label="Stage file" data-stage="' + esc(c.path) + '" title="' + stageTickTitle(isStaged, isPartial) + '"' + (isStaged ? ' checked' : '') + '>' : '';
+    const tick = showTick ? '<label class="inline-flex size-6 shrink-0 items-center justify-center cursor-pointer" data-stage-target><input type="checkbox" class="input" data-partial="' + isPartial + '" aria-label="Stage file" data-stage="' + esc(c.path) + '" title="' + stageTickTitle(isStaged, isPartial) + '"' + (isStaged ? ' checked' : '') + '></label>' : '';
     return '<div class="tr flex min-h-6 cursor-pointer select-none items-center gap-1.5 pr-2 text-xs whitespace-nowrap hover:bg-sidebar-accent focus-visible:outline focus-visible:outline-ring [&.sel]:bg-sidebar-accent [&.ignored]:opacity-50 [&.git-M]:text-primary-text [&.git-R]:text-primary-text [&.git-A]:text-gi [&.git-untracked]:text-gi [&.git-D]:text-gd [&.git-D_.nm]:line-through [&.your-change]:font-semibold [.scope-pr_&.your-change]:font-normal [&.file-viewed_.nm]:opacity-50 group file' + ig + gc + yc + sc + '" data-file="' + esc(c.path) + '"' + (c.status ? ' data-st="' + esc(c.status) + '"' : '') + (c.yourStatus ? ' data-yst="' + esc(c.yourStatus) + '"' : '') + ' style="padding-left:' + (pad + 12) + 'px" title="Open ' + esc(c.path) + note + '">' +
-      '<span class="ic size-2 shrink-0 rounded-sm bg-faint [--dot:var(--faint)] data-[t=code]:bg-[var(--nf)] data-[t=data]:bg-[var(--kt)] data-[t=web]:bg-[var(--nt)] data-[t=img]:bg-[var(--nc)]" data-t="' + fileKind(c.name) + '"></span><span class="nm truncate group-[.dir.dirty]:after:ml-1 group-[.dir.dirty]:after:inline-block group-[.dir.dirty]:after:size-1 group-[.dir.dirty]:after:rounded-full group-[.dir.dirty]:after:bg-primary">' + esc(c.name) + '</span>' + badge + tick + menuBtn + '</div>';
+      '<span class="ic size-2 shrink-0 rounded-sm bg-faint [--dot:var(--faint)] data-[t=code]:bg-[var(--nf)] data-[t=data]:bg-[var(--kt)] data-[t=web]:bg-[var(--nt)] data-[t=img]:bg-[var(--nc)]" data-t="' + fileKind(c.name) + '"></span><button type="button" class="nm min-h-6 min-w-0 text-left focus-visible:outline focus-visible:outline-ring truncate group-[.dir.dirty]:after:ml-1 group-[.dir.dirty]:after:inline-block group-[.dir.dirty]:after:size-1 group-[.dir.dirty]:after:rounded-full group-[.dir.dirty]:after:bg-primary">' + esc(c.name) + '</button>' + badge + tick + menuBtn + '</div>';
   }).join('');
   for (const tick of container.querySelectorAll('[data-stage]')) tick.indeterminate = tick.dataset.partial === 'true';
   relabelTreeBadges();
@@ -372,7 +372,7 @@ export async function patchTreeGitStatus(statuses = {}, dirtyDirs = {}, staged =
       const youTag = fileRow.querySelector('[data-control~=gs-you-tag]');
       if (youTag) youTag.remove();
       const tick = fileRow.querySelector('[data-stage]');
-      if (tick) tick.remove();
+      if (tick) (tick.closest('[data-stage-target]') || tick).remove();
     }
   }
 
@@ -422,19 +422,23 @@ export async function patchTreeGitStatus(statuses = {}, dirtyDirs = {}, staged =
         if (!tick) {
           tick = document.createElement('input');
           tick.type = 'checkbox';
-          tick.className = 'input size-[13px] shrink-0 ml-1';
+          tick.className = 'input';
           tick.setAttribute('aria-label', 'Stage file');
           tick.dataset.variant = 'outline';
           tick.dataset.size = 'icon-xs';
           tick.dataset.stage = p;
-          fileRow.appendChild(tick);
+          const label = document.createElement('label');
+          label.className = 'inline-flex size-6 shrink-0 items-center justify-center cursor-pointer';
+          label.setAttribute('data-stage-target', '');
+          label.append(tick);
+          fileRow.insertBefore(label, fileRow.querySelector('[data-control~=tr-menu-btn]'));
         }
         tick.dataset.partial = String(isPartial);
         tick.checked = isStaged;
         tick.indeterminate = isPartial;
         tick.title = stageTickTitle(isStaged, isPartial);
       } else if (tick) {
-        tick.remove();
+        (tick.closest('[data-stage-target]') || tick).remove();
       }
     } else {
       fileRow.classList.remove('dirty', 'is-staged', 'your-change');
@@ -443,7 +447,7 @@ export async function patchTreeGitStatus(statuses = {}, dirtyDirs = {}, staged =
       const youTag = fileRow.querySelector('[data-control~=gs-you-tag]');
       if (youTag) youTag.remove();
       const tick = fileRow.querySelector('[data-stage]');
-      if (tick) tick.remove();
+      if (tick) (tick.closest('[data-stage-target]') || tick).remove();
     }
     const menuBtn = fileRow.querySelector('[data-control~=tr-menu-btn]');
     if (menuBtn) fileRow.appendChild(menuBtn);
@@ -658,6 +662,7 @@ export function initTree() {
       }
       return;
     }
+    if (e.target.closest('[data-stage-target]') && !e.target.matches('[data-stage]')) return;
     const tick = e.target.closest('[data-stage]');
     if (tick) {
       e.stopPropagation();

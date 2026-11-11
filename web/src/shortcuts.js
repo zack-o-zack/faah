@@ -1,3 +1,4 @@
+import { ownsNavigationKey } from './controls.js';
 // web/src/shortcuts.js
 import { $, $$, esc, S, doc_, isMac, MOD, LH, keyCaps } from './state.js';
 import { vp, sizer } from './ui.js';
@@ -114,6 +115,7 @@ export function initShortcuts() {
 
   addEventListener('keydown', e => {
     const mod = e[MOD];
+    if (ownsNavigationKey(e)) return;
     const menuOpen = document.querySelector('[data-popover][aria-hidden="false"]');
     if (menuOpen && ['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return;
     if (menuOpen && e.key === 'Escape') { e.preventDefault(); return; }

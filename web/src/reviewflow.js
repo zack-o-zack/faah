@@ -387,22 +387,24 @@ function renderPipeline() {
     const isActive = idx === activeStageIdx;
 
     const card = document.createElement('div');
-    card.setAttribute('data-ui', 'review-stage-card'); card.className = `card flex flex-row items-start gap-3 p-4 cursor-pointer [&.active]:ring-2 [&.active]:ring-ring ${status} ${isActive ? 'active' : ''}`;
+    card.setAttribute('data-ui', 'review-stage-card'); card.className = `card flex shrink-0 flex-col gap-3 p-4 [&.active]:ring-2 [&.active]:ring-ring ${status} ${isActive ? 'active' : ''}`;
     card.dataset.index = String(idx);
 
     const iconHtml = statusIcons[status] || statusIcons.pending;
 
     card.innerHTML = `
-      <div data-ui="review-stage-card-icon" class="flex items-center justify-center flex-none text-muted-foreground">${iconHtml}</div>
-      <div data-ui="review-stage-card-body" class="flex-1 min-w-0">
-        <div data-ui="review-stage-card-num" class="font-semibold text-muted-foreground">Stage ${idx + 1}</div>
-        <div data-ui="review-stage-card-title" class="label overflow-hidden whitespace-nowrap text-ellipsis font-semibold">${esc(title)}</div>
-        <div data-ui="review-stage-card-desc" class="overflow-hidden text-muted-foreground" title="${esc(question)}">${esc(question)}</div>
-      </div>
-      <div data-ui="review-stage-card-actions" class="flex flex-col items-end flex-none gap-2">
-        <span class="badge" data-variant="secondary">${status}</span>
+      <button type="button" data-control="review-stage-select" aria-pressed="${isActive}" class="flex w-full min-w-0 items-start gap-2 text-left rounded focus-visible:outline focus-visible:outline-ring">
+        <span data-ui="review-stage-card-icon" class="flex shrink-0 items-center text-muted-foreground">${iconHtml}</span>
+        <span data-ui="review-stage-card-body" class="flex min-w-0 flex-1 flex-col gap-1">
+          <span data-ui="review-stage-card-num" class="text-xs text-muted-foreground">Stage ${idx + 1}</span>
+          <span data-ui="review-stage-card-title" class="font-semibold wrap-anywhere">${esc(title)}</span>
+          <span data-ui="review-stage-card-desc" class="text-sm text-muted-foreground wrap-anywhere">${esc(question)}</span>
+        </span>
+      </button>
+      <div data-ui="review-stage-card-actions" class="flex flex-wrap items-center gap-1">
+        <span class="badge mr-auto" data-variant="secondary">${status}</span>
         <button type="button" title="Edit this stage" class="btn" data-control="mini review-stage-card-edit-btn" data-variant="ghost" data-size="icon-xs" aria-label="Edit this stage"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-        <button type="button" title="Remove stage from workflow" aria-label="Remove stage" class="btn" data-control="mini review-stage-remove-btn" data-variant="ghost" data-size="icon-xs">&times;</button>
+        <button type="button" title="Remove stage from workflow" aria-label="Remove stage" class="btn" data-control="mini review-stage-remove-btn" data-variant="ghost" data-size="icon-xs"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
       </div>
     `;
 
@@ -411,6 +413,7 @@ function renderPipeline() {
       activeStageIdx = idx;
       renderPipeline();
       renderActiveStage();
+      container.querySelector(`[data-index="${idx}"] [data-control~=review-stage-select]`)?.focus();
     };
 
     const editBtn = card.querySelector('[data-control~=review-stage-card-edit-btn]');

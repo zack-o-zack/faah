@@ -91,7 +91,7 @@ function updateVimStatus() {
   chip.hidden = !vimEnabled;
   if (!vimEnabled) return;
 
-  chip.className = 'btn h-5! text-10! font-mono';
+  chip.className = 'btn font-mono';
   chip.dataset.control = 'status-vim-chip';
   chip.dataset.variant = vimMode === 'NORMAL' ? 'primary' : 'secondary';
   chip.dataset.size = 'xs';

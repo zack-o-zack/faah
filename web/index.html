@@ -17,7 +17,7 @@
 <div id="app" class="flex h-dvh overflow-hidden">
   <!-- SECTION: Sidebar (File explorer tree) -->
   <aside id="side" class="flex w-[340px] shrink-0 flex-col overflow-hidden border-r bg-sidebar text-sidebar-foreground [body.side-hidden_&]:hidden">
-    <header class="panel-head desktop:min-h-[var(--titlebar-h,2.5rem)] desktop:[-webkit-app-region:drag] desktop:[&_button]:[-webkit-app-region:no-drag] desktop:[&_a]:[-webkit-app-region:no-drag] desktop:[&_[role=group]]:[-webkit-app-region:no-drag] desktop:[&_[role=tab]]:[-webkit-app-region:no-drag] desktop:pl-[calc(0.75rem+var(--titlebar-left,0px))] desktop:flex-wrap [&_.panel-actions]:desktop:w-full flex shrink-0 items-center gap-2 border-b px-3 py-2 text-xs font-medium"><span id="root-name" class="min-w-0 flex-1 truncate">-</span><span class="panel-actions ml-auto flex shrink-0 items-center gap-1"><div class="button-group desktop:mr-auto" role="group" aria-label="Explorer view mode"><button id="btn-files" title="File Explorer (show all files)" aria-label="File Explorer" class="btn size-5!" data-control="view-choice" data-variant="secondary" data-size="icon-xs" aria-pressed="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></button><button id="btn-changed" title="Git changes (show changed files only)" aria-label="Git changes" class="btn size-5!" data-control="view-choice" data-variant="ghost" data-size="icon-xs"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="9" r="2.5"/><path d="M6 8.5v7M18 11.5c0 3-3 3.5-6 3.5"/></svg></button></div><button id="btn-new-file" title="New File" aria-label="New File" class="btn size-5!" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg></button><button id="btn-new-folder" title="New Folder" aria-label="New Folder" class="btn size-5!" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg></button><button id="btn-collapse-tree" title="Collapse all folders" aria-label="Collapse all folders" class="btn size-5!" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 11 12 6 17 11"/><polyline points="7 18 12 13 17 18"/></svg></button><button id="btn-expand-tree" title="Expand all project folders (ignored folders stay closed)" aria-label="Expand all project folders" class="btn size-5!" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 6 12 11 17 6"/><polyline points="7 13 12 18 17 13"/></svg></button><button id="btn-reindex" title="Re-index" class="btn size-5!" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Re-index"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button></span></header>
+    <header class="panel-head desktop:min-h-[var(--titlebar-h,2.5rem)] desktop:[-webkit-app-region:drag] desktop:[&_button]:[-webkit-app-region:no-drag] desktop:[&_a]:[-webkit-app-region:no-drag] desktop:[&_[role=group]]:[-webkit-app-region:no-drag] desktop:[&_[role=tab]]:[-webkit-app-region:no-drag] desktop:pl-[calc(0.75rem+var(--titlebar-left,0px))] desktop:flex-wrap [&_.panel-actions]:desktop:w-full flex shrink-0 items-center gap-2 border-b px-3 py-2 text-xs font-medium"><span id="root-name" class="min-w-0 flex-1 truncate">-</span><span class="panel-actions ml-auto flex shrink-0 items-center gap-1"><div class="button-group desktop:mr-auto" role="group" aria-label="Explorer view mode"><button id="btn-files" title="File Explorer (show all files)" aria-label="File Explorer" class="btn" data-control="view-choice" data-variant="secondary" data-size="icon-xs" aria-pressed="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></button><button id="btn-changed" title="Git changes (show changed files only)" aria-label="Git changes" class="btn" data-control="view-choice" data-variant="ghost" data-size="icon-xs"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="9" r="2.5"/><path d="M6 8.5v7M18 11.5c0 3-3 3.5-6 3.5"/></svg></button></div><button id="btn-new-file" title="New File" aria-label="New File" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg></button><button id="btn-new-folder" title="New Folder" aria-label="New Folder" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg></button><button id="btn-collapse-tree" title="Collapse all folders" aria-label="Collapse all folders" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 11 12 6 17 11"/><polyline points="7 18 12 13 17 18"/></svg></button><button id="btn-expand-tree" title="Expand all project folders (ignored folders stay closed)" aria-label="Expand all project folders" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 6 12 11 17 6"/><polyline points="7 13 12 18 17 13"/></svg></button><button id="btn-reindex" title="Re-index" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Re-index"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button></span></header>
     <!-- PR review only (web/src/prscope.js): whole PR vs just your own changes -->
     <div id="scope-bar" class="scope-bar flex shrink-0 gap-1 border-b p-2 button-group" role="group" aria-label="Changes to show" hidden>
       <button type="button" data-scope="all" aria-pressed="true" title="Every file this PR changes, plus your edits" class="btn" data-variant="secondary" data-size="xs">PR changes <span id="scope-all-n" class="badge" data-variant="secondary" data-control="scope-n">0</span></button>
@@ -74,7 +74,7 @@
               <button id="git-generate-msg" title="Stage all changes and write a commit message using the selected coding harness" class="btn" data-control="git-generate-btn" data-variant="primary" data-size="xs">Stage all + Commit with AI</button>
             </div>
           </div>
-          <textarea id="git-commit-msg" rows="3" spellcheck="false" autocomplete="off" placeholder="Commit message..." hidden class="textarea resize-y" data-control="git-commit-msg"></textarea>
+          <textarea id="git-commit-msg" aria-label="Commit message" rows="3" spellcheck="false" autocomplete="off" placeholder="Commit message..." hidden class="textarea resize-y" data-control="git-commit-msg"></textarea>
           <div class="git-instructions-wrap flex items-center">
             <a id="git-write-msg-link" href="#" role="button" title="Write the commit message yourself" class="btn" data-control="git-instructions-link" data-variant="link" data-size="xs">write message</a>
             <span class="git-link-sep mx-2 text-xs text-muted-foreground" aria-hidden="true" hidden>&middot;</span>
@@ -227,7 +227,7 @@
       <div id="editview" class="absolute inset-0 z-[6] flex overflow-hidden bg-background" hidden>
         <div id="editview-gutter" class="editview-gutter"></div>
         <div class="relative h-full flex-1 overflow-hidden">
-          <textarea id="editview-textarea" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+          <textarea id="editview-textarea" aria-label="File contents" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
         </div>
       </div>
       <!-- Preview: covers the code view for a Markdown tab, or a CSV/TSV tab as a table (Alt+M toggles) -->
@@ -292,7 +292,7 @@
 
       <!-- Find in File (Ctrl+F) Overlay Bar -->
       <div id="findbar" class="card absolute top-2 right-[22px] z-20 flex-row items-center gap-1" hidden>
-        <input id="find-input" type="text" spellcheck="false" placeholder="Find" autocomplete="off" class="input border-0! shadow-none! bg-transparent! h-6! w-[190px]!">
+        <input id="find-input" aria-label="Find in file" type="text" spellcheck="false" placeholder="Find" autocomplete="off" class="input border-0! shadow-none! bg-transparent! h-6! w-[190px]!">
         <button id="find-case" title="Match case" class="btn" data-variant="outline" data-size="xs">Aa</button>
         <span id="find-count" class="min-w-16 text-right font-mono text-muted-foreground">0</span>
         <button id="find-prev" title="Previous ({Shift+Enter})" class="btn" data-variant="ghost" data-size="icon-xs" aria-label="Previous ({Shift+Enter})">&#8593;</button>
@@ -318,7 +318,7 @@
           <!-- Shown until a harness has been picked, and whenever one is changed -->
           <div data-ui="agent-pick" class="flex flex-col gap-2" hidden></div>
           <div data-ui="agent-compose" class="flex flex-col gap-2 in-[.queued]:hidden">
-            <textarea rows="3" spellcheck="false" autocomplete="off" placeholder="Describe the change. Add it as a comment to batch with others, or apply it right away." class="textarea resize-y" data-control="agent-input"></textarea>
+            <textarea rows="3" spellcheck="false" autocomplete="off" placeholder="Describe the change. Add it as a comment to batch with others, or apply it right away." class="textarea resize-y" data-control="agent-input" aria-label="Comment about selected code"></textarea>
             <div data-ui="agent-err" class="alert flex flex-col overflow-y-auto gap-2 p-3 font-mono" hidden></div>
             <div data-ui="agent-foot" class="flex items-center gap-2 font-mono text-muted-foreground">
               <span data-ui="agent-hint" class="flex-1">Enter to send, Esc to cancel</span>
@@ -459,19 +459,19 @@
         <div id="review-stage-inline-editor" data-ui="review-stage-inline-editor" class="flex flex-col gap-2 p-3" hidden>
           <div data-ui="review-inline-edit-row" class="field flex flex-col gap-2">
             <label class="label">Stage Title</label>
-            <input type="text" id="inline-edit-stage-title" placeholder="e.g. Performance Impact" class="input h-8!" data-control="review-inline-input">
+            <input type="text" id="inline-edit-stage-title" aria-label="Stage title" placeholder="e.g. Performance Impact" class="input h-8!" data-control="review-inline-input">
           </div>
           <div data-ui="review-inline-edit-row" class="field flex flex-col gap-2">
             <label class="label">Review Question</label>
-            <textarea id="inline-edit-stage-q" rows="2" placeholder="e.g. Are there any performance bottlenecks or lock contentions?" class="textarea resize-y" data-control="review-inline-textarea"></textarea>
+            <textarea id="inline-edit-stage-q" aria-label="Stage question" rows="2" placeholder="e.g. Are there any performance bottlenecks or lock contentions?" class="textarea resize-y" data-control="review-inline-textarea"></textarea>
           </div>
           <div data-ui="review-inline-edit-row" class="field flex flex-col gap-2">
             <label class="label">Detailed AI Prompt Instructions</label>
-            <textarea id="inline-edit-stage-prompt" rows="3" placeholder="Detailed instructions for the AI reviewer..." class="textarea resize-y" data-control="review-inline-textarea"></textarea>
+            <textarea id="inline-edit-stage-prompt" aria-label="Stage instructions" rows="3" placeholder="Detailed instructions for the AI reviewer..." class="textarea resize-y" data-control="review-inline-textarea"></textarea>
           </div>
           <div data-ui="review-inline-edit-actions" class="flex gap-2">
-            <button id="btn-save-stage-inline" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="primary" data-size="xs">Save Changes</button>
-            <button id="btn-cancel-stage-inline" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs">Cancel</button>
+            <button id="btn-save-stage-inline" class="btn" data-control="bar-action" data-variant="primary" data-size="xs">Save Changes</button>
+            <button id="btn-cancel-stage-inline" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs">Cancel</button>
           </div>
         </div>
 
@@ -481,7 +481,7 @@
         <!-- Composer to ask follow-up questions on this stage -->
         <div data-ui="review-compose-wrap" class="p-3">
           <div data-ui="review-compose-inner" class="flex flex-col gap-2">
-            <textarea id="review-compose-input" rows="2" spellcheck="false" autocomplete="off" placeholder="Ask follow-up question about this stage..." class="textarea resize-y" data-control="agent-input review-input"></textarea>
+            <textarea id="review-compose-input" aria-label="Follow-up about this stage" rows="2" spellcheck="false" autocomplete="off" placeholder="Ask follow-up question about this stage..." class="textarea resize-y" data-control="agent-input review-input"></textarea>
             <div data-ui="review-compose-foot" class="flex items-center justify-between">
               <span data-ui="agent-hint" class="flex-1">Enter to send, Shift+Enter for new line</span>
               <button id="review-compose-send" class="btn" data-control="agent-send review-send-btn" data-variant="primary" data-size="xs">Send</button>
@@ -522,7 +522,7 @@
         <span id="pr-draft-count" class="badge" data-variant="secondary" data-control="pr-draft-count"></span>
       </div>
       <div data-ui="pr-bar-row pr-review-row" class="flex items-center min-w-0 gap-2 gap-2">
-        <textarea id="pr-review-body" rows="1" spellcheck="false" autocomplete="off" placeholder="Review summary / verdict comment (optional)..." class="textarea resize-y" data-control="pr-review-body"></textarea>
+        <textarea id="pr-review-body" aria-label="Review summary" rows="1" spellcheck="false" autocomplete="off" placeholder="Review summary / verdict comment (optional)..." class="textarea resize-y" data-control="pr-review-body"></textarea>
         <button id="pr-batch-apply" hidden title="Dispatch AI agent to apply all draft review comments directly to the codebase" class="btn" data-control="bar-action pr-btn-batch-apply" data-variant="ghost" data-size="xs">
           <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="block shrink-0"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg>
           <span class="bar-action-label text-xs font-medium desktop:hidden">Batch Apply</span>
@@ -553,8 +553,8 @@
       <div id="pr-comments-body" data-ui="pr-comments-body" class="flex flex-1 min-h-0 flex-col group-[.collapsed]/comments:hidden">
         <div id="pr-comments-list" data-ui="pr-comments-list" class="flex flex-col flex-1 min-h-0 overflow-y-auto gap-2 p-3"></div>
         <div id="pr-issue-compose" data-ui="pr-issue-compose" class="flex items-start flex-none gap-2 p-3">
-          <textarea id="pr-issue-compose-body" rows="2" spellcheck="false" autocomplete="off" placeholder="Write a comment on the PR conversation..." class="textarea resize-y" data-control="pr-review-body"></textarea>
-          <button id="pr-issue-compose-send" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs">Post Comment</button>
+          <textarea id="pr-issue-compose-body" aria-label="Pull request comment" rows="2" spellcheck="false" autocomplete="off" placeholder="Write a comment on the PR conversation..." class="textarea resize-y" data-control="pr-review-body"></textarea>
+          <button id="pr-issue-compose-send" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs">Post Comment</button>
         </div>
       </div>
     </div>
@@ -607,34 +607,34 @@
       <!-- Selection actions: replace the buttons and size below while code is selected -->
       <div id="footer-sel" class="hidden min-w-0 items-center gap-2 [#status.selecting_&]:flex">
         <span class="sel-chip badge">Selection</span>
-        <button data-sel="copy-source" title="Copy source code as is ({Mod+C})" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Copy Source</span><kbd data-keys="Mod+C" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-sel="copy-preview-text" title="Copy formatted text ({Mod+C})" hidden class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Copy Text</span><kbd data-keys="Mod+C" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-sel="copy-markdown" title="Copy raw Markdown" hidden class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Copy Raw Markdown</span><kbd data-keys="Alt+M" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-sel="copy-ref" title="Copy file and line reference ({Alt+C})" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Copy Ref</span><kbd data-keys="Alt+C" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-sel="copy-agent" title="Copy snippet with file path and line numbers ({Alt+A})" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Copy with Context</span><kbd data-keys="Alt+A" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-sel="thread" title="Start a thread on this selection ({Alt+T})" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Thread</span><kbd data-keys="Alt+T" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-sel="explain" title="Explain this selection ({Alt+X})" hidden class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Explain</span><kbd data-keys="Alt+X" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-sel="agent-edit" title="Edit this selection inline ({Alt+E})" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Edit Inline</span><kbd data-keys="Alt+E" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
+        <button data-sel="copy-source" title="Copy source code as is ({Mod+C})" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Copy Source</span><kbd data-keys="Mod+C" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
+        <button data-sel="copy-preview-text" title="Copy formatted text ({Mod+C})" hidden class="btn" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Copy Text</span><kbd data-keys="Mod+C" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
+        <button data-sel="copy-markdown" title="Copy raw Markdown" hidden class="btn" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Copy Raw Markdown</span><kbd data-keys="Alt+M" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
+        <button data-sel="copy-ref" title="Copy file and line reference ({Alt+C})" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Copy Ref</span><kbd data-keys="Alt+C" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
+        <button data-sel="copy-agent" title="Copy snippet with file path and line numbers ({Alt+A})" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Copy with Context</span><kbd data-keys="Alt+A" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
+        <button data-sel="thread" title="Start a thread on this selection ({Alt+T})" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Thread</span><kbd data-keys="Alt+T" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
+        <button data-sel="explain" title="Explain this selection ({Alt+X})" hidden class="btn" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Explain</span><kbd data-keys="Alt+X" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
+        <button data-sel="agent-edit" title="Edit this selection inline ({Alt+E})" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Edit Inline</span><kbd data-keys="Alt+E" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
       </div>
       <div id="footer-actions" class="flex items-center gap-1 [#status.selecting_&]:hidden">
-        <button data-action="quick-open" title="Go to File ({Mod+P})" class="btn desktop:size-6! desktop:p-0! h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><svg class="shell-ico hidden desktop:block" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg><span class="bar-action-label text-xs font-medium desktop:hidden">Files</span><kbd data-keys="Mod+P" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-action="search" title="Search in Files ({Mod+Shift+F})" class="btn desktop:size-6! desktop:p-0! h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><svg class="shell-ico hidden desktop:block" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg><span class="bar-action-label text-xs font-medium desktop:hidden">Search</span><kbd data-keys="Mod+Shift+F" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-action="find" title="Find in File ({Mod+F})" class="btn desktop:size-6! desktop:p-0! desktop:hidden! h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Find in File</span><kbd data-keys="Mod+F" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-action="goto" title="Go to Line ({Mod+G})" class="btn desktop:size-6! desktop:p-0! desktop:hidden! h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Go to</span><kbd data-keys="Mod+G" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-action="md-preview" title="Toggle Markdown / table preview ({Alt+M})" hidden class="btn desktop:size-6! desktop:p-0! desktop:hidden! h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Preview</span><kbd data-keys="Alt+M" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-action="wrap" title="Toggle Word Wrap ({Alt+Z})" class="btn desktop:size-6! desktop:p-0! desktop:hidden! h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Wrap</span><kbd data-keys="Alt+Z" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button id="btn-vim-help" data-action="vim-help" title="Vim Keybindings" hidden class="btn desktop:size-6! desktop:p-0! desktop:hidden! h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Vim Keys</span><kbd class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut">?</kbd></button>
-        <button data-action="help" title="Keyboard Shortcuts ({?})" class="btn desktop:size-6! desktop:p-0! desktop:hidden! h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Help</span><kbd data-keys="?" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
+        <button data-action="quick-open" title="Go to File ({Mod+P})" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs"><svg class="shell-ico hidden desktop:block" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg><span class="bar-action-label text-xs font-medium desktop:hidden">Files</span><kbd data-keys="Mod+P" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
+        <button data-action="search" title="Search in Files ({Mod+Shift+F})" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs"><svg class="shell-ico hidden desktop:block" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg><span class="bar-action-label text-xs font-medium desktop:hidden">Search</span><kbd data-keys="Mod+Shift+F" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
+        <button data-action="find" title="Find in File ({Mod+F})" class="btn desktop:hidden!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Find in File</span><kbd data-keys="Mod+F" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
+        <button data-action="goto" title="Go to Line ({Mod+G})" class="btn desktop:hidden!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Go to</span><kbd data-keys="Mod+G" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
+        <button data-action="md-preview" title="Toggle Markdown / table preview ({Alt+M})" hidden class="btn desktop:hidden!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Preview</span><kbd data-keys="Alt+M" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
+        <button data-action="wrap" title="Toggle Word Wrap ({Alt+Z})" class="btn desktop:hidden!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Wrap</span><kbd data-keys="Alt+Z" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
+        <button id="btn-vim-help" data-action="vim-help" title="Vim Keybindings" hidden class="btn desktop:hidden!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Vim Keys</span><kbd class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut">?</kbd></button>
+        <button data-action="help" title="Keyboard Shortcuts ({?})" class="btn desktop:hidden!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Help</span><kbd data-keys="?" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
       </div>
       <span class="status-sep h-3 w-px shrink-0 bg-border [#status.selecting_#footer-actions+&]:hidden"></span>
-      <span id="st-vim" hidden role="button" tabindex="0" title="Vim Mode (Click for shortcuts)" class="btn h-5! text-10! font-mono" data-control="status-vim-chip" data-variant="outline" data-size="xs">NORMAL</span>
+      <span id="st-vim" hidden role="button" tabindex="0" title="Vim Mode (Click for shortcuts)" class="btn font-mono" data-control="status-vim-chip" data-variant="outline" data-size="xs">NORMAL</span>
       <span id="st-size" class="[#status.selecting_&]:hidden"></span>
       <span class="empty:hidden" id="st-pos"></span>
       <span id="status-spacer" class="flex-1"></span>
       <span id="st-lsp" role="button" tabindex="0" title="Language Servers (Click to manage)" class="btn data-[state=ready]:text-gi data-[state=indexing]:text-primary-text data-[state=failed]:text-destructive" data-variant="outline" data-size="xs">LSP</span>
       <span id="sel-stats" class="hidden [#status.selecting_&]:inline-flex"></span>
       <span class="status-sep h-3 w-px shrink-0 bg-border [#status.selecting_#footer-actions+&]:hidden"></span>
-      <span id="st-metrics" role="button" tabindex="0" class="btn h-5! px-1! text-11! font-mono desktop:[&>:not(.shell-ico)]:hidden desktop:size-6! desktop:p-0!" data-control="status-metrics" data-variant="outline" data-size="xs">
+      <span id="st-metrics" role="button" tabindex="0" class="btn font-mono desktop:[&>:not(.shell-ico)]:hidden" data-control="status-metrics" data-variant="outline" data-size="xs">
         <svg class="shell-ico hidden desktop:block" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         <span class="metric"><span class="metric-label">CPU</span> <span id="st-cpu">--%</span></span>
         <span class="metric-divider text-muted-foreground">·</span>
@@ -679,7 +679,7 @@
     <!-- Right Pane 2: Symbols outline for active file -->
     <section class="inspector-pane hidden min-h-0 flex-1 flex-col overflow-hidden [&.active]:flex" id="pane-right-symbols">
       <div data-ui="search-form" class="flex flex-col gap-2 p-3">
-        <input id="right-symbols-filter" type="text" spellcheck="false" placeholder="Filter file symbols" autocomplete="off" class="input h-8!">
+        <input id="right-symbols-filter" aria-label="Filter symbols" type="text" spellcheck="false" placeholder="Filter file symbols" autocomplete="off" class="input h-8!">
       </div>
       <div class="panel-body min-h-0 flex-1 overflow-auto pb-4" id="right-symbols-list"></div>
     </section>
@@ -701,13 +701,13 @@
     <!-- Right Pane 4: Full-text search across the workspace -->
     <section class="inspector-pane hidden min-h-0 flex-1 flex-col overflow-hidden [&.active]:flex" id="pane-right-search">
       <div data-ui="search-form" class="flex flex-col gap-2 p-3">
-        <input id="q" type="text" spellcheck="false" placeholder="Search in files" autocomplete="off" class="input h-8!">
+        <input id="q" aria-label="Search in files" type="text" spellcheck="false" placeholder="Search in files" autocomplete="off" class="input h-8!">
         <div class="flex flex-wrap gap-1">
           <button id="o-case" title="Match case" class="btn" data-control="opt" data-variant="ghost" data-size="xs">Aa</button>
           <button id="o-word" title="Whole word" class="btn" data-control="opt" data-variant="ghost" data-size="xs">|ab|</button>
           <button id="o-re" title="Regular expression" class="btn" data-control="opt" data-variant="ghost" data-size="xs">.*</button>
         </div>
-        <input id="glob" type="text" spellcheck="false" placeholder="files to include e.g. *.go" autocomplete="off" class="input h-8!">
+        <input id="glob" aria-label="Files to include" type="text" spellcheck="false" placeholder="files to include e.g. *.go" autocomplete="off" class="input h-8!">
       </div>
       <div class="panel-body min-h-0 flex-1 overflow-auto pb-4" id="results">
         <div data-ui="hint" class="empty text-muted-foreground">Search text across every indexed file.</div>
@@ -718,7 +718,7 @@
       <div data-ui="tips-header-bar" class="inspector-bar flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2 text-xs flex items-center gap-2 p-3">
         <div data-ui="tips-search-wrap" class="flex items-center flex-1 gap-2 p-3 text-muted-foreground">
           <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" id="tips-filter" placeholder="Filter tips..." autocomplete="off" spellcheck="false" class="input">
+          <input type="text" id="tips-filter" aria-label="Filter tips" placeholder="Filter tips..." autocomplete="off" spellcheck="false" class="input">
         </div>
         <span id="tips-count-badge" class="badge" data-variant="secondary" data-control="inspector-badge">0 tips</span>
         <button id="btn-refresh-tips" title="Reload tips" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Reload tips">&#x21bb;</button>
@@ -813,7 +813,7 @@
           <select id="thr-harness" title="Coding harness" class="select h-6! max-w-full text-xs!" data-control="agent-harness-select"></select>
           <select id="thr-model" title="Model" class="select h-6! max-w-full text-xs!" data-control="agent-model-select"></select>
         </div>
-        <textarea id="thr-input" rows="3" spellcheck="false" autocomplete="off" placeholder="Ask about this code, or ask for changes anywhere..." class="textarea resize-y" data-control="agent-input"></textarea>
+        <textarea id="thr-input" aria-label="Thread message" rows="3" spellcheck="false" autocomplete="off" placeholder="Ask about this code, or ask for changes anywhere..." class="textarea resize-y" data-control="agent-input" aria-label="Comment about selected code"></textarea>
         <div data-ui="agent-foot" class="flex items-center gap-2 font-mono text-muted-foreground">
           <span data-ui="agent-hint" class="flex-1" id="thr-hint">Enter to send, Shift+Enter for a new line</span>
           <button id="thr-stop" title="Stop this reply" hidden class="btn" data-control="agent-cancel" data-variant="outline" data-size="xs">Stop</button>
@@ -864,12 +864,12 @@
       </div>
       <textarea id="pr-merge-commit-body" rows="8" spellcheck="false" autocomplete="off" class="textarea resize-y" data-control="pr-merge-input pr-merge-body"></textarea>
       <div id="pr-merge-ai-row" data-ui="pr-merge-ai" class="flex items-center gap-2">
-        <input id="pr-merge-ai-instruction" type="text" spellcheck="false" autocomplete="off" placeholder="Instructions for this rewrite (optional), e.g. Conventional Commits, mention the ticket" class="input h-8!" data-control="pr-merge-input">
+        <input id="pr-merge-ai-instruction" aria-label="Rewrite instructions" type="text" spellcheck="false" autocomplete="off" placeholder="Instructions for this rewrite (optional), e.g. Conventional Commits, mention the ticket" class="input h-8!" data-control="pr-merge-input">
         <div class="git-agent-picker flex flex-col gap-2">
           <select id="pr-merge-harness" title="Coding harness" class="select h-6! max-w-full text-xs!" data-control="agent-harness-select"></select>
           <select id="pr-merge-model" title="Model" class="select h-6! max-w-full text-xs!" data-control="agent-model-select"></select>
         </div>
-        <button id="pr-merge-ai" type="button" title="Have the harness rewrite the title and message from the PR's commits and diff" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs">Rewrite with AI</button>
+        <button id="pr-merge-ai" type="button" title="Have the harness rewrite the title and message from the PR's commits and diff" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs">Rewrite with AI</button>
       </div>
       <span id="pr-merge-instructions-note" data-ui="pr-merge-note" class="text-muted-foreground" hidden>Your <a id="pr-merge-instructions-link" href="#" data-ui="pr-merge-link" class="text-primary-text">commit message instructions</a> from Settings apply too.</span>
     </div>
@@ -877,7 +877,7 @@
     <div id="pr-merge-err" data-ui="agent-err" class="alert flex flex-col overflow-y-auto gap-2 p-3 font-mono" hidden></div>
     </section><footer class="flex-row! items-center gap-2">
       <span id="pr-merge-hint" data-ui="agent-hint" class="flex-1"></span>
-      <button id="pr-merge-cancel" type="button" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs">Cancel</button>
+      <button id="pr-merge-cancel" type="button" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs">Cancel</button>
       <button id="pr-merge-confirm" type="button" class="btn" data-control="bar-action pr-btn-merge" data-variant="primary" data-size="xs">Confirm merge</button>
     </footer>
   </div>
@@ -906,7 +906,7 @@
     </section><footer class="flex-row! items-center gap-2">
       <a id="forge-connect-settings" href="#" data-ui="pr-merge-link" class="text-primary-text">Open Settings</a>
       <span id="forge-connect-hint" data-ui="agent-hint" class="flex-1"></span>
-      <button id="forge-connect-cancel" type="button" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs">Cancel</button>
+      <button id="forge-connect-cancel" type="button" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs">Cancel</button>
       <button id="forge-connect-submit" type="button" class="btn" data-control="bar-action pr-btn-merge" data-variant="primary" data-size="xs">Connect</button>
     </footer>
   </div>
@@ -929,7 +929,7 @@
     <!-- Search bar for filtering settings -->
     <div id="settings-search-bar" data-ui="settings-search-bar" class="flex items-center flex-none gap-2 p-3">
       <svg data-ui="settings-search-icon" class="flex-none text-muted-foreground" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" id="settings-search" placeholder="Search settings..." autocomplete="off" spellcheck="false" class="input">
+      <input type="text" id="settings-search" aria-label="Search settings" placeholder="Search settings..." autocomplete="off" spellcheck="false" class="input">
       <button id="settings-search-clear" title="Clear search" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Clear search">&#10005;</button>
     </div>
 
@@ -949,7 +949,7 @@
         </div>
       </div>
       <div id="settings-raw-error" data-ui="settings-error-banner" class="alert [&.success]:text-gi" hidden></div>
-      <textarea id="settings-raw-editor" spellcheck="false" autocomplete="off" wrap="off" class="textarea flex-1 min-h-0 resize-none font-mono"></textarea>
+      <textarea id="settings-raw-editor" aria-label="Settings JSON" spellcheck="false" autocomplete="off" wrap="off" class="textarea flex-1 min-h-0 resize-none font-mono"></textarea>
     </div>
 
     <!-- Settings Footer with Explicit Save Button -->
@@ -1036,7 +1036,7 @@
       </div>
     </section>
     <footer class="">
-      <button id="add-stage-cancel" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs">Cancel</button>
+      <button id="add-stage-cancel" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs">Cancel</button>
       <button id="add-stage-submit" class="btn" data-control="bar-action pr-btn-merge" data-variant="primary" data-size="xs">Add Stage</button>
     </footer>
   </div>
@@ -1051,11 +1051,11 @@
     </header>
     <section class="flex flex-col gap-2">
       <div id="modal-desc" data-ui="fs-modal-desc" class="text-muted-foreground">Enter relative path from project root:</div>
-      <input id="modal-input" type="text" spellcheck="false" autocomplete="off" class="input h-8!" data-control="fs-modal-input">
+      <input id="modal-input" aria-label="New item path" type="text" spellcheck="false" autocomplete="off" class="input h-8!" data-control="fs-modal-input">
     </section>
     <footer class="flex-row! justify-end gap-2">
-      <button id="modal-btn-cancel" type="button" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs">Cancel</button>
-      <button id="modal-btn-ok" type="button" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="primary" data-size="xs">Create</button>
+      <button id="modal-btn-cancel" type="button" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs">Cancel</button>
+      <button id="modal-btn-ok" type="button" class="btn" data-control="bar-action" data-variant="primary" data-size="xs">Create</button>
     </footer>
   </div>
 </dialog>
