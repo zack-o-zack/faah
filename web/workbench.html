@@ -36,7 +36,7 @@
             <span class="max-sm:hidden">Open</span><span class="icon-[lucide--arrow-right] size-4 sm:hidden" aria-hidden="true"></span>
           </button>
         </div>
-        <ul id="wb-suggest" data-popover class="absolute inset-x-0 top-full z-[60] mt-1 max-h-80 overflow-auto" role="listbox" hidden></ul>
+        <ul id="wb-suggest" data-popover class="absolute inset-x-0 top-full z-[60] mt-1 max-h-80 w-full! overflow-auto" role="listbox" hidden></ul>
       </form>
       <p id="wb-msg" class="mt-2 text-sm text-destructive" role="alert" hidden></p>
 
@@ -50,7 +50,7 @@
         <form id="wb-clone-form" class="dropdown-menu relative flex gap-2" autocomplete="off">
           <input id="wb-clone-path" type="text" spellcheck="false" autocapitalize="off" placeholder="~/path/to/your/clone"
                  aria-label="Folder of your local clone" aria-autocomplete="list" aria-controls="wb-clone-suggest" class="input min-w-0 flex-1">
-          <ul id="wb-clone-suggest" data-popover class="absolute inset-x-0 top-full z-[60] mt-1 max-h-80 overflow-auto" role="listbox" hidden></ul>
+          <ul id="wb-clone-suggest" data-popover class="absolute inset-x-0 top-full z-[60] mt-1 max-h-80 w-full! overflow-auto" role="listbox" hidden></ul>
           <button type="submit" class="btn" data-variant="primary">Use this clone</button>
         </form>
         <footer class="flex flex-wrap items-center gap-2">

@@ -18,7 +18,10 @@ const req = async (path, body) => {
   return j;
 };
 
-const ICON_DIR = '<span class="icon-[lucide--folder] size-4 shrink-0" aria-hidden="true"></span>';
+// A git repository is a green folder with the git mark; any other folder is plain.
+const folderIcon = git => git
+  ? '<span class="icon-[lucide--folder-git-2] size-4 shrink-0 text-gi" title="Git repository" aria-label="Git repository"></span>'
+  : '<span class="icon-[lucide--folder] size-4 shrink-0 text-muted-foreground" aria-hidden="true"></span>';
 // Recent rows show this many before "Show all".
 const RECENT_SHOWN = 12;
 
@@ -155,11 +158,10 @@ function attachComplete(input, list, onFolder) {
   const render = () => {
     const prefix = (input.value.match(/[^/\\]*$/) || [''])[0];
     list.innerHTML = items.map((e, i) => `<li class="item cursor-pointer aria-selected:bg-accent hover:bg-accent" data-size="xs" role="option" data-i="${i}" aria-selected="${i === sel}">
-      <span class="inline-flex shrink-0 text-muted-foreground">${ICON_DIR}</span>
+      ${folderIcon(e.git)}
       <span class="shrink-0 [&_b]:text-primary-text"><b>${esc(e.name.slice(0, prefix.length))}</b>${esc(e.name.slice(prefix.length))}</span>
-      ${e.git ? '<span class="badge" data-variant="secondary" data-control="wb-git">git</span>' : ''}
       <span class="flex-1 min-w-0 truncate text-right font-mono text-xs text-muted-foreground">${esc(tildify(e.path))}</span></li>`).join('') +
-      (items.length ? '<li role="presentation" class="flex gap-3 border-t px-3 py-1.5 text-xs text-muted-foreground"><span><kbd class="kbd">Tab</kbd> complete</span><span><kbd class="kbd"><span class="icon-[lucide--arrow-up-down] size-3" aria-hidden="true"></span></kbd> choose</span><span><kbd class="kbd">Enter</kbd> open</span></li>' : '');
+      (items.length ? '<li role="presentation" class="mt-1 flex items-center justify-start! gap-4 border-t px-2! pt-1.5 pb-0.5 text-xs text-muted-foreground [&>span]:inline-flex [&>span]:items-center [&>span]:gap-1 [&_kbd]:ms-0! [&_kbd]:px-1.5!"><span><kbd class="kbd">Tab</kbd> complete</span><span><kbd class="kbd"><span class="icon-[lucide--arrow-up-down] size-3" aria-hidden="true"></span></kbd> choose</span><span><kbd class="kbd">Enter</kbd> open</span></li>' : '');
     list.hidden = !items.length;
     input.setAttribute('aria-expanded', String(!list.hidden));
     list.children[sel]?.scrollIntoView({ block: 'nearest' });
@@ -364,9 +366,8 @@ function renderPath(path) {
 
 function renderDirs() {
   $('#wb-dirs').innerHTML = dirEntries.length ? dirEntries.map((e, i) => `<li role="option" id="wb-dir-${i}" data-i="${i}" aria-selected="${i === dirSel}" class="${e.name.startsWith('.') ? 'opacity-50 ' : ''}flex h-7 cursor-pointer select-none items-center gap-2 rounded-md px-2 text-sm hover:bg-accent/60 aria-selected:bg-accent">
-    <span class="icon-[lucide--folder] size-4 shrink-0 text-muted-foreground" aria-hidden="true"></span>
+    ${folderIcon(e.git)}
     <span class="min-w-0 flex-1 truncate">${esc(e.name)}</span>
-    ${e.git ? '<span class="text-xs opacity-70">git</span>' : ''}
   </li>`).join('') : '<li class="py-8 text-center text-sm text-muted-foreground">No folders here.</li>';
   const sel = dirEntries[dirSel];
   if (sel) $('#wb-dirs').setAttribute('aria-activedescendant', 'wb-dir-' + dirSel);
