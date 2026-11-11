@@ -17,7 +17,7 @@
 <div id="app" class="flex h-dvh overflow-hidden">
   <!-- SECTION: Sidebar (File explorer tree) -->
   <aside id="side" class="flex w-[340px] shrink-0 flex-col overflow-hidden border-r bg-sidebar text-sidebar-foreground [body.side-hidden_&]:hidden">
-    <header class="panel-head desktop:min-h-[var(--titlebar-h,2.5rem)] desktop:[-webkit-app-region:drag] desktop:[&_button]:[-webkit-app-region:no-drag] desktop:[&_a]:[-webkit-app-region:no-drag] desktop:[&_[role=group]]:[-webkit-app-region:no-drag] desktop:[&_[role=tab]]:[-webkit-app-region:no-drag] desktop:pl-[calc(0.75rem+var(--titlebar-left,0px))] desktop:flex-wrap [&_.panel-actions]:desktop:w-full flex shrink-0 items-center gap-2 border-b px-3 py-2 text-xs font-medium"><span class="side-logo flex min-w-0 flex-1 items-center gap-2 [&_img]:h-4 [&_img]:w-auto" title="faah"><img class="hidden dark:block" src="static/logo-dark.svg" alt="faah" width="35" height="13"><img class="block dark:hidden" src="static/logo-light.svg" alt="faah" width="35" height="13"><span id="st-ver" class="status-ver cursor-pointer rounded px-1 font-mono text-xs text-muted-foreground hover:bg-accent hover:text-foreground" title="faah Version"></span></span><span class="panel-actions ml-auto flex shrink-0 items-center gap-1"><div class="button-group mr-1" role="group" aria-label="Explorer view mode"><button id="btn-files" title="File Explorer (show all files)" aria-label="File Explorer" class="btn" data-control="view-choice" data-variant="secondary" data-size="icon-xs" aria-pressed="true"><span class="icon-[lucide--folder] size-3 shrink-0" aria-hidden="true"></span></button><button id="btn-changed" title="Git changes (show changed files only)" aria-label="Git changes" class="btn" data-control="view-choice" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--git-branch] size-3 shrink-0" aria-hidden="true"></span></button></div><button id="btn-new-file" title="New File" aria-label="New File" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--file-plus] size-3.5 shrink-0" aria-hidden="true"></span></button><button id="btn-new-folder" title="New Folder" aria-label="New Folder" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--folder-plus] size-3.5 shrink-0" aria-hidden="true"></span></button><button id="btn-collapse-tree" title="Collapse all folders" aria-label="Collapse all folders" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--chevrons-up] size-3.5 shrink-0" aria-hidden="true"></span></button><button id="btn-expand-tree" title="Expand all project folders (ignored folders stay closed)" aria-label="Expand all project folders" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--chevrons-down] size-3.5 shrink-0" aria-hidden="true"></span></button><button id="btn-reindex" title="Re-index" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Re-index"><span class="icon-[lucide--rotate-cw] size-3.5 shrink-0" aria-hidden="true"></span></button></span></header>
+    <header class="panel-head desktop:min-h-[var(--titlebar-h,2.5rem)] desktop:[-webkit-app-region:drag] desktop:[&_button]:[-webkit-app-region:no-drag] desktop:[&_a]:[-webkit-app-region:no-drag] desktop:[&_[role=group]]:[-webkit-app-region:no-drag] desktop:[&_[role=tab]]:[-webkit-app-region:no-drag] desktop:pl-[calc(0.75rem+var(--titlebar-left,0px))] desktop:flex-wrap desktop:pt-0 [&_.panel-actions]:desktop:w-[calc(100%+var(--titlebar-left,0px))] [&_.panel-actions]:desktop:-ml-[var(--titlebar-left,0px)] flex shrink-0 items-center gap-2 border-b px-3 py-2 text-xs font-medium"><span class="side-logo flex min-w-0 flex-1 items-center gap-2 desktop:h-[var(--titlebar-h,38px)] [&_img]:h-4 [&_img]:w-auto" title="faah"><img class="hidden dark:block" src="static/logo-dark.svg" alt="faah" width="35" height="13"><img class="block dark:hidden" src="static/logo-light.svg" alt="faah" width="35" height="13"><span id="st-ver" class="status-ver cursor-pointer rounded px-1 font-mono text-xs text-muted-foreground hover:bg-accent hover:text-foreground" title="faah Version"></span></span><span class="panel-actions ml-auto flex shrink-0 items-center gap-1"><div class="button-group mr-1" role="group" aria-label="Explorer view mode"><button id="btn-files" title="File Explorer (show all files)" aria-label="File Explorer" class="btn" data-control="view-choice" data-variant="secondary" data-size="icon-xs" aria-pressed="true"><span class="icon-[lucide--folder] size-3 shrink-0" aria-hidden="true"></span></button><button id="btn-changed" title="Git changes (show changed files only)" aria-label="Git changes" class="btn" data-control="view-choice" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--git-branch] size-3 shrink-0" aria-hidden="true"></span></button></div><button id="btn-new-file" title="New File" aria-label="New File" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--file-plus] size-3.5 shrink-0" aria-hidden="true"></span></button><button id="btn-new-folder" title="New Folder" aria-label="New Folder" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--folder-plus] size-3.5 shrink-0" aria-hidden="true"></span></button><button id="btn-collapse-tree" title="Collapse all folders" aria-label="Collapse all folders" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--chevrons-up] size-3.5 shrink-0" aria-hidden="true"></span></button><button id="btn-expand-tree" title="Expand all project folders (ignored folders stay closed)" aria-label="Expand all project folders" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--chevrons-down] size-3.5 shrink-0" aria-hidden="true"></span></button><button id="btn-reindex" title="Re-index" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Re-index"><span class="icon-[lucide--rotate-cw] size-3.5 shrink-0" aria-hidden="true"></span></button></span></header>
     <!-- PR review only (web/src/prscope.js): whole PR vs just your own changes -->
     <div id="scope-bar" class="scope-bar shrink-0 border-b p-2" hidden>
       <div class="button-group w-full" role="group" aria-label="Changes to show">
@@ -62,16 +62,14 @@
           </div>
           <div id="git-notice-text" data-ui="hint" class="git-notice-text max-h-40 overflow-y-auto whitespace-pre-wrap wrap-anywhere empty:hidden [&_code]:font-mono [&_[data-ui~=hint]]:block [&_[data-ui~=hint]]:text-muted-foreground"></div>
           <div id="git-notice-agent" class="git-agent-picker flex flex-col gap-2" hidden>
-            <select id="git-sync-harness" title="Coding harness" class="select h-6! max-w-full text-xs!" data-control="agent-harness-select"></select>
-            <select id="git-sync-model" title="Model" class="select h-6! max-w-full text-xs!" data-control="agent-model-select"></select>
+            <div id="git-sync-agent" class="select" data-control="agent-picker" data-placeholder="No harness"><button type="button" data-size="sm" aria-haspopup="listbox" aria-expanded="false" aria-label="Coding harness and model" title="Coding harness and model"><span class="truncate"></span><i class="icon-[lucide--chevrons-up-down] size-3.5 shrink-0 text-muted-foreground" aria-hidden="true"></i></button><div data-popover aria-hidden="true"><div role="listbox" aria-orientation="vertical" aria-label="Coding harness and model"></div></div><input type="hidden"></div>
           </div>
           <div id="git-notice-actions" class="git-notice-actions flex flex-wrap gap-2 empty:hidden"></div>
           <details id="git-notice-log" class="git-notice-log [&_summary]:cursor-pointer [&_summary]:text-muted-foreground [&_pre]:mt-2 [&_pre]:max-h-40 [&_pre]:overflow-auto [&_pre]:whitespace-pre-wrap [&_pre]:wrap-anywhere [&_pre]:font-mono [&_pre]:text-xs" hidden><summary>Agent output</summary><pre></pre></details>
         </div>
         <div id="git-commit-section" class="git-commit-section flex flex-col gap-2">
           <div class="git-agent-picker flex flex-col gap-2">
-            <select id="git-harness" title="Coding harness" class="select h-6! max-w-full text-xs!" data-control="agent-harness-select"></select>
-            <select id="git-model" title="Model" class="select h-6! max-w-full text-xs!" data-control="agent-model-select"></select>
+            <div id="git-agent" class="select" data-control="agent-picker" data-placeholder="No harness"><button type="button" data-size="sm" aria-haspopup="listbox" aria-expanded="false" aria-label="Coding harness and model" title="Coding harness and model"><span class="truncate"></span><i class="icon-[lucide--chevrons-up-down] size-3.5 shrink-0 text-muted-foreground" aria-hidden="true"></i></button><div data-popover aria-hidden="true"><div role="listbox" aria-orientation="vertical" aria-label="Coding harness and model"></div></div><input type="hidden"></div>
             <div class="git-ai-row flex w-full items-center gap-2">
               <button id="git-generate-msg" title="Stage all changes and write a commit message using the selected coding harness" class="btn" data-control="git-generate-btn" data-variant="primary" data-size="xs">Stage all + Commit with AI</button>
             </div>
@@ -309,8 +307,7 @@
           </div>
           <div data-ui="agent-meta" class="flex flex-wrap items-center gap-2 in-[.queued]:hidden in-[.has-batch]:hidden">
             <span data-ui="agent-meta-label" class="label flex-none text-muted-foreground">Model</span>
-            <select title="Coding harness" class="select h-6! max-w-full text-xs!" data-control="agent-harness-select"></select>
-            <select title="Model" class="select h-6! max-w-full text-xs!" data-control="agent-model-select"></select>
+            <div class="select" data-control="agent-picker" data-placeholder="No harness"><button type="button" data-size="sm" aria-haspopup="listbox" aria-expanded="false" aria-label="Coding harness and model" title="Coding harness and model"><span class="truncate"></span><i class="icon-[lucide--chevrons-up-down] size-3.5 shrink-0 text-muted-foreground" aria-hidden="true"></i></button><div data-popover aria-hidden="true"><div role="listbox" aria-orientation="vertical" aria-label="Coding harness and model"></div></div><input type="hidden"></div>
           </div>
           <!-- A comment that has been added to the batch: click to edit it again -->
           <button title="Click to edit this comment" hidden class="btn" data-control="agent-queued" data-variant="outline" data-size="xs"></button>
@@ -318,7 +315,7 @@
           <div data-ui="agent-pick" class="flex flex-col gap-2" hidden></div>
           <div data-ui="agent-compose" class="flex flex-col gap-2 in-[.queued]:hidden">
             <textarea rows="3" spellcheck="false" autocomplete="off" placeholder="Describe the change. Add it as a comment to batch with others, or apply it right away." class="textarea resize-y" data-control="agent-input" aria-label="Comment about selected code"></textarea>
-            <div data-ui="agent-err" class="alert flex flex-col overflow-y-auto gap-2 p-3 font-mono" hidden></div>
+            <div data-ui="agent-err" hidden></div>
             <div data-ui="agent-foot" class="flex items-center gap-2 font-mono text-muted-foreground">
               <span data-ui="agent-hint" class="flex-1">Enter to send, Esc to cancel</span>
               <button title="Cancel in-flight edit" hidden class="btn" data-control="agent-cancel" data-variant="outline" data-size="xs">Cancel</button>
@@ -559,7 +556,7 @@
     </div>
 
     <!-- Floating Copy Toast Notification -->
-    <div id="toast" class="toaster bottom-5" data-align="end" hidden></div>
+    <div id="toaster" class="toaster top-[var(--titlebar-h,0px)] bottom-auto flex-col [&_.toast]:animate-[toast-down_0.3s_ease-in-out]" data-align="end"></div>
 
     <!-- Selection context menu: the footer's selection actions, at the pointer -->
     <div id="sel-menu" role="menu" hidden></div>
@@ -763,8 +760,7 @@
           </div>
           <div data-ui="agent-batch-meta" class="flex items-center gap-2 p-3">
             <span data-ui="agent-meta-label" class="label flex-none text-muted-foreground">Model</span>
-            <select id="agent-batch-harness" title="Coding harness" class="select h-6! max-w-full text-xs!" data-control="agent-harness-select"></select>
-            <select id="agent-batch-model" title="Model" class="select h-6! max-w-full text-xs!" data-control="agent-model-select"></select>
+            <div id="agent-batch-agent" class="select" data-control="agent-picker" data-placeholder="No harness"><button type="button" data-size="sm" aria-haspopup="listbox" aria-expanded="false" aria-label="Coding harness and model" title="Coding harness and model"><span class="truncate"></span><i class="icon-[lucide--chevrons-up-down] size-3.5 shrink-0 text-muted-foreground" aria-hidden="true"></i></button><div data-popover aria-hidden="true" data-side="top"><div role="listbox" aria-orientation="vertical" aria-label="Coding harness and model"></div></div><input type="hidden"></div>
           </div>
         </div>
         <div data-ui="agent-batch-actions" class="flex items-center gap-2 font-mono text-muted-foreground">
@@ -773,7 +769,7 @@
           <button id="agent-batch-cancel" title="Cancel in-flight batch edits" hidden class="btn" data-control="agent-cancel" data-variant="outline" data-size="xs">Cancel</button>
           <button id="agent-batch-apply" title="Apply all comments together ({Mod+Shift+Enter})" class="btn" data-control="agent-send agent-batch-apply" data-variant="primary" data-size="xs">Apply All</button>
         </div>
-        <div id="agent-batch-err" data-ui="agent-err" class="alert flex flex-col overflow-y-auto gap-2 p-3 font-mono" hidden></div>
+        <div id="agent-batch-err" data-ui="agent-err" hidden></div>
       </div>
       <div id="agentbox-list" data-ui="agentbox-list" class="flex flex-col gap-2"></div>
     </div>
@@ -785,39 +781,40 @@
           <button data-thr-filter="all" title="Every thread in this workspace" class="btn" data-control="opt" data-variant="secondary" data-size="xs" aria-pressed="true">All</button>
           <button data-thr-filter="file" title="Threads started in the open file" class="btn" data-control="opt" data-variant="outline" data-size="xs">This file</button>
         </span>
-        <button id="thr-new" title="Start a thread about the workspace or the selection" class="btn" data-control="thr-btn-primary" data-variant="primary" data-size="xs">+ New</button>
+        <button id="thr-new" title="Start a thread about the workspace or the selection" class="btn" data-control="thr-btn-primary" data-variant="primary" data-size="xs"><span class="icon-[lucide--plus] size-3.5" aria-hidden="true"></span>New</button>
       </div>
-      <div class="flex flex-col gap-2 p-3 panel-body min-h-0 flex-1 overflow-auto pb-4 [&>*]:shrink-0" id="thr-list"></div>
+      <div class="flex min-h-0 flex-1 flex-col gap-0.5 overflow-auto p-2 [&>*]:shrink-0" id="thr-list"></div>
     </div>
 
     <!-- Thread detail & conversation view -->
     <div id="thr-thread-view" data-ui="thr-view" class="flex flex-1 min-h-0 flex-col" hidden>
-      <div data-ui="thr-head" class="inspector-bar flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2 text-xs justify-start gap-2">
+      <div data-ui="thr-head" class="inspector-bar flex shrink-0 items-center gap-2 border-b px-3 py-2">
         <button id="thr-back" title="All threads" aria-label="All threads" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--arrow-left] size-3.5 shrink-0" aria-hidden="true"></span></button>
-        <span class="inspector-sym-title truncate font-mono font-semibold" id="thr-title">New thread</span>
+        <span class="min-w-0 flex-1 truncate text-sm font-medium" id="thr-title">New thread</span>
         <button id="thr-delete" title="Delete this thread" aria-label="Delete thread" hidden class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--trash-2] size-3.5 shrink-0" aria-hidden="true"></span></button>
       </div>
-      <div id="thr-anchor" data-ui="thr-anchor" class="truncate p-3 text-muted-foreground [&.jump]:cursor-pointer [&.jump]:text-primary-text" hidden></div>
       <div id="thr-msgs" data-ui="thr-msgs" class="flex flex-1 min-h-0 flex-col gap-4 overflow-y-auto p-4"></div>
-      <div data-ui="thr-compose" class="flex flex-col gap-2 p-3">
-        <!-- PR review only: what this thread is about (thread.js) -->
-        <div id="thr-scope" data-ui="thr-scope" class="flex items-center gap-2 button-group" role="group" aria-label="What this thread is about" hidden>
-          <span data-ui="thr-scope-label" class="label text-muted-foreground">About</span>
-          <button type="button" data-scope="pr" title="The whole pull request: merge-base to PR head" class="btn" data-variant="outline" data-size="xs">Whole PR</button>
-          <button type="button" data-scope="mine" title="Only your own changes on top of the PR (uncommitted and unpushed)" class="btn" data-variant="outline" data-size="xs">My changes</button>
-          <button type="button" data-scope="selection" title="Just the code this thread is anchored to" class="btn" data-variant="outline" data-size="xs">Selection</button>
+      <div data-ui="thr-compose" class="flex flex-col gap-1.5 px-3 pt-1 pb-3">
+        <div data-ui="thr-box" class="input-group" data-orientation="vertical">
+          <!-- What the message is about: the code it is anchored to, and in PR review its scope (thread.js) -->
+          <header data-ui="thr-context" data-align="block-start" class="hidden flex-wrap gap-1.5 has-[>:not([hidden])]:flex">
+            <button type="button" id="thr-anchor" data-ui="thr-anchor" class="inline-flex max-w-full min-w-0 items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground [&.jump]:cursor-pointer [&.jump]:hover:text-foreground" hidden><span class="icon-[lucide--file-code] size-3 shrink-0" aria-hidden="true"></span><span data-ui="thr-anchor-text" class="truncate"></span></button>
+            <div id="thr-scope" data-ui="thr-scope" class="button-group" role="group" aria-label="What this thread is about" hidden>
+              <button type="button" data-scope="pr" title="The whole pull request: merge-base to PR head" class="btn h-6 px-2 text-xs" data-variant="outline" data-size="xs">Whole PR</button>
+              <button type="button" data-scope="mine" title="Only your own changes on top of the PR (uncommitted and unpushed)" class="btn h-6 px-2 text-xs" data-variant="outline" data-size="xs">My changes</button>
+              <button type="button" data-scope="selection" title="Just the code this thread is anchored to" class="btn h-6 px-2 text-xs" data-variant="outline" data-size="xs">Selection</button>
+            </div>
+          </header>
+          <textarea id="thr-input" aria-label="Thread message" rows="2" spellcheck="false" autocomplete="off" placeholder="Ask about this code, or ask for changes anywhere" class="max-h-60 min-h-14" data-control="agent-input"></textarea>
+          <footer data-ui="thr-box-foot" data-align="block-end" class="gap-1">
+            <div data-ui="agent-meta" class="flex min-w-0 items-center gap-1 in-[.queued]:hidden in-[.has-batch]:hidden">
+              <div id="thr-agent" class="select" data-control="agent-picker" data-placeholder="No harness"><button type="button" data-size="sm" class="h-7! border-transparent! bg-transparent! px-2! text-xs! shadow-none! hover:bg-accent!" aria-haspopup="listbox" aria-expanded="false" aria-label="Coding harness and model" title="Coding harness and model"><span class="truncate"></span><i class="icon-[lucide--chevrons-up-down] size-3.5 shrink-0 text-muted-foreground" aria-hidden="true"></i></button><div data-popover aria-hidden="true" data-side="top"><div role="listbox" aria-orientation="vertical" aria-label="Coding harness and model"></div></div><input type="hidden"></div>
+            </div>
+            <span class="flex-1"></span>
+            <button id="thr-send" title="Send (Enter)" aria-label="Send (Enter)" disabled class="btn rounded-full" data-control="agent-send" data-variant="primary" data-size="icon-sm"><span class="icon-[lucide--arrow-up] size-4" aria-hidden="true"></span></button>
+          </footer>
         </div>
-        <div data-ui="agent-meta" class="flex flex-wrap items-center gap-2 in-[.queued]:hidden in-[.has-batch]:hidden">
-          <span data-ui="agent-meta-label" class="label flex-none text-muted-foreground">Model</span>
-          <select id="thr-harness" title="Coding harness" class="select h-6! max-w-full text-xs!" data-control="agent-harness-select"></select>
-          <select id="thr-model" title="Model" class="select h-6! max-w-full text-xs!" data-control="agent-model-select"></select>
-        </div>
-        <textarea id="thr-input" aria-label="Thread message" rows="3" spellcheck="false" autocomplete="off" placeholder="Ask about this code, or ask for changes anywhere..." class="textarea resize-y" data-control="agent-input" aria-label="Comment about selected code"></textarea>
-        <div data-ui="agent-foot" class="flex items-center gap-2 font-mono text-muted-foreground">
-          <span data-ui="agent-hint" class="flex-1" id="thr-hint">Enter to send, Shift+Enter for a new line</span>
-          <button id="thr-stop" title="Stop this reply" hidden class="btn" data-control="agent-cancel" data-variant="outline" data-size="xs">Stop</button>
-          <button id="thr-send" title="Send message" class="btn" data-control="agent-send" data-variant="primary" data-size="xs">Send</button>
-        </div>
+        <p data-ui="agent-hint" id="thr-hint" class="px-1 text-xs text-muted-foreground">Enter to send · Shift+Enter for a new line</p>
       </div>
     </div>
   </aside>
@@ -865,15 +862,14 @@
       <div id="pr-merge-ai-row" data-ui="pr-merge-ai" class="flex items-center gap-2">
         <input id="pr-merge-ai-instruction" aria-label="Rewrite instructions" type="text" spellcheck="false" autocomplete="off" placeholder="Instructions for this rewrite (optional), e.g. Conventional Commits, mention the ticket" class="input h-8!" data-control="pr-merge-input">
         <div class="git-agent-picker flex flex-col gap-2">
-          <select id="pr-merge-harness" title="Coding harness" class="select h-6! max-w-full text-xs!" data-control="agent-harness-select"></select>
-          <select id="pr-merge-model" title="Model" class="select h-6! max-w-full text-xs!" data-control="agent-model-select"></select>
+          <div id="pr-merge-agent" class="select" data-control="agent-picker" data-placeholder="No harness"><button type="button" data-size="sm" aria-haspopup="listbox" aria-expanded="false" aria-label="Coding harness and model" title="Coding harness and model"><span class="truncate"></span><i class="icon-[lucide--chevrons-up-down] size-3.5 shrink-0 text-muted-foreground" aria-hidden="true"></i></button><div data-popover aria-hidden="true" data-side="top"><div role="listbox" aria-orientation="vertical" aria-label="Coding harness and model"></div></div><input type="hidden"></div>
         </div>
         <button id="pr-merge-ai" type="button" title="Have the harness rewrite the title and message from the PR's commits and diff" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs">Rewrite with AI</button>
       </div>
       <span id="pr-merge-instructions-note" data-ui="pr-merge-note" class="text-muted-foreground" hidden>Your <a id="pr-merge-instructions-link" href="#" data-ui="pr-merge-link" class="text-primary-text">commit message instructions</a> from Settings apply too.</span>
     </div>
     <ol id="pr-merge-commit-list" data-ui="pr-merge-commit-list" class="overflow-y-auto p-3" hidden></ol>
-    <div id="pr-merge-err" data-ui="agent-err" class="alert flex flex-col overflow-y-auto gap-2 p-3 font-mono" hidden></div>
+    <div id="pr-merge-err" data-ui="agent-err" hidden></div>
     </section><footer class="flex-row! items-center gap-2">
       <span id="pr-merge-hint" data-ui="agent-hint" class="flex-1"></span>
       <button id="pr-merge-cancel" type="button" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs">Cancel</button>
@@ -899,7 +895,7 @@
       <input id="forge-connect-extra-input" type="text" spellcheck="false" autocomplete="off" class="input h-8!" data-control="pr-merge-input">
       <span id="forge-connect-extra-hint" data-ui="pr-merge-note" class="text-muted-foreground"></span>
     </div>
-    <div id="forge-connect-err" data-ui="agent-err" class="alert flex flex-col overflow-y-auto gap-2 p-3 font-mono" hidden></div>
+    <div id="forge-connect-err" data-ui="agent-err" hidden></div>
     <span id="forge-connect-check" data-ui="pr-merge-note" class="text-muted-foreground"></span>
     <span id="forge-connect-alt" data-ui="pr-merge-note" class="text-muted-foreground"></span>
     </section><footer class="flex-row! items-center gap-2">

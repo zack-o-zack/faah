@@ -1,4 +1,4 @@
-import { toastMarkup } from './toast.js';
+import { toastConfig } from './toast.js';
 // web/src/ui.js
 import { $, esc } from './state.js';
 
@@ -6,37 +6,43 @@ export const vp = $('#viewport');
 export const sizer = $('#sizer');
 export const rowsEl = $('#rows');
 export const editor = $('#editor');
-export const toastEl = $('#toast');
+export const toastEl = $('#toaster');
 
-let toastTimer = 0;
-let toastLeaveTimer = 0;
-
-export function showToast(kind, text, duration = 2200) {
+export function showToast(kind, text, duration) {
   if (!toastEl) return;
-  clearTimeout(toastTimer);
-  clearTimeout(toastLeaveTimer);
-
-  toastEl.innerHTML = toastMarkup(kind, text);
-  toastEl.hidden = false;
-  toastTimer = setTimeout(() => {
-    toastEl.firstElementChild?.setAttribute('aria-hidden', 'true');
-    toastLeaveTimer = setTimeout(() => { toastEl.hidden = true; }, 180);
-  }, duration);
+  // Basecoat sets the toaster up on DOMContentLoaded; a toast raised during startup comes first.
+  if (!toastEl.toast) window.basecoat?.init('toaster');
+  toastEl.toast?.(toastConfig(kind, text, duration));
 }
 
+/** Every error alert's copy button (errors.js) puts the whole output on the clipboard and in the console. */
+export function initErrorCopy() {
+  document.addEventListener('click', e => {
+    const btn = /** @type {HTMLElement|null} */ (e.target)?.closest?.('[data-control~=copy-error]');
+    if (!btn) return;
+    console.error(btn.dataset.error);
+    copyToClipboard(btn.dataset.error || '', '').then(ok => { if (ok) flashActionSuccess(btn, null); });
+  });
+}
+
+/* A button that just did its job says so for a moment: its label reads the
+   result, and its icon, if it has one, turns into a tick. With no text, only
+   the icon changes. */
 export function flashActionSuccess(el, text = 'Done', duration = 1200) {
   if (!el) return;
-  const label = el.querySelector?.('.bar-action-label') || el.querySelector?.('span') || el;
-  if (!label) return;
+  const icon = el.querySelector?.('[class*="icon-["]');
+  const label = text === null ? null : el.querySelector?.('.bar-action-label, [data-ui~=label]') || el.querySelector?.('span:not([class*="icon-["])') || (icon ? null : el);
   if (el._flashTimer) clearTimeout(el._flashTimer);
-  else el._oldText = label.textContent;
-  label.textContent = text;
-  el.classList.add('text-gi!', 'border-gi!');
+  else el._flashOld = { text: label?.textContent, icon: icon?.className };
+  if (label) label.textContent = text;
+  if (icon) icon.className = icon.className.replace(/icon-\[lucide--[\w-]+\]/, 'icon-[lucide--check]') + (label ? '' : ' text-gi');
+  if (label) el.classList.add('text-gi!', 'border-gi!');
   el._flashTimer = setTimeout(() => {
-    if (el._oldText !== undefined) label.textContent = el._oldText;
+    if (label) label.textContent = el._flashOld.text;
+    if (icon) icon.className = el._flashOld.icon;
     el.classList.remove('text-gi!', 'border-gi!');
     delete el._flashTimer;
-    delete el._oldText;
+    delete el._flashOld;
   }, duration);
 }
 
@@ -65,6 +71,7 @@ export async function copyToClipboard(text, notify = 'Copied', triggerEl = null)
     if (notify) showToast('success', notify);
     if (triggerEl) flashActionSuccess(triggerEl, 'Copied');
   }
+  return ok;
 }
 
 export async function copyRichToClipboard(plainText, htmlText, notify = 'Copied', triggerEl = null) {

@@ -1,6 +1,7 @@
 // web/src/agent.js
 import { $, esc, S, doc_, api, apiPost, apiPostJson, MOD, keyLabel } from './state.js';
 import { showToast } from './ui.js';
+import { showError } from './errors.js';
 import { setStatusNote } from './status.js';
 import { openFile, reloadOpenTabs } from './tabs.js';
 import { refreshTree, treeEl } from './tree.js';
@@ -34,15 +35,13 @@ const agentListEl = $('#agentbox-list');
 const batchBar = $('#agent-batch-bar');
 const batchCount = $('#agent-batch-count');
 const batchClear = $('#agent-batch-clear');
-const batchHarness = $('#agent-batch-harness');
-const batchModel = $('#agent-batch-model');
+const batchPicker = $('#agent-batch-agent');
 const batchHint = $('#agent-batch-hint');
 const batchApply = $('#agent-batch-apply');
 const batchCancel = $('#agent-batch-cancel');
 const batchOpen = $('#agent-batch-open');
 const batchErr = $('#agent-batch-err');
-const gitHarness = $('#git-harness');
-const gitModel = $('#git-model');
+const gitPicker = $('#git-agent');
 
 const sessions = new Map(); // local session id -> in-progress compose/edit
 let agentSeq = 0;
@@ -59,79 +58,59 @@ const chosenModel = () => (S.meta && S.meta.agentModel) || '';
 const targetRef = ({ path, l1, l2 }) => path + ':' + (l1 === l2 ? l1 : l1 + '-' + l2);
 const rangesOverlap = (a, b) => a.path === b.path && a.l1 <= b.l2 && b.l1 <= a.l2;
 
-// Harness/model selects owned by other panels (the thread composer). They
-// show the same global selection as every composer box and write it back.
+// Pickers owned by other panels (the thread composer). They show the same
+// global selection as every composer box and write it back.
 const extraPickers = new Set();
 export function registerAgentPicker(picker) {
+  if (!picker) return;
   extraPickers.add(picker);
-  picker.harnessSelect.addEventListener('change', () => {
-    if (picker.harnessSelect.value) select(picker.harnessSelect.value, msg => showToast('error', msg));
-  });
-  picker.modelSelect.addEventListener('change', () => {
-    select(picker.harnessSelect.value || chosen(), picker.modelSelect.value, msg => showToast('error', msg));
-  });
-  updateSessionMeta(picker);
+  wireAgentPicker(picker, msg => showToast('error', msg));
+  renderAgentPicker(picker);
 }
 
 export function applyAgentMeta() {
   for (const session of sessions.values()) {
-    updateSessionMeta(session);
+    renderAgentPicker(session.picker, session.el.classList.contains('busy'));
   }
-  for (const picker of extraPickers) updateSessionMeta(picker);
-  syncBatchMeta();
-  syncGitPanelHarnessMeta();
+  for (const picker of extraPickers) renderAgentPicker(picker);
+  renderAgentPicker(batchPicker, !!batchJobId);
+  renderAgentPicker(gitPicker);
 }
 
-function updateSessionMeta(session) {
-  if (!session.harnessSelect || !session.modelSelect) return;
-  const ready = (S.meta?.agents || []).filter(h => h.installed);
-  const currentHarness = chosen();
-  const currentModel = chosenModel();
+/* Harness and model are one choice: a Basecoat select whose options are
+   grouped by harness, each one naming both. */
+const pickerValue = (harness, model) => JSON.stringify([harness, model || '']);
 
-  // Populate harness select
-  session.harnessSelect.innerHTML = '';
-  if (!ready.length) {
-    const opt = document.createElement('option');
-    opt.value = '';
-    opt.textContent = 'no harness';
-    session.harnessSelect.appendChild(opt);
-    session.harnessSelect.disabled = true;
-    session.modelSelect.innerHTML = '';
-    session.modelSelect.hidden = true;
-    return;
-  }
+function renderAgentPicker(picker, busy = false) {
+  if (!picker) return;
+  const trigger = picker.querySelector(':scope > button');
+  const listbox = picker.querySelector('[role=listbox]');
+  const input = picker.querySelector(':scope > input[type=hidden]');
+  const ready = installed();
+  const pinned = !!(S.meta && S.meta.agentPinned);
+  const current = ready.find(h => h.name === chosen()) || ready[0];
+  listbox.innerHTML = ready.map(h => {
+    const models = h.models?.length ? h.models : [''];
+    // A harness fixed by -agent keeps its models; the others are out of reach.
+    const off = pinned && h !== current ? ' aria-disabled="true"' : '';
+    return '<div role="group" aria-label="' + esc(h.name) + '"><div role="heading">' + esc(h.name) + '</div>' +
+      models.map(m => '<div role="option" data-value="' + esc(pickerValue(h.name, m)) + '" data-label="' + esc(m ? h.name + ' · ' + m : h.name) + '"' + off + '>' + esc(m || h.name) + '</div>').join('') +
+      '</div>';
+  }).join('');
+  const models = current?.models || [];
+  input.value = current ? pickerValue(current.name, models.includes(chosenModel()) ? chosenModel() : models[0]) : '';
+  picker.refresh?.();
+  trigger.disabled = busy || !ready.length;
+  trigger.title = pinned ? 'Harness fixed for this run by -agent' : 'Coding harness and model';
+}
 
-  for (const h of ready) {
-    const opt = document.createElement('option');
-    opt.value = h.name;
-    opt.textContent = h.name;
-    if (h.name === currentHarness) opt.selected = true;
-    session.harnessSelect.appendChild(opt);
-  }
-  const isBusy = session.el.classList.contains('busy');
-  session.harnessSelect.disabled = isBusy || !!(S.meta && S.meta.agentPinned);
-  session.harnessSelect.title = S.meta && S.meta.agentPinned
-    ? 'Fixed for this run by -agent'
-    : 'Change the coding harness';
-
-  // Populate model select for the currently selected harness
-  const activeH = ready.find(h => h.name === (session.harnessSelect.value || currentHarness)) || ready[0];
-  session.modelSelect.innerHTML = '';
-  const models = activeH?.models || [];
-  if (models.length > 0) {
-    for (const m of models) {
-      const opt = document.createElement('option');
-      opt.value = m;
-      opt.textContent = m;
-      if (m === currentModel) opt.selected = true;
-      session.modelSelect.appendChild(opt);
-    }
-    session.modelSelect.hidden = false;
-    session.modelSelect.disabled = isBusy;
-    session.modelSelect.title = 'Model for ' + activeH.name;
-  } else {
-    session.modelSelect.hidden = true;
-  }
+function wireAgentPicker(picker, onError, after) {
+  picker?.addEventListener('change', async () => {
+    const [harness, model] = JSON.parse(picker.value || '[""]');
+    if (!harness) return;
+    await select(harness, model, onError);
+    after?.();
+  });
 }
 
 // Loads harnesses and models asynchronously after the browser UI has loaded.
@@ -144,103 +123,6 @@ export async function loadAgentAsync() {
     S.meta.agentPinned = !!j.pinned;
     applyAgentMeta();
   } catch {}
-}
-
-function syncBatchMeta() {
-  if (!batchHarness || !batchModel) return;
-  const ready = installed();
-  const currentHarness = chosen();
-  const currentModel = chosenModel();
-
-  batchHarness.innerHTML = '';
-  if (!ready.length) {
-    const opt = document.createElement('option');
-    opt.value = '';
-    opt.textContent = 'no harness';
-    batchHarness.appendChild(opt);
-    batchHarness.disabled = true;
-    batchModel.innerHTML = '';
-    batchModel.hidden = true;
-    return;
-  }
-
-  for (const h of ready) {
-    const opt = document.createElement('option');
-    opt.value = h.name;
-    opt.textContent = h.name;
-    if (h.name === currentHarness) opt.selected = true;
-    batchHarness.appendChild(opt);
-  }
-  const isBusy = !!batchJobId;
-  batchHarness.disabled = isBusy || !!(S.meta && S.meta.agentPinned);
-  batchHarness.title = S.meta && S.meta.agentPinned ? 'Fixed for this run by -agent' : 'Change the coding harness';
-
-  const activeH = ready.find(h => h.name === (batchHarness.value || currentHarness)) || ready[0];
-  batchModel.innerHTML = '';
-  const models = activeH?.models || [];
-  if (models.length > 0) {
-    for (const m of models) {
-      const opt = document.createElement('option');
-      opt.value = m;
-      opt.textContent = m;
-      if (m === currentModel) opt.selected = true;
-      batchModel.appendChild(opt);
-    }
-    batchModel.hidden = false;
-    batchModel.disabled = isBusy;
-    batchModel.title = 'Model for ' + activeH.name;
-  } else {
-    batchModel.hidden = true;
-  }
-}
-
-// Harness/model pickers for the sidebar git panel's "Generate" commit
-// message action -- same global selection as every other harness picker,
-// just a second view onto it (see syncBatchMeta above).
-function syncGitPanelHarnessMeta() {
-  if (!gitHarness || !gitModel) return;
-  const ready = installed();
-  const currentHarness = chosen();
-  const currentModel = chosenModel();
-
-  gitHarness.innerHTML = '';
-  if (!ready.length) {
-    const opt = document.createElement('option');
-    opt.value = '';
-    opt.textContent = 'no harness';
-    gitHarness.appendChild(opt);
-    gitHarness.disabled = true;
-    gitModel.innerHTML = '';
-    gitModel.hidden = true;
-    return;
-  }
-
-  for (const h of ready) {
-    const opt = document.createElement('option');
-    opt.value = h.name;
-    opt.textContent = h.name;
-    if (h.name === currentHarness) opt.selected = true;
-    gitHarness.appendChild(opt);
-  }
-  gitHarness.disabled = !!(S.meta && S.meta.agentPinned);
-  gitHarness.title = S.meta && S.meta.agentPinned ? 'Fixed for this run by -agent' : 'Change the coding harness';
-
-  const activeH = ready.find(h => h.name === (gitHarness.value || currentHarness)) || ready[0];
-  gitModel.innerHTML = '';
-  const models = activeH?.models || [];
-  if (models.length > 0) {
-    for (const m of models) {
-      const opt = document.createElement('option');
-      opt.value = m;
-      opt.textContent = m;
-      if (m === currentModel) opt.selected = true;
-      gitModel.appendChild(opt);
-    }
-    gitModel.hidden = false;
-    gitModel.title = 'Model for ' + activeH.name;
-  } else {
-    gitModel.hidden = true;
-  }
 }
 
 function getReadySessions() {
@@ -294,7 +176,7 @@ function syncBatchBar() {
         : 'Select more code to add more';
     }
   }
-  syncBatchMeta();
+  renderAgentPicker(batchPicker, !!batchJobId);
 }
 
 function anyInFlight() {
@@ -369,8 +251,7 @@ function createSession(info) {
     el,
     refEl: el.querySelector('[data-control~=agent-ref]'),
     metaEl: el.querySelector('[data-ui~=agent-meta]'),
-    harnessSelect: el.querySelector('[data-control~=agent-harness-select]'),
-    modelSelect: el.querySelector('[data-control~=agent-model-select]'),
+    picker: el.querySelector('[data-control~=agent-picker]'),
     closeBtn: el.querySelector('[data-control~=agent-close]'),
     pickEl: el.querySelector('[data-ui~=agent-pick]'),
     composeEl: el.querySelector('[data-ui~=agent-compose]'),
@@ -409,22 +290,7 @@ function wireSession(session) {
       openFile(session.target.path, { line: session.target.l1 });
     });
   }
-  if (session.harnessSelect) {
-    session.harnessSelect.addEventListener('change', async () => {
-      const hName = session.harnessSelect.value;
-      if (!hName) return;
-      await select(hName, msg => showErr(session, msg));
-      session.input.focus();
-    });
-  }
-  if (session.modelSelect) {
-    session.modelSelect.addEventListener('change', async () => {
-      const hName = session.harnessSelect?.value || chosen();
-      const mName = session.modelSelect.value;
-      await select(hName, mName, msg => showErr(session, msg));
-      session.input.focus();
-    });
-  }
+  wireAgentPicker(session.picker, msg => showErr(session, msg), () => session.input.focus());
   /* The composer swallows every key while it is open. Nothing typed into an
      instruction should also fire a viewport shortcut. */
   session.el.addEventListener('keydown', e => {
@@ -486,15 +352,12 @@ function refreshRef(session) {
 }
 
 function clearErr(session) {
-  const errEl = session.errEl;
-  if (!errEl) return;
-  errEl.textContent = '';
-  errEl.hidden = true;
+  showError(session.errEl, '');
 }
 
 function attachAlreadyRunningCancel(errContainer) {
   const row = document.createElement('div');
-  row.setAttribute('data-ui', 'agent-err-actions'); row.className = 'flex items-center';
+  row.setAttribute('data-ui', 'agent-err-actions'); row.className = 'mt-2 flex items-center';
   const btn = document.createElement('button');
   btn.type = 'button';
   btn.className = 'btn';
@@ -525,27 +388,8 @@ function attachAlreadyRunningCancel(errContainer) {
 /* Renders a failure inline under the instruction. A harness run also carries
    what it printed, which is usually the only clue to why it exited non-zero. */
 function showErr(session, msg, streams = []) {
-  const errEl = session.errEl;
-  if (!errEl) return;
-  errEl.textContent = '';
-  const head = document.createElement('div');
-  head.setAttribute('data-ui', 'agent-err-msg'); head.className = 'whitespace-pre-wrap wrap-anywhere text-destructive';
-  head.textContent = msg;
-  errEl.appendChild(head);
-  if (msg && msg.includes('already running')) {
-    attachAlreadyRunningCancel(errEl);
-  }
-  for (const [label, text] of streams) {
-    if (!text) continue;
-    const name = document.createElement('div');
-    name.setAttribute('data-ui', 'agent-err-label'); name.className = 'label text-muted-foreground';
-    name.textContent = label;
-    const pre = document.createElement('pre');
-    pre.setAttribute('data-ui', 'agent-err-out'); pre.className = 'whitespace-pre-wrap wrap-anywhere text-muted-foreground';
-    pre.textContent = text;
-    errEl.append(name, pre);
-  }
-  errEl.hidden = false;
+  showError(session.errEl, msg, { streams });
+  if (msg && msg.includes('already running')) attachAlreadyRunningCancel(session.errEl);
 }
 
 function resetHint(session) {
@@ -594,8 +438,7 @@ function setBusy(session, busy, msg) {
   if (session.threadBtn) session.threadBtn.hidden = !(busy && session.threadId);
   if (session.cancelBtn) session.cancelBtn.hidden = !busy;
   session.closeBtn.disabled = false;
-  if (session.harnessSelect) session.harnessSelect.disabled = busy || !!(S.meta && S.meta.agentPinned);
-  if (session.modelSelect) session.modelSelect.disabled = busy;
+  renderAgentPicker(session.picker, busy);
   if (session.hintEl && msg) session.hintEl.textContent = msg;
 }
 
@@ -643,13 +486,6 @@ async function showPicker(session) {
   session.pickEl.querySelectorAll('[data-pick]').forEach(b => {
     b.addEventListener('click', () => pick(session, b.dataset.pick));
   });
-  session.pickEl.querySelectorAll('[data-control~=agent-model-select]').forEach(sel => {
-    sel.addEventListener('change', async (e) => {
-      e.stopPropagation();
-      await select(sel.dataset.harness, sel.value, msg => showErr(session, msg));
-      showPicker(session);
-    });
-  });
 }
 
 function optionsHtml(ready, settingsPath) {
@@ -660,16 +496,6 @@ function optionsHtml(ready, settingsPath) {
       '<button aria-pressed="' + isSelected + '" data-variant="' + (isSelected ? 'secondary' : 'ghost') + '" data-pick="' + esc(h.name) + '" class="btn" data-control="agent-opt" data-size="xs">' +
       '<span data-ui="agent-opt-name" class="font-semibold">' + esc(h.name) + '</span>' +
       '<code data-ui="agent-opt-cmd" class="overflow-hidden whitespace-nowrap text-ellipsis font-mono text-muted-foreground">' + esc(h.cmd) + '</code></button>';
-    if (isSelected && h.models && h.models.length > 0) {
-      html += '<div data-ui="agent-model-row" class="card flex items-center justify-between gap-2 p-3 text-muted-foreground">' +
-        '<span data-ui="agent-model-label" class="label">Model:</span>' +
-        '<select data-harness="' + esc(h.name) + '" class="select h-6! max-w-full text-xs!" data-control="agent-model-select">';
-      for (const m of h.models) {
-        const sel = m === (h.model || chosenModel()) ? ' selected' : '';
-        html += '<option value="' + esc(m) + '"' + sel + '>' + esc(m) + '</option>';
-      }
-      html += '</select></div>';
-    }
     html += '</div>';
   }
   if (settingsPath) html += '<div data-ui="agent-note" class="wrap-anywhere font-mono text-muted-foreground">Remembered in ' + esc(settingsPath) + '</div>';
@@ -777,8 +603,7 @@ function setBatchBusy(busy, msg) {
   if (batchCancel) batchCancel.hidden = !busy;
   if (batchOpen) batchOpen.hidden = !(busy && batchThreadId);
   if (batchClear) batchClear.disabled = busy;
-  if (batchHarness) batchHarness.disabled = busy || !!(S.meta && S.meta.agentPinned);
-  if (batchModel) batchModel.disabled = busy;
+  renderAgentPicker(batchPicker, busy);
   if (batchHint) {
     if (msg) batchHint.textContent = msg;
     else syncBatchBar();
@@ -786,32 +611,12 @@ function setBatchBusy(busy, msg) {
 }
 
 function clearBatchErr() {
-  if (!batchErr) return;
-  batchErr.textContent = '';
-  batchErr.hidden = true;
+  showError(batchErr, '');
 }
 
 function showBatchErr(msg, streams = []) {
-  if (!batchErr) return;
-  batchErr.textContent = '';
-  const head = document.createElement('div');
-  head.setAttribute('data-ui', 'agent-err-msg'); head.className = 'whitespace-pre-wrap wrap-anywhere text-destructive';
-  head.textContent = msg;
-  batchErr.appendChild(head);
-  if (msg && msg.includes('already running')) {
-    attachAlreadyRunningCancel(batchErr);
-  }
-  for (const [label, text] of streams) {
-    if (!text) continue;
-    const name = document.createElement('div');
-    name.setAttribute('data-ui', 'agent-err-label'); name.className = 'label text-muted-foreground';
-    name.textContent = label;
-    const pre = document.createElement('pre');
-    pre.setAttribute('data-ui', 'agent-err-out'); pre.className = 'whitespace-pre-wrap wrap-anywhere text-muted-foreground';
-    pre.textContent = text;
-    batchErr.append(name, pre);
-  }
-  batchErr.hidden = false;
+  showError(batchErr, msg, { streams });
+  if (msg && msg.includes('already running')) attachAlreadyRunningCancel(batchErr);
 }
 
 export async function submitBatch() {
@@ -1070,34 +875,8 @@ export function initAgent() {
   if (batchCancel) batchCancel.addEventListener('click', () => cancelBatch());
   if (batchOpen) batchOpen.addEventListener('click', () => emit('threads:open', batchThreadId));
   if (batchClear) batchClear.addEventListener('click', () => clearAllEdits());
-  if (batchHarness) {
-    batchHarness.addEventListener('change', async () => {
-      const hName = batchHarness.value;
-      if (!hName) return;
-      await select(hName, msg => showBatchErr(msg));
-    });
-  }
-  if (batchModel) {
-    batchModel.addEventListener('change', async () => {
-      const hName = batchHarness?.value || chosen();
-      const mName = batchModel.value;
-      await select(hName, mName, msg => showBatchErr(msg));
-    });
-  }
-  if (gitHarness) {
-    gitHarness.addEventListener('change', async () => {
-      const hName = gitHarness.value;
-      if (!hName) return;
-      await select(hName, msg => showToast('error', msg));
-    });
-  }
-  if (gitModel) {
-    gitModel.addEventListener('change', async () => {
-      const hName = gitHarness?.value || chosen();
-      const mName = gitModel.value;
-      await select(hName, mName, msg => showToast('error', msg));
-    });
-  }
+  wireAgentPicker(batchPicker, msg => showBatchErr(msg));
+  wireAgentPicker(gitPicker, msg => showToast('error', msg));
 
   document.addEventListener('click', e => {
     const target = /** @type {HTMLElement|null} */ (e.target);

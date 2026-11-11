@@ -19,8 +19,12 @@ const rootDir = path.resolve(__dirname, '..');
 const srcDir = path.join(rootDir, 'web', 'src');
 // Keep the app, launcher, and loading page separate so opening a workspace
 // does not load the editor before it is ready.
+// Basecoat's own scripts drive the select and toast components. They are plain
+// scripts that register on window.basecoat, so they go ahead of the app bundle.
+const basecoatScripts = ['basecoat', 'select', 'toast']
+  .map(name => path.join(rootDir, 'node_modules', 'basecoat-css', 'dist', 'js', name + '.min.js'));
 const bundles = [
-  { entry: path.join(srcDir, 'main.js'), out: path.join(rootDir, 'web', 'app.js') },
+  { entry: path.join(srcDir, 'main.js'), out: path.join(rootDir, 'web', 'app.js'), prelude: basecoatScripts },
   { entry: path.join(srcDir, 'workbench.js'), out: path.join(rootDir, 'web', 'workbench.js') },
   { entry: path.join(srcDir, 'holding.js'), out: path.join(rootDir, 'web', 'holding.js') },
 ];
@@ -168,9 +172,13 @@ function run() {
     cwd: rootDir, stdio: 'inherit',
   });
   const bun = hasBun();
-  for (const { entry, out } of bundles) {
+  for (const { entry, out, prelude } of bundles) {
     if (bun) buildWithBun(entry, out);
     else buildWithNode(entry, out);
+    if (prelude) {
+      const head = prelude.map(file => fs.readFileSync(file, 'utf8')).join(';\n');
+      fs.writeFileSync(out, head + ';\n' + fs.readFileSync(out, 'utf8'));
+    }
   }
   compressVendorAssets();
 

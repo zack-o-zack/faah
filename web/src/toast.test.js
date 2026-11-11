@@ -1,16 +1,15 @@
 import { test, expect } from 'bun:test';
-import { toastMarkup } from './toast.js';
+import { toastConfig } from './toast.js';
 
-test('toast uses Basecoat content structure and escapes caller text', () => {
-  const html = toastMarkup('<done>', 'Copied "a&b"');
-  expect(html).toContain('class="toast" role="status" aria-hidden="false"');
-  expect(html).toContain('class="toast-content"><section><h2>&lt;done&gt;</h2><p>Copied &quot;a&amp;b&quot;</p>');
-  expect(toastMarkup('', 'Ready')).toContain('<section><p>Ready</p>');
+test('toast kinds pick an icon and show the text as the title', () => {
+  const config = toastConfig('success', 'Saved');
+  expect(config.category).toBe('success');
+  expect(config.icon).toContain('icon-[lucide--circle-check]');
+  expect(config.title).toBe('Saved');
+  expect(toastConfig('error', 'Failed').icon).toContain('icon-[lucide--circle-alert]');
 });
 
-test('toast kinds show an icon instead of a heading', () => {
-  const html = toastMarkup('success', 'Saved');
-  expect(html).toContain('icon-[lucide--circle-check]');
-  expect(html).not.toContain('<h2>');
-  expect(toastMarkup('error', 'Failed')).toContain('icon-[lucide--circle-alert]');
+test('any other first argument becomes a heading over the text', () => {
+  expect(toastConfig('Pushed', 'main is up to date')).toEqual({ category: '', title: 'Pushed', description: 'main is up to date' });
+  expect(toastConfig('', 'Ready', 1000)).toEqual({ category: '', title: 'Ready', duration: 1000 });
 });

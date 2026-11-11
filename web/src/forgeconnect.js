@@ -10,6 +10,7 @@
 // S.meta.forge, which the server builds from the provider's TokenSetup.
 import { $, S, esc, apiPostJson, keyLabel } from './state.js';
 import { showToast } from './ui.js';
+import { showError } from './errors.js';
 import { emit } from './bus.js';
 import { openSettings } from './settings.js';
 
@@ -110,9 +111,7 @@ function close() {
 }
 
 function setForgeConnectErr(msg) {
-  const el = $('#forge-connect-err');
-  el.hidden = !msg;
-  el.textContent = msg;
+  showError($('#forge-connect-err'), msg);
 }
 
 function setForgeConnectBusy(busy) {

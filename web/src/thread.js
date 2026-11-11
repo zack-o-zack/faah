@@ -3,6 +3,7 @@ import { setPressed } from './controls.js';
 import { $, $$, S, esc, doc_, api, apiPost, apiPostJson, applyKeyLabels } from './state.js';
 import { on } from './bus.js';
 import { showToast, copyToClipboard } from './ui.js';
+import { errorAlertHtml } from './errors.js';
 import { openFile } from './tabs.js';
 import { setThreadHandler, setExplainHandler, setExplainPrepareHandler, hideSelectionBar } from './selbar.js';
 import { highlightRange } from './renderer.js';
@@ -436,18 +437,21 @@ function thrDrawList() {
   if (!items.length) {
     thrEl.list.innerHTML = '<div data-ui="hint" class="empty text-muted-foreground">' + (thr.filter === 'file'
       ? 'No threads started in this file. Select code and press <b data-keys="Alt+T"></b> to start one.'
-      : 'No threads yet. Select code and press <b data-keys="Alt+T"></b>, or use + New, to start a long-running conversation.') + '</div>';
+      : 'No threads yet. Select code and press <b data-keys="Alt+T"></b>, or use New to start a long-running conversation.') + '</div>';
     applyKeyLabels(thrEl.list);
     return;
   }
   thrEl.list.innerHTML = items.map(t =>
-    '<div data-ui="thr-item" class="item cursor-pointer hover:bg-accent [&.sel]:bg-accent' + (thr.cur && thr.cur.id === t.id ? ' sel' : '') + '" data-id="' + esc(t.id) + '" role="button" tabindex="0">' +
-    '<div data-ui="thr-item-title" class="label flex items-center min-w-0 gap-2 font-semibold">' + (t.running ? '<span data-ui="thr-spin" class="size-3 shrink-0 rounded-full border-2 border-border border-t-primary animate-spin" title="Working"></span>' : t.failed ? '<span data-ui="thr-fail" class="flex-none font-semibold text-destructive" title="Last reply failed">!</span>' : '') +
-    '<span data-ui="thr-item-title-text" class="flex-1 min-w-0 overflow-hidden whitespace-nowrap text-ellipsis">' + esc(t.title) + '</span>' + (t.kind ? '<span class="badge" data-variant="outline" data-control="thr-kind">' + (t.kind === 'batch' || t.kind === 'explain' ? t.kind : 'inline') + '</span>' : '') +
-    '<button data-del="' + esc(t.id) + '" title="Delete this thread" aria-label="Delete thread" class="btn" data-control="thr-item-del mini" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--trash-2] size-3 shrink-0" aria-hidden="true"></span></button>' +
+    '<div data-ui="thr-item" class="item group flex-col items-stretch gap-1 cursor-pointer hover:bg-accent [&.sel]:bg-accent' + (thr.cur && thr.cur.id === t.id ? ' sel' : '') + '" data-size="xs" data-id="' + esc(t.id) + '" role="button" tabindex="0">' +
+    '<div data-ui="thr-item-title" class="flex min-w-0 items-center gap-2 text-sm font-medium">' +
+      (t.running ? '<span data-ui="thr-spin" class="icon-[lucide--loader-circle] size-3.5 shrink-0 animate-spin text-muted-foreground" title="Working"></span>'
+        : t.failed ? '<span data-ui="thr-fail" class="icon-[lucide--circle-alert] size-3.5 shrink-0 text-destructive" title="Last reply failed"></span>' : '') +
+      '<span data-ui="thr-item-title-text" class="min-w-0 flex-1 truncate">' + esc(t.title) + '</span>' +
+      (t.kind ? '<span class="badge" data-variant="secondary" data-control="thr-kind">' + (t.kind === 'batch' || t.kind === 'explain' ? t.kind : 'inline') + '</span>' : '') +
+      '<button data-del="' + esc(t.id) + '" title="Delete this thread" aria-label="Delete thread" class="btn opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100" data-control="thr-item-del mini" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--trash-2] size-3 shrink-0" aria-hidden="true"></span></button>' +
     '</div>' +
-    '<div data-ui="thr-item-meta" class="flex justify-between gap-2 font-mono text-muted-foreground"><span data-ui="thr-item-ref" class="overflow-hidden whitespace-nowrap text-ellipsis">' + esc(thrRefText(t)) + '</span>' +
-    '<span>' + t.turns + (t.turns === 1 ? ' turn' : ' turns') + ' · ' + thrAgo(t.updated) + '</span></div></div>').join('');
+    '<div data-ui="thr-item-meta" class="flex justify-between gap-2 text-xs text-muted-foreground"><span data-ui="thr-item-ref" class="truncate font-mono">' + esc(thrRefText(t)) + '</span>' +
+    '<span class="shrink-0">' + t.turns + (t.turns === 1 ? ' turn' : ' turns') + ' · ' + thrAgo(t.updated) + '</span></div></div>').join('');
 }
 
 function thrApplyList(next) {
@@ -485,9 +489,10 @@ const thrRunning = () => !!(thr.cur && thr.cur.turns.length && thr.cur.turns[thr
 function thrRenderAnchor() {
   const t = thr.cur || thr.draft;
   const el = thrEl.anchor;
+  thrEl.input.placeholder = t && t.path ? 'Ask about this code, or ask for changes anywhere' : 'Ask about this workspace, or ask for changes';
+  // A workspace thread has nothing to point at; its placeholder says so.
   if (!t || !t.path) {
-    el.hidden = !thr.draft;
-    el.textContent = 'Workspace thread: not tied to a file';
+    el.hidden = true;
     el.classList.remove('jump');
     delete el.dataset.path;
     return;
@@ -496,7 +501,7 @@ function thrRenderAnchor() {
   el.classList.add('jump');
   el.dataset.path = t.path;
   el.dataset.line = t.l1;
-  el.textContent = thrRefText(t);
+  el.querySelector('[data-ui~=thr-anchor-text]').textContent = thrRefText(t);
   el.title = 'Jump to this code';
 }
 
@@ -518,17 +523,28 @@ function thrReplyHtml(turn) {
   try { return thrMd(turn.reply || ''); } finally { thrRefs = null; }
 }
 
+/* The steps a turn took. While it runs, the latest one is its status line;
+   once it is done they fold under a count. */
+function thrStepsHtml(turn, open = false) {
+  const tools = turn.tools || [];
+  if (!turn.running && !tools.length) return '';
+  const head = turn.running
+    ? '<span class="icon-[lucide--loader-circle] mt-px size-3 shrink-0 animate-spin" aria-hidden="true"></span><span class="line-clamp-2 min-w-0 wrap-anywhere">' + esc(tools[tools.length - 1] || 'Starting') + '</span>'
+    : '<span class="icon-[lucide--chevron-right] mt-px size-3 shrink-0 transition-transform group-open:rotate-90" aria-hidden="true"></span>' + tools.length + (tools.length === 1 ? ' step' : ' steps');
+  if (!tools.length) return '<div data-ui="thr-steps" class="flex items-start gap-1.5 text-xs text-muted-foreground">' + head + '</div>';
+  return '<details data-ui="thr-steps" class="group text-xs text-muted-foreground [&::details-content]:overflow-hidden"' + (open ? ' open' : '') + '>' +
+    '<summary class="flex cursor-pointer list-none items-start gap-1.5 hover:text-foreground [&::-webkit-details-marker]:hidden">' + head + '</summary>' +
+    '<ol data-ui="thr-step-list" class="mt-1.5 ml-1.5 flex flex-col gap-1 border-l pl-3">' + tools.map(x => '<li class="whitespace-pre-wrap wrap-anywhere">' + esc(x) + '</li>').join('') + '</ol></details>';
+}
+
 function thrTurnHtml(turn) {
-  let h = '<div data-ui="thr-msg" class="card flex min-w-0 flex-col gap-2 thr-user"><div data-ui="thr-who" class="text-muted-foreground">You</div><div class="thr-body">' + thrMd(turn.prompt) + '</div></div>';
-  h += '<div data-ui="thr-msg" class="flex min-w-0 flex-col gap-2  thr-agent" data-turn="' + turn.id + '"><div data-ui="thr-who" class="text-muted-foreground">' + esc(turn.harness || 'agent') +
+  let h = '<div data-ui="thr-msg" class="thr-user ml-8 self-end min-w-0 rounded-lg bg-muted px-3 py-2 text-sm"><div class="thr-body">' + thrMd(turn.prompt) + '</div></div>';
+  h += '<div data-ui="thr-msg" class="thr-agent flex min-w-0 flex-col gap-2 text-sm" data-turn="' + turn.id + '"><div data-ui="thr-who" class="text-xs text-muted-foreground">' + esc(turn.harness || 'agent') +
     (turn.model ? ' · ' + esc(turn.model) : '') +
-    (turn.running ? ' · <span data-ui="thr-live" class="">working…</span>' : turn.ms ? ' · <span' + (turn.firstMs ? ' title="First words after ' + thrDur(turn.firstMs) + (turn.warm ? ', agent started ahead' : '') + '"' : '') + '>' + thrDur(turn.ms) + '</span>' : '') + '</div>';
-  if (turn.tools && turn.tools.length) {
-    h += '<details data-ui="thr-steps" class="font-mono text-muted-foreground"' + (turn.running ? ' open' : '') + '><summary>' + turn.tools.length + (turn.tools.length === 1 ? ' step' : ' steps') + '</summary>' +
-      '<div data-ui="thr-step-list" class="flex flex-col gap-2 p-3">' + turn.tools.map(x => '<div>' + esc(x) + '</div>').join('') + '</div></details>';
-  }
+    (!turn.running && turn.ms ? ' · <span' + (turn.firstMs ? ' title="First words after ' + thrDur(turn.firstMs) + (turn.warm ? ', agent started ahead' : '') + '"' : '') + '>' + thrDur(turn.ms) + '</span>' : '') + '</div>';
+  h += thrStepsHtml(turn);
   h += '<div class="thr-body thr-reply">' + thrReplyHtml(turn) + '</div>';
-  if (turn.error) h += '<div data-ui="thr-err" class="alert whitespace-pre-wrap wrap-anywhere p-3 font-mono text-destructive">' + esc(turn.error) + '</div>';
+  if (turn.error) h += errorAlertHtml(turn.error, { title: 'The run failed' });
   if (thr.cur?.kind === 'explain' && turn.id === 1 && !turn.running) h += thrExplainFoot();
   if (!turn.running) {
     if (turn.changed && turn.changed.length) {
@@ -537,10 +553,10 @@ function thrTurnHtml(turn) {
           ? '<span class="badge" data-variant="outline" data-control="thr-reverted-badge">Reverted</span>'
           : '<button type="button" data-revert-turn="' + turn.id + '" title="Revert files modified in this turn back to pre-turn snapshot" class="btn" data-control="thr-revert-btn" data-variant="outline" data-size="xs">Revert turn</button>')
         : '';
-      h += '<div data-ui="thr-changed" class="flex items-center flex-wrap gap-2"><div data-ui="thr-changed-head" class="flex items-center justify-between w-full gap-2"><span data-ui="thr-changed-label" class="label font-mono text-muted-foreground">' + (thr.cur?.kind === 'explain' ? 'Files changed during this explanation' : 'Changed ' + turn.changed.length + (turn.changed.length === 1 ? ' file' : ' files')) + '</span>' + revertHtml + '</div>' +
-        turn.changed.map(p => '<button data-path="' + esc(p) + '" data-turn-id="' + turn.id + '" title="Review changes in ' + esc(p) + '" class="btn" data-control="thr-file" data-variant="outline" data-size="xs">' + esc(p) + '</button>').join('') + '</div>';
+      h += '<div data-ui="thr-changed" class="flex items-center flex-wrap gap-2"><div data-ui="thr-changed-head" class="flex items-center justify-between w-full gap-2"><span data-ui="thr-changed-label" class="text-xs text-muted-foreground">' + (thr.cur?.kind === 'explain' ? 'Files changed during this explanation' : 'Changed ' + turn.changed.length + (turn.changed.length === 1 ? ' file' : ' files')) + '</span>' + revertHtml + '</div>' +
+        turn.changed.map(p => '<button data-path="' + esc(p) + '" data-turn-id="' + turn.id + '" title="Review changes in ' + esc(p) + '" class="btn max-w-full font-mono" data-control="thr-file" data-variant="outline" data-size="xs"><span class="icon-[lucide--file-diff] size-3" aria-hidden="true"></span><span class="truncate">' + esc(p) + '</span></button>').join('') + '</div>';
     } else if (turn.tracked === false) {
-      h += '<div data-ui="thr-changed" class="flex items-center flex-wrap gap-2"><span data-ui="thr-changed-label" class="label font-mono text-muted-foreground">Changes unknown outside a git repository; the workspace was reloaded.</span></div>';
+      h += '<div data-ui="thr-changed" class="flex items-center flex-wrap gap-2"><span data-ui="thr-changed-label" class="text-xs text-muted-foreground">Changes unknown outside a git repository; the workspace was reloaded.</span></div>';
     }
   }
   return h + '</div>';
@@ -594,13 +610,23 @@ async function thrPickScope(scope) {
   thrRenderScope();
 }
 
+// One button sends, and stops the reply while one runs.
+function thrSyncSend() {
+  const running = thrRunning();
+  const b = thrEl.send;
+  const label = running ? 'Stop this reply' : 'Send (Enter)';
+  b.title = label;
+  b.setAttribute('aria-label', label);
+  b.firstElementChild.className = running ? 'size-2.5 rounded-[2px] bg-current' : 'icon-[lucide--arrow-up] size-4';
+  b.disabled = !running && (thr.sending || !thrEl.input.value.trim());
+}
+
 function thrRenderState() {
   const running = thrRunning();
   thrEl.title.textContent = thr.cur ? thr.cur.title : 'New thread';
   thrEl.del.hidden = !thr.cur;
-  thrEl.stop.hidden = !running;
-  thrEl.send.disabled = running || thr.sending;
-  thrEl.hint.textContent = running ? 'Working. You can send the next message once it replies.' : 'Enter to send, Shift+Enter for a new line';
+  thrSyncSend();
+  thrEl.hint.textContent = running ? 'The stop button ends this reply early' : 'Enter to send · Shift+Enter for a new line';
   thrRenderAnchor();
   thrRenderScope();
   thrRenderMsgs();
@@ -655,10 +681,10 @@ function thrWireStream() {
     const stick = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
     const msg = box.querySelector('.thr-agent[data-turn="' + d.turn + '"]');
     if (msg) {
-      msg.querySelector('[data-ui~=thr-steps]')?.remove();
-      msg.querySelector('[data-ui~=thr-who]').insertAdjacentHTML('afterend',
-        '<details data-ui="thr-steps" class="font-mono text-muted-foreground" open><summary>' + turn.tools.length + (turn.tools.length === 1 ? ' step' : ' steps') + '</summary>' +
-        '<div data-ui="thr-step-list" class="flex flex-col gap-2 p-3">' + turn.tools.map(x => '<div>' + esc(x) + '</div>').join('') + '</div></details>');
+      const old = msg.querySelector('[data-ui~=thr-steps]');
+      const open = !!old?.open;
+      old?.remove();
+      msg.querySelector('[data-ui~=thr-who]').insertAdjacentHTML('afterend', thrStepsHtml(turn, open));
     }
     if (stick) box.scrollTop = box.scrollHeight;
   });
@@ -769,7 +795,7 @@ async function thrSend() {
   const message = thrEl.input.value.trim();
   if (!message || thr.sending || thrRunning()) return;
   thr.sending = true;
-  thrEl.send.disabled = true;
+  thrSyncSend();
   try {
     if (thr.draft) {
       const t = await apiPostJson('/api/threads/create', { ...thr.draft, message });
@@ -819,7 +845,6 @@ export function initThreads() {
   thrEl.msgs = $('#thr-msgs');
   thrEl.input = $('#thr-input');
   thrEl.send = $('#thr-send');
-  thrEl.stop = $('#thr-stop');
   thrEl.hint = $('#thr-hint');
   $('#thr-scope')?.addEventListener('click', e => {
     const b = e.target.closest('button[data-scope]');
@@ -828,7 +853,7 @@ export function initThreads() {
   if (!thrEl.listView) return;
 
   setThreadHandler(newThread);
-  registerAgentPicker({ el: $('[data-ui~=thr-compose]'), harnessSelect: $('#thr-harness'), modelSelect: $('#thr-model') });
+  registerAgentPicker($('#thr-agent'));
 
   $('#thr-new').addEventListener('click', () => newThread(null));
   $('#thr-back').addEventListener('click', thrBack);
@@ -848,10 +873,11 @@ export function initThreads() {
     });
     addEventListener('mouseup', () => { if (dragging) { dragging = false; trz.classList.remove('drag'); layout(); render(); } });
   })();
-  thrEl.send.addEventListener('click', thrSend);
-  thrEl.stop.addEventListener('click', () => {
+  thrEl.send.addEventListener('click', () => {
+    if (!thrRunning()) { thrSend(); return; }
     if (thr.cur) apiPost('/api/threads/cancel', { id: thr.cur.id }).catch(e => showToast('error', e.message));
   });
+  thrEl.input.addEventListener('input', thrSyncSend);
   thrEl.del.addEventListener('click', () => {
     if (thr.cur) deleteThread(thr.cur.id);
   });

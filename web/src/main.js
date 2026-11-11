@@ -33,6 +33,7 @@ import { initEditView } from './editview.js';
 import { initNewItem } from './newitem.js';
 import { initTips, startTipsAsync } from './tips.js';
 import { initReviewFlow } from './reviewflow.js';
+import { initErrorCopy } from './ui.js';
 
 // Initialize all subsystems
 initRenderer();
@@ -65,6 +66,7 @@ initSettings();
 initVim();
 initImageViewer();
 initLineComment();
+initErrorCopy();
 initUnpushed();
 initPRScope();
 

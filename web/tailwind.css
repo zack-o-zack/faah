@@ -549,3 +549,11 @@
   }
 
 }
+
+/* Toasts sit at the top right, so they come in from above. */
+@keyframes toast-down {
+  from {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+}

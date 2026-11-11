@@ -12,6 +12,7 @@ import { setMenuHidden } from './overlays.js';
 // merging now a bad idea. Nothing here knows which forge it is talking to.
 import { $, S, esc, api, apiPostJson, keyLabel } from './state.js';
 import { showToast } from './ui.js';
+import { showError } from './errors.js';
 import { on, emit } from './bus.js';
 import { registerAgentPicker } from './agent.js';
 import { openSettings } from './settings.js';
@@ -276,9 +277,7 @@ function initDialog() {
   for (const id of ['#pr-merge-commit-title', '#pr-merge-commit-body']) {
     $(id)?.addEventListener('input', saveDraft);
   }
-  const harnessSelect = $('#pr-merge-harness');
-  const modelSelect = $('#pr-merge-model');
-  if (harnessSelect && modelSelect) registerAgentPicker({ el: m, harnessSelect, modelSelect });
+  registerAgentPicker($('#pr-merge-agent'));
   $('#pr-merge-hint').textContent = keyLabel('Mod+Enter') + ' to merge, Esc to cancel';
 }
 
@@ -379,10 +378,7 @@ function saveDraft() {
 }
 
 function setPRMergeErr(msg) {
-  const el = $('#pr-merge-err');
-  if (!el) return;
-  el.hidden = !msg;
-  el.textContent = msg;
+  showError($('#pr-merge-err'), msg);
 }
 
 async function confirmMerge() {

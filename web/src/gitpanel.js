@@ -414,9 +414,7 @@ let syncJob = 0; // id of the agent rebase/merge job while one runs
 function initNotice() {
   $('#git-notice-close')?.addEventListener('click', clearGitNotice);
   const n = $('#git-notice');
-  const harnessSelect = $('#git-sync-harness');
-  const modelSelect = $('#git-sync-model');
-  if (n && harnessSelect && modelSelect) registerAgentPicker({ el: n, harnessSelect, modelSelect });
+  registerAgentPicker($('#git-sync-agent'));
   // Stage ticks in the file tree report their failures here too.
   on('git:error', ({ title, message }) => showGitError(title, message));
   on('pr:resolve', resolvePRBase);
