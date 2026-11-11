@@ -3,7 +3,7 @@ import { ownsNavigationKey } from './controls.js';
 
 test('focused controls retain navigation and activation without taking editor shortcuts', () => {
   const control = { closest: () => ({}) };
-  for (const key of ['ArrowDown', 'ArrowLeft', 'Home', 'End', ' ', 'Enter']) {
+  for (const key of ['ArrowDown', 'ArrowLeft', 'Home', 'End', 'PageUp', 'PageDown', ' ', 'Enter']) {
     expect(ownsNavigationKey({ key, target: control })).toBe(true);
     expect(ownsNavigationKey({ key, target: control, metaKey: true })).toBe(false);
     expect(ownsNavigationKey({ key, target: control, ctrlKey: true })).toBe(false);

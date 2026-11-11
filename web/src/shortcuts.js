@@ -88,7 +88,7 @@ export function showHelp() {
   });
 }
 
-export const inField = el => el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA');
+export const inField = el => el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT');
 
 export function initShortcuts() {
   $('#btn-theme')?.addEventListener('click', cycleTheme);

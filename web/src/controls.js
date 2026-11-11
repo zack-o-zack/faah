@@ -9,6 +9,6 @@ export function setPressed(control, pressed) {
 /** Let focused controls own ordinary navigation; editor shortcuts keep modifiers. */
 export function ownsNavigationKey(event) {
   return !event.metaKey && !event.ctrlKey && !event.altKey &&
-    ['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight', 'Home', 'End', ' ', 'Enter'].includes(event.key) &&
+    ['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown', ' ', 'Enter'].includes(event.key) &&
     !!event.target?.closest?.('button, a[href], select, [role="button"], [role="tab"], [role^="menuitem"]');
 }
