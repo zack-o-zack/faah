@@ -3512,18 +3512,3 @@ body.in-review-mode .review-view {
   width: 480px;
   max-width: 90vw;
 }
-
-.sym .kd {
-  font: 600 var(--t-9)/1 var(--mono); text-transform: uppercase; letter-spacing: .03em;
-  color: var(--on-badge); background: var(--muted-foreground); border-radius: var(--r); flex: none;
-  min-width: 26px; text-align: center; padding: 4px 3px;
-}
-.sym .kd[data-k="func"], .sym .kd[data-k="method"], .sym .kd[data-k="fn"],
-.sym .kd[data-k="def"], .sym .kd[data-k="defp"] { background: var(--nf); }
-.sym .kd[data-k="class"], .sym .kd[data-k="struct"], .sym .kd[data-k="interface"],
-.sym .kd[data-k="type"], .sym .kd[data-k="enum"], .sym .kd[data-k="trait"],
-.sym .kd[data-k="record"], .sym .kd[data-k="protocol"] { background: var(--nc); }
-.sym .kd[data-k="const"], .sym .kd[data-k="var"], .sym .kd[data-k="let"], .sym .kd[data-k="val"] { background: var(--kt); }
-.sym .kd[data-k="module"], .sym .kd[data-k="mod"], .sym .kd[data-k="namespace"],
-.sym .kd[data-k="defmodule"], .sym .kd[data-k="impl"], .sym .kd[data-k="extension"] { background: var(--nt); }
-.pi .pr { margin-left: auto; font: var(--t-10-5) var(--mono); color: var(--faint); flex: none; }

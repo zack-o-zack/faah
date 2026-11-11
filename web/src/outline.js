@@ -50,7 +50,7 @@ export function drawOutline() {
     return (d.outlineSource ? '<div class="hint"><span class="src">' + esc(d.outlineSource) + '</span> · ' + items.length + ' symbols</div>' : '') +
       items.map(s =>
       '<div class="sym" data-n="' + s.line + '" style="padding-left:' + (10 + Math.min(s.indent - base, 16) * 5) + 'px" title="Jump to ' + esc(s.name) + ' at line ' + s.line + '">' +
-      '<span class="kd" data-k="' + esc(s.kind) + '">' + esc(kindLabel(s.kind)) + '</span>' +
+      '<span class="badge text-[var(--on-badge)]! bg-[var(--m)]! data-[k=func]:bg-[var(--nf)]! data-[k=method]:bg-[var(--nf)]! data-[k=fn]:bg-[var(--nf)]! data-[k=def]:bg-[var(--nf)]! data-[k=defp]:bg-[var(--nf)]! data-[k=class]:bg-[var(--nc)]! data-[k=struct]:bg-[var(--nc)]! data-[k=interface]:bg-[var(--nc)]! data-[k=type]:bg-[var(--nc)]! data-[k=enum]:bg-[var(--nc)]! data-[k=trait]:bg-[var(--nc)]! data-[k=record]:bg-[var(--nc)]! data-[k=protocol]:bg-[var(--nc)]! data-[k=const]:bg-[var(--kt)]! data-[k=var]:bg-[var(--kt)]! data-[k=let]:bg-[var(--kt)]! data-[k=val]:bg-[var(--kt)]! data-[k=module]:bg-[var(--nt)]! data-[k=mod]:bg-[var(--nt)]! data-[k=namespace]:bg-[var(--nt)]! data-[k=defmodule]:bg-[var(--nt)]! data-[k=impl]:bg-[var(--nt)]! data-[k=extension]:bg-[var(--nt)]!" data-variant="secondary" data-k="' + esc(s.kind) + '">' + esc(kindLabel(s.kind)) + '</span>' +
       '<span class="sn">' + esc(s.name) + '</span><span class="sl">' + s.line + '</span></div>').join('');
   };
 

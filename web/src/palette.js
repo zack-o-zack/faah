@@ -230,7 +230,7 @@ export function drawPalette() {
     '<div class="pi' + (i === pal.sel ? ' sel' : '') + '" data-i="' + i + '">' +
     '<span class="pn">' + (it.raw ? it.label : esc(it.label)) + '</span>' +
     '<span class="pp">' + (it.raw ? it.sub : esc(it.sub || '')) + '</span>' +
-    (it.right ? '<span class="pr">' + esc(it.right) + '</span>' : '') + '</div>').join('');
+    (it.right ? '<span class="badge ml-auto" data-variant="outline">' + esc(it.right) + '</span>' : '') + '</div>').join('');
   const s = palList.children[pal.sel];
   if (s) s.scrollIntoView({ block: 'nearest' });
   if (pal.mode === 'theme') setTheme(pal.items[pal.sel].id, false); // live preview
