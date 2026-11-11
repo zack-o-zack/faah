@@ -285,7 +285,7 @@ export function renderTipMarkdown(src) {
 
   // 2. Extract code blocks / inline code
   s = s.replace(/(`+)([\s\S]*?[^`])\1(?!`)/g, (_, q, code) => {
-    codes.push('<code class="tip-code">' + escapeTipHtml(code.trim()) + '</code>');
+    codes.push('<code data-ui="tip-code" class="font-mono bg-muted text-primary-text">' + escapeTipHtml(code.trim()) + '</code>');
     return '%%PXCODE' + (codes.length - 1) + '%%';
   });
 
@@ -307,7 +307,7 @@ export function renderTipMarkdown(src) {
 
   // 6. Links: [text](url)
   s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (_, text, url) => {
-    return `<a href="${escapeTipHtml(url)}" target="_blank" rel="noopener noreferrer" class="tip-link">${text}</a>`;
+    return `<a href="${escapeTipHtml(url)}" target="_blank" rel="noopener noreferrer" data-ui="tip-link" class="text-primary-text underline">${text}</a>`;
   });
 
   // 7. Restore inline codes and kbds

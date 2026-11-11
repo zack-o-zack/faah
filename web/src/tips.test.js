@@ -26,7 +26,7 @@ test('renderTipMarkdown formats bold, italic, code, and escapes html', () => {
 
   assert.ok(output.includes('<strong>bold</strong>'));
   assert.ok(output.includes('<em>italic</em>'));
-  assert.ok(output.includes('<code class="tip-code">code</code>'));
+  assert.ok(output.includes('<code data-ui="tip-code" class="font-mono bg-muted text-primary-text">code</code>'));
   assert.ok(!output.includes('<script>'));
   assert.ok(output.includes('&lt;script&gt;alert(1)&lt;/script&gt;'));
 });
@@ -35,7 +35,7 @@ test('renderTipMarkdown formats links securely', () => {
   const input = 'Visit [px0](https://px0.ai) for more info.';
   const output = renderTipMarkdown(input);
 
-  assert.ok(output.includes('<a href="https://px0.ai" target="_blank" rel="noopener noreferrer" class="tip-link">px0</a>'));
+  assert.ok(output.includes('<a href="https://px0.ai" target="_blank" rel="noopener noreferrer" data-ui="tip-link" class="text-primary-text underline">px0</a>'));
 });
 
 test('renderTipMarkdown formats kbd and KBD tags as styled HTML', () => {

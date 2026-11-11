@@ -1,6 +1,6 @@
 // web/src/commitfiles.js
 // A commit's changed files as sidebar rows, shared by Recent Commits
-// (gitpanel.js) and the Unpushed section (unpushed.js), styled by the .up-file
+// (gitpanel.js) and the Unpushed section (unpushed.js), styled by the [data-commit-file]
 // rules. Rows are built COMMIT_FILES_PAGE at a time behind a "Show N more" row,
 // so a commit of thousands of files costs no more DOM than one of a hundred
 // until someone asks for more.
@@ -54,14 +54,14 @@ function commitFileRow(f, sel) {
   const name = f.path.split('/').pop();
   const dir = f.path.slice(0, f.path.length - name.length).replace(/\/$/, '');
   const from = f.from ? ' (was ' + f.from + ')' : '';
-  const stat = f.binary ? '<span class="up-file-bin text-muted-foreground">bin</span>'
-    : (f.add ? '<span class="up-file-add text-gi">+' + f.add + '</span>' : '') +
-      (f.del ? '<span class="up-file-del text-gd">&minus;' + f.del + '</span>' : '');
-  return '<div class="up-file' + (sel ? ' sel' : '') + '" data-path="' + esc(f.path) + '" tabindex="0" role="button" ' +
+  const stat = f.binary ? '<span class="text-muted-foreground">bin</span>'
+    : (f.add ? '<span class="text-gi">+' + f.add + '</span>' : '') +
+      (f.del ? '<span class="text-gd">&minus;' + f.del + '</span>' : '');
+  return '<div data-commit-file class="flex min-w-0 items-center gap-2 p-2 cursor-pointer hover:bg-accent [&.sel]:bg-accent' + (sel ? ' sel' : '') + '" data-path="' + esc(f.path) + '" tabindex="0" role="button" ' +
     'title="' + esc(f.path + from) + ' — ' + esc(g[1]) + ' in this commit">' +
-    '<span class="up-file-name min-w-0 truncate">' + esc(name) + '</span>' +
-    (dir ? '<span class="up-file-dir min-w-0 flex-1 truncate text-muted-foreground">' + esc(dir) + '</span>' : '') +
-    (stat ? '<span class="up-file-stat ml-auto inline-flex shrink-0 gap-1 font-mono">' + stat + '</span>' : '') +
+    '<span class="min-w-0 truncate">' + esc(name) + '</span>' +
+    (dir ? '<span class="min-w-0 flex-1 truncate text-muted-foreground">' + esc(dir) + '</span>' : '') +
+    (stat ? '<span class="ml-auto inline-flex shrink-0 gap-1 font-mono">' + stat + '</span>' : '') +
     '<span class="gs ml-auto shrink-0 px-1 font-mono text-xs [&.git-M]:text-primary-text [&.git-R]:text-primary-text [&.git-A]:text-gi [&.git-untracked]:text-gi [&.git-D]:text-gd ' + g[0] + '" title="' + esc(g[1]) + '">' + esc(f.status) + '</span>' +
   '</div>';
 }

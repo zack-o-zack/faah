@@ -1,5 +1,7 @@
 /* Gruvbox Dark: based on the Gruvbox palette. Token reference: docs/internals/styling-and-themes.md. */
 :root[data-theme="gruvbox-dark"] {
+  --image-dark: #121214;
+  --image-light: #ffffff;
   --theme-name: "Gruvbox Dark";
   color-scheme: dark;
 

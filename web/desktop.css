@@ -28,21 +28,8 @@
 /* Buttons: small and medium sizes, default and primary weights. Controls inside
    code rows, tree rows, and the crowded sidebar header stay compact. */
 :root[data-shell] { --focus-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 45%, transparent); }
-[data-shell] :is(.diff-section-head, .review-section-title) { font-size: var(--t-12); font-weight: 500; letter-spacing: 0; text-transform: none; }
-[data-shell] .sym { height: var(--ctl-sm); margin: 0 6px; border-radius: var(--r); }
-[data-shell] .rfile { margin: 0 6px; padding-inline: 6px; border-radius: var(--r); }
 [data-shell] .wb-list { padding: 4px; }
 [data-shell] .wb-row { padding: 8px; border-radius: var(--r); }
-[data-shell] .thr-item { margin: 2px 6px; padding: 8px; border-bottom: 0; border-radius: var(--r); }
-[data-shell] .thr-item:hover { background: color-mix(in srgb, var(--muted) 55%, transparent); }
-[data-shell] .thr-item.sel { background: var(--muted); box-shadow: none; }
-[data-shell] .diff-item-desc { white-space: nowrap; }
-
-[data-shell] .diff-item-title { font-size: var(--t-13); font-weight: 500; }
-[data-shell] .diff-item-desc { font-size: var(--t-12); }
-/* Dialog actions borrow the status bar's button class; give them the medium size. */
-
-[data-shell] .settings-nav { padding: 8px; gap: 1px; }
 
 :root[data-titlebar] {
   --titlebar-h: 38px;
@@ -64,19 +51,3 @@
   content: ""; position: fixed; inset: 0 0 auto; height: var(--titlebar-h);
   -webkit-app-region: drag;
 }
-
-/* Disclosure arrows: the tree's stroked chevron in place of a filled triangle. */
-
-[data-shell] :is(.rfile.closed .ar, .car.shut) { transform: rotate(-90deg); }
-
-/* Settings are rows divided by a line, not boxes. */
-[data-shell] .settings-list { gap: 0; padding: 4px 28px 24px 24px; }
-/* The native arrow sits against the border, so selects draw their own. */
-
-[data-shell] .settings-card, [data-shell] .settings-card.is-modified {
-  padding: 14px 0; background: none; border: 0; border-bottom: 1px solid var(--border); border-radius: 0;
-}
-[data-shell] .settings-card:last-child { border-bottom: 0; }
-
-[data-shell] .settings-card-right { gap: var(--space-2); }
-[data-shell] .settings-card-textarea .settings-card-right { flex-wrap: wrap; justify-content: flex-end; }

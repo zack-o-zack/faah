@@ -87,9 +87,9 @@ export async function showHover(at, x, y) {
   S.hoverAnchor = { x: ax, y: ay };
   const refPath = d.path + ':' + at.line;
   hovercard.innerHTML =
-    (j.signature ? '<div class="sig">' + j.signature + '</div>' : '') +
-    (j.doc ? '<div class="doc">' + esc(j.doc) + '</div>' : '') +
-    '<div class="actions">' +
+    (j.signature ? '<div data-ui="sig" class="font-mono whitespace-pre-wrap wrap-anywhere p-3">' + j.signature + '</div>' : '') +
+    (j.doc ? '<div data-ui="doc" class="p-3">' + esc(j.doc) + '</div>' : '') +
+    '<div data-ui="actions" class="flex flex-wrap items-center gap-2 p-3">' +
       '<button id="hc-def-src" title="' + withKeys('Jump to definition in Source ({Mod+Click})') + '" class="btn" data-variant="outline" data-size="xs">Definition (Source)</button>' +
       '<button id="hc-def-diff" title="' + withKeys('Jump to definition in Diff ({Mod+Alt+Click})') + '" class="btn" data-variant="outline" data-size="xs">Definition (Diff)</button>' +
       '<button id="hc-copy-ref" title="Copy file and line reference" class="btn" data-variant="outline" data-size="xs">Copy Ref</button>' +
@@ -97,7 +97,7 @@ export async function showHover(at, x, y) {
       '<button id="hc-find-refs" title="Find all usages across codebase" class="btn" data-variant="outline" data-size="xs">Usages</button>' +
       '<button id="hc-calls" title="' + withKeys('Trace callers and callees ({Alt+Shift+H})') + '" class="btn" data-variant="outline" data-size="xs">Calls</button>' +
     '</div>' +
-    '<div class="foot"><b>' + esc(j.server || 'lsp') + '</b>' +
+    '<div data-ui="foot" class="flex items-center gap-2 p-3 text-muted-foreground"><b>' + esc(j.server || 'lsp') + '</b>' +
     '<span>' + withKeys('{Mod+Click} source') + '</span>' +
     '<span>' + withKeys('{Mod+Alt+Click} diff') + '</span>' +
     '<span>' + withKeys('{Shift+F12} usages') + '</span></div>';

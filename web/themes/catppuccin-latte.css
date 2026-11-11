@@ -2,6 +2,8 @@
    Yellow, peach, sky, green, pink and lavender are darkened from the palette so
    code stays readable (3:1 or better) on the light base. */
 :root[data-theme="catppuccin-latte"] {
+  --image-dark: #121214;
+  --image-light: #ffffff;
   --theme-name: "Catppuccin Latte";
   color-scheme: light;
 

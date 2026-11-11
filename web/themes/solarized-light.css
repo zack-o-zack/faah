@@ -1,5 +1,7 @@
 /* Solarized Light: based on the Solarized palette. Token reference: docs/internals/styling-and-themes.md. */
 :root[data-theme="solarized-light"] {
+  --image-dark: #121214;
+  --image-light: #ffffff;
   --theme-name: "Solarized Light";
   color-scheme: light;
 

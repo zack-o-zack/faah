@@ -94,7 +94,8 @@ export function applyImageTransform(d = doc_()) {
   }
 
   canvas.style.transform = `translate(${d.imagePanX || 0}px, ${d.imagePanY || 0}px) scale(${currentScale})`;
-  canvas.className = 'bg-' + (d.imageBg || 'checker');
+  canvas.classList.remove('bg-checker', 'bg-dark', 'bg-light');
+  canvas.classList.add(d.imageBg === 'dark' ? 'bg-dark' : d.imageBg === 'light' ? 'bg-light' : 'bg-checker');
 
   img.classList.toggle('render-pixelated', !!d.imagePixelated);
   img.classList.toggle('render-smooth', !d.imagePixelated);

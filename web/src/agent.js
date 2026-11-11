@@ -368,12 +368,12 @@ function createSession(info) {
     harness: '',
     el,
     refEl: el.querySelector('[data-control~=agent-ref]'),
-    metaEl: el.querySelector('.agent-meta'),
+    metaEl: el.querySelector('[data-ui~=agent-meta]'),
     harnessSelect: el.querySelector('[data-control~=agent-harness-select]'),
     modelSelect: el.querySelector('[data-control~=agent-model-select]'),
     closeBtn: el.querySelector('[data-control~=agent-close]'),
-    pickEl: el.querySelector('.agent-pick'),
-    composeEl: el.querySelector('.agent-compose'),
+    pickEl: el.querySelector('[data-ui~=agent-pick]'),
+    composeEl: el.querySelector('[data-ui~=agent-compose]'),
     input: el.querySelector('[data-control~=agent-input]'),
     sendBtn: el.querySelector('[data-control~=agent-send]'),
     nowBtn: el.querySelector('[data-control~=agent-now]:not([data-control~=agent-open-thread])'),
@@ -382,8 +382,8 @@ function createSession(info) {
     queuedEl: el.querySelector('[data-control~=agent-queued]'),
     queued: false,
     cancelBtn: el.querySelector('[data-control~=agent-cancel]'),
-    hintEl: el.querySelector('.agent-hint'),
-    errEl: el.querySelector('.agent-err'),
+    hintEl: el.querySelector('[data-ui~=agent-hint]'),
+    errEl: el.querySelector('[data-ui~=agent-err]'),
   };
   wireSession(session);
   refreshRef(session);
@@ -494,7 +494,7 @@ function clearErr(session) {
 
 function attachAlreadyRunningCancel(errContainer) {
   const row = document.createElement('div');
-  row.className = 'agent-err-actions';
+  row.setAttribute('data-ui', 'agent-err-actions'); row.className = 'flex items-center';
   const btn = document.createElement('button');
   btn.type = 'button';
   btn.className = 'btn';
@@ -529,7 +529,7 @@ function showErr(session, msg, streams = []) {
   if (!errEl) return;
   errEl.textContent = '';
   const head = document.createElement('div');
-  head.className = 'agent-err-msg';
+  head.setAttribute('data-ui', 'agent-err-msg'); head.className = 'whitespace-pre-wrap wrap-anywhere text-destructive';
   head.textContent = msg;
   errEl.appendChild(head);
   if (msg && msg.includes('already running')) {
@@ -538,10 +538,10 @@ function showErr(session, msg, streams = []) {
   for (const [label, text] of streams) {
     if (!text) continue;
     const name = document.createElement('div');
-    name.className = 'agent-err-label';
+    name.setAttribute('data-ui', 'agent-err-label'); name.className = 'label text-muted-foreground';
     name.textContent = label;
     const pre = document.createElement('pre');
-    pre.className = 'agent-err-out';
+    pre.setAttribute('data-ui', 'agent-err-out'); pre.className = 'whitespace-pre-wrap wrap-anywhere text-muted-foreground';
     pre.textContent = text;
     errEl.append(name, pre);
   }
@@ -610,7 +610,7 @@ async function showPicker(session) {
   session.composeEl.hidden = true;
   if (session.metaEl) session.metaEl.hidden = true;
   session.pickEl.hidden = false;
-  session.pickEl.innerHTML = '<div class="hint">Looking for coding harnesses…</div>';
+  session.pickEl.innerHTML = '<div data-ui="hint" class="empty text-muted-foreground">Looking for coding harnesses…</div>';
 
   let list = S.meta?.agents || [];
   let settingsPath = '';
@@ -624,20 +624,20 @@ async function showPicker(session) {
     S.meta.agentModel = j.model || '';
     S.meta.agentPinned = !!j.pinned;
   } catch (e) {
-    session.pickEl.innerHTML = '<div class="hint">Could not look for harnesses: ' + esc(e.message) + '</div>';
+    session.pickEl.innerHTML = '<div data-ui="hint" class="empty text-muted-foreground">Could not look for harnesses: ' + esc(e.message) + '</div>';
     return;
   }
 
   const ready = list.filter(h => h.installed);
   if (!ready.length) {
     showToast('!', 'Could not find any coding harness like Claude Code, OpenCode, Codex, Antigravity, Aider, etc. Install one and restart faah.', 6000);
-    session.pickEl.innerHTML = '<div class="hint" style="line-height: 1.5; padding: 4px 2px;">' +
+    session.pickEl.innerHTML = '<div data-ui="hint" class="empty text-muted-foreground" style="line-height: 1.5; padding: 4px 2px;">' +
       'Could not find any coding harness like <b>Claude Code</b>, <b>OpenCode</b>, <b>Codex</b>, <b>Antigravity</b> (<code>agy</code>), <b>Aider</b>, <b>Goose</b>, <b>Gemini CLI</b>, or <b>Cursor Agent</b>.<br><br>' +
       'Please install a coding harness, make sure it is on your <code>PATH</code>, and restart faah after that.</div>';
     return;
   }
 
-  session.pickEl.innerHTML = '<div class="hint">This harness will edit files in this workspace.</div>' +
+  session.pickEl.innerHTML = '<div data-ui="hint" class="empty text-muted-foreground">This harness will edit files in this workspace.</div>' +
     optionsHtml(ready, settingsPath);
 
   session.pickEl.querySelectorAll('[data-pick]').forEach(b => {
@@ -656,13 +656,13 @@ function optionsHtml(ready, settingsPath) {
   let html = '';
   for (const h of ready) {
     const isSelected = h.name === chosen();
-    html += '<div class="agent-opt-wrap">' +
+    html += '<div data-ui="agent-opt-wrap" class="flex flex-col w-full gap-2">' +
       '<button aria-pressed="' + isSelected + '" data-variant="' + (isSelected ? 'secondary' : 'ghost') + '" data-pick="' + esc(h.name) + '" class="btn" data-control="agent-opt" data-size="xs">' +
-      '<span class="agent-opt-name">' + esc(h.name) + '</span>' +
-      '<code class="agent-opt-cmd">' + esc(h.cmd) + '</code></button>';
+      '<span data-ui="agent-opt-name" class="font-semibold">' + esc(h.name) + '</span>' +
+      '<code data-ui="agent-opt-cmd" class="overflow-hidden whitespace-nowrap text-ellipsis font-mono text-muted-foreground">' + esc(h.cmd) + '</code></button>';
     if (isSelected && h.models && h.models.length > 0) {
-      html += '<div class="agent-model-row">' +
-        '<span class="agent-model-label">Model:</span>' +
+      html += '<div data-ui="agent-model-row" class="card flex items-center justify-between gap-2 p-3 text-muted-foreground">' +
+        '<span data-ui="agent-model-label" class="label">Model:</span>' +
         '<select data-harness="' + esc(h.name) + '" class="select h-6! max-w-full text-xs!" data-control="agent-model-select">';
       for (const m of h.models) {
         const sel = m === (h.model || chosenModel()) ? ' selected' : '';
@@ -672,7 +672,7 @@ function optionsHtml(ready, settingsPath) {
     }
     html += '</div>';
   }
-  if (settingsPath) html += '<div class="agent-note">Remembered in ' + esc(settingsPath) + '</div>';
+  if (settingsPath) html += '<div data-ui="agent-note" class="wrap-anywhere font-mono text-muted-foreground">Remembered in ' + esc(settingsPath) + '</div>';
   return html;
 }
 
@@ -795,7 +795,7 @@ function showBatchErr(msg, streams = []) {
   if (!batchErr) return;
   batchErr.textContent = '';
   const head = document.createElement('div');
-  head.className = 'agent-err-msg';
+  head.setAttribute('data-ui', 'agent-err-msg'); head.className = 'whitespace-pre-wrap wrap-anywhere text-destructive';
   head.textContent = msg;
   batchErr.appendChild(head);
   if (msg && msg.includes('already running')) {
@@ -804,10 +804,10 @@ function showBatchErr(msg, streams = []) {
   for (const [label, text] of streams) {
     if (!text) continue;
     const name = document.createElement('div');
-    name.className = 'agent-err-label';
+    name.setAttribute('data-ui', 'agent-err-label'); name.className = 'label text-muted-foreground';
     name.textContent = label;
     const pre = document.createElement('pre');
-    pre.className = 'agent-err-out';
+    pre.setAttribute('data-ui', 'agent-err-out'); pre.className = 'whitespace-pre-wrap wrap-anywhere text-muted-foreground';
     pre.textContent = text;
     batchErr.append(name, pre);
   }

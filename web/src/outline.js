@@ -8,7 +8,7 @@ import { pushHistory } from './history.js';
 export async function loadOutline() {
   const d = doc_();
   const el = $('#outline');
-  if (!d) { if (el) el.innerHTML = '<div class="hint">No file open.</div>'; return; }
+  if (!d) { if (el) el.innerHTML = '<div data-ui="hint" class="empty text-muted-foreground">No file open.</div>'; return; }
   if (!d.outline) {
     try { d.outline = (await api('/api/outline', { path: d.path })).symbols || []; }
     catch { d.outline = []; }
@@ -37,21 +37,21 @@ export function drawOutline() {
   const el = $('#outline');
   const rel = $('#right-symbols-list');
   if (!d || !d.outline) {
-    if (el) el.innerHTML = '<div class="hint">No symbols found.</div>';
-    if (rel) rel.innerHTML = '<div class="hint">No symbols found.</div>';
+    if (el) el.innerHTML = '<div data-ui="hint" class="empty text-muted-foreground">No symbols found.</div>';
+    if (rel) rel.innerHTML = '<div data-ui="hint" class="empty text-muted-foreground">No symbols found.</div>';
     return;
   }
   const renderSymHtml = (items) => {
-    if (!items.length) return '<div class="hint">No symbols found.</div>';
+    if (!items.length) return '<div data-ui="hint" class="empty text-muted-foreground">No symbols found.</div>';
     let base = Infinity;
     for (let i = 0; i < items.length; i++) {
       if (items[i].indent < base) base = items[i].indent;
     }
-    return (d.outlineSource ? '<div class="hint"><span class="src">' + esc(d.outlineSource) + '</span> · ' + items.length + ' symbols</div>' : '') +
+    return (d.outlineSource ? '<div data-ui="hint" class="empty text-muted-foreground"><span class="src">' + esc(d.outlineSource) + '</span> · ' + items.length + ' symbols</div>' : '') +
       items.map(s =>
-      '<div class="sym" data-n="' + s.line + '" style="padding-left:' + (10 + Math.min(s.indent - base, 16) * 5) + 'px" title="Jump to ' + esc(s.name) + ' at line ' + s.line + '">' +
+      '<div data-ui="sym" class="flex min-w-0 items-center gap-2 p-2 cursor-pointer hover:bg-accent [&.sel]:bg-accent" data-n="' + s.line + '" style="padding-left:' + (10 + Math.min(s.indent - base, 16) * 5) + 'px" title="Jump to ' + esc(s.name) + ' at line ' + s.line + '">' +
       '<span class="badge text-[var(--on-badge)]! bg-[var(--m)]! data-[k=func]:bg-[var(--nf)]! data-[k=method]:bg-[var(--nf)]! data-[k=fn]:bg-[var(--nf)]! data-[k=def]:bg-[var(--nf)]! data-[k=defp]:bg-[var(--nf)]! data-[k=class]:bg-[var(--nc)]! data-[k=struct]:bg-[var(--nc)]! data-[k=interface]:bg-[var(--nc)]! data-[k=type]:bg-[var(--nc)]! data-[k=enum]:bg-[var(--nc)]! data-[k=trait]:bg-[var(--nc)]! data-[k=record]:bg-[var(--nc)]! data-[k=protocol]:bg-[var(--nc)]! data-[k=const]:bg-[var(--kt)]! data-[k=var]:bg-[var(--kt)]! data-[k=let]:bg-[var(--kt)]! data-[k=val]:bg-[var(--kt)]! data-[k=module]:bg-[var(--nt)]! data-[k=mod]:bg-[var(--nt)]! data-[k=namespace]:bg-[var(--nt)]! data-[k=defmodule]:bg-[var(--nt)]! data-[k=impl]:bg-[var(--nt)]! data-[k=extension]:bg-[var(--nt)]!" data-variant="secondary" data-k="' + esc(s.kind) + '">' + esc(kindLabel(s.kind)) + '</span>' +
-      '<span class="sn">' + esc(s.name) + '</span><span class="sl">' + s.line + '</span></div>').join('');
+      '<span data-ui="sn" class="truncate">' + esc(s.name) + '</span><span data-ui="sl" class="ml-auto font-mono text-muted-foreground">' + s.line + '</span></div>').join('');
   };
 
   if (el) {
@@ -80,9 +80,9 @@ export function kindLabel(k) { return KIND_LABEL[k] || k.slice(0, 3); }
 
 export function initOutline() {
   $('#outline')?.addEventListener('click', e => {
-    const s = e.target.closest('.sym');
+    const s = e.target.closest('[data-ui~=sym]');
     if (!s) return;
-    $$('.sym.sel').forEach(x => x.classList.remove('sel'));
+    $$('[data-ui~=sym].sel').forEach(x => x.classList.remove('sel'));
     s.classList.add('sel');
     const d = doc_(); if (!d) return;
     d.cur = +s.dataset.n; centerLine(d.cur); render(); updateStatus();

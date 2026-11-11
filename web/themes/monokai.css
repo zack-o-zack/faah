@@ -1,5 +1,7 @@
 /* Monokai: based on the classic Monokai palette. Token reference: docs/internals/styling-and-themes.md. */
 :root[data-theme="monokai"] {
+  --image-dark: #121214;
+  --image-light: #ffffff;
   --theme-name: "Monokai";
   color-scheme: dark;
 

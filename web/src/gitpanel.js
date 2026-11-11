@@ -394,7 +394,7 @@ function confirmForcePush() {
   notice({
     tone: 'warn', title: `Force-push to PR #${pr.number}?`,
     html: `This checkout was rebased, so its commits replace the ones on ${code(pr.head)} rather than adding to them.` +
-      `<span class="hint">Pushed with a lease: if anyone else pushed to ${esc(pr.head || 'the branch')} since this checkout, the push is refused and nothing of theirs is lost.</span>`,
+      `<span data-ui="hint" class="empty text-muted-foreground">Pushed with a lease: if anyone else pushed to ${esc(pr.head || 'the branch')} since this checkout, the push is refused and nothing of theirs is lost.</span>`,
     actions: [
       { label: 'Force-push', primary: true, title: `git push --force-with-lease to ${pr.head}`, run: () => doPush(true) },
       { label: 'Not now', run: clearGitNotice },
@@ -503,14 +503,14 @@ function offerSync(st, err = '') {
   if (!hasHarness()) {
     notice({
       tone: 'warn', title,
-      html: html + `<span class="hint">Install a coding harness to rebase or merge from here, or run ${code(pr ? 'git rebase ' + up : 'git pull --rebase')} in a terminal.</span>`,
+      html: html + `<span data-ui="hint" class="empty text-muted-foreground">Install a coding harness to rebase or merge from here, or run ${code(pr ? 'git rebase ' + up : 'git pull --rebase')} in a terminal.</span>`,
     });
     return;
   }
   html += pr
-    ? `<span class="hint">Rebase replays the PR's commits on top of ${esc(up)} for a straight history, then needs a force-push to update the PR. Merge brings ${esc(up)} in with a merge commit and a normal push. The harness resolves any conflicts; nothing is pushed until you say so.</span>`
-    : `<span class="hint">Rebase replays your commits on top of ${esc(up)} for a straight history; merge joins the two with a merge commit. The harness resolves any conflicts. Nothing is pushed.</span>`;
-  if (err) html += `<span class="hint" style="color:var(--destructive)">${esc(err)}</span>`;
+    ? `<span data-ui="hint" class="empty text-muted-foreground">Rebase replays the PR's commits on top of ${esc(up)} for a straight history, then needs a force-push to update the PR. Merge brings ${esc(up)} in with a merge commit and a normal push. The harness resolves any conflicts; nothing is pushed until you say so.</span>`
+    : `<span data-ui="hint" class="empty text-muted-foreground">Rebase replays your commits on top of ${esc(up)} for a straight history; merge joins the two with a merge commit. The harness resolves any conflicts. Nothing is pushed.</span>`;
+  if (err) html += `<span data-ui="hint" class="empty text-muted-foreground" style="color:var(--destructive)">${esc(err)}</span>`;
   notice({
     tone: 'warn', title, html, picker: true,
     actions: [
@@ -525,8 +525,8 @@ function offerSync(st, err = '') {
 function offerUnfinished(st, log = '', err = '') {
   const op = st.inProgress;
   let html = `${code(st.branch)} is in the middle of a ${op}${st.upstream ? ' onto ' + code(st.upstream) : ''}, most likely stopped on a conflict.` +
-    `<span class="hint">Abort to put the branch back exactly as it was before the ${op}, or have the harness resolve the conflicts and finish it.</span>`;
-  if (err) html += `<span class="hint" style="color:var(--destructive)">${esc(err)}</span>`;
+    `<span data-ui="hint" class="empty text-muted-foreground">Abort to put the branch back exactly as it was before the ${op}, or have the harness resolve the conflicts and finish it.</span>`;
+  if (err) html += `<span data-ui="hint" class="empty text-muted-foreground" style="color:var(--destructive)">${esc(err)}</span>`;
   const actions = [{ label: `Abort ${op}`, run: abortSync }];
   if (hasHarness() && st.upstream) actions.unshift({ label: 'Finish with AI', primary: true, run: () => startSync(op, st) });
   notice({ tone: 'warn', title: `${op === 'rebase' ? 'Rebase' : 'Merge'} not finished`, html, picker: hasHarness(), actions, log, closable: true });
@@ -601,7 +601,7 @@ async function finishSync(strategy, j) {
       tone: 'ok', title: `${done} onto ${st.upstream}`, log,
       html: st.rewritten
         ? `The PR's commits now sit on top of ${code(st.upstream)}. Review the result; force-pushing replaces the commits on ${code(pr.head)}.` +
-          `<span class="hint">Approve and Merge wait until it's pushed, so they never act on the old commits.</span>`
+          `<span data-ui="hint" class="empty text-muted-foreground">Approve and Merge wait until it's pushed, so they never act on the old commits.</span>`
         : `${code(pr.head)} now contains ${code(st.upstream)}. Review the result, then push to update the PR.`,
       actions: st.rewritten
         ? [{ label: `Force-push to PR #${st.pr}`, primary: true, title: `git push --force-with-lease to ${pr.head}`, run: () => doPush(true) }]
@@ -950,7 +950,7 @@ function drawCommitFiles(body, sha, files) {
 
 // Builds the next page of rows; returns the index of the first one added.
 function appendCommitFiles(body, sha, files) {
-  const from = body.querySelectorAll('.up-file').length;
+  const from = body.querySelectorAll('[data-commit-file]').length;
   body.querySelector('[data-control~=up-more]')?.remove();
   body.insertAdjacentHTML('beforeend', commitFileRows(files, from, from + COMMIT_FILES_PAGE, activeCommitPath(sha)));
   return from;
@@ -992,10 +992,10 @@ function activeCommitPath(sha) {
 function markActiveCommitFile() {
   const list = $('#git-commits-list');
   if (!list) return;
-  for (const x of list.querySelectorAll('.up-file.sel')) x.classList.remove('sel');
+  for (const x of list.querySelectorAll('[data-commit-file].sel')) x.classList.remove('sel');
   for (const el of list.querySelectorAll('.git-commit.expanded')) {
     const path = activeCommitPath(el.dataset.sha);
-    if (path) el.querySelector(`.up-file[data-path="${CSS.escape(path)}"]`)?.classList.add('sel');
+    if (path) el.querySelector(`[data-commit-file][data-path="${CSS.escape(path)}"]`)?.classList.add('sel');
   }
 }
 
@@ -1011,7 +1011,7 @@ function initCommitList() {
     }
     const more = e.target.closest('[data-control~=up-more]');
     if (more) { showMoreCommitFiles(more.closest('.git-commit')); return; }
-    const file = e.target.closest('.up-file');
+    const file = e.target.closest('[data-commit-file]');
     if (file) { openCommitPath(file.closest('.git-commit'), file.dataset.path); return; }
     const row = e.target.closest('.git-commit-row');
     // The second click of a double-click opens instead (dblclick below).
@@ -1026,17 +1026,17 @@ function initCommitList() {
     openFirstCommitFile(row.closest('.git-commit'));
   });
   list.addEventListener('keydown', e => {
-    const item = e.target.closest('.git-commit-row, .up-file, [data-control~=up-more]');
+    const item = e.target.closest('.git-commit-row, [data-commit-file], [data-control~=up-more]');
     if (!item) return;
     const el = item.closest('.git-commit');
     const isRow = item.classList.contains('git-commit-row');
     if (item.matches('[data-control~=up-more]') && (e.key === 'Enter' || e.key === ' ')) {
       e.preventDefault();
       const first = showMoreCommitFiles(el);
-      el.querySelectorAll('.up-file')[first]?.focus();
+      el.querySelectorAll('[data-commit-file]')[first]?.focus();
       return;
     }
-    const items = [...list.querySelectorAll('.git-commit-row, .git-commit.expanded .up-file, .git-commit.expanded [data-control~=up-more]')];
+    const items = [...list.querySelectorAll('.git-commit-row, .git-commit.expanded [data-commit-file], .git-commit.expanded [data-control~=up-more]')];
     const at = items.indexOf(item);
     switch (e.key) {
       case 'ArrowDown': items[at + 1]?.focus(); break;

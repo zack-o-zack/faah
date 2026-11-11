@@ -169,7 +169,7 @@ function renderDiff(d) {
     const hunks = d.diffHunks || [];
     if (!hunks.length) {
       const p = document.createElement('div');
-      p.className = 'diff-empty';
+      p.setAttribute('data-ui', 'diff-empty'); p.className = 'empty p-3 text-muted-foreground';
       p.textContent = (d.turnLabel ? d.turnLabel : 'This commit') + ' made no change to ' + d.name + '.';
       diffContent.append(p);
       return;
@@ -201,7 +201,7 @@ function renderDiff(d) {
     }
     if (!prHunks.length && !yourHunks.length) {
       const p = document.createElement('div');
-      p.className = 'diff-empty';
+      p.setAttribute('data-ui', 'diff-empty'); p.className = 'empty p-3 text-muted-foreground';
       p.textContent = 'No changes.';
       diffContent.append(p);
       return;
@@ -219,7 +219,7 @@ function renderDiff(d) {
   } else {
     if (!d.diffHunks || !d.diffHunks.length) {
       const p = document.createElement('div');
-      p.className = 'diff-empty';
+      p.setAttribute('data-ui', 'diff-empty'); p.className = 'empty p-3 text-muted-foreground';
       p.textContent = 'No changes against HEAD.';
       diffContent.append(p);
       return;
@@ -253,17 +253,17 @@ function createDiffSection(d, kind, title, sub, populateBody) {
   }
 
   const head = document.createElement('div');
-  head.className = 'diff-section-head diff-section-head-' + kind;
+  head.setAttribute('data-ui', 'diff-section-head'); head.className = 'flex flex-wrap items-center gap-2 p-3 bg-muted cursor-pointer diff-section-head-' + kind;
   head.title = 'Click to collapse/expand section';
 
   const t = document.createElement('span');
-  t.className = 'diff-section-title';
+  t.setAttribute('data-ui', 'diff-section-title'); t.className = 'label';
   t.textContent = title;
   head.append(t);
 
   if (sub) {
     const s = document.createElement('span');
-    s.className = 'diff-section-sub';
+    s.setAttribute('data-ui', 'diff-section-sub'); s.className = 'text-muted-foreground';
     s.textContent = sub;
     head.append(s);
   }
@@ -298,7 +298,7 @@ function createDiffSection(d, kind, title, sub, populateBody) {
 
 function sectionNote(text) {
   const el = document.createElement('div');
-  el.className = 'diff-section-note';
+  el.setAttribute('data-ui', 'diff-section-note'); el.className = 'p-3 text-muted-foreground';
   el.textContent = text;
   return el;
 }
@@ -330,7 +330,7 @@ function commitStepTarget(files, i, dir) {
    rest. The file list is fetched on first need and filled in when it lands. */
 function commitStrip(d) {
   const el = document.createElement('div');
-  el.className = 'diff-commit-strip';
+  el.setAttribute('data-ui', 'diff-commit-strip'); el.className = 'flex items-center gap-2 p-3 font-mono';
   const fill = files => {
     const i = files.findIndex(f => f.path === d.path);
     if (i < 0) { el.remove(); return; }
@@ -339,10 +339,10 @@ function commitStrip(d) {
     const path = f.from ? esc(f.from) + ' → ' + esc(f.path) : esc(f.path);
     el.innerHTML =
       '<span class="gs ' + g[0] + '" title="' + esc(g[1]) + '">' + esc(f.status) + '</span>' +
-      '<span class="dcs-path" title="' + path + '">' + path + '</span>' +
+      '<span data-ui="dcs-path" class="min-w-0 overflow-hidden whitespace-nowrap text-ellipsis text-muted-foreground" title="' + path + '">' + path + '</span>' +
       (f.binary ? '' : (f.add ? '<span class="up-file-add">+' + f.add + '</span>' : '') + (f.del ? '<span class="up-file-del">&minus;' + f.del + '</span>' : '')) +
       '<span class="flex-1 min-w-0"></span>' +
-      '<span class="dcs-pos">' + (i + 1) + ' / ' + files.length + '</span>' +
+      '<span data-ui="dcs-pos" class="flex-none text-muted-foreground">' + (i + 1) + ' / ' + files.length + '</span>' +
       '<button type="button" aria-label="Previous file" data-commit-step="-1" title="Previous file in this commit"' + (commitStepTarget(files, i, -1) < 0 ? ' disabled' : '') + ' class="btn" data-control="dcs-step" data-variant="ghost" data-size="icon-xs">‹</button>' +
       '<button type="button" aria-label="Next file" data-commit-step="1" title="Next file in this commit"' + (commitStepTarget(files, i, 1) < 0 ? ' disabled' : '') + ' class="btn" data-control="dcs-step" data-variant="ghost" data-size="icon-xs">›</button>';
     el.dataset.i = i;
@@ -429,16 +429,16 @@ function reviewStrip(d) {
   const files = currentChangedFiles(d);
   const i = files.findIndex(f => f.path === d.path);
   const el = document.createElement('div');
-  el.className = 'diff-commit-strip diff-review-strip';
+  el.setAttribute('data-ui', 'diff-commit-strip'); el.className = 'flex items-center gap-2 p-3 font-mono diff-review-strip';
   const viewed = isFileViewed(d.path);
   const posHtml = files.length > 0 && i >= 0
-    ? '<span class="dcs-pos">' + (i + 1) + ' / ' + files.length + '</span>' +
+    ? '<span data-ui="dcs-pos" class="flex-none text-muted-foreground">' + (i + 1) + ' / ' + files.length + '</span>' +
       '<button type="button" aria-label="Previous file" data-review-step="-1" title="Previous changed file ([f)"' + (i <= 0 ? ' disabled' : '') + ' class="btn" data-control="dcs-step" data-variant="ghost" data-size="icon-xs">‹</button>' +
       '<button type="button" aria-label="Next file" data-review-step="1" title="Next changed file (]f)"' + (i >= files.length - 1 ? ' disabled' : '') + ' class="btn" data-control="dcs-step" data-variant="ghost" data-size="icon-xs">›</button>'
     : '';
   el.innerHTML =
     (d.turnLabel ? '<span class="gs git-M">' + esc(d.turnLabel) + '</span>' : '') +
-    '<span class="dcs-path" title="' + esc(d.path) + '">' + esc(d.path) + '</span>' +
+    '<span data-ui="dcs-path" class="min-w-0 overflow-hidden whitespace-nowrap text-ellipsis text-muted-foreground" title="' + esc(d.path) + '">' + esc(d.path) + '</span>' +
     '<span class="flex-1 min-w-0"></span>' +
     '<button type="button" data-hunk-step="-1" title="Previous diff hunk ([c)" class="btn" data-control="dcs-step dcs-hunk-btn" data-variant="outline" data-size="xs">↑ Hunk</button>' +
     '<button type="button" data-hunk-step="1" title="Next diff hunk (]c)" class="btn" data-control="dcs-step dcs-hunk-btn" data-variant="outline" data-size="xs">↓ Hunk</button>' +
@@ -469,7 +469,7 @@ export function stepChangedFile(dir = 1) {
 
 export function stepDiffHunk(dir = 1) {
   if (!diffview || diffview.hidden) return;
-  const heads = [...diffview.querySelectorAll('.diff-hunk-head')];
+  const heads = [...diffview.querySelectorAll('[data-ui~=diff-hunk-head]')];
   if (!heads.length) return;
   const viewTop = diffview.getBoundingClientRect().top;
   const threshold = 24;
@@ -492,11 +492,11 @@ export function stepDiffHunk(dir = 1) {
 
 function hunkHeader(hunk, idx = 0, canActOnHunk = false) {
   const el = document.createElement('div');
-  el.className = 'diff-hunk-head';
+  el.setAttribute('data-ui', 'diff-hunk-head'); el.className = 'flex items-center gap-2 p-3 bg-muted text-muted-foreground';
   el._hunk = hunk;
 
   const label = document.createElement('span');
-  label.className = 'diff-hunk-label';
+  label.setAttribute('data-ui', 'diff-hunk-label'); label.className = 'overflow-hidden whitespace-nowrap text-ellipsis';
   label.textContent = '@@ -' + hunk.oldStart + ' +' + hunk.newStart + ' @@' + (hunk.section ? ' ' + hunk.section : '');
   el.append(label);
 
@@ -1126,7 +1126,7 @@ export function initDiff() {
     const hunkActBtn = e.target.closest('[data-hunk-act]');
     if (hunkActBtn) {
       e.stopPropagation();
-      const head = hunkActBtn.closest('.diff-hunk-head');
+      const head = hunkActBtn.closest('[data-ui~=diff-hunk-head]');
       const d = doc_();
       if (head?._hunk && d) applyHunkAction(d, head._hunk, hunkActBtn.dataset.hunkAct);
       return;
@@ -1134,7 +1134,7 @@ export function initDiff() {
     const expandBtn = e.target.closest('[data-hunk-expand]');
     if (expandBtn) {
       e.stopPropagation();
-      const head = expandBtn.closest('.diff-hunk-head');
+      const head = expandBtn.closest('[data-ui~=diff-hunk-head]');
       const d = doc_();
       if (head?._hunk && d) expandHunkContext(d, head._hunk);
       return;
@@ -1171,7 +1171,7 @@ export function initDiff() {
     if (step) {
       const d = doc_();
       const files = d && cachedCommitFiles(d.diffRef);
-      const next = files?.[commitStepTarget(files, +step.closest('.diff-commit-strip').dataset.i, +step.dataset.commitStep)];
+      const next = files?.[commitStepTarget(files, +step.closest('[data-ui~=diff-commit-strip]').dataset.i, +step.dataset.commitStep)];
       if (!step.disabled && next && commitStepHandler) commitStepHandler(d, next);
       return;
     }

@@ -205,7 +205,7 @@ export function renderLspMenu(data) {
 
   let rows = '';
   if (servers.length === 0) {
-    rows = `<div class="lsp-empty-note">No language servers detected for workspace</div>`;
+    rows = `<div data-ui="lsp-empty-note" class="empty text-center p-3 text-muted-foreground">No language servers detected for workspace</div>`;
   } else {
     rows = servers.map(s => {
       let dotClass = s.state || 'stopped';
@@ -244,18 +244,18 @@ export function renderLspMenu(data) {
         } else if (s.options && s.options.length > 0) {
           btnHtml = `<button data-cmd="${esc(s.options[0].cmd)}" data-act="copy" title="Copy install command: ${esc(s.options[0].cmd)}" class="btn" data-control="lsp-btn lsp-btn-copy" data-variant="outline" data-size="xs">Copy Cmd</button>`;
         } else {
-          btnHtml = `<span class="lsp-meta-dim">Manual</span>`;
+          btnHtml = `<span data-ui="lsp-meta-dim" class="whitespace-nowrap font-mono text-muted-foreground">Manual</span>`;
         }
       }
 
       return `
-        <div class="lsp-server-row">
-          <div class="lsp-server-info">
-            <span class="lsp-dot ${dotClass}"></span>
-            <span class="lsp-server-name">${esc(s.name)}</span>
-            <span class="lsp-server-lang">${esc(shortLang(s.lang))}</span>
+        <div data-ui="lsp-server-row" class="flex items-center justify-between gap-2 p-3">
+          <div data-ui="lsp-server-info" class="flex items-center min-w-0 gap-2">
+            <span data-ui="lsp-dot" class="size-2 shrink-0 rounded-full bg-muted-foreground [&.ready]:bg-gi [&.failed]:bg-gd [&.indexing]:bg-warn [&.starting]:bg-warn ${dotClass}"></span>
+            <span data-ui="lsp-server-name" class="font-mono">${esc(s.name)}</span>
+            <span data-ui="lsp-server-lang" class="whitespace-nowrap text-muted-foreground">${esc(shortLang(s.lang))}</span>
           </div>
-          <span class="lsp-server-meta" title="${esc(s.error || metaText)}">${metaText}</span>
+          <span data-ui="lsp-server-meta" class="whitespace-nowrap font-mono text-muted-foreground" title="${esc(s.error || metaText)}">${metaText}</span>
           ${btnHtml}
         </div>
       `;
@@ -263,11 +263,11 @@ export function renderLspMenu(data) {
   }
 
   lspMenuEl.innerHTML = `
-    <div class="lsp-menu-head">
+    <div data-ui="lsp-menu-head" class="flex items-center justify-between">
       <span>Language Servers</span>
       ${headAction}
     </div>
-    <div class="lsp-server-list">
+    <div data-ui="lsp-server-list" class="flex flex-col gap-2">
       ${rows}
     </div>
   `;
@@ -316,7 +316,7 @@ export async function openLspMenu() {
     S.lsp.anyRunning = data.anyRunning;
     drawLspStatus();
   } catch {
-    lspMenuEl.innerHTML = `<div class="lsp-empty-note">Failed to load language servers</div>`;
+    lspMenuEl.innerHTML = `<div data-ui="lsp-empty-note" class="empty text-center p-3 text-muted-foreground">Failed to load language servers</div>`;
   }
 }
 

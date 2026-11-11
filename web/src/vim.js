@@ -674,31 +674,31 @@ export function showVimHelp() {
   const sectionsHtml = VIM_SHORTCUT_SECTIONS.map(sec => {
     const itemsHtml = sec.items.map(([combos, v]) => {
       const comboList = Array.isArray(combos) ? combos : [combos];
-      const keysHtml = comboList.map(keyCaps).filter(Boolean).join('<span class="key-or">/</span>');
+      const keysHtml = comboList.map(keyCaps).filter(Boolean).join('<span data-ui="key-or" class="text-muted-foreground">/</span>');
       return '<dt>' + keysHtml + '</dt><dd>' + esc(v) + '</dd>';
     }).join('');
-    return '<div class="vim-help-section">' +
-      '<div class="vim-sec-title">' + esc(sec.title) + '</div>' +
-      '<dl class="help-grid vim-help-grid">' + itemsHtml + '</dl>' +
+    return '<div data-ui="vim-help-section" class="flex flex-col gap-2">' +
+      '<div data-ui="vim-sec-title" class="label text-primary-text">' + esc(sec.title) + '</div>' +
+      '<dl data-ui="help-grid vim-help-grid" class="grid grid-cols-[auto_1fr_auto_1fr] gap-3 items-center [&_dt]:flex [&_dt]:gap-1 [&_dt]:justify-end [&_dd]:text-muted-foreground grid-cols-[auto_1fr]">' + itemsHtml + '</dl>' +
       '</div>';
   }).join('');
 
   modal.innerHTML = '<div class="sm:max-w-4xl overflow-auto">' +
     '<header class="flex-row! items-center justify-between">' +
-    '<h2>Vim Keybindings</h2><span class="help-version">Modal Navigation</span>' +
-    '<div class="vim-toggle-row">' +
-    '<label class="label vim-switch-label">' +
+    '<h2>Vim Keybindings</h2><span data-ui="help-version" class="p-3 font-mono text-primary-text">Modal Navigation</span>' +
+    '<div data-ui="vim-toggle-row" class="flex items-center gap-2">' +
+    '<label data-ui="vim-switch-label" class="label label inline-flex items-center cursor-pointer select-none gap-2">' +
     '<input type="checkbox" id="vim-toggle-input" ' + isChecked + ' class="input">' +
     '<span class="vim-switch-slider"></span>' +
-    '<span class="vim-switch-text">' + (vimEnabled ? 'Enabled' : 'Disabled') + '</span>' +
+    '<span data-ui="vim-switch-text" class="font-mono text-muted-foreground">' + (vimEnabled ? 'Enabled' : 'Disabled') + '</span>' +
     '</label>' +
     '<button id="btn-close-vim-help" title="Close (Esc)" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Close (Esc)">✕</button>' +
     '</div>' +
     '</header>' +
-    '<section class="vim-help-content">' + sectionsHtml + '</section>' +
+    '<section data-ui="vim-help-content" class="flex flex-col overflow-y-auto gap-2">' + sectionsHtml + '</section>' +
     '<footer class="flex items-center justify-between">' +
     '<button id="btn-switch-to-std-help" title="View Standard Shortcuts (?)" class="btn" data-control="settings-btn-link" data-variant="link" data-size="xs">View Standard Shortcuts (?)</button>' +
-    '<span class="agent-hint">Press Esc or click outside to dismiss</span>' +
+    '<span data-ui="agent-hint" class="flex-1">Press Esc or click outside to dismiss</span>' +
     '</footer>' +
     '</div>';
 
@@ -710,7 +710,7 @@ export function showVimHelp() {
     toggleInput.addEventListener('change', e => {
       const active = e.target.checked;
       setVimModeEnabled(active, true);
-      const txt = modal.querySelector('.vim-switch-text');
+      const txt = modal.querySelector('[data-ui~=vim-switch-text]');
       if (txt) txt.textContent = active ? 'Enabled' : 'Disabled';
       showToast('✓', active ? 'Vim mode enabled' : 'Vim mode disabled');
     });

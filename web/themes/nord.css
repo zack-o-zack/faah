@@ -1,5 +1,7 @@
 /* Nord: based on the Nord palette. Token reference: docs/internals/styling-and-themes.md. */
 :root[data-theme="nord"] {
+  --image-dark: #121214;
+  --image-light: #ffffff;
   --theme-name: "Nord";
   color-scheme: dark;
 

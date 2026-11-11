@@ -387,19 +387,19 @@ function renderPipeline() {
     const isActive = idx === activeStageIdx;
 
     const card = document.createElement('div');
-    card.className = `review-stage-card ${status} ${isActive ? 'active' : ''}`;
+    card.setAttribute('data-ui', 'review-stage-card'); card.className = `card flex flex-row items-start gap-3 p-4 cursor-pointer [&.active]:ring-2 [&.active]:ring-ring ${status} ${isActive ? 'active' : ''}`;
     card.dataset.index = String(idx);
 
     const iconHtml = statusIcons[status] || statusIcons.pending;
 
     card.innerHTML = `
-      <div class="review-stage-card-icon">${iconHtml}</div>
-      <div class="review-stage-card-body">
-        <div class="review-stage-card-num">Stage ${idx + 1}</div>
-        <div class="review-stage-card-title">${esc(title)}</div>
-        <div class="review-stage-card-desc" title="${esc(question)}">${esc(question)}</div>
+      <div data-ui="review-stage-card-icon" class="flex items-center justify-center flex-none text-muted-foreground">${iconHtml}</div>
+      <div data-ui="review-stage-card-body" class="flex-1 min-w-0">
+        <div data-ui="review-stage-card-num" class="font-semibold text-muted-foreground">Stage ${idx + 1}</div>
+        <div data-ui="review-stage-card-title" class="label overflow-hidden whitespace-nowrap text-ellipsis font-semibold">${esc(title)}</div>
+        <div data-ui="review-stage-card-desc" class="overflow-hidden text-muted-foreground" title="${esc(question)}">${esc(question)}</div>
       </div>
-      <div class="review-stage-card-actions">
+      <div data-ui="review-stage-card-actions" class="flex flex-col items-end flex-none gap-2">
         <span class="badge" data-variant="secondary">${status}</span>
         <button type="button" title="Edit this stage" class="btn" data-control="mini review-stage-card-edit-btn" data-variant="ghost" data-size="icon-xs" aria-label="Edit this stage">✏️</button>
         <button type="button" title="Remove stage from workflow" aria-label="Remove stage" class="btn" data-control="mini review-stage-remove-btn" data-variant="ghost" data-size="icon-xs">&times;</button>
@@ -530,7 +530,7 @@ function renderActiveStage() {
 
   if (!threadId) {
     msgsEl.innerHTML = `
-      <div class="review-thread-placeholder">
+      <div data-ui="review-thread-placeholder" class="empty flex flex-col items-center justify-center h-full gap-2 text-muted-foreground">
         <p>This stage has not been executed yet.</p>
         <button id="btn-start-single-stage" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs">Run Stage ${activeStageIdx + 1} Now</button>
       </div>
@@ -664,7 +664,7 @@ function renderThreadTranscript(t) {
     const tools = turn.tools || turn.Tools || [];
 
     html += `
-      <div class="thr-msg user">
+      <div data-ui="thr-msg" class="flex min-w-0 flex-col gap-2  user">
         <div class="thr-role">${i === 0 ? 'Review Question' : 'Follow-up'}</div>
         <div class="thr-body">${thrMd(prompt)}</div>
       </div>
@@ -683,7 +683,7 @@ function renderThreadTranscript(t) {
 
     if (reply || running) {
       html += `
-        <div class="thr-msg assistant ${running ? 'running' : ''}">
+        <div data-ui="thr-msg" class="flex min-w-0 flex-col gap-2  assistant ${running ? 'running' : ''}">
           <div class="thr-role">Review Analysis ${model ? `(${esc(model)})` : ''}</div>
           <div class="thr-body">${reply ? thrMd(reply) : '<span class="thr-loading">Analyzing changes...</span>'}</div>
         </div>
@@ -691,7 +691,7 @@ function renderThreadTranscript(t) {
     }
 
     if (error) {
-      html += `<div class="thr-err">Error: ${esc(error)}</div>`;
+      html += `<div data-ui="thr-err" class="alert whitespace-pre-wrap wrap-anywhere p-3 font-mono text-destructive">Error: ${esc(error)}</div>`;
     }
   });
 

@@ -18,7 +18,7 @@ let callSeq = 0;
 const flat = [];    // node by row index, rebuilt on every draw
 
 const listEl = () => $('#right-calls-list');
-const hint = html => { const el = listEl(); if (el) el.innerHTML = '<div class="hint">' + html + '</div>'; };
+const hint = html => { const el = listEl(); if (el) el.innerHTML = '<div data-ui="hint" class="empty text-muted-foreground">' + html + '</div>'; };
 const base = p => p.split('/').pop();
 // Some servers crash on particular call hierarchy requests; say so plainly.
 const explain = msg => /connection lost|exited|EOF/i.test(msg)
@@ -120,14 +120,14 @@ function draw() {
     const arrow = node.cycle ? '&#8635;' : node.loading ? '&#8230;' : node.open ? '&#9660;' : '&#9654;';
     const calls = n.sites && n.sites.length > 1 ? ' &times;' + n.sites.length : '';
     const tip = t.path + ':' + t.line + (node.cycle ? '\n(recursive, already in this trail)' : '') + (n.detail ? '\n' + n.detail : '');
-    html += '<div class="sym cnode" data-i="' + i + '" style="padding-left:' + (6 + depth * 14) + 'px" title="' + esc(tip) + '">' +
-      '<span class="car' + (node.cycle ? ' cyc' : node.loading ? '' : node.open ? ' open' : ' shut') + '">' + arrow + '</span>' +
+    html += '<div data-ui="cnode sym" class="flex min-w-0 items-center gap-2 p-2 cursor-pointer hover:bg-accent [&.sel]:bg-accent " data-i="' + i + '" style="padding-left:' + (6 + depth * 14) + 'px" title="' + esc(tip) + '">' +
+      '<span data-ui="car" class="w-4 shrink-0 cursor-pointer text-muted-foreground [&.shut]:-rotate-90' + (node.cycle ? ' cyc' : node.loading ? '' : node.open ? ' open' : ' shut') + '">' + arrow + '</span>' +
       '<span class="kd" data-k="' + esc(n.kind) + '">' + esc(n.kind) + '</span>' +
-      '<span class="sn">' + esc(n.name) + '</span>' +
-      '<span class="sl">' + esc(base(t.path)) + ':' + t.line + calls + '</span></div>';
+      '<span data-ui="sn" class="truncate">' + esc(n.name) + '</span>' +
+      '<span data-ui="sl" class="ml-auto font-mono text-muted-foreground">' + esc(base(t.path)) + ':' + t.line + calls + '</span></div>';
     const pad = 'style="padding-left:' + (26 + (depth + 1) * 14) + 'px"';
-    if (node.err) html += '<div class="cnone" ' + pad + '>' + esc(node.err) + '</div>';
-    else if (node.open && node.kids && !node.kids.length) html += '<div class="cnone" ' + pad + '>' + none + '</div>';
+    if (node.err) html += '<div data-ui="cnone" class="p-3 text-muted-foreground" ' + pad + '>' + esc(node.err) + '</div>';
+    else if (node.open && node.kids && !node.kids.length) html += '<div data-ui="cnone" class="p-3 text-muted-foreground" ' + pad + '>' + none + '</div>';
     if (node.open && node.kids) for (const k of node.kids) walk(k, depth + 1);
   };
   for (const r of T.roots) walk(r, 0);
@@ -152,15 +152,15 @@ export function initCalls() {
   });
 
   listEl()?.addEventListener('click', async e => {
-    const row = e.target.closest('.cnode');
+    const row = e.target.closest('[data-ui~=cnode]');
     if (!row) return;
     const node = flat[+row.dataset.i];
     if (!node) return;
-    if (e.target.closest('.car')) {
+    if (e.target.closest('[data-ui~=car]')) {
       if (node.open) { node.open = false; draw(); } else expand(node);
       return;
     }
-    $$('#right-calls-list .cnode.sel').forEach(x => x.classList.remove('sel'));
+    $$('#right-calls-list [data-ui~=cnode].sel').forEach(x => x.classList.remove('sel'));
     row.classList.add('sel');
     const t = target(node);
     await openFile(t.path, { line: t.line });

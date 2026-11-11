@@ -11,7 +11,7 @@ import { warmLSP } from './lsp.js';
 let setupSeq = 0;
 let setupPollTimer = 0;
 
-const hintHtml = html => '<div class="hint">' + html + '</div>';
+const hintHtml = html => '<div data-ui="hint" class="empty text-muted-foreground">' + html + '</div>';
 
 // Stops a pending refresh, so it cannot draw over whatever replaced the panel.
 export function cancelLspSetup() {
@@ -74,21 +74,21 @@ function drawSetup(s, d) {
 
   const offer = s.servers.filter(v => v.options.length || v.job);
   const running = s.servers.some(v => v.job && v.job.running);
-  let html = '<div class="lsp-setup">';
+  let html = '<div data-ui="lsp-setup" class="flex flex-col gap-2 p-3 text-muted-foreground">';
   if (s.state === 'failed') {
-    html += '<p><b>' + esc(s.server) + '</b> did not start: <span class="lsp-reason">' + esc(s.reason || 'unknown error') + '</span></p>' +
-      '<div class="lsp-row"><button data-start title="Retry starting language server" class="btn" data-control="lsp-btn" data-variant="outline" data-size="xs">Retry</button></div>';
+    html += '<p><b>' + esc(s.server) + '</b> did not start: <span data-ui="lsp-reason" class="text-destructive">' + esc(s.reason || 'unknown error') + '</span></p>' +
+      '<div data-ui="lsp-row" class="flex items-center flex-wrap gap-2"><button data-start title="Retry starting language server" class="btn" data-control="lsp-btn" data-variant="outline" data-size="xs">Retry</button></div>';
     if (offer.length) html += '<p>If it is broken or incomplete, install it again:</p>';
   } else {
     html += '<p>Call trails, hover and precise references for ' + esc(s.lang) + ' need a language server, and none is installed.</p>';
   }
 
   for (const v of offer) {
-    html += '<div class="lsp-server"><div class="lsp-name">' + esc(v.name) + '</div>';
+    html += '<div data-ui="lsp-server" class="card overflow-hidden"><div data-ui="lsp-name" class="p-3 font-mono">' + esc(v.name) + '</div>';
     v.options.forEach((o, i) => {
-      html += '<div class="lsp-opt"><code>' + esc(o.cmd) + '</code><span class="lsp-acts">';
-      if (!o.auto) html += '<span class="lsp-need">run in a terminal</span>';
-      else if (!o.hasTool) html += '<span class="lsp-need">needs ' + esc(o.tool) + '</span>';
+      html += '<div data-ui="lsp-opt" class="flex items-center gap-2 p-3"><code>' + esc(o.cmd) + '</code><span data-ui="lsp-acts" class="flex items-center flex-none gap-2">';
+      if (!o.auto) html += '<span data-ui="lsp-need" class="whitespace-nowrap text-muted-foreground">run in a terminal</span>';
+      else if (!o.hasTool) html += '<span data-ui="lsp-need" class="whitespace-nowrap text-muted-foreground">needs ' + esc(o.tool) + '</span>';
       else html += '<button data-install="' + esc(v.name) + '" data-option="' + i + '"' + (running ? ' disabled' : '') + ' title="Install language server" class="btn" data-control="lsp-btn" data-variant="primary" data-size="xs">Install</button>';
       html += '<button data-copy="' + esc(o.cmd) + '" title="Copy command to clipboard" class="btn" data-control="lsp-btn" data-variant="outline" data-size="xs">Copy</button></span></div>';
     });
@@ -99,15 +99,15 @@ function drawSetup(s, d) {
     html += '<p>faah has no installer for this one. Install ' + s.servers.map(v => '<b>' + esc(v.name) + '</b>').join(' or ') +
       ' and make sure it is on PATH.</p>';
   }
-  html += '<div class="lsp-row"><span>Installed one yourself?</span><button data-start title="Detect and start language server" class="btn" data-control="lsp-btn" data-variant="outline" data-size="xs">Detect and start</button></div></div>';
+  html += '<div data-ui="lsp-row" class="flex items-center flex-wrap gap-2"><span>Installed one yourself?</span><button data-start title="Detect and start language server" class="btn" data-control="lsp-btn" data-variant="outline" data-size="xs">Detect and start</button></div></div>';
   return html;
 }
 
 function job(j) {
   const tail = (j.log || '').trimEnd().split('\n').slice(-12).join('\n');
   const log = tail ? '<pre>' + esc(tail) + '</pre>' : '';
-  if (j.running) return '<div class="lsp-job">Installing with <code>' + esc(j.cmd) + '</code>…' + log + '</div>';
-  if (j.error) return '<div class="lsp-job err">Install failed: ' + esc(j.error) + log + '</div>';
+  if (j.running) return '<div data-ui="lsp-job" class="p-3">Installing with <code>' + esc(j.cmd) + '</code>…' + log + '</div>';
+  if (j.error) return '<div data-ui="lsp-job" class="p-3 err">Install failed: ' + esc(j.error) + log + '</div>';
   return '';
 }
 

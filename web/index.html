@@ -58,7 +58,7 @@
             <span id="git-notice-title" class="git-notice-title min-w-0 flex-1 font-semibold wrap-anywhere"></span>
             <button id="git-notice-close" type="button" title="Dismiss" class="btn" data-control="git-notice-close" data-variant="ghost" data-size="icon-xs" aria-label="Dismiss">&times;</button>
           </div>
-          <div id="git-notice-text" class="git-notice-text max-h-40 overflow-y-auto whitespace-pre-wrap wrap-anywhere empty:hidden [&_code]:font-mono [&_.hint]:block [&_.hint]:text-muted-foreground"></div>
+          <div id="git-notice-text" data-ui="hint" class="git-notice-text max-h-40 overflow-y-auto whitespace-pre-wrap wrap-anywhere empty:hidden [&_code]:font-mono [&_.empty text-muted-foreground]:block [&_.empty text-muted-foreground]:text-muted-foreground"></div>
           <div id="git-notice-agent" class="git-agent-picker flex flex-col gap-2" hidden>
             <select id="git-sync-harness" title="Coding harness" class="select h-6! max-w-full text-xs!" data-control="agent-harness-select"></select>
             <select id="git-sync-model" title="Model" class="select h-6! max-w-full text-xs!" data-control="agent-model-select"></select>
@@ -146,7 +146,7 @@
         <button role="tab" id="btn-mode-review" aria-selected="false" title="Review Workflow ({Mod+Shift+V})" class="" data-variant="outline" data-size="xs">
           <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
           <span>Review</span>
-          <span id="review-badge-status" class="review-status-dot" hidden></span>
+          <span id="review-badge-status" data-ui="review-status-dot" class="inline-block" hidden></span>
         </button>
       </div></div>
 
@@ -172,17 +172,17 @@
             <div role="heading" class="px-2 py-1 text-11 text-muted-foreground">Diff View Mode</div>
             <button type="button" data-diff-opt="split" role="menuitemradio" title="Side-by-side split diff view" class="btn" data-control="diff-menu-item" data-variant="outline" data-size="xs">
               <span data-indicator aria-hidden="true">✓</span>
-              <div class="diff-item-content">
-                <span class="diff-item-title">Split</span>
-                <span class="diff-item-desc">Side-by-side</span>
+              <div data-ui="diff-item-content" class="flex flex-col flex-1 min-w-0">
+                <span data-ui="diff-item-title" class="label font-semibold">Split</span>
+                <span data-ui="diff-item-desc" class="text-muted-foreground">Side-by-side</span>
               </div>
               <span class="badge" data-variant="secondary">Default</span>
             </button>
             <button type="button" data-diff-opt="unified" role="menuitemradio" title="Inline unified diff view" class="btn" data-control="diff-menu-item" data-variant="outline" data-size="xs">
               <span data-indicator aria-hidden="true">✓</span>
-              <div class="diff-item-content">
-                <span class="diff-item-title">Unified</span>
-                <span class="diff-item-desc">Inline unified</span>
+              <div data-ui="diff-item-content" class="flex flex-col flex-1 min-w-0">
+                <span data-ui="diff-item-title" class="label font-semibold">Unified</span>
+                <span data-ui="diff-item-desc" class="text-muted-foreground">Inline unified</span>
               </div>
             </button>
           </div>
@@ -207,7 +207,7 @@
           <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           <span>Threads</span>
           <span class="badge" data-variant="secondary" data-control="thr-tab-count" hidden></span>
-          <span class="thr-tab-dot" hidden></span>
+          <span data-ui="thr-tab-dot" class="inline-block" hidden></span>
         </button>
         <!-- Opens/toggles the right sidebar inspector (LSP & Tips) -->
         <button id="btn-open-right" title="Inspector (References, Symbols, Calls, Search, Tips) ({Mod+J})" aria-label="Toggle inspector" class="btn" data-control="header-action open-right" data-variant="ghost" data-size="icon-xs"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16"/></svg></button>
@@ -235,30 +235,30 @@
       <!-- Diff view: covers the code view while a diff layout is active (Mod+D toggles) -->
       <div id="diffview" hidden><div id="diffcontent"></div></div>
       <!-- Image viewer: covers the code view for an image tab -->
-      <div id="imgview" hidden>
-        <div id="imgview-viewport">
-          <div id="imgview-canvas" class="bg-checker">
-            <img id="imgview-img" src="" alt="">
+      <div id="imgview" hidden class="absolute inset-0 z-5 flex flex-col overflow-hidden bg-background">
+        <div id="imgview-viewport" class="relative flex flex-1 h-full w-full items-center justify-center overflow-hidden cursor-grab select-none [&.panning]:cursor-grabbing">
+          <div id="imgview-canvas" class="relative inline-flex max-w-none max-h-none origin-center [&.bg-checker]:[background:repeating-conic-gradient(var(--muted)_0_25%,var(--sidebar)_0_50%)_0_0/16px_16px] [&.bg-dark]:bg-[var(--image-dark)] [&.bg-light]:bg-[var(--image-light)] bg-checker">
+            <img id="imgview-img" src="" alt="" class="block pointer-events-none max-w-none max-h-none [&.render-pixelated]:[image-rendering:pixelated]">
           </div>
         </div>
-        <div id="imgview-hud">
-          <div class="imgview-hud-group">
+        <div id="imgview-hud" class="card absolute bottom-4 right-4 z-10 flex flex-row flex-wrap items-center gap-2 p-3 max-w-full">
+          <div data-ui="imgview-hud-group" class="flex items-center gap-2">
             <button id="iv-zoom-out" title="Zoom out (-)" aria-label="Zoom out" class="btn" data-control="iv-btn" data-variant="ghost" data-size="xs">−</button>
             <button id="iv-zoom-label" title="Reset zoom (0 to fit, 1 for 100%)" class="btn" data-control="iv-btn iv-btn-text" data-variant="ghost" data-size="xs">Fit</button>
             <button id="iv-zoom-in" title="Zoom in (+)" aria-label="Zoom in" class="btn" data-control="iv-btn" data-variant="ghost" data-size="xs">+</button>
           </div>
-          <span class="iv-sep"></span>
-          <div class="imgview-hud-group">
+          <span data-ui="iv-sep" class=""></span>
+          <div data-ui="imgview-hud-group" class="flex items-center gap-2">
             <button id="iv-fit" title="Fit to window (0)" class="btn" data-control="iv-btn" data-variant="ghost" data-size="xs">Fit</button>
             <button id="iv-100" title="Actual size 1:1 (1)" class="btn" data-control="iv-btn" data-variant="ghost" data-size="xs">1:1</button>
           </div>
-          <span class="iv-sep"></span>
-          <div class="imgview-hud-group">
+          <span data-ui="iv-sep" class=""></span>
+          <div data-ui="imgview-hud-group" class="flex items-center gap-2">
             <button id="iv-bg" title="Toggle background (b)" class="btn" data-control="iv-btn" data-variant="ghost" data-size="xs">Checker</button>
             <button id="iv-pixel" title="Toggle smooth / pixelated (p)" class="btn" data-control="iv-btn" data-variant="ghost" data-size="xs">Smooth</button>
           </div>
-          <span class="iv-sep"></span>
-          <span id="iv-meta" class="iv-meta"></span>
+          <span data-ui="iv-sep" class=""></span>
+          <span id="iv-meta" data-ui="iv-meta" class="whitespace-nowrap font-mono text-muted-foreground"></span>
         </div>
       </div>
       <div id="minimap-hits" class="absolute inset-y-0 right-0 z-[6] w-3 empty:pointer-events-none"></div>
@@ -294,34 +294,34 @@
       <div id="findbar" class="card absolute top-2 right-[22px] z-20 flex-row items-center gap-1" hidden>
         <input id="find-input" type="text" spellcheck="false" placeholder="Find" autocomplete="off" class="input border-0! shadow-none! bg-transparent! h-6! w-[190px]!">
         <button id="find-case" title="Match case" class="btn" data-variant="outline" data-size="xs">Aa</button>
-        <span id="find-count">0</span>
+        <span id="find-count" class="min-w-16 text-right font-mono text-muted-foreground">0</span>
         <button id="find-prev" title="Previous ({Shift+Enter})" class="btn" data-variant="ghost" data-size="icon-xs" aria-label="Previous ({Shift+Enter})">&#8593;</button>
         <button id="find-next" title="Next ({Enter})" class="btn" data-variant="ghost" data-size="icon-xs" aria-label="Next ({Enter})">&#8595;</button>
         <button id="find-close" title="Close ({Esc})" class="btn" data-variant="ghost" data-size="icon-xs" aria-label="Close ({Esc})">&#10005;</button>
       </div>
 
       <template id="agentbox-tpl">
-        <div class="agent-box">
-          <div class="agent-head">
+        <div data-ui="agent-box" class="card flex flex-col gap-2 p-4 [&.shake]:animate-pulse">
+          <div data-ui="agent-head" class="flex items-center gap-2 font-mono">
             <span class="sel-chip badge">Comment</span>
             <span role="button" tabindex="0" title="Click to jump to code" class="btn" data-control="agent-ref" data-variant="ghost" data-size="xs"></span>
             <span class="flex-1 min-w-0"></span>
             <button title="Close ({Esc})" class="btn" data-control="agent-close" data-variant="ghost" data-size="icon-xs" aria-label="Close ({Esc})">&#10005;</button>
           </div>
-          <div class="agent-meta">
-            <span class="agent-meta-label">Model</span>
+          <div data-ui="agent-meta" class="flex flex-wrap items-center gap-2 in-[.queued]:hidden in-[.has-batch]:hidden">
+            <span data-ui="agent-meta-label" class="label flex-none text-muted-foreground">Model</span>
             <select title="Coding harness" class="select h-6! max-w-full text-xs!" data-control="agent-harness-select"></select>
             <select title="Model" class="select h-6! max-w-full text-xs!" data-control="agent-model-select"></select>
           </div>
           <!-- A comment that has been added to the batch: click to edit it again -->
           <button title="Click to edit this comment" hidden class="btn" data-control="agent-queued" data-variant="outline" data-size="xs"></button>
           <!-- Shown until a harness has been picked, and whenever one is changed -->
-          <div class="agent-pick" hidden></div>
-          <div class="agent-compose">
+          <div data-ui="agent-pick" class="flex flex-col gap-2" hidden></div>
+          <div data-ui="agent-compose" class="flex flex-col gap-2 in-[.queued]:hidden">
             <textarea rows="3" spellcheck="false" autocomplete="off" placeholder="Describe the change. Add it as a comment to batch with others, or apply it right away." class="textarea resize-y" data-control="agent-input"></textarea>
-            <div class="agent-err" hidden></div>
-            <div class="agent-foot">
-              <span class="agent-hint">Enter to send, Esc to cancel</span>
+            <div data-ui="agent-err" class="alert flex flex-col overflow-y-auto gap-2 p-3 font-mono" hidden></div>
+            <div data-ui="agent-foot" class="flex items-center gap-2 font-mono text-muted-foreground">
+              <span data-ui="agent-hint" class="flex-1">Enter to send, Esc to cancel</span>
               <button title="Cancel in-flight edit" hidden class="btn" data-control="agent-cancel" data-variant="outline" data-size="xs">Cancel</button>
               <button title="Watch this edit as a thread" hidden class="btn" data-control="agent-open-thread agent-now" data-variant="outline" data-size="xs">View thread</button>
               <button title="Run just this comment now ({Mod+Enter})" class="btn" data-control="agent-now" data-variant="outline" data-size="xs">Apply now</button>
@@ -331,17 +331,17 @@
         </div>
       </template>
 
-      <!-- Draft review comment composers: one .agent-box per open composer,
+      <!-- Draft review comment composers: one [data-ui~=agent-box] per open composer,
            each pinned beside the diff line it's on (or docked bottom-right
            when that file isn't the one on screen). web/src/pr.js owns it. -->
-      <div id="pr-comment-list" class="pr-comment-list" hidden></div>
+      <div id="pr-comment-list" data-ui="pr-comment-list" class="absolute inset-0 z-30 pointer-events-none [&>[data-ui~=agent-box]]:absolute [&>[data-ui~=agent-box]]:w-96 [&>[data-ui~=agent-box]]:max-w-full [&>[data-ui~=agent-box]]:pointer-events-auto" hidden></div>
     </div>
 
     <!-- Review Mode Workflow View -->
-    <div id="review-view" class="review-view layout-vertical" hidden>
+    <div id="review-view" data-ui="review-view" class="group/review relative flex flex-1 min-h-0 flex-col overflow-hidden layout-vertical" hidden>
       <!-- Review Sub-Navbar: Walkthrough & Diff vs Workflow Stages -->
-      <div id="review-sub-bar" class="review-sub-bar">
-        <div class="review-sub-tabs" role="tablist">
+      <div id="review-sub-bar" data-ui="review-sub-bar" class="flex flex-wrap items-center shrink-0 select-none gap-2 p-3">
+        <div data-ui="review-sub-tabs" class="flex items-center gap-2" role="tablist">
           <button id="btn-review-tab-walkthrough" role="tab" aria-selected="true" title="Scrollytelling code diff and guardrail understanding" class="btn" data-control="review-sub-tab" data-variant="secondary" data-size="xs" aria-pressed="true">
             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg>
             <span>Diff & Understanding</span>
@@ -354,10 +354,10 @@
           </button>
         </div>
 
-        <div class="review-sub-bar-spacer"></div>
+        <div data-ui="review-sub-bar-spacer" class="flex-1"></div>
 
-        <div id="review-walkthrough-toolbar" class="review-walkthrough-toolbar">
-          <div class="review-filter-chips button-group" role="group" aria-label="Filter insights">
+        <div id="review-walkthrough-toolbar" data-ui="review-walkthrough-toolbar" class="flex items-center gap-2">
+          <div data-ui="review-filter-chips" class="flex flex-wrap items-center gap-2 button-group" role="group" aria-label="Filter insights">
             <button data-filter="all" title="Show all insights" class="btn" data-control="review-chip" data-variant="secondary" data-size="xs" aria-pressed="true">All</button>
             <button data-filter="fastReturns" title="Fast returns & guardrails" class="btn" data-control="review-chip" data-variant="ghost" data-size="xs">⚡ Returns (<span id="wt-count-returns">0</span>)</button>
             <button data-filter="edgeCases" title="Error & edge case exits" class="btn" data-control="review-chip" data-variant="ghost" data-size="xs">⚠️ Edge Cases (<span id="wt-count-edge">0</span>)</button>
@@ -370,39 +370,39 @@
       </div>
 
       <!-- Diff Walkthrough & Understanding View (Default in Review Mode) -->
-      <div id="review-walkthrough-view" class="review-walkthrough-view">
+      <div id="review-walkthrough-view" data-ui="review-walkthrough-view" class="flex flex-row flex-1 min-h-0 overflow-hidden h-full">
         <!-- Left: Understanding Pane -->
-        <aside id="review-understanding-pane" class="review-understanding-pane">
-          <div class="review-pane-header">
-            <div class="review-pane-title">
-              <span class="review-pane-heading">Code Understanding & Guardrails</span>
-              <span id="review-understanding-stat" class="review-pane-sub">Fast returns, edge cases & core logic</span>
+        <aside id="review-understanding-pane" data-ui="review-understanding-pane" class="flex w-96 max-w-1/2 min-h-0 shrink-0 flex-col overflow-hidden">
+          <div data-ui="review-pane-header" class="flex flex-col gap-2 p-3">
+            <div data-ui="review-pane-title" class="flex flex-wrap items-baseline justify-between gap-2">
+              <span data-ui="review-pane-heading" class="label font-semibold">Code Understanding & Guardrails</span>
+              <span id="review-understanding-stat" data-ui="review-pane-sub" class="text-muted-foreground">Fast returns, edge cases & core logic</span>
             </div>
-            <div id="review-understanding-files-nav" class="review-files-quick-nav"></div>
+            <div id="review-understanding-files-nav" data-ui="review-files-quick-nav" class="flex overflow-x-auto gap-2"></div>
           </div>
-          <div id="review-understanding-content" class="review-understanding-content">
-            <div class="review-empty-state"><div class="review-spinner"></div><p>Analyzing code changes...</p></div>
+          <div id="review-understanding-content" data-ui="review-understanding-content" class="flex flex-col flex-1 min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain gap-2 p-3">
+            <div data-ui="review-empty-state" class="empty flex flex-col items-center justify-center text-center h-full p-3 text-muted-foreground"><div data-ui="review-spinner" class="size-6 rounded-full border-2 border-border border-t-primary animate-spin"></div><p>Analyzing code changes...</p></div>
           </div>
         </aside>
 
         <!-- Right: Synchronized Diff Pane with Sticky Headers -->
-        <section id="review-diff-pane" class="review-diff-pane">
-          <div id="review-diff-content" class="review-diff-content">
-            <div class="review-empty-state"><div class="review-spinner"></div><p>Loading diff...</p></div>
+        <section id="review-diff-pane" data-ui="review-diff-pane" class="flex-1 min-w-0 min-h-0 overflow-x-auto overflow-y-auto relative h-full overscroll-contain">
+          <div id="review-diff-content" data-ui="review-diff-content" class="p-3">
+            <div data-ui="review-empty-state" class="empty flex flex-col items-center justify-center text-center h-full p-3 text-muted-foreground"><div data-ui="review-spinner" class="size-6 rounded-full border-2 border-border border-t-primary animate-spin"></div><p>Loading diff...</p></div>
           </div>
         </section>
       </div>
 
       <!-- Existing Workflow Stages Pipeline View -->
-      <div id="review-stages-view" class="review-stages-view" hidden>
+      <div id="review-stages-view" data-ui="review-stages-view" class="flex flex-1 min-h-0 overflow-hidden group-[.layout-horizontal]/review:flex-col" hidden>
         <!-- Left sidebar / Top bar: Sequential Stages Pipeline -->
-        <aside id="review-pipeline" class="review-pipeline">
-        <div class="review-pipeline-head">
-          <div class="review-workflow-info">
-            <span class="review-section-title">Workflow</span>
-            <span id="review-workflow-name" class="review-workflow-name">PR Review Workflow</span>
+        <aside id="review-pipeline" data-ui="review-pipeline" class="flex w-80 max-w-1/2 shrink-0 flex-col overflow-auto group-[.layout-horizontal]/review:w-full group-[.layout-horizontal]/review:max-w-none group-[.layout-horizontal]/review:max-h-64">
+        <div data-ui="review-pipeline-head" class="flex flex-wrap items-center justify-between gap-2 p-3">
+          <div data-ui="review-workflow-info" class="flex flex-col min-w-0 gap-2">
+            <span data-ui="review-section-title" class="label font-semibold text-muted-foreground">Workflow</span>
+            <span id="review-workflow-name" data-ui="review-workflow-name" class="overflow-hidden whitespace-nowrap text-ellipsis font-semibold">PR Review Workflow</span>
           </div>
-          <div class="review-pipeline-head-actions">
+          <div data-ui="review-pipeline-head-actions" class="flex items-center gap-2">
             <button id="btn-toggle-review-layout" title="Toggle Layout: Vertical / Horizontal" aria-label="Toggle Layout" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs">
               <svg id="icon-layout-vert" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg>
               <svg id="icon-layout-horiz" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" hidden><rect x="3" y="3" width="18" height="7" rx="1"/><rect x="3" y="14" width="18" height="7" rx="1"/></svg>
@@ -415,8 +415,8 @@
             </button>
           </div>
         </div>
-        <div id="review-stages-container" class="review-stages-container"></div>
-        <div class="review-pipeline-actions">
+        <div id="review-stages-container" data-ui="review-stages-container" class="flex flex-col flex-1 overflow-y-auto gap-2 p-3"></div>
+        <div data-ui="review-pipeline-actions" class="flex flex-col gap-2 p-3">
           <button id="btn-run-review-flow" title="Run workflow stages sequentially" class="btn" data-control="review-run-btn" data-variant="primary" data-size="xs">
             <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             <span id="btn-run-review-label">Run Workflow</span>
@@ -429,13 +429,13 @@
       </aside>
 
       <!-- Center/Right: Active Stage Question & Conversation Thread -->
-      <section id="review-stage-main" class="review-stage-main">
-        <header class="review-stage-header">
-          <div class="review-stage-header-info">
+      <section id="review-stage-main" data-ui="review-stage-main" class="flex flex-1 min-w-0 min-h-0 flex-col overflow-hidden">
+        <header data-ui="review-stage-header" class="flex flex-wrap items-center justify-between gap-2 p-3">
+          <div data-ui="review-stage-header-info" class="flex items-center min-w-0 gap-2">
             <span id="review-stage-badge" class="badge" data-variant="secondary">Stage 1</span>
-            <h2 id="review-stage-title" class="review-stage-title">PR Intent & Overview</h2>
+            <h2 id="review-stage-title" data-ui="review-stage-title" class="label overflow-hidden whitespace-nowrap text-ellipsis font-semibold">PR Intent & Overview</h2>
           </div>
-          <div class="review-stage-header-actions">
+          <div data-ui="review-stage-header-actions" class="flex items-center gap-2">
             <span id="review-stage-status-tag" class="badge" data-variant="secondary">Pending</span>
             <button id="btn-edit-stage-inline" title="Edit this stage title, question and prompt" class="btn" data-control="mini review-btn-edit-stage" data-variant="ghost" data-size="icon-xs" aria-label="Edit this stage title, question and prompt">
               <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -447,43 +447,43 @@
           </div>
         </header>
 
-        <div id="review-question-banner" class="review-question-banner">
-          <span class="review-q-label">Question:</span>
-          <span id="review-question-text" class="review-question-text"></span>
+        <div id="review-question-banner" data-ui="review-question-banner" class="flex flex-wrap items-center justify-between gap-2 p-3">
+          <span data-ui="review-q-label" class="label flex-none font-semibold text-primary-text">Question:</span>
+          <span id="review-question-text" data-ui="review-question-text" class=""></span>
           <button id="btn-quick-edit-q" title="Edit Question" class="btn" data-control="mini review-btn-quick-edit" data-variant="ghost" data-size="icon-xs" aria-label="Edit Question">
             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           </button>
         </div>
 
         <!-- Inline Stage Editor (Right inside the Review View) -->
-        <div id="review-stage-inline-editor" class="review-stage-inline-editor" hidden>
-          <div class="review-inline-edit-row">
+        <div id="review-stage-inline-editor" data-ui="review-stage-inline-editor" class="flex flex-col gap-2 p-3" hidden>
+          <div data-ui="review-inline-edit-row" class="field flex flex-col gap-2">
             <label class="label">Stage Title</label>
             <input type="text" id="inline-edit-stage-title" placeholder="e.g. Performance Impact" class="input h-8!" data-control="review-inline-input">
           </div>
-          <div class="review-inline-edit-row">
+          <div data-ui="review-inline-edit-row" class="field flex flex-col gap-2">
             <label class="label">Review Question</label>
             <textarea id="inline-edit-stage-q" rows="2" placeholder="e.g. Are there any performance bottlenecks or lock contentions?" class="textarea resize-y" data-control="review-inline-textarea"></textarea>
           </div>
-          <div class="review-inline-edit-row">
+          <div data-ui="review-inline-edit-row" class="field flex flex-col gap-2">
             <label class="label">Detailed AI Prompt Instructions</label>
             <textarea id="inline-edit-stage-prompt" rows="3" placeholder="Detailed instructions for the AI reviewer..." class="textarea resize-y" data-control="review-inline-textarea"></textarea>
           </div>
-          <div class="review-inline-edit-actions">
+          <div data-ui="review-inline-edit-actions" class="flex gap-2">
             <button id="btn-save-stage-inline" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="primary" data-size="xs">Save Changes</button>
             <button id="btn-cancel-stage-inline" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs">Cancel</button>
           </div>
         </div>
 
         <!-- Transcript of this stage's thread -->
-        <div id="review-thread-msgs" class="review-thread-msgs thr-msgs"></div>
+        <div id="review-thread-msgs" data-ui="review-thread-msgs thr-msgs" class="flex flex-col flex-1 min-h-0 overflow-y-auto gap-2 p-3 flex flex-1 min-h-0 flex-col gap-4 overflow-y-auto p-4"></div>
 
         <!-- Composer to ask follow-up questions on this stage -->
-        <div class="review-compose-wrap">
-          <div class="review-compose-inner">
+        <div data-ui="review-compose-wrap" class="p-3">
+          <div data-ui="review-compose-inner" class="flex flex-col gap-2">
             <textarea id="review-compose-input" rows="2" spellcheck="false" autocomplete="off" placeholder="Ask follow-up question about this stage..." class="textarea resize-y" data-control="agent-input review-input"></textarea>
-            <div class="review-compose-foot">
-              <span class="agent-hint">Enter to send, Shift+Enter for new line</span>
+            <div data-ui="review-compose-foot" class="flex items-center justify-between">
+              <span data-ui="agent-hint" class="flex-1">Enter to send, Shift+Enter for new line</span>
               <button id="review-compose-send" class="btn" data-control="agent-send review-send-btn" data-variant="primary" data-size="xs">Send</button>
             </div>
           </div>
@@ -493,8 +493,8 @@
     </div>
 
     <!-- Floating Jump Return Pill (shown in Code Mode when jumped from a review link) -->
-    <div id="review-return-pill" class="review-return-pill" hidden>
-      <span class="review-return-icon">&#8617;</span>
+    <div id="review-return-pill" data-ui="review-return-pill" class="card fixed bottom-12 right-6 z-50 flex flex-row items-center gap-2 p-3" hidden>
+      <span data-ui="review-return-icon" class="font-semibold text-primary-text">&#8617;</span>
       <span id="review-return-label">Viewing from Review</span>
       <button id="btn-return-to-review" title="Return to Review Mode ({Mod+Shift+V})" class="btn" data-control="review-return-btn" data-variant="outline" data-size="xs">
         Back to Review <kbd class="kbd">Mod+Shift+V</kbd>
@@ -503,25 +503,25 @@
     </div>
 
     <!-- PR review bar: shown only when this session is `faah pr ...` (web/src/pr.js) -->
-    <div id="pr-bar" class="pr-bar" hidden>
-      <div class="pr-bar-row">
-        <a id="pr-link" class="pr-link" target="_blank" rel="noopener noreferrer" >
+    <div id="pr-bar" data-ui="pr-bar" class="flex flex-col flex-none gap-2 p-3" hidden>
+      <div data-ui="pr-bar-row" class="flex items-center min-w-0 gap-2">
+        <a id="pr-link" data-ui="pr-link" class="flex items-center min-w-0 gap-2" target="_blank" rel="noopener noreferrer" >
           <span id="pr-badge" class="badge" data-variant="secondary" data-control="pr-badge"></span>
-          <span id="pr-title" class="pr-title"></span>
+          <span id="pr-title" data-ui="pr-title" class="label min-w-0 overflow-hidden whitespace-nowrap text-ellipsis"></span>
         </a>
         <span id="pr-merged-badge" class="badge" data-variant="secondary" data-control="pr-merged-badge" hidden>Merged</span>
-        <span id="pr-refs" class="pr-refs"></span>
+        <span id="pr-refs" data-ui="pr-refs" class="flex-none font-mono text-muted-foreground"></span>
         <button id="pr-merge-state" type="button" hidden class="btn" data-control="pr-merge-state" data-variant="outline" data-size="xs"></button>
         <button id="pr-rebase-ai" type="button" hidden title="Rebase onto base branch with AI and resolve conflicts" class="btn" data-control="bar-action pr-btn-rebase-ai" data-variant="ghost" data-size="xs">
           <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="bar-action-icon"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg>
           <span class="bar-action-label text-xs font-medium desktop:hidden">Rebase with AI</span>
         </button>
         <span class="flex-1 min-w-0"></span>
-        <span id="pr-diff-warning" class="pr-diff-warning" hidden>&#9888; diff base unresolved</span>
+        <span id="pr-diff-warning" data-ui="pr-diff-warning" class="flex-none p-3 text-destructive" hidden>&#9888; diff base unresolved</span>
         <button id="pr-readonly-note" type="button" hidden  class="btn" data-control="pr-readonly-note" data-variant="outline" data-size="xs">No token &mdash; click to connect</button>
         <span id="pr-draft-count" class="badge" data-variant="secondary" data-control="pr-draft-count"></span>
       </div>
-      <div class="pr-bar-row pr-review-row">
+      <div data-ui="pr-bar-row pr-review-row" class="flex items-center min-w-0 gap-2 gap-2">
         <textarea id="pr-review-body" rows="1" spellcheck="false" autocomplete="off" placeholder="Review summary / verdict comment (optional)..." class="textarea resize-y" data-control="pr-review-body"></textarea>
         <button id="pr-batch-apply" hidden title="Dispatch AI agent to apply all draft review comments directly to the codebase" class="btn" data-control="bar-action pr-btn-batch-apply" data-variant="ghost" data-size="xs">
           <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="bar-action-icon"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg>
@@ -531,7 +531,7 @@
         <button id="pr-submit-request-changes" hidden title="Request changes on this PR" class="btn" data-control="bar-action pr-btn-request-changes" data-variant="destructive" data-size="xs">Request Changes</button>
         <button id="pr-submit-approve" hidden title="Approve this PR" class="btn" data-control="bar-action pr-btn-approve" data-variant="primary" data-size="xs">Approve</button>
         <!-- Merge: split button -- the last-used method, and a caret to pick another (web/src/prmerge.js) -->
-        <div id="pr-merge-group" class="pr-merge-group" hidden>
+        <div id="pr-merge-group" data-ui="pr-merge-group" class="flex flex-none relative" hidden>
           <button id="pr-merge" type="button" class="btn" data-control="bar-action pr-btn-merge" data-variant="primary" data-size="xs">Squash and merge</button>
           <button id="pr-merge-caret" type="button" aria-haspopup="menu" title="Choose how to merge" class="btn" data-control="bar-action pr-btn-merge pr-merge-caret" data-variant="primary" data-size="icon-xs" aria-label="Choose how to merge">&#9662;</button>
           <div id="pr-merge-menu"  role="menu" hidden></div>
@@ -542,17 +542,17 @@
     <!-- PR comments bottom panel: existing GitHub comments (top-level and
          inline) plus your own draft review comments, open by default for the
          life of a PR review session. web/src/pr.js owns everything in it. -->
-    <div id="pr-comments-panel" class="pr-comments-panel collapsed" hidden>
-      <div id="pr-comments-resizer" class="pr-comments-resizer" title="Drag to resize"></div>
-      <div class="pr-comments-panel-head">
-        <span class="pr-comments-panel-title">Comments</span>
+    <div id="pr-comments-panel" data-ui="pr-comments-panel" class="group/comments relative flex h-72 max-h-[80vh] shrink-0 flex-col border-t [&.collapsed]:h-auto! collapsed" hidden>
+      <div id="pr-comments-resizer" data-ui="pr-comments-resizer" class="absolute -top-1 inset-x-0 h-2 cursor-row-resize hover:bg-primary" title="Drag to resize"></div>
+      <div data-ui="pr-comments-panel-head" class="flex flex-wrap items-center shrink-0 select-none gap-2 p-3">
+        <span data-ui="pr-comments-panel-title" class="label">Comments</span>
         <span id="pr-comments-count" class="badge" data-variant="secondary" data-control="pr-comments-count"></span>
         <span class="flex-1 min-w-0"></span>
         <button id="pr-comments-collapse" title="Expand/collapse comments panel" class="btn" data-control="pr-comments-collapse" data-variant="ghost" data-size="icon-xs" aria-label="Expand/collapse comments panel">&#9662;</button>
       </div>
-      <div id="pr-comments-body" class="pr-comments-body">
-        <div id="pr-comments-list" class="pr-comments-list"></div>
-        <div id="pr-issue-compose" class="pr-issue-compose">
+      <div id="pr-comments-body" data-ui="pr-comments-body" class="flex flex-1 min-h-0 flex-col group-[.collapsed]/comments:hidden">
+        <div id="pr-comments-list" data-ui="pr-comments-list" class="flex flex-col flex-1 min-h-0 overflow-y-auto gap-2 p-3"></div>
+        <div id="pr-issue-compose" data-ui="pr-issue-compose" class="flex items-start flex-none gap-2 p-3">
           <textarea id="pr-issue-compose-body" rows="2" spellcheck="false" autocomplete="off" placeholder="Write a comment on the PR conversation..." class="textarea resize-y" data-control="pr-review-body"></textarea>
           <button id="pr-issue-compose-send" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs">Post Comment</button>
         </div>
@@ -579,22 +579,22 @@
 
     <!-- Floating Async Tip Widget (web/src/tips.js) -->
     <div id="tip-widget" class="card fixed bottom-[34px] right-[18px] w-[360px] max-w-[calc(100vw-36px)] z-40 gap-0 py-0! overflow-hidden" hidden>
-      <div class="tip-widget-head">
-        <div class="tip-widget-tag-group">
-          <svg class="tip-widget-bulb" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z"/></svg>
-          <span class="tip-widget-label">Tip</span>
+      <div data-ui="tip-widget-head" class="flex items-center justify-between p-3">
+        <div data-ui="tip-widget-tag-group" class="flex items-center min-w-0 gap-2">
+          <svg data-ui="tip-widget-bulb" class="text-primary-text" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z"/></svg>
+          <span data-ui="tip-widget-label" class="label font-semibold">Tip</span>
           <button id="tip-widget-tag" type="button" title="Filter tips by this category" class="btn badge" data-control="tip-tag-pill" data-variant="secondary" data-size="xs"></button>
           <span id="tip-widget-count" class="badge" data-variant="secondary" data-control="tip-count-chip"></span>
         </div>
         <button id="tip-widget-close" type="button" title="Dismiss tip" class="btn" data-control="tip-btn-close" data-variant="ghost" data-size="icon-xs" aria-label="Dismiss tip">&times;</button>
       </div>
-      <div class="tip-widget-body">
-        <h4 id="tip-widget-title" class="tip-widget-title"></h4>
-        <div id="tip-widget-content" class="tip-widget-content"></div>
+      <div data-ui="tip-widget-body" class="p-3">
+        <h4 id="tip-widget-title" data-ui="tip-widget-title" class="label font-semibold"></h4>
+        <div id="tip-widget-content" data-ui="tip-widget-content" class="text-muted-foreground [&_p]:my-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6"></div>
       </div>
-      <div class="tip-widget-foot">
+      <div data-ui="tip-widget-foot" class="flex items-center justify-between p-3">
         <button id="tip-widget-hide-perm" type="button" title="Permanently hide tips in the interface" class="btn" data-control="tip-btn-link" data-variant="link" data-size="xs">Don't show tips</button>
-        <div class="tip-widget-actions">
+        <div data-ui="tip-widget-actions" class="flex items-center gap-2">
           <button id="tip-widget-prev" type="button" title="Previous tip" class="btn" data-control="tip-btn-nav" data-variant="ghost" data-size="icon-xs" aria-label="Previous tip">&lsaquo;</button>
           <button id="tip-widget-next" type="button" title="Next tip" class="btn" data-control="tip-btn-nav" data-variant="ghost" data-size="icon-xs" aria-label="Next tip">&rsaquo;</button>
           <button id="tip-widget-all" type="button" title="View all tips in IDE" class="btn" data-control="tip-btn-all" data-variant="outline" data-size="xs">All Tips</button>
@@ -672,13 +672,13 @@
         <span class="badge" data-variant="secondary" data-control="inspector-badge" id="right-ref-badge">0</span>
       </div>
       <div class="panel-body min-h-0 flex-1 overflow-auto pb-4" id="right-refs-list">
-        <div class="hint">Select or click a symbol to inspect references.</div>
+        <div data-ui="hint" class="empty text-muted-foreground">Select or click a symbol to inspect references.</div>
       </div>
     </section>
 
     <!-- Right Pane 2: Symbols outline for active file -->
     <section class="inspector-pane hidden min-h-0 flex-1 flex-col overflow-hidden [&.active]:flex" id="pane-right-symbols">
-      <div class="search-form">
+      <div data-ui="search-form" class="flex flex-col gap-2 p-3">
         <input id="right-symbols-filter" type="text" spellcheck="false" placeholder="Filter file symbols" autocomplete="off" class="input h-8!">
       </div>
       <div class="panel-body min-h-0 flex-1 overflow-auto pb-4" id="right-symbols-list"></div>
@@ -694,15 +694,15 @@
         </span>
       </div>
       <div class="panel-body min-h-0 flex-1 overflow-auto pb-4" id="right-calls-list">
-        <div class="hint">Click a function name, then press <b data-keys="Alt+Shift+H"></b> to trace its calls.</div>
+        <div data-ui="hint" class="empty text-muted-foreground">Click a function name, then press <b data-keys="Alt+Shift+H"></b> to trace its calls.</div>
       </div>
     </section>
 
     <!-- Right Pane 4: Full-text search across the workspace -->
     <section class="inspector-pane hidden min-h-0 flex-1 flex-col overflow-hidden [&.active]:flex" id="pane-right-search">
-      <div class="search-form">
+      <div data-ui="search-form" class="flex flex-col gap-2 p-3">
         <input id="q" type="text" spellcheck="false" placeholder="Search in files" autocomplete="off" class="input h-8!">
-        <div class="opts">
+        <div class="flex flex-wrap gap-1">
           <button id="o-case" title="Match case" class="btn" data-control="opt" data-variant="ghost" data-size="xs">Aa</button>
           <button id="o-word" title="Whole word" class="btn" data-control="opt" data-variant="ghost" data-size="xs">|ab|</button>
           <button id="o-re" title="Regular expression" class="btn" data-control="opt" data-variant="ghost" data-size="xs">.*</button>
@@ -710,26 +710,26 @@
         <input id="glob" type="text" spellcheck="false" placeholder="files to include e.g. *.go" autocomplete="off" class="input h-8!">
       </div>
       <div class="panel-body min-h-0 flex-1 overflow-auto pb-4" id="results">
-        <div class="hint">Search text across every indexed file.</div>
+        <div data-ui="hint" class="empty text-muted-foreground">Search text across every indexed file.</div>
       </div>
     </section>
     <!-- Right Pane 5: Tips & Tricks. Browse, search and filter all faah tips. web/src/tips.js owns it. -->
-    <section class="inspector-pane hidden min-h-0 flex-1 flex-col overflow-hidden [&.active]:flex" id="pane-right-tips">
-      <div class="inspector-bar flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2 text-xs tips-header-bar">
-        <div class="tips-search-wrap">
+    <section class="hidden h-full flex-col overflow-hidden [&.active]:flex inspector-pane hidden min-h-0 flex-1 flex-col overflow-hidden [&.active]:flex" id="pane-right-tips">
+      <div data-ui="tips-header-bar" class="inspector-bar flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2 text-xs flex items-center gap-2 p-3">
+        <div data-ui="tips-search-wrap" class="flex items-center flex-1 gap-2 p-3 text-muted-foreground">
           <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" id="tips-filter" placeholder="Filter tips..." autocomplete="off" spellcheck="false" class="input border-0! shadow-none! bg-transparent! h-6!">
+          <input type="text" id="tips-filter" placeholder="Filter tips..." autocomplete="off" spellcheck="false" class="input">
         </div>
         <span id="tips-count-badge" class="badge" data-variant="secondary" data-control="inspector-badge">0 tips</span>
         <button id="btn-refresh-tips" title="Reload tips" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Reload tips">&#x21bb;</button>
       </div>
-      <div class="tips-toolbar-sub">
-        <label title="Toggle automatic tip popups in interface" class="label tips-setting-toggle">
+      <div data-ui="tips-toolbar-sub" class="flex items-center justify-between p-3">
+        <label title="Toggle automatic tip popups in interface" data-ui="tips-setting-toggle" class="label inline-flex items-center cursor-pointer select-none gap-2 text-muted-foreground">
           <input type="checkbox" id="tips-toggle-popup" checked class="input">
           <span>Show tip popups in interface</span>
         </label>
       </div>
-      <div class="panel-body min-h-0 flex-1 overflow-auto pb-4" id="tips-list"></div>
+      <div class="flex flex-1 min-h-0 flex-col gap-4 overflow-y-auto p-4 panel-body min-h-0 flex-1 overflow-auto pb-4" id="tips-list"></div>
     </section>
   </aside>
 
@@ -743,7 +743,7 @@
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         <span class="threads-head-label text-xs font-medium">Threads</span>
         <span class="badge" data-variant="secondary" data-control="thr-tab-count" hidden></span>
-        <span class="thr-tab-dot" hidden></span>
+        <span data-ui="thr-tab-dot" class="inline-block" hidden></span>
       </div>
       <div class="inspector-head-actions flex items-center">
         <button id="btn-close-threads" title="Close threads (Esc)" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Close threads (Esc)">&#10005;</button>
@@ -753,34 +753,34 @@
     <!-- Inline edit comments: one box per edit being composed or in flight, kept at the top of the
          Threads pane. #agent-batch-bar applies every added comment together, and each applied
          edit becomes a thread in the list below. web/src/agent.js owns it. -->
-    <div id="agentbox" hidden>
-      <div id="agent-batch-bar" class="agent-batch-bar" hidden>
-        <div class="agent-batch-header">
-          <div class="agent-batch-title-row">
+    <div id="agentbox" hidden class="flex shrink-0 max-h-[55%] flex-col gap-2 overflow-y-auto border-b bg-sidebar p-3">
+      <div id="agent-batch-bar" data-ui="agent-batch-bar" class="card flex flex-col gap-2 p-3" hidden>
+        <div data-ui="agent-batch-header" class="flex flex-col gap-2">
+          <div data-ui="agent-batch-title-row" class="flex items-center gap-2 font-mono">
             <span class="badge" data-variant="secondary" data-control="agent-batch-badge">Batch</span>
-            <span id="agent-batch-count" class="agent-batch-count">No comments yet</span>
+            <span id="agent-batch-count" data-ui="agent-batch-count" class="font-mono">No comments yet</span>
             <span class="flex-1 min-w-0"></span>
             <button id="agent-batch-clear" title="Clear all comments" class="btn" data-control="agent-batch-clear" data-variant="outline" data-size="xs">Clear All</button>
           </div>
-          <div class="agent-batch-meta">
-            <span class="agent-meta-label">Model</span>
+          <div data-ui="agent-batch-meta" class="flex items-center gap-2 p-3">
+            <span data-ui="agent-meta-label" class="label flex-none text-muted-foreground">Model</span>
             <select id="agent-batch-harness" title="Coding harness" class="select h-6! max-w-full text-xs!" data-control="agent-harness-select"></select>
             <select id="agent-batch-model" title="Model" class="select h-6! max-w-full text-xs!" data-control="agent-model-select"></select>
           </div>
         </div>
-        <div class="agent-batch-actions">
-          <span id="agent-batch-hint" class="agent-hint"></span>
+        <div data-ui="agent-batch-actions" class="flex items-center gap-2 font-mono text-muted-foreground">
+          <span id="agent-batch-hint" data-ui="agent-hint" class="flex-1"></span>
           <button id="agent-batch-open" title="Watch this batch as a thread" hidden class="btn" data-control="agent-now" data-variant="outline" data-size="xs">View thread</button>
           <button id="agent-batch-cancel" title="Cancel in-flight batch edits" hidden class="btn" data-control="agent-cancel" data-variant="outline" data-size="xs">Cancel</button>
           <button id="agent-batch-apply" title="Apply all comments together ({Mod+Shift+Enter})" class="btn" data-control="agent-send agent-batch-apply" data-variant="primary" data-size="xs">Apply All</button>
         </div>
-        <div id="agent-batch-err" class="agent-err" hidden></div>
+        <div id="agent-batch-err" data-ui="agent-err" class="alert flex flex-col overflow-y-auto gap-2 p-3 font-mono" hidden></div>
       </div>
-      <div id="agentbox-list" class="agentbox-list"></div>
+      <div id="agentbox-list" data-ui="agentbox-list" class="flex flex-col gap-2"></div>
     </div>
 
     <!-- Threads list view -->
-    <div id="thr-list-view" class="thr-view">
+    <div id="thr-list-view" data-ui="thr-view" class="flex flex-1 min-h-0 flex-col">
       <div class="inspector-bar flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2 text-xs">
         <span role="group" class="button-group" id="thr-filter">
           <button data-thr-filter="all" title="Every thread in this workspace" class="btn" data-control="opt" data-variant="secondary" data-size="xs" aria-pressed="true">All</button>
@@ -788,34 +788,34 @@
         </span>
         <button id="thr-new" title="Start a thread about the workspace or the selection" class="btn" data-control="thr-btn-primary" data-variant="primary" data-size="xs">+ New</button>
       </div>
-      <div class="panel-body min-h-0 flex-1 overflow-auto pb-4" id="thr-list"></div>
+      <div class="flex flex-col gap-2 p-3 panel-body min-h-0 flex-1 overflow-auto pb-4" id="thr-list"></div>
     </div>
 
     <!-- Thread detail & conversation view -->
-    <div id="thr-thread-view" class="thr-view" hidden>
-      <div class="inspector-bar flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2 text-xs thr-head">
+    <div id="thr-thread-view" data-ui="thr-view" class="flex flex-1 min-h-0 flex-col" hidden>
+      <div data-ui="thr-head" class="inspector-bar flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2 text-xs justify-start gap-2">
         <button id="thr-back" title="All threads" aria-label="All threads" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs">&#8592;</button>
         <span class="inspector-sym-title truncate font-mono font-semibold" id="thr-title">New thread</span>
         <button id="thr-delete" title="Delete this thread" aria-label="Delete thread" hidden class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
       </div>
-      <div id="thr-anchor" class="thr-anchor" hidden></div>
-      <div id="thr-msgs" class="thr-msgs"></div>
-      <div class="thr-compose">
+      <div id="thr-anchor" data-ui="thr-anchor" class="truncate p-3 text-muted-foreground [&.jump]:cursor-pointer [&.jump]:text-primary-text" hidden></div>
+      <div id="thr-msgs" data-ui="thr-msgs" class="flex flex-1 min-h-0 flex-col gap-4 overflow-y-auto p-4"></div>
+      <div data-ui="thr-compose" class="flex flex-col gap-2 p-3">
         <!-- PR review only: what this thread is about (thread.js) -->
-        <div id="thr-scope" class="thr-scope button-group" role="group" aria-label="What this thread is about" hidden>
-          <span class="thr-scope-label">About</span>
+        <div id="thr-scope" data-ui="thr-scope" class="flex items-center gap-2 button-group" role="group" aria-label="What this thread is about" hidden>
+          <span data-ui="thr-scope-label" class="label text-muted-foreground">About</span>
           <button type="button" data-scope="pr" title="The whole pull request: merge-base to PR head" class="btn" data-variant="outline" data-size="xs">Whole PR</button>
           <button type="button" data-scope="mine" title="Only your own changes on top of the PR (uncommitted and unpushed)" class="btn" data-variant="outline" data-size="xs">My changes</button>
           <button type="button" data-scope="selection" title="Just the code this thread is anchored to" class="btn" data-variant="outline" data-size="xs">Selection</button>
         </div>
-        <div class="agent-meta">
-          <span class="agent-meta-label">Model</span>
+        <div data-ui="agent-meta" class="flex flex-wrap items-center gap-2 in-[.queued]:hidden in-[.has-batch]:hidden">
+          <span data-ui="agent-meta-label" class="label flex-none text-muted-foreground">Model</span>
           <select id="thr-harness" title="Coding harness" class="select h-6! max-w-full text-xs!" data-control="agent-harness-select"></select>
           <select id="thr-model" title="Model" class="select h-6! max-w-full text-xs!" data-control="agent-model-select"></select>
         </div>
         <textarea id="thr-input" rows="3" spellcheck="false" autocomplete="off" placeholder="Ask about this code, or ask for changes anywhere..." class="textarea resize-y" data-control="agent-input"></textarea>
-        <div class="agent-foot">
-          <span class="agent-hint" id="thr-hint">Enter to send, Shift+Enter for a new line</span>
+        <div data-ui="agent-foot" class="flex items-center gap-2 font-mono text-muted-foreground">
+          <span data-ui="agent-hint" class="flex-1" id="thr-hint">Enter to send, Shift+Enter for a new line</span>
           <button id="thr-stop" title="Stop this reply" hidden class="btn" data-control="agent-cancel" data-variant="outline" data-size="xs">Stop</button>
           <button id="thr-send" title="Send message" class="btn" data-control="agent-send" data-variant="primary" data-size="xs">Send</button>
         </div>
@@ -843,27 +843,27 @@
   <div class="overflow-auto" role="dialog" aria-modal="true" aria-labelledby="pr-merge-title">
     <header class="flex-row! items-start justify-between">
       <h2 id="pr-merge-title">Merge pull request</h2>
-        <span id="pr-merge-refs" class="pr-merge-refs"></span>
+        <span id="pr-merge-refs" data-ui="pr-merge-refs" class="text-muted-foreground"></span>
       <button id="pr-merge-close" type="button" title="Close (Esc)" class="btn" data-control="git-notice-close" data-variant="ghost" data-size="icon-xs" aria-label="Close (Esc)">&times;</button>
     </header><section class="flex flex-col gap-3 overflow-auto">
     <div id="pr-merge-methods" class="button-group" role="radiogroup" aria-label="Merge method"></div>
-    <p id="pr-merge-explain" class="pr-merge-explain"></p>
-    <div id="pr-merge-warnings" class="pr-merge-warnings"></div>
-    <div id="pr-merge-commit" class="pr-merge-commit">
-      <div id="pr-merge-ai-checkbox-wrap" class="pr-merge-ai-checkbox-wrap" hidden>
-        <label for="pr-merge-ai-checkbox" class="label pr-merge-checkbox-label">
+    <p id="pr-merge-explain" data-ui="pr-merge-explain" class="text-muted-foreground"></p>
+    <div id="pr-merge-warnings" data-ui="pr-merge-warnings" class="flex flex-col gap-2"></div>
+    <div id="pr-merge-commit" data-ui="pr-merge-commit" class="field flex flex-col gap-2">
+      <div id="pr-merge-ai-checkbox-wrap" data-ui="pr-merge-ai-checkbox-wrap" class="flex items-center gap-2" hidden>
+        <label for="pr-merge-ai-checkbox" data-ui="pr-merge-checkbox-label" class="label label inline-flex items-center cursor-pointer select-none gap-2">
           <input type="checkbox" id="pr-merge-ai-checkbox" class="input">
-          <span class="pr-merge-checkbox-text">Rewrite commit message with AI</span>
+          <span data-ui="pr-merge-checkbox-text" class="">Rewrite commit message with AI</span>
         </label>
       </div>
-      <label for="pr-merge-commit-title" class="label pr-merge-label">Commit title</label>
+      <label for="pr-merge-commit-title" data-ui="pr-merge-label" class="label label text-muted-foreground">Commit title</label>
       <input id="pr-merge-commit-title" type="text" spellcheck="false" autocomplete="off" class="input h-8!" data-control="pr-merge-input">
-      <div class="pr-merge-label-row">
-        <label for="pr-merge-commit-body" class="label pr-merge-label">Commit message</label>
-        <a id="pr-merge-reset" href="#" class="pr-merge-link">Reset to default</a>
+      <div data-ui="pr-merge-label-row" class="flex items-baseline justify-between">
+        <label for="pr-merge-commit-body" data-ui="pr-merge-label" class="label label text-muted-foreground">Commit message</label>
+        <a id="pr-merge-reset" href="#" data-ui="pr-merge-link" class="text-primary-text">Reset to default</a>
       </div>
       <textarea id="pr-merge-commit-body" rows="8" spellcheck="false" autocomplete="off" class="textarea resize-y" data-control="pr-merge-input pr-merge-body"></textarea>
-      <div id="pr-merge-ai-row" class="pr-merge-ai">
+      <div id="pr-merge-ai-row" data-ui="pr-merge-ai" class="flex items-center gap-2">
         <input id="pr-merge-ai-instruction" type="text" spellcheck="false" autocomplete="off" placeholder="Instructions for this rewrite (optional), e.g. Conventional Commits, mention the ticket" class="input h-8!" data-control="pr-merge-input">
         <div class="git-agent-picker flex flex-col gap-2">
           <select id="pr-merge-harness" title="Coding harness" class="select h-6! max-w-full text-xs!" data-control="agent-harness-select"></select>
@@ -871,12 +871,12 @@
         </div>
         <button id="pr-merge-ai" type="button" title="Have the harness rewrite the title and message from the PR's commits and diff" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs">Rewrite with AI</button>
       </div>
-      <span id="pr-merge-instructions-note" class="pr-merge-note" hidden>Your <a id="pr-merge-instructions-link" href="#" class="pr-merge-link">commit message instructions</a> from Settings apply too.</span>
+      <span id="pr-merge-instructions-note" data-ui="pr-merge-note" class="text-muted-foreground" hidden>Your <a id="pr-merge-instructions-link" href="#" data-ui="pr-merge-link" class="text-primary-text">commit message instructions</a> from Settings apply too.</span>
     </div>
-    <ol id="pr-merge-commit-list" class="pr-merge-commit-list" hidden></ol>
-    <div id="pr-merge-err" class="agent-err" hidden></div>
+    <ol id="pr-merge-commit-list" data-ui="pr-merge-commit-list" class="overflow-y-auto p-3" hidden></ol>
+    <div id="pr-merge-err" data-ui="agent-err" class="alert flex flex-col overflow-y-auto gap-2 p-3 font-mono" hidden></div>
     </section><footer class="flex-row! items-center gap-2">
-      <span id="pr-merge-hint" class="agent-hint"></span>
+      <span id="pr-merge-hint" data-ui="agent-hint" class="flex-1"></span>
       <button id="pr-merge-cancel" type="button" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs">Cancel</button>
       <button id="pr-merge-confirm" type="button" class="btn" data-control="bar-action pr-btn-merge" data-variant="primary" data-size="xs">Confirm merge</button>
     </footer>
@@ -888,24 +888,24 @@
   <div class="overflow-auto" role="dialog" aria-modal="true" aria-labelledby="forge-connect-title">
     <header class="flex-row! items-start justify-between">
       <h2 id="forge-connect-title">Connect</h2>
-        <span id="forge-connect-host" class="pr-merge-refs"></span>
+        <span id="forge-connect-host" data-ui="pr-merge-refs" class="text-muted-foreground"></span>
       <button id="forge-connect-close" type="button" title="Close (Esc)" class="btn" data-control="git-notice-close" data-variant="ghost" data-size="icon-xs" aria-label="Close (Esc)">&times;</button>
     </header><section class="flex flex-col gap-3 overflow-auto">
-    <p id="forge-connect-why" class="pr-merge-explain"></p>
-    <ol id="forge-connect-steps" class="forge-connect-steps"></ol>
-    <label for="forge-connect-token" class="label pr-merge-label">Token</label>
+    <p id="forge-connect-why" data-ui="pr-merge-explain" class="text-muted-foreground"></p>
+    <ol id="forge-connect-steps" data-ui="forge-connect-steps" class="list-decimal pl-6 flex flex-col gap-2"></ol>
+    <label for="forge-connect-token" data-ui="pr-merge-label" class="label label text-muted-foreground">Token</label>
     <input id="forge-connect-token" type="password" spellcheck="false" autocomplete="off" placeholder="Paste the token" class="input h-8!" data-control="pr-merge-input">
-    <div id="forge-connect-extra" class="forge-connect-extra" hidden>
-      <label id="forge-connect-extra-label" for="forge-connect-extra-input" class="label pr-merge-label"></label>
+    <div id="forge-connect-extra" data-ui="forge-connect-extra" class="flex flex-col gap-2" hidden>
+      <label id="forge-connect-extra-label" for="forge-connect-extra-input" data-ui="pr-merge-label" class="label label text-muted-foreground"></label>
       <input id="forge-connect-extra-input" type="text" spellcheck="false" autocomplete="off" class="input h-8!" data-control="pr-merge-input">
-      <span id="forge-connect-extra-hint" class="pr-merge-note"></span>
+      <span id="forge-connect-extra-hint" data-ui="pr-merge-note" class="text-muted-foreground"></span>
     </div>
-    <div id="forge-connect-err" class="agent-err" hidden></div>
-    <span id="forge-connect-check" class="pr-merge-note"></span>
-    <span id="forge-connect-alt" class="pr-merge-note"></span>
+    <div id="forge-connect-err" data-ui="agent-err" class="alert flex flex-col overflow-y-auto gap-2 p-3 font-mono" hidden></div>
+    <span id="forge-connect-check" data-ui="pr-merge-note" class="text-muted-foreground"></span>
+    <span id="forge-connect-alt" data-ui="pr-merge-note" class="text-muted-foreground"></span>
     </section><footer class="flex-row! items-center gap-2">
-      <a id="forge-connect-settings" href="#" class="pr-merge-link">Open Settings</a>
-      <span id="forge-connect-hint" class="agent-hint"></span>
+      <a id="forge-connect-settings" href="#" data-ui="pr-merge-link" class="text-primary-text">Open Settings</a>
+      <span id="forge-connect-hint" data-ui="agent-hint" class="flex-1"></span>
       <button id="forge-connect-cancel" type="button" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs">Cancel</button>
       <button id="forge-connect-submit" type="button" class="btn" data-control="bar-action pr-btn-merge" data-variant="primary" data-size="xs">Connect</button>
     </footer>
@@ -927,38 +927,38 @@
     </header><section class="flex min-h-0 flex-1 flex-col overflow-hidden">
 
     <!-- Search bar for filtering settings -->
-    <div id="settings-search-bar" class="settings-search-bar">
-      <svg class="settings-search-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" id="settings-search" placeholder="Search settings..." autocomplete="off" spellcheck="false" class="input border-0! shadow-none! bg-transparent! h-6!">
+    <div id="settings-search-bar" data-ui="settings-search-bar" class="flex items-center flex-none gap-2 p-3">
+      <svg data-ui="settings-search-icon" class="flex-none text-muted-foreground" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="settings-search" placeholder="Search settings..." autocomplete="off" spellcheck="false" class="input">
       <button id="settings-search-clear" title="Clear search" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Clear search">&#10005;</button>
     </div>
 
     <!-- UI View Mode -->
-    <div id="settings-ui-container" class="settings-body">
-      <nav id="settings-nav" class="settings-nav" aria-label="Settings categories"></nav>
-      <section id="settings-list" class="settings-list" aria-label="Settings list"></section>
+    <div id="settings-ui-container" data-ui="settings-body" class="flex flex-1 min-h-0 overflow-hidden">
+      <nav id="settings-nav" data-ui="settings-nav" class="flex w-48 max-w-1/3 shrink-0 flex-col gap-1 overflow-y-auto p-3" aria-label="Settings categories"></nav>
+      <section id="settings-list" data-ui="settings-list" class="flex flex-1 min-w-0 flex-col gap-6 overflow-y-auto p-6" aria-label="Settings list"></section>
     </div>
 
     <!-- JSON View Mode -->
-    <div id="settings-json-container" class="settings-json-body" hidden>
-      <div class="settings-json-toolbar">
-        <span class="settings-json-hint">Edit settings.json directly. Changes apply immediately upon saving.</span>
-        <div class="settings-json-actions">
+    <div id="settings-json-container" data-ui="settings-json-body" class="flex flex-1 min-h-0 flex-col overflow-hidden" hidden>
+      <div data-ui="settings-json-toolbar" class="flex items-center justify-between p-3 text-muted-foreground">
+        <span class="text-muted-foreground">Edit settings.json directly. Changes apply immediately upon saving.</span>
+        <div data-ui="settings-json-actions" class="flex items-center gap-2">
           <button id="btn-settings-reset-raw" title="Discard unsaved changes" class="btn" data-control="settings-btn-secondary" data-variant="outline" data-size="xs">Discard</button>
           <button id="btn-settings-save-raw" title="Save changes to settings.json ({Mod+S})" class="btn" data-control="settings-btn-primary" data-variant="primary" data-size="xs">Save</button>
         </div>
       </div>
-      <div id="settings-raw-error" class="settings-error-banner" hidden></div>
-      <textarea id="settings-raw-editor" spellcheck="false" autocomplete="off" wrap="off" class="textarea resize-y"></textarea>
+      <div id="settings-raw-error" data-ui="settings-error-banner" class="alert [&.success]:text-gi" hidden></div>
+      <textarea id="settings-raw-editor" spellcheck="false" autocomplete="off" wrap="off" class="textarea flex-1 min-h-0 resize-none font-mono"></textarea>
     </div>
 
     <!-- Settings Footer with Explicit Save Button -->
     </section><footer id="settings-footer" class="flex-row! items-center justify-between shrink-0">
-      <div id="settings-footer-status" class="settings-footer-status is-saved">
+      <div id="settings-footer-status" data-ui="settings-footer-status" class="flex items-center gap-2 text-muted-foreground [&.is-saved]:text-gi [&.is-error]:text-destructive [&.is-unsaved]:text-warn [&.is-saving]:text-primary-text is-saved">
         <svg id="settings-status-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
         <span id="settings-status-text">All changes saved</span>
       </div>
-      <div class="settings-footer-actions">
+      <div data-ui="settings-footer-actions" class="flex items-center gap-2">
         <button type="button" id="btn-settings-save" title="Save settings ({Mod+S})" class="btn" data-control="settings-btn-save" data-variant="primary" data-size="xs">
           <svg class="settings-btn-save-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           <span id="settings-btn-save-label">Save</span>
@@ -972,16 +972,16 @@
 <dialog id="img-lightbox" class="dialog">
   <div class="sm:max-w-[92vw] overflow-auto">
     <header class="flex-row! items-center gap-3">
-      <span class="lightbox-title" id="lb-title"></span>
-      <span class="lightbox-meta" id="lb-meta"></span>
-      <div class="lightbox-actions">
+      <span data-ui="lightbox-title" class="label overflow-hidden whitespace-nowrap text-ellipsis font-mono font-semibold" id="lb-title"></span>
+      <span data-ui="lightbox-meta" class="font-mono text-muted-foreground" id="lb-meta"></span>
+      <div data-ui="lightbox-actions" class="flex items-center gap-2">
         <button id="lb-open-tab" title="Open image in dedicated tab" class="btn" data-control="lightbox-btn" data-variant="outline" data-size="xs">Open in Tab</button>
         <button id="lb-copy-path" title="Copy image path" class="btn" data-control="lightbox-btn" data-variant="outline" data-size="xs">Copy Path</button>
         <button id="lb-close" title="Close (Esc)" class="btn" data-control="lightbox-btn lightbox-close" data-variant="outline" data-size="xs">&#10005;</button>
       </div>
     </header>
-    <section class="lightbox-body">
-      <div class="lightbox-canvas bg-checker" id="lb-canvas">
+    <section data-ui="lightbox-body" class="flex items-center justify-center overflow-auto relative p-3">
+      <div data-ui="lightbox-canvas" class="flex items-center justify-center overflow-hidden [background:repeating-conic-gradient(var(--muted)_0_25%,var(--sidebar)_0_50%)_0_0/16px_16px]" id="lb-canvas">
         <img id="lb-img" src="" alt="">
       </div>
     </section>
@@ -998,13 +998,13 @@
         <button id="review-config-close" title="Close (Esc)" class="btn" data-control="mini settings-close-btn" data-variant="ghost" data-size="icon-xs" aria-label="Close (Esc)">&#10005;</button>
       </div>
     </header>
-    <section class="review-config-body">
-      <div class="review-config-field">
+    <section data-ui="review-config-body" class="flex flex-col overflow-y-auto gap-2 p-3">
+      <div data-ui="review-config-field" class="field flex flex-col gap-2">
         <label class="label">Workflow Name</label>
         <input type="text" id="review-config-wf-name" placeholder="e.g. Standard PR Review" class="input h-8!">
       </div>
-      <div class="review-config-stages-head">Stages Pipeline</div>
-      <div id="review-config-stages" class="review-config-stages"></div>
+      <div data-ui="review-config-stages-head" class="font-semibold">Stages Pipeline</div>
+      <div id="review-config-stages" data-ui="review-config-stages" class="flex flex-col gap-2"></div>
     </section>
     <footer class="">
       <button id="review-config-save" class="btn" data-control="bar-action pr-btn-merge" data-variant="primary" data-size="xs">Save Workflow</button>
@@ -1021,16 +1021,16 @@
         <button id="add-stage-close" title="Close (Esc)" class="btn" data-control="mini settings-close-btn" data-variant="ghost" data-size="icon-xs" aria-label="Close (Esc)">&#10005;</button>
       </div>
     </header>
-    <section class="review-config-body">
-      <div class="review-config-field">
+    <section data-ui="review-config-body" class="flex flex-col overflow-y-auto gap-2 p-3">
+      <div data-ui="review-config-field" class="field flex flex-col gap-2">
         <label class="label">Stage Title</label>
         <input type="text" id="add-stage-title-input" placeholder="e.g. Security & Permissions" class="input h-8!">
       </div>
-      <div class="review-config-field">
+      <div data-ui="review-config-field" class="field flex flex-col gap-2">
         <label class="label">Review Question</label>
         <input type="text" id="add-stage-q-input" placeholder="e.g. Does this PR introduce any auth or injection risks?" class="input h-8!">
       </div>
-      <div class="review-config-field">
+      <div data-ui="review-config-field" class="field flex flex-col gap-2">
         <label class="label">Detailed AI Prompt</label>
         <textarea rows="3" id="add-stage-prompt-input" placeholder="Detailed instructions for the AI reviewer..." class="textarea resize-y"></textarea>
       </div>
@@ -1050,7 +1050,7 @@
       <button type="button" id="modal-btn-close" title="Close (Esc)" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Close (Esc)">&#10005;</button>
     </header>
     <section class="flex flex-col gap-2">
-      <div id="modal-desc" class="fs-modal-desc">Enter relative path from project root:</div>
+      <div id="modal-desc" data-ui="fs-modal-desc" class="text-muted-foreground">Enter relative path from project root:</div>
       <input id="modal-input" type="text" spellcheck="false" autocomplete="off" class="input h-8!" data-control="fs-modal-input">
     </section>
     <footer class="flex-row! justify-end gap-2">

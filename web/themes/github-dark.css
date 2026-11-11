@@ -1,5 +1,7 @@
 /* GitHub Dark: based on GitHub's dark default palette. Token reference: docs/internals/styling-and-themes.md. */
 :root[data-theme="github-dark"] {
+  --image-dark: #121214;
+  --image-light: #ffffff;
   --theme-name: "GitHub Dark";
   color-scheme: dark;
 

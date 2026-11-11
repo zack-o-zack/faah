@@ -72,7 +72,7 @@ export function openForgeConnect(reason = '') {
   $('#forge-connect-why').innerHTML = why;
 
   const steps = [
-    `Open <a href="${esc(setup.url)}" target="_blank" rel="noopener noreferrer" class="pr-merge-link">${esc(info.label)}'s token page on ${esc(host)}</a>.`,
+    `Open <a href="${esc(setup.url)}" target="_blank" rel="noopener noreferrer" data-ui="pr-merge-link" class="text-primary-text">${esc(info.label)}'s token page on ${esc(host)}</a>.`,
     ...setup.steps.map(esc),
     'Paste it below.',
   ];

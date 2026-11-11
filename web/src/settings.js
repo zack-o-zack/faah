@@ -642,7 +642,7 @@ function renderSettingsList() {
   }
 
   if (items.length === 0) {
-    container.innerHTML = `<div class="settings-empty">No matching settings found for "${esc(q || activeSettingsCategory)}".</div>`;
+    container.innerHTML = `<div data-ui="settings-empty" class="empty text-center p-3 text-muted-foreground">No matching settings found for "${esc(q || activeSettingsCategory)}".</div>`;
     return;
   }
 
@@ -665,13 +665,13 @@ function renderSettingsList() {
       const checked = (val === true || val === 'true') ? 'checked' : '';
       controlHtml = `
         <label class="label">
-          <input aria-label="${esc(title)}" role="switch" type="checkbox" data-key="${esc(key)}" ${checked} class="input">
+          <input aria-label="${esc(title)}" role="switch" type="checkbox" id="setting-${esc(key)}" data-key="${esc(key)}" ${checked} class="input">
 
         </label>`;
       const isT = val === true || val === 'true';
       aptValuesHtml = `
-        <div class="settings-apt-bar">
-          <span class="settings-apt-label">Allowed Values:</span>
+        <div data-ui="settings-apt-bar" class="flex flex-wrap items-center gap-2 [&>.button-group]:flex-wrap">
+          <span data-ui="settings-apt-label" class="label text-muted-foreground">Allowed Values:</span>
           <div class="button-group" role="group">
             <button type="button" aria-pressed="${isT}" data-variant="${isT ? 'secondary' : 'ghost'}" data-set-key="${esc(key)}" data-set-val="true" title="Set to true" class="btn" data-control="settings-pill-tag" data-size="xs">true</button>
             <button type="button" aria-pressed="${!isT}" data-variant="${!isT ? 'secondary' : 'ghost'}" data-set-key="${esc(key)}" data-set-val="false" title="Set to false" class="btn" data-control="settings-pill-tag" data-size="xs">false</button>
@@ -683,14 +683,14 @@ function renderSettingsList() {
         const sel = String(o) === String(val) ? 'selected' : '';
         return `<option value="${esc(o)}" ${sel}>${esc(o)}${String(o) === String(def) ? ' (default)' : ''}</option>`;
       }).join('');
-      controlHtml = `<select data-key="${esc(key)}" class="select h-6! max-w-full text-xs!" data-control="settings-select">${optHtml}</select>`;
+      controlHtml = `<select id="setting-${esc(key)}" data-key="${esc(key)}" class="select max-w-full" data-control="settings-select">${optHtml}</select>`;
       const pills = opts.map(o => {
         const isSel = String(o) === String(val);
         return `<button type="button" aria-pressed="${isSel}" data-variant="${isSel ? 'secondary' : 'ghost'}" data-set-key="${esc(key)}" data-set-val="${esc(String(o))}" title="Select ${esc(String(o))}" class="btn" data-control="settings-pill-tag" data-size="xs">${esc(String(o))}</button>`;
       }).join('');
       aptValuesHtml = `
-        <div class="settings-apt-bar">
-          <span class="settings-apt-label">Options:</span>
+        <div data-ui="settings-apt-bar" class="flex flex-wrap items-center gap-2 [&>.button-group]:flex-wrap">
+          <span data-ui="settings-apt-label" class="label text-muted-foreground">Options:</span>
           <div class="button-group" role="group">
             ${pills}
           </div>
@@ -702,7 +702,7 @@ function renderSettingsList() {
       const minAttr = min !== undefined ? `min="${min}"` : '';
       const maxAttr = max !== undefined ? `max="${max}"` : '';
       const stepAttr = step !== undefined ? `step="${step}"` : 'step="1"';
-      controlHtml = `<input type="number" data-key="${esc(key)}" value="${esc(String(val))}" ${minAttr} ${maxAttr} ${stepAttr} class="input h-8! w-24!" data-control="settings-input settings-input-num">`;
+      controlHtml = `<input type="number" id="setting-${esc(key)}" data-key="${esc(key)}" value="${esc(String(val))}" ${minAttr} ${maxAttr} ${stepAttr} class="input w-28" data-control="settings-input settings-input-num">`;
 
       let numberPresets = [];
       if (key === 'editor.fontSize') numberPresets = [12, 13, 13.5, 14, 16, 18];
@@ -711,7 +711,7 @@ function renderSettingsList() {
       else if (key === 'agent.timeoutSeconds') numberPresets = [60, 120, 180, 300];
 
       const presetPills = numberPresets.length ? `
-        <span class="settings-apt-label">Presets:</span>
+        <span data-ui="settings-apt-label" class="label text-muted-foreground">Presets:</span>
         <div class="button-group" role="group">
           ${numberPresets.map(n => {
             const isSel = Number(val) === n;
@@ -720,7 +720,7 @@ function renderSettingsList() {
         </div>` : '';
 
       aptValuesHtml = `
-        <div class="settings-apt-bar">
+        <div data-ui="settings-apt-bar" class="flex flex-wrap items-center gap-2 [&>.button-group]:flex-wrap">
           <span class="badge" data-variant="secondary" data-control="settings-tag">Min: <b>${min !== undefined ? min : '—'}</b></span>
           <span class="badge" data-variant="secondary" data-control="settings-tag">Max: <b>${max !== undefined ? max : '—'}</b></span>
           ${step !== undefined ? `<span class="badge" data-variant="secondary" data-control="settings-tag">Step: <b>${step}</b></span>` : ''}
@@ -730,17 +730,17 @@ function renderSettingsList() {
       const placeholder = key === 'git.commitMessageInstruction'
         ? 'Enter custom instructions for AI commit messages (e.g. Follow Conventional Commits, reference issue key from branch)...'
         : 'Enter instructions...';
-      controlHtml = `<textarea data-key="${esc(key)}" rows="6" spellcheck="false" placeholder="${esc(placeholder)}" class="textarea resize-y" data-control="settings-input settings-textarea">${esc(String(val || ''))}</textarea>`;
+      controlHtml = `<textarea id="setting-${esc(key)}" data-key="${esc(key)}" rows="6" spellcheck="false" placeholder="${esc(placeholder)}" class="textarea resize-y" data-control="settings-input settings-textarea">${esc(String(val || ''))}</textarea>`;
     } else {
       const isSecret = item.secret || item.Secret;
-      controlHtml = `<input type="${isSecret ? 'password' : 'text'}" data-key="${esc(key)}" value="${esc(String(val || ''))}"${isSecret ? ' autocomplete="off"' : ''} class="input h-8!" data-control="settings-input">`;
+      controlHtml = `<input type="${isSecret ? 'password' : 'text'}" id="setting-${esc(key)}" data-key="${esc(key)}" value="${esc(String(val || ''))}"${isSecret ? ' autocomplete="off"' : ''} class="input" data-control="settings-input">`;
       let stringPresets = [];
       if (key === 'agent.harness') {
         stringPresets = ['claude', 'gemini', 'cursor-agent', 'agy', 'aider'];
       }
       const presetPills = stringPresets.length ? `
-        <div class="settings-apt-bar settings-apt-suggest">
-          <span class="settings-apt-label">Suggestions:</span>
+        <div data-ui="settings-apt-bar" class="flex flex-wrap items-center gap-2 [&>.button-group]:flex-wrap settings-apt-suggest">
+          <span data-ui="settings-apt-label" class="label text-muted-foreground">Suggestions:</span>
           <div class="button-group" role="group">
             ${stringPresets.map(s => {
               const isSel = String(val) === s;
@@ -757,33 +757,33 @@ function renderSettingsList() {
       : '';
 
     const extraAction = (key === 'editor.vimMode') ? `
-      <div style="margin: 6px 0 2px;">
-        <button type="button" style="cursor:pointer;font-size:11.5px;display:inline-flex;align-items:center;gap:4px;color:var(--primary-text);" class="btn" data-control="settings-btn-link btn-vim-cheatsheet-trigger" data-variant="link" data-size="xs">
-          <span>View Vim Keybindings Cheat Sheet</span><kbd style="font-size:10px;" class="kbd has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="footer-kbd">?</kbd>
+      <div>
+        <button type="button" class="btn" data-control="settings-btn-link btn-vim-cheatsheet-trigger" data-variant="link" data-size="xs">
+          <span>View Vim Keybindings Cheat Sheet</span><kbd class="kbd has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="footer-kbd">?</kbd>
         </button>
       </div>` : '';
 
-    const cardClass = `settings-card${modClass}${type === 'textarea' ? ' settings-card-textarea' : ''}`;
+    const cardClass = modified ? 'field min-w-0 border-l-2 border-primary pl-4' : 'field min-w-0';
 
     return `
-      <div class="${cardClass}" data-setting="${esc(key)}">
-        <div class="settings-card-left">
-          <div class="settings-card-header">
-            <span class="settings-card-title">${esc(title)}</span>
-            <span class="settings-card-key">${esc(key)}</span>
+      <div data-ui="settings-card" class="${cardClass}" data-setting="${esc(key)}">
+        <div data-ui="settings-card-left" class="flex min-w-0 flex-col gap-2">
+          <div data-ui="settings-card-header" class="flex flex-wrap items-center gap-2">
+            <label for="setting-${esc(key)}" class="label">${esc(title)}</label>
+            <span data-ui="settings-card-key" class="font-mono text-muted-foreground">${esc(key)}</span>
             <span class="badge" data-variant="secondary" data-control="settings-tag">${esc(cat)}</span>
             <span class="badge" data-variant="secondary" data-control="settings-tag">${esc(type)}</span>
           </div>
-          <div class="settings-card-desc">${esc(desc)}</div>
+          <div data-ui="settings-card-desc" class="text-muted-foreground">${esc(desc)}</div>
           ${aptValuesHtml}
           ${extraAction}
-          <div class="settings-card-meta">
+          <div data-ui="settings-card-meta" class="flex items-center flex-wrap gap-2">
             ${(type !== 'textarea' && key !== 'git.commitMessageInstruction') ? `<span class="badge" data-variant="secondary" data-control="settings-tag">Current: <b>${esc(String(val))}</b></span>` : ''}
             <span class="badge" data-variant="secondary" data-control="settings-tag">Default: <code>${esc(String(def))}</code></span>
             ${modified ? `<span class="badge" data-variant="secondary" data-control="settings-tag">Modified</span>` : ''}
           </div>
         </div>
-        <div class="settings-card-right">
+        <div data-ui="settings-card-right" class="flex flex-wrap items-center gap-2 min-w-0 [&>.input]:min-w-0 [&>.select]:max-w-full">
           ${resetBtn}
           ${controlHtml}
         </div>
@@ -804,7 +804,7 @@ function setSaveStatus(state, msg) {
   const saveLabel = $('#settings-btn-save-label');
   if (!statusEl || !statusText) return;
 
-  statusEl.className = 'settings-footer-status';
+  statusEl.setAttribute('data-ui', 'settings-footer-status'); statusEl.className = 'flex items-center gap-2 text-muted-foreground [&.is-saved]:text-gi [&.is-error]:text-destructive [&.is-unsaved]:text-warn [&.is-saving]:text-primary-text';
 
   if (state === 'saving') {
     statusEl.classList.add('is-saving');
@@ -1072,19 +1072,19 @@ function initSettingsDOM() {
       } else if (target.type === 'number') {
         value = parseFloat(target.value);
         // An out-of-range number is reported on the card and never saved.
-        const card = target.closest('.settings-card');
-        card?.querySelector('.settings-card-error')?.remove();
+        const card = target.closest('[data-ui~=settings-card]');
+        card?.querySelector('[data-ui~=settings-card-error]')?.remove();
         const v = target.validity;
         if (isNaN(value) || v.rangeUnderflow || v.rangeOverflow) {
           delete pendingSettingsChanges[key];
           target.setAttribute('aria-invalid', 'true');
           const err = document.createElement('div');
-          err.className = 'settings-card-error';
+          err.setAttribute('data-ui', 'settings-card-error'); err.className = 'text-destructive';
           err.setAttribute('role', 'alert');
           err.textContent = target.min && target.max
             ? `Enter a number from ${target.min} to ${target.max}.`
             : target.validationMessage || 'Enter a valid number.';
-          card?.querySelector('.settings-card-left')?.append(err);
+          card?.querySelector('[data-ui~=settings-card-left]')?.append(err);
           return;
         }
       } else {

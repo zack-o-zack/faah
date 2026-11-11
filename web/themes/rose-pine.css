@@ -1,5 +1,7 @@
 /* Rose Pine: based on the Rose Pine palette. Token reference: docs/internals/styling-and-themes.md. */
 :root[data-theme="rose-pine"] {
+  --image-dark: #121214;
+  --image-light: #ffffff;
   --theme-name: "Rose Pine";
   color-scheme: dark;
 

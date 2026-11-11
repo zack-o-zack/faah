@@ -1,6 +1,8 @@
 /* Paper: a clean, high-contrast light palette.
    Token reference and how to write your own theme: docs/internals/styling-and-themes.md. */
 :root[data-theme="light"] {
+  --image-dark: #121214;
+  --image-light: #ffffff;
   --theme-name: "Paper";
   color-scheme: light;
 

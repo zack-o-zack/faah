@@ -348,7 +348,7 @@ function flashDiffRow(el) {
    the diff scrolls) instead of sitting in one fixed spot -- so it never
    drifts from the line it's actually commenting on, and opening one never
    shifts the tabs or code beneath it (the list is an absolute overlay; see
-   .pr-comment-list in style.css). A composer for a file that isn't the one
+   [data-ui~=pr-comment-list] in style.css). A composer for a file that isn't the one
    on screen has no row to pin to, so it docks in the bottom-right corner
    until you jump back to it (click its ref, or the file's own tab). */
 
@@ -417,7 +417,7 @@ export function openCommentComposer(info) {
   if (!meta) return;
   const id = 'prc' + (++seq);
   const box = document.createElement('div');
-  box.className = 'agent-box entering';
+  box.setAttribute('data-ui', 'agent-box'); box.className = 'card flex flex-col gap-2 p-4 [&.shake]:animate-pulse entering';
   box.dataset.id = id;
   const side = info.side || 'RIGHT';
   const line = side === 'LEFT' ? (info.delL1 || info.l1) : info.l1;
@@ -425,13 +425,13 @@ export function openCommentComposer(info) {
   const ref = info.path + ':' + (line === lineEnd ? line : line + '-' + lineEnd) + (side === 'LEFT' ? ' (base)' : '');
   const modEnter = keyLabel('Mod+Enter');
   box.innerHTML =
-    '<div class="agent-head"><span class="sel-chip">Review Comment</span>' +
+    '<div data-ui="agent-head" class="flex items-center gap-2 font-mono"><span class="sel-chip">Review Comment</span>' +
     '<span role="button" tabindex="0" title="Jump to this line" class="btn" data-control="agent-ref" data-variant="ghost" data-size="xs">' + esc(ref) + '</span>' +
     '<span class="flex-1 min-w-0"></span><button title="Close (Esc)" class="btn" data-control="agent-close" data-variant="ghost" data-size="icon-xs" aria-label="Close (Esc)">✕</button></div>' +
-    '<div class="agent-compose">' +
+    '<div data-ui="agent-compose" class="flex flex-col gap-2 in-[.queued]:hidden">' +
     '<textarea rows="3" spellcheck="false" autocomplete="off" placeholder="Leave a comment on this line... (' + esc(modEnter) + ' to add)" class="textarea resize-y" data-control="agent-input"></textarea>' +
-    '<div class="agent-err" hidden></div>' +
-    '<div class="agent-foot"><span class="agent-hint">' + esc(modEnter) + ' to add, Esc to cancel</span>' +
+    '<div data-ui="agent-err" class="alert flex flex-col overflow-y-auto gap-2 p-3 font-mono" hidden></div>' +
+    '<div data-ui="agent-foot" class="flex items-center gap-2 font-mono text-muted-foreground"><span data-ui="agent-hint" class="flex-1">' + esc(modEnter) + ' to add, Esc to cancel</span>' +
     '<button title="Add comment (' + esc(modEnter) + ')" class="btn" data-control="agent-send" data-variant="primary" data-size="xs">Add Comment</button></div></div>';
 
   const entry = { box, path: info.path, side, line };
@@ -459,7 +459,7 @@ export function openCommentComposer(info) {
     if (!ta) return;
     const body = ta.value.trim();
     if (!body) return;
-    const errEl = /** @type {HTMLElement|null} */ (box.querySelector('.agent-err'));
+    const errEl = /** @type {HTMLElement|null} */ (box.querySelector('[data-ui~=agent-err]'));
     if (errEl) errEl.hidden = true;
     try {
       const c = await apiPostJson('/api/pr/comments', { path: info.path, line, side, body });
@@ -520,7 +520,7 @@ function renderMarkersForActiveDoc() {
     if (!existingByKey.has(key)) existingByKey.set(key, []);
     existingByKey.get(key).push(c);
   }
-  for (const el of diffview.querySelectorAll('.pr-comment-mark')) el.remove();
+  for (const el of diffview.querySelectorAll('[data-ui~=pr-comment-mark]')) el.remove();
   for (const el of diffview.querySelectorAll('[data-l]:not([data-reviewable="0"]), [data-old-l]:not([data-reviewable="0"])')) {
     const isOldOnly = el.dataset.oldL !== undefined && el.dataset.l === undefined;
     const side = isOldOnly ? 'LEFT' : 'RIGHT';
@@ -531,7 +531,7 @@ function renderMarkersForActiveDoc() {
     el.classList.toggle('pr-has-comment', !!drafts || !!existing);
     if (!drafts && !existing) continue;
     const badge = document.createElement('span');
-    badge.className = 'pr-comment-mark';
+    badge.setAttribute('data-ui', 'pr-comment-mark'); badge.className = 'inline-flex items-center flex-none cursor-pointer text-primary-text';
     const count = (existing?.length || 0) + (drafts?.length || 0);
     badge.title = 'View ' + count + ' comment' + (count === 1 ? '' : 's');
     badge.innerHTML = COMMENT_ICON;
@@ -555,8 +555,8 @@ const expandedKeys = new Set();
 function toggleAccordion(item) {
   if (!item) return;
   const key = item.dataset.acc;
-  const open = !item.classList.contains('open');
-  item.classList.toggle('open', open);
+  const open = !item.open;
+  item.open = open;
   if (!key) return;
   if (open) expandedKeys.add(key); else expandedKeys.delete(key);
 }
@@ -578,7 +578,7 @@ function wireCommentsPanel() {
     toggle();
   });
 
-  $('.pr-comments-panel-head')?.addEventListener('click', e => {
+  $('[data-ui~=pr-comments-panel-head]')?.addEventListener('click', e => {
     if (e.target.closest('#pr-comments-collapse')) return;
     toggle();
   });
@@ -619,7 +619,7 @@ function wireCommentsPanel() {
       }
       return;
     }
-    const loc = e.target.closest('.pr-comment-loc');
+    const loc = e.target.closest('[data-ui~=pr-comment-loc]');
     if (loc) {
       openFile(loc.dataset.path, { line: +loc.dataset.line });
       return;
@@ -631,19 +631,23 @@ function wireCommentsPanel() {
     }
     const sendBtn = e.target.closest('[data-control~=reply-send]');
     if (sendBtn) {
-      const row = sendBtn.closest('.pr-comment-reply-row');
+      const row = sendBtn.closest('[data-ui~=pr-comment-reply-row]');
       sendThreadReply(row);
       return;
     }
-    const head = e.target.closest('.acc-head');
-    if (head) toggleAccordion(head.closest('.acc-item'));
+
   });
+
+  $('#pr-comments-list')?.addEventListener('toggle', e => {
+    const key = e.target.dataset.acc;
+    if (key) { if (e.target.open) expandedKeys.add(key); else expandedKeys.delete(key); }
+  }, true);
 
   $('#pr-comments-list')?.addEventListener('keydown', e => {
     if (!e.target.closest('[data-control~=reply-input]')) return;
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
-      sendThreadReply(e.target.closest('.pr-comment-reply-row'));
+      sendThreadReply(e.target.closest('[data-ui~=pr-comment-reply-row]'));
     }
   });
 }
@@ -694,48 +698,48 @@ function revealThreadInPanel(key) {
   layout(); render();
   const el = $('#pr-comments-list')?.querySelector('[data-thread-key="' + CSS.escape(key) + '"]');
   if (!el) return;
-  if (!el.classList.contains('open')) toggleAccordion(el);
+  if (!el.open) toggleAccordion(el);
   el.scrollIntoView({ block: 'center', behavior: 'smooth' });
   el.classList.add('flash');
   setTimeout(() => el.classList.remove('flash'), 1200);
 }
 
-// Every comment/thread is an accordion item: a clickable .acc-head (author,
-// time, a one-line ellipsized preview of the body) and an .acc-body that's
+// Every comment/thread is an accordion item: a clickable [data-ui~=acc-head] (author,
+// time, a one-line ellipsized preview of the body) and an [data-ui~=acc-body] that's
 // only in the flow when the item carries the 'open' class -- so a scan of
 // the panel is just headers until you click one open to read and reply.
 function issueCommentCardHtml(c) {
   const key = 'issue:' + c.id;
   const open = expandedKeys.has(key);
-  return '<div class="pr-comment-card acc-item' + (open ? ' open' : '') + '" data-acc="' + esc(key) + '">' +
-    '<div class="acc-head">' +
-      '<span class="acc-chevron">&#8250;</span>' +
-      '<span class="pr-issue-comment-author">' + esc(c.author || 'unknown') + '</span>' +
-      '<span class="pr-issue-comment-time">' + esc(fmtTime(c.createdAt)) + '</span>' +
-      '<span class="acc-preview">' + esc(c.body) + '</span>' +
-    '</div>' +
-    '<div class="acc-body">' +
-      '<div class="pr-issue-comment-body">' + esc(c.body) + '</div>' +
+  return '<details data-ui="acc-item pr-comment-card" class="card flex flex-col gap-2 p-3 [&.reply]:ml-4 [&.draft]:border-dashed group/accordion' + '"' + (open ? ' open' : '') + ' data-acc="' + esc(key) + '">' +
+    '<summary data-ui="acc-head" class="flex items-center gap-2 min-w-0 cursor-pointer">' +
+      '<span data-ui="acc-chevron" class="group-open/accordion:rotate-90">&#8250;</span>' +
+      '<span data-ui="pr-issue-comment-author" class="">' + esc(c.author || 'unknown') + '</span>' +
+      '<span data-ui="pr-issue-comment-time" class="text-muted-foreground">' + esc(fmtTime(c.createdAt)) + '</span>' +
+      '<span data-ui="acc-preview" class="flex-1 truncate text-muted-foreground group-open/accordion:hidden">' + esc(c.body) + '</span>' +
+    '</summary>' +
+    '<div data-ui="acc-body" class="flex flex-col gap-2">' +
+      '<div data-ui="pr-issue-comment-body" class="whitespace-pre-wrap wrap-anywhere">' + esc(c.body) + '</div>' +
       '<button data-author="' + esc(c.author || '') + '" class="btn" data-control="pr-issue-comment-reply-btn" data-variant="outline" data-size="xs">Reply</button>' +
     '</div>' +
-  '</div>';
+  '</details>';
 }
 
 function reviewCommentCardHtml(c) {
-  return '<div class="pr-comment-card' + (c.inReplyTo ? ' reply' : '') + '">' +
-    '<div class="pr-issue-comment-head">' +
-      '<span class="pr-issue-comment-author">' + esc(c.author || 'unknown') + '</span>' +
-      '<span class="pr-issue-comment-time">' + esc(fmtTime(c.createdAt)) + '</span>' +
+  return '<div data-ui="pr-comment-card" class="card flex flex-col gap-2 p-3 [&.reply]:ml-4 [&.draft]:border-dashed' + (c.inReplyTo ? ' reply' : '') + '">' +
+    '<div data-ui="pr-issue-comment-head" class="flex items-baseline min-w-0 gap-2">' +
+      '<span data-ui="pr-issue-comment-author" class="">' + esc(c.author || 'unknown') + '</span>' +
+      '<span data-ui="pr-issue-comment-time" class="text-muted-foreground">' + esc(fmtTime(c.createdAt)) + '</span>' +
     '</div>' +
-    '<div class="pr-issue-comment-body">' + esc(c.body) + '</div>' +
+    '<div data-ui="pr-issue-comment-body" class="whitespace-pre-wrap wrap-anywhere">' + esc(c.body) + '</div>' +
   '</div>';
 }
 
 function draftCardHtml(c) {
-  return '<div class="pr-comment-card draft">' +
-    '<div class="pr-issue-comment-head"><span class="pr-issue-comment-author">You (draft, not yet submitted)</span></div>' +
-    '<div class="pr-issue-comment-body">' + esc(c.body) + '</div>' +
-    '<div class="pr-comment-card-actions">' +
+  return '<div data-ui="pr-comment-card" class="card flex flex-col gap-2 p-3 [&.reply]:ml-4 [&.draft]:border-dashed draft">' +
+    '<div data-ui="pr-issue-comment-head" class="flex items-baseline min-w-0 gap-2"><span data-ui="pr-issue-comment-author" class="">You (draft, not yet submitted)</span></div>' +
+    '<div data-ui="pr-issue-comment-body" class="whitespace-pre-wrap wrap-anywhere">' + esc(c.body) + '</div>' +
+    '<div data-ui="pr-comment-card-actions" class="flex gap-2">' +
       '<button data-draft-id="' + c.id + '" class="btn" data-control="pr-comment-delete-btn" data-variant="destructive" data-size="xs">Delete draft</button>' +
     '</div>' +
   '</div>';
@@ -749,7 +753,7 @@ function threadHtml(path, t, key) {
   const draftsHtml = t.drafts.map(draftCardHtml).join('');
   const canReply = !!root;
   const replyRow = canReply
-    ? '<div class="pr-comment-reply-row" data-reply-to="' + root.id + '">' +
+    ? '<div data-ui="pr-comment-reply-row" class="flex items-start gap-2" data-reply-to="' + root.id + '">' +
       '<textarea rows="1" spellcheck="false" autocomplete="off" placeholder="Reply..." class="textarea resize-y" data-control="pr-review-body reply-input"></textarea>' +
       '<button class="btn" data-control="bar-action reply-send" data-variant="ghost" data-size="xs">Reply</button>' +
       '</div>'
@@ -759,16 +763,16 @@ function threadHtml(path, t, key) {
   const total = sortedExisting.length + t.drafts.length;
   const countBadge = total > 1 ? '<span class="badge" data-variant="secondary">' + total + '</span>' : '';
   const preview = root ? root.body : (t.drafts[0]?.body || '');
-  return '<div class="pr-comment-thread acc-item' + (open ? ' open' : '') + '" data-thread-key="' + esc(key) + '" data-acc="' + esc(accKey) + '">' +
-    '<div class="acc-head">' +
-      '<span class="acc-chevron">&#8250;</span>' +
-      '<span class="pr-comment-loc" data-path="' + esc(path) + '" data-line="' + t.line + '">' + esc(loc) + '</span>' +
-      '<span class="pr-issue-comment-author">' + esc(root ? (root.author || 'unknown') : 'you') + '</span>' +
+  return '<details data-ui="acc-item pr-comment-thread" class="card flex flex-col gap-2 p-3 group/accordion' + '"' + (open ? ' open' : '') + ' data-thread-key="' + esc(key) + '" data-acc="' + esc(accKey) + '">' +
+    '<summary data-ui="acc-head" class="flex items-center gap-2 min-w-0 cursor-pointer">' +
+      '<span data-ui="acc-chevron" class="group-open/accordion:rotate-90">&#8250;</span>' +
+      '<span data-ui="pr-comment-loc" class="inline-flex items-center cursor-pointer w-fit gap-2 p-3 font-mono text-primary-text" data-path="' + esc(path) + '" data-line="' + t.line + '">' + esc(loc) + '</span>' +
+      '<span data-ui="pr-issue-comment-author" class="">' + esc(root ? (root.author || 'unknown') : 'you') + '</span>' +
       countBadge +
-      '<span class="acc-preview">' + esc(preview) + '</span>' +
-    '</div>' +
-    '<div class="acc-body">' + itemsHtml + draftsHtml + replyRow + '</div>' +
-  '</div>';
+      '<span data-ui="acc-preview" class="flex-1 truncate text-muted-foreground group-open/accordion:hidden">' + esc(preview) + '</span>' +
+    '</summary>' +
+    '<div data-ui="acc-body" class="flex flex-col gap-2">' + itemsHtml + draftsHtml + replyRow + '</div>' +
+  '</details>';
 }
 
 function renderCommentsPanel() {
@@ -797,16 +801,16 @@ function renderCommentsPanel() {
   }
 
   const totalReview = reviewComments.length + comments.length;
-  let html = '<div class="pr-comments-section-title">Conversation' +
+  let html = '<div data-ui="pr-comments-section-title" class="label text-muted-foreground">Conversation' +
     (issueComments.length ? ' (' + issueComments.length + ')' : '') + '</div>';
   html += issueComments.length
     ? [...issueComments].sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || '')).map(issueCommentCardHtml).join('')
-    : '<div class="pr-comments-empty">No top-level comments yet.</div>';
+    : '<div data-ui="pr-comments-empty" class="empty p-3 text-muted-foreground">No top-level comments yet.</div>';
 
-  html += '<div class="pr-comments-section-title">Review comments' +
+  html += '<div data-ui="pr-comments-section-title" class="label text-muted-foreground">Review comments' +
     (totalReview ? ' (' + totalReview + ')' : '') + '</div>';
   if (byPath.size === 0) {
-    html += '<div class="pr-comments-empty">No inline comments yet.</div>';
+    html += '<div data-ui="pr-comments-empty" class="empty p-3 text-muted-foreground">No inline comments yet.</div>';
   } else {
     const entries = [];
     for (const [path, threads] of byPath) {

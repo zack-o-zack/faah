@@ -17,9 +17,9 @@ let lastMetrics = null;
 let onMenuOpen = null;
 
 const row = (label, val) => `
-      <div class="metrics-row">
-        <span class="metrics-label">${esc(label)}</span>
-        <span class="metrics-val">${val}</span>
+      <div data-ui="metrics-row" class="flex items-center justify-between gap-2">
+        <span data-ui="metrics-label" class="label text-muted-foreground">${esc(label)}</span>
+        <span data-ui="metrics-val" class="font-mono">${val}</span>
       </div>`;
 
 // m.parts, when present (the workbench), breaks the totals down per process.
@@ -28,15 +28,15 @@ function renderMetricsMenu(m) {
   if (!menuEl || !m) return;
   const lspRow = m.lspEnabled ? row('Language Servers (RSS)', fmtBytes(m.lspMemBytes || 0)) : '';
   const parts = Array.isArray(m.parts) && m.parts.length > 1 ? `
-    <div class="metrics-title"><span>By Process</span></div>
-    <div class="metrics-grid">${m.parts.map(p => row(p.name, `${fmtBytes(p.rssBytes || 0)} · ${fmtCpu(p)}`)).join('')}
+    <div data-ui="metrics-title" class="label flex items-center justify-between"><span>By Process</span></div>
+    <div data-ui="metrics-grid" class="flex flex-col gap-2">${m.parts.map(p => row(p.name, `${fmtBytes(p.rssBytes || 0)} · ${fmtCpu(p)}`)).join('')}
     </div>` : '';
   menuEl.innerHTML = `
-    <div class="metrics-title">
+    <div data-ui="metrics-title" class="label flex items-center justify-between">
       <span>Process Metrics</span>
       <span class="badge" data-variant="secondary">faah</span>
     </div>
-    <div class="metrics-grid">${row('Resident RAM (RSS)', fmtBytes(m.rssBytes || 0))}${row('CPU Usage', fmtCpu(m))}${row('Active Goroutines', m.goroutines || 0)}${lspRow}
+    <div data-ui="metrics-grid" class="flex flex-col gap-2">${row('Resident RAM (RSS)', fmtBytes(m.rssBytes || 0))}${row('CPU Usage', fmtCpu(m))}${row('Active Goroutines', m.goroutines || 0)}${lspRow}
     </div>${parts}
   `;
 }

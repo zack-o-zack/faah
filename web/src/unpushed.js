@@ -180,30 +180,30 @@ async function showCommitCard(sha, x, y) {
 
 function commitCardMarkup(d) {
   const stat = [];
-  if (d.files) stat.push('<span class="cc-files">' + d.files + (d.files === 1 ? ' file' : ' files') + '</span>');
-  if (d.insertions) stat.push('<span class="cc-add">+' + d.insertions + '</span>');
-  if (d.deletions) stat.push('<span class="cc-del">&minus;' + d.deletions + '</span>');
+  if (d.files) stat.push('<span data-ui="cc-files" class="text-muted-foreground">' + d.files + (d.files === 1 ? ' file' : ' files') + '</span>');
+  if (d.insertions) stat.push('<span data-ui="cc-add" class="text-gi">+' + d.insertions + '</span>');
+  if (d.deletions) stat.push('<span data-ui="cc-del" class="text-gd">&minus;' + d.deletions + '</span>');
 
   const name = esc(d.author || 'unknown');
   /* Best effort: a users.noreply.github.com address carries the login outright,
      any other address only supports "this repo's commits by this author". A
      non-GitHub remote gets no link and the name stays plain text. */
   const who = d.authorUrl
-    ? '<a class="cc-who" href="' + esc(d.authorUrl) + '" target="_blank" rel="noopener" title="' +
+    ? '<a data-ui="cc-who" class="font-semibold" href="' + esc(d.authorUrl) + '" target="_blank" rel="noopener" title="' +
       esc(d.email || '') + ' — open on GitHub">' + name + '</a>'
-    : '<span class="cc-who" title="' + esc(d.email || '') + '">' + name + '</span>';
+    : '<span data-ui="cc-who" class="font-semibold" title="' + esc(d.email || '') + '">' + name + '</span>';
 
-  return '<div class="cc-head">' +
-      '<span class="cc-sha" title="' + esc(d.hash) + '">' + esc(d.short) + '</span>' +
+  return '<div data-ui="cc-head" class="flex items-center gap-2 p-3">' +
+      '<span data-ui="cc-sha" class="font-mono text-primary-text" title="' + esc(d.hash) + '">' + esc(d.short) + '</span>' +
       '<span class="flex-1 min-w-0"></span>' +
       '<button type="button" title="Copy the full SHA" class="btn" data-control="cc-copy" data-variant="outline" data-size="xs">Copy SHA</button>' +
     '</div>' +
-    '<div class="cc-meta">' + who +
-      '<span class="cc-dot">·</span>' +
+    '<div data-ui="cc-meta" class="flex items-center flex-wrap gap-2 p-3 text-muted-foreground">' + who +
+      '<span data-ui="cc-dot" class="text-muted-foreground">·</span>' +
       '<span class="cc-date" title="' + esc(d.dateIso || '') + '">' + esc(d.date || '') + '</span>' +
     '</div>' +
-    '<div class="cc-msg">' + esc(d.message || d.subject || '') + '</div>' +
-    (stat.length ? '<div class="cc-stat">' + stat.join('') + '</div>' : '');
+    '<div data-ui="cc-msg" class="overflow-x-hidden overflow-y-auto whitespace-pre-wrap p-3 font-mono">' + esc(d.message || d.subject || '') + '</div>' +
+    (stat.length ? '<div data-ui="cc-stat" class="flex items-center gap-2 p-3 font-mono">' + stat.join('') + '</div>' : '');
 }
 
 /* Just clear of the sidebar rather than under the pointer: the card is wider
@@ -256,12 +256,12 @@ export function initUnpushed() {
 
   el.addEventListener('click', e => {
     if (e.target.closest('[data-control~=up-more]')) { upShown += COMMIT_FILES_PAGE; drawUnpushed(); return; }
-    const file = e.target.closest('.up-file');
+    const file = e.target.closest('[data-commit-file]');
     if (file) {
       const sha = file.closest('.up-commit')?.dataset.sha;
       if (!sha) return;
       upActiveFile = sha + '\0' + file.dataset.path;
-      for (const r of el.querySelectorAll('.up-file.sel')) r.classList.remove('sel');
+      for (const r of el.querySelectorAll('[data-commit-file].sel')) r.classList.remove('sel');
       file.classList.add('sel');
       openFile(file.dataset.path, { ref: sha, view: 'diff' });
       return;
@@ -280,10 +280,10 @@ export function initUnpushed() {
       const first = upShown;
       upShown += COMMIT_FILES_PAGE;
       drawUnpushed();
-      el.querySelectorAll('.up-commit.open .up-file')[first]?.focus();
+      el.querySelectorAll('.up-commit.open [data-commit-file]')[first]?.focus();
       return;
     }
-    const file = e.target.closest('.up-file');
+    const file = e.target.closest('[data-commit-file]');
     if (file) { e.preventDefault(); file.click(); return; }
     const row = e.target.closest('.up-row');
     if (!row) return;

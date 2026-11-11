@@ -205,8 +205,8 @@ function renderMenu() {
   const n = info?.commits?.length || 0;
   menu.innerHTML = allowed().map(m =>
     `<button type="button" role="menuitemradio" aria-checked="${m === cur}" data-method="${m}" class="btn" data-variant="outline" data-size="xs">` +
-    `<span class="pr-merge-menu-check">${m === cur ? '&#10003;' : ''}</span>` +
-    `<span class="pr-merge-menu-text"><b>${esc(METHODS[m].label)}</b><span>${esc(METHODS[m].explain(n, baseBranch()))}</span></span></button>`
+    `<span data-ui="pr-merge-menu-check" class="flex-none text-primary-text">${m === cur ? '&#10003;' : ''}</span>` +
+    `<span data-ui="pr-merge-menu-text" class="flex flex-col gap-2 text-muted-foreground"><b>${esc(METHODS[m].label)}</b><span>${esc(METHODS[m].explain(n, baseBranch()))}</span></span></button>`
   ).join('');
   for (const b of menu.querySelectorAll('button')) {
     b.addEventListener('click', () => {
@@ -342,7 +342,7 @@ function renderDialog() {
   const list = $('#pr-merge-commit-list');
   list.hidden = method !== 'rebase';
   list.innerHTML = [...(info.commits || [])].reverse().map(c =>
-    `<li><code>${esc(c.short)}</code> ${esc(c.subject)}</li>`).join('') || '<li class="pr-merge-empty">No commits</li>';
+    `<li><code>${esc(c.short)}</code> ${esc(c.subject)}</li>`).join('') || '<li data-ui="pr-merge-empty" class="empty">No commits</li>';
 
   renderWarnings();
   $('#pr-merge-confirm').textContent = METHODS[method].confirm;
@@ -356,10 +356,10 @@ function renderWarnings() {
   else if (info.rewritten || sync.rewritten) block = 'This checkout was rebased but not pushed. Force-push it first, or the old commits are what merges.';
   else if (info.stale) block = 'The PR has commits this checkout has not seen. Pull and review them before merging.';
   else if (state() === 'conflicts') block = `This PR has conflicts with ${baseBranch()}. Resolve them first.`;
-  if (block) w.push(`<div class="pr-merge-warn block">${esc(block)}</div>`);
-  if (state() === 'unstable') w.push(`<div class="pr-merge-warn">${esc(info.status.reason || 'Some checks are failing or still running.')}</div>`);
+  if (block) w.push(`<div data-ui="pr-merge-warn" class="alert p-3 block">${esc(block)}</div>`);
+  if (state() === 'unstable') w.push(`<div data-ui="pr-merge-warn" class="alert p-3">${esc(info.status.reason || 'Some checks are failing or still running.')}</div>`);
   if (info.unpushed > 0 && !info.rewritten) {
-    w.push(`<div class="pr-merge-warn">${pluralize(info.unpushed, 'local commit')} in this checkout ${info.unpushed === 1 ? "isn't" : "aren't"} pushed to the PR and won't be part of the merge.</div>`);
+    w.push(`<div data-ui="pr-merge-warn" class="alert p-3">${pluralize(info.unpushed, 'local commit')} in this checkout ${info.unpushed === 1 ? "isn't" : "aren't"} pushed to the PR and won't be part of the merge.</div>`);
   }
   $('#pr-merge-warnings').innerHTML = w.join('');
   const confirm = $('#pr-merge-confirm');
@@ -420,7 +420,7 @@ async function rewriteWithAI() {
   saveDraft();
   const btn = $('#pr-merge-ai');
   const cb = $('#pr-merge-ai-checkbox');
-  const cbText = $('.pr-merge-checkbox-text');
+  const cbText = $('[data-ui~=pr-merge-checkbox-text]');
   if (cb && method === 'squash') cb.checked = true;
   const d = drafts[method] || {};
   setPRMergeErr('');

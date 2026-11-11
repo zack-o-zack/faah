@@ -137,7 +137,7 @@ export function showTipWidget(index = currentTipIndex) {
   if (contentEl) {
     contentEl.innerHTML = renderTipMarkdown(tip.content);
     if (tip.shortcut) {
-      const shortcutHtml = `<div class="tip-widget-shortcut"><span class="tip-shortcut-label">Shortcut:</span> <span class="tip-shortcut-keys">${keyCaps(tip.shortcut)}</span></div>`;
+      const shortcutHtml = `<div data-ui="tip-widget-shortcut" class="flex items-center gap-2"><span data-ui="tip-shortcut-label" class="label text-muted-foreground">Shortcut:</span> <span data-ui="tip-shortcut-keys" class="inline-flex items-center gap-2">${keyCaps(tip.shortcut)}</span></div>`;
       contentEl.insertAdjacentHTML('beforeend', shortcutHtml);
     }
   }
@@ -227,7 +227,7 @@ export function renderTipsList() {
   }
 
   if (filtered.length === 0) {
-    listEl.innerHTML = `<div class="hint">No tips found matching "<b>${esc(q)}</b>".</div>`;
+    listEl.innerHTML = `<div data-ui="hint" class="empty text-muted-foreground">No tips found matching "<b>${esc(q)}</b>".</div>`;
     return;
   }
 
@@ -235,17 +235,17 @@ export function renderTipsList() {
   filtered.forEach((tip, idx) => {
     const tag = tip.tag || tip.category || 'Tip';
     html += `
-      <article class="tip-item" data-id="${esc(tip.id || String(idx))}">
-        <header class="tip-item-header">
-          <div class="tip-item-title-group">
-            <span class="tip-item-num">#${idx + 1}</span>
-            <h4 class="tip-item-title">${esc(tip.title)}</h4>
+      <article data-ui="tip-item" class="card p-3" data-id="${esc(tip.id || String(idx))}">
+        <header data-ui="tip-item-header" class="flex items-center justify-between gap-2">
+          <div data-ui="tip-item-title-group" class="flex items-baseline min-w-0 gap-2">
+            <span data-ui="tip-item-num" class="font-mono text-muted-foreground">#${idx + 1}</span>
+            <h4 data-ui="tip-item-title" class="label overflow-hidden whitespace-nowrap text-ellipsis font-semibold">${esc(tip.title)}</h4>
           </div>
-          <div class="tip-item-meta">
+          <div data-ui="tip-item-meta" class="flex items-center gap-2">
             <button data-tag="${esc(tag)}" title="Filter by ${esc(tag)}" class="btn badge" data-control="tip-tag-pill" data-variant="ghost" data-size="xs">${esc(tag)}</button>
           </div>
         </header>
-        <div class="tip-item-content">${renderTipMarkdown(tip.content)}</div>
+        <div data-ui="tip-item-content" class="text-muted-foreground [&_p]:my-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6">${renderTipMarkdown(tip.content)}</div>
       </article>
     `;
   });
