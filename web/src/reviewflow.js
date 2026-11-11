@@ -497,7 +497,7 @@ function renderActiveStage() {
 
   const runStages = currentRun ? getStages(currentRun) : null;
   const currentStageState = runStages ? runStages[activeStageIdx] : null;
-  const def = getDef(currentStageState) || stages[activeStageIdx] || {};
+  const def = currentStageState ? getDef(currentStageState) : stages[activeStageIdx] || {};
 
   const badge = $('#review-stage-badge');
   const title = $('#review-stage-title');

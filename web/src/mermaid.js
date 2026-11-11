@@ -240,7 +240,7 @@ function setupDiagramControlsAndPan(output, canvas, svg) {
 
   const fsClose = document.createElement('button');
   fsClose.type = 'button';
-  fsClose.className = 'btn';
+  fsClose.className = 'btn hidden [.is-fullscreen_&]:inline-flex fixed top-3 right-3 z-[1001]';
   fsClose.dataset.control = 'md-mermaid-fs-close';
   fsClose.dataset.variant = 'ghost';
   fsClose.dataset.size = 'icon-xs';

@@ -102,6 +102,7 @@ test('pending stages use SVG edit controls, a run button and no empty question b
     setMode('review');
     await new Promise(resolve => setTimeout(resolve, 0));
     assert.equal(elements.get('review-question-banner').hidden, true);
+    assert.equal(elements.get('review-stage-title').textContent, 'Check changes');
     const messages = elements.get('review-thread-msgs').innerHTML;
     assert.match(messages, /id="btn-start-single-stage" class="btn"/);
     assert.match(messages, /data-variant="primary"/);
@@ -116,6 +117,24 @@ test('pending stages use SVG edit controls, a run button and no empty question b
     assert.equal(elements.get('review-question-banner').hidden, true);
     elements.get('review-question-text').textContent = 'What changed?';
     elements.get('btn-cancel-stage-inline').onclick();
+    assert.equal(elements.get('review-question-banner').hidden, false);
+  } finally {
+    setMode('code');
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('a configured stage shows its title and question before its first run', async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({
+    ok: true,
+    json: async () => ({ config: { stages: [{ title: 'Configured stage', question: 'What changed?' }] } }),
+  });
+  try {
+    setMode('review');
+    await new Promise(resolve => setTimeout(resolve, 0));
+    assert.equal(elements.get('review-stage-title').textContent, 'Configured stage');
+    assert.equal(elements.get('review-question-text').textContent, 'What changed?');
     assert.equal(elements.get('review-question-banner').hidden, false);
   } finally {
     setMode('code');
