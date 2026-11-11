@@ -531,8 +531,8 @@ export function initMarkdown() {
   const lb = $('#img-lightbox');
   if (lb) {
     lb.addEventListener('click', e => {
-      if (e.target.closest('[data-control~=lightbox-close]') || e.target.classList.contains('lightbox-backdrop')) {
-        lb.hidden = true;
+      if (e.target.closest('[data-control~=lightbox-close]') || e.target === lb) {
+        lb.close();
       }
     });
   }
@@ -764,7 +764,7 @@ export function openLightbox(img) {
   if (rawPath) {
     lbOpenTab.hidden = false;
     lbOpenTab.onclick = () => {
-      lb.hidden = true;
+      lb.close();
       openFile(rawPath);
     };
     lbCopyPath.hidden = false;
@@ -778,5 +778,5 @@ export function openLightbox(img) {
     };
   }
 
-  lb.hidden = false;
+  lb.showModal();
 }

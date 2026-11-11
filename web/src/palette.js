@@ -122,7 +122,7 @@ export const PAL_MODES = {
 
 export function openPalette(mode, seed) {
   pal = { mode, items: [], sel: 0, restoreTheme: mode === 'theme' ? currentTheme() : null };
-  overlay.hidden = false;
+  overlay.showModal();
   palInput.value = seed !== undefined ? seed : ({ symbol: '@', line: ':', command: '>' }[mode] || '');
   $('#pal-mode').textContent = PAL_MODES[mode].tag;
   $('#pal-hint').textContent = PAL_MODES[mode].hint;
@@ -135,7 +135,7 @@ let palSeq = 0;
 
 export function closePalette() {
   palSeq++;
-  overlay.hidden = true;
+  overlay.close();
   if (pal && pal.restoreTheme) setTheme(pal.restoreTheme, false); // dismissed mid-preview
   pal = null;
 }
@@ -220,16 +220,16 @@ export function drawPalette() {
   if (!pal) return;
   if (!pal.items.length) {
     if (pal.indexing) {
-      palList.innerHTML = '<div class="pi"><span class="pp">Indexing…</span></div>';
+      palList.innerHTML = '<div class="px-3 py-2"><span class="truncate">Indexing…</span></div>';
       return;
     }
-    palList.innerHTML = '<div class="pi"><span class="pp">No matches</span></div>';
+    palList.innerHTML = '<div class="px-3 py-2"><span class="truncate">No matches</span></div>';
     return;
   }
   palList.innerHTML = pal.items.map((it, i) =>
-    '<div class="pi' + (i === pal.sel ? ' sel' : '') + '" data-i="' + i + '">' +
-    '<span class="pn">' + (it.raw ? it.label : esc(it.label)) + '</span>' +
-    '<span class="pp">' + (it.raw ? it.sub : esc(it.sub || '')) + '</span>' +
+    '<div role="menuitem" class="[&_b]:text-primary-text" data-selected="' + (i === pal.sel) + '" data-i="' + i + '">' +
+    '<span class="truncate max-w-[48%]">' + (it.raw ? it.label : esc(it.label)) + '</span>' +
+    '<span class="truncate">' + (it.raw ? it.sub : esc(it.sub || '')) + '</span>' +
     (it.right ? '<span class="badge ml-auto" data-variant="outline">' + esc(it.right) + '</span>' : '') + '</div>').join('');
   const s = palList.children[pal.sel];
   if (s) s.scrollIntoView({ block: 'nearest' });
@@ -262,6 +262,7 @@ export async function acceptPalette() {
 }
 
 export function initPalette() {
+  overlay.addEventListener('cancel', e => { e.preventDefault(); closePalette(); });
   palInput.addEventListener('input', refreshPalette);
   palInput.addEventListener('keydown', e => {
     if (e.key === 'ArrowDown' || (e.ctrlKey && e.key === 'n')) { e.preventDefault(); movePalette(1); }
@@ -271,8 +272,8 @@ export function initPalette() {
     else if (e.key === 'Tab') { e.preventDefault(); movePalette(e.shiftKey ? -1 : 1); }
   });
   palList.addEventListener('click', e => {
-    const p = e.target.closest('.pi');
+    const p = e.target.closest('[data-i]');
     if (p && p.dataset.i !== undefined) { pal.sel = +p.dataset.i; acceptPalette(); }
   });
-  overlay.addEventListener('mousedown', e => { if (e.target === overlay) closePalette(); });
+  overlay.addEventListener('pointerdown', e => { if (e.target === overlay) closePalette(); });
 }

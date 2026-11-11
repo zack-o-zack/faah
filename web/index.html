@@ -160,16 +160,16 @@
           <button data-md="source" title="File source ({Alt+M})" class="btn" data-variant="outline" data-size="xs">Source</button>
         </div>
         <!-- Modified files in a git repo only: view the file's diff against HEAD -->
-        <div id="diff-switch" class="button-group diff-dropdown" role="group" aria-label="Diff view" hidden>
+        <div id="diff-switch" class="button-group diff-dropdown dropdown-menu" role="group" aria-label="Diff view" hidden>
           <button id="diff-source" data-diff-opt="source" title="Show the file ({Mod+D})" class="btn" data-variant="outline" data-size="xs">Source</button>
-          <div class="button-group" role="group">
+          <div class="button-group dropdown-menu" role="group">
           <button id="diff-btn" title="Show changes against HEAD ({Mod+D})" class="btn" data-variant="outline" data-size="xs">
             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="diff-btn-icon"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="9" r="2.5"/><path d="M6 8.5v7M18 11.5c0 3-3 3.5-6 3.5"/></svg>
             <span class="diff-btn-label">Diff</span>
             <svg viewBox="0 0 10 10" width="7" height="7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="diff-caret"><path d="M2 3.5L5 6.5L8 3.5"/></svg>
           </button>
-          <div id="diff-menu" class="diff-menu" role="menu">
-            <div class="diff-menu-header">Diff View Mode</div>
+          <div id="diff-menu" class="absolute right-0 left-auto min-w-max" data-popover aria-hidden="true" role="menu">
+            <div role="heading" class="px-2 py-1 text-11 text-muted-foreground">Diff View Mode</div>
             <button type="button" data-diff-opt="split" role="menuitem" title="Side-by-side split diff view" class="btn" data-control="diff-menu-item" data-variant="outline" data-size="xs">
               <span class="diff-item-check" aria-hidden="true">✓</span>
               <div class="diff-item-content">
@@ -288,10 +288,10 @@
       </div>
 
       <!-- Hovercard: Type signature, documentation, and quick AI/Usages actions -->
-      <div id="hovercard" hidden></div>
+      <div id="hovercard" class="card fixed z-[60] max-w-[580px] max-h-[70vh] overflow-auto gap-0" hidden></div>
 
       <!-- Find in File (Ctrl+F) Overlay Bar -->
-      <div id="findbar" hidden>
+      <div id="findbar" class="card absolute top-2 right-[22px] z-20 flex-row items-center gap-1" hidden>
         <input id="find-input" type="text" spellcheck="false" placeholder="Find" autocomplete="off" class="input border-0! shadow-none! bg-transparent! h-6! w-[190px]!">
         <button id="find-case" title="Match case" class="btn" data-variant="outline" data-size="xs">Aa</button>
         <span id="find-count">0</span>
@@ -534,7 +534,7 @@
         <div id="pr-merge-group" class="pr-merge-group" hidden>
           <button id="pr-merge" type="button" class="btn" data-control="bar-action pr-btn-merge" data-variant="primary" data-size="xs">Squash and merge</button>
           <button id="pr-merge-caret" type="button" aria-haspopup="menu" title="Choose how to merge" class="btn" data-control="bar-action pr-btn-merge pr-merge-caret" data-variant="primary" data-size="icon-xs" aria-label="Choose how to merge">&#9662;</button>
-          <div id="pr-merge-menu" class="pr-merge-menu" role="menu" hidden></div>
+          <div id="pr-merge-menu"  role="menu" hidden></div>
         </div>
       </div>
     </div>
@@ -560,7 +560,7 @@
     </div>
 
     <!-- Floating Copy Toast Notification -->
-    <div id="toast" hidden></div>
+    <div id="toast" class="toaster bottom-5" data-align="end" hidden></div>
 
     <!-- Selection context menu: the footer's selection actions, at the pointer -->
     <div id="sel-menu" role="menu" hidden></div>
@@ -569,7 +569,7 @@
     <div id="tree-menu" role="menu" hidden></div>
 
     <!-- Commit card: author, message and diffstat for a hovered unpushed commit -->
-    <div id="commitcard" hidden></div>
+    <div id="commitcard" class="card fixed z-[60] max-w-[480px] max-h-[70vh] overflow-auto" hidden></div>
 
     <!-- Metrics menu, opened from CPU/RAM status bar -->
     <div id="metrics-menu" role="menu" hidden></div>
@@ -578,7 +578,7 @@
     <div id="lsp-menu" role="menu" hidden></div>
 
     <!-- Floating Async Tip Widget (web/src/tips.js) -->
-    <div id="tip-widget" class="tip-widget" hidden>
+    <div id="tip-widget" class="card fixed bottom-[34px] right-[18px] w-[360px] max-w-[calc(100vw-36px)] z-50 gap-0" hidden>
       <div class="tip-widget-head">
         <div class="tip-widget-tag-group">
           <svg class="tip-widget-bulb" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z"/></svg>
@@ -825,29 +825,29 @@
 </div>
 
 <!-- SECTION: Command / File / Symbol Palette Modal (Cmd+K / Ctrl+P) -->
-<div id="overlay" hidden>
-  <div id="palette">
-    <div class="pal-input"><span id="pal-mode"></span><input id="pal" type="text" spellcheck="false" autocomplete="off" class="input border-0! shadow-none! bg-transparent! h-6!"></div>
-    <div id="pal-list"></div>
-    <div id="pal-hint"></div>
+<dialog id="overlay" class="command-dialog">
+  <div id="palette" class="command">
+    <header><span id="pal-mode" class="badge"></span><input id="pal" type="text" spellcheck="false" autocomplete="off" class="min-w-0"></header>
+    <div id="pal-list" role="menu"></div>
+    <div id="pal-hint" class="empty:hidden"></div>
   </div>
-</div>
+</dialog>
 
 <!-- SECTION: Keyboard Shortcuts Cheat Sheet Overlay (?) -->
-<div id="helpsheet" hidden></div>
-<div id="vim-helpsheet" hidden></div>
+<dialog id="helpsheet" class="dialog"></dialog>
+<dialog id="vim-helpsheet" class="dialog"></dialog>
 
 <!-- SECTION: Settings Modal (Cmd+, / Ctrl+,) -->
 <!-- PR merge dialog: method, commit title/message (rewritable by the harness), and what blocks merging now (web/src/prmerge.js) -->
-<div id="pr-merge-modal" class="modal-overlay" hidden>
-  <div class="pr-merge-dialog" role="dialog" aria-modal="true" aria-labelledby="pr-merge-title">
-    <header class="pr-merge-head">
-      <div class="pr-merge-head-text">
+<dialog id="pr-merge-modal" class="dialog">
+  <div class="overflow-auto" role="dialog" aria-modal="true" aria-labelledby="pr-merge-title">
+    <header class="flex-row! items-start justify-between">
+      <div class="flex flex-col gap-1 grow">
         <h2 id="pr-merge-title">Merge pull request</h2>
         <span id="pr-merge-refs" class="pr-merge-refs"></span>
       </div>
       <button id="pr-merge-close" type="button" title="Close (Esc)" class="btn" data-control="git-notice-close" data-variant="ghost" data-size="icon-xs" aria-label="Close (Esc)">&times;</button>
-    </header>
+    </header><section class="flex flex-col gap-3 overflow-auto">
     <div id="pr-merge-methods" class="button-group" role="radiogroup" aria-label="Merge method"></div>
     <p id="pr-merge-explain" class="pr-merge-explain"></p>
     <div id="pr-merge-warnings" class="pr-merge-warnings"></div>
@@ -877,24 +877,24 @@
     </div>
     <ol id="pr-merge-commit-list" class="pr-merge-commit-list" hidden></ol>
     <div id="pr-merge-err" class="agent-err" hidden></div>
-    <footer class="pr-merge-foot">
+    </section><footer class="flex-row! items-center gap-2">
       <span id="pr-merge-hint" class="agent-hint"></span>
       <button id="pr-merge-cancel" type="button" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs">Cancel</button>
       <button id="pr-merge-confirm" type="button" class="btn" data-control="bar-action pr-btn-merge" data-variant="primary" data-size="xs">Confirm merge</button>
     </footer>
   </div>
-</div>
+</dialog>
 
 <!-- Connect dialog: create, paste and check a forge token without a restart (web/src/forgeconnect.js) -->
-<div id="forge-connect-modal" class="modal-overlay" hidden>
-  <div class="pr-merge-dialog forge-connect-dialog" role="dialog" aria-modal="true" aria-labelledby="forge-connect-title">
-    <header class="pr-merge-head">
-      <div class="pr-merge-head-text">
+<dialog id="forge-connect-modal" class="dialog">
+  <div class="overflow-auto" role="dialog" aria-modal="true" aria-labelledby="forge-connect-title">
+    <header class="flex-row! items-start justify-between">
+      <div class="flex flex-col gap-1 grow">
         <h2 id="forge-connect-title">Connect</h2>
         <span id="forge-connect-host" class="pr-merge-refs"></span>
       </div>
       <button id="forge-connect-close" type="button" title="Close (Esc)" class="btn" data-control="git-notice-close" data-variant="ghost" data-size="icon-xs" aria-label="Close (Esc)">&times;</button>
-    </header>
+    </header><section class="flex flex-col gap-3 overflow-auto">
     <p id="forge-connect-why" class="pr-merge-explain"></p>
     <ol id="forge-connect-steps" class="forge-connect-steps"></ol>
     <label for="forge-connect-token" class="label pr-merge-label">Token</label>
@@ -907,30 +907,30 @@
     <div id="forge-connect-err" class="agent-err" hidden></div>
     <span id="forge-connect-check" class="pr-merge-note"></span>
     <span id="forge-connect-alt" class="pr-merge-note"></span>
-    <footer class="pr-merge-foot">
+    </section><footer class="flex-row! items-center gap-2">
       <a id="forge-connect-settings" href="#" class="pr-merge-link">Open Settings</a>
       <span id="forge-connect-hint" class="agent-hint"></span>
       <button id="forge-connect-cancel" type="button" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs">Cancel</button>
       <button id="forge-connect-submit" type="button" class="btn" data-control="bar-action pr-btn-merge" data-variant="primary" data-size="xs">Connect</button>
     </footer>
   </div>
-</div>
+</dialog>
 
-<div id="settings-modal" class="modal-overlay" hidden>
-  <div class="settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-title">
-    <header class="settings-header">
-      <div class="settings-title-group">
+<dialog id="settings-modal" class="dialog">
+  <div class="sm:max-w-[1180px] h-[min(840px,92vh)] overflow-hidden gap-0" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <header class="flex-row! items-center justify-between shrink-0">
+      <div class="flex items-center gap-3">
         <h2 id="settings-title">Settings</h2>
         <span id="settings-path" class="badge" data-variant="outline" data-control="settings-path-badge" title="Click to copy path">~/.faah/settings.json</span>
       </div>
-      <div class="settings-header-actions">
+      <div class="flex items-center gap-3">
         <div class="button-group" role="group" aria-label="Settings View Mode">
           <button type="button" id="settings-mode-ui" title="Settings UI" class="btn" data-variant="secondary" data-size="xs" aria-pressed="true">UI</button>
           <button type="button" id="settings-mode-json" title="Open Settings (JSON)" class="btn" data-variant="outline" data-size="xs">JSON</button>
         </div>
         <button id="settings-close" title="Close (Esc)" class="btn" data-control="mini settings-close-btn" data-variant="ghost" data-size="icon-xs" aria-label="Close (Esc)">&#10005;</button>
       </div>
-    </header>
+    </header><section class="flex min-h-0 flex-1 flex-col overflow-hidden">
 
     <!-- Search bar for filtering settings -->
     <div id="settings-search-bar" class="settings-search-bar">
@@ -959,7 +959,7 @@
     </div>
 
     <!-- Settings Footer with Explicit Save Button -->
-    <footer id="settings-footer" class="settings-footer">
+    </section><footer id="settings-footer" class="flex-row! items-center justify-between shrink-0">
       <div id="settings-footer-status" class="settings-footer-status is-saved">
         <svg id="settings-status-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
         <span id="settings-status-text">All changes saved</span>
@@ -972,13 +972,12 @@
       </div>
     </footer>
   </div>
-</div>
+</dialog>
 
 <!-- Markdown Image Lightbox Overlay -->
-<div id="img-lightbox" hidden>
-  <div class="lightbox-backdrop"></div>
-  <div class="lightbox-dialog">
-    <header class="lightbox-header">
+<dialog id="img-lightbox" class="dialog">
+  <div class="sm:max-w-[92vw] overflow-auto">
+    <header class="flex-row! items-center gap-3">
       <span class="lightbox-title" id="lb-title"></span>
       <span class="lightbox-meta" id="lb-meta"></span>
       <div class="lightbox-actions">
@@ -987,52 +986,52 @@
         <button id="lb-close" title="Close (Esc)" class="btn" data-control="lightbox-btn lightbox-close" data-variant="outline" data-size="xs">&#10005;</button>
       </div>
     </header>
-    <div class="lightbox-body">
+    <section class="lightbox-body">
       <div class="lightbox-canvas bg-checker" id="lb-canvas">
         <img id="lb-img" src="" alt="">
       </div>
-    </div>
+    </section>
   </div>
-</div>
+</dialog>
 
 <!-- Modal Dialog for Configuring Review Workflow -->
-<div id="review-config-dialog" class="modal-overlay" hidden>
-  <div class="settings-dialog review-config-dialog-box" role="dialog" aria-modal="true" aria-labelledby="review-config-title">
-    <header class="settings-header">
-      <div class="settings-title-group">
+<dialog id="review-config-dialog" class="dialog">
+  <div class="overflow-auto" role="dialog" aria-modal="true" aria-labelledby="review-config-title">
+    <header class="flex-row! items-center justify-between shrink-0">
+      <div class="flex items-center gap-3">
         <h2 id="review-config-title">Configure Review Workflow</h2>
         <span class="badge" data-variant="outline" data-control="settings-path-badge">.faah/workflows.json</span>
       </div>
-      <div class="settings-header-actions">
+      <div class="flex items-center gap-3">
         <button id="review-config-close" title="Close (Esc)" class="btn" data-control="mini settings-close-btn" data-variant="ghost" data-size="icon-xs" aria-label="Close (Esc)">&#10005;</button>
       </div>
     </header>
-    <div class="review-config-body">
+    <section class="review-config-body">
       <div class="review-config-field">
         <label class="label">Workflow Name</label>
         <input type="text" id="review-config-wf-name" placeholder="e.g. Standard PR Review" class="input h-8!">
       </div>
       <div class="review-config-stages-head">Stages Pipeline</div>
       <div id="review-config-stages" class="review-config-stages"></div>
-    </div>
-    <footer class="settings-foot">
+    </section>
+    <footer class="">
       <button id="review-config-save" class="btn" data-control="bar-action pr-btn-merge" data-variant="primary" data-size="xs">Save Workflow</button>
     </footer>
   </div>
-</div>
+</dialog>
 
 <!-- Modal Dialog for Adding a New Review Stage -->
-<div id="review-add-stage-modal" class="modal-overlay" hidden>
-  <div class="settings-dialog review-add-stage-dialog-box" role="dialog" aria-modal="true" aria-labelledby="add-stage-title">
-    <header class="settings-header">
-      <div class="settings-title-group">
+<dialog id="review-add-stage-modal" class="dialog">
+  <div class="overflow-auto" role="dialog" aria-modal="true" aria-labelledby="add-stage-title">
+    <header class="flex-row! items-center justify-between shrink-0">
+      <div class="flex items-center gap-3">
         <h2 id="add-stage-title">Add Review Stage</h2>
       </div>
-      <div class="settings-header-actions">
+      <div class="flex items-center gap-3">
         <button id="add-stage-close" title="Close (Esc)" class="btn" data-control="mini settings-close-btn" data-variant="ghost" data-size="icon-xs" aria-label="Close (Esc)">&#10005;</button>
       </div>
     </header>
-    <div class="review-config-body">
+    <section class="review-config-body">
       <div class="review-config-field">
         <label class="label">Stage Title</label>
         <input type="text" id="add-stage-title-input" placeholder="e.g. Security & Permissions" class="input h-8!">
@@ -1045,31 +1044,31 @@
         <label class="label">Detailed AI Prompt</label>
         <textarea rows="3" id="add-stage-prompt-input" placeholder="Detailed instructions for the AI reviewer..." class="textarea resize-y"></textarea>
       </div>
-    </div>
-    <footer class="settings-foot">
+    </section>
+    <footer class="">
       <button id="add-stage-cancel" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs">Cancel</button>
       <button id="add-stage-submit" class="btn" data-control="bar-action pr-btn-merge" data-variant="primary" data-size="xs">Add Stage</button>
     </footer>
   </div>
-</div>
+</dialog>
 
 <!-- Modal Prompt Dialog for New File / New Folder -->
-<div id="input-modal" class="modal-overlay" hidden>
-  <div class="fs-modal-card">
-    <div class="fs-modal-header">
-      <h3 id="modal-title" class="fs-modal-title">New File</h3>
-      <button type="button" id="modal-btn-close" onclick="document.getElementById('input-modal').hidden=true" title="Close (Esc)" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Close (Esc)">&#10005;</button>
-    </div>
-    <div class="fs-modal-body">
+<dialog id="input-modal" class="dialog">
+  <div class="">
+    <header class="flex-row! items-center justify-between">
+      <h2 id="modal-title" class="text-14 font-semibold">New File</h2>
+      <button type="button" id="modal-btn-close" title="Close (Esc)" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Close (Esc)">&#10005;</button>
+    </header>
+    <section class="flex flex-col gap-2">
       <div id="modal-desc" class="fs-modal-desc">Enter relative path from project root:</div>
       <input id="modal-input" type="text" spellcheck="false" autocomplete="off" class="input h-8!" data-control="fs-modal-input">
-    </div>
-    <div class="fs-modal-footer">
+    </section>
+    <footer class="flex-row! justify-end gap-2">
       <button id="modal-btn-cancel" type="button" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs">Cancel</button>
       <button id="modal-btn-ok" type="button" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="primary" data-size="xs">Create</button>
-    </div>
+    </footer>
   </div>
-</div>
+</dialog>
 
 <!-- Invisible text node to measure font metrics in DOM -->
 <span id="measure">0</span>

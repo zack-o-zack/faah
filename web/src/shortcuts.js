@@ -62,25 +62,25 @@ export const SHORTCUTS = [
 export function showHelp() {
   const h = $('#helpsheet');
   const ver = S.meta?.version ? ` <span class="help-version">v${esc(S.meta.version)}</span>` : '';
-  h.innerHTML = '<div class="help-card"><div class="help-header"><h2>Keyboard Shortcuts</h2>' + ver +
+  h.innerHTML = '<div class="sm:max-w-4xl overflow-auto"><header class="flex-row! items-center gap-2"><h2>Keyboard Shortcuts</h2>' + ver +
     '<div style="margin-left:auto;display:flex;gap:12px;align-items:center;">' +
     '<button id="btn-switch-to-tips" style="font-size:12px;cursor:pointer;" title="View Tips & Tricks" class="btn" data-control="settings-btn-link" data-variant="link" data-size="xs">💡 Tips & Tricks</button>' +
     '<button id="btn-switch-to-vim-help" style="font-size:12px;cursor:pointer;" title="View Vim Keybindings" class="btn" data-control="settings-btn-link" data-variant="link" data-size="xs">View Vim Keybindings</button>' +
-    '</div></div><dl class="help-grid">' +
+    '</div></header><dl class="help-grid">' +
     SHORTCUTS.map(([combos, v]) => {
       const comboList = Array.isArray(combos) ? combos : [combos];
       return '<dt>' + comboList.map(keyCaps).filter(Boolean).join('<span class="key-or">/</span>') + '</dt>' +
         '<dd>' + esc(v) + '</dd>';
     }).join('') + '</dl></div>';
-  h.hidden = false;
+  h.showModal();
   h.querySelector('#btn-switch-to-vim-help')?.addEventListener('click', (e) => {
     e.stopPropagation();
-    h.hidden = true;
+    h.close();
     showVimHelp();
   });
   h.querySelector('#btn-switch-to-tips')?.addEventListener('click', (e) => {
     e.stopPropagation();
-    h.hidden = true;
+    h.close();
     navigateToTips();
   });
 }
@@ -92,7 +92,7 @@ export function initShortcuts() {
   $('#btn-settings')?.addEventListener('click', () => openSettings('ui'));
   $('#btn-help')?.addEventListener('click', () => navigateToTips());
   $('#st-ver')?.addEventListener('click', showHelp);
-  $('#helpsheet').addEventListener('click', () => { $('#helpsheet').hidden = true; });
+  $('#helpsheet').addEventListener('click', () => { $('#helpsheet').close(); });
 
   // Footer quick action buttons
   $('#footer-actions')?.addEventListener('click', e => {
@@ -116,14 +116,23 @@ export function initShortcuts() {
     const mod = e[MOD];
 
     if (e.key === 'Escape') {
+      if (e.defaultPrevented) return;
+      if (document.querySelector('dialog[open]')) {
+        e.preventDefault();
+        const top = [...document.querySelectorAll('dialog[open]')].at(-1);
+        top.dispatchEvent(new Event('cancel', { cancelable: true }));
+        if (top.open) top.close();
+        return;
+      }
       if (exitMermaidFullscreen()) return;
       const lb = $('#img-lightbox');
-      if (lb && !lb.hidden) { lb.hidden = true; return; }
-      if (!$('#vim-helpsheet')?.hidden) { closeVimHelp(); return; }
+      if (lb && lb.open) { lb.close(); return; }
+      if ($('#vim-helpsheet')?.open) { closeVimHelp(); return; }
       if (isVimEnabled() && handleVimKeyDown(e)) return;
       if (isSettingsOpen()) { closeSettings(); return; }
-      if (!overlay.hidden) { closePalette(); return; }
-      if (!$('#helpsheet').hidden) { $('#helpsheet').hidden = true; return; }
+      if (overlay.open) { closePalette(); return; }
+      if ($('#helpsheet').open) { $('#helpsheet').close(); return; }
+      if (document.querySelector('dialog[open]')) { document.querySelector('dialog[open]').close(); return; }
       if (!hovercard.hidden) { clearLink(); return; }
       if (!findbar.hidden) {
         clearFind();

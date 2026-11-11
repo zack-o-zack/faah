@@ -38,7 +38,8 @@ function wireForgeConnect() {
     close();
     if (f) openSettings('ui', f.tokenCategory, f.tokenKey);
   });
-  m.addEventListener('click', e => { if (e.target === m) close(); });
+  m.addEventListener('cancel', e => { e.preventDefault(); close(); });
+  m.addEventListener('pointerdown', e => { if (e.target === m) close(); });
   $('#forge-connect-hint').textContent = keyLabel('Enter') + ' to connect, Esc to cancel';
   m.addEventListener('keydown', e => {
     if (e.key === 'Escape') { e.preventDefault(); close(); }
@@ -97,7 +98,7 @@ export function openForgeConnect(reason = '') {
   $('#forge-connect-extra-input').value = '';
   setForgeConnectErr('');
   setForgeConnectBusy(false);
-  connectModal().hidden = false;
+  connectModal().showModal();
   $('#forge-connect-token').focus();
 }
 
@@ -105,7 +106,7 @@ const codeTag = s => '<code>' + esc(s || '') + '</code>';
 
 function close() {
   const m = connectModal();
-  if (m) m.hidden = true;
+  if (m) m.close();
 }
 
 function setForgeConnectErr(msg) {

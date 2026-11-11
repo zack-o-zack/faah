@@ -663,8 +663,9 @@ export const VIM_SHORTCUT_SECTIONS = [
 export function showVimHelp() {
   let modal = $('#vim-helpsheet');
   if (!modal) {
-    modal = document.createElement('div');
+    modal = document.createElement('dialog');
     modal.id = 'vim-helpsheet';
+    modal.className = 'dialog';
     document.body.appendChild(modal);
   }
 
@@ -682,8 +683,8 @@ export function showVimHelp() {
       '</div>';
   }).join('');
 
-  modal.innerHTML = '<div class="help-card vim-help-card">' +
-    '<div class="help-header vim-help-header">' +
+  modal.innerHTML = '<div class="sm:max-w-4xl overflow-auto">' +
+    '<header class="flex-row! items-center justify-between">' +
     '<div class="vim-help-title"><h2>Vim Keybindings</h2><span class="help-version">Modal Navigation</span></div>' +
     '<div class="vim-toggle-row">' +
     '<label class="label vim-switch-label">' +
@@ -693,15 +694,15 @@ export function showVimHelp() {
     '</label>' +
     '<button id="btn-close-vim-help" title="Close (Esc)" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Close (Esc)">✕</button>' +
     '</div>' +
-    '</div>' +
-    '<div class="vim-help-content">' + sectionsHtml + '</div>' +
-    '<div class="vim-help-footer">' +
+    '</header>' +
+    '<section class="vim-help-content">' + sectionsHtml + '</section>' +
+    '<footer class="flex items-center justify-between">' +
     '<button id="btn-switch-to-std-help" title="View Standard Shortcuts (?)" class="btn" data-control="settings-btn-link" data-variant="link" data-size="xs">View Standard Shortcuts (?)</button>' +
     '<span class="agent-hint">Press Esc or click outside to dismiss</span>' +
-    '</div>' +
+    '</footer>' +
     '</div>';
 
-  modal.hidden = false;
+  modal.showModal();
 
   // Toggle listener inside help sheet
   const toggleInput = modal.querySelector('#vim-toggle-input');
@@ -720,14 +721,14 @@ export function showVimHelp() {
     closeVimHelp();
     showHelp();
   });
-  modal.addEventListener('click', e => {
+  modal.addEventListener('pointerdown', e => {
     if (e.target === modal) closeVimHelp();
   });
 }
 
 export function closeVimHelp() {
   const modal = $('#vim-helpsheet');
-  if (modal) modal.hidden = true;
+  if (modal) modal.close();
 }
 
 export function initVim() {

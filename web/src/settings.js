@@ -481,7 +481,7 @@ export function applyAllSettingsLive() {
 export function openSettings(mode = 'ui', category = null, highlightKey = null) {
   if (!settingsModalEl) initSettingsDOM();
   settingsViewMode = mode === 'json' ? 'json' : 'ui';
-  settingsModalEl.hidden = false;
+  settingsModalEl.showModal();
   pendingSettingsChanges = {};
   setSaveStatus('saved', 'All changes saved');
 
@@ -533,11 +533,11 @@ function focusSettingCard(key) {
 }
 
 export function closeSettings() {
-  if (settingsModalEl) settingsModalEl.hidden = true;
+  if (settingsModalEl) settingsModalEl.close();
 }
 
 export function isSettingsOpen() {
-  return settingsModalEl && !settingsModalEl.hidden;
+  return settingsModalEl && settingsModalEl.open;
 }
 
 function updateSettingsHeader() {
@@ -990,11 +990,12 @@ function initSettingsDOM() {
   settingsModalEl = $('#settings-modal');
   if (!settingsModalEl) return;
 
+  settingsModalEl.addEventListener('cancel', e => { e.preventDefault(); closeSettings(); });
   // Header close button
   $('#settings-close')?.addEventListener('click', closeSettings);
 
   // Click outside dialog to close
-  settingsModalEl.addEventListener('click', e => {
+  settingsModalEl.addEventListener('pointerdown', e => {
     if (e.target === settingsModalEl) closeSettings();
   });
 
@@ -1017,12 +1018,7 @@ function initSettingsDOM() {
   $('#settings-path')?.addEventListener('click', () => {
     if (settingsData.path) {
       navigator.clipboard.writeText(settingsData.path);
-      const toast = $('#toast');
-      if (toast) {
-        toast.textContent = 'Copied settings path to clipboard';
-        toast.hidden = false;
-        setTimeout(() => { toast.hidden = true; }, 2000);
-      }
+      showToast('✓', 'Copied settings path to clipboard', 2000);
     }
   });
 

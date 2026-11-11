@@ -826,12 +826,12 @@ function wireAddStageModal() {
     if (titleIn) titleIn.value = '';
     if (qIn) qIn.value = '';
     if (promptIn) promptIn.value = '';
-    modal.hidden = false;
+    modal.showModal();
     if (titleIn) titleIn.focus();
   };
 
   const closeAddModal = () => {
-    if (modal) modal.hidden = true;
+    if (modal) modal.close();
   };
 
   if (addBtn) addBtn.onclick = openAddModal;

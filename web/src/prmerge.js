@@ -1,3 +1,4 @@
+import { setMenuHidden } from './overlays.js';
 // web/src/prmerge.js
 // Merging a PR from the review bar, and keeping the review verdict honest
 // about the branch's state. The forge's mergeability (/api/pr/merge-status)
@@ -223,7 +224,7 @@ function renderMenu() {
 function toggleMenu(force) {
   const menu = $('#pr-merge-menu');
   if (!menu) return;
-  menu.hidden = force === undefined ? !menu.hidden : !force;
+  setMenuHidden(menu, force === undefined ? !menu.hidden : !force);
 }
 
 /* ---------- the merge dialog ---------- */
@@ -266,7 +267,8 @@ function initDialog() {
     e.preventDefault();
     openSettings('ui', 'Git & Diff', 'git.commitMessageInstruction');
   });
-  m.addEventListener('click', e => { if (e.target === m) closeDialog(); });
+  m.addEventListener('cancel', e => { e.preventDefault(); closeDialog(); });
+  m.addEventListener('pointerdown', e => { if (e.target === m) closeDialog(); });
   m.addEventListener('keydown', e => {
     if (e.key === 'Escape') { e.preventDefault(); closeDialog(); }
     else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); confirmMerge(); }
@@ -292,13 +294,13 @@ async function openDialog(m) {
   if (cb) cb.checked = false;
   setPRMergeErr('');
   renderDialog();
-  mergeModal().hidden = false;
+  mergeModal().showModal();
   (method === 'rebase' ? $('#pr-merge-confirm') : $('#pr-merge-commit-title'))?.focus();
 }
 
 function closeDialog() {
   const m = mergeModal();
-  if (m) m.hidden = true;
+  if (m) m.close();
 }
 
 function renderDialog() {
@@ -385,7 +387,7 @@ function setPRMergeErr(msg) {
 
 async function confirmMerge() {
   const confirm = $('#pr-merge-confirm');
-  if (mergeModal()?.hidden || confirm.disabled) return;
+  if (!mergeModal()?.open || confirm.disabled) return;
   saveDraft();
   const d = drafts[method] || {};
   if (method !== 'rebase' && !d.title?.trim()) {
@@ -441,7 +443,7 @@ async function rewriteWithAI() {
     btn.disabled = false;
     btn.textContent = 'Rewrite with AI';
     if (cbText) cbText.textContent = 'Rewrite commit message with AI';
-    if (!mergeModal().hidden) renderWarnings();
+    if (mergeModal().open) renderWarnings();
   };
   const poll = async () => {
     let j;

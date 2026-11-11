@@ -23,7 +23,7 @@ export function promptNewItem(type, targetDir = '') {
     ? `Create inside ${prefix} (or specify path):`
     : 'Enter relative path from project root:';
   modalInput.value = prefix;
-  modal.hidden = false;
+  modal.showModal();
   modalInput.focus();
   modalInput.setSelectionRange(modalInput.value.length, modalInput.value.length);
 }
@@ -31,7 +31,7 @@ export function promptNewItem(type, targetDir = '') {
 export function closeNewItemModal() {
   const modal = $('#input-modal');
   const modalInput = $('#modal-input');
-  if (modal) modal.hidden = true;
+  if (modal) modal.close();
   if (modalInput) modalInput.value = '';
 }
 
@@ -80,10 +80,12 @@ export function initNewItem() {
   $('#btn-new-file')?.addEventListener('click', () => promptNewItem('file'));
   $('#btn-new-folder')?.addEventListener('click', () => promptNewItem('dir'));
 
+  $('#modal-btn-close')?.addEventListener('click', closeNewItemModal);
   $('#modal-btn-cancel')?.addEventListener('click', closeNewItemModal);
   $('#modal-btn-ok')?.addEventListener('click', submitNewItem);
 
   const modalInput = $('#modal-input');
+  modal.addEventListener('cancel', e => { e.preventDefault(); closeNewItemModal(); });
   modalInput?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();

@@ -74,37 +74,13 @@
 [data-shell] .thr-item { margin: 2px 6px; padding: 8px; border-bottom: 0; border-radius: var(--r); }
 [data-shell] .thr-item:hover { background: color-mix(in srgb, var(--muted) 55%, transparent); }
 [data-shell] .thr-item.sel { background: var(--muted); box-shadow: none; }
-
-/* Menus: one raised surface, rounded items inset by the surface padding, and a
-   neutral highlight. Popover panels such as the LSP and metrics menus keep
-   their own padding. */
-[data-shell] :is(.wb-suggest, .wb-menu, .diff-menu, #sel-menu, #tab-menu, #tree-menu, .pr-merge-menu) {
-  padding: 4px; gap: 1px; background: var(--muted); border: 1px solid var(--border);
-  border-radius: var(--r-lg); box-shadow: var(--shadow);
-}
-
-/* The check marks the current choice, so the highlight is left to the pointer. */
-
-[data-shell] .diff-menu { min-width: 220px; }
 [data-shell] .diff-item-desc { white-space: nowrap; }
 
 [data-shell] .diff-item-title { font-size: var(--t-13); font-weight: 500; }
 [data-shell] .diff-item-desc { font-size: var(--t-12); }
-
-/* Modals: header and footer sit on the dialog surface, divided by lines, instead
-   of on a second gray band. Settings navigation uses the inset row pattern. */
-[data-shell] :is(.settings-header, .settings-footer, .fs-modal-header, .fs-modal-footer) { background: transparent; }
-[data-shell] :is(.settings-title-group h2, .fs-modal-title) { font-size: var(--t-14); font-weight: 600; }
-[data-shell] .help-header h2 { font-size: var(--t-14); letter-spacing: 0; text-transform: none; color: var(--foreground); }
 /* Dialog actions borrow the status bar's button class; give them the medium size. */
 
 [data-shell] .settings-nav { padding: 8px; gap: 1px; }
-
-/* A shortcut's outer <kbd> only groups its caps. */
-
-[data-shell] :is(.diff-menu-header, .lsp-menu-head) {
-  font-size: var(--t-12); font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--muted-foreground);
-}
 
 :root[data-titlebar] {
   --titlebar-h: 38px;
