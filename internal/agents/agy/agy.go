@@ -17,8 +17,10 @@ type Agent struct{}
 
 func New() *Agent { return &Agent{} }
 
-func (*Agent) Name() string      { return name }
-func (*Agent) Caps() agents.Caps { return agents.Caps{Sessions: true, NamesSession: true} }
+func (*Agent) Name() string { return name }
+func (*Agent) Caps() agents.Caps {
+	return agents.Caps{Sessions: true, NamesSession: true, Tools: agents.ToolsTagged}
+}
 
 func (*Agent) ReadOnly(argv []string) ([]string, []string, error) {
 	out, ok := agents.SetFlag(argv, "--mode", "plan")
@@ -32,17 +34,17 @@ func (*Agent) ReadOnly(argv []string) ([]string, []string, error) {
 func (*Agent) NewSession(context.Context, string, []string) string { return "" }
 
 func (a *Agent) Run(ctx context.Context, t agents.Turn, sink agents.Sink) (agents.Outcome, error) {
-	return agents.Exec(ctx, name, t, a.TurnArgv(t.Argv, t.SessionID, t.Resume), parse, sink)
+	return agents.Exec(ctx, name, t, a.TurnArgv(t), parse, sink)
 }
 
 // TurnArgv adds the session and output flags a turn needs. Flag order does not
 // matter to the CLI, so they go right after the binary.
-func (*Agent) TurnArgv(argv []string, sessionID string, resume bool) []string {
+func (*Agent) TurnArgv(t agents.Turn) []string {
 	extra := []string{"--output-format", "stream-json"}
-	if resume && sessionID != "" {
-		extra = append(extra, "--conversation", sessionID)
+	if t.Resume && t.SessionID != "" {
+		extra = append(extra, "--conversation", t.SessionID)
 	}
-	return agents.InsertAfterBinary(argv, extra)
+	return agents.InsertAfterBinary(t.Argv, extra)
 }
 
 // StdinArgv reads the prompt from stdin as one stream-json message.

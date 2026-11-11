@@ -86,7 +86,9 @@ type Agent interface {
 // given the prompt on stdin later.
 type Warmable interface {
 	Agent
-	TurnArgv(argv []string, sessionID string, resume bool) []string
+	// TurnArgv is the argv a turn runs: session and output flags when it has
+	// a session, tool flags when it has tools.
+	TurnArgv(t Turn) []string
 	StdinArgv(argv []string) []string
 	StdinMessage(prompt string) []byte
 	Stream(sink Sink) *Stream

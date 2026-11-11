@@ -36,19 +36,24 @@ var fixture = map[string][]string{
 
 // expect is what each listed agent must do. {sid} is the id NewSession
 // returned. A follow-up resumes that id, or the id the harness reported when
-// it was given none.
+// it was given none. The tools endpoint is toolURL with the token "tok".
 type expect struct {
 	caps          agents.Caps
 	first, resume string // the args the fake receives, joined by spaces
 	live          bool   // the session can be resumed after the first turn
 	steps         bool   // the output's tool step reaches the sink
+	tools         agents.ToolChannel
+	toolArgs      string // what a turn with tools adds to the args, for MCP
 }
 
+const toolURL = "ht" + "tp://127.0.0.1:1/api/mcp"
+
 var contract = map[string]expect{
-	"claude": {caps: agents.Caps{Sessions: true}, live: true, steps: true,
-		first:  "--output-format stream-json --verbose --session-id {sid} -p say hello",
-		resume: "--output-format stream-json --verbose --resume {sid} -p say hello"},
-	"agy": {caps: agents.Caps{Sessions: true, NamesSession: true}, live: true, steps: true,
+	"claude": {caps: agents.Caps{Sessions: true}, live: true, steps: true, tools: agents.ToolsMCP,
+		toolArgs: `--mcp-config {"mcpServers":{"faah":{"headers":{"Authorization":"Bearer tok"},"type":"http","url":"` + toolURL + `"}}} --strict-mcp-config --allowedTools mcp__faah__annotate,mcp__faah__walkthrough`,
+		first:    "--output-format stream-json --verbose --session-id {sid} -p say hello",
+		resume:   "--output-format stream-json --verbose --resume {sid} -p say hello"},
+	"agy": {caps: agents.Caps{Sessions: true, NamesSession: true}, live: true, steps: true, tools: agents.ToolsTagged,
 		first:  "--output-format stream-json -p say hello",
 		resume: "--output-format stream-json --conversation c123 -p say hello"},
 	"gemini": {caps: agents.Caps{Sessions: true}, live: true, steps: true,
@@ -57,8 +62,9 @@ var contract = map[string]expect{
 	"cursor-agent": {caps: agents.Caps{Sessions: true}, live: true,
 		first:  "--resume {sid} -p say hello",
 		resume: "--resume {sid} -p say hello"},
-	"codex":    {first: "-p say hello", resume: "-p say hello"},
-	"opencode": {first: "-p say hello", resume: "-p say hello"},
+	"codex": {first: "-p say hello", resume: "-p say hello", tools: agents.ToolsMCP,
+		toolArgs: `-c mcp_servers.faah.url="` + toolURL + `" -c mcp_servers.faah.http_headers={Authorization="Bearer tok"} -p say hello`},
+	"opencode": {first: "-p say hello", resume: "-p say hello", tools: agents.ToolsTagged},
 }
 
 // Every listed agent runs a fake binary of its own name, for a first turn and
@@ -82,8 +88,11 @@ func TestAgentContract(t *testing.T) {
 			if For(a.Name()).Name() != a.Name() {
 				t.Fatal("For does not find the listed agent")
 			}
-			if a.Caps() != want.caps {
-				t.Fatalf("caps = %+v, want %+v", a.Caps(), want.caps)
+			if c := a.Caps(); c.Sessions != want.caps.Sessions || c.NamesSession != want.caps.NamesSession {
+				t.Fatalf("caps = %+v, want %+v", c, want.caps)
+			}
+			if a.Caps().Tools != want.tools {
+				t.Fatalf("tools = %v, want %v", a.Caps().Tools, want.tools)
 			}
 			dir := t.TempDir()
 			lines := fixture[a.Name()]
@@ -148,9 +157,31 @@ func TestAgentContract(t *testing.T) {
 					t.Fatalf("no session, but args = %q", got)
 				}
 			}
+			// A turn with tools adds the MCP flags. A tagged agent's argv does not change.
+			if want.tools != agents.ToolsNone {
+				ep := &agents.ToolEndpoint{URL: toolURL, Token: "tok"}
+				if _, err := a.Run(ctx, agents.Turn{Dir: dir, Argv: argv, Prompt: "say hello", Tools: ep, Timeout: 5 * time.Second}, &sink{}); err != nil {
+					t.Fatal(err)
+				}
+				w := want.toolArgs
+				if w == "" {
+					w = noSession(a)
+				}
+				if got := args(); !strings.Contains(got, w) {
+					t.Fatalf("tool args = %q, want %q", got, w)
+				}
+			}
 			if _, _, err := a.ReadOnly(argv); err != nil && !strings.Contains(err.Error(), agents.ErrNotReadOnly.Error()) {
 				t.Fatalf("ReadOnly error must wrap ErrNotReadOnly: %v", err)
 			}
 		})
 	}
+}
+
+// noSession is the args an agent passes for a turn with no session.
+func noSession(a agents.Agent) string {
+	if a.Name() == "agy" {
+		return "--output-format stream-json -p say hello"
+	}
+	return "-p say hello"
 }

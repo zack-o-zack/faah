@@ -91,7 +91,7 @@ func (tm *threadManager) warmExplain() {
 		return
 	}
 	sessionID := w.NewSession(context.Background(), tm.root, ro)
-	sp, err := startStandby(tm.root, w, key, sessionID, w.StdinArgv(w.TurnArgv(ro, sessionID, false)))
+	sp, err := startStandby(tm.root, w, key, sessionID, w.StdinArgv(w.TurnArgv(agents.Turn{Argv: ro, SessionID: sessionID})))
 	if err != nil {
 		sb.failed = time.Now()
 		ui.Status("err", "explain", "could not start "+name+" ahead: "+err.Error(), 0, os.Stdout)
