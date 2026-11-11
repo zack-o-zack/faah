@@ -757,7 +757,7 @@ function renderSettingsList() {
 
     const extraAction = (key === 'editor.vimMode') ? `
       <div style="margin: 6px 0 2px;">
-        <button type="button" class="settings-btn-link btn-vim-cheatsheet-trigger" style="cursor:pointer;font-size:11.5px;display:inline-flex;align-items:center;gap:4px;color:var(--accent-fg);">
+        <button type="button" class="settings-btn-link btn-vim-cheatsheet-trigger" style="cursor:pointer;font-size:11.5px;display:inline-flex;align-items:center;gap:4px;color:var(--primary-text);">
           <span>View Vim Keybindings Cheat Sheet</span><kbd class="footer-kbd" style="font-size:10px;">?</kbd>
         </button>
       </div>` : '';

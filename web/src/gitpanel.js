@@ -508,7 +508,7 @@ function offerSync(st, err = '') {
   html += pr
     ? `<span class="hint">Rebase replays the PR's commits on top of ${esc(up)} for a straight history, then needs a force-push to update the PR. Merge brings ${esc(up)} in with a merge commit and a normal push. The harness resolves any conflicts; nothing is pushed until you say so.</span>`
     : `<span class="hint">Rebase replays your commits on top of ${esc(up)} for a straight history; merge joins the two with a merge commit. The harness resolves any conflicts. Nothing is pushed.</span>`;
-  if (err) html += `<span class="hint" style="color:var(--err)">${esc(err)}</span>`;
+  if (err) html += `<span class="hint" style="color:var(--destructive)">${esc(err)}</span>`;
   notice({
     tone: 'warn', title, html, picker: true,
     actions: [
@@ -524,7 +524,7 @@ function offerUnfinished(st, log = '', err = '') {
   const op = st.inProgress;
   let html = `${code(st.branch)} is in the middle of a ${op}${st.upstream ? ' onto ' + code(st.upstream) : ''}, most likely stopped on a conflict.` +
     `<span class="hint">Abort to put the branch back exactly as it was before the ${op}, or have the harness resolve the conflicts and finish it.</span>`;
-  if (err) html += `<span class="hint" style="color:var(--err)">${esc(err)}</span>`;
+  if (err) html += `<span class="hint" style="color:var(--destructive)">${esc(err)}</span>`;
   const actions = [{ label: `Abort ${op}`, run: abortSync }];
   if (hasHarness() && st.upstream) actions.unshift({ label: 'Finish with AI', primary: true, run: () => startSync(op, st) });
   notice({ tone: 'warn', title: `${op === 'rebase' ? 'Rebase' : 'Merge'} not finished`, html, picker: hasHarness(), actions, log, closable: true });

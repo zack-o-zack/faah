@@ -340,7 +340,7 @@ function renderDialog() {
   const list = $('#pr-merge-commit-list');
   list.hidden = method !== 'rebase';
   list.innerHTML = [...(info.commits || [])].reverse().map(c =>
-    `<li><code>${esc(c.short)}</code> ${esc(c.subject)}</li>`).join('') || '<li class="empty">No commits</li>';
+    `<li><code>${esc(c.short)}</code> ${esc(c.subject)}</li>`).join('') || '<li class="pr-merge-empty">No commits</li>';
 
   renderWarnings();
   $('#pr-merge-confirm').textContent = METHODS[method].confirm;
