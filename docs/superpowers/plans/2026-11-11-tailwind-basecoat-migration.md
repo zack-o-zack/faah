@@ -133,6 +133,10 @@ Settings body, search and find, symbol outline, hover and references, metrics, i
 
 Workbench (`web/workbench.html`, `web/src/workbench.js`), holding page (`workbench.go` template, `web/src/holding.js`), desktop rules moved to the `desktop:` and `win-linux:` variants and the `[data-shell]` token overrides moved into the entry file's `@layer base`. Move the rules for runtime-generated HTML (syntax spans, Markdown, Mermaid, diff gutters, scrollbars, keyframes) into `@layer components` in `web/tailwind.css`. Delete `web/style.css`, `web/workbench.css`, `web/desktop.css`. Update `docs/internals/styling-and-themes.md` to describe the final system.
 
+### Phase 7: Audit and fix
+
+A separate agent audits the finished UI with the impeccable audit, critique and polish playbooks (Operate mode): accessibility, performance, theming, responsive layout, implementation integrity, and usability heuristics on the real screens. It runs the bundled detector against the running app, fixes every P0, P1 and P2 finding, re-runs the audit, and reports scores before and after.
+
 ## Verification per phase
 
 - `node scripts/build-web.js && node scripts/check-web.js && bun test web/src/ && go test ./... && npm test --prefix desktop`
