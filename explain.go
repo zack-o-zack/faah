@@ -6,11 +6,13 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 	"time"
 
 	"faah/internal/symbols"
+	"faah/internal/ui"
 )
 
 // Explain This. A reader selects code and gets a short explanation grounded in
@@ -35,6 +37,7 @@ const (
 	explainSnapLines     = 20
 	explainKeep          = 200
 	explainBudget        = 8 * time.Second
+	explainServerWait    = 5 * time.Second
 )
 
 // What a symbol turned out to be, and "block" for everything else.
@@ -119,10 +122,23 @@ func (s *Server) explainDeps() explainDeps {
 		ready: func(ctx context.Context, abs, rel string) string {
 			s.lsp.RefreshOpenDocs() // files may have changed outside faah since last asked
 			_ = s.lsp.EnsureOpen(ctx, abs, rel)
-			if state, server := s.lsp.State(rel); state == lspReady {
-				return server
+			// A server still starting is worth a short wait: its answers are
+			// far better evidence than a text search.
+			deadline := time.Now().Add(explainServerWait)
+			for {
+				state, server := s.lsp.State(rel)
+				if state == lspReady {
+					return server
+				}
+				if (state != lspStarting && state != lspIndexing) || time.Now().After(deadline) {
+					return ""
+				}
+				select {
+				case <-ctx.Done():
+					return ""
+				case <-time.After(100 * time.Millisecond):
+				}
 			}
-			return ""
 		},
 		outline: symbols.Outline,
 		search: func(ctx context.Context, name string) []FileMatches {
@@ -139,6 +155,30 @@ func (s *Server) explainDeps() explainDeps {
 	}
 }
 
+// explainTarget checks a request against the file on disk. The status is the
+// HTTP code to answer with when it fails.
+func (s *Server) explainTarget(req *explainRequest) (explainTarget, []string, string, int, error) {
+	abs, rel, ok := s.safePath(req.Path)
+	if !ok || rel == "" {
+		return explainTarget{}, nil, "", 400, errors.New("bad path")
+	}
+	lines, err := explainReadLines(abs)
+	if err != nil {
+		return explainTarget{}, nil, "", 400, errors.New("cannot read " + rel)
+	}
+	target, err := classifyExplain(lines, *req)
+	if err != nil {
+		code := 400
+		if errors.Is(err, errExplainMismatch) {
+			code = 409
+		}
+		return explainTarget{}, nil, "", code, err
+	}
+	target.Abs, target.Rel = abs, rel
+	req.Path = rel
+	return target, lines, explainPrepareKey(abs, *req), 0, nil
+}
+
 // handleExplain serves POST /api/explain: classify, gather, then reopen or start.
 func (s *Server) handleExplain(w http.ResponseWriter, r *http.Request) {
 	if !localPost(w, r) || !s.threadsOrFail(w) {
@@ -149,33 +189,24 @@ func (s *Server) handleExplain(w http.ResponseWriter, r *http.Request) {
 		fail(w, 400, "bad request")
 		return
 	}
-	abs, rel, ok := s.safePath(req.Path)
-	if !ok || rel == "" {
-		fail(w, 400, "bad path")
-		return
-	}
-	lines, err := explainReadLines(abs)
+	target, lines, key, code, err := s.explainTarget(&req)
 	if err != nil {
-		fail(w, 400, "cannot read "+rel)
-		return
-	}
-	target, err := classifyExplain(lines, req)
-	if err != nil {
-		code := 400
-		if errors.Is(err, errExplainMismatch) {
-			code = 409
-		}
 		fail(w, code, err.Error())
 		return
 	}
-	target.Abs, target.Rel = abs, rel
-	req.Path = rel
 
+	started := time.Now()
 	ctx, cancel := context.WithTimeout(r.Context(), explainBudget)
 	defer cancel()
-	ev := gatherExplain(ctx, s.explainDeps(), target, lines)
+	ev, prepared := s.preparedExplain(ctx, key)
+	if !prepared {
+		ev = s.gatherExplainEvidence(ctx, target, lines)
+	}
 	if r.Context().Err() != nil {
 		return // the reader has moved on
+	}
+	if ui.Verbose {
+		ui.Status("info", "explain", fmt.Sprintf("%s:%s evidence in %s (prepared=%v)", target.Rel, lineRef(target.L1, target.L2), ui.FmtDuration(time.Since(started)), prepared), 0, os.Stdout)
 	}
 
 	res, err := s.threads.explain(target, req, ev)

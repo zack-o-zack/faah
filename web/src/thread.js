@@ -3,7 +3,7 @@ import { $, $$, S, esc, doc_, api, apiPost, apiPostJson, applyKeyLabels } from '
 import { on } from './bus.js';
 import { showToast, copyToClipboard } from './ui.js';
 import { openFile } from './tabs.js';
-import { setThreadHandler, setExplainHandler, hideSelectionBar } from './selbar.js';
+import { setThreadHandler, setExplainHandler, setExplainPrepareHandler, hideSelectionBar } from './selbar.js';
 import { highlightRange } from './renderer.js';
 import { linkTarget, explainEvidenceLine, explainStaleLabel } from './threadrefs.js';
 import { hideRightInspector } from './inspector.js';
@@ -517,7 +517,7 @@ function thrTurnHtml(turn) {
   let h = '<div class="thr-msg thr-user"><div class="thr-who">You</div><div class="thr-body">' + thrMd(turn.prompt) + '</div></div>';
   h += '<div class="thr-msg thr-agent" data-turn="' + turn.id + '"><div class="thr-who">' + esc(turn.harness || 'agent') +
     (turn.model ? ' · ' + esc(turn.model) : '') +
-    (turn.running ? ' · <span class="thr-live">working…</span>' : turn.ms ? ' · ' + thrDur(turn.ms) : '') + '</div>';
+    (turn.running ? ' · <span class="thr-live">working…</span>' : turn.ms ? ' · <span' + (turn.firstMs ? ' title="First words after ' + thrDur(turn.firstMs) + (turn.warm ? ', agent started ahead' : '') + '"' : '') + '>' + thrDur(turn.ms) + '</span>' : '') + '</div>';
   if (turn.tools && turn.tools.length) {
     h += '<details class="thr-steps"' + (turn.running ? ' open' : '') + '><summary>' + turn.tools.length + (turn.tools.length === 1 ? ' step' : ' steps') + '</summary>' +
       '<div class="thr-step-list">' + turn.tools.map(x => '<div>' + esc(x) + '</div>').join('') + '</div></details>';
@@ -739,6 +739,20 @@ async function thrExplain(body) {
   }
 }
 
+/* Fire and forget: the server gathers evidence in the background and Explain
+   picks it up. Nothing here waits, and a failure costs only the head start. */
+let lastPrepared = '';
+function prepareExplain(info) {
+  const d = doc_();
+  if (!d || d.path !== info.path || d.dirty) return;
+  if (info.l2 - info.l1 >= 400 || info.text.length > 20000) return;
+  const { path, l1, c1, l2, c2, text } = info;
+  const key = [path, l1, c1, l2, c2, text].join('\u0000');
+  if (key === lastPrepared) return;
+  lastPrepared = key;
+  apiPostJson('/api/explain/prepare', { path, l1, c1, l2, c2, text }).catch(() => { lastPrepared = ''; });
+}
+
 export function explainSelection(info) {
   const d = doc_();
   if (d && d.path === info.path && d.dirty) { showToast('!', 'Save the file to explain the current code'); return; }
@@ -953,6 +967,7 @@ export function initThreads() {
   api('/api/threads').then(j => {
     thr.avail = true;
     setExplainHandler(explainSelection);
+    setExplainPrepareHandler(prepareExplain);
     $('#btn-top-threads')?.removeAttribute('hidden');
     thr.list = j.threads || [];
     thrDrawList();

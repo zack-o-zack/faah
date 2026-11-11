@@ -43,6 +43,10 @@ type Settings struct {
 	ServerBasePath              *string  `json:"server.basePath,omitempty"`
 	ExplorerAutoReveal          *bool    `json:"explorer.autoReveal,omitempty"`
 	TipsEnabled                 *bool    `json:"tips.enabled,omitempty"`
+	ExplainAgent                *string  `json:"explain.agent,omitempty"`
+	ExplainModel                *string  `json:"explain.model,omitempty"`
+	ExplainPrefetch             *bool    `json:"explain.prefetch,omitempty"`
+	ExplainWarmup               *bool    `json:"explain.warmup,omitempty"`
 }
 
 var settingsMu sync.Mutex
@@ -427,6 +431,38 @@ var Schema = []SchemaItem{
 		Category:    "Server",
 		Type:        "string",
 		Default:     "/",
+	},
+	{
+		Key:         "explain.agent",
+		Title:       "Explain Agent",
+		Description: "The coding harness that writes explanations (claude, agy, codex or opencode). Leave empty to use the harness selected for editing. Ignored when faah is started with -agent.",
+		Category:    "Explain",
+		Type:        "string",
+		Default:     "",
+	},
+	{
+		Key:         "explain.model",
+		Title:       "Explain Model",
+		Description: "The model explanations run on, as the explain agent names it. A smaller model answers faster. Leave empty to use that harness's own model.",
+		Category:    "Explain",
+		Type:        "string",
+		Default:     "",
+	},
+	{
+		Key:         "explain.prefetch",
+		Title:       "Prepare Explanations on Selection",
+		Description: "Gathers definitions, callers and references in the background when you select code, so Explain starts sooner.",
+		Category:    "Explain",
+		Type:        "boolean",
+		Default:     true,
+	},
+	{
+		Key:         "explain.warmup",
+		Title:       "Keep Explain Agent Started",
+		Description: "Keeps one explain agent (claude or agy) started and waiting, so an explanation skips the seconds the agent takes to start. It is stopped after 10 minutes unused.",
+		Category:    "Explain",
+		Type:        "boolean",
+		Default:     true,
 	},
 	{
 		Key:         "tips.enabled",

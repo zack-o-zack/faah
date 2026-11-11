@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"html"
 	"path/filepath"
@@ -132,9 +133,35 @@ func explainInstructions(kind string) string {
 }
 
 // explainVerified lists the harnesses that have passed the conformance test in
-// explain_conformance_test.go. codex and cursor-agent have rewrites below but
-// have not yet passed, so they stay off until they do.
-var explainVerified = map[string]bool{"claude": true, "agy": true}
+// explain_conformance_test.go. cursor-agent has a rewrite below but has not
+// yet passed, so it stays off until it does.
+var explainVerified = map[string]bool{"claude": true, "agy": true, "codex": true, "opencode": true}
+
+// opencode has no read-only flag, so explanations run as an agent of faah's
+// own, defined in OPENCODE_CONFIG_CONTENT. That config outranks the user's and
+// the project's, even an agent of the same name, so neither can hand the agent
+// write tools back. --standalone starts a private server that reads it; the
+// shared background service loaded its config long before.
+const opencodeExplainAgent = "faah-explain"
+
+var opencodeExplainConfig = func() string {
+	readOnly := map[string]string{"*": "deny", "read": "allow", "glob": "allow", "grep": "allow", "list": "allow"}
+	b, _ := json.Marshal(map[string]any{
+		"agent": map[string]any{opencodeExplainAgent: map[string]any{
+			"mode": "primary", "description": "Read-only explanations for faah", "permission": readOnly,
+		}},
+		"permission": readOnly,
+	})
+	return string(b)
+}()
+
+// explainEnv is what a harness's environment needs for readOnlyArgv to hold.
+func explainEnv(name string) []string {
+	if name == "opencode" {
+		return []string{"OPENCODE_CONFIG_CONTENT=" + opencodeExplainConfig}
+	}
+	return nil
+}
 
 // readOnlyArgv rewrites a harness command to run without write access. Only
 // verified harnesses qualify, and a command missing the expected flag, such as
@@ -162,6 +189,10 @@ func readOnlyArgv(name string, argv []string) ([]string, error) {
 		ok = setFlag("--sandbox", "read-only")
 	case "agy":
 		ok = setFlag("--mode", "plan")
+	case "opencode": // and explainEnv
+		if ok = len(out) > 1 && out[1] == "run"; ok {
+			out = append(out[:2:2], append([]string{"--standalone", "--agent", opencodeExplainAgent}, out[2:]...)...)
+		}
 	case "cursor-agent":
 		for i, a := range out {
 			if a == "--force" {

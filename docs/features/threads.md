@@ -58,6 +58,8 @@ References to files, lines, and named symbols are links. faah checks each one wh
 
 Explaining the same code again reopens the earlier conversation, even if the code moved in the file. When the code changes, faah writes a new explanation. When only its callers or references change, the old one opens with a **Refresh** action. **Re-explain** always writes a new one.
 
+Explanations can run on their own harness and model: claude, agy, codex or opencode. Set `explain.agent` and `explain.model` in settings, for example `claude` and `haiku`; left empty, Explain uses the harness selected for editing. When you select code, faah prepares the evidence in the background so Explain starts sooner. Turn that off with `explain.prefetch`. With claude or agy, faah also keeps one agent process started and waiting, which skips most of its start-up time: about 1 second for claude and 10 for agy. The process is stopped after 10 minutes unused. Turn that off with `explain.warmup`.
+
 Explanations never change your files. They need a harness with a read-only mode, and they read the saved file, so save your edits first.
 
 ## The Thread List
@@ -68,4 +70,4 @@ Threads are stored on disk and survive restarts. A reply that was still running 
 
 ## Requirements
 
-Threads use the coding harness you have selected, the same as inline edits, and are unavailable with `-no-agent`. Harnesses that faah can hand a session id (Claude Code, and Cursor Agent) keep their own memory of the conversation. With any other harness, faah sends the earlier transcript along with each message, which works but uses more tokens on long threads.
+Threads use the coding harness you have selected, the same as inline edits, and are unavailable with `-no-agent`. Harnesses that can resume a session (Claude Code, Cursor Agent, agy and Gemini CLI) keep their own memory of the conversation. With any other harness, faah sends the earlier transcript along with each message, which works but uses more tokens on long threads.
