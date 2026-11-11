@@ -28,7 +28,7 @@
           <input id="wb-target" type="text" spellcheck="false" autocapitalize="off"
                  placeholder="Folder path or pull request URL"
                  aria-label="Folder path or pull request URL" aria-autocomplete="list" aria-controls="wb-suggest">
-          <kbd data-align="inline-end" class="kbd group-focus-within/field:hidden max-sm:hidden" title="Press / to focus">/</kbd>
+          <kbd data-align="inline-end" class="kbd me-1 h-5 min-w-5 border border-border bg-transparent px-1 font-sans text-muted-foreground group-focus-within/field:hidden max-sm:hidden" title="Press / to focus">/</kbd>
           <button type="submit" data-align="inline-end" class="btn" data-variant="primary" data-size="sm" aria-label="Open">
             <span class="max-sm:hidden">Open</span><span class="icon-[lucide--arrow-right] size-4 sm:hidden" aria-hidden="true"></span>
           </button>
@@ -75,15 +75,22 @@
           </div>
         </div>
         <div role="tabpanel" id="wb-panel-browse" aria-labelledby="wb-tab-browse" class="flex min-h-0 flex-col pb-4" hidden>
-          <div class="flex shrink-0 items-center gap-2 pb-2">
+          <div class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border bg-card/40">
+          <div class="flex shrink-0 items-center gap-2 border-b px-1.5 py-1.5">
             <button id="wb-up" type="button" title="Parent folder" aria-label="Parent folder" class="btn" data-variant="ghost" data-size="icon-sm">
               <span class="icon-[lucide--arrow-up] size-4" aria-hidden="true"></span>
             </button>
             <nav id="wb-path" aria-label="Folder path" class="flex min-w-0 flex-1 items-center overflow-x-auto text-sm [scrollbar-width:none]"></nav>
-            <label class="label shrink-0 gap-2 text-xs font-normal text-muted-foreground max-[560px]:hidden" title="Show folders whose names start with a dot"><input id="wb-hidden" type="checkbox" role="switch" class="input"> Show hidden</label>
+            <button id="wb-mkdir" type="button" title="New folder" aria-label="New folder" class="btn" data-variant="ghost" data-size="icon-sm">
+              <span class="icon-[lucide--folder-plus] size-4" aria-hidden="true"></span>
+            </button>
+            <button id="wb-hidden" type="button" aria-pressed="false" title="Show hidden folders (Mod+Shift+.)" aria-label="Show hidden folders" class="btn text-muted-foreground aria-pressed:text-foreground" data-variant="ghost" data-size="icon-sm">
+              <span class="icon-[lucide--eye-off] size-4" aria-hidden="true"></span>
+            </button>
             <button id="wb-open-here" type="button" class="btn" data-variant="secondary" data-size="sm">Open this folder</button>
           </div>
-          <ul id="wb-dirs" role="listbox" tabindex="0" aria-label="Folders" class="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-md py-1 outline-none transition-opacity focus-visible:ring-[3px] focus-visible:ring-ring/50"></ul>
+          <ul id="wb-dirs" role="listbox" tabindex="0" aria-label="Folders" class="flex min-h-0 flex-1 flex-col overflow-y-auto p-1 outline-none transition-opacity focus-visible:ring-[3px] focus-visible:ring-inset focus-visible:ring-ring/50"></ul>
+          </div>
           <p class="shrink-0 pt-2 text-xs text-muted-foreground max-sm:hidden">Double-click or <kbd class="kbd">Enter</kbd> goes into a folder, <kbd class="kbd">Backspace</kbd> goes up, <kbd class="kbd" data-keys="Mod+Enter">Mod+Enter</kbd> opens it.</p>
         </div>
       </div>

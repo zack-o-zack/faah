@@ -375,6 +375,7 @@ func (wb *workbench) routes() {
 	wb.mux.HandleFunc(wb.route("/api/wb/state"), wb.handleState)
 	wb.mux.HandleFunc(wb.route("/api/wb/browse"), wb.handleBrowse)
 	wb.mux.HandleFunc(wb.route("/api/wb/complete"), wb.handleComplete)
+	wb.mux.HandleFunc(wb.route("/api/wb/mkdir"), wb.handleMkdir)
 	wb.mux.HandleFunc(wb.route("/api/metrics"), wb.handleMetrics)
 	wb.mux.HandleFunc(wb.route("/api/settings"), wb.handleSettings)
 	wb.mux.HandleFunc(wb.route("/api/wb/open"), wb.handleOpen)
@@ -814,6 +815,42 @@ func (wb *workbench) handleBrowse(w http.ResponseWriter, r *http.Request) {
 		parent = ""
 	}
 	writeJSON(w, map[string]any{"path": dir, "parent": parent, "git": hasGitMarker(dir) || gitAvailable(dir), "entries": out})
+}
+
+// handleMkdir creates a folder for Browse's New folder. The path is a name
+// inside base (the folder being shown), or a ~ or absolute path; missing
+// parents are created too. A folder that already exists is an error, so a
+// typo cannot silently land somewhere else.
+func (wb *workbench) handleMkdir(w http.ResponseWriter, r *http.Request) {
+	if !localPost(w, r) {
+		return
+	}
+	var body struct {
+		Path string `json:"path"`
+		Base string `json:"base"`
+	}
+	if readJSONBody(r, &body) != nil || strings.TrimSpace(body.Path) == "" {
+		fail(w, http.StatusBadRequest, "folder name is required")
+		return
+	}
+	base := body.Base
+	if base == "" {
+		base = wb.cwd
+	}
+	dir, err := expandPath(body.Path, base)
+	if err != nil {
+		fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if _, err := os.Stat(dir); err == nil {
+		fail(w, http.StatusConflict, dir+" already exists")
+		return
+	}
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	writeJSON(w, map[string]any{"path": dir})
 }
 
 // handleComplete completes the folder name being typed: q's last path

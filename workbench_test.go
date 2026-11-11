@@ -449,6 +449,27 @@ func postJSON(t *testing.T, h http.Handler, path, body string) *httptest.Respons
 	return w
 }
 
+// New folder takes a name inside the shown folder or a nested path, and
+// refuses one that already exists.
+func TestWorkbenchMkdir(t *testing.T) {
+	newTestStore(t)
+	dir := t.TempDir()
+	wb := newWorkbench("/", dir, "", nil)
+	w := postJSON(t, wb, "/api/wb/mkdir", `{"path":"a/b","base":"`+dir+`"}`)
+	if w.Code != http.StatusOK {
+		t.Fatalf("mkdir: %d %s", w.Code, w.Body.String())
+	}
+	if st, err := os.Stat(filepath.Join(dir, "a", "b")); err != nil || !st.IsDir() {
+		t.Fatalf("folder not created: %v", err)
+	}
+	if w := postJSON(t, wb, "/api/wb/mkdir", `{"path":"a","base":"`+dir+`"}`); w.Code != http.StatusConflict {
+		t.Fatalf("existing folder: got %d", w.Code)
+	}
+	if w := postJSON(t, wb, "/api/wb/mkdir", `{"path":" ","base":"`+dir+`"}`); w.Code != http.StatusBadRequest {
+		t.Fatalf("empty name: got %d", w.Code)
+	}
+}
+
 // Opening a PR with no known clone asks for one and records nothing; giving
 // a folder that is not a clone is refused; a real clone is remembered.
 func TestWorkbenchOpenPRAsksForClone(t *testing.T) {

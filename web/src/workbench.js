@@ -227,26 +227,24 @@ function rowHtml(it) {
   const title = pr ? (it.title || `#${it.number}`) : it.title || it.path;
   const failed = s === 'failed';
   const sub = s === 'starting' && it.progress ? it.progress : failed && it.error ? it.error : pr ? `${it.repo}#${it.number}` : tildify(it.path);
-  // Pull requests are always green; a running workspace gets a green dot on its tile.
+  // Pull requests are always green; a running workspace shows its stop button.
   const icon = s === 'starting'
     ? '<span class="icon-[lucide--loader-circle] size-4 animate-spin text-muted-foreground" aria-hidden="true"></span>'
     : pr ? '<span class="icon-[lucide--git-pull-request] size-4 text-gi" aria-hidden="true"></span>'
     : '<span class="icon-[lucide--folder] size-4 text-muted-foreground" aria-hidden="true"></span>';
-  const dot = s === 'running' ? '<span class="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-gi ring-2 ring-background" title="Running"></span>' : '';
   const act = (name, label, iconClass) => `<button type="button" data-act="${name}" title="${label}" aria-label="${label}" class="btn" data-variant="ghost" data-size="icon-xs"><span class="${iconClass}" aria-hidden="true"></span></button>`;
-  const star = it.pinned
-    ? act('pin', 'Stop keeping at the top', 'icon-[lucide--star] size-3.5 text-warn')
-    : act('pin', 'Keep at the top', 'icon-[lucide--star] size-3.5');
+  const pin = it.pinned
+    ? act('pin', 'Unpin', 'icon-[lucide--pin-off] size-3.5')
+    : act('pin', 'Pin to the top', 'icon-[lucide--pin] size-3.5');
   return `<li><a class="item group min-w-0 hover:bg-accent/60 focus-visible:bg-accent/60" data-size="sm" href="${esc(it.href)}" data-id="${esc(it.id)}">
-    <figure class="relative flex size-8 shrink-0 items-center justify-center rounded-md bg-muted">${icon}${dot}</figure>
+    <figure class="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted">${icon}</figure>
     <section class="flex min-w-0 flex-1 flex-col">
       <h3 class="truncate">${esc(title)}</h3>
       <p class="truncate font-mono text-xs ${failed ? 'text-destructive' : 'text-muted-foreground'} [direction:rtl] text-left" title="${esc(failed ? it.error || '' : sub)}"><bdi>${esc(sub)}</bdi></p>
     </section>
     <aside class="flex shrink-0 items-center gap-1">
       <span class="w-16 text-right text-xs tabular-nums text-muted-foreground group-hover:hidden group-focus-within:hidden max-sm:hidden">${esc(ago(it.lastOpened))}</span>
-      <span class="hidden gap-0.5 group-hover:flex group-focus-within:flex">${it.pinned ? '' : star}${act('remove', 'Remove from the list', 'icon-[lucide--x] size-3.5')}</span>
-      ${it.pinned ? star : ''}
+      <span class="hidden gap-0.5 group-hover:flex group-focus-within:flex">${pin}${act('remove', 'Remove from the list', 'icon-[lucide--x] size-3.5')}</span>
       ${s === 'running' ? act('stop', 'Stop this workspace', 'icon-[lucide--square] size-3 text-destructive') : ''}
     </aside>
   </a></li>`;
@@ -256,8 +254,10 @@ function renderRecent() {
   const pinned = state.items.filter(i => i.pinned);
   const rest = state.items.filter(i => !i.pinned);
   const shown = showAll ? rest : rest.slice(0, Math.max(0, RECENT_SHOWN - pinned.length));
-  let html = pinned.map(rowHtml).join('');
-  if (pinned.length && shown.length) html += '<li class="my-1 border-t" role="separator"></li>';
+  // Pinned workspaces get their own group, so pinning reads as "keep these here".
+  const heading = text => `<li role="presentation" class="px-3 pt-3 pb-1 text-xs font-medium text-muted-foreground first:pt-1">${text}</li>`;
+  let html = pinned.length ? heading('Pinned') + pinned.map(rowHtml).join('') : '';
+  if (pinned.length && shown.length) html += heading('Recent');
   html += shown.map(rowHtml).join('');
   $('#wb-recent').innerHTML = html;
   const hiddenCount = rest.length - shown.length;
@@ -362,7 +362,7 @@ function renderPath(path) {
 }
 
 function renderDirs() {
-  $('#wb-dirs').innerHTML = dirEntries.length ? dirEntries.map((e, i) => `<li role="option" id="wb-dir-${i}" data-i="${i}" aria-selected="${i === dirSel}" class="flex h-7 cursor-default select-none items-center gap-2 rounded-md px-2 text-sm hover:bg-accent/60 aria-selected:bg-primary aria-selected:text-primary-foreground">
+  $('#wb-dirs').innerHTML = dirEntries.length ? dirEntries.map((e, i) => `<li role="option" id="wb-dir-${i}" data-i="${i}" aria-selected="${i === dirSel}" class="${e.name.startsWith('.') && i !== dirSel ? 'opacity-50 ' : ''}flex h-7 cursor-default select-none items-center gap-2 rounded-md px-2 text-sm hover:bg-accent/60 aria-selected:bg-primary aria-selected:text-primary-foreground">
     <span class="icon-[lucide--folder] size-4 shrink-0 ${i === dirSel ? '' : 'text-muted-foreground'}" aria-hidden="true"></span>
     <span class="min-w-0 flex-1 truncate">${esc(e.name)}</span>
     ${e.git ? '<span class="text-xs opacity-70">git</span>' : ''}
@@ -375,9 +375,10 @@ function renderDirs() {
   $('#wb-open-here').textContent = sel ? `${verb} ${sel.name}` : pendingPR ? 'Use this folder' : 'Open this folder';
 }
 
-async function browse(path) {
+async function browse(path, select = '') {
   const params = new URLSearchParams({ path });
-  if ($('#wb-hidden').checked) params.set('hidden', '1');
+  // Shown hidden folders are dimmed, the way a file manager shows them.
+  if ($('#wb-hidden').getAttribute('aria-pressed') === 'true') params.set('hidden', '1');
   let r;
   // The old list stays, dimmed, until the new one arrives.
   $('#wb-dirs').classList.add('opacity-60');
@@ -396,7 +397,7 @@ async function browse(path) {
   $('#wb-up').disabled = !r.parent;
   $('#wb-up').dataset.path = r.parent || '';
   dirEntries = r.entries;
-  dirSel = dirEntries.findIndex(e => e.path === from);
+  dirSel = dirEntries.findIndex(e => e.path === (select || from));
   renderDirs();
 }
 
@@ -441,7 +442,6 @@ $('#wb-clone-managed').addEventListener('click', () => pendingPR && open(pending
 $('#wb-clone-cancel').addEventListener('click', cancelClone);
 $('#wb-open-here').addEventListener('click', () => useFolder(dirEntries[dirSel]?.path || browsePath));
 $('#wb-up').addEventListener('click', e => { const p = e.currentTarget.dataset.path; if (p) browse(p); });
-$('#wb-hidden').addEventListener('change', () => browse(browsePath));
 
 $('#wb-recent').addEventListener('click', async e => {
   const btn = e.target.closest('button[data-act]');
@@ -491,6 +491,51 @@ $('#wb-dirs').addEventListener('keydown', e => {
     if (i >= 0) selectDir(i);
   }
 });
+function toggleHidden() {
+  const btn = $('#wb-hidden');
+  const on = btn.getAttribute('aria-pressed') !== 'true';
+  btn.setAttribute('aria-pressed', String(on));
+  btn.firstElementChild.className = (on ? 'icon-[lucide--eye]' : 'icon-[lucide--eye-off]') + ' size-4';
+  browse(browsePath, dirEntries[dirSel]?.path);
+}
+$('#wb-hidden').addEventListener('click', toggleHidden);
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === '.' || e.key === '>') && !$('#wb-panel-browse').hidden) {
+    e.preventDefault();
+    toggleHidden();
+  }
+});
+
+// New folder: a row at the top of the list takes a name, or a ~ or absolute
+// path for a folder somewhere else. Enter creates it and selects it.
+function startMkdir() {
+  if ($('#wb-mkdir-row')) { $('#wb-mkdir-row input').focus(); return; }
+  $('#wb-dirs').insertAdjacentHTML('afterbegin', `<li id="wb-mkdir-row" class="flex h-8 items-center gap-2 px-2">
+    <span class="icon-[lucide--folder-plus] size-4 shrink-0 text-muted-foreground" aria-hidden="true"></span>
+    <input type="text" spellcheck="false" autocapitalize="off" class="input h-7 min-w-0 flex-1 text-sm" placeholder="Folder name, or a path like ~/code/new-project" aria-label="New folder name or path">
+  </li>`);
+  const input = $('#wb-mkdir-row input');
+  input.focus();
+  input.addEventListener('keydown', async e => {
+    e.stopPropagation();
+    if (e.key === 'Escape') { $('#wb-mkdir-row').remove(); $('#wb-dirs').focus(); return; }
+    if (e.key !== 'Enter' || !input.value.trim()) return;
+    e.preventDefault();
+    try {
+      const r = await req('api/wb/mkdir', { path: input.value.trim(), base: browsePath });
+      const at = r.path.lastIndexOf(state.sep);
+      await browse(at > 0 ? r.path.slice(0, at) : state.sep, r.path);
+      msg('');
+      $('#wb-dirs').focus();
+    } catch (err) {
+      input.setAttribute('aria-invalid', 'true');
+      msg(err.message);
+    }
+  });
+  input.addEventListener('input', () => input.removeAttribute('aria-invalid'));
+}
+$('#wb-mkdir').addEventListener('click', startMkdir);
+
 $('#wb-path').addEventListener('click', e => {
   const b = e.target.closest('button[data-path]');
   if (b) browse(b.dataset.path);
