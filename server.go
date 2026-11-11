@@ -218,6 +218,8 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc(s.routePath("/api/threads/revert"), s.handleThreadRevert)
 	s.mux.HandleFunc(s.routePath("/api/threads/stream"), s.handleThreadStream)
 	s.mux.HandleFunc(s.routePath("/api/explain"), s.handleExplain)
+	s.mux.HandleFunc(s.routePath("/api/explain/notes"), s.handleExplainNotes)
+	s.mux.HandleFunc(s.routePath("/api/mcp"), s.handleMCP)
 	s.mux.HandleFunc(s.routePath("/api/explain/prepare"), s.handleExplainPrepare)
 	s.mux.HandleFunc(s.routePath("/api/review-workflow/config"), s.handleReviewWorkflowConfig)
 	s.mux.HandleFunc(s.routePath("/api/review-workflow/run"), s.handleReviewWorkflowRun)
@@ -523,6 +525,7 @@ func (s *Server) SetAgent(a *agentManager) {
 	if a != nil {
 		s.threads = newThreadManager(a, s.ix.Root())
 		s.threads.prContext = s.prThreadContext
+		s.threads.symbolHash = s.symbolHash
 		a.onEdit = func() {
 			if s.gitWatcher != nil {
 				s.gitWatcher.Trigger()

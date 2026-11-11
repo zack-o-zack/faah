@@ -23,6 +23,7 @@ import (
 	"faah/internal/agents"
 	"faah/internal/agents/all"
 	"faah/internal/explain"
+	"faah/internal/explain/notes"
 	"faah/internal/render"
 	"faah/internal/settings"
 	"faah/internal/ui"
@@ -1051,6 +1052,9 @@ type threadTurn struct {
 	// Refs holds the citations in an explanation's reply that passed checking,
 	// by target as written.
 	Refs map[string]explain.Ref `json:"refs,omitempty"`
+	// What an explanation showed on the code through the explain tools.
+	Notes        []notes.Note        `json:"notes,omitempty"`
+	Walkthroughs []notes.Walkthrough `json:"walkthroughs,omitempty"`
 }
 
 // thread is the persisted conversation. Path and lines are where it was
@@ -1080,10 +1084,10 @@ type thread struct {
 	// and EvidenceHash what surrounded that code; see explain.go. ExplainReader
 	// is the explain.reader text it was written for. The packet the harness
 	// reads is kept beside the store and loaded here for a turn.
-	ExplainKey    string          `json:"explain.Key,omitempty"`
-	ExplainKind   string          `json:"explainKind,omitempty"`
-	ExplainReader string          `json:"explainReader,omitempty"`
-	EvidenceHash  string          `json:"evidenceHash,omitempty"`
+	ExplainKey    string           `json:"explainKey,omitempty"`
+	ExplainKind   string           `json:"explainKind,omitempty"`
+	ExplainReader string           `json:"explainReader,omitempty"`
+	EvidenceHash  string           `json:"evidenceHash,omitempty"`
 	Evidence      *explain.Summary `json:"evidence,omitempty"`
 	ExplainReq    *explain.Request `json:"explainReq,omitempty"`
 	packet        string
@@ -1130,6 +1134,10 @@ type threadManager struct {
 	subs      map[string]map[chan threadEvent]struct{}
 	lastSave  time.Time
 	standby   explainStandby // a harness started ahead of the next explanation
+	tools     *explainTools  // annotate and walkthrough, for explain turns
+	// symbolHash is the callers and references hash of a symbol, set by the
+	// server; nil in tests that build a manager alone.
+	symbolHash func(rel string, line int, name string) string
 }
 
 // threadStorePath keeps every workspace's threads beside settings.json, never
@@ -1153,6 +1161,7 @@ func newThreadManager(a *agentManager, root string) *threadManager {
 		jobs:    map[int64]*threadJobRef{},
 		subs:    map[string]map[chan threadEvent]struct{}{},
 	}
+	tm.tools = newExplainTools(tm)
 	tm.load()
 	a.threadJob = tm.job
 	a.threadCancel = tm.cancelJob
@@ -1278,6 +1287,8 @@ func cloneThread(t *thread) *thread {
 		tc := *tr
 		tc.Tools = append([]string(nil), tr.Tools...)
 		tc.Changed = append([]string(nil), tr.Changed...)
+		tc.Notes = append([]notes.Note(nil), tr.Notes...)
+		tc.Walkthroughs = append([]notes.Walkthrough(nil), tr.Walkthroughs...)
 		c.Turns[i] = &tc
 	}
 	return &c
@@ -1347,11 +1358,12 @@ func (tm *threadManager) SetScope(id, scope string) error {
 // threadPrompt composes what the harness is told for one turn. The anchor and
 // ground rules go in only when the harness has no memory of them: the first
 // turn, or a replay after a harness switch.
-func threadPrompt(t *thread, prior []*threadTurn, message string, replay bool, prCtx string, scopeChanged bool) string {
+func threadPrompt(t *thread, prior []*threadTurn, message string, replay bool, prCtx string, scopeChanged bool, tools agents.ToolChannel) string {
 	var b strings.Builder
 	if len(prior) == 0 || replay {
 		if t.Kind == "explain" {
 			b.WriteString(explain.Instructions(t.ExplainKind, t.ExplainReader))
+			b.WriteString(notes.Prompt(tools))
 		} else if t.Kind == "edit" || t.Kind == "batch" {
 			b.WriteString("Carry out the edit request below by editing files in place. ")
 			b.WriteString("Change only what it asks for; you may touch other files if the change needs it. ")
@@ -1382,6 +1394,9 @@ func threadPrompt(t *thread, prior []*threadTurn, message string, replay bool, p
 		var h strings.Builder
 		for _, tr := range prior {
 			fmt.Fprintf(&h, "User: %s\n\nAssistant: %s\n\n", tr.Prompt, strings.TrimSpace(tr.Reply))
+			if shown := notes.History(tr.Notes, tr.Walkthroughs); shown != "" {
+				h.WriteString(shown + "\n")
+			}
 			if len(tr.Changed) > 0 {
 				fmt.Fprintf(&h, "(files changed in that turn: %s)\n\n", strings.Join(tr.Changed, ", "))
 			}
@@ -1543,7 +1558,7 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 			tm.mu.Unlock()
 		}
 	}
-	prompt := threadPrompt(t, r.prior, r.message, replay, prCtx, scopeChanged)
+	prompt := threadPrompt(t, r.prior, r.message, replay, prCtx, scopeChanged, caps.Tools)
 
 	if ui.Verbose {
 		ui.VerbosePrompt(0, r.name, prompt, os.Stdout)
@@ -1559,10 +1574,38 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 		turnSession = sessionID
 	}
 
+	// An explanation's tool calls land on this turn: over MCP with a token
+	// that works until the turn ends, or as tagged blocks pulled out of the
+	// reply.
+	scope := toolScope{tid: r.tid, turn: r.turn.ID}
+	var tools *agents.ToolEndpoint
+	if explaining && caps.Tools == agents.ToolsMCP {
+		tok := ""
+		if standby != nil && standby.token != "" {
+			tok = standby.token
+			tm.tools.tokens.Bind(tok, scope)
+		} else {
+			tok = tm.tools.tokens.Issue(scope)
+		}
+		defer tm.tools.tokens.Revoke(tok)
+		tools = tm.tools.endpoint(tok)
+	}
+	var turnSink agents.Sink = sink
+	var tagged *notes.Tagged
+	if explaining && caps.Tools == agents.ToolsTagged {
+		read := notes.DiskReader(tm.root)
+		tagged = notes.NewTagged(sink, func(name string, args json.RawMessage) {
+			if _, err := notes.Apply(read, tm, scope, name, args); err != nil {
+				ui.Status("err", "explain", fmt.Sprintf("%s %s: %v", r.tid, name, err), 0, os.Stdout)
+			}
+		})
+		turnSink = tagged
+	}
+
 	var out agents.Outcome
 	var err error
 	if standby != nil {
-		st := standby.agent.Stream(sink)
+		st := standby.agent.Stream(turnSink)
 		err = standby.run(ctx, prompt, st, stderr, threadTurnTimeout)
 		var failed error
 		out, failed = st.Close()
@@ -1573,9 +1616,12 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 	} else {
 		out, err = a.Run(ctx, agents.Turn{
 			Dir: tm.root, Argv: r.base, Env: r.env, Model: r.model, Prompt: prompt,
-			SessionID: turnSession, Resume: live, Timeout: threadTurnTimeout,
+			SessionID: turnSession, Resume: live, Tools: tools, Timeout: threadTurnTimeout,
 			LogBytes: agentLogBytes, Stderr: stderr,
-		}, sink)
+		}, turnSink)
+	}
+	if tagged != nil {
+		tagged.Flush()
 	}
 
 	changed := changedSince(tm.root, before)

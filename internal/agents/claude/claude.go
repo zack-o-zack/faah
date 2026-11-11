@@ -18,7 +18,7 @@ type Agent struct{}
 func New() *Agent { return &Agent{} }
 
 func (*Agent) Name() string      { return name }
-func (*Agent) Caps() agents.Caps { return agents.Caps{Sessions: true} }
+func (*Agent) Caps() agents.Caps { return agents.Caps{Sessions: true, Tools: agents.ToolsMCP} }
 
 func (*Agent) ReadOnly(argv []string) ([]string, []string, error) {
 	out, ok := agents.SetFlag(argv, "--permission-mode", "plan")
@@ -30,26 +30,35 @@ func (*Agent) ReadOnly(argv []string) ([]string, []string, error) {
 
 func (*Agent) NewSession(context.Context, string, []string) string { return agents.NewUUID() }
 
-// Run adds session flags only when the turn has a session, as threads did
-// before this package: a turn without one runs its argv unchanged.
 func (a *Agent) Run(ctx context.Context, t agents.Turn, sink agents.Sink) (agents.Outcome, error) {
-	argv := t.Argv
-	if t.SessionID != "" {
-		argv = a.TurnArgv(t.Argv, t.SessionID, t.Resume)
-	}
-	return agents.Exec(ctx, name, t, argv, parse, sink)
+	return agents.Exec(ctx, name, t, a.TurnArgv(t), parse, sink)
 }
 
-// TurnArgv adds the session and output flags a turn needs. Flag order does not
-// matter to the CLI, so they go right after the binary.
-func (*Agent) TurnArgv(argv []string, sessionID string, resume bool) []string {
-	extra := []string{"--output-format", "stream-json", "--verbose"}
-	if resume {
-		extra = append(extra, "--resume", sessionID)
-	} else {
-		extra = append(extra, "--session-id", sessionID)
+// TurnArgv adds the flags a turn needs right after the binary, where their
+// order does not matter: output and session flags when the turn has a
+// session, MCP flags when it has tools. A turn with neither, as threads ran
+// before this package, runs its argv unchanged.
+func (*Agent) TurnArgv(t agents.Turn) []string {
+	var extra []string
+	if t.SessionID != "" {
+		extra = append(extra, "--output-format", "stream-json", "--verbose")
+		if t.Resume {
+			extra = append(extra, "--resume", t.SessionID)
+		} else {
+			extra = append(extra, "--session-id", t.SessionID)
+		}
 	}
-	return agents.InsertAfterBinary(argv, extra)
+	if t.Tools != nil {
+		cfg, _ := json.Marshal(map[string]any{"mcpServers": map[string]any{"faah": map[string]any{
+			"type": "http", "url": t.Tools.URL, "headers": map[string]string{"Authorization": "Bearer " + t.Tools.Token},
+		}}})
+		extra = append(extra, "--mcp-config", string(cfg), "--strict-mcp-config",
+			"--allowedTools", "mcp__faah__annotate,mcp__faah__walkthrough")
+	}
+	if extra == nil {
+		return t.Argv
+	}
+	return agents.InsertAfterBinary(t.Argv, extra)
 }
 
 // StdinArgv reads the prompt from stdin as one stream-json message.

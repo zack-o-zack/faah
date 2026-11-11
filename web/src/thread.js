@@ -513,6 +513,25 @@ function thrReplyHtml(turn) {
   try { return thrMd(turn.reply || ''); } finally { thrRefs = null; }
 }
 
+/* What an explanation showed on the code through its tools, listed with links
+   to the lines. */
+function thrShownHtml(turn) {
+  const where = (p, l1, l2) => '<span class="thr-shown-where">' + esc(p) + ':' + l1 + (l2 > l1 ? '-' + l2 : '') + '</span>';
+  const link = (p, l1, l2, inner) => '<a href="#" class="thr-link thr-shown-link" data-path="' + esc(p) + '" data-line="' + l1 + '"' +
+    (l2 > l1 ? ' data-end="' + l2 + '"' : '') + '>' + inner + '</a>';
+  let h = '';
+  const notes = turn.notes || [];
+  if (notes.length) {
+    h += '<div class="thr-shown"><div class="thr-shown-head">' + notes.length + (notes.length === 1 ? ' note' : ' notes') + ' on the code</div>' +
+      notes.map(n => link(n.path, n.l1, n.l2, where(n.path, n.l1, n.l2) + ' ' + esc(n.summary))).join('') + '</div>';
+  }
+  for (const w of turn.walkthroughs || []) {
+    h += '<div class="thr-shown"><div class="thr-shown-head">Walkthrough: ' + esc(w.title) + '</div><ol>' +
+      w.steps.map(s => '<li>' + link(s.path, s.l1, s.l2, esc(s.title)) + ' <span class="thr-shown-body">' + esc(s.body) + '</span></li>').join('') + '</ol></div>';
+  }
+  return h;
+}
+
 function thrTurnHtml(turn) {
   let h = '<div class="thr-msg thr-user"><div class="thr-who">You</div><div class="thr-body">' + thrMd(turn.prompt) + '</div></div>';
   h += '<div class="thr-msg thr-agent" data-turn="' + turn.id + '"><div class="thr-who">' + esc(turn.harness || 'agent') +
@@ -523,6 +542,7 @@ function thrTurnHtml(turn) {
       '<div class="thr-step-list">' + turn.tools.map(x => '<div>' + esc(x) + '</div>').join('') + '</div></details>';
   }
   h += '<div class="thr-body thr-reply">' + thrReplyHtml(turn) + '</div>';
+  h += thrShownHtml(turn);
   if (turn.error) h += '<div class="thr-err">' + esc(turn.error) + '</div>';
   if (thr.cur?.kind === 'explain' && turn.id === 1 && !turn.running) h += thrExplainFoot();
   if (!turn.running) {

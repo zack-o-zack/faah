@@ -223,6 +223,7 @@ func main() {
 			fatal(fmt.Errorf("-agent: %w", err))
 		}
 		pxSrv.SetAgent(agent)
+		pxSrv.SetToolsAddr(addr)
 	}
 	initDur := time.Since(tInit)
 

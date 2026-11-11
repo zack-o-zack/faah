@@ -3,6 +3,8 @@ package claude
 import (
 	"strings"
 	"testing"
+
+	"faah/internal/agents"
 )
 
 func TestParseClaudeEvent(t *testing.T) {
@@ -25,11 +27,11 @@ func TestParseClaudeEvent(t *testing.T) {
 
 func TestTurnArgv(t *testing.T) {
 	tpl := []string{"/bin/claude", "--permission-mode", "acceptEdits", "-p", "{prompt}"}
-	first := strings.Join(New().TurnArgv(tpl, "U", false), " ")
+	first := strings.Join(New().TurnArgv(agents.Turn{Argv: tpl, SessionID: "U"}), " ")
 	if !strings.Contains(first, "--session-id U") || strings.Contains(first, "--resume") || !strings.Contains(first, "stream-json") {
 		t.Fatalf("first turn argv = %s", first)
 	}
-	next := strings.Join(New().TurnArgv(tpl, "U", true), " ")
+	next := strings.Join(New().TurnArgv(agents.Turn{Argv: tpl, SessionID: "U", Resume: true}), " ")
 	if !strings.Contains(next, "--resume U") || strings.Contains(next, "--session-id") {
 		t.Fatalf("resume argv = %s", next)
 	}

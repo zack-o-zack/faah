@@ -98,7 +98,7 @@ func ReadLines(abs string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	if st.IsDir() || st.Size() > explainMaxFileBytes {
+	if !st.Mode().IsRegular() || st.Size() > explainMaxFileBytes {
 		return nil, errors.New("not a readable source file")
 	}
 	data, err := os.ReadFile(abs)

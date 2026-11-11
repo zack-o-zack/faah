@@ -34,7 +34,7 @@ type Agent struct{}
 func New() *Agent { return &Agent{} }
 
 func (*Agent) Name() string      { return name }
-func (*Agent) Caps() agents.Caps { return agents.Caps{} }
+func (*Agent) Caps() agents.Caps { return agents.Caps{Tools: agents.ToolsTagged} }
 
 // ReadOnly runs the turn as faah's own read-only agent, defined in
 // OPENCODE_CONFIG_CONTENT.

@@ -56,6 +56,8 @@ The answer appears in the thread panel, and you can ask follow-up questions belo
 
 References to files, lines, and named symbols are links. faah checks each one when the answer finishes, and anything it cannot confirm stays plain text.
 
+The agent can also show its explanation on the code: notes on a symbol, a line, or a block, and walkthroughs of a flow across files. They are listed under the answer, and each one links to its lines.
+
 Explaining the same code again reopens the earlier conversation, even if the code moved in the file. When the code changes, faah writes a new explanation. When only its callers or references change, or you changed `explain.reader` since it was written, the old one opens with a **Refresh** action. **Re-explain** always writes a new one.
 
 `explain.reader` is added to the explain agent's prompt to describe the reader, for example `I'm new to Go`.
