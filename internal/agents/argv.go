@@ -7,7 +7,7 @@ import (
 )
 
 // NewUUID returns a random version 4 UUID, the form claude and gemini accept
-// as a session id. Moved from newUUID in agent.go.
+// as a session id.
 func NewUUID() string {
 	var b [16]byte
 	rand.Read(b[:])
@@ -40,7 +40,6 @@ func InsertAfterBinary(argv, extra []string) []string {
 
 // StdinArgv makes a print-mode argv read its prompt as stream-json on stdin:
 // it adds --input-format stream-json and empties the prompt placeholder.
-// Moved from standbyArgv in explain_standby.go.
 func StdinArgv(argv []string, placeholder string) []string {
 	out := make([]string, 0, len(argv)+2)
 	out = append(out, argv[0], "--input-format", "stream-json")
