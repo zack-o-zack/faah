@@ -47,3 +47,17 @@ func TestTaggedResult(t *testing.T) {
 		t.Fatalf("result = %q, calls %d", sink.result.String(), n)
 	}
 }
+
+// agy streams its reply and then sends it again as the result.
+func TestTaggedIgnoresResultAfterText(t *testing.T) {
+	sink := &textSink{}
+	var n int
+	tg := NewTagged(sink, func(string, json.RawMessage) { n++ })
+	reply := "Done.\n<faah:annotate>{\"notes\":[]}</faah:annotate>"
+	tg.Text(reply, false)
+	tg.Result(reply)
+	tg.Flush()
+	if n != 1 || sink.result.Len() != 0 || strings.TrimSpace(sink.text.String()) != "Done." {
+		t.Fatalf("calls %d, text %q, result %q", n, sink.text.String(), sink.result.String())
+	}
+}

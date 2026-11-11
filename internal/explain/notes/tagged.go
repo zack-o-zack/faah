@@ -15,9 +15,10 @@ var tagNames = []string{"annotate", "walkthrough"}
 // in its reply. Text outside the blocks passes on as it arrives; text that may
 // start a block is held until the block closes or turns out not to be one.
 type Tagged struct {
-	sink agents.Sink
-	call func(name string, args json.RawMessage)
-	held string
+	sink     agents.Sink
+	call     func(name string, args json.RawMessage)
+	held     string
+	streamed bool // text arrived, so the final answer repeats it
 }
 
 func NewTagged(sink agents.Sink, call func(name string, args json.RawMessage)) *Tagged {
@@ -25,6 +26,7 @@ func NewTagged(sink agents.Sink, call func(name string, args json.RawMessage)) *
 }
 
 func (t *Tagged) Text(s string, block bool) {
+	t.streamed = true
 	out := t.take(t.held + s)
 	if out != "" {
 		t.sink.Text(out, block)
@@ -34,7 +36,11 @@ func (t *Tagged) Text(s string, block bool) {
 func (t *Tagged) Step(label string) { t.sink.Step(label) }
 
 // Result is a whole final answer, so a block in it is complete or not at all.
+// After streamed text it repeats what was streamed, and is ignored.
 func (t *Tagged) Result(s string) {
+	if t.streamed {
+		return
+	}
 	out := t.take(s)
 	t.sink.Result(out + t.held)
 	t.held = ""
