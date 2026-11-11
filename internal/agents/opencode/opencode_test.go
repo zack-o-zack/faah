@@ -202,7 +202,7 @@ func TestOpenCodeSessions(t *testing.T) {
 				if r.Path == "/api/session" {
 					expected := []rule{{"edit", "*", "ask"}, {"edit", filepath.ToSlash(o.Dir) + "/*", "allow"}, {"bash", "*", "ask"}, {"external_directory", "*", "ask"}}
 					if mode == agents.ModePlan {
-						expected = append(expected, rule{"edit", "*", "deny"}, rule{"bash", "*", "deny"}, rule{"shell", "*", "deny"})
+						expected = append(expected, rule{"edit", "*", "deny"}, rule{"bash", "*", "deny"}, rule{"shell", "*", "deny"}, rule{"webfetch", "*", "deny"}, rule{"websearch", "*", "deny"}, rule{"execute", "*", "deny"})
 					}
 					expected = append(expected, rule{"faah-*", "*", "deny"}, rule{"faah-thread_a_*", "*", "allow"})
 					raw, _ := json.Marshal(expected)
@@ -225,7 +225,7 @@ func TestOpenCodeSessions(t *testing.T) {
 				}
 				if r.Method == "PUT" {
 					adds++
-					if r.Path != "/api/experimental/mcp/faah-thread_a" || r.Directory != o.Dir || !reflect.DeepEqual(r.Body, map[string]any{"config": map[string]any{"type": "remote", "url": o.Tools.URL, "headers": map[string]any{"Authorization": "Bearer token"}, "oauth": false}}) {
+					if r.Path != "/api/experimental/mcp/faah-thread_a" || r.Directory != o.Dir || !reflect.DeepEqual(r.Body, map[string]any{"config": map[string]any{"type": "remote", "url": o.Tools.URL, "headers": map[string]any{"Authorization": "Bearer token"}, "oauth": false, "codemode": false}}) {
 						t.Fatalf("MCP %+v", r)
 					}
 				}
@@ -511,7 +511,7 @@ func validHelperConfig(content string) bool {
 	if json.Unmarshal(c.Agents["faah-plan"], &p) != nil {
 		return false
 	}
-	return c.Model == "user/model" && string(c.Agents["plan"]) == `{"disabled":true}` && string(c.Agents["custom"]) == `{"mode":"subagent"}` && p.Mode == "primary" && reflect.DeepEqual(p.Permissions, []rule{{"edit", "*", "deny"}, {"bash", "*", "deny"}, {"shell", "*", "deny"}})
+	return c.Model == "user/model" && string(c.Agents["plan"]) == `{"disabled":true}` && string(c.Agents["custom"]) == `{"mode":"subagent"}` && p.Mode == "primary" && reflect.DeepEqual(p.Permissions, []rule{{"edit", "*", "deny"}, {"bash", "*", "deny"}, {"shell", "*", "deny"}, {"webfetch", "*", "deny"}, {"websearch", "*", "deny"}, {"execute", "*", "deny"}})
 }
 
 func TestOpenCodeInvalidConfig(t *testing.T) {

@@ -426,7 +426,7 @@ func planConfig(content string) (string, error) {
 	profiles["faah-plan"], _ = json.Marshal(map[string]any{
 		"mode": "primary", "description": "Read-only code explanations and planning",
 		"system":      "Explore, explain, and plan using read-only tools. Do not create, modify, or delete files. Answer the user directly and use the provided annotation and walkthrough tools when helpful.",
-		"permissions": []rule{{"edit", "*", "deny"}, {"bash", "*", "deny"}, {"shell", "*", "deny"}},
+		"permissions": planRules(),
 	})
 	config["agents"], _ = json.Marshal(profiles)
 	b, err := json.Marshal(config)

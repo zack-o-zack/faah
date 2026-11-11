@@ -56,10 +56,15 @@ type rule struct {
 	Effect   string `json:"effect"`
 }
 
+// Code Mode includes HTTP fetch, so Plan uses direct MCP tools instead.
+func planRules() []rule {
+	return []rule{{"edit", "*", "deny"}, {"bash", "*", "deny"}, {"shell", "*", "deny"}, {"webfetch", "*", "deny"}, {"websearch", "*", "deny"}, {"execute", "*", "deny"}}
+}
+
 func rules(o agents.Open, name string) []rule {
 	r := []rule{{"edit", "*", "ask"}, {"edit", filepath.ToSlash(o.Dir) + "/*", "allow"}, {"bash", "*", "ask"}, {"external_directory", "*", "ask"}}
 	if o.Mode == agents.ModePlan {
-		r = append(r, rule{"edit", "*", "deny"}, rule{"bash", "*", "deny"}, rule{"shell", "*", "deny"})
+		r = append(r, planRules()...)
 	}
 	r = append(r, rule{"faah-*", "*", "deny"})
 	if o.Tools != nil {
@@ -229,7 +234,7 @@ func (s *session) Prompt(ctx context.Context, text string, sink agents.Sink) (ag
 		s.agent = agent
 	}
 	if ep := s.o.Tools; ep != nil {
-		if err := s.server.call(ctx, "PUT", s.mcpPath(), map[string]any{"config": map[string]any{"type": "remote", "url": ep.URL, "headers": map[string]string{"Authorization": ep.Authorization}, "oauth": false}}, nil); err != nil {
+		if err := s.server.call(ctx, "PUT", s.mcpPath(), map[string]any{"config": map[string]any{"type": "remote", "url": ep.URL, "headers": map[string]string{"Authorization": ep.Authorization}, "oauth": false, "codemode": false}}, nil); err != nil {
 			return out, err
 		}
 	}
