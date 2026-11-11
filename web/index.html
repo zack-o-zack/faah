@@ -14,102 +14,102 @@
 <link rel="stylesheet" href="static/themes.css">
 </head>
 <body class="right-hidden threads-hidden">
-<div id="app">
+<div id="app" class="flex h-dvh overflow-hidden">
   <!-- SECTION: Sidebar (File explorer tree) -->
-  <aside id="side">
-    <header class="panel-head"><span id="root-name">-</span><span class="panel-actions"><div class="button-group desktop:mr-auto" role="group" aria-label="Explorer view mode"><button id="btn-files" title="File Explorer (show all files)" aria-label="File Explorer" class="btn size-5!" data-control="view-choice" data-variant="secondary" data-size="icon-xs" aria-pressed="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></button><button id="btn-changed" title="Git changes (show changed files only)" aria-label="Git changes" class="btn size-5!" data-control="view-choice" data-variant="ghost" data-size="icon-xs"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="9" r="2.5"/><path d="M6 8.5v7M18 11.5c0 3-3 3.5-6 3.5"/></svg></button></div><button id="btn-new-file" title="New File" aria-label="New File" class="btn size-5!" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg></button><button id="btn-new-folder" title="New Folder" aria-label="New Folder" class="btn size-5!" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg></button><button id="btn-collapse-tree" title="Collapse all folders" aria-label="Collapse all folders" class="btn size-5!" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 11 12 6 17 11"/><polyline points="7 18 12 13 17 18"/></svg></button><button id="btn-expand-tree" title="Expand all project folders (ignored folders stay closed)" aria-label="Expand all project folders" class="btn size-5!" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 6 12 11 17 6"/><polyline points="7 13 12 18 17 13"/></svg></button><button id="btn-reindex" title="Re-index" class="btn size-5!" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Re-index"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button></span></header>
+  <aside id="side" class="flex w-[340px] shrink-0 flex-col overflow-hidden border-r bg-sidebar text-sidebar-foreground [body.side-hidden_&]:hidden">
+    <header class="panel-head desktop:min-h-[var(--titlebar-h,2.5rem)] desktop:[-webkit-app-region:drag] desktop:[&_button]:[-webkit-app-region:no-drag] desktop:[&_a]:[-webkit-app-region:no-drag] desktop:[&_[role=group]]:[-webkit-app-region:no-drag] desktop:[&_[role=tab]]:[-webkit-app-region:no-drag] desktop:pl-[calc(0.75rem+var(--titlebar-left,0px))] desktop:flex-wrap [&_.panel-actions]:desktop:w-full flex shrink-0 items-center gap-2 border-b px-3 py-2 text-xs font-medium"><span id="root-name" class="min-w-0 flex-1 truncate">-</span><span class="panel-actions ml-auto flex shrink-0 items-center gap-1"><div class="button-group desktop:mr-auto" role="group" aria-label="Explorer view mode"><button id="btn-files" title="File Explorer (show all files)" aria-label="File Explorer" class="btn size-5!" data-control="view-choice" data-variant="secondary" data-size="icon-xs" aria-pressed="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></button><button id="btn-changed" title="Git changes (show changed files only)" aria-label="Git changes" class="btn size-5!" data-control="view-choice" data-variant="ghost" data-size="icon-xs"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="9" r="2.5"/><path d="M6 8.5v7M18 11.5c0 3-3 3.5-6 3.5"/></svg></button></div><button id="btn-new-file" title="New File" aria-label="New File" class="btn size-5!" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg></button><button id="btn-new-folder" title="New Folder" aria-label="New Folder" class="btn size-5!" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg></button><button id="btn-collapse-tree" title="Collapse all folders" aria-label="Collapse all folders" class="btn size-5!" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 11 12 6 17 11"/><polyline points="7 18 12 13 17 18"/></svg></button><button id="btn-expand-tree" title="Expand all project folders (ignored folders stay closed)" aria-label="Expand all project folders" class="btn size-5!" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 6 12 11 17 6"/><polyline points="7 13 12 18 17 13"/></svg></button><button id="btn-reindex" title="Re-index" class="btn size-5!" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Re-index"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button></span></header>
     <!-- PR review only (web/src/prscope.js): whole PR vs just your own changes -->
-    <div id="scope-bar" class="scope-bar button-group" role="group" aria-label="Changes to show" hidden>
+    <div id="scope-bar" class="scope-bar flex shrink-0 gap-1 border-b p-2 button-group" role="group" aria-label="Changes to show" hidden>
       <button type="button" data-scope="all" aria-pressed="true" title="Every file this PR changes, plus your edits" class="btn" data-variant="secondary" data-size="xs">PR changes <span id="scope-all-n" class="badge" data-variant="secondary" data-control="scope-n">0</span></button>
       <button type="button" data-scope="yours" aria-pressed="false" title="Only files you have edited or committed since checkout" class="btn" data-variant="outline" data-size="xs">Yours <span id="scope-yours-n" class="badge" data-variant="secondary" data-control="scope-n">0</span></button>
     </div>
-    <div class="panel-body" id="tree"></div>
+    <div class="panel-body min-h-0 flex-1 overflow-auto pb-4 [&.changed-only_.file:not(.dirty)]:hidden [&.changed-only_.tw:not(:has(.dirty))]:hidden [&.changed-only.scope-yours_.file:not(.your-change)]:hidden [&.changed-only.scope-yours_.tw:not(:has(.your-change))]:hidden [&.changed-only.scope-pr_.file:not(.pr-file)]:hidden [&.changed-only.scope-pr_.tw:not(:has(.pr-file))]:hidden [&.no-changes]:after:content-['Working_tree_clean'] [&.no-yours]:after:content-['No_changes_of_yours_yet'] after:block after:p-3 after:text-xs after:text-muted-foreground" id="tree"></div>
     <!-- Unpushed commits: the local commits ahead of the tracking branch,
          listed beside the tree while the "changed files only" filter is on.
          web/src/unpushed.js owns it. -->
-    <div id="unpushed" class="unpushed" hidden>
-      <div id="unpushed-resizer" class="unpushed-resizer" title="Drag to resize"></div>
-      <div class="unpushed-head">
-        <svg class="unpushed-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
-        <span class="unpushed-title">Unpushed</span>
+    <div id="unpushed" class="unpushed relative flex min-h-8 max-h-[45vh] flex-col border-t bg-sidebar [&.collapsed]:flex-none [&.collapsed_.unpushed-body]:hidden" hidden>
+      <div id="unpushed-resizer" class="unpushed-resizer absolute -top-1 inset-x-0 z-10 h-2 cursor-row-resize hover:bg-primary [&.drag]:bg-primary" title="Drag to resize"></div>
+      <div class="unpushed-head flex shrink-0 items-center gap-2 border-b px-3 py-2 text-xs font-medium">
+        <svg class="unpushed-icon shrink-0 text-primary" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+        <span class="unpushed-title shrink-0 text-xs font-medium text-muted-foreground">Unpushed</span>
         <span id="unpushed-count" class="badge" data-variant="secondary" data-control="unpushed-count"></span>
-        <span class="grow"></span>
-        <span id="unpushed-upstream" class="unpushed-upstream"></span>
+        <span class="flex-1 min-w-0"></span>
+        <span id="unpushed-upstream" class="unpushed-upstream max-w-[45%] truncate font-mono text-xs text-muted-foreground"></span>
         <button id="unpushed-collapse" title="Collapse/expand unpushed commits" class="btn" data-control="pr-comments-collapse" data-variant="ghost" data-size="icon-xs" aria-label="Collapse/expand unpushed commits">&#9662;</button>
       </div>
-      <div id="unpushed-body" class="unpushed-body"></div>
+      <div id="unpushed-body" class="unpushed-body min-h-0 flex-1 overflow-y-auto py-2"></div>
     </div>
-    <div id="git-panel" class="git-panel" hidden>
-      <div id="git-panel-resizer" class="git-panel-resizer" title="Drag to resize"></div>
-      <div class="git-panel-head">
-        <svg class="git-panel-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" title="Git Panel"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="9" r="2.5"/><path d="M6 8.5v7M18 11.5c0 3-3 3.5-6 3.5"/></svg>
-        <span id="git-branch" class="git-branch"></span>
-        <span id="git-counts" class="git-counts"></span>
-        <span class="grow"></span>
+    <div id="git-panel" class="git-panel relative flex h-96 min-h-8 max-h-[80vh] shrink-0 flex-col border-t bg-sidebar [&.collapsed]:h-auto! [&.collapsed_.git-panel-body]:hidden" hidden>
+      <div id="git-panel-resizer" class="git-panel-resizer absolute -top-1 inset-x-0 z-10 h-2 cursor-row-resize hover:bg-primary [&.drag]:bg-primary" title="Drag to resize"></div>
+      <div class="git-panel-head flex shrink-0 items-center gap-2 border-b px-3 py-2 text-xs font-medium">
+        <svg class="git-panel-icon shrink-0 text-primary" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" title="Git Panel"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="9" r="2.5"/><path d="M6 8.5v7M18 11.5c0 3-3 3.5-6 3.5"/></svg>
+        <span id="git-branch" class="git-branch truncate font-medium"></span>
+        <span id="git-counts" class="git-counts shrink-0 font-mono text-xs text-muted-foreground"></span>
+        <span class="flex-1 min-w-0"></span>
         <button id="git-panel-collapse" title="Collapse" class="btn" data-control="pr-comments-collapse" data-variant="ghost" data-size="icon-xs" aria-label="Collapse">&#9662;</button>
       </div>
-      <div id="git-panel-body" class="git-panel-body">
+      <div id="git-panel-body" class="git-panel-body flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-3">
         <button id="git-token-nudge" type="button" hidden title="Set GITHUB_TOKEN, set GH_TOKEN, or run 'gh auth login' -- or add one below" class="btn" data-control="git-token-nudge" data-variant="outline" data-size="xs">
           <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           <span>No GitHub token configured &mdash; add one</span>
         </button>
-        <div id="git-notice" class="git-notice" role="status" aria-live="polite" hidden>
-          <div class="git-notice-head">
-            <span id="git-notice-title" class="git-notice-title"></span>
+        <div id="git-notice" class="git-notice alert flex! flex-col gap-2 [&[data-tone=warn]]:border-warn [&[data-tone=busy]]:border-primary [&[data-tone=ok]]:border-gi" role="status" aria-live="polite" hidden>
+          <div class="git-notice-head flex items-center gap-2">
+            <span id="git-notice-title" class="git-notice-title min-w-0 flex-1 font-semibold wrap-anywhere"></span>
             <button id="git-notice-close" type="button" title="Dismiss" class="btn" data-control="git-notice-close" data-variant="ghost" data-size="icon-xs" aria-label="Dismiss">&times;</button>
           </div>
-          <div id="git-notice-text" class="git-notice-text"></div>
-          <div id="git-notice-agent" class="git-agent-picker" hidden>
+          <div id="git-notice-text" class="git-notice-text max-h-40 overflow-y-auto whitespace-pre-wrap wrap-anywhere empty:hidden [&_code]:font-mono [&_.hint]:block [&_.hint]:text-muted-foreground"></div>
+          <div id="git-notice-agent" class="git-agent-picker flex flex-col gap-2" hidden>
             <select id="git-sync-harness" title="Coding harness" class="select h-6! max-w-full text-xs!" data-control="agent-harness-select"></select>
             <select id="git-sync-model" title="Model" class="select h-6! max-w-full text-xs!" data-control="agent-model-select"></select>
           </div>
-          <div id="git-notice-actions" class="git-notice-actions"></div>
-          <details id="git-notice-log" class="git-notice-log" hidden><summary>Agent output</summary><pre></pre></details>
+          <div id="git-notice-actions" class="git-notice-actions flex flex-wrap gap-2 empty:hidden"></div>
+          <details id="git-notice-log" class="git-notice-log [&_summary]:cursor-pointer [&_summary]:text-muted-foreground [&_pre]:mt-2 [&_pre]:max-h-40 [&_pre]:overflow-auto [&_pre]:whitespace-pre-wrap [&_pre]:wrap-anywhere [&_pre]:font-mono [&_pre]:text-xs" hidden><summary>Agent output</summary><pre></pre></details>
         </div>
-        <div id="git-commit-section" class="git-commit-section">
-          <div class="git-agent-picker">
+        <div id="git-commit-section" class="git-commit-section flex flex-col gap-2">
+          <div class="git-agent-picker flex flex-col gap-2">
             <select id="git-harness" title="Coding harness" class="select h-6! max-w-full text-xs!" data-control="agent-harness-select"></select>
             <select id="git-model" title="Model" class="select h-6! max-w-full text-xs!" data-control="agent-model-select"></select>
-            <div class="git-ai-row">
+            <div class="git-ai-row flex w-full items-center gap-2">
               <button id="git-generate-msg" title="Stage all changes and write a commit message using the selected coding harness" class="btn" data-control="git-generate-btn" data-variant="primary" data-size="xs">Stage all + Commit with AI</button>
             </div>
           </div>
           <textarea id="git-commit-msg" rows="3" spellcheck="false" autocomplete="off" placeholder="Commit message..." hidden class="textarea resize-y" data-control="git-commit-msg"></textarea>
-          <div class="git-instructions-wrap">
+          <div class="git-instructions-wrap flex items-center">
             <a id="git-write-msg-link" href="#" role="button" title="Write the commit message yourself" class="btn" data-control="git-instructions-link" data-variant="link" data-size="xs">write message</a>
-            <span class="git-link-sep" aria-hidden="true" hidden>&middot;</span>
+            <span class="git-link-sep mx-2 text-xs text-muted-foreground" aria-hidden="true" hidden>&middot;</span>
             <a id="git-generate-link" href="#" role="button" title="Generate a message for staged changes using the AI instructions" hidden class="btn" data-control="git-instructions-link" data-variant="link" data-size="xs">generate with AI</a>
-            <span class="git-link-sep" aria-hidden="true">&middot;</span>
+            <span class="git-link-sep mx-2 text-xs text-muted-foreground" aria-hidden="true">&middot;</span>
             <a id="git-instructions-link" href="#" role="button" title="Configure commit message instructions for AI in Settings" class="btn" data-control="git-instructions-link" data-variant="link" data-size="xs">instructions for AI</a>
           </div>
         </div>
-        <div id="git-clean-state" class="git-clean-state" hidden>
+        <div id="git-clean-state" class="git-clean-state flex items-center justify-center gap-2 rounded border border-dashed p-3 text-xs text-muted-foreground [&_svg]:shrink-0 [&_svg]:text-primary" hidden>
           <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           <span>Working tree clean</span>
         </div>
-        <div class="git-panel-actions">
+        <div class="git-panel-actions grid w-full grid-cols-3 gap-2">
           <button id="git-commit" title="Tick modified files to stage them for commit" disabled class="btn flex-1 min-w-0" data-control="bar-action" data-variant="outline" data-size="xs">Commit</button>
           <button id="git-push" title="No unpushed commits to push" disabled class="btn flex-1 min-w-0" data-control="bar-action" data-variant="outline" data-size="xs">Push</button>
           <button id="git-pull" title="Pull (fast-forward only; if the branches diverged, offers a rebase or merge by your coding harness)" class="btn flex-1 min-w-0" data-control="bar-action" data-variant="outline" data-size="xs">Pull</button>
         </div>
-        <div id="git-recent-commits" class="git-recent-commits">
-          <div class="git-recent-head">
-            <span class="git-recent-title">Recent Commits</span>
+        <div id="git-recent-commits" class="git-recent-commits mt-1 flex flex-col gap-1 border-t pt-2">
+          <div class="git-recent-head flex items-center justify-between">
+            <span class="git-recent-title shrink-0 text-xs font-medium text-muted-foreground">Recent Commits</span>
           </div>
-          <div id="git-commits-list" class="git-commits-list"></div>
-          <div class="git-see-all-wrap">
-            <a id="git-see-all-commits" class="git-see-all-commits" href="#" target="_blank" rel="noopener">See all commits</a>
+          <div id="git-commits-list" class="git-commits-list flex flex-col gap-1"></div>
+          <div class="git-see-all-wrap px-2 py-1">
+            <a id="git-see-all-commits" class="git-see-all-commits cursor-pointer text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground" href="#" target="_blank" rel="noopener">See all commits</a>
           </div>
         </div>
       </div>
     </div>
-    <footer class="side-foot">
-      <a class="side-logo" href="https://github.com/zack-o-zack/faah" target="_blank" rel="noopener" title="faah">
+    <footer class="side-foot flex shrink-0 items-center gap-2 border-t px-2 py-1 desktop:hidden">
+      <a class="side-logo flex shrink-0 items-center rounded p-1 hover:bg-accent [&_img]:h-4 [&_img]:w-auto" href="https://github.com/zack-o-zack/faah" target="_blank" rel="noopener" title="faah">
         <img class="logo-dark" src="static/logo-dark.svg" alt="faah" width="35" height="13">
         <img class="logo-light" src="static/logo-light.svg" alt="faah" width="35" height="13">
       </a>
-      <span id="st-ver" class="status-ver" title="faah Version"></span>
-      <span class="side-actions">
+      <span id="st-ver" class="status-ver cursor-pointer rounded px-1 font-mono text-xs text-muted-foreground hover:bg-accent hover:text-foreground" title="faah Version"></span>
+      <span class="side-actions ml-auto flex items-center gap-1">
       <a class="btn" data-variant="ghost" data-size="icon-xs" href="https://github.com/zack-o-zack/faah" target="_blank" rel="noopener" title="faah on GitHub" aria-label="faah on GitHub">
         <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
       </a>
@@ -127,33 +127,33 @@
   </aside>
 
   <!-- Sidebar Resizer Divider -->
-  <div id="resizer"></div>
+  <div id="resizer" class="-ml-0.5 w-1 shrink-0 cursor-col-resize z-10 hover:bg-primary [&.drag]:bg-primary [body.side-hidden_&]:hidden"></div>
 
   <!-- SECTION: Main Editor Area -->
-  <main id="main">
+  <main id="main" class="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
     <!-- Top Control Bar (Level 1 Menu): Mode toggle + View actions -->
-    <header id="main-top-bar" class="main-top-bar">
+    <header id="main-top-bar" class="main-top-bar desktop:min-h-[var(--titlebar-h,2.5rem)] desktop:[-webkit-app-region:drag] desktop:[&_button]:[-webkit-app-region:no-drag] desktop:[&_a]:[-webkit-app-region:no-drag] desktop:[&_[role=group]]:[-webkit-app-region:no-drag] desktop:[&_[role=tab]]:[-webkit-app-region:no-drag] [body.side-hidden_&]:desktop:pl-[calc(0.5rem+var(--titlebar-left,0px))] desktop:pr-[calc(0.5rem+var(--titlebar-right,0px))] z-[7] flex shrink-0 items-center justify-between gap-2 border-b bg-sidebar px-2 py-1">
       <!-- Desktop app on Windows and Linux only (web/desktop.css, desktop/preload.cjs) -->
-      <button data-desktop-menu title="Menu" aria-label="Application menu" class="btn desktop-menu-btn" data-control="header-action" data-variant="ghost" data-size="xs">
+      <button data-desktop-menu title="Menu" aria-label="Application menu" class="btn desktop-menu-btn hidden! win-linux:inline-flex!" data-control="header-action" data-variant="ghost" data-size="xs">
         <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
       </button>
       <!-- Workplace mode switch: Code Mode vs Review Mode -->
-      <div id="mode-switch" class="button-group" role="group" aria-label="Workplace Mode">
-        <button id="btn-mode-code" title="Code Mode ({Mod+Shift+C})" class="btn" data-variant="secondary" data-size="xs" aria-pressed="true">
+      <div class="tabs"><div id="mode-switch" role="tablist" aria-label="Workplace Mode">
+        <button role="tab" id="btn-mode-code" title="Code Mode ({Mod+Shift+C})" class="" data-variant="secondary" data-size="xs" aria-pressed="true" aria-selected="true">
           <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
           <span>Code</span>
         </button>
-        <button id="btn-mode-review" title="Review Workflow ({Mod+Shift+V})" class="btn" data-variant="outline" data-size="xs">
+        <button role="tab" id="btn-mode-review" aria-selected="false" title="Review Workflow ({Mod+Shift+V})" class="" data-variant="outline" data-size="xs">
           <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
           <span>Review</span>
           <span id="review-badge-status" class="review-status-dot" hidden></span>
         </button>
-      </div>
+      </div></div>
 
-      <div class="main-top-bar-spacer"></div>
+      <div class="main-top-bar-spacer flex-1"></div>
 
       <!-- View-mode switches: Diff, Markdown preview, Edit controls, Sidebar toggle -->
-      <div id="view-switches">
+      <div id="view-switches" class="flex items-center gap-2">
         <!-- Markdown tabs only: switch between the rendered file and its source -->
         <div id="md-switch" class="button-group" role="group" aria-label="Preview or source" hidden>
           <button data-md="preview" title="Rendered view ({Alt+M})" class="btn" data-variant="outline" data-size="xs">Preview</button>
@@ -215,10 +215,10 @@
     </header>
 
     <!-- File Tabs (Level 2: directly below top menu bar) -->
-    <div id="tabs"></div>
+    <div id="tabs" class="flex shrink-0 items-center gap-1 overflow-x-auto overflow-y-hidden border-b bg-sidebar p-1 [scrollbar-width:none] empty:hidden"></div>
 
     <!-- Virtualized Code Editor Viewport -->
-    <div id="editor">
+    <div id="editor" class="relative min-h-0 flex-1 overflow-hidden bg-background">
       <!-- #viewport handles scrolling; #sizer sets full document scroll height; #rows renders only visible DOM rows -->
       <div id="viewport">
         <div id="sizer"><div id="rows"></div><div id="caret" hidden></div></div>
@@ -261,7 +261,7 @@
           <span id="iv-meta" class="iv-meta"></span>
         </div>
       </div>
-      <div id="minimap-hits"></div>
+      <div id="minimap-hits" class="absolute inset-y-0 right-0 z-[6] w-3 empty:pointer-events-none"></div>
 
       <!-- Welcome / Empty State Screen -->
       <div id="empty">
@@ -303,9 +303,9 @@
       <template id="agentbox-tpl">
         <div class="agent-box">
           <div class="agent-head">
-            <span class="sel-chip">Comment</span>
+            <span class="sel-chip badge">Comment</span>
             <span role="button" tabindex="0" title="Click to jump to code" class="btn" data-control="agent-ref" data-variant="ghost" data-size="xs"></span>
-            <span class="grow"></span>
+            <span class="flex-1 min-w-0"></span>
             <button title="Close ({Esc})" class="btn" data-control="agent-close" data-variant="ghost" data-size="icon-xs" aria-label="Close ({Esc})">&#10005;</button>
           </div>
           <div class="agent-meta">
@@ -514,9 +514,9 @@
         <button id="pr-merge-state" type="button" hidden class="btn" data-control="pr-merge-state" data-variant="outline" data-size="xs"></button>
         <button id="pr-rebase-ai" type="button" hidden title="Rebase onto base branch with AI and resolve conflicts" class="btn" data-control="bar-action pr-btn-rebase-ai" data-variant="ghost" data-size="xs">
           <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="bar-action-icon"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg>
-          <span class="bar-action-label desktop:hidden">Rebase with AI</span>
+          <span class="bar-action-label text-xs font-medium desktop:hidden">Rebase with AI</span>
         </button>
-        <span class="grow"></span>
+        <span class="flex-1 min-w-0"></span>
         <span id="pr-diff-warning" class="pr-diff-warning" hidden>&#9888; diff base unresolved</span>
         <button id="pr-readonly-note" type="button" hidden  class="btn" data-control="pr-readonly-note" data-variant="outline" data-size="xs">No token &mdash; click to connect</button>
         <span id="pr-draft-count" class="badge" data-variant="secondary" data-control="pr-draft-count"></span>
@@ -525,7 +525,7 @@
         <textarea id="pr-review-body" rows="1" spellcheck="false" autocomplete="off" placeholder="Review summary / verdict comment (optional)..." class="textarea resize-y" data-control="pr-review-body"></textarea>
         <button id="pr-batch-apply" hidden title="Dispatch AI agent to apply all draft review comments directly to the codebase" class="btn" data-control="bar-action pr-btn-batch-apply" data-variant="ghost" data-size="xs">
           <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="bar-action-icon"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg>
-          <span class="bar-action-label desktop:hidden">Batch Apply</span>
+          <span class="bar-action-label text-xs font-medium desktop:hidden">Batch Apply</span>
         </button>
         <button id="pr-submit-comment" title="Submit review with drafts, without approval or change requests" class="btn" data-control="bar-action pr-btn-neutral" data-variant="outline" data-size="xs">Submit Review</button>
         <button id="pr-submit-request-changes" hidden title="Request changes on this PR" class="btn" data-control="bar-action pr-btn-request-changes" data-variant="destructive" data-size="xs">Request Changes</button>
@@ -547,7 +547,7 @@
       <div class="pr-comments-panel-head">
         <span class="pr-comments-panel-title">Comments</span>
         <span id="pr-comments-count" class="badge" data-variant="secondary" data-control="pr-comments-count"></span>
-        <span class="grow"></span>
+        <span class="flex-1 min-w-0"></span>
         <button id="pr-comments-collapse" title="Expand/collapse comments panel" class="btn" data-control="pr-comments-collapse" data-variant="ghost" data-size="icon-xs" aria-label="Expand/collapse comments panel">&#9662;</button>
       </div>
       <div id="pr-comments-body" class="pr-comments-body">
@@ -578,7 +578,7 @@
     <div id="lsp-menu" role="menu" hidden></div>
 
     <!-- Floating Async Tip Widget (web/src/tips.js) -->
-    <div id="tip-widget" class="card fixed bottom-[34px] right-[18px] w-[360px] max-w-[calc(100vw-36px)] z-40 gap-0" hidden>
+    <div id="tip-widget" class="card fixed bottom-[34px] right-[18px] w-[360px] max-w-[calc(100vw-36px)] z-40 gap-0 py-0! overflow-hidden" hidden>
       <div class="tip-widget-head">
         <div class="tip-widget-tag-group">
           <svg class="tip-widget-bulb" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z"/></svg>
@@ -603,44 +603,44 @@
     </div>
 
     <!-- Bottom Status Bar -->
-    <footer id="status">
+    <footer id="status" class="flex shrink-0 items-center gap-2 overflow-hidden whitespace-nowrap border-t bg-sidebar px-2 py-1 font-mono text-xs text-muted-foreground select-none [&>*]:shrink-0 [&.selecting]:border-primary [&.fit-1_kbd]:hidden [&.fit-2_#st-size]:hidden [&.fit-3_.metric-label]:hidden [&.fit-4_[data-action=wrap]]:hidden [&.fit-4_[data-action=help]]:hidden [&.fit-4_.sel-chip]:hidden [&.fit-4_#sel-stats]:hidden! [&.fit-5_#st-lang]:hidden [&.fit-6_#st-pos]:hidden">
       <!-- Selection actions: replace the buttons and size below while code is selected -->
-      <div id="footer-sel">
-        <span class="sel-chip">Selection</span>
-        <button data-sel="copy-source" title="Copy source code as is ({Mod+C})" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label desktop:hidden">Copy Source</span><kbd data-keys="Mod+C" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-sel="copy-preview-text" title="Copy formatted text ({Mod+C})" hidden class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label desktop:hidden">Copy Text</span><kbd data-keys="Mod+C" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-sel="copy-markdown" title="Copy raw Markdown" hidden class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label desktop:hidden">Copy Raw Markdown</span><kbd data-keys="Alt+M" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-sel="copy-ref" title="Copy file and line reference ({Alt+C})" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label desktop:hidden">Copy Ref</span><kbd data-keys="Alt+C" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-sel="copy-agent" title="Copy snippet with file path and line numbers ({Alt+A})" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label desktop:hidden">Copy with Context</span><kbd data-keys="Alt+A" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-sel="thread" title="Start a thread on this selection ({Alt+T})" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label desktop:hidden">Thread</span><kbd data-keys="Alt+T" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-sel="explain" title="Explain this selection ({Alt+X})" hidden class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label desktop:hidden">Explain</span><kbd data-keys="Alt+X" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-sel="agent-edit" title="Edit this selection inline ({Alt+E})" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label desktop:hidden">Edit Inline</span><kbd data-keys="Alt+E" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
+      <div id="footer-sel" class="hidden min-w-0 items-center gap-2 [#status.selecting_&]:flex">
+        <span class="sel-chip badge">Selection</span>
+        <button data-sel="copy-source" title="Copy source code as is ({Mod+C})" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Copy Source</span><kbd data-keys="Mod+C" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
+        <button data-sel="copy-preview-text" title="Copy formatted text ({Mod+C})" hidden class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Copy Text</span><kbd data-keys="Mod+C" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
+        <button data-sel="copy-markdown" title="Copy raw Markdown" hidden class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Copy Raw Markdown</span><kbd data-keys="Alt+M" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
+        <button data-sel="copy-ref" title="Copy file and line reference ({Alt+C})" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Copy Ref</span><kbd data-keys="Alt+C" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
+        <button data-sel="copy-agent" title="Copy snippet with file path and line numbers ({Alt+A})" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Copy with Context</span><kbd data-keys="Alt+A" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
+        <button data-sel="thread" title="Start a thread on this selection ({Alt+T})" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Thread</span><kbd data-keys="Alt+T" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
+        <button data-sel="explain" title="Explain this selection ({Alt+X})" hidden class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Explain</span><kbd data-keys="Alt+X" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
+        <button data-sel="agent-edit" title="Edit this selection inline ({Alt+E})" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Edit Inline</span><kbd data-keys="Alt+E" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
       </div>
-      <div id="footer-actions">
-        <button data-action="quick-open" title="Go to File ({Mod+P})" class="btn desktop:size-6! desktop:p-0! h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><svg class="shell-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg><span class="bar-action-label desktop:hidden">Files</span><kbd data-keys="Mod+P" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-action="search" title="Search in Files ({Mod+Shift+F})" class="btn desktop:size-6! desktop:p-0! h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><svg class="shell-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg><span class="bar-action-label desktop:hidden">Search</span><kbd data-keys="Mod+Shift+F" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-action="find" title="Find in File ({Mod+F})" class="btn desktop:size-6! desktop:p-0! desktop:hidden! h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label desktop:hidden">Find in File</span><kbd data-keys="Mod+F" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-action="goto" title="Go to Line ({Mod+G})" class="btn desktop:size-6! desktop:p-0! desktop:hidden! h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label desktop:hidden">Go to</span><kbd data-keys="Mod+G" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-action="md-preview" title="Toggle Markdown / table preview ({Alt+M})" hidden class="btn desktop:size-6! desktop:p-0! desktop:hidden! h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label desktop:hidden">Preview</span><kbd data-keys="Alt+M" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-action="wrap" title="Toggle Word Wrap ({Alt+Z})" class="btn desktop:size-6! desktop:p-0! desktop:hidden! h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label desktop:hidden">Wrap</span><kbd data-keys="Alt+Z" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button id="btn-vim-help" data-action="vim-help" title="Vim Keybindings" hidden class="btn desktop:size-6! desktop:p-0! desktop:hidden! h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label desktop:hidden">Vim Keys</span><kbd class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut">?</kbd></button>
-        <button data-action="help" title="Keyboard Shortcuts ({?})" class="btn desktop:size-6! desktop:p-0! desktop:hidden! h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label desktop:hidden">Help</span><kbd data-keys="?" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
+      <div id="footer-actions" class="flex items-center gap-1 [#status.selecting_&]:hidden">
+        <button data-action="quick-open" title="Go to File ({Mod+P})" class="btn desktop:size-6! desktop:p-0! h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><svg class="shell-ico hidden desktop:block" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg><span class="bar-action-label text-xs font-medium desktop:hidden">Files</span><kbd data-keys="Mod+P" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
+        <button data-action="search" title="Search in Files ({Mod+Shift+F})" class="btn desktop:size-6! desktop:p-0! h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><svg class="shell-ico hidden desktop:block" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg><span class="bar-action-label text-xs font-medium desktop:hidden">Search</span><kbd data-keys="Mod+Shift+F" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
+        <button data-action="find" title="Find in File ({Mod+F})" class="btn desktop:size-6! desktop:p-0! desktop:hidden! h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Find in File</span><kbd data-keys="Mod+F" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
+        <button data-action="goto" title="Go to Line ({Mod+G})" class="btn desktop:size-6! desktop:p-0! desktop:hidden! h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Go to</span><kbd data-keys="Mod+G" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
+        <button data-action="md-preview" title="Toggle Markdown / table preview ({Alt+M})" hidden class="btn desktop:size-6! desktop:p-0! desktop:hidden! h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Preview</span><kbd data-keys="Alt+M" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
+        <button data-action="wrap" title="Toggle Word Wrap ({Alt+Z})" class="btn desktop:size-6! desktop:p-0! desktop:hidden! h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Wrap</span><kbd data-keys="Alt+Z" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
+        <button id="btn-vim-help" data-action="vim-help" title="Vim Keybindings" hidden class="btn desktop:size-6! desktop:p-0! desktop:hidden! h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Vim Keys</span><kbd class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut">?</kbd></button>
+        <button data-action="help" title="Keyboard Shortcuts ({?})" class="btn desktop:size-6! desktop:p-0! desktop:hidden! h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Help</span><kbd data-keys="?" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
       </div>
-      <span class="status-sep"></span>
+      <span class="status-sep h-3 w-px shrink-0 bg-border [#status.selecting_#footer-actions+&]:hidden"></span>
       <span id="st-vim" hidden role="button" tabindex="0" title="Vim Mode (Click for shortcuts)" class="btn h-5! text-10! font-mono" data-control="status-vim-chip" data-variant="outline" data-size="xs">NORMAL</span>
-      <span id="st-size"></span>
-      <span id="st-pos"></span>
-      <span class="grow"></span>
-      <span id="st-lsp" role="button" tabindex="0" title="Language Servers (Click to manage)" class="btn" data-variant="outline" data-size="xs">LSP</span>
-      <span id="sel-stats"></span>
-      <span class="status-sep"></span>
-      <span id="st-metrics" role="button" tabindex="0" class="btn h-5! px-1! text-11! font-mono desktop:[&>:not(.shell-ico)]:hidden desktop:size-6! desktop:p-0!" data-control="status-metrics" data-variant="outline" data-size="xs">
-        <svg class="shell-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span id="st-size" class="[#status.selecting_&]:hidden"></span>
+      <span class="empty:hidden" id="st-pos"></span>
+      <span id="status-spacer" class="flex-1"></span>
+      <span id="st-lsp" role="button" tabindex="0" title="Language Servers (Click to manage)" class="btn data-[state=ready]:text-gi data-[state=indexing]:text-primary-text data-[state=failed]:text-destructive" data-variant="outline" data-size="xs">LSP</span>
+      <span id="sel-stats" class="hidden [#status.selecting_&]:inline-flex"></span>
+      <span class="status-sep h-3 w-px shrink-0 bg-border [#status.selecting_#footer-actions+&]:hidden"></span>
+      <span id="st-metrics" role="button" tabindex="0" class="btn h-5! px-1! text-11! font-mono desktop:[&>:not(.shell-ico hidden desktop:block)]:hidden desktop:size-6! desktop:p-0!" data-control="status-metrics" data-variant="outline" data-size="xs">
+        <svg class="shell-ico hidden desktop:block" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         <span class="metric"><span class="metric-label">CPU</span> <span id="st-cpu">--%</span></span>
-        <span class="metric-divider">·</span>
+        <span class="metric-divider text-muted-foreground">·</span>
         <span class="metric"><span class="metric-label">RAM</span> <span id="st-ram">-- MB</span></span>
-        <span id="st-lspmem-wrap" class="status-metrics-group" hidden>
-          <span class="metric-divider">·</span>
+        <span id="st-lspmem-wrap" class="status-metrics-group inline-flex items-center gap-2" hidden>
+          <span class="metric-divider text-muted-foreground">·</span>
           <span class="metric"><span class="metric-label">LSP</span> <span id="st-lspmem">-- MB</span></span>
         </span>
       </span>
@@ -648,58 +648,58 @@
   </main>
 
   <!-- Right Inspector Resizer Divider -->
-  <div id="right-resizer" title="Drag to resize inspector"></div>
+  <div id="right-resizer" title="Drag to resize inspector" class="-mr-0.5 w-1 shrink-0 cursor-col-resize z-10 hover:bg-primary [&.drag]:bg-primary [body.right-hidden_&]:hidden"></div>
 
   <!-- SECTION: Right-side Inspector (Symbols & References) -->
-  <aside id="right-side">
-    <header class="inspector-head">
-      <div class="inspector-tabs">
-        <button data-itab="refs" title="View references across workspace" class="btn" data-control="inspector-tab" data-variant="secondary" data-size="xs" aria-pressed="true">References</button>
-        <button data-itab="symbols" title="View file symbols outline" class="btn" data-control="inspector-tab" data-variant="ghost" data-size="xs">Symbols</button>
-        <button data-itab="calls" title="Trace callers and callees ({Alt+Shift+H})" class="btn" data-control="inspector-tab" data-variant="ghost" data-size="xs">Calls</button>
-        <button data-itab="search" title="Search text across workspace ({Mod+Shift+F})" class="btn" data-control="inspector-tab" data-variant="ghost" data-size="xs">Search</button>
-        <button data-itab="tips" id="tab-tips" title="Tips & Tricks" class="btn" data-control="inspector-tab" data-variant="ghost" data-size="xs">Tips</button>
-      </div>
-      <div class="inspector-head-actions">
+  <aside id="right-side" class="flex w-96 shrink-0 flex-col overflow-hidden border-l bg-sidebar [body.right-hidden_&]:hidden">
+    <header class="inspector-head desktop:min-h-[var(--titlebar-h,2.5rem)] desktop:[-webkit-app-region:drag] desktop:[&_button]:[-webkit-app-region:no-drag] desktop:[&_a]:[-webkit-app-region:no-drag] desktop:[&_[role=group]]:[-webkit-app-region:no-drag] desktop:[&_[role=tab]]:[-webkit-app-region:no-drag] flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2">
+      <div class="tabs min-w-0 overflow-x-auto"><div class="inspector-tabs" role="tablist" aria-label="Inspector">
+        <button role="tab" data-itab="refs" title="View references across workspace" class="px-2! text-xs!" data-control="inspector-tab" data-variant="secondary" data-size="xs" aria-pressed="true" aria-selected="true">References</button>
+        <button role="tab" data-itab="symbols" title="View file symbols outline" class="px-2! text-xs!" data-control="inspector-tab" data-variant="ghost" data-size="xs">Symbols</button>
+        <button role="tab" data-itab="calls" title="Trace callers and callees ({Alt+Shift+H})" class="px-2! text-xs!" data-control="inspector-tab" data-variant="ghost" data-size="xs">Calls</button>
+        <button role="tab" data-itab="search" title="Search text across workspace ({Mod+Shift+F})" class="px-2! text-xs!" data-control="inspector-tab" data-variant="ghost" data-size="xs">Search</button>
+        <button role="tab" data-itab="tips" id="tab-tips" title="Tips & Tricks" class="px-2! text-xs!" data-control="inspector-tab" data-variant="ghost" data-size="xs">Tips</button>
+      </div></div>
+      <div class="inspector-head-actions flex items-center">
         <button id="btn-close-right" title="Close inspector (Esc)" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Close inspector (Esc)">&#10005;</button>
       </div>
     </header>
 
     <!-- Right Pane 1: References for active symbol -->
-    <section class="inspector-pane active" id="pane-right-refs">
-      <div class="inspector-bar">
-        <span class="inspector-sym-title" id="right-ref-target">-</span>
+    <section class="inspector-pane hidden min-h-0 flex-1 flex-col overflow-hidden [&.active]:flex active" id="pane-right-refs">
+      <div class="inspector-bar flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2 text-xs">
+        <span class="inspector-sym-title truncate font-mono font-semibold" id="right-ref-target">-</span>
         <span class="badge" data-variant="secondary" data-control="inspector-badge" id="right-ref-badge">0</span>
       </div>
-      <div class="panel-body" id="right-refs-list">
+      <div class="panel-body min-h-0 flex-1 overflow-auto pb-4" id="right-refs-list">
         <div class="hint">Select or click a symbol to inspect references.</div>
       </div>
     </section>
 
     <!-- Right Pane 2: Symbols outline for active file -->
-    <section class="inspector-pane" id="pane-right-symbols">
+    <section class="inspector-pane hidden min-h-0 flex-1 flex-col overflow-hidden [&.active]:flex" id="pane-right-symbols">
       <div class="search-form">
         <input id="right-symbols-filter" type="text" spellcheck="false" placeholder="Filter file symbols" autocomplete="off" class="input h-8!">
       </div>
-      <div class="panel-body" id="right-symbols-list"></div>
+      <div class="panel-body min-h-0 flex-1 overflow-auto pb-4" id="right-symbols-list"></div>
     </section>
 
     <!-- Right Pane 3: Call trail (callers / callees) for a function -->
-    <section class="inspector-pane" id="pane-right-calls">
-      <div class="inspector-bar">
-        <span class="inspector-sym-title" id="right-calls-target">-</span>
+    <section class="inspector-pane hidden min-h-0 flex-1 flex-col overflow-hidden [&.active]:flex" id="pane-right-calls">
+      <div class="inspector-bar flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2 text-xs">
+        <span class="inspector-sym-title truncate font-mono font-semibold" id="right-calls-target">-</span>
         <span role="group" class="button-group" id="calls-dir">
           <button data-dir="in" title="Functions that call this one, up toward entry points" class="btn" data-control="opt" data-variant="secondary" data-size="xs" aria-pressed="true">Callers</button>
           <button data-dir="out" title="Functions this one calls, down toward leaves" class="btn" data-control="opt" data-variant="ghost" data-size="xs">Callees</button>
         </span>
       </div>
-      <div class="panel-body" id="right-calls-list">
+      <div class="panel-body min-h-0 flex-1 overflow-auto pb-4" id="right-calls-list">
         <div class="hint">Click a function name, then press <b data-keys="Alt+Shift+H"></b> to trace its calls.</div>
       </div>
     </section>
 
     <!-- Right Pane 4: Full-text search across the workspace -->
-    <section class="inspector-pane" id="pane-right-search">
+    <section class="inspector-pane hidden min-h-0 flex-1 flex-col overflow-hidden [&.active]:flex" id="pane-right-search">
       <div class="search-form">
         <input id="q" type="text" spellcheck="false" placeholder="Search in files" autocomplete="off" class="input h-8!">
         <div class="opts">
@@ -709,13 +709,13 @@
         </div>
         <input id="glob" type="text" spellcheck="false" placeholder="files to include e.g. *.go" autocomplete="off" class="input h-8!">
       </div>
-      <div class="panel-body" id="results">
+      <div class="panel-body min-h-0 flex-1 overflow-auto pb-4" id="results">
         <div class="hint">Search text across every indexed file.</div>
       </div>
     </section>
     <!-- Right Pane 5: Tips & Tricks. Browse, search and filter all faah tips. web/src/tips.js owns it. -->
-    <section class="inspector-pane" id="pane-right-tips">
-      <div class="inspector-bar tips-header-bar">
+    <section class="inspector-pane hidden min-h-0 flex-1 flex-col overflow-hidden [&.active]:flex" id="pane-right-tips">
+      <div class="inspector-bar flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2 text-xs tips-header-bar">
         <div class="tips-search-wrap">
           <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input type="text" id="tips-filter" placeholder="Filter tips..." autocomplete="off" spellcheck="false" class="input border-0! shadow-none! bg-transparent! h-6!">
@@ -729,23 +729,23 @@
           <span>Show tip popups in interface</span>
         </label>
       </div>
-      <div class="panel-body" id="tips-list"></div>
+      <div class="panel-body min-h-0 flex-1 overflow-auto pb-4" id="tips-list"></div>
     </section>
   </aside>
 
   <!-- Threads Resizer Divider -->
-  <div id="threads-resizer" title="Drag to resize threads sidebar"></div>
+  <div id="threads-resizer" title="Drag to resize threads sidebar" class="-mr-0.5 w-1 shrink-0 cursor-col-resize z-10 hover:bg-primary [&.drag]:bg-primary [body.threads-hidden_&]:hidden"></div>
 
   <!-- SECTION: Dedicated Threads Sidebar -->
-  <aside id="threads-side">
-    <header class="inspector-head threads-head">
-      <div class="threads-head-title">
+  <aside id="threads-side" class="flex w-96 shrink-0 flex-col overflow-hidden border-l bg-sidebar [body.threads-hidden_&]:hidden">
+    <header class="inspector-head desktop:min-h-[var(--titlebar-h,2.5rem)] desktop:[-webkit-app-region:drag] desktop:[&_button]:[-webkit-app-region:no-drag] desktop:[&_a]:[-webkit-app-region:no-drag] desktop:[&_[role=group]]:[-webkit-app-region:no-drag] desktop:[&_[role=tab]]:[-webkit-app-region:no-drag] flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2 threads-head">
+      <div class="threads-head-title flex items-center gap-2 font-medium [&_svg]:shrink-0 [&_svg]:text-primary">
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        <span class="threads-head-label">Threads</span>
+        <span class="threads-head-label text-xs font-medium">Threads</span>
         <span class="badge" data-variant="secondary" data-control="thr-tab-count" hidden></span>
         <span class="thr-tab-dot" hidden></span>
       </div>
-      <div class="inspector-head-actions">
+      <div class="inspector-head-actions flex items-center">
         <button id="btn-close-threads" title="Close threads (Esc)" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Close threads (Esc)">&#10005;</button>
       </div>
     </header>
@@ -759,7 +759,7 @@
           <div class="agent-batch-title-row">
             <span class="badge" data-variant="secondary" data-control="agent-batch-badge">Batch</span>
             <span id="agent-batch-count" class="agent-batch-count">No comments yet</span>
-            <span class="grow"></span>
+            <span class="flex-1 min-w-0"></span>
             <button id="agent-batch-clear" title="Clear all comments" class="btn" data-control="agent-batch-clear" data-variant="outline" data-size="xs">Clear All</button>
           </div>
           <div class="agent-batch-meta">
@@ -781,21 +781,21 @@
 
     <!-- Threads list view -->
     <div id="thr-list-view" class="thr-view">
-      <div class="inspector-bar">
+      <div class="inspector-bar flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2 text-xs">
         <span role="group" class="button-group" id="thr-filter">
           <button data-thr-filter="all" title="Every thread in this workspace" class="btn" data-control="opt" data-variant="secondary" data-size="xs" aria-pressed="true">All</button>
           <button data-thr-filter="file" title="Threads started in the open file" class="btn" data-control="opt" data-variant="ghost" data-size="xs">This file</button>
         </span>
         <button id="thr-new" title="Start a thread about the workspace or the selection" class="btn" data-control="thr-btn-primary" data-variant="primary" data-size="xs">+ New</button>
       </div>
-      <div class="panel-body" id="thr-list"></div>
+      <div class="panel-body min-h-0 flex-1 overflow-auto pb-4" id="thr-list"></div>
     </div>
 
     <!-- Thread detail & conversation view -->
     <div id="thr-thread-view" class="thr-view" hidden>
-      <div class="inspector-bar thr-head">
+      <div class="inspector-bar flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2 text-xs thr-head">
         <button id="thr-back" title="All threads" aria-label="All threads" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs">&#8592;</button>
-        <span class="inspector-sym-title" id="thr-title">New thread</span>
+        <span class="inspector-sym-title truncate font-mono font-semibold" id="thr-title">New thread</span>
         <button id="thr-delete" title="Delete this thread" aria-label="Delete thread" hidden class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
       </div>
       <div id="thr-anchor" class="thr-anchor" hidden></div>
@@ -825,7 +825,7 @@
 </div>
 
 <!-- SECTION: Command / File / Symbol Palette Modal (Cmd+K / Ctrl+P) -->
-<dialog id="overlay" class="command-dialog">
+<dialog id="overlay" class="command-dialog sm:max-w-[40rem]!">
   <div id="palette" class="command">
     <header><span id="pal-mode" class="badge"></span><input id="pal" aria-label="Search commands and files" type="text" spellcheck="false" autocomplete="off" class="min-w-0"></header>
     <div id="pal-list" role="menu"></div>
@@ -865,7 +865,7 @@
       <textarea id="pr-merge-commit-body" rows="8" spellcheck="false" autocomplete="off" class="textarea resize-y" data-control="pr-merge-input pr-merge-body"></textarea>
       <div id="pr-merge-ai-row" class="pr-merge-ai">
         <input id="pr-merge-ai-instruction" type="text" spellcheck="false" autocomplete="off" placeholder="Instructions for this rewrite (optional), e.g. Conventional Commits, mention the ticket" class="input h-8!" data-control="pr-merge-input">
-        <div class="git-agent-picker">
+        <div class="git-agent-picker flex flex-col gap-2">
           <select id="pr-merge-harness" title="Coding harness" class="select h-6! max-w-full text-xs!" data-control="agent-harness-select"></select>
           <select id="pr-merge-model" title="Model" class="select h-6! max-w-full text-xs!" data-control="agent-model-select"></select>
         </div>

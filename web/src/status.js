@@ -454,17 +454,17 @@ export function initMetrics() {
 }
 
 /* The status bar stays on one line. When its contents outgrow the width, it
-   sheds detail in steps (see the fit-N rules in style.css), least useful first,
+   sheds detail in steps (see the fit-N variants on #status), least useful first,
    stopping at the first step that fits. A step comes back only with FIT_SLACK px
    to spare, so a 1px wobble of a resizer cannot flip it on every move. */
 const FIT_STEPS = 6, FIT_SLACK = 16;
 const statusEl = $('#status');
-const growEl = $('.grow', statusEl);
+const growEl = $('#status-spacer', statusEl);
 let fitLevel = 0;
 let appliedFit = -1;
 let fitRAF = 0;
 
-/* Apply fit level n and return the room left: the .grow spacer's width, or the
+/* Apply fit level n and return the room left: the status spacer's width, or the
    overflow as a negative number. */
 function applyFit(n) {
   if (n !== appliedFit) {

@@ -31,9 +31,6 @@
 }
 
 /* Preserve the browser defaults used by existing components after preflight. */
-* { box-sizing: border-box; outline-color: currentColor; }
-svg, img, video, canvas, audio, iframe, embed, object { display: inline; vertical-align: baseline; }
-img, video { max-width: none; }
 
 html { scroll-behavior: auto; }
 
@@ -51,235 +48,15 @@ body {
 
 ::selection { background: var(--sel); }
 
-#app { display: flex; height: 100vh; }
-
-/* ---------- sidebar ---------- */
-#side {
-  width: 340px; flex: none; background: var(--sidebar); border-right: 1px solid var(--border);
-  display: flex; flex-direction: column; overflow: hidden;
-}
-body.side-hidden #side, body.side-hidden #resizer { display: none; }
-.panel { display: none; flex-direction: column; height: 100%; overflow: hidden; }
-.panel.active { display: flex; }
-.panel-head {
-  display: flex; align-items: center; gap: 6px; padding: 9px 12px 7px;
-  font-size: var(--t-11); font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted-foreground);
-}
-.panel-head #root-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.panel-head .wb-back { margin-left: 0; flex: none; display: inline-flex; padding: 3px; }
-.panel-actions { margin-left: auto; flex: none; display: flex; align-items: center; gap: 4px; }
-
-@media (prefers-reduced-motion: no-preference) {
-
-}
 @keyframes explorer-progress { 50% { opacity: .45; } }
 
-/* Sidebar Explorer vs Git Changes segmented toggle */
-
-.panel-body { flex: 1; overflow: auto; padding-bottom: 16px; }
-/* Version and theme, level with the status bar beside it. */
-.side-foot {
-  flex: none; height: 24px; display: flex; align-items: center; gap: 6px;
-  padding: 0 8px; border-top: 1px solid var(--border);
-}
-
-/* Project links and the theme button, together at the right edge. */
-.side-actions { margin-left: auto; display: flex; align-items: center; gap: 2px; }
-
-.side-logo { flex: none; display: flex; align-items: center; padding: 2px 3px; border-radius: var(--r); }
-.side-logo:hover { background: var(--accent); }
-.side-logo img { height: 13px; width: auto; }
-
-/* ---------- tree ---------- */
-.tw { display: block; }
-.tr {
-  display: flex; align-items: center; gap: 5px; height: 22px; padding-right: 8px;
-  white-space: nowrap; cursor: pointer; user-select: none; font-size: var(--t-12-5);
-}
-.tr:hover { background: var(--muted); }
-.tr.sel { background: var(--sel); }
-/* Chevron and file dot are drawn, never typed: no icon font to go missing. */
-.tr .ar { width: 12px; height: 12px; flex: none; position: relative; transition: transform .12s ease; }
-.tr .ar::before {
-  content: ""; position: absolute; left: 3px; top: 2.5px;
-  border: 4px solid transparent; border-left-color: var(--faint); border-right-width: 0;
-}
-.tr.open > .ar { transform: rotate(90deg); }
-.tr .ic { width: 7px; height: 7px; flex: none; border-radius: 2px; background: var(--faint); opacity: .75; }
-.tr .ic[data-t="code"] { background: var(--nf); }
-.tr .ic[data-t="data"] { background: var(--kt); }
-.tr .ic[data-t="doc"] { background: var(--muted-foreground); }
-.tr .ic[data-t="web"] { background: var(--nt); }
-.tr .ic[data-t="img"] { background: var(--nc); }
-.tr .nm { overflow: hidden; text-overflow: ellipsis; }
-.tr.dir .nm { color: var(--foreground); }
-.tr.file .nm { color: var(--muted-foreground); }
-.tr.file:hover .nm, .tr.sel .nm { color: var(--foreground); }
-/* Ignored by .gitignore: listed but dimmed, and left out of search. */
-.tr.ignored .nm { color: var(--faint); }
-.tr.ignored .ic, .tr.ignored .ar { opacity: .45; }
-.tr.ignored:hover .nm, .tr.ignored.sel .nm { color: var(--muted-foreground); }
-.kids { display: none; }
-.kids.open { display: block; }
-
-/* One-letter badge on dirty files; colour by status, no literal colours. */
-.tr .gs { margin-left: auto; flex: none; font: 600 var(--t-10)/1 var(--mono); padding: 0 4px; }
-
-/* Staged, then modified again: a red "!" replaces the tick until restaged. */
-
-.tr.git-M .nm, .tr.git-M .gs, .tr.git-R .nm, .tr.git-R .gs { color: var(--primary-text); }
-.tr.git-A .nm, .tr.git-A .gs, .tr.git-untracked .nm, .tr.git-untracked .gs { color: var(--gi); }
-.tr.git-D .nm, .tr.git-D .gs { color: var(--gd); }
-.tr.git-D .nm { text-decoration: line-through; }
-/* Dirty folder: subtle dot after its name. */
-.tr.dir.dirty > .nm::after {
-  content: ""; display: inline-block; width: 5px; height: 5px; margin-left: 5px;
-  border-radius: 50%; background: var(--primary); vertical-align: middle;
-}
-.tr.dir.your-dirty > .nm::after {
-  background: var(--primary-text);
-  box-shadow: 0 0 0 2px var(--primary);
-}
-.tr.file.your-change .nm {
-  color: var(--primary-text);
-  font-weight: 600;
-  text-decoration: underline dotted var(--primary);
-  text-underline-offset: 2px;
-}
-.tr.file.your-change .gs {
-  color: var(--primary-text);
-}
-
-/* "Changed only" filter: hide clean files and folders (dir rows carry an
-   authoritative dirty flag from the backend, so even collapsed ones are known). */
-#tree.changed-only .tr.file:not(.dirty) { display: none; }
-#tree.changed-only .tw:not(:has(.dirty)) { display: none; }
-
-/* PR review scope: whole PR vs only what you changed (prscope.js). */
-.scope-bar { display: flex; gap: 4px; padding: 5px 8px; border-bottom: 1px solid var(--border); flex: none; }
-.scope-bar[hidden] { display: none; }
-
-#tree.changed-only.scope-yours .tr.file:not(.your-change) { display: none; }
-#tree.changed-only.scope-yours .tw:not(:has(.your-change)) { display: none; }
-/* "PR changes" shows the PR as it is: no YOU markers, and nothing only you touched. */
-#tree.changed-only.scope-pr .tr.file:not(.pr-file) { display: none; }
-#tree.changed-only.scope-pr .tw:not(:has(.pr-file)) { display: none; }
-
-#tree.scope-pr .tr.dir.your-dirty > .nm::after { background: var(--primary); box-shadow: none; }
-#tree.scope-pr .tr.file.your-change .nm { font-weight: inherit; text-decoration: none; }
-#tree.scope-pr .tr.file.your-change.git-A .nm, #tree.scope-pr .tr.file.your-change.git-A .gs, #tree.scope-pr .tr.file.your-change.git-untracked .nm, #tree.scope-pr .tr.file.your-change.git-untracked .gs { color: var(--gi); }
-#tree.scope-pr .tr.file.your-change.git-D .nm, #tree.scope-pr .tr.file.your-change.git-D .gs { color: var(--gd); }
-#tree.scope-pr .tr.file.your-change.git-D .nm { text-decoration: line-through; }
-#tree.changed-only.no-yours::after {
-  content: "No changes of yours yet \2014 edit a file or commit, and it shows up here";
-  display: block; padding: 8px 12px; font: var(--t-11-5) var(--ui); color: var(--faint);
-}
-
-/* Git view on a clean working tree renders no rows at all, so the tree says
-   why rather than looking like it failed to load. It keeps growing into the
-   sidebar's spare height: it is the column's only flex-grow item, and taking
-   that away would leave nothing to absorb the slack, stacking the panels from
-   the top and lifting .side-foot off the bottom edge. */
-#tree.changed-only.no-changes::after {
-  content: "Working tree clean"; display: block;
-  padding: 8px 12px; font: var(--t-11-5) var(--ui); color: var(--faint);
-}
-
-/* ---------- unpushed commits (sidebar: @{u}..HEAD) ---------- */
-.unpushed {
-  flex: 0 1 auto; display: flex; flex-direction: column; min-height: 26px;
-  max-height: 45vh; background: var(--sidebar); border-top: 1px solid var(--border);
-  position: relative;
-}
-.unpushed-resizer {
-  position: absolute; top: -3px; left: 0; right: 0; height: 6px; cursor: row-resize; z-index: 2;
-}
-.unpushed-resizer:hover, .unpushed-resizer.drag { background: var(--primary); opacity: .5; }
-.unpushed[hidden] { display: none; }
-.unpushed.collapsed { flex: none; }
-.unpushed.collapsed .unpushed-body { display: none; }
-
-.unpushed-head {
-  flex: none; display: flex; align-items: center; gap: 6px;
-  padding: 5px 12px; border-bottom: 1px solid var(--border); user-select: none;
-}
-.unpushed-head .grow { flex: 1; min-width: 0; }
-.unpushed-icon { flex: none; color: var(--primary); opacity: .85; }
-.unpushed-title {
-  font: 600 var(--t-11) var(--ui); color: var(--muted-foreground);
-  text-transform: uppercase; letter-spacing: .05em; flex: none;
-}
-
-/* The branch the list is measured against: without it "unpushed" is ambiguous. */
-.unpushed-upstream {
-  flex: none; max-width: 45%; font: var(--t-10-5) var(--mono); color: var(--faint);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.unpushed-body { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 0 8px; }
-
-.up-row {
-  display: flex; align-items: center; gap: 5px; height: 22px;
-  padding: 0 10px 0 8px; white-space: nowrap; cursor: pointer; user-select: none;
-}
-.up-row:hover { background: var(--muted); }
-.up-row:focus-visible { outline: 1px solid var(--ring); outline-offset: -1px; }
-/* Same disclosure triangle as the file tree's folders. */
-.up-ar {
-  flex: none; width: 0; height: 0; margin-left: 2px;
-  border: 4px solid transparent; border-left-color: var(--faint);
-  transition: transform .12s;
-}
-.up-commit.open .up-ar { transform: rotate(90deg) translateX(1px); }
-.up-subject {
-  flex: 1; min-width: 0; font-size: var(--t-12-5); color: var(--foreground);
-  overflow: hidden; text-overflow: ellipsis;
-}
-.up-sha { flex: none; font: var(--t-10-5) var(--mono); color: var(--faint); }
-.up-row:hover .up-sha { color: var(--muted-foreground); }
-
-.up-files { display: none; }
-.up-commit.open .up-files { display: block; }
-.up-note { padding: 4px 10px 4px 26px; font: var(--t-11) var(--ui); color: var(--faint); }
-.up-file {
-  display: flex; align-items: baseline; gap: 6px; height: 21px;
-  padding: 0 10px 0 26px; white-space: nowrap; cursor: pointer; user-select: none;
-}
-.up-file:hover { background: var(--muted); }
-.up-file.sel { background: var(--accent); }
-.up-file-name { flex: none; font-size: var(--t-12-5); color: var(--foreground); }
-.up-file-dir {
-  flex: 1; min-width: 0; font-size: var(--t-11); color: var(--faint);
-  overflow: hidden; text-overflow: ellipsis;
-}
-.up-file .gs {
-  margin-left: auto; flex: none; font: 600 var(--t-10)/1 var(--mono); padding: 0 4px;
-}
-/* The tree colours these through .tr.git-*; here the letter carries it itself. */
-.up-file .gs.git-M, .up-file .gs.git-R { color: var(--primary-text); }
-.up-file .gs.git-A, .up-file .gs.git-untracked { color: var(--gi); }
-.up-file .gs.git-D { color: var(--gd); }
-.up-file:focus-visible { outline: 1px solid var(--ring); outline-offset: -1px; }
-.up-file-stat { flex: none; display: inline-flex; gap: 4px; margin-left: auto; font: var(--t-10-5) var(--mono); }
-.up-file-stat + .gs { margin-left: 0; }
-.up-file-add { color: var(--gi); }
-.up-file-del { color: var(--gd); }
-.up-file-bin { color: var(--faint); }
-
-/* A tab pinned to a commit rather than the working tree. */
-.tab-ref {
-  flex: none; font: var(--t-10) var(--mono); color: var(--faint);
-  margin-left: 1px; letter-spacing: -0.02em;
-}
-.tab.active .tab-ref { color: var(--primary-text); }
-
 /* ---------- commit card (hovering an unpushed commit) ---------- */
-
 
 .cc-head {
   display: flex; align-items: center; gap: 8px; padding: 6px 10px;
   background: var(--sidebar); border-bottom: 1px solid var(--border);
 }
-.cc-head .grow { flex: 1; }
+
 .cc-sha { font: 600 var(--t-11) var(--mono); color: var(--primary-text); }
 
 .cc-meta {
@@ -303,48 +80,6 @@ a.cc-who:hover { color: var(--primary-text); }
 .cc-add { color: var(--gi); }
 .cc-del { color: var(--gd); }
 
-/* ---------- git panel (sidebar: stage/commit/push/pull) ---------- */
-.git-panel {
-  flex: none; display: flex; flex-direction: column;
-  height: 425px; min-height: 30px; max-height: 80vh;
-  position: relative; background: var(--sidebar); border-top: 1px solid var(--border);
-}
-.git-panel[hidden] { display: none; }
-.git-panel.collapsed { height: auto !important; }
-.git-panel.collapsed .git-panel-body { display: none; }
-
-.git-panel-resizer {
-  position: absolute; top: -3px; left: 0; right: 0; height: 6px; cursor: row-resize; z-index: 2;
-}
-.git-panel-resizer:hover, .git-panel-resizer.drag { background: var(--primary); opacity: 0.5; }
-.git-panel-head {
-  flex: none; display: flex; align-items: center; gap: 6px;
-  padding: 5px 12px; border-bottom: 1px solid var(--border); user-select: none;
-}
-.git-panel-icon { flex: none; color: var(--primary); opacity: .85; }
-.git-panel-head .grow { flex: 1; min-width: 0; }
-.git-branch { font: 600 var(--t-12) var(--ui); color: var(--foreground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.git-counts { font: var(--t-11) var(--mono); color: var(--faint); flex: none; }
-.git-panel-body { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding: 8px 12px; }
-
-.git-link-sep { font: var(--t-11) var(--ui); color: var(--faint); margin: 0 6px; }
-.git-instructions-wrap {
-  display: flex; align-items: center; justify-content: flex-start;
-  margin-top: -2px; margin-bottom: 2px; padding: 0 1px;
-}
-
-.git-panel-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; width: 100%; }
-
-/* Harness/model pickers stacked (the sidebar is too narrow for them side by
-   side, as in the batch-edit bar), with the AI commit action -- the panel's
-   primary action -- right below. */
-.git-agent-picker { display: flex; flex-direction: column; gap: 6px; }
-
-.git-commit-section { display: flex; flex-direction: column; gap: 6px; }
-.git-commit-section[hidden] { display: none; }
-
-.git-ai-row { display: flex; align-items: center; gap: 6px; width: 100%; }
-
 .git-nudge-btn {
   flex: none; width: 24px; height: 24px; padding: 0;
   display: inline-flex; align-items: center; justify-content: center;
@@ -355,118 +90,7 @@ a.cc-who:hover { color: var(--primary-text); }
 .git-nudge-btn:hover {
   color: var(--foreground); border-color: var(--primary); background: var(--accent);
 }
-
-/* The panel's one place for git outcomes: a failed action, a pull that can't
-   fast-forward (with the rebase/merge offer), an agent rebase running, and
-   what it left behind. Git errors land here, never in a global toast. */
-.git-notice {
-  --tone: var(--destructive);
-  display: flex; flex-direction: column; gap: 6px;
-  padding: 7px 8px; border: 1px solid var(--tone); border-left-width: 3px;
-  border-radius: var(--r); background: var(--muted); font: var(--t-11-5)/1.45 var(--ui);
-}
-.git-notice[hidden] { display: none; }
-.git-notice[data-tone="warn"] { --tone: var(--warn, #e5a50a); }
-.git-notice[data-tone="busy"] { --tone: var(--primary); }
-.git-notice[data-tone="ok"] { --tone: var(--s, var(--primary)); }
-.git-notice-head { display: flex; align-items: center; gap: 6px; }
-.git-notice-title { flex: 1; min-width: 0; font-weight: 600; color: var(--tone); overflow-wrap: anywhere; }
-.git-notice[data-tone="busy"] .git-notice-title::before {
-  content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 6px;
-  border: 1.5px solid currentColor; border-right-color: transparent; border-radius: 50%;
-  vertical-align: -1px; animation: git-notice-spin .8s linear infinite;
-}
 @keyframes git-notice-spin { to { transform: rotate(360deg); } }
-
-.git-notice-text { color: var(--foreground); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 9em; overflow-y: auto; }
-.git-notice-text:empty { display: none; }
-.git-notice-text code { font: var(--t-11) var(--mono); color: var(--foreground); }
-.git-notice-text .hint { display: block; margin-top: 3px; color: var(--faint); font-size: var(--t-10-5); }
-.git-notice-actions { display: flex; flex-wrap: wrap; gap: 6px; }
-.git-notice-actions:empty { display: none; }
-
-.git-notice-log summary { font: var(--t-10-5) var(--ui); color: var(--faint); cursor: pointer; user-select: none; }
-.git-notice-log[hidden] { display: none; }
-.git-notice-log pre {
-  margin: 4px 0 0; padding: 6px; max-height: 160px; overflow: auto;
-  background: var(--background); border: 1px solid var(--border); border-radius: var(--r);
-  font: var(--t-10-5)/1.4 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere;
-}
-
-.git-clean-state {
-  display: flex; align-items: center; justify-content: center; gap: 6px;
-  padding: 8px 10px; font: var(--t-12) var(--ui); color: var(--faint);
-  background: var(--background); border: 1px dashed var(--border); border-radius: var(--r);
-  user-select: none;
-}
-.git-clean-state[hidden] { display: none; }
-.git-clean-state svg { color: var(--primary); flex: none; }
-
-.git-recent-commits {
-  margin-top: 4px; display: flex; flex-direction: column; gap: 2px;
-  border-top: 1px solid var(--border); padding-top: 8px;
-}
-.git-recent-head {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 2px;
-}
-.git-recent-title {
-  font: 600 var(--t-11) var(--ui); color: var(--faint); text-transform: uppercase; letter-spacing: 0.5px;
-}
-.git-commits-list {
-  display: flex; flex-direction: column; gap: 2px;
-}
-.git-commits-empty {
-  font: var(--t-11) var(--ui); color: var(--faint); text-align: center; padding: 6px 0;
-}
-.git-commit-row {
-  display: flex; align-items: center; gap: 6px;
-  padding: 3px 6px; border-radius: var(--r);
-  cursor: pointer; user-select: none;
-  transition: background .12s, color .12s;
-}
-.git-commit-row:hover {
-  background: var(--muted);
-}
-.git-commit-icon {
-  flex: none; color: var(--primary); opacity: .8;
-}
-.git-commit-row:hover .git-commit-icon {
-  opacity: 1;
-}
-.git-commit-msg-text {
-  flex: 1; min-width: 0; font: var(--t-11-5) var(--ui); color: var(--foreground);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.4;
-}
-.git-commit-row:focus-visible { outline: 1px solid var(--ring); outline-offset: -1px; }
-.git-commit-caret {
-  flex: none; color: var(--faint); transition: transform .12s;
-}
-.git-commit.expanded .git-commit-caret { transform: rotate(90deg); color: var(--foreground); }
-
-.git-commit-files {
-  display: flex; flex-direction: column; gap: 1px;
-  margin: 1px 0 4px 13px; padding-left: 8px; border-left: 1px solid var(--border);
-}
-.git-commit-files[hidden] { display: none; }
-.git-commit-meta, .git-commit-note {
-  font: var(--t-10-5)/1.5 var(--ui); color: var(--faint); padding: 1px 6px 3px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-/* File rows are the shared .up-file ones (commitfiles.js); these only fit
-   them under the commit's indent. */
-.git-commit-files .up-file { padding-left: 6px; border-radius: var(--r); }
-.git-see-all-wrap {
-  padding: 3px 6px 2px;
-}
-.git-see-all-commits {
-  font: var(--t-11) var(--ui); color: var(--faint);
-  text-decoration: underline; text-underline-offset: 2px;
-  cursor: pointer; transition: color .15s;
-}
-.git-see-all-commits:hover {
-  color: var(--foreground);
-}
 
 /* ---------- search panel ---------- */
 .search-form { padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; }
@@ -500,55 +124,6 @@ a.cc-who:hover { color: var(--primary-text); }
 .sym .sn { overflow: hidden; text-overflow: ellipsis; }
 .sym .sl { margin-left: auto; font: var(--t-10) var(--mono); color: var(--faint); }
 
-#resizer, #right-resizer, #threads-resizer { width: 4px; cursor: col-resize; z-index: 5; flex: none; }
-#resizer { margin-left: -2px; }
-#right-resizer, #threads-resizer { margin-right: -2px; }
-#resizer:hover, #resizer.drag, #right-resizer:hover, #right-resizer.drag, #threads-resizer:hover, #threads-resizer.drag { background: var(--primary); }
-
-/* ---------- right-side inspector ---------- */
-#right-side {
-  width: 384px; flex: none; background: var(--sidebar); border-left: 1px solid var(--border);
-  display: flex; flex-direction: column; overflow: hidden;
-}
-body.right-hidden #right-side, body.right-hidden #right-resizer { display: none; }
-
-/* ---------- dedicated threads sidebar ---------- */
-#threads-side {
-  width: 384px; flex: none; background: var(--sidebar); border-left: 1px solid var(--border);
-  display: flex; flex-direction: column; overflow: hidden;
-}
-body.threads-hidden #threads-side, body.threads-hidden #threads-resizer { display: none; }
-
-.threads-head {
-  height: 35px; flex: none; display: flex; align-items: center; justify-content: space-between;
-  padding: 0 8px 0 12px; border-bottom: 1px solid var(--border);
-}
-.threads-head-title {
-  display: flex; align-items: center; gap: 6px; font-size: var(--t-12); font-weight: 600; color: var(--foreground);
-}
-.threads-head-title svg { color: var(--primary); flex: none; }
-.threads-head-label { font-size: var(--t-12); font-weight: 600; }
-
-.inspector-head {
-  height: 35px; flex: none; display: flex; align-items: center; justify-content: space-between;
-  padding: 0 8px 0 12px; border-bottom: 1px solid var(--border);
-}
-.inspector-tabs { display: flex; gap: 2px; min-width: 0; }
-
-.inspector-head-actions { display: flex; align-items: center; }
-
-.inspector-pane { display: none; flex-direction: column; height: 100%; overflow: hidden; }
-.inspector-pane.active { display: flex; }
-
-.inspector-bar {
-  display: flex; align-items: center; justify-content: space-between; gap: 8px;
-  padding: 7px 12px; border-bottom: 1px solid var(--border); font-size: var(--t-12);
-}
-.inspector-sym-title {
-  font-family: var(--mono); font-weight: 600; color: var(--foreground);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-
 /* call trail */
 .calls-dir { display: flex; gap: 2px; flex: none; }
 .cnode .car { width: 14px; flex: none; text-align: center; font-size: var(--t-9); color: var(--faint); cursor: pointer; }
@@ -556,74 +131,9 @@ body.threads-hidden #threads-side, body.threads-hidden #threads-resizer { displa
 .cnode .car.cyc { cursor: default; font-size: var(--t-11); }
 .cnone { padding-block: 1px; padding-right: 10px; font-size: var(--t-11); font-style: italic; color: var(--faint); }
 
-/* ---------- main ---------- */
-#main { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; position: relative; }
-
-/* Level 1: Main Top Control Bar */
-.main-top-bar {
-  height: 28px;
-  background: var(--sidebar);
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 8px;
-  flex: none;
-  z-index: 7;
-}
-.main-top-bar-spacer {
-  flex: 1;
-}
-
-#view-switches {
-  position: static;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-
-
-
-
 .diff-item-content { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .diff-item-title { font-weight: 600; font-size: var(--t-11-5); color: var(--foreground); }
 .diff-item-desc { font-size: var(--t-10); color: var(--muted-foreground); margin-top: 1px; }
-
-#tabs { display: flex; height: 28px; background: var(--sidebar); box-shadow: inset 0 -1px 0 var(--border); overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
-#tabs::-webkit-scrollbar { display: none; }
-#tabs:empty { display: none; }
-.tab {
-  display: flex; align-items: center; gap: 6px; padding: 0 8px 0 10px; flex: none;
-  border-right: 1px solid var(--border); color: var(--muted-foreground); cursor: pointer;
-  font-size: var(--t-11-5); max-width: 200px; position: relative; user-select: none;
-  line-height: 28px; height: 28px;
-  box-shadow: inset 0 -1px 0 var(--border);
-  transition: background .1s ease, color .1s ease;
-}
-.tab:hover { background: var(--muted); color: var(--foreground); }
-.tab.active {
-  background: var(--background); color: var(--foreground); font-weight: 500;
-  box-shadow: none;
-}
-.tab .tn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tab.tab-deleted .tn { text-decoration: line-through; color: var(--gd); }
-.tab .tab-dirty-dot {
-  color: var(--primary);
-  font-size: var(--t-13);
-  line-height: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: 1px;
-}
-/* The close cross is drawn, not typed: a glyph's ink sits wherever the font puts
-   it, which is below centre for x in most UI fonts. */
-
-#crumbs { display: none !important; }
-
-/* ---------- the editor surface ---------- */
-#editor { flex: 1; position: relative; overflow: hidden; background: var(--background); }
 /* The whole surface takes the text cursor, not just the glyphs: past the end of a
    line and below the last one still read as places the caret can go. */
 #viewport { position: absolute; inset: 0; overflow: auto; contain: strict; cursor: text; }
@@ -744,9 +254,6 @@ body.word-wrap .c { white-space: pre-wrap; word-break: break-word; overflow-wrap
    theme instead of a fixed colour that can clash with it (or with itself: --s is
    the syntax "string" token, not a status colour, and drifts theme to theme). */
 
-
-
-
 /* token colours: the code view, and fenced code in the Markdown preview */
 .c .k, .md-code .k, .diff-code .k {color:var(--k)} .c .kt, .md-code .kt, .diff-code .kt {color:var(--kt)}
 .c .nf, .md-code .nf, .diff-code .nf {color:var(--nf)} .c .nc, .md-code .nc, .diff-code .nc {color:var(--nc)}
@@ -757,7 +264,7 @@ body.word-wrap .c { white-space: pre-wrap; word-break: break-word; overflow-wrap
 .c .m, .md-code .m, .diff-code .m {color:var(--m)} .c .o, .md-code .o, .diff-code .o {color:var(--o)} .c .p, .md-code .p, .diff-code .p {color:var(--p)}
 .c .c, .md-code .c, .diff-code .c {color:var(--c);font-style:normal} .c .cp, .md-code .cp, .diff-code .cp {color:var(--cp)}
 .c .gi, .md-code .gi, .diff-code .gi {color:var(--gi);background:var(--gi-bg)} .c .gd, .md-code .gd, .diff-code .gd {color:var(--gd);background:var(--gd-bg)}
-.c .gh, .md-code .gh, .diff-code .gh {color:var(--primary-text);font-weight:600} .c .ge, .md-code .ge, .diff-code .ge {font-style:italic} .c .gs, .md-code .gs, .diff-code .gs {font-weight:600}
+.c .gh, .md-code .gh, .diff-code .gh {color:var(--primary-text);font-weight:600} .c .ge, .md-code .ge, .diff-code .ge {font-style:italic}
 .c .err, .md-code .err, .diff-code .err {color:var(--err);text-decoration:underline wavy}
 
 /* ---------- diff view (Mod+D): split (default) or unified render of a
@@ -773,12 +280,8 @@ body.word-wrap .c { white-space: pre-wrap; word-break: break-word; overflow-wrap
   font: var(--t-11-5)/1.4 var(--mono);
 }
 .diff-commit-strip:empty { display: none; }
-.diff-commit-strip .gs { flex: none; font: 600 var(--t-10)/1 var(--mono); }
-.diff-commit-strip .gs.git-M, .diff-commit-strip .gs.git-R { color: var(--primary-text); }
-.diff-commit-strip .gs.git-A { color: var(--gi); }
-.diff-commit-strip .gs.git-D { color: var(--gd); }
 .dcs-path { min-width: 0; color: var(--muted-foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.diff-commit-strip .grow { flex: 1; }
+
 .dcs-pos { flex: none; color: var(--faint); font: var(--t-11) var(--ui); font-variant-numeric: tabular-nums; }
 
 .diff-hunk-head {
@@ -799,7 +302,7 @@ body.word-wrap .c { white-space: pre-wrap; word-break: break-word; overflow-wrap
   cursor: pointer; user-select: none;
 }
 .diff-section-head:first-child { border-top: none; }
-.diff-section-head .grow { flex: 1; min-width: 0; }
+
 .diff-section-title { color: var(--foreground); }
 .diff-section-head-you .diff-section-title { color: var(--primary-text); }
 .diff-section-sub { font: var(--t-11)/1.4 var(--ui); color: var(--faint); text-transform: none; letter-spacing: normal; }
@@ -852,6 +355,7 @@ body.word-wrap .c { white-space: pre-wrap; word-break: break-word; overflow-wrap
 .diff-side-left { border-right: 1px solid var(--border); }
 
 /* ---------- markdown preview ---------- */
+#md :is(svg, img), .thr-body :is(svg, img) { display: inline; vertical-align: baseline; }
 #mdview { position: absolute; inset: 0; overflow: auto; background: var(--background); }
 .md {
   max-width: 860px; margin: 0 auto; padding: 40px clamp(20px, 6%, 56px) 40vh;
@@ -1044,11 +548,6 @@ body.word-wrap .editview-gutter { white-space: normal; }
 .iv-sep { width: 1px; height: 14px; background: var(--border); margin: 0 4px; }
 .iv-meta { font-size: var(--t-11); color: var(--faint); font-family: var(--font-mono); margin-left: 4px; white-space: nowrap; }
 
-/* Tab Image Icon */
-.tab.tab-image { display: inline-flex; align-items: center; gap: 5px; }
-.tab.tab-image .tab-icon { color: var(--faint); flex-shrink: 0; }
-.tab.tab-image.active .tab-icon { color: var(--primary); }
-
 /* Markdown Image Enhancement & Broken Fallback */
 .md img.md-zoomable { cursor: zoom-in; transition: transform 0.15s ease, box-shadow 0.15s ease; border-radius: var(--r); max-width: 100%; }
 .md img.md-zoomable:hover { box-shadow: 0 0 0 2px var(--primary), var(--shadow); }
@@ -1152,7 +651,6 @@ body.word-wrap .editview-gutter { white-space: normal; }
 }
 .agent-head { display: flex; align-items: center; gap: 6px; font: var(--t-11-5) var(--mono); color: var(--foreground); }
 .agent-foot { display: flex; align-items: center; gap: 6px; font: var(--t-11) var(--mono); color: var(--faint); }
-.agent-head .grow { flex: 1; min-width: 0; }
 
 /* Dedicated metadata row in composer: harness & model dropdowns */
 .agent-meta {
@@ -1239,37 +737,12 @@ body.word-wrap .editview-gutter { white-space: normal; }
   animation: spin 0.75s linear infinite;
 }
 
-/* ---------- status ---------- */
-#status { height: 24px; flex: none; display: flex; align-items: center; gap: 12px; padding: 0 10px; background: var(--sidebar); border-top: 1px solid var(--border); font: var(--t-11) var(--mono); color: var(--faint); user-select: none; white-space: nowrap; overflow: hidden; }
-/* Nothing shrinks or wraps: an overflowing bar is what tells fitStatus() to shed detail. */
-#status > * { flex: none; }
-#status > .grow { flex: 1; }
-/* Shed in steps as the bar narrows; the classes accumulate, so each step keeps the ones before. */
-#status.fit-2 #st-size, #status.fit-3 .metric-label, #status.fit-4 [data-action="wrap"], #status.fit-4 [data-action="help"], #status.fit-4 .sel-chip, #status.fit-4 #sel-stats { display: none; }
-#footer-actions { display: flex; align-items: center; gap: 3px; }
-
 .bar-action-icon {
   padding: 0 4px; display: inline-flex; align-items: center; justify-content: center;
 }
 .bar-action-icon svg { display: block; }
-.bar-action-label { font-weight: 500; font-size: var(--t-11); }
-
-.status-sep { width: 1px; height: 12px; background: var(--border); flex: none; }
-
-/* Selection mode: the left of the bar swaps to actions on the selected code.
-   The accent edge and chip make the swap noticeable at the bottom of the screen. */
-#footer-sel { display: none; align-items: center; gap: 8px; min-width: 0; }
-#status.selecting { border-top-color: var(--primary); }
-#status.selecting #footer-sel { display: flex; animation: sel-in .12s ease-out; }
-#status.selecting > #footer-actions, #status.selecting > #footer-actions + .status-sep, #status.selecting > #st-size { display: none; }
 @keyframes sel-in { from { opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { #status.selecting #footer-sel { animation: none; } }
-.sel-chip {
-  flex: none; font: 600 var(--t-9-5)/1 var(--ui); letter-spacing: .06em; text-transform: uppercase;
-  color: var(--primary-foreground); background: var(--primary); padding: 3px 6px; border-radius: var(--r);
-}
-#sel-stats { display: none; white-space: nowrap; }
-#status.selecting #sel-stats { display: inline-flex; }
+@media (prefers-reduced-motion: reduce) { }
 
 /* ---------- language server setup (calls pane) ---------- */
 .lsp-setup { padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; font-size: var(--t-12); line-height: 1.55; color: var(--muted-foreground); }
@@ -1291,18 +764,7 @@ body.word-wrap .editview-gutter { white-space: normal; }
   margin: 6px 0 0; max-height: 160px; overflow: auto; white-space: pre-wrap; word-break: break-all;
   font: var(--t-10-5)/1.45 var(--mono); color: var(--muted-foreground);
 }
-#status span:empty:not(.grow) { display: none; }
-.status-metrics {
-  display: inline-flex; align-items: center; gap: 6px;
-  font: var(--t-11) var(--mono); color: var(--foreground); opacity: 0.88;
-  padding: 1px 6px; border-radius: var(--r); background: var(--muted);
-  border: 1px solid var(--border); cursor: pointer; user-select: none;
-  transition: border-color .15s ease, opacity .15s ease;
-}
-.metric-divider { color: var(--faint); }
-.status-metrics-group { display: inline-flex; align-items: center; gap: 6px; }
-.status-metrics-group[hidden] { display: none; }
-.status-metrics:hover, .status-metrics:focus-visible { opacity: 1; border-color: var(--primary); }
+
 .metrics-title {
   font: 600 var(--t-11)/1.2 var(--ui); color: var(--foreground);
   display: flex; align-items: center; justify-content: space-between;
@@ -1322,11 +784,6 @@ body.word-wrap .editview-gutter { white-space: normal; }
 .metrics-val {
   font: var(--t-11-5)/1.4 var(--mono); color: var(--foreground); font-weight: 500;
 }
-.status-ver {
-  font: var(--t-11) var(--mono); color: var(--muted-foreground); cursor: pointer;
-  padding: 1px 4px; border-radius: var(--r);
-}
-.status-ver:hover { color: var(--primary-text); background: var(--accent); }
 .lsp-menu-head {
   font: 600 var(--t-11)/1.2 var(--ui); color: var(--foreground);
   display: flex; align-items: center; justify-content: space-between;
@@ -1371,7 +828,6 @@ body.word-wrap .editview-gutter { white-space: normal; }
   font: var(--t-11-5)/1.4 var(--ui); color: var(--muted-foreground); padding: 8px 4px; text-align: center;
 }
 
-
 .help-version { font: var(--t-11) var(--mono); color: var(--primary-text); background: var(--accent); padding: 2px 6px; border-radius: var(--r); }
 #empty-ver { font: var(--t-12) var(--mono); color: var(--primary-text); opacity: 0.8; padding-bottom: 3px; }
 .help-grid { margin-block: 1em; }
@@ -1411,7 +867,6 @@ body.vim-normal-caret #caret {
   opacity: 0.65;
 }
 
-
 .vim-toggle-row { display: flex; align-items: center; gap: 14px; }
 .vim-switch-label {
   display: inline-flex; align-items: center; gap: 8px;
@@ -1437,10 +892,6 @@ body.vim-normal-caret #caret {
 ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: var(--r-lg); border: 3px solid var(--background); }
 ::-webkit-scrollbar-thumb:hover { background: var(--faint); }
 ::-webkit-scrollbar-corner { background: transparent; }
-
-/* ---------- match minimap ---------- */
-#minimap-hits { position: absolute; top: 0; right: 0; bottom: 0; width: 12px; pointer-events: auto; z-index: 6; }
-#minimap-hits:empty { pointer-events: none; }
 #minimap-hits i { position: absolute; right: 2px; width: 8px; height: 2px; background: var(--mark-active); border-radius: 1px; opacity: .85; }
 
 body.hide-lines .g { display: none !important; }
@@ -1834,8 +1285,6 @@ body.hide-git-gutter .g-git, body.hide-git-gutter [class*="git-"] { display: non
 .pr-merge-label-row { display: flex; align-items: baseline; justify-content: space-between; margin-top: 4px; }
 
 .pr-merge-ai { display: flex; gap: 6px; align-items: center; margin-top: 4px; }
-
-.pr-merge-ai .git-agent-picker { flex: none; }
 .pr-merge-ai[hidden] { display: none; }
 
 .pr-merge-note { font-size: var(--t-11); color: var(--faint); }
@@ -2196,8 +1645,6 @@ body.hide-git-gutter .g-git, body.hide-git-gutter [class*="git-"] { display: non
   gap: 6px;
 }
 
-/* This spacer was inert here before the Tailwind grow utility existed. */
-.diff-hunk-head > .grow { flex-grow: 0 !important; }
 .diff-hunk-label {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2207,10 +1654,6 @@ body.hide-git-gutter .g-git, body.hide-git-gutter [class*="git-"] { display: non
 .diff-hunk-discard:hover {
   color: var(--red, #f85149);
   border-color: var(--red, #f85149);
-}
-
-#tree .tr.file-viewed .nm {
-  opacity: 0.55;
 }
 
 .c[data-diag]::after, .diff-code[data-diag]::after {

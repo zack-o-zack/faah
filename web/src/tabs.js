@@ -537,13 +537,13 @@ async function stepCommitFile(from, file) {
 
 export function drawTabs() {
   $('#tabs').innerHTML = S.tabs.map((t, i) =>
-    '<div class="tab' + (i === S.active ? ' active' : '') + (t.isImage ? ' tab-image' : '') + (t.deleted ? ' tab-deleted' : '') + (t.dirty ? ' tab-dirty' : '') + '" data-i="' + i +
+    '<div class="tab flex shrink-0 max-w-64 cursor-pointer select-none items-center gap-2 rounded px-3 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground [&.active]:bg-accent [&.active]:text-foreground [&.tab-deleted_.tn]:line-through' + (i === S.active ? ' active' : '') + (t.isImage ? ' tab-image' : '') + (t.deleted ? ' tab-deleted' : '') + (t.dirty ? ' tab-dirty' : '') + '" data-i="' + i +
     '" title="' + esc(t.path) + (t.diffRef ? ' — in commit ' + esc(t.diffRef.slice(0, 7)) : '') + '">' +
-    (t.isImage ? '<svg class="tab-icon" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="12" height="12" rx="2"/><circle cx="5.5" cy="5.5" r="1.5"/><path d="M14 10l-3.5-3.5L3 14"/></svg>' : '') +
-    '<span class="tn">' + esc(t.name) + '</span>' +
+    (t.isImage ? '<svg class="tab-icon shrink-0 text-primary" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="12" height="12" rx="2"/><circle cx="5.5" cy="5.5" r="1.5"/><path d="M14 10l-3.5-3.5L3 14"/></svg>' : '') +
+    '<span class="tn truncate">' + esc(t.name) + '</span>' +
     // Pinned to a commit: the tab is not the working tree, and it should say so.
-    (t.diffRef ? '<span class="tab-ref">@' + esc(t.diffRef.slice(0, 7)) + '</span>' : '') +
-    (t.dirty ? '<span class="tab-dirty-dot" title="Unsaved changes">●</span>' : '') +
+    (t.diffRef ? '<span class="tab-ref shrink-0 font-mono text-xs text-muted-foreground">@' + esc(t.diffRef.slice(0, 7)) + '</span>' : '') +
+    (t.dirty ? '<span class="tab-dirty-dot text-primary" title="Unsaved changes">●</span>' : '') +
     '<button type="button" class="btn size-4! p-0!" data-variant="ghost" data-size="icon-xs" aria-label="Close tab" data-close="' + i + '" title="' + withKeys('Close tab ({Alt+W})') + '"><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2 2l6 6M8 2l-6 6"/></svg></button></div>').join('');
   const act = $('#tabs .tab.active');
   if (act) act.scrollIntoView({ block: 'nearest', inline: 'nearest' });

@@ -1,7 +1,4 @@
-/* Desktop app only. desktop/preload.cjs sets the data-* attributes on <html>,
-   so every rule here is inert in a browser tab. */
-.desktop-menu-btn, .shell-ico { display: none; }
-:root:is([data-platform="win"], [data-platform="linux"]) .desktop-menu-btn { display: inline-flex; }
+
 
 /* Inter 5.3.0 from Fontsource, SIL Open Font License (fonts/LICENSE-Inter.txt). */
 @font-face { font-family: "Inter"; font-style: normal; font-weight: 100 900; font-display: swap; src: url("fonts/inter-latin-ext-wght-normal.woff2") format("woff2-variations"); unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF; }
@@ -31,43 +28,8 @@
 /* Buttons: small and medium sizes, default and primary weights. Controls inside
    code rows, tree rows, and the crowded sidebar header stay compact. */
 :root[data-shell] { --focus-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 45%, transparent); }
-[data-shell] #status { height: 28px; }
-
-/* Tabs: rounded items floating in their bar instead of cells joined by
-   dividers. Hover is a lighter wash than the selected tab so the two never match. */
-[data-shell] #tabs {
-  height: 36px; padding: 4px; gap: 2px; align-items: center; box-sizing: border-box;
-  background: var(--sidebar); box-shadow: inset 0 -1px 0 var(--border);
-}
-[data-shell] .tab {
-  height: var(--ctl-md); line-height: normal; padding: 0 6px 0 10px; box-sizing: border-box;
-  font-size: var(--t-12); color: var(--muted-foreground); border-right: 0; border-radius: var(--r); box-shadow: none;
-}
-[data-shell] .tab:hover { background: color-mix(in srgb, var(--muted) 55%, transparent); color: var(--foreground); }
-[data-shell] .tab.active { background: var(--muted); color: var(--foreground); font-weight: 500; box-shadow: none; }
-
-/* Headers: sentence-weight labels in place of small spaced capitals. Panel
-   headers read as titles; section titles inside a panel stay secondary. */
-[data-shell] :is(.panel-head, .threads-head-title, .threads-head-label, .unpushed-title, .git-recent-title, .diff-section-head, .review-section-title) {
-  font-size: var(--t-12); font-weight: 500; letter-spacing: 0; text-transform: none;
-}
-[data-shell] .panel-head { height: 38px; padding: 0 12px; color: var(--foreground); box-sizing: border-box; flex: none; }
-[data-shell] :is(.unpushed-title, .git-recent-title, .review-section-title) { color: var(--muted-foreground); }
-
-/* Rows: chrome lists inset their rows from the panel edge and round them, so a
-   hovered or selected row reads as an item. Rows that show code, such as search
-   results and diff lines, stay full width. */
-[data-shell] :is(.tr, .sym) { height: var(--ctl-sm); margin: 0 6px; border-radius: var(--r); }
-/* Tree: a stroked chevron, and a guide line under each open folder's chevron. */
-[data-shell] .tr .ar::before {
-  left: 3px; top: 3.5px; width: 4px; height: 4px;
-  border: solid var(--muted-foreground); border-width: 0 1.5px 1.5px 0; transform: rotate(-45deg);
-}
-[data-shell] .kids.open { position: relative; }
-[data-shell] .kids.open::before {
-  content: ""; position: absolute; top: 0; bottom: 0; left: calc(6px + var(--guide, 0px)); width: 1px;
-  background: color-mix(in srgb, var(--foreground) 12%, transparent); pointer-events: none;
-}
+[data-shell] :is(.diff-section-head, .review-section-title) { font-size: var(--t-12); font-weight: 500; letter-spacing: 0; text-transform: none; }
+[data-shell] .sym { height: var(--ctl-sm); margin: 0 6px; border-radius: var(--r); }
 [data-shell] .rfile { margin: 0 6px; padding-inline: 6px; border-radius: var(--r); }
 [data-shell] .wb-list { padding: 4px; }
 [data-shell] .wb-row { padding: 8px; border-radius: var(--r); }
@@ -93,28 +55,6 @@
   --titlebar-right: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw));
 }
 
-/* The three bars along the top edge share one height so their borders line up. */
-[data-titlebar] #side > .panel-head,
-[data-titlebar] .main-top-bar,
-[data-titlebar] .inspector-head {
-  height: var(--titlebar-h);
-  flex: none;
-  box-sizing: border-box;
-  -webkit-app-region: drag;
-}
-[data-titlebar] #side > .panel-head { padding: 0 12px 0 calc(12px + var(--titlebar-left)); }
-[data-titlebar] body.side-hidden .main-top-bar { padding-left: calc(8px + var(--titlebar-left)); }
-
-/* Only the rightmost bar sits under the Windows controls. */
-[data-titlebar] body.right-hidden.threads-hidden .main-top-bar, [data-titlebar] body:not(.threads-hidden) .threads-head, [data-titlebar] body.threads-hidden:not(.right-hidden) #right-side .inspector-head {
-  padding-right: calc(8px + var(--titlebar-right));
-}
-
-[data-titlebar] :is(#side > .panel-head, .main-top-bar, .inspector-head)
-  :is(button, a, input, select, label, [role="button"], [role="group"], [role="tab"], .inspector-tab) {
-  -webkit-app-region: no-drag;
-}
-
 /* Chromium ignores stacking when it collects drag regions, so anything laid
    over the top bar has to opt out or it would move the window when clicked. */
 [data-titlebar] body > :not(#app):not(#wb-app) { -webkit-app-region: no-drag; }
@@ -124,29 +64,6 @@
   content: ""; position: fixed; inset: 0 0 auto; height: var(--titlebar-h);
   -webkit-app-region: drag;
 }
-
-
-
-/* Chrome: the sidebar footer is gone. The version sits on the title row, the
-   tree's actions get a row of their own, and the status bar keeps icons whose
-   name and shortcut show on hover. */
-[data-shell] .shell-ico { display: block; }
-[data-shell] .side-foot { display: none; }
-[data-shell] #side > .panel-head { flex-wrap: wrap; height: auto; padding-bottom: 6px; }
-[data-shell] #side > .panel-head #root-name { flex: 1; min-width: 0; line-height: 38px; }
-[data-shell] #side > .panel-head .status-ver {
-  flex: none; font: var(--t-11) var(--ui); color: var(--faint); -webkit-app-region: no-drag;
-}
-/* The second row starts at the panel edge, under the window buttons. */
-[data-shell] #side > .panel-head .panel-actions {
-  flex: 0 0 calc(100% + var(--titlebar-left, 0px)); margin-left: calc(-1 * var(--titlebar-left, 0px));
-  height: var(--ctl-sm);
-}
-
-
-
-
-
 
 /* Disclosure arrows: the tree's stroked chevron in place of a filled triangle. */
 

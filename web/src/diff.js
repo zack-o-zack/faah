@@ -341,7 +341,7 @@ function commitStrip(d) {
       '<span class="gs ' + g[0] + '" title="' + esc(g[1]) + '">' + esc(f.status) + '</span>' +
       '<span class="dcs-path" title="' + path + '">' + path + '</span>' +
       (f.binary ? '' : (f.add ? '<span class="up-file-add">+' + f.add + '</span>' : '') + (f.del ? '<span class="up-file-del">&minus;' + f.del + '</span>' : '')) +
-      '<span class="grow"></span>' +
+      '<span class="flex-1 min-w-0"></span>' +
       '<span class="dcs-pos">' + (i + 1) + ' / ' + files.length + '</span>' +
       '<button type="button" aria-label="Previous file" data-commit-step="-1" title="Previous file in this commit"' + (commitStepTarget(files, i, -1) < 0 ? ' disabled' : '') + ' class="btn" data-control="dcs-step" data-variant="ghost" data-size="icon-xs">‹</button>' +
       '<button type="button" aria-label="Next file" data-commit-step="1" title="Next file in this commit"' + (commitStepTarget(files, i, 1) < 0 ? ' disabled' : '') + ' class="btn" data-control="dcs-step" data-variant="ghost" data-size="icon-xs">›</button>';
@@ -439,7 +439,7 @@ function reviewStrip(d) {
   el.innerHTML =
     (d.turnLabel ? '<span class="gs git-M">' + esc(d.turnLabel) + '</span>' : '') +
     '<span class="dcs-path" title="' + esc(d.path) + '">' + esc(d.path) + '</span>' +
-    '<span class="grow"></span>' +
+    '<span class="flex-1 min-w-0"></span>' +
     '<button type="button" data-hunk-step="-1" title="Previous diff hunk ([c)" class="btn" data-control="dcs-step dcs-hunk-btn" data-variant="outline" data-size="xs">↑ Hunk</button>' +
     '<button type="button" data-hunk-step="1" title="Next diff hunk (]c)" class="btn" data-control="dcs-step dcs-hunk-btn" data-variant="outline" data-size="xs">↓ Hunk</button>' +
     '<button type="button" aria-pressed="' + viewed + '" data-variant="' + (viewed ? 'secondary' : 'ghost') + '" data-toggle-viewed="1" title="Mark file as viewed and advance to next unviewed file" class="btn" data-control="dcs-viewed" data-size="xs">✓ Viewed</button>' +

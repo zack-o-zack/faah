@@ -427,7 +427,7 @@ export function openCommentComposer(info) {
   box.innerHTML =
     '<div class="agent-head"><span class="sel-chip">Review Comment</span>' +
     '<span role="button" tabindex="0" title="Jump to this line" class="btn" data-control="agent-ref" data-variant="ghost" data-size="xs">' + esc(ref) + '</span>' +
-    '<span class="grow"></span><button title="Close (Esc)" class="btn" data-control="agent-close" data-variant="ghost" data-size="icon-xs" aria-label="Close (Esc)">✕</button></div>' +
+    '<span class="flex-1 min-w-0"></span><button title="Close (Esc)" class="btn" data-control="agent-close" data-variant="ghost" data-size="icon-xs" aria-label="Close (Esc)">✕</button></div>' +
     '<div class="agent-compose">' +
     '<textarea rows="3" spellcheck="false" autocomplete="off" placeholder="Leave a comment on this line... (' + esc(modEnter) + ' to add)" class="textarea resize-y" data-control="agent-input"></textarea>' +
     '<div class="agent-err" hidden></div>' +
