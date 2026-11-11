@@ -32,7 +32,7 @@ export function updateStatus() {
   }
   const sw = $('#md-switch');
   if (sw) {
-    sw.hidden = !isMd;
+    sw.hidden = !isMd || !!d?.diffMode;
     const pb = $('[data-md="preview"]', sw);
     if (pb && isMd) pb.textContent = label;
     document.body.classList.toggle('md-tab', isMd);
@@ -59,7 +59,7 @@ export function updateStatus() {
       setPressed(btn, hasDiff && isDiffOn);
       btn.title = hasDiff
         ? withKeys(`Show changes against HEAD, ${currentLayout === 'unified' ? 'unified' : 'split'} ({Mod+D})`)
-        : 'There are no git modified files.';
+        : 'This file has no changes against HEAD';
     }
     const srcBtn = $('#diff-source');
     if (srcBtn) {

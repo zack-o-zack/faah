@@ -1,3 +1,4 @@
+import { pictureSource } from './markdown-picture.js';
 // web/src/markdown.js
 import { $, $$, S, doc_, esc, api, isMac, MOD, LH } from './state.js';
 import { on } from './bus.js';
@@ -142,11 +143,11 @@ function mdSetPref(d, on) {
 const HTML_NS = 'http://www.w3.org/1999/xhtml';
 // Removed along with everything inside them.
 const MD_DROP = new Set(('script style iframe frame frameset object embed applet template noscript noembed ' +
-  'svg math form textarea select option button link meta base title audio video source track canvas dialog').split(' '));
+  'svg math form textarea select option button link meta base title audio video track canvas dialog').split(' '));
 // Kept. Any other element is unwrapped: its children stay, the element goes.
 const MD_KEEP = new Set(('a abbr b bdi bdo blockquote br caption center cite code col colgroup dd del details dfn div dl dt ' +
   'em figcaption figure h1 h2 h3 h4 h5 h6 hr i img input ins kbd li mark ol p pre q rp rt ruby s samp section small span ' +
-  'strike strong sub summary sup table tbody td tfoot th thead tr tt u ul var wbr').split(' '));
+  'picture source strike strong sub summary sup table tbody td tfoot th thead tr tt u ul var wbr').split(' '));
 // Attributes that can neither run script nor reach the network.
 const MD_ATTRS = new Set(('align valign alt title lang dir width height colspan rowspan start reversed open checked ' +
   'disabled type data-line data-lang').split(' '));
@@ -188,12 +189,38 @@ function mdSanitize(html, docPath) {
     if (tag === 'input') el.className = 'input mr-2';
     if (tag === 'kbd') el.className = 'kbd';
     if (tag === 'input') /** @type {HTMLInputElement} */ (el).disabled = true;
+    if (tag === 'source') {
+      const candidate = el.parentElement?.localName === 'picture' && pictureSource(attrs.srcset || '', attrs.media || '');
+      if (!candidate) { el.remove(); continue; }
+      const image = document.createElement('img');
+      mdSetImage(image, candidate.src, base);
+      if (!image.hasAttribute('src')) { el.remove(); continue; }
+      el.setAttribute('srcset', image.getAttribute('src'));
+      el.dataset.mdScheme = candidate.scheme;
+      el.dataset.origSrc = candidate.src;
+      if (image.dataset.rawPath) el.dataset.rawPath = image.dataset.rawPath;
+    }
     if (tag === 'img') mdSetImage(el, mdURL(attrs.src || ''), base);
     if (tag === 'a' && attrs.href) mdSetLink(el, mdURL(attrs.href), base);
   }
   const frag = document.createDocumentFragment();
   while (body.firstChild) frag.appendChild(document.adoptNode(body.firstChild));
+  syncMarkdownPictures(frag);
   return frag;
+}
+
+/* Native media queries follow the OS; pictures in the preview follow the app theme. */
+function syncMarkdownPictures(root = mdArticle) {
+  const scheme = getComputedStyle(document.documentElement).colorScheme === 'dark' ? 'dark' : 'light';
+  for (const picture of root.querySelectorAll('picture')) {
+    const sources = [...picture.querySelectorAll('source[data-md-scheme]')];
+    const selected = sources.find(source => source.dataset.mdScheme === scheme);
+    const img = picture.querySelector('img');
+    if (img) img.dataset.picturePath = selected ? selected.dataset.rawPath || '' : img.dataset.rawPath || '';
+    for (const source of sources) {
+      source.setAttribute('media', source.dataset.mdScheme === scheme ? '(min-width: 0px)' : 'not all');
+    }
+  }
 }
 
 /* A reference without a scheme names a file in the workspace, relative to the
@@ -272,7 +299,7 @@ function mdEnhance() {
     if (pre.dataset.lang) wrap.dataset.lang = pre.dataset.lang;
     pre.replaceWith(wrap);
     const copy = document.createElement('button');
-    copy.className = 'btn absolute top-2 right-2';
+    copy.className = 'btn';
     copy.dataset.control = 'md-copy';
     copy.dataset.variant = 'ghost';
     copy.dataset.size = 'icon-xs';
@@ -280,7 +307,12 @@ function mdEnhance() {
     copy.setAttribute('aria-label', 'Copy code');
     // An icon, not a label: find in the preview walks text nodes.
     copy.innerHTML = '<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 3.5V3a1.5 1.5 0 0 0-1.5-1.5H4A1.5 1.5 0 0 0 2.5 3v5A1.5 1.5 0 0 0 4 9.5h.5"/></svg>';
-    wrap.append(pre, copy);
+    const toolbar = document.createElement('div');
+    toolbar.className = 'flex items-center justify-between gap-2 border border-b-0 rounded-t-md bg-sidebar px-3 py-1 text-xs text-muted-foreground';
+    const language = document.createElement('span');
+    language.textContent = pre.dataset.lang || 'Code';
+    toolbar.append(language, copy);
+    wrap.append(toolbar, pre);
   }
 }
 
@@ -542,7 +574,7 @@ export function initMarkdown() {
   }
   on('tab:activated', () => syncPreview());
   on('tabs:cleared', () => syncPreview());
-  on('theme:changed', scheduleMermaidThemeRender);
+  on('theme:changed', () => { syncMarkdownPictures(); scheduleMermaidThemeRender(); });
 }
 
 export function getDocRaw(d) {
@@ -747,8 +779,8 @@ export function openLightbox(img) {
   const lbOpenTab = $('#lb-open-tab');
   const lbCopyPath = $('#lb-copy-path');
 
-  const src = img.getAttribute('src');
-  const rawPath = img.dataset.rawPath || '';
+  const src = img.currentSrc || img.getAttribute('src');
+  const rawPath = (img.parentElement?.localName === 'picture' ? img.dataset.picturePath : img.dataset.rawPath) || '';
   const alt = img.getAttribute('alt') || '';
   const displayTitle = rawPath || alt || src.split('/').pop() || 'Image Preview';
 

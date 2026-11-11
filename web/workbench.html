@@ -63,10 +63,10 @@
 
       <div class="grid gap-4 mt-6 md:grid-cols-2">
         <section class="card min-w-0" aria-labelledby="wb-recent-h">
-          <header class="">
+          <header class="flex flex-wrap items-center gap-2">
             <h2 id="wb-recent-h">Recent</h2>
-            <span class="card-action flex items-center gap-2">
-              <button id="wb-cwd" type="button" hidden class="btn max-w-[260px] truncate" data-control="wb-link" data-variant="link" data-size="xs"></button>
+            <span class="min-w-0 flex-1">
+              <button id="wb-cwd" type="button" hidden class="btn max-w-full" data-control="wb-link" data-variant="ghost" data-size="xs"></button>
             </span>
           </header>
           <ul id="wb-recent" class="item-group max-h-[56vh] overflow-auto desktop:p-1"></ul>

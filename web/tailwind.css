@@ -244,11 +244,7 @@
   .md pre code { font: inherit; white-space: pre; }
   .md pre i { font-style: normal; }
 
-  .md-pre[data-lang]::before {
-    content: attr(data-lang); position: absolute; top: 8px; right: 12px; pointer-events: none;
-    font: var(--t-10-5)/1 var(--mono); letter-spacing: .04em; color: var(--faint); transition: opacity .12s;
-  }
-  .md-pre:hover::before { opacity: 0; }
+  .md-pre > pre { border-top-left-radius: 0; border-top-right-radius: 0; }
 
   .md-mermaid {
     display: grid; min-width: 0; max-height: 80vh; overflow: auto;

@@ -263,7 +263,15 @@ async function refresh() {
   $('#st-ver').textContent = state.version ? 'v' + state.version : '';
   const cwd = $('#wb-cwd');
   cwd.hidden = !state.cwd;
-  cwd.textContent = 'Open ' + tildify(state.cwd);
+  cwd.replaceChildren();
+  const openLabel = document.createElement('span');
+  openLabel.className = 'shrink-0';
+  openLabel.textContent = 'Open';
+  const pathLabel = document.createElement('span');
+  pathLabel.className = 'min-w-0 truncate [direction:rtl] text-left';
+  pathLabel.textContent = tildify(state.cwd);
+  cwd.append(openLabel, pathLabel);
+  cwd.setAttribute('aria-label', 'Open ' + tildify(state.cwd));
   cwd.title = 'Open the folder faah was started in: ' + state.cwd;
   if (!browsePath) browse(state.cwd);
 }
