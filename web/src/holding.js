@@ -1,3 +1,7 @@
+import { currentTheme, setTheme } from './theme.js';
+
+setTheme(currentTheme(), false);
+
 // Poll without replacing the document, so the CSS spinner keeps rotating.
 const holdingProgress = document.querySelector('#wb-holding-progress');
 const holdingPath = location.pathname;
@@ -21,4 +25,4 @@ async function pollHolding() {
   setTimeout(pollHolding, 1000);
 }
 
-void pollHolding();
+if (holdingProgress) void pollHolding();

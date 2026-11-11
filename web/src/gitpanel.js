@@ -52,7 +52,7 @@ export function initGitPanel() {
   }
 
   $('#git-commit')?.addEventListener('click', doCommit);
-  $('#git-commit-msg')?.addEventListener('input', () => $('#git-commit-msg')?.classList.remove('warn-border'));
+  $('#git-commit-msg')?.addEventListener('input', () => $('#git-commit-msg')?.classList.remove('border-warn!'));
   $('#git-commit-msg')?.addEventListener('keydown', e => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
       e.preventDefault();
@@ -239,7 +239,7 @@ async function doCommit() {
     if (ta) {
       ta.classList.remove('shake');
       void ta.offsetWidth;
-      ta.classList.add('shake', 'warn-border');
+      ta.classList.add('shake', 'border-warn!');
       setTimeout(() => ta.classList.remove('shake'), 350);
       ta.focus();
     }
@@ -255,7 +255,7 @@ async function doCommit() {
     await apiPostJson('/api/git/commit', { message });
     if (ta) {
       ta.value = '';
-      ta.classList.remove('warn-border');
+      ta.classList.remove('border-warn!');
     }
     toggleCommitMsgBox(false);
     clearGitNotice();
@@ -779,7 +779,7 @@ async function commitWithMessage(message, btn) {
     const ta = $('#git-commit-msg');
     if (ta) {
       ta.value = '';
-      ta.classList.remove('warn-border');
+      ta.classList.remove('border-warn!');
     }
     clearGitNotice();
     showToast('✓', 'Committed with AI');

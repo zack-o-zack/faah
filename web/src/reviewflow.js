@@ -354,9 +354,9 @@ function updateBackgroundStatusDot() {
   const isRunning = status === 'running';
   dot.hidden = !isRunning;
   if (isRunning) {
-    dot.classList.add('pulse');
+    dot.classList.add('animate-pulse');
   } else {
-    dot.classList.remove('pulse');
+    dot.classList.remove('animate-pulse');
   }
 }
 
@@ -401,7 +401,7 @@ function renderPipeline() {
       </div>
       <div data-ui="review-stage-card-actions" class="flex flex-col items-end flex-none gap-2">
         <span class="badge" data-variant="secondary">${status}</span>
-        <button type="button" title="Edit this stage" class="btn" data-control="mini review-stage-card-edit-btn" data-variant="ghost" data-size="icon-xs" aria-label="Edit this stage">✏️</button>
+        <button type="button" title="Edit this stage" class="btn" data-control="mini review-stage-card-edit-btn" data-variant="ghost" data-size="icon-xs" aria-label="Edit this stage"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
         <button type="button" title="Remove stage from workflow" aria-label="Remove stage" class="btn" data-control="mini review-stage-remove-btn" data-variant="ghost" data-size="icon-xs">&times;</button>
       </div>
     `;
@@ -522,7 +522,7 @@ function renderActiveStage() {
   const inlineEditor = $('#review-stage-inline-editor');
   const questionBanner = $('#review-question-banner');
   if (inlineEditor) inlineEditor.hidden = true;
-  if (questionBanner) questionBanner.hidden = false;
+  if (questionBanner) questionBanner.hidden = !questionText.trim();
 
   const threadId = currentStageState ? getThreadId(currentStageState) : '';
   const msgsEl = $('#review-thread-msgs');
@@ -532,7 +532,7 @@ function renderActiveStage() {
     msgsEl.innerHTML = `
       <div data-ui="review-thread-placeholder" class="empty flex flex-col items-center justify-center h-full gap-2 text-muted-foreground">
         <p>This stage has not been executed yet.</p>
-        <button id="btn-start-single-stage" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs">Run Stage ${activeStageIdx + 1} Now</button>
+        <button id="btn-start-single-stage" class="btn" data-control="bar-action" data-variant="primary" data-size="default">Run Stage ${activeStageIdx + 1} Now</button>
       </div>
     `;
     const startSingle = $('#btn-start-single-stage');
@@ -580,7 +580,7 @@ function wireInlineStageEditor() {
       const inlineEditor = $('#review-stage-inline-editor');
       const questionBanner = $('#review-question-banner');
       if (inlineEditor) inlineEditor.hidden = true;
-      if (questionBanner) questionBanner.hidden = false;
+      if (questionBanner) questionBanner.hidden = !$('#review-question-text')?.textContent?.trim();
     };
   }
 
@@ -611,7 +611,7 @@ function wireInlineStageEditor() {
         const inlineEditor = $('#review-stage-inline-editor');
         const questionBanner = $('#review-question-banner');
         if (inlineEditor) inlineEditor.hidden = true;
-        if (questionBanner) questionBanner.hidden = false;
+        if (questionBanner) questionBanner.hidden = !$('#review-question-text')?.textContent?.trim();
         renderPipeline();
         renderActiveStage();
       } catch (err) {

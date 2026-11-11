@@ -18,9 +18,11 @@ function createElement(id) {
     dataset: {},
     innerHTML: '',
     textContent: '',
+    children: [],
+    focus() {},
     addEventListener() {},
     removeEventListener() {},
-    appendChild() {},
+    appendChild(child) { this.children.push(child); },
     setAttribute(k, v) { this[k] = v; },
     getAttribute(k) { return this[k] ?? null; },
     querySelector() { return null; },
@@ -58,13 +60,15 @@ globalThis.document = {
 globalThis.window = globalThis;
 globalThis.location = { href: 'http://localhost:7777/' };
 
-const { getMode, setMode, getLayout, setLayout } = await import('./reviewflow.js');
+const { getMode, setMode, getLayout, setLayout, initReviewFlow } = await import('./reviewflow.js');
 
 test('defaults to code mode', () => {
   assert.equal(getMode(), 'code');
 });
 
-test('toggles to review mode and back to code mode', () => {
+test('toggles to review mode and back to code mode', async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({ ok: true, json: async () => ({}) });
   setMode('review');
   assert.equal(getMode(), 'review');
   assert.equal(document.body.classList.contains('in-review-mode'), true);
@@ -72,6 +76,8 @@ test('toggles to review mode and back to code mode', () => {
   setMode('code');
   assert.equal(getMode(), 'code');
   assert.equal(document.body.classList.contains('in-review-mode'), false);
+  await new Promise(resolve => setTimeout(resolve, 0));
+  globalThis.fetch = originalFetch;
 });
 
 test('toggles between vertical and horizontal review layout', () => {
@@ -83,4 +89,36 @@ test('toggles between vertical and horizontal review layout', () => {
   setLayout('vertical');
   assert.equal(getLayout(), 'vertical');
   assert.equal(reviewView.classList.contains('layout-vertical'), true);
+});
+
+test('pending stages use SVG edit controls, a run button and no empty question banner', async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({
+    ok: true,
+    json: async () => ({ config: { stages: [{ title: 'Check changes', question: '', prompt: '' }] } }),
+  });
+  try {
+    initReviewFlow();
+    setMode('review');
+    await new Promise(resolve => setTimeout(resolve, 0));
+    assert.equal(elements.get('review-question-banner').hidden, true);
+    const messages = elements.get('review-thread-msgs').innerHTML;
+    assert.match(messages, /id="btn-start-single-stage" class="btn"/);
+    assert.match(messages, /data-variant="primary"/);
+    const cards = elements.get('review-stages-container').children;
+    const card = cards[cards.length - 1].innerHTML;
+    assert.match(card, /aria-label="Edit this stage"><svg/);
+    assert.doesNotMatch(card, /✏/);
+    elements.get('btn-edit-stage-inline').onclick();
+    assert.equal(elements.get('review-stage-inline-editor').hidden, false);
+    elements.get('btn-cancel-stage-inline').onclick();
+    assert.equal(elements.get('review-stage-inline-editor').hidden, true);
+    assert.equal(elements.get('review-question-banner').hidden, true);
+    elements.get('review-question-text').textContent = 'What changed?';
+    elements.get('btn-cancel-stage-inline').onclick();
+    assert.equal(elements.get('review-question-banner').hidden, false);
+  } finally {
+    setMode('code');
+    globalThis.fetch = originalFetch;
+  }
 });

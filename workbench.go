@@ -1253,29 +1253,30 @@ var holdingTmpl = template.Must(template.New("holding").Parse(`<!doctype html>
 <base href="{{.Base}}">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 {{if .Starting}}<noscript><meta http-equiv="refresh" content="1; url={{.Self}}"></noscript>
-<script defer src="static/holding.js"></script>{{end}}
+{{end}}
+<script defer src="static/holding.js"></script>
 <title>{{if .Starting}}Opening…{{else}}faah{{end}}</title>
 <link rel="icon" type="image/svg+xml" href="static/favicon.svg">
 <link rel="stylesheet" href="static/app.css">
 <link rel="stylesheet" href="static/themes.css">
 </head>
-<body class="wb">
-<button data-desktop-menu title="Menu" aria-label="Application menu" class="btn desktop-menu-btn" data-variant="outline" data-size="xs">
+<body class="before:desktop:fixed before:desktop:inset-x-0 before:desktop:top-0 before:desktop:h-[var(--titlebar-h,38px)] before:desktop:[-webkit-app-region:drag] before:desktop:content-['']">
+<button data-desktop-menu title="Menu" aria-label="Application menu" class="btn desktop-menu-btn hidden! win-linux:inline-flex! fixed top-2 left-2 z-1 [-webkit-app-region:no-drag]" data-variant="outline" data-size="xs">
   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
 </button>
-<main class="wb-holding">
-  <div class="empty-logo">
-    <img class="logo-dark" src="static/logo-dark.svg" alt="faah" width="160" height="60">
-    <img class="logo-light" src="static/logo-light.svg" alt="faah" width="160" height="60">
+<main class="card mx-4 mt-[18vh] max-w-xl sm:mx-auto">
+  <div class="flex items-end gap-2 px-6">
+    <img class="hidden dark:block" src="static/logo-dark.svg" alt="faah" width="160" height="60">
+    <img class="block dark:hidden" src="static/logo-light.svg" alt="faah" width="160" height="60">
   </div>
   {{if .Starting}}
-  <p class="wb-holding-msg"><span class="wb-spin" aria-hidden="true"></span>Opening <b>{{.Title}}</b>…</p>
-  <p id="wb-holding-progress" class="wb-faint">{{if .Progress}}{{.Progress}}…{{else}}Pull requests are checked out first; large repositories take a while.{{end}}</p>
+  <p class="flex flex-wrap items-center gap-2 px-6"><span class="size-3 shrink-0 rounded-full border-2 border-border border-t-primary animate-spin motion-reduce:animate-none" aria-hidden="true"></span>Opening <b>{{.Title}}</b>…</p>
+  <p id="wb-holding-progress" class="px-6 text-muted-foreground">{{if .Progress}}{{.Progress}}…{{else}}Pull requests are checked out first; large repositories take a while.{{end}}</p>
   {{else}}
-  <p class="wb-holding-msg">Could not open <b>{{.Title}}</b></p>
-  <pre class="wb-error">{{.Error}}</pre>
+  <p class="flex flex-wrap items-center gap-2 px-6">Could not open <b>{{.Title}}</b></p>
+  <pre class="mx-6 overflow-auto whitespace-pre-wrap break-words font-mono text-sm text-destructive">{{.Error}}</pre>
   {{end}}
-  <p class="wb-holding-actions">{{if .Retry}}<a class="btn" data-variant="primary" data-size="default" href="{{.Retry}}">Retry</a>{{end}}{{if .Choose}}<a class="btn" data-variant="primary" data-size="default" href="{{.Choose}}">Choose a clone</a>{{end}}<a class="btn" data-variant="outline" data-size="default" href="{{.Base}}">Back to workbench</a></p>
+  <p class="flex flex-wrap gap-2 px-6">{{if .Retry}}<a class="btn" data-variant="primary" data-size="default" href="{{.Retry}}">Retry</a>{{end}}{{if .Choose}}<a class="btn" data-variant="primary" data-size="default" href="{{.Choose}}">Choose a clone</a>{{end}}<a class="btn" data-variant="outline" data-size="default" href="{{.Base}}">Back to workbench</a></p>
 </main>
 </body>
 </html>

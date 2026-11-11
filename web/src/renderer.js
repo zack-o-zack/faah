@@ -345,7 +345,7 @@ export function paint() {
   for (let i = first; i < last; i++) {
     const n = i + 1;
     const body = d.lines[i];
-    let rc = 'row', gc = 'g';
+    let rc = 'row flex h-[var(--lh)] [body.word-wrap_&]:h-auto [body.word-wrap_&]:min-h-[var(--lh)] font-mono text-[length:var(--fs)] leading-[var(--lh)] [font-feature-settings:normal]', gc = 'g sticky left-0 z-[2] shrink-0 w-[calc(var(--gw,1)*1ch+30px)] pl-4 pr-3.5 text-right text-faint bg-background group-[.cur]/line:bg-cur group-[.cur]/line:text-foreground group-[.ref-range]/line:bg-sel group-[.agent-sel]/line:text-primary group-[.agent-sel]/line:font-semibold group-[.agent-anchor]/line:relative select-none cursor-pointer tabular-nums';
     if (n === d.cur) rc += ' cur';
     if (agentRanges.some(r => n >= r.l1 && n <= r.l2)) rc += ' agent-sel';
     if (agentRanges.some(r => n === r.l1)) rc += ' agent-anchor';
@@ -365,7 +365,7 @@ export function paint() {
       cAttr = ' data-diag="' + esc(label) + '" title="' + esc(dg.message || '') + '"';
     }
     html += '<div class="' + rc + ' group/line" data-l="' + n + '">' +
-      '<div class="' + gc + '"><span role="button" data-l="' + n + '" title="Thread and line actions" class="btn absolute left-0 top-1/2 -translate-y-1/2 max-w-full truncate h-4! px-1! text-9! opacity-0 pointer-events-none group-hover/line:opacity-100 group-hover/line:pointer-events-auto group-[.agent-anchor]/line:opacity-100 group-[.agent-anchor]/line:pointer-events-auto" data-control="line-btn" data-variant="ghost" data-size="xs">Edit</span>' + n + '</div><div class="c"' + cAttr + '>' + (body === undefined ? '' : body) + '</div></div>';
+      '<div class="' + gc + '"><span role="button" data-l="' + n + '" title="Thread and line actions" class="btn absolute left-0 top-1/2 -translate-y-1/2 max-w-full truncate h-4! px-1! text-9! opacity-0 pointer-events-none group-hover/line:opacity-100 group-hover/line:pointer-events-auto group-[.agent-anchor]/line:opacity-100 group-[.agent-anchor]/line:pointer-events-auto" data-control="line-btn" data-variant="ghost" data-size="xs">Edit</span>' + n + '</div><div class="c flex-1 min-w-0 whitespace-pre pr-10 [body.word-wrap_&]:whitespace-pre-wrap [body.word-wrap_&]:break-words [body.word-wrap_&]:[overflow-wrap:anywhere]"' + cAttr + '>' + (body === undefined ? '' : body) + '</div></div>';
   }
   const sel = saveSelection();
   const y0 = w ? w.offsets[first] : first * lh;

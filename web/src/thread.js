@@ -88,7 +88,7 @@ function thrInline(src) {
     const m = /^([a-zA-Z0-9_.\-/]+\.[a-zA-Z0-9]+)(?::(\d+)(?:-(\d+))?)?$/.exec(trimmed);
     const attrs = m ? thrLinkAttrs(trimmed, m[1], m[2], m[3]) : '';
     if (attrs) {
-      codes.push(`<code class="thr-code-ref"><a href="#" class="thr-link" ${attrs}>${esc(trimmed)}</a></code>`);
+      codes.push(`<code class="font-medium"><a href="#" class="thr-link cursor-pointer text-primary-text underline underline-offset-2 hover:text-primary" ${attrs}>${esc(trimmed)}</a></code>`);
     } else {
       codes.push('<code>' + esc(trimmed) + '</code>');
     }
@@ -126,7 +126,7 @@ function thrInline(src) {
     const m = /^([a-zA-Z0-9_.\-/]+\.[a-zA-Z0-9]+)(?::(\d+)(?:-(\d+))?)?$/.exec(url.trim());
     if (m && !url.includes('://')) {
       const attrs = thrLinkAttrs(url.trim(), m[1], m[2], m[3]);
-      return attrs ? pushLink(`<a href="#" class="thr-link" ${attrs}>${text}</a>`) : text;
+      return attrs ? pushLink(`<a href="#" class="thr-link cursor-pointer text-primary-text underline underline-offset-2 hover:text-primary" ${attrs}>${text}</a>`) : text;
     }
     return pushLink(`<a href="${u}" target="_blank" rel="noopener noreferrer">${text}</a>`);
   });
@@ -135,7 +135,7 @@ function thrInline(src) {
   s = s.replace(/(^|[\s(])([a-zA-Z0-9_.\-/]+\.[a-zA-Z0-9]+):(\d+)(?:-(\d+))?(?=[\s),.;:!?]|$)/g, (_, prefix, path, line, end) => {
     const shown = path + ':' + line + (end ? '-' + end : '');
     const attrs = thrLinkAttrs(shown, path, line, end);
-    return prefix + (attrs ? pushLink(`<a href="#" class="thr-link" ${attrs}>${esc(shown)}</a>`) : esc(shown));
+    return prefix + (attrs ? pushLink(`<a href="#" class="thr-link cursor-pointer text-primary-text underline underline-offset-2 hover:text-primary" ${attrs}>${esc(shown)}</a>`) : esc(shown));
   });
 
   // 4. Bracketed autolinks: <https://...>

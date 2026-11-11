@@ -45,7 +45,7 @@ function placeThemeMenu() {
 
 function renderThemeMenu() {
   themeMenu.innerHTML = listThemes().map((t, i) => `<button type="button" role="menuitemradio" data-id="${esc(t.id)}" aria-checked="${i === themeSel}" class="aria-checked:bg-accent">
-    <span>${esc(t.name)}</span><span class="wb-faint">${esc(t.id === themeBefore ? 'current' : t.scheme)}</span></button>`).join('');
+    <span>${esc(t.name)}</span><span class="text-muted-foreground">${esc(t.id === themeBefore ? 'current' : t.scheme)}</span></button>`).join('');
   themeMenu.children[themeSel]?.scrollIntoView({ block: 'nearest' });
 }
 
@@ -79,13 +79,13 @@ $('#btn-theme').addEventListener('click', e => {
   else closeThemeMenu(true);
 });
 themeMenu.addEventListener('click', e => {
-  const li = e.target.closest('li[data-id]');
+  const li = e.target.closest('[data-id]');
   if (!li) return;
   setTheme(li.dataset.id, false);
   closeThemeMenu(true);
 });
 themeMenu.addEventListener('mousemove', e => {
-  const li = e.target.closest('li[data-id]');
+  const li = e.target.closest('[data-id]');
   if (!li) return;
   const i = [...themeMenu.children].indexOf(li);
   if (i !== themeSel) previewTheme(i);
@@ -150,11 +150,11 @@ function attachComplete(input, list, onFolder) {
   const close = () => { list.hidden = true; items = []; sel = -1; input.setAttribute('aria-expanded', 'false'); };
   const render = () => {
     const prefix = (input.value.match(/[^/\\]*$/) || [''])[0];
-    list.innerHTML = items.map((e, i) => `<li role="option" data-i="${i}" aria-selected="${i === sel}">
-      <span class="wb-ico">${ICON_DIR}</span>
-      <span class="wb-sg-name"><b>${esc(e.name.slice(0, prefix.length))}</b>${esc(e.name.slice(prefix.length))}</span>
+    list.innerHTML = items.map((e, i) => `<li class="item cursor-pointer aria-selected:bg-accent hover:bg-accent" role="option" data-i="${i}" aria-selected="${i === sel}">
+      <span class="inline-flex shrink-0 text-muted-foreground">${ICON_DIR}</span>
+      <span class="shrink-0 [&_b]:text-primary-text"><b>${esc(e.name.slice(0, prefix.length))}</b>${esc(e.name.slice(prefix.length))}</span>
       ${e.git ? '<span class="badge" data-variant="secondary" data-control="wb-git">git</span>' : ''}
-      <span class="wb-sg-path">${esc(e.path)}</span></button>`).join('');
+      <span class="flex-1 min-w-0 truncate text-right text-muted-foreground">${esc(e.path)}</span></li>`).join('');
     list.hidden = !items.length;
     input.setAttribute('aria-expanded', String(!list.hidden));
     list.children[sel]?.scrollIntoView({ block: 'nearest' });
@@ -221,13 +221,13 @@ function rowHtml(it) {
   const title = pr ? (it.title || `#${it.number}`) : it.title || it.path;
   const sub = it.state === 'starting' && it.progress ? it.progress : pr ? `${it.repo}#${it.number}` : tildify(it.path);
   const st = it.state === 'stopped' && !it.error ? '' :
-    `<span class="wb-state ${esc(it.state)}" title="${esc(it.error || it.state)}">${esc(it.state === 'stopped' ? 'exited' : it.state)}</span>`;
-  return `<li><a class="wb-row" href="${esc(it.href)}" data-id="${esc(it.id)}">
-    <span class="wb-ico${pr ? ' pr' : ''}">${pr ? ICON_PR : ICON_DIR}</span>
-    <span class="wb-text"><span class="wb-title">${esc(title)}</span><span class="wb-sub">${esc(sub)}</span></span>
+    `<span class="badge shrink-0" data-variant="${it.state === 'failed' ? 'destructive' : 'secondary'}" title="${esc(it.error || it.state)}">${esc(it.state === 'stopped' ? 'exited' : it.state)}</span>`;
+  return `<li><a class="item group min-w-0 desktop:p-2" href="${esc(it.href)}" data-id="${esc(it.id)}">
+    <span class="${pr ? 'inline-flex shrink-0 text-gi' : 'inline-flex shrink-0 text-muted-foreground'}">${pr ? ICON_PR : ICON_DIR}</span>
+    <span class="flex flex-1 min-w-0 flex-col"><span class="truncate">${esc(title)}</span><span class="truncate font-mono text-xs text-muted-foreground">${esc(sub)}</span></span>
     ${st}
-    <span class="wb-when">${esc(ago(it.lastOpened))}</span>
-    <span class="wb-acts">
+    <span class="shrink-0 text-xs text-muted-foreground">${esc(ago(it.lastOpened))}</span>
+    <span class="flex shrink-0 gap-1">
       <button type="button" data-act="pin" aria-pressed="${it.pinned}" title="${it.pinned ? 'Unpin' : 'Pin to top'}" aria-label="${it.pinned ? 'Unpin' : 'Pin'}" class="btn aria-pressed:visible" data-variant="${it.pinned ? 'secondary' : 'ghost'}" data-size="icon-xs">${it.pinned ? '★' : '☆'}</button>
       ${it.state === 'running' ? '<button type="button" data-act="stop" title="Stop this workspace" aria-label="Stop" class="btn" data-variant="outline" data-size="xs">■</button>' : ''}
       <button type="button" data-act="remove" title="Remove from the list" aria-label="Remove" class="btn" data-variant="outline" data-size="xs">✕</button>
@@ -239,7 +239,7 @@ function renderRecent() {
   const pinned = state.items.filter(i => i.pinned);
   const rest = state.items.filter(i => !i.pinned);
   let html = pinned.map(rowHtml).join('');
-  if (pinned.length && rest.length) html += '<li class="wb-sep" role="separator"></li>';
+  if (pinned.length && rest.length) html += '<li class="my-1 border-t" role="separator"></li>';
   html += rest.map(rowHtml).join('');
   $('#wb-recent').innerHTML = html;
   $('#wb-recent-empty').hidden = state.items.length > 0;
@@ -321,12 +321,12 @@ async function browse(path) {
   $('#wb-path').title = r.path;
   $('#wb-up').disabled = !r.parent;
   $('#wb-up').dataset.path = r.parent || '';
-  $('#wb-dirs').innerHTML = r.entries.length ? r.entries.map(e => `<li><div class="wb-row" tabindex="0" data-path="${esc(e.path)}">
-    <span class="wb-ico">${ICON_DIR}</span>
-    <span class="wb-text"><span class="wb-title">${esc(e.name)}</span></span>
+  $('#wb-dirs').innerHTML = r.entries.length ? r.entries.map(e => `<li><div class="item group min-w-0 desktop:p-2" tabindex="0" data-path="${esc(e.path)}">
+    <span class="inline-flex shrink-0 text-muted-foreground">${ICON_DIR}</span>
+    <span class="flex flex-1 min-w-0 flex-col"><span class="truncate">${esc(e.name)}</span></span>
     ${e.git ? '<span class="badge" data-variant="secondary" data-control="wb-git">git</span>' : ''}
-    <span class="wb-acts"><button type="button" data-act="open" title="Open ${esc(e.name)}" class="btn" data-variant="outline" data-size="xs">${pendingPR ? 'Use' : 'Open'}</button></span>
-  </div></button>`).join('') : '<li class="wb-empty">No folders here.</li>';
+    <span class="flex shrink-0 gap-1"><button type="button" data-act="open" title="Open ${esc(e.name)}" class="btn" data-variant="outline" data-size="xs">${pendingPR ? 'Use' : 'Open'}</button></span>
+  </div></li>`).join('') : '<li class="empty p-4 text-muted-foreground">No folders here.</li>';
 }
 
 // Opening a folder, or, while a PR waits for its clone, choosing it as that clone.
@@ -360,7 +360,7 @@ $('#wb-recent').addEventListener('click', async e => {
   const btn = e.target.closest('button[data-act]');
   if (!btn) return;
   e.preventDefault();
-  const id = btn.closest('.wb-row').dataset.id;
+  const id = btn.closest('[data-id]').dataset.id;
   const it = state.items.find(i => i.id === id);
   try {
     if (btn.dataset.act === 'pin') await req('api/wb/pin', { id, pinned: !it?.pinned });
@@ -374,13 +374,13 @@ $('#wb-recent').addEventListener('click', async e => {
 
 const dirAction = (row, act) => (act === 'open' ? useFolder(row.dataset.path) : browse(row.dataset.path));
 $('#wb-dirs').addEventListener('click', e => {
-  const row = e.target.closest('.wb-row');
+  const row = e.target.closest('[data-path]');
   if (!row) return;
   const btn = e.target.closest('button[data-act]');
   dirAction(row, btn ? btn.dataset.act : 'browse');
 });
 $('#wb-dirs').addEventListener('keydown', e => {
-  const row = e.target.closest('.wb-row');
+  const row = e.target.closest('[data-path]');
   if (row && e.key === 'Enter' && e.target === row) dirAction(row, (e.metaKey || e.ctrlKey) ? 'open' : 'browse');
 });
 

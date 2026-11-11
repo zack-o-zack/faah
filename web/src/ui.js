@@ -31,10 +31,10 @@ export function flashActionSuccess(el, text = 'Done', duration = 1200) {
   if (el._flashTimer) clearTimeout(el._flashTimer);
   else el._oldText = label.textContent;
   label.textContent = text.startsWith('✓') ? text : '✓ ' + text;
-  el.classList.add('action-success');
+  el.classList.add('text-gi!', 'border-gi!');
   el._flashTimer = setTimeout(() => {
     if (el._oldText !== undefined) label.textContent = el._oldText;
-    el.classList.remove('action-success');
+    el.classList.remove('text-gi!', 'border-gi!');
     delete el._flashTimer;
     delete el._oldText;
   }, duration);

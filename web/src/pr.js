@@ -348,7 +348,7 @@ function flashDiffRow(el) {
    the diff scrolls) instead of sitting in one fixed spot -- so it never
    drifts from the line it's actually commenting on, and opening one never
    shifts the tabs or code beneath it (the list is an absolute overlay; see
-   [data-ui~=pr-comment-list] in style.css). A composer for a file that isn't the one
+   [data-ui~=pr-comment-list] in the Tailwind entry). A composer for a file that isn't the one
    on screen has no row to pin to, so it docks in the bottom-right corner
    until you jump back to it (click its ref, or the file's own tab). */
 
@@ -528,7 +528,7 @@ function renderMarkersForActiveDoc() {
     const key = side + ':' + line;
     const drafts = draftsByKey.get(key);
     const existing = existingByKey.get(key);
-    el.classList.toggle('pr-has-comment', !!drafts || !!existing);
+    el.classList.toggle('relative', !!drafts || !!existing);
     if (!drafts && !existing) continue;
     const badge = document.createElement('span');
     badge.setAttribute('data-ui', 'pr-comment-mark'); badge.className = 'inline-flex items-center flex-none cursor-pointer text-primary-text';
