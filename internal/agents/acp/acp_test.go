@@ -57,7 +57,7 @@ func TestMain(m *testing.M) {
 			if f.Method == "session/load" {
 				emit(map[string]any{"sessionUpdate": "agent_message_chunk", "content": map[string]string{"type": "text", "text": "replay"}})
 			}
-			setup := map[string]any{"sessionId": "native", "configOptions": []any{map[string]string{"id": "model-choice", "category": "model", "type": "select"}}, "modes": map[string]any{"availableModes": []any{map[string]string{"id": "plan"}}}}
+			setup := map[string]any{"sessionId": "native", "configOptions": []any{map[string]string{"id": "model-choice", "category": "model", "type": "select"}}, "modes": map[string]any{"availableModes": []any{map[string]string{"id": "default"}}}}
 			if os.Getenv("FAAH_ACP_LEGACY_MODEL") == "1" {
 				delete(setup, "configOptions")
 				setup["models"] = map[string]any{"availableModels": []any{map[string]string{"modelId": "test-model"}}}
@@ -83,16 +83,16 @@ func TestMain(m *testing.M) {
 			}
 			if text == "permissions" {
 				pending = f.ID
-				kinds := []string{"read", "search", "think", "fetch", "edit", "execute", "edit"}
+				kinds := []string{"read", "search", "think", "fetch", "edit", "execute", "edit", "list", "other", "other", "read", "delete", "move", "other"}
 				for i, k := range kinds {
 					locations := []any{}
 					if i == 4 {
 						locations = append(locations, map[string]string{"path": "new.go"})
 					}
-					if i == 6 {
+					if i == 6 || i == 10 {
 						locations = append(locations, map[string]string{"path": filepath.Join(os.TempDir(), "outside.go")})
 					}
-					enc.Encode(map[string]any{"jsonrpc": "2.0", "id": fmt.Sprintf("perm-%d", i), "method": "session/request_permission", "params": map[string]any{"sessionId": "native", "toolCall": map[string]any{"kind": k, "locations": locations}, "options": []any{map[string]string{"kind": "allow_once", "optionId": "yes"}, map[string]string{"kind": "reject_once", "optionId": "no"}}}})
+					enc.Encode(map[string]any{"jsonrpc": "2.0", "id": fmt.Sprintf("perm-%d", i), "method": "session/request_permission", "params": map[string]any{"sessionId": "native", "toolCall": map[string]any{"kind": k, "title": []string{"", "", "", "", "", "", "", "", "mcp__faah__annotate", "mcp__other__annotate", "", "", "", "unknown"}[i], "locations": locations}, "options": []any{map[string]string{"kind": "allow_once", "optionId": "yes"}, map[string]string{"kind": "reject_once", "optionId": "no"}}}})
 				}
 				enc.Encode(map[string]any{"jsonrpc": "2.0", "id": "unknown", "method": "fs/read_text_file", "params": map[string]any{}})
 				continue
@@ -122,7 +122,7 @@ func TestMain(m *testing.M) {
 			}
 		case "":
 			count++
-			if count == 8 {
+			if count == 15 {
 				enc.Encode(map[string]any{"jsonrpc": "2.0", "id": pending, "result": map[string]string{"stopReason": "end_turn"}})
 			}
 		}
@@ -184,9 +184,9 @@ func TestACPHandshakeResumeAndStreaming(t *testing.T) {
 				if load {
 					o.Env = append(o.Env, "FAAH_ACP_LOAD=1")
 				}
-				o.Mode = agents.ModePlan
+				o.Mode = agents.ModeAsk
 				for i := 0; i < 2; i++ {
-					s, err := Open(ctx, o, argv, nil, nil, true)
+					s, err := Open(ctx, o, argv, nil, nil)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -234,7 +234,7 @@ func TestACPHandshakeResumeAndStreaming(t *testing.T) {
 					case "session/set_config_option":
 						model = p["configId"] == "model-choice" && p["value"] == o.Model
 					case "session/set_mode":
-						mode = p["modeId"] == "plan"
+						mode = p["modeId"] == "default"
 					}
 				}
 				if !found || !model || !mode {
@@ -246,13 +246,12 @@ func TestACPHandshakeResumeAndStreaming(t *testing.T) {
 }
 
 func TestACPPermissions(t *testing.T) {
-	for _, mode := range []agents.Mode{agents.ModePlan, agents.ModeEdit} {
+	for _, mode := range []agents.Mode{agents.ModeAsk, agents.ModeEdit} {
 		t.Run(fmt.Sprint(mode), func(t *testing.T) {
 			ctx, o, argv := setup(t)
 			o.Mode = mode
-			o.Tools = nil
 			o.Model = ""
-			s, err := Open(ctx, o, argv, nil, nil, false)
+			s, err := Open(ctx, o, argv, nil, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -266,7 +265,7 @@ func TestACPPermissions(t *testing.T) {
 					var i int
 					fmt.Sscanf(id, "perm-%d", &i)
 					want := "yes"
-					if i == 6 || mode == agents.ModePlan && i >= 4 {
+					if i == 6 || i == 10 || mode == agents.ModeAsk && !(i == 0 || i == 1 || i == 2 || i == 7 || i == 8) {
 						want = "no"
 					}
 					r := f["result"].(map[string]any)["outcome"].(map[string]any)
@@ -277,7 +276,7 @@ func TestACPPermissions(t *testing.T) {
 				if id == "unknown" && f["error"] == nil {
 					t.Fatal(f)
 				}
-				if f["method"] == "session/new" && len(f["params"].(map[string]any)["mcpServers"].([]any)) != 0 {
+				if f["method"] == "session/new" && len(f["params"].(map[string]any)["mcpServers"].([]any)) != 1 {
 					t.Fatal(f)
 				}
 			}
@@ -289,7 +288,7 @@ func TestACPCrashAndCancel(t *testing.T) {
 	for _, text := range []string{"crash", "hold"} {
 		t.Run(text, func(t *testing.T) {
 			ctx, o, argv := setup(t)
-			s, err := Open(ctx, o, argv, nil, nil, false)
+			s, err := Open(ctx, o, argv, nil, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -353,7 +352,7 @@ func TestACPContainment(t *testing.T) {
 func TestACPAuthAndLegacyModel(t *testing.T) {
 	ctx, o, argv := setup(t)
 	o.Env = append(o.Env, "FAAH_ACP_AUTH=1", "FAAH_ACP_LEGACY_MODEL=1")
-	s, err := Open(ctx, o, argv, nil, nil, false)
+	s, err := Open(ctx, o, argv, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -379,7 +378,7 @@ func TestACPAuthAndLegacyModel(t *testing.T) {
 func TestACPGracefulCancel(t *testing.T) {
 	ctx, o, argv := setup(t)
 	o.Env = append(o.Env, "FAAH_ACP_CANCEL=1")
-	s, err := Open(ctx, o, argv, nil, nil, false)
+	s, err := Open(ctx, o, argv, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -396,7 +395,7 @@ func TestACPGracefulCancel(t *testing.T) {
 
 func TestACPMessageAfterTool(t *testing.T) {
 	ctx, o, argv := setup(t)
-	s, err := Open(ctx, o, argv, nil, nil, false)
+	s, err := Open(ctx, o, argv, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -410,14 +409,14 @@ func TestACPMessageAfterTool(t *testing.T) {
 	}
 }
 
-func TestACPPlanModeFailure(t *testing.T) {
+func TestACPAskModeFailure(t *testing.T) {
 	ctx, o, argv := setup(t)
-	o.Mode = agents.ModePlan
+	o.Mode = agents.ModeAsk
 	o.Env = append(o.Env, "FAAH_ACP_MODE_FAIL=1")
-	s, err := Open(ctx, o, argv, nil, nil, true)
+	s, err := Open(ctx, o, argv, nil, nil)
 	if err == nil {
 		s.Close()
-		t.Fatal("Plan opened after set_mode failed")
+		t.Fatal("Ask opened after set_mode failed")
 	}
 	if !strings.Contains(err.Error(), "mode failed") {
 		t.Fatal(err)

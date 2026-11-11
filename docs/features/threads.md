@@ -64,7 +64,7 @@ Explaining the same code again reopens the earlier conversation, even if the cod
 
 Explanations can run on their own harness and model: claude, codex, agy, opencode or cursor-agent. Set `explain.agent` and `explain.model` in settings, for example `claude` and `haiku`; left empty, Explain uses the harness selected for editing. When you select code, faah prepares the evidence in the background so Explain starts sooner. Turn that off with `explain.prefetch`.
 
-Explanations run in Plan mode on every supported agent and read the saved file, so save your edits first. Notes and walkthroughs arrive through faah’s MCP tools.
+Explanations run in Ask mode on every supported agent and read the saved file, so save your edits first. Notes and walkthroughs arrive through faah’s MCP tools.
 
 ## The Thread List
 

@@ -5,7 +5,7 @@ This document describes the design and implementation of threads, the long-runni
 - the store, turn runner, and event feed: [`agent.go`](../../agent.go)
 - the HTTP routing and handlers: [`server.go`](../../server.go)
 - the selected harness and change settling it reuses: [`agent.go`](../../agent.go)
-- native agent sessions, protocol handling and Plan mode: [`internal/agents`](../../internal/agents), one package per harness, listed in [`internal/agents/all/all.go`](../../internal/agents/all/all.go)
+- native agent sessions, protocol handling and Ask mode: [`internal/agents`](../../internal/agents), one package per harness, listed in [`internal/agents/all/all.go`](../../internal/agents/all/all.go)
 - Explain's selection checks, evidence, prompt and citation checks: [`internal/explain`](../../internal/explain)
 - the sidebar views, streams and composer: [`web/src/thread.js`](../../web/src/thread.js)
 
@@ -45,7 +45,7 @@ All five agents use native sessions. A thread retains a live `agents.Session` an
 
 If native resume fails, faah opens a new session and replays bounded history, including the annotations and walkthroughs the reader saw. Changing agent or model also starts a new session with that context. The last turn identifies which agent and model own the saved id. The anchor, evidence and ground rules are sent on the first turn and during recovery.
 
-See [Native agent sessions](agents.md) for the `Agent`/`Open`/`Session` interface, each process and protocol, Plan enforcement, MCP attachment.
+See [Native agent sessions](agents.md) for the `Agent`/`Open`/`Session` interface, each process and protocol, Ask enforcement, MCP attachment.
 
 ## 3. Output and Streaming
 
@@ -104,7 +104,7 @@ To provide instant visual review and safe rollbacks of code modifications genera
 
 - **Classification:** `explain.Classify` rereads the selection from disk and answers 409 if it differs. One whole identifier is a symbol, and anything else is a block.
 - **Evidence:** `explain.Gather` builds a packet of at most 16 KB within an 8-second budget, through the `explain.Workspace` interface, which `explainWorkspace` in `explain.go` implements over the language-server manager, search, and the workspace paths. Without a ready server it falls back to the regex outline and whole-word search. Packets live in `<store>.explain/<thread>.md`, so the thread store stays small.
-- **Read-only:** every explanation and follow-up uses `agents.ModePlan`. Each adapter enforces it through native permissions or sandbox settings, described in [Native agent sessions](agents.md#plan-mode). The opt-in `harness` conformance test checks real agents without becoming part of the default test suite.
+- **Read-only:** every explanation and follow-up uses `agents.ModeAsk`. Each adapter uses normal agent behavior with a read/search and faah-MCP allowlist through native permissions or sandbox settings, subject to the documented protocol limitations, described in [Native agent sessions](agents.md#ask-mode). The opt-in `harness` conformance test checks real agents without becoming part of the default test suite.
 - **Reuse:** `ExplainKey` hashes the content that defines the explanation and leaves out line numbers. `EvidenceHash` covers callers and references and only marks a reused explanation as stale. `ExplainReader` keeps the `explain.reader` text the explanation was written for. Its prompt always uses that copy, and when the setting no longer matches, a reused explanation is stale with reason `reader`.
 - **Freshness:** gathering first syncs every open document with disk. Faah sends no file-watch events, so a change in a file the server has never opened can be missing from references and callers until that file is opened.
 - **Harness:** `explainHarness` resolves `explain.agent` and `explain.model` for explain turns only. A harness pinned with `-agent` wins.

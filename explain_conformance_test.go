@@ -95,6 +95,10 @@ func TestExplainHarnessConformance(t *testing.T) {
 					t.Errorf("read-only run created %s", e.Name())
 				}
 			}
+			contents, err := os.ReadFile(filepath.Join(root, "main.go"))
+			if err != nil || string(contents) != source {
+				t.Errorf("read-only run changed main.go: %v", err)
+			}
 		})
 	}
 }

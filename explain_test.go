@@ -254,7 +254,7 @@ func TestExplainUsesItsOwnAgentAndModel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(args), "haiku") || !strings.Contains(string(args), "plan") {
+	if !strings.Contains(string(args), "haiku") || !strings.Contains(string(args), "default") || strings.Contains(string(args), "plan") {
 		t.Fatalf("args = %s", args)
 	}
 	if code, _ := agentPostJSON(t, s, "/api/threads/create", map[string]any{"message": "hello"}); code == 200 {

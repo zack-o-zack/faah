@@ -111,7 +111,7 @@ Follow-ups answer concisely and have no paragraph limit.
 
 ### Read-only enforcement
 
-Each explanation opens an `agents.ModePlan` native session. Follow-ups retain that mode. All five supported agents attach faah’s tools through MCP and enforce Plan through native permissions, sandbox settings, or ACP permission answers. See [Native agent sessions](../../internals/agents.md#plan-mode) for each policy.
+Each explanation opens an `agents.ModeAsk` native session. Follow-ups retain that mode. All five supported agents attach faah’s tools through MCP and apply Ask allowlists through native permissions, sandbox settings, or ACP permission answers, subject to the documented protocol limitations. See [Native agent sessions](../../internals/agents.md#ask-mode) for each policy.
 
 Agent settings and `-agent` accept `claude`, `codex`, `agy`, `opencode`, or `cursor-agent`. Unknown names are refused with the supported-name list. A cached explanation can be reopened without starting an agent.
 
@@ -232,7 +232,7 @@ Unit tests in `explain_test.go`:
 - One key for a workspace symbol reached from two call sites.
 - Packet priority, section caps, and the 16 KB limit, using a fake `codeIntel`.
 - The `text` fallback.
-- Native Plan permissions and MCP attachment for every supported adapter.
+- Native Ask permissions and MCP attachment for every supported adapter.
 - Reference validation: valid, out of range, snapped, missing file, escaping path.
 - Reuse table outcomes, follow-up read-only behavior, and pruning.
 

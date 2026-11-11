@@ -13,7 +13,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
@@ -166,11 +165,6 @@ func launch(ctx context.Context, o agents.Open, binary string) (*server, error) 
 	}
 	delete(envMap, "OPENCODE_SERVER_PASSWORD")
 	envMap["OPENCODE_PASSWORD"] = password
-	content, err := planConfig(envMap["OPENCODE_CONFIG_CONTENT"])
-	if err != nil {
-		return nil, err
-	}
-	envMap["OPENCODE_CONFIG_CONTENT"] = content
 	env := []string{}
 	for k, v := range envMap {
 		env = append(env, k+"="+v)
@@ -376,80 +370,5 @@ func (s *server) events() {
 }
 
 func inside(dir, path string) bool {
-	if strings.TrimSpace(path) == "" {
-		return false
-	}
-	if !filepath.IsAbs(path) {
-		path = filepath.Join(dir, path)
-	}
-	root, err := canonical(dir)
-	if err != nil {
-		return false
-	}
-	p, err := canonical(path)
-	if err != nil {
-		return false
-	}
-	rel, err := filepath.Rel(root, p)
-	return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) && !filepath.IsAbs(rel)
-}
-
-func canonical(path string) (string, error) {
-	p, err := filepath.Abs(path)
-	if err != nil {
-		return "", err
-	}
-	suffix := []string{}
-	for {
-		r, e := filepath.EvalSymlinks(p)
-		if e == nil {
-			for i := len(suffix) - 1; i >= 0; i-- {
-				r = filepath.Join(r, suffix[i])
-			}
-			return r, nil
-		}
-		if !os.IsNotExist(e) {
-			return "", e
-		}
-		if _, e = os.Lstat(p); e == nil {
-			return "", errors.New("broken symlink")
-		}
-		parent := filepath.Dir(p)
-		if parent == p {
-			return "", e
-		}
-		suffix = append(suffix, filepath.Base(p))
-		p = parent
-	}
-}
-
-// planConfig adds a private read-only profile without enabling the user's plan
-// agent or discarding their models, providers, or other agent definitions.
-func planConfig(content string) (string, error) {
-	config := map[string]json.RawMessage{}
-	if strings.TrimSpace(content) != "" {
-		if err := json.Unmarshal([]byte(content), &config); err != nil {
-			return "", fmt.Errorf("opencode config: %w", err)
-		}
-		if config == nil {
-			return "", errors.New("opencode config must be an object")
-		}
-	}
-	profiles := map[string]json.RawMessage{}
-	if raw, ok := config["agents"]; ok {
-		if err := json.Unmarshal(raw, &profiles); err != nil {
-			return "", fmt.Errorf("opencode agents config: %w", err)
-		}
-		if profiles == nil {
-			return "", errors.New("opencode agents config must be an object")
-		}
-	}
-	profiles["faah-plan"], _ = json.Marshal(map[string]any{
-		"mode": "primary", "description": "Read-only code explanations and planning",
-		"system":      "Explore, explain, and plan using read-only tools. Do not create, modify, or delete files. Answer the user directly and use the provided annotation and walkthrough tools when helpful.",
-		"permissions": planRules(),
-	})
-	config["agents"], _ = json.Marshal(profiles)
-	b, err := json.Marshal(config)
-	return string(b), err
+	return agents.WithinWorkspace(dir, path)
 }

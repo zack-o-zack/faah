@@ -7,7 +7,7 @@ import (
 	"errors"
 )
 
-// ErrNotReadOnly means an adapter cannot enforce Plan mode.
+// ErrNotReadOnly means an adapter cannot enforce Ask mode.
 var ErrNotReadOnly = errors.New("no read-only mode")
 
 // ToolEndpoint gives a native session access to faah's MCP tools.

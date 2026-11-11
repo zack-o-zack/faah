@@ -35,8 +35,8 @@ func For(name string) agents.Agent {
 	return nil
 }
 
-// CheckPlan verifies that the agent has a native Plan policy.
-func CheckPlan(name string) error { return ValidateName(name) }
+// CheckAsk verifies that the agent has a read-only Ask policy.
+func CheckAsk(name string) error { return ValidateName(name) }
 
 // Names returns the supported agent names.
 func Names() []string {

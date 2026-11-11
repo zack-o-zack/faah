@@ -11,8 +11,8 @@ type Mode int
 const (
 	// ModeEdit permits workspace changes.
 	ModeEdit Mode = iota
-	// ModePlan enforces read-only operation.
-	ModePlan
+	// ModeAsk uses normal agent behavior and allows only workspace reads and faah tools.
+	ModeAsk
 )
 
 // Open configures a native agent session.

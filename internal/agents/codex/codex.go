@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -286,13 +285,8 @@ func (s *session) connect(ctx context.Context) error {
 	if ep := s.o.Tools; ep != nil {
 		params["config"] = map[string]any{"mcp_servers.faah": map[string]any{"url": ep.URL, "tool_timeout_sec": 3900, "http_headers": map[string]string{"Authorization": ep.Authorization}, "omit_tools_from": []string{"code_mode", "deferred"}}, "mcp_optional_startup_grace_ms": 10000}
 	}
-	if s.o.Mode == agents.ModePlan {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return err
-		}
-		params["config"].(map[string]any)["permissions.faah-plan"] = map[string]any{"extends": ":read-only", "filesystem": map[string]string{filepath.Join(home, ".codex", "rules"): "deny"}}
-		params["permissions"] = "faah-plan"
+	if s.o.Mode == agents.ModeAsk {
+		params["sandbox"] = "read-only"
 		params["approvalPolicy"] = "untrusted"
 	}
 	method := "thread/start"
@@ -421,15 +415,10 @@ func (s *session) Prompt(ctx context.Context, text string, sink agents.Sink) (ag
 	if s.o.Model != "" {
 		params["model"] = s.o.Model
 	}
-	mode := "default"
-	if s.o.Mode == agents.ModePlan {
-		mode = "plan"
-	}
-	params["collaborationMode"] = map[string]any{"mode": mode, "settings": map[string]any{"model": s.model}}
-	if s.o.Mode == agents.ModePlan {
+	params["collaborationMode"] = map[string]any{"mode": "default", "settings": map[string]any{"model": s.model}}
+	if s.o.Mode == agents.ModeAsk {
 		params["approvalPolicy"] = "untrusted"
-		delete(params, "sandboxPolicy")
-		params["permissions"] = "faah-plan"
+		params["sandboxPolicy"] = map[string]string{"type": "readOnly"}
 	}
 	started := make(chan error, 1)
 	go func() {

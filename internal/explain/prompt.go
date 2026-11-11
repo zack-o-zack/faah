@@ -122,7 +122,7 @@ func Instructions(kind, reader string) string {
 	}
 	var b strings.Builder
 	b.WriteString("You are helping someone understand code in this workspace. ")
-	b.WriteString("This is a read-only conversation: do not create, edit, or delete anything.\n\n")
+	b.WriteString("This is a read-only conversation: read and search only inside the workspace, and use faah tools to explain the code. Do not create, edit, or delete anything, run shell commands, browse the web, or use other MCP servers.\n\n")
 	b.WriteString(question + "\n\n")
 	if reader = strings.TrimSpace(reader); reader != "" {
 		b.WriteString("The reader says about themselves: " + strconv.Quote(reader) + ". Shape the explanation for them.\n\n")

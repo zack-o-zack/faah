@@ -48,7 +48,7 @@ func TestMain(m *testing.M) {
 				text := f["message"].(map[string]any)["content"].(string)
 				if text == "permissions" {
 					for i, name := range []string{"Read", "Glob", "Grep", "mcp__faah__annotate", "Bash", "ExitPlanMode"} {
-						enc.Encode(map[string]any{"type": "control_request", "request_id": fmt.Sprint(i), "request": map[string]any{"subtype": "can_use_tool", "tool_name": name, "input": map[string]string{"x": "y"}, "tool_use_id": name}})
+						enc.Encode(map[string]any{"type": "control_request", "request_id": fmt.Sprint(i), "request": map[string]any{"subtype": "can_use_tool", "tool_name": name, "input": map[string]string{"x": "y", "file_path": "file.go", "pattern": "*"}, "tool_use_id": name}})
 						pending++
 					}
 					enc.Encode(map[string]any{"type": "control_request", "request_id": "e", "request": map[string]any{"subtype": "elicitation"}})
@@ -109,7 +109,7 @@ func TestAgentSessionTurns(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	exe, _ := os.Executable()
-	open := agents.Open{Base: []string{exe}, Mode: agents.ModePlan, Env: []string{"FAAH_CLAUDE_HELPER=1"}, Tools: &agents.ToolEndpoint{URL: "http://localhost/api/mcp", Authorization: "Bearer secret"}}
+	open := agents.Open{Base: []string{exe}, Mode: agents.ModeAsk, Env: []string{"FAAH_CLAUDE_HELPER=1"}, Tools: &agents.ToolEndpoint{URL: "http://localhost/api/mcp", Authorization: "Bearer secret"}}
 	s, err := New().Open(ctx, open)
 	if err != nil {
 		t.Fatal(err)
@@ -146,7 +146,7 @@ func TestAgentSessionControlAndArgv(t *testing.T) {
 	exe, _ := os.Executable()
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	for _, mode := range []agents.Mode{agents.ModePlan, agents.ModeEdit} {
+	for _, mode := range []agents.Mode{agents.ModeAsk, agents.ModeEdit} {
 		path := filepath.Join(t.TempDir(), "wire")
 		s, err := New().Open(ctx, agents.Open{Base: []string{exe}, Model: "-model", Mode: mode, Env: []string{"FAAH_CLAUDE_HELPER=1", "FAAH_HELPER_LOG=" + path}, Tools: &agents.ToolEndpoint{URL: "http://localhost/api/mcp", Authorization: "Bearer token"}})
 		if err != nil {
@@ -180,13 +180,13 @@ func TestAgentSessionControlAndArgv(t *testing.T) {
 		for i, f := range frames[3:9] {
 			response := f["response"].(map[string]any)["response"].(map[string]any)
 			behavior := "allow"
-			if mode == agents.ModePlan && i >= 4 {
+			if mode == agents.ModeAsk && i >= 4 {
 				behavior = "deny"
 			}
 			if response["behavior"] != behavior {
 				t.Fatalf("permission %d: %v", i, response)
 			}
-			if behavior == "allow" && !reflect.DeepEqual(response["updatedInput"], map[string]any{"x": "y"}) {
+			if behavior == "allow" && !reflect.DeepEqual(response["updatedInput"], map[string]any{"x": "y", "file_path": "file.go", "pattern": "*"}) {
 				t.Fatal(response)
 			}
 		}
@@ -197,10 +197,13 @@ func TestAgentSessionControlAndArgv(t *testing.T) {
 			t.Fatal("unknown request accepted")
 		}
 		argv, _ := os.ReadFile(path + ".argv")
+		if !strings.Contains(string(argv), `"--permission-mode","default"`) || strings.Contains(string(argv), `"plan"`) {
+			t.Fatal(string(argv))
+		}
 		if !strings.Contains(string(argv), "--model=-model") {
 			t.Fatal(string(argv))
 		}
-		if mode == agents.ModePlan && !strings.Contains(string(argv), "Read,Glob,Grep") {
+		if mode == agents.ModeAsk && !strings.Contains(string(argv), "Read,Glob,Grep") {
 			t.Fatal(string(argv))
 		}
 	}
@@ -213,6 +216,39 @@ func TestAgentSessionAttachmentFailure(t *testing.T) {
 	_, err := New().Open(ctx, agents.Open{Base: []string{exe}, Env: []string{"FAAH_CLAUDE_HELPER=1", "FAAH_ATTACH_FAIL=1"}, Tools: &agents.ToolEndpoint{URL: "http://localhost/api/mcp", Authorization: "Bearer token"}})
 	if err == nil || !strings.Contains(err.Error(), "attachment refused") {
 		t.Fatal(err)
+	}
+}
+
+func TestAskAllowlist(t *testing.T) {
+	dir := t.TempDir()
+	outside := t.TempDir()
+	if err := os.Symlink(outside, filepath.Join(dir, "escape")); err != nil {
+		t.Fatal(err)
+	}
+	s := &session{mode: agents.ModeAsk, dir: dir}
+	for _, test := range []struct {
+		name, input string
+		allow       bool
+	}{
+		{"Read", `{"file_path":"file.go"}`, true},
+		{"Glob", `{"pattern":"*.go"}`, true},
+		{"Grep", `{"pattern":"func"}`, true},
+		{"mcp__faah__annotate", `{}`, true},
+		{"mcp__faah__walkthrough", `{}`, true},
+		{"Bash", `{"command":"cat file.go"}`, false},
+		{"Write", `{"file_path":"file.go"}`, false},
+		{"ExitPlanMode", `{}`, false},
+		{"mcp__other__read", `{}`, false},
+		{"Read", `{"file_path":"../outside.go"}`, false},
+		{"Read", `{"file_path":"escape/secret.go"}`, false},
+		{"Read", `{}`, false},
+		{"Glob", `{"path":"../","pattern":"*"}`, false},
+		{"Glob", `{"pattern":"../*"}`, false},
+		{"Grep", `{"path":"../","pattern":"func"}`, false},
+	} {
+		if got := s.allow(test.name, json.RawMessage(test.input)); got != test.allow {
+			t.Errorf("%s %s: allowed %v, want %v", test.name, test.input, got, test.allow)
+		}
 	}
 }
 

@@ -15,6 +15,29 @@ import (
 	"faah/internal/agents"
 )
 
+func TestAskToolRestrictions(t *testing.T) {
+	for _, mode := range []agents.Mode{agents.ModeAsk, agents.ModeEdit} {
+		config := options(agents.Open{Mode: mode, Dir: t.TempDir()}, true)
+		if config["mode"] != "agent" {
+			t.Fatal(config)
+		}
+		if mode == agents.ModeEdit {
+			if config["tools"] != nil {
+				t.Fatal("Edit toolset changed", config)
+			}
+			continue
+		}
+		tools := config["tools"].([]string)
+		if !reflect.DeepEqual(tools, []string{"read", "grep", "glob", "ls", "mcp"}) {
+			t.Fatal("Ask exposes non-read tools", tools)
+		}
+		local := config["local"].(map[string]any)
+		if !local["sandboxOptions"].(map[string]bool)["enabled"] || len(local["settingSources"].([]string)) != 0 {
+			t.Fatal("Ask loads ambient tools or disables sandboxing", local)
+		}
+	}
+}
+
 func TestMain(m *testing.M) {
 	if path := os.Getenv("FAAH_CURSOR_LOCK_HELPER"); path != "" {
 		lock, err := lockInstall(context.Background(), path)
@@ -124,7 +147,7 @@ func fakeSession(t *testing.T, o agents.Open) (agents.Session, string) {
 }
 
 func TestCursorProtocol(t *testing.T) {
-	for _, mode := range []agents.Mode{agents.ModeEdit, agents.ModePlan} {
+	for _, mode := range []agents.Mode{agents.ModeEdit, agents.ModeAsk} {
 		for _, resume := range []string{"", "previous"} {
 			t.Run(fmt.Sprint(mode, resume), func(t *testing.T) {
 				o := agents.Open{Dir: t.TempDir(), Resume: resume, Mode: mode, Model: "chosen", Tools: &agents.ToolEndpoint{URL: "http://localhost/mcp", Authorization: "Bearer secret"}}
@@ -146,12 +169,13 @@ func TestCursorProtocol(t *testing.T) {
 				b, _ := os.ReadFile(path)
 				lines := strings.Split(strings.TrimSpace(string(b)), "\n")
 				m := "agent"
-				if mode == agents.ModePlan {
-					m = "plan"
-				}
 				server := `"mcpServers":{"faah":{"type":"http","url":"http://localhost/mcp","headers":{"Authorization":"Bearer secret"}}}`
 				open := fmt.Sprintf(`{"op":"open","agentId":%q,"options":{"mode":%q,"model":{"id":"chosen"},"name":"faah","local":{"cwd":%q,"settingSources":["project","user","team","mdm","plugins"],"sandboxOptions":{"enabled":true}},%s}}`, resume, m, o.Dir, server)
 				send := fmt.Sprintf(`{"op":"send","text":"hello","options":{"mode":%q,"model":{"id":"chosen"},%s}}`, m, server)
+				if mode == agents.ModeAsk {
+					open = strings.Replace(open, `"mode":"agent"`, `"mode":"agent","tools":["read","grep","glob","ls","mcp"]`, 1)
+					open = strings.Replace(open, `["project","user","team","mdm","plugins"]`, `[]`, 1)
+				}
 				for i, w := range []string{open, send, send} {
 					var got, want any
 					json.Unmarshal([]byte(lines[i]), &got)

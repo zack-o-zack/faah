@@ -36,11 +36,10 @@ func (*Agent) Open(ctx context.Context, o agents.Open) (agents.Session, error) {
 }
 
 func options(o agents.Open, opening bool) map[string]any {
-	mode := "agent"
-	if o.Mode == agents.ModePlan {
-		mode = "plan"
+	v := map[string]any{"mode": "agent"}
+	if opening && o.Mode == agents.ModeAsk {
+		v["tools"] = []string{"read", "grep", "glob", "ls", "mcp"}
 	}
-	v := map[string]any{"mode": mode}
 	if o.Model != "" {
 		v["model"] = map[string]string{"id": o.Model}
 	}
@@ -49,7 +48,11 @@ func options(o agents.Open, opening bool) map[string]any {
 	}
 	if opening {
 		v["name"] = "faah"
-		v["local"] = map[string]any{"cwd": o.Dir, "settingSources": []string{"project", "user", "team", "mdm", "plugins"}, "sandboxOptions": map[string]bool{"enabled": true}}
+		sources := []string{"project", "user", "team", "mdm", "plugins"}
+		if o.Mode == agents.ModeAsk {
+			sources = []string{}
+		}
+		v["local"] = map[string]any{"cwd": o.Dir, "settingSources": sources, "sandboxOptions": map[string]bool{"enabled": true}}
 	}
 	return v
 }

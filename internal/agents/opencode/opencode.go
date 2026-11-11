@@ -56,15 +56,27 @@ type rule struct {
 	Effect   string `json:"effect"`
 }
 
-// Code Mode includes HTTP fetch, so Plan uses direct MCP tools instead.
-func planRules() []rule {
-	return []rule{{"edit", "*", "deny"}, {"bash", "*", "deny"}, {"shell", "*", "deny"}, {"webfetch", "*", "deny"}, {"websearch", "*", "deny"}, {"execute", "*", "deny"}}
+func (s *session) allow(action string, resources []string) bool {
+	if s.o.Tools != nil && strings.HasPrefix(action, s.name+"_") {
+		return true
+	}
+	switch action {
+	case "read", "glob", "grep", "list":
+		for _, resource := range resources {
+			if !inside(s.o.Dir, resource) {
+				return false
+			}
+		}
+		return true
+	default:
+		return false
+	}
 }
 
 func rules(o agents.Open, name string) []rule {
 	r := []rule{{"edit", "*", "ask"}, {"edit", filepath.ToSlash(o.Dir) + "/*", "allow"}, {"bash", "*", "ask"}, {"external_directory", "*", "ask"}}
-	if o.Mode == agents.ModePlan {
-		r = append(r, planRules()...)
+	if o.Mode == agents.ModeAsk {
+		r = []rule{{"*", "*", "ask"}, {"read", "*", "allow"}, {"glob", "*", "allow"}, {"grep", "*", "allow"}, {"list", "*", "allow"}}
 	}
 	r = append(r, rule{"faah-*", "*", "deny"})
 	if o.Tools != nil {
@@ -232,9 +244,6 @@ func (s *session) Prompt(ctx context.Context, text string, sink agents.Sink) (ag
 	default:
 	}
 	agent := "build"
-	if s.o.Mode == agents.ModePlan {
-		agent = "faah-plan"
-	}
 	if agent != s.agent {
 		if err := s.server.call(ctx, "POST", s.path()+"/agent", map[string]string{"agent": agent}, nil); err != nil {
 			return out, err
@@ -345,6 +354,9 @@ func (s *session) Prompt(ctx context.Context, text string, sink agents.Sink) (ag
 				return out, context.Canceled
 			case "permission.asked":
 				decision := "reject"
+				if s.o.Mode == agents.ModeAsk && s.allow(d.Action, d.Resources) {
+					decision = "once"
+				}
 				// Edit sessions execute shell commands unattended on the user's behalf.
 				if s.o.Mode == agents.ModeEdit && (d.Action == "bash" || d.Action == "shell") {
 					decision = "once"

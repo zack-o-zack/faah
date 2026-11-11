@@ -1462,10 +1462,10 @@ func (tm *threadManager) Send(id, message string) (*thread, error) {
 	var env []string
 	mode := agents.ModeEdit
 	if explaining {
-		mode = agents.ModePlan
+		mode = agents.ModeAsk
 	}
 	if explaining {
-		if err := all.CheckPlan(name); err != nil {
+		if err := all.CheckAsk(name); err != nil {
 			tm.mu.Unlock()
 			return nil, err
 		}
@@ -1535,7 +1535,7 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 	a := tm.agent.openAgent(r.name)
 	mode := agents.ModeEdit
 	if explaining {
-		mode = agents.ModePlan
+		mode = agents.ModeAsk
 	}
 	tm.mu.Lock()
 	liveSession := tm.sessions[r.tid]

@@ -13,7 +13,7 @@ Explanations appear on the code, not in a paragraph in the sidebar. The agent ge
 
 In scope:
 
-- The `annotate` and `walkthrough` tools, delivered over MCP to claude, codex, agy, opencode and cursor-agent in Plan mode.
+- The `annotate` and `walkthrough` tools, delivered over MCP to claude, codex, agy, opencode and cursor-agent in Ask mode.
 - Checking, saving, and staleness of what the tools show.
 - Ghost summaries and margin notes in the editor, with hover dimming.
 - A walkthrough with a spotlight, keyboard and on-screen navigation, gutter badges, and a summary view.
@@ -28,7 +28,7 @@ Out of scope:
 
 ## Code structure
 
-Agent execution lives in `internal/agents`, with one adapter per supported agent and registration in `internal/agents/all`. `Agent.Open` creates or resumes a `Session`; `Session.Prompt` streams text, reasoning and steps until native completion. `Open` supplies the workspace, model, Plan mode, resume id, and MCP endpoint.
+Agent execution lives in `internal/agents`, with one adapter per supported agent and registration in `internal/agents/all`. `Agent.Open` creates or resumes a `Session`; `Session.Prompt` streams text, reasoning and steps until native completion. `Open` supplies the workspace, model, Ask mode, resume id, and MCP endpoint.
 
 `internal/mcp` implements the endpoint, credentials, and stdio bridge. `internal/explain` gathers evidence through its `Workspace` interface, and `internal/explain/notes` checks tool arguments and locates saved notes. Package `main` owns threads and HTTP handlers. See [Agent Runtime](2026-11-11-agent-runtime-design.md) and [Native agent sessions](../../internals/agents.md) for the built interfaces and protocols.
 
@@ -75,15 +75,15 @@ Every supported agent receives annotate and walkthrough through MCP. Claude atta
 - **Authentication:** each native session gets a random bearer credential bound to its faah thread. Credentials expire after 24 idle hours and are revoked when that agent session closes. They remain valid between turns, but tool calls require a running turn and save results on that turn.
 - **Address:** agents use faah's listening address and base path, with loopback when it listens on all interfaces.
 - **Tool results:** annotate validates notes independently and returns the accepted count and individual failures. Walkthrough is accepted as a whole or refused with errors for its steps. An agent can correct and retry a failed call.
-- **Plan:** every explanation and follow-up runs in a native Plan session. The [agent internals](../../internals/agents.md#plan-mode) describe enforcement per agent.
+- **Read-only:** every explanation and follow-up runs in a normal agent session with Ask permissions. The [agent internals](../../internals/agents.md#ask-mode) describe enforcement per agent.
 
 ### ACP bridge
 
-Antigravity uses one `agy acp` process per session. ACP registers faah as HTTP MCP when advertised; otherwise it starts `faah acp-mcp-bridge` with `FAAH_ACP_MCP_ENDPOINT` and `FAAH_ACP_MCP_AUTHORIZATION`. The bridge forwards JSON-RPC lines, negotiates transport headers, and retains the returned MCP session id. ACP permission answers enforce read-only operations even when the agent has no native plan mode.
+Antigravity uses one `agy acp` process per session. ACP registers faah as HTTP MCP when advertised; otherwise it starts `faah acp-mcp-bridge` with `FAAH_ACP_MCP_ENDPOINT` and `FAAH_ACP_MCP_AUTHORIZATION`. The bridge forwards JSON-RPC lines, negotiates transport headers, and retains the returned MCP session id. ACP permission answers enforce read-only operations when the agent requests permission; user always-proceed settings can skip those requests.
 
 ### OpenCode tools
 
-OpenCode registers a `faah-<thread>` remote MCP server before each turn. Its supported `codemode: false` option exposes annotate and walkthrough directly. Plan denies `webfetch`, `websearch`, and `execute`, alongside file-edit and shell actions. Denying `execute` blocks its built-in HTTP fetch. The thread's own MCP tools remain allowed; other faah endpoints are denied.
+OpenCode registers a `faah-<thread>` remote MCP server before each turn. Its supported `codemode: false` option exposes annotate and walkthrough directly. Ask rejects requests for `webfetch`, `websearch`, and `execute`, alongside file-edit and shell actions. Rejecting `execute` blocks its built-in HTTP fetch. The thread's own MCP tools remain allowed; other faah endpoints are denied.
 
 All agents use the same validation, saving, and staleness logic after tool delivery.
 
@@ -159,7 +159,7 @@ Each phase is a pull request, based on the one before it.
 
 ## Testing
 
-- **Agent contract:** protocol fakes cover native sessions, follow-ups, completion, interruption, Plan permissions, and MCP attachment.
+- **Agent contract:** protocol fakes cover native sessions, follow-ups, completion, interruption, Ask permissions, and MCP attachment.
 - **Endpoint:** credentials, initialization, transport session headers, discovery, calls, notifications, DELETE, invalid arguments, and refusal of tool calls between turns.
 - **Checks:** range limits, symbol snapping, length limits, workspace escape, and walkthrough step limits.
 - **Saving and staleness:** a note follows moved lines, a changed text marks it outdated, a changed reference hash marks a symbol note outdated, and thread deletion removes notes.

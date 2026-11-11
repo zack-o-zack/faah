@@ -17,6 +17,7 @@ import (
 type session struct {
 	id      string
 	mode    agents.Mode
+	dir     string
 	process *host.Process
 	mu      sync.Mutex
 	pending map[string]chan frame
@@ -90,15 +91,11 @@ func (*Agent) Open(ctx context.Context, o agents.Open) (agents.Session, error) {
 	} else {
 		argv = flag(argv, "--resume", id)
 	}
-	mode := "default"
-	if o.Mode == agents.ModePlan {
-		mode = "plan"
-	}
-	argv = flag(argv, "--permission-mode", mode)
+	argv = flag(argv, "--permission-mode", "default")
 	if o.Model != "" {
 		argv = flag(argv, "--model", o.Model)
 	}
-	if o.Mode == agents.ModePlan {
+	if o.Mode == agents.ModeAsk {
 		argv = flag(argv, "--tools", "Read,Glob,Grep")
 	}
 	env := []string{}
@@ -112,7 +109,7 @@ func (*Agent) Open(ctx context.Context, o agents.Open) (agents.Session, error) {
 	if err != nil {
 		return nil, err
 	}
-	s := &session{id: id, mode: o.Mode, process: p, pending: map[string]chan frame{}, events: make(chan frame, 256), done: make(chan struct{}), closed: make(chan struct{})}
+	s := &session{id: id, mode: o.Mode, dir: o.Dir, process: p, pending: map[string]chan frame{}, events: make(chan frame, 256), done: make(chan struct{}), closed: make(chan struct{})}
 	go s.read()
 	initCtx, cancel := context.WithTimeout(ctx, 90*time.Second)
 	defer cancel()
@@ -128,6 +125,35 @@ func (*Agent) Open(ctx context.Context, o agents.Open) (agents.Session, error) {
 
 // ID returns the native conversation identifier.
 func (s *session) ID() string { return s.id }
+
+func (s *session) allow(name string, input json.RawMessage) bool {
+	if strings.HasPrefix(name, "mcp__faah__") {
+		return true
+	}
+	var paths struct {
+		FilePath string `json:"file_path"`
+		Path     string `json:"path"`
+		Pattern  string `json:"pattern"`
+	}
+	if json.Unmarshal(input, &paths) != nil {
+		return false
+	}
+	switch name {
+	case "Read":
+		return agents.WithinWorkspace(s.dir, paths.FilePath)
+	case "Glob", "Grep":
+		path := paths.Path
+		if path == "" {
+			path = "."
+		}
+		if !agents.WithinWorkspace(s.dir, path) {
+			return false
+		}
+		return name != "Glob" || agents.WithinWorkspace(s.dir, paths.Pattern)
+	default:
+		return false
+	}
+}
 
 func (s *session) send(v any) error {
 	b, err := json.Marshal(v)
@@ -192,7 +218,7 @@ func (s *session) read() {
 			switch f.Request.Subtype {
 			case "can_use_tool":
 				name := f.Request.ToolName
-				allow := s.mode == agents.ModeEdit || name == "Read" || name == "Glob" || name == "Grep" || strings.HasPrefix(name, "mcp__faah__")
+				allow := s.mode == agents.ModeEdit || s.allow(name, f.Request.Input)
 				if allow {
 					response["response"] = map[string]any{"behavior": "allow", "updatedInput": f.Request.Input, "toolUseID": f.Request.ToolUseID}
 				} else {

@@ -90,6 +90,12 @@ func TestMain(m *testing.M) {
 			}
 			emit("item/agentMessage/delta", map[string]string{"threadId": thread, "turnId": turn, "itemId": "answer", "delta": text})
 			emit("item/reasoning/textDelta", map[string]string{"threadId": thread, "turnId": turn, "delta": "thinking"})
+			if text == "native-tools" {
+				emit("item/started", map[string]any{"threadId": thread, "turnId": turn, "item": map[string]string{"type": "commandExecution", "command": "cat file.go"}})
+				emit("item/started", map[string]any{"threadId": thread, "turnId": turn, "item": map[string]string{"type": "mcpToolCall", "tool": "mcp__faah__annotate"}})
+				finish(thread, turn)
+				continue
+			}
 			emit("item/started", map[string]any{"threadId": thread, "turnId": turn, "item": map[string]string{"type": "commandExecution", "command": "pwd"}})
 			if text == "approvals" {
 				methods := []string{"item/commandExecution/requestApproval", "item/fileChange/requestApproval", "execCommandApproval", "applyPatchApproval", "item/permissions/requestApproval", "mcpServer/elicitation/request", "item/tool/requestUserInput", "unknown"}
@@ -225,8 +231,30 @@ func wire(t *testing.T, o agents.Open) []map[string]any {
 	return result
 }
 
+func TestCodexAskNativeReadAndMCPEvents(t *testing.T) {
+	ctx, open := setup(t)
+	open.Mode = agents.ModeAsk
+	session, err := New().Open(ctx, open)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer session.Close()
+	sink := &capture{}
+	if _, err := session.Prompt(ctx, "native-tools", sink); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(sink.steps, []string{"Bash cat file.go", "mcp__faah__annotate"}) {
+		t.Fatal(sink.steps)
+	}
+	for _, frame := range wire(t, open) {
+		if frame["method"] == nil {
+			t.Fatal("native read/MCP notifications unexpectedly required a client approval", frame)
+		}
+	}
+}
+
 func TestCodexProtocol(t *testing.T) {
-	for _, mode := range []agents.Mode{agents.ModePlan, agents.ModeEdit} {
+	for _, mode := range []agents.Mode{agents.ModeAsk, agents.ModeEdit} {
 		t.Run(fmt.Sprint(mode), func(t *testing.T) {
 			ctx, o := setup(t)
 			o.Mode = mode
@@ -253,37 +281,24 @@ func TestCodexProtocol(t *testing.T) {
 			}
 			config := frames[2]["params"].(map[string]any)["config"]
 			threadParams := frames[2]["params"].(map[string]any)
-			if mode == agents.ModePlan && (threadParams["permissions"] != "faah-plan" || threadParams["approvalPolicy"] != "untrusted") {
+			if mode == agents.ModeAsk && (threadParams["permissions"] != nil || threadParams["sandbox"] != "read-only" || threadParams["approvalPolicy"] != "untrusted") {
 				t.Fatal(threadParams)
 			}
 			wantConfig := map[string]any{"mcp_servers.faah": map[string]any{"url": o.Tools.URL, "http_headers": map[string]any{"Authorization": o.Tools.Authorization}, "tool_timeout_sec": float64(3900), "omit_tools_from": []any{"code_mode", "deferred"}}, "mcp_optional_startup_grace_ms": float64(10000)}
-			if mode == agents.ModePlan {
-				home, err := os.UserHomeDir()
-				if err != nil {
-					t.Fatal(err)
-				}
-				wantConfig["permissions.faah-plan"] = map[string]any{"extends": ":read-only", "filesystem": map[string]any{filepath.Join(home, ".codex", "rules"): "deny"}}
-			}
 			if !reflect.DeepEqual(config, wantConfig) {
 				t.Fatalf("config: %#v", config)
 			}
 			p := frames[3]["params"].(map[string]any)
 			// Experimental v2/TurnStartParams.json defines collaborationMode.settings.model.
 			modeName := "default"
-			if mode == agents.ModePlan {
-				modeName = "plan"
-			}
 			if !reflect.DeepEqual(p["collaborationMode"], map[string]any{"mode": modeName, "settings": map[string]any{"model": o.Model}}) {
 				t.Fatal(p)
 			}
 			policy, sandbox := "on-request", "workspaceWrite"
-			if mode == agents.ModePlan {
+			if mode == agents.ModeAsk {
 				policy, sandbox = "untrusted", "readOnly"
 			}
-			sandboxOK := p["permissions"] == "faah-plan" && p["sandboxPolicy"] == nil
-			if mode == agents.ModeEdit {
-				sandboxOK = p["sandboxPolicy"].(map[string]any)["type"] == sandbox && p["permissions"] == nil
-			}
+			sandboxOK := p["sandboxPolicy"].(map[string]any)["type"] == sandbox && p["permissions"] == nil
 			if p["approvalPolicy"] != policy || !sandboxOK || p["model"] != o.Model || p["cwd"] != o.Dir {
 				t.Fatal(p)
 			}
@@ -302,7 +317,7 @@ func TestCodexProtocol(t *testing.T) {
 					if mode == agents.ModeEdit && r["decision"] != "approved" {
 						t.Fatal(f)
 					}
-					if mode == agents.ModePlan {
+					if mode == agents.ModeAsk {
 						if _, ok := r["decision"].(map[string]any)["denied"]; !ok {
 							t.Fatal(f)
 						}

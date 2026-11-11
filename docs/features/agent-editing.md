@@ -87,4 +87,4 @@ Agent preferences are managed in Settings (`Cmd/Ctrl+,`) or stored in `~/.faah/s
 
 ## Technical Architecture Deep Dive
 
-For in-depth details on native sessions, Plan mode, MCP tools, and changed-file reloads, see [Agent Dispatch](../internals/agent-editing.md) and [Native Agent Sessions](../internals/agents.md).
+For in-depth details on native sessions, Ask mode, MCP tools, and changed-file reloads, see [Agent Dispatch](../internals/agent-editing.md) and [Native Agent Sessions](../internals/agents.md).

@@ -50,7 +50,7 @@ type session struct {
 }
 
 // Open starts a session using the supplied native ACP command and optional session metadata.
-func Open(ctx context.Context, o agents.Open, argv, env []string, meta any, planMode bool) (agents.Session, error) {
+func Open(ctx context.Context, o agents.Open, argv, env []string, meta any) (agents.Session, error) {
 	ctx, cancel := context.WithTimeout(ctx, 90*time.Second)
 	defer cancel()
 	dir, err := filepath.Abs(o.Dir)
@@ -188,9 +188,9 @@ func Open(ctx context.Context, o agents.Open, argv, env []string, meta any, plan
 			return nil, err
 		}
 	}
-	if planMode && o.Mode == agents.ModePlan {
+	if o.Mode == agents.ModeAsk {
 		for _, m := range setup.Modes.AvailableModes {
-			if m.ID == "plan" {
+			if m.ID == "default" {
 				_, err = s.call(ctx, "session/set_mode", map[string]string{"sessionId": s.id, "modeId": m.ID})
 				if err != nil {
 					return nil, err
@@ -289,6 +289,11 @@ func (s *session) read() {
 	}
 }
 
+func faahTool(name string) bool {
+	name = strings.TrimPrefix(name, "Run ")
+	return strings.HasPrefix(name, "mcp__faah__") || strings.HasPrefix(name, "mcp_faah_")
+}
+
 func (s *session) answer(f frame) {
 	response := map[string]any{"jsonrpc": "2.0", "id": f.ID}
 	if f.Method != "session/request_permission" {
@@ -297,7 +302,11 @@ func (s *session) answer(f frame) {
 		var p struct {
 			SessionID string `json:"sessionId"`
 			ToolCall  struct {
-				Kind      string `json:"kind"`
+				Kind     string `json:"kind"`
+				Title    string `json:"title"`
+				RawInput struct {
+					Name string `json:"name"`
+				} `json:"rawInput"`
 				Locations []struct {
 					Path string `json:"path"`
 				} `json:"locations"`
@@ -311,14 +320,14 @@ func (s *session) answer(f frame) {
 		s.mu.Lock()
 		allow := p.SessionID == s.id
 		s.mu.Unlock()
-		if s.o.Mode == agents.ModePlan {
+		if s.o.Mode == agents.ModeAsk {
 			k := p.ToolCall.Kind
-			allow = allow && (k == "read" || k == "search" || k == "think" || k == "fetch")
-		} else {
-			for _, l := range p.ToolCall.Locations {
-				if !inside(s.o.Dir, l.Path) {
-					allow = false
-				}
+			faah := s.o.Tools != nil && (faahTool(p.ToolCall.Title) || faahTool(p.ToolCall.RawInput.Name))
+			allow = allow && (k == "read" || k == "search" || k == "list" || k == "think" || faah)
+		}
+		for _, l := range p.ToolCall.Locations {
+			if !inside(s.o.Dir, l.Path) {
+				allow = false
 			}
 		}
 		kind := "reject_once"
@@ -337,53 +346,8 @@ func (s *session) answer(f frame) {
 	_ = s.send(response)
 }
 
-// canonical resolves existing ancestors too, so new files cannot escape through a symlink.
-func canonical(path string) (string, error) {
-	p, err := filepath.Abs(path)
-	if err != nil {
-		return "", err
-	}
-	suffix := []string{}
-	for {
-		r, e := filepath.EvalSymlinks(p)
-		if e == nil {
-			for i := len(suffix) - 1; i >= 0; i-- {
-				r = filepath.Join(r, suffix[i])
-			}
-			return r, nil
-		}
-		if !os.IsNotExist(e) {
-			return "", e
-		}
-		if _, e = os.Lstat(p); e == nil {
-			return "", errors.New("broken symlink")
-		}
-		parent := filepath.Dir(p)
-		if parent == p {
-			return "", e
-		}
-		suffix = append(suffix, filepath.Base(p))
-		p = parent
-	}
-}
-
 func inside(dir, path string) bool {
-	if strings.TrimSpace(path) == "" {
-		return false
-	}
-	if !filepath.IsAbs(path) {
-		path = filepath.Join(dir, path)
-	}
-	root, err := canonical(dir)
-	if err != nil {
-		return false
-	}
-	p, err := canonical(path)
-	if err != nil {
-		return false
-	}
-	rel, err := filepath.Rel(root, p)
-	return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) && !filepath.IsAbs(rel)
+	return agents.WithinWorkspace(dir, path)
 }
 
 // Prompt streams a turn until the agent answers session/prompt.

@@ -34,7 +34,7 @@ func stubSession(t *testing.T, resume, key string) (agents.Session, string) {
 			t.Fatal(err)
 		}
 	}
-	o := agents.Open{Dir: dir, Resume: resume, Mode: agents.ModePlan, Model: "test", Env: []string{"CURSOR_API_KEY=" + key}, Tools: &agents.ToolEndpoint{URL: "http://local/mcp", Authorization: "Bearer stub"}}
+	o := agents.Open{Dir: dir, Resume: resume, Mode: agents.ModeAsk, Model: "test", Env: []string{"CURSOR_API_KEY=" + key}, Tools: &agents.ToolEndpoint{URL: "http://local/mcp", Authorization: "Bearer stub"}}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	s, err := openHelper(ctx, o, []string{node, "helper.mjs"}, dir)
@@ -88,15 +88,16 @@ func TestCursorHelperSDK(t *testing.T) {
 					t.Fatal(calls[0])
 				}
 				want := map[string]any{
-					"mode": "plan", "model": map[string]any{"id": "test"},
+					"mode": "agent", "model": map[string]any{"id": "test"},
 					"mcpServers": map[string]any{"faah": map[string]any{"type": "http", "url": "http://local/mcp", "headers": map[string]any{"Authorization": "Bearer stub"}}},
 				}
 				wantOpen := map[string]any{}
 				for k, v := range want {
 					wantOpen[k] = v
 				}
+				wantOpen["tools"] = []any{"read", "grep", "glob", "ls", "mcp"}
 				wantOpen["name"] = "faah"
-				wantOpen["local"] = map[string]any{"cwd": dir, "settingSources": []any{"project", "user", "team", "mdm", "plugins"}, "sandboxOptions": map[string]any{"enabled": true}}
+				wantOpen["local"] = map[string]any{"cwd": dir, "settingSources": []any{}, "sandboxOptions": map[string]any{"enabled": true}}
 				if key != "" {
 					wantOpen["apiKey"] = key
 				}

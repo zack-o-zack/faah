@@ -141,6 +141,10 @@ func (f *fake) serve(w http.ResponseWriter, r *http.Request) {
 		f.emit(id, "permission.asked", map[string]any{"id": "perm_out", "resources": []string{"/outside"}})
 		f.emit(id, "permission.asked", map[string]any{"id": "perm_bash", "action": "bash", "resources": []string{"rm -rf /"}})
 		f.emit(id, "permission.asked", map[string]any{"id": "perm_shell", "action": "shell", "resources": []string{"go test ./..."}})
+		for _, action := range []string{"read", "glob", "grep", "list", "faah-thread_a_annotate", "faah-other_annotate", "webfetch", "execute", "edit", "unknown"} {
+			f.emit(id, "permission.asked", map[string]any{"id": "allowlist_" + action, "action": action, "resources": []string{"file.go"}})
+		}
+		f.emit(id, "permission.asked", map[string]any{"id": "read_outside", "action": "read", "resources": []string{"/outside"}})
 		f.emit(id, "form.asked", map[string]any{"id": "form"})
 		kind := "succeeded"
 		if text == "failed" || text == "interrupted" {
@@ -214,7 +218,7 @@ func (c *capture) Step(s string) { c.steps = append(c.steps, s) }
 func (*capture) Result(string) {}
 
 func TestOpenCodeSessions(t *testing.T) {
-	for _, mode := range []agents.Mode{agents.ModeEdit, agents.ModePlan} {
+	for _, mode := range []agents.Mode{agents.ModeEdit, agents.ModeAsk} {
 		t.Run(fmt.Sprint(mode), func(t *testing.T) {
 			f, _, o := fixture(t)
 			o.Mode = mode
@@ -242,8 +246,8 @@ func TestOpenCodeSessions(t *testing.T) {
 			for _, r := range calls {
 				if r.Path == "/api/session" {
 					expected := []rule{{"edit", "*", "ask"}, {"edit", filepath.ToSlash(o.Dir) + "/*", "allow"}, {"bash", "*", "ask"}, {"external_directory", "*", "ask"}}
-					if mode == agents.ModePlan {
-						expected = append(expected, rule{"edit", "*", "deny"}, rule{"bash", "*", "deny"}, rule{"shell", "*", "deny"}, rule{"webfetch", "*", "deny"}, rule{"websearch", "*", "deny"}, rule{"execute", "*", "deny"})
+					if mode == agents.ModeAsk {
+						expected = []rule{{"*", "*", "ask"}, {"read", "*", "allow"}, {"glob", "*", "allow"}, {"grep", "*", "allow"}, {"list", "*", "allow"}}
 					}
 					expected = append(expected, rule{"faah-*", "*", "deny"}, rule{"faah-thread_a_*", "*", "allow"})
 					raw, _ := json.Marshal(expected)
@@ -260,7 +264,7 @@ func TestOpenCodeSessions(t *testing.T) {
 				}
 				if strings.HasSuffix(r.Path, "/agent") {
 					switches++
-					if r.Body["agent"] != "faah-plan" {
+					if r.Body["agent"] != "build" {
 						t.Fatal(r)
 					}
 				}
@@ -275,6 +279,12 @@ func TestOpenCodeSessions(t *testing.T) {
 					if mode == agents.ModeEdit && (strings.Contains(r.Path, "perm_in") || strings.Contains(r.Path, "perm_bash") || strings.Contains(r.Path, "perm_shell")) {
 						want = "once"
 					}
+					if strings.Contains(r.Path, "allowlist_") {
+						action := strings.TrimSuffix(strings.Split(r.Path, "allowlist_")[1], "/reply")
+						if mode == agents.ModeEdit || action == "read" || action == "glob" || action == "grep" || action == "list" || action == "faah-thread_a_annotate" {
+							want = "once"
+						}
+					}
 					if r.Body["decision"] != want {
 						t.Fatal(r)
 					}
@@ -283,7 +293,7 @@ func TestOpenCodeSessions(t *testing.T) {
 					t.Fatal(r)
 				}
 			}
-			if adds != 3 || (mode == agents.ModePlan && switches != 1) || (mode == agents.ModeEdit && switches != 0) {
+			if adds != 3 || switches != 0 {
 				t.Fatal(adds, switches)
 			}
 			id := s.ID()
@@ -656,27 +666,5 @@ func TestOpenCodeSharedIdleOwnership(t *testing.T) {
 }
 
 func validHelperConfig(content string) bool {
-	var c struct {
-		Model  string
-		Agents map[string]json.RawMessage
-	}
-	if json.Unmarshal([]byte(content), &c) != nil {
-		return false
-	}
-	var p struct {
-		Mode        string
-		Permissions []rule
-	}
-	if json.Unmarshal(c.Agents["faah-plan"], &p) != nil {
-		return false
-	}
-	return c.Model == "user/model" && string(c.Agents["plan"]) == `{"disabled":true}` && string(c.Agents["custom"]) == `{"mode":"subagent"}` && p.Mode == "primary" && reflect.DeepEqual(p.Permissions, []rule{{"edit", "*", "deny"}, {"bash", "*", "deny"}, {"shell", "*", "deny"}, {"webfetch", "*", "deny"}, {"websearch", "*", "deny"}, {"execute", "*", "deny"}})
-}
-
-func TestOpenCodeInvalidConfig(t *testing.T) {
-	for _, content := range []string{`bad`, `null`, `{"agents":[]}`, `{"agents":null}`} {
-		if _, err := planConfig(content); err == nil {
-			t.Fatalf("accepted %s", content)
-		}
-	}
+	return content == `{"model":"user/model","agents":{"plan":{"disabled":true},"custom":{"mode":"subagent"}}}`
 }

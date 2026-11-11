@@ -75,7 +75,7 @@ When hosted behind reverse proxies or multi-tenant review platforms, faah suppor
 faah is structured into decoupled core files and modular `internal/` packages:
 
 - **Root Package (`faah`)**: Contains the CLI entrypoint ([`main.go`](../../main.go)), HTTP routing and middleware ([`server.go`](../../server.go)), filesystem indexing and tree walk ([`index.go`](../../index.go)), search pipeline ([`search.go`](../../search.go)), Git operations and watcher ([`git.go`](../../git.go)), LSP client and supervisor ([`lsp.go`](../../lsp.go)), agent harnesses and multi-turn threads ([`agent.go`](../../agent.go)), PR review lifecycle ([`pr.go`](../../pr.go)), forge providers ([`forge.go`](../../forge.go)), and multi-repo workbench ([`workbench.go`](../../workbench.go)).
-- **`internal/agents`**: Native `Agent`/`Open`/`Session` adapters, process hosts, protocol handling and Plan policies, listed in `internal/agents/all`. See [Native agent sessions](agents.md).
+- **`internal/agents`**: Native `Agent`/`Open`/`Session` adapters, process hosts, protocol handling and Ask policies, listed in `internal/agents/all`. See [Native agent sessions](agents.md).
 - **`internal/mcp`**: Authenticated Streamable HTTP tools and the ACP stdio bridge.
 - **`internal/explain`**: Explain's selection checks, evidence gathering through the `Workspace` interface, prompt, and citation checks.
 - **`internal/codeintel`**: Plain language-server and search result types shared by the root package and `internal/explain`.
