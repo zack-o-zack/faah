@@ -62,14 +62,14 @@
           </div>
           <div id="git-notice-text" data-ui="hint" class="git-notice-text max-h-40 overflow-y-auto whitespace-pre-wrap wrap-anywhere empty:hidden [&_code]:font-mono [&_[data-ui~=hint]]:block [&_[data-ui~=hint]]:text-muted-foreground"></div>
           <div id="git-notice-agent" class="git-agent-picker flex flex-col gap-2" hidden>
-            <div id="git-sync-agent" class="select" data-control="agent-picker" data-placeholder="No harness"><button type="button" data-size="sm" aria-haspopup="listbox" aria-expanded="false" aria-label="Coding harness and model" title="Coding harness and model"><span class="truncate"></span><i class="icon-[lucide--chevrons-up-down] size-3.5 shrink-0 text-muted-foreground" aria-hidden="true"></i></button><div data-popover aria-hidden="true"><div role="listbox" aria-orientation="vertical" aria-label="Coding harness and model"></div></div><input type="hidden"></div>
+            <div id="git-sync-agent" class="inline-flex min-w-0 max-w-full" data-control="agent-picker" data-placeholder="No harness"><button class="btn max-w-full" data-variant="outline" type="button" data-size="sm" aria-haspopup="dialog" aria-expanded="false" aria-label="Coding harness and model" title="Coding harness and model"><span class="truncate"></span><i class="icon-[lucide--chevrons-up-down] size-3.5 shrink-0 text-muted-foreground" aria-hidden="true"></i></button></div>
           </div>
           <div id="git-notice-actions" class="git-notice-actions flex flex-wrap gap-2 empty:hidden"></div>
           <details id="git-notice-log" class="git-notice-log [&_summary]:cursor-pointer [&_summary]:text-muted-foreground [&_pre]:mt-2 [&_pre]:max-h-40 [&_pre]:overflow-auto [&_pre]:whitespace-pre-wrap [&_pre]:wrap-anywhere [&_pre]:font-mono [&_pre]:text-xs" hidden><summary>Agent output</summary><pre></pre></details>
         </div>
         <div id="git-commit-section" class="git-commit-section flex flex-col gap-2">
           <div class="git-agent-picker flex flex-col gap-2">
-            <div id="git-agent" class="select" data-control="agent-picker" data-placeholder="No harness"><button type="button" data-size="sm" aria-haspopup="listbox" aria-expanded="false" aria-label="Coding harness and model" title="Coding harness and model"><span class="truncate"></span><i class="icon-[lucide--chevrons-up-down] size-3.5 shrink-0 text-muted-foreground" aria-hidden="true"></i></button><div data-popover aria-hidden="true"><div role="listbox" aria-orientation="vertical" aria-label="Coding harness and model"></div></div><input type="hidden"></div>
+            <div id="git-agent" class="inline-flex min-w-0 max-w-full" data-control="agent-picker" data-placeholder="No harness"><button class="btn max-w-full" data-variant="outline" type="button" data-size="sm" aria-haspopup="dialog" aria-expanded="false" aria-label="Coding harness and model" title="Coding harness and model"><span class="truncate"></span><i class="icon-[lucide--chevrons-up-down] size-3.5 shrink-0 text-muted-foreground" aria-hidden="true"></i></button></div>
             <div class="git-ai-row flex w-full items-center gap-2">
               <button id="git-generate-msg" title="Stage all changes and write a commit message using the selected coding harness" class="btn" data-control="git-generate-btn" data-variant="primary" data-size="xs">Stage all + Commit with AI</button>
             </div>
@@ -307,7 +307,7 @@
           </div>
           <div data-ui="agent-meta" class="flex flex-wrap items-center gap-2 in-[.queued]:hidden in-[.has-batch]:hidden">
             <span data-ui="agent-meta-label" class="label flex-none text-muted-foreground">Model</span>
-            <div class="select" data-control="agent-picker" data-placeholder="No harness"><button type="button" data-size="sm" aria-haspopup="listbox" aria-expanded="false" aria-label="Coding harness and model" title="Coding harness and model"><span class="truncate"></span><i class="icon-[lucide--chevrons-up-down] size-3.5 shrink-0 text-muted-foreground" aria-hidden="true"></i></button><div data-popover aria-hidden="true"><div role="listbox" aria-orientation="vertical" aria-label="Coding harness and model"></div></div><input type="hidden"></div>
+            <div class="inline-flex min-w-0 max-w-full" data-control="agent-picker" data-placeholder="No harness"><button class="btn max-w-full" data-variant="outline" type="button" data-size="sm" aria-haspopup="dialog" aria-expanded="false" aria-label="Coding harness and model" title="Coding harness and model"><span class="truncate"></span><i class="icon-[lucide--chevrons-up-down] size-3.5 shrink-0 text-muted-foreground" aria-hidden="true"></i></button></div>
           </div>
           <!-- A comment that has been added to the batch: click to edit it again -->
           <button title="Click to edit this comment" hidden class="btn" data-control="agent-queued" data-variant="outline" data-size="xs"></button>
@@ -760,7 +760,7 @@
           </div>
           <div data-ui="agent-batch-meta" class="flex items-center gap-2 p-3">
             <span data-ui="agent-meta-label" class="label flex-none text-muted-foreground">Model</span>
-            <div id="agent-batch-agent" class="select" data-control="agent-picker" data-placeholder="No harness"><button type="button" data-size="sm" aria-haspopup="listbox" aria-expanded="false" aria-label="Coding harness and model" title="Coding harness and model"><span class="truncate"></span><i class="icon-[lucide--chevrons-up-down] size-3.5 shrink-0 text-muted-foreground" aria-hidden="true"></i></button><div data-popover aria-hidden="true" data-side="top"><div role="listbox" aria-orientation="vertical" aria-label="Coding harness and model"></div></div><input type="hidden"></div>
+            <div id="agent-batch-agent" class="inline-flex min-w-0 max-w-full" data-control="agent-picker" data-placeholder="No harness"><button class="btn max-w-full" data-variant="outline" type="button" data-size="sm" aria-haspopup="dialog" aria-expanded="false" aria-label="Coding harness and model" title="Coding harness and model"><span class="truncate"></span><i class="icon-[lucide--chevrons-up-down] size-3.5 shrink-0 text-muted-foreground" aria-hidden="true"></i></button></div>
           </div>
         </div>
         <div data-ui="agent-batch-actions" class="flex items-center gap-2 font-mono text-muted-foreground">
@@ -808,7 +808,7 @@
           <textarea id="thr-input" aria-label="Thread message" rows="2" spellcheck="false" autocomplete="off" placeholder="Ask about this code, or ask for changes anywhere" class="max-h-60 min-h-14" data-control="agent-input"></textarea>
           <footer data-ui="thr-box-foot" data-align="block-end" class="gap-1">
             <div data-ui="agent-meta" class="flex min-w-0 items-center gap-1 in-[.queued]:hidden in-[.has-batch]:hidden">
-              <div id="thr-agent" class="select" data-control="agent-picker" data-placeholder="No harness"><button type="button" data-size="sm" class="h-7! border-transparent! bg-transparent! px-2! text-xs! shadow-none! hover:bg-accent!" aria-haspopup="listbox" aria-expanded="false" aria-label="Coding harness and model" title="Coding harness and model"><span class="truncate"></span><i class="icon-[lucide--chevrons-up-down] size-3.5 shrink-0 text-muted-foreground" aria-hidden="true"></i></button><div data-popover aria-hidden="true" data-side="top"><div role="listbox" aria-orientation="vertical" aria-label="Coding harness and model"></div></div><input type="hidden"></div>
+              <div id="thr-agent" class="inline-flex min-w-0 max-w-full" data-control="agent-picker" data-placeholder="No harness"><button type="button" data-variant="ghost" data-size="sm" class="btn max-w-full h-7! text-foreground! border-transparent! bg-transparent! px-2! text-xs! shadow-none! hover:bg-accent!" aria-haspopup="dialog" aria-expanded="false" aria-label="Coding harness and model" title="Coding harness and model"><span class="truncate"></span><i class="icon-[lucide--chevrons-up-down] size-3.5 shrink-0 text-muted-foreground" aria-hidden="true"></i></button></div>
             </div>
             <span class="flex-1"></span>
             <button id="thr-send" title="Send (Enter)" aria-label="Send (Enter)" disabled class="btn rounded-full" data-control="agent-send" data-variant="primary" data-size="icon-sm"><span class="icon-[lucide--arrow-up] size-4" aria-hidden="true"></span></button>
@@ -862,7 +862,7 @@
       <div id="pr-merge-ai-row" data-ui="pr-merge-ai" class="flex items-center gap-2">
         <input id="pr-merge-ai-instruction" aria-label="Rewrite instructions" type="text" spellcheck="false" autocomplete="off" placeholder="Instructions for this rewrite (optional), e.g. Conventional Commits, mention the ticket" class="input h-8!" data-control="pr-merge-input">
         <div class="git-agent-picker flex flex-col gap-2">
-          <div id="pr-merge-agent" class="select" data-control="agent-picker" data-placeholder="No harness"><button type="button" data-size="sm" aria-haspopup="listbox" aria-expanded="false" aria-label="Coding harness and model" title="Coding harness and model"><span class="truncate"></span><i class="icon-[lucide--chevrons-up-down] size-3.5 shrink-0 text-muted-foreground" aria-hidden="true"></i></button><div data-popover aria-hidden="true" data-side="top"><div role="listbox" aria-orientation="vertical" aria-label="Coding harness and model"></div></div><input type="hidden"></div>
+          <div id="pr-merge-agent" class="inline-flex min-w-0 max-w-full" data-control="agent-picker" data-placeholder="No harness"><button class="btn max-w-full" data-variant="outline" type="button" data-size="sm" aria-haspopup="dialog" aria-expanded="false" aria-label="Coding harness and model" title="Coding harness and model"><span class="truncate"></span><i class="icon-[lucide--chevrons-up-down] size-3.5 shrink-0 text-muted-foreground" aria-hidden="true"></i></button></div>
         </div>
         <button id="pr-merge-ai" type="button" title="Have the harness rewrite the title and message from the PR's commits and diff" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs">Rewrite with AI</button>
       </div>

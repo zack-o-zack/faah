@@ -118,6 +118,13 @@ export function initShortcuts() {
   addEventListener('keydown', e => {
     const mod = e[MOD];
     if (ownsNavigationKey(e)) return;
+    const nativePopover = document.querySelector('[popover]:popover-open');
+    if (nativePopover && e.key === 'Escape') {
+      e.preventDefault();
+      nativePopover.hidePopover();
+      document.querySelector(`[aria-controls="${nativePopover.id}"]`)?.focus();
+      return;
+    }
     const menuOpen = document.querySelector('[data-popover][aria-hidden="false"]');
     if (menuOpen && ['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return;
     if (menuOpen && e.key === 'Escape') { e.preventDefault(); return; }

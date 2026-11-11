@@ -1,3 +1,4 @@
+import { updateAgentPicker } from './agent-picker.js';
 // web/src/agent.js
 import { $, esc, S, doc_, api, apiPost, apiPostJson, MOD, keyLabel } from './state.js';
 import { showToast } from './ui.js';
@@ -77,31 +78,19 @@ export function applyAgentMeta() {
   renderAgentPicker(gitPicker);
 }
 
-/* Harness and model are one choice: a Basecoat select whose options are
-   grouped by harness, each one naming both. */
-const pickerValue = (harness, model) => JSON.stringify([harness, model || '']);
-
+// All composers share the same provider/model picker and saved selection.
 function renderAgentPicker(picker, busy = false) {
   if (!picker) return;
-  const trigger = picker.querySelector(':scope > button');
-  const listbox = picker.querySelector('[role=listbox]');
-  const input = picker.querySelector(':scope > input[type=hidden]');
   const ready = installed();
-  const pinned = !!(S.meta && S.meta.agentPinned);
   const current = ready.find(h => h.name === chosen()) || ready[0];
-  listbox.innerHTML = ready.map(h => {
-    const models = h.models?.length ? h.models : [''];
-    // A harness fixed by -agent keeps its models; the others are out of reach.
-    const off = pinned && h !== current ? ' aria-disabled="true"' : '';
-    return '<div role="group" aria-label="' + esc(h.name) + '"><div role="heading">' + esc(h.name) + '</div>' +
-      models.map(m => '<div role="option" data-value="' + esc(pickerValue(h.name, m)) + '" data-label="' + esc(m ? h.name + ' · ' + m : h.name) + '"' + off + '>' + esc(m || h.name) + '</div>').join('') +
-      '</div>';
-  }).join('');
   const models = current?.models || [];
-  input.value = current ? pickerValue(current.name, models.includes(chosenModel()) ? chosenModel() : models[0]) : '';
-  picker.refresh?.();
-  trigger.disabled = busy || !ready.length;
-  trigger.title = pinned ? 'Harness fixed for this run by -agent' : 'Coding harness and model';
+  updateAgentPicker(picker, {
+    harnesses: ready,
+    harness: current?.name || '',
+    model: models.includes(chosenModel()) ? chosenModel() : models[0] || '',
+    pinned: !!S.meta?.agentPinned,
+    busy,
+  });
 }
 
 function wireAgentPicker(picker, onError, after) {
