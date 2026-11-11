@@ -142,10 +142,17 @@ export function closePalette() {
   pal = null;
 }
 
-export const refreshPalette = debounce(async () => {
+export const refreshPalette = debounce(() => {
+  if (pal && pal.loadingQuery !== palInput.value) void refreshPaletteNow();
+}, 40);
+
+export async function refreshPaletteNow() {
   if (!pal) return;
   const seq = ++palSeq;
-  let raw = palInput.value;
+  const session = pal, input = palInput.value;
+  const current = () => pal === session && seq === palSeq && input === palInput.value;
+  pal.loadingQuery = input;
+  let raw = input;
   // theme and openpr have no prefix character: once entered (via a command),
   // they stay put regardless of what's typed, unlike file/symbol/line/command
   // which re-derive their mode from the input on every keystroke.
@@ -170,7 +177,7 @@ export const refreshPalette = debounce(async () => {
     const d = doc_();
     if (d && !d.outline) {
       try { d.outline = (await api('/api/outline', { path: d.path })).symbols || []; } catch { d.outline = []; }
-      if (seq !== palSeq || !pal) return;
+      if (!current()) return;
     }
     const lq = q.toLowerCase();
     pal.items = ((d && d.outline) || []).filter(s => !lq || s.name.toLowerCase().includes(lq))
@@ -183,8 +190,11 @@ export const refreshPalette = debounce(async () => {
     pal.items = q ? [{ kind: 'openpr', target: q, label: 'Open PR: ' + esc(q), sub: 'Enter to open in a new tab', raw: true }] : [];
   } else {
     let j;
-    try { j = await api('/api/find', { q, limit: 120 }); } catch { return; }
-    if (seq !== palSeq || !pal) return;
+    try { j = await api('/api/find', { q, limit: 120 }); } catch {
+      if (current()) pal.loadingQuery = null;
+      return;
+    }
+    if (!current()) return;
     pal.indexing = !!j.indexing;
     pal.items = (j.results || []).map(r => {
       const cut = r.path.length - r.name.length;
@@ -201,9 +211,11 @@ export const refreshPalette = debounce(async () => {
       }, 300);
     }
   }
+  pal.loadingQuery = null;
+  pal.loadedQuery = input;
   pal.sel = mode === 'theme' ? Math.max(0, pal.items.findIndex(it => it.id === currentTheme())) : 0;
   drawPalette();
-}, 40);
+}
 
 export function fuzzyHTML(text, pos) {
   if (!pos || !pos.length) return esc(text);
@@ -245,7 +257,10 @@ export function movePalette(delta) {
 }
 
 export async function acceptPalette() {
-  if (!pal || !pal.items.length) return;
+  if (!pal) return;
+  const session = pal;
+  if (pal.loadedQuery !== palInput.value) await refreshPaletteNow();
+  if (pal !== session || pal.loadedQuery !== palInput.value || !pal.items.length) return;
   const it = pal.items[pal.sel];
   if (it.kind === 'theme') pal.restoreTheme = null;
   closePalette();
