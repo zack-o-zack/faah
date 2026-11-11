@@ -1231,6 +1231,10 @@ func (wb *workbench) handleWorkspace(w http.ResponseWriter, r *http.Request) {
 	}
 	if snap.state == "failed" && r.URL.Query().Get("retry") == "" {
 		p := holdingPage{Title: snap.title, Error: snap.err}
+		if it, ok := wb.store.Get(id); ok {
+			p.Title, p.Sub = holdingNames(it)
+			p.PR = it.Kind == "pr"
+		}
 		if it, ok := wb.store.Get(id); ok && snap.noClone {
 			p.Choose = wb.basePath + "?open=" + url.QueryEscape(it.URL)
 		} else if !snap.gone {
@@ -1253,7 +1257,8 @@ func (wb *workbench) handleWorkspace(w http.ResponseWriter, r *http.Request) {
 	wb.mu.Lock()
 	progress := c.progress
 	wb.mu.Unlock()
-	wb.renderHolding(w, holdingPage{Title: itemTitle(it), Self: wb.childBase(id), Progress: progress, Starting: true})
+	title, sub := holdingNames(it)
+	wb.renderHolding(w, holdingPage{Title: title, Sub: sub, PR: it.Kind == "pr", Self: wb.childBase(id), Progress: progress, Starting: true})
 }
 
 func withoutItem(items []wbItem, id string) []wbItem {
@@ -1264,6 +1269,18 @@ func withoutItem(items []wbItem, id string) []wbItem {
 		}
 	}
 	return kept
+}
+
+// holdingNames splits an item into the holding page's title and subtitle.
+func holdingNames(it wbItem) (title, sub string) {
+	if it.Kind == "pr" {
+		sub = fmt.Sprintf("%s#%d", it.Repo, it.Number)
+		if it.Title != "" {
+			return it.Title, sub
+		}
+		return sub, ""
+	}
+	return filepath.Base(it.Path), it.Path
 }
 
 func itemTitle(it wbItem) string {
@@ -1279,6 +1296,8 @@ func itemTitle(it wbItem) string {
 
 type holdingPage struct {
 	Base, Theme, Title, Error, Retry, Self, Progress string
+	Sub                                              string // the PR's repo#number, or the folder's path
+	PR                                               bool
 	Choose                                           string // workbench URL that asks where the PR's clone is
 	Starting                                         bool
 }
@@ -1301,19 +1320,28 @@ var holdingTmpl = template.Must(template.New("holding").Parse(`<!doctype html>
 <button data-desktop-menu title="Menu" aria-label="Application menu" class="btn desktop-menu-btn hidden! win-linux:inline-flex! fixed top-2 left-2 z-1 [-webkit-app-region:no-drag]" data-variant="ghost" data-size="icon-xs">
   <span class="icon-[lucide--menu] size-3.5" aria-hidden="true"></span>
 </button>
-<main class="card mx-4 mt-[18vh] max-w-xl sm:mx-auto">
-  <div class="flex items-end gap-2 px-6">
-    <img class="hidden dark:block" src="static/logo-dark.svg" alt="faah" width="160" height="60">
-    <img class="block dark:hidden" src="static/logo-light.svg" alt="faah" width="160" height="60">
-  </div>
+<main class="mx-auto flex min-h-dvh w-full max-w-[560px] flex-col justify-center gap-6 px-4 pb-[12vh]">
+  <header class="flex">
+    <img class="hidden h-5 w-auto dark:block" src="static/logo-dark.svg" alt="faah" width="35" height="13">
+    <img class="block h-5 w-auto dark:hidden" src="static/logo-light.svg" alt="faah" width="35" height="13">
+  </header>
+  <section class="flex items-center gap-3">
+    <figure class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted">{{if .PR}}<span class="icon-[lucide--git-pull-request] size-5 text-gi" aria-hidden="true"></span>{{else}}<span class="icon-[lucide--folder] size-5 text-muted-foreground" aria-hidden="true"></span>{{end}}</figure>
+    <div class="flex min-w-0 flex-col">
+      <h1 class="truncate font-medium">{{.Title}}</h1>
+      {{if .Sub}}<p class="truncate font-mono text-xs text-muted-foreground">{{.Sub}}</p>{{end}}
+    </div>
+  </section>
   {{if .Starting}}
-  <p class="flex flex-wrap items-center gap-2 px-6"><span class="size-3 shrink-0 rounded-full border-2 border-border border-t-primary animate-spin motion-reduce:animate-none" aria-hidden="true"></span>Opening <b>{{.Title}}</b>…</p>
-  <p id="wb-holding-progress" class="px-6 text-muted-foreground">{{if .Progress}}{{.Progress}}…{{else}}Pull requests are checked out first; large repositories take a while.{{end}}</p>
+  <p class="flex items-start gap-2 text-sm text-muted-foreground" role="status"><span class="icon-[lucide--loader-circle] mt-0.5 size-4 shrink-0 animate-spin text-primary motion-reduce:animate-none" aria-hidden="true"></span><span id="wb-holding-progress">{{if .Progress}}{{.Progress}}…{{else}}Opening… Pull requests are checked out first, so large repositories take a while.{{end}}</span></p>
   {{else}}
-  <p class="flex flex-wrap items-center gap-2 px-6">Could not open <b>{{.Title}}</b></p>
-  <pre class="mx-6 overflow-auto whitespace-pre-wrap break-words font-mono text-sm text-destructive">{{.Error}}</pre>
+  <div class="alert grid-cols-[auto_1fr] gap-x-2.5" data-variant="destructive" role="alert">
+    <span class="icon-[lucide--circle-alert] row-span-2 size-4 translate-y-0.5" aria-hidden="true"></span>
+    <h2 class="col-start-2">Could not open it</h2>
+    <section class="col-start-2 min-w-0"><p class="whitespace-pre-wrap wrap-anywhere font-mono text-xs">{{.Error}}</p></section>
+  </div>
   {{end}}
-  <p class="flex flex-wrap gap-2 px-6">{{if .Retry}}<a class="btn" data-variant="primary" data-size="default" href="{{.Retry}}">Retry</a>{{end}}{{if .Choose}}<a class="btn" data-variant="primary" data-size="default" href="{{.Choose}}">Choose a clone</a>{{end}}<a class="btn" data-variant="outline" data-size="default" href="{{.Base}}">Back to workbench</a></p>
+  <footer class="flex flex-wrap gap-2">{{if .Retry}}<a class="btn" data-variant="primary" data-size="sm" href="{{.Retry}}">Retry</a>{{end}}{{if .Choose}}<a class="btn" data-variant="primary" data-size="sm" href="{{.Choose}}">Choose a clone</a>{{end}}<a class="btn first:-ms-2.5" data-variant="ghost" data-size="sm" href="{{.Base}}"><span class="icon-[lucide--arrow-left] size-4" aria-hidden="true"></span>Back to workbench</a></footer>
 </main>
 </body>
 </html>
