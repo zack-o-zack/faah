@@ -1,5 +1,6 @@
 /* GitHub Dark: based on GitHub's dark default palette. Token reference: docs/internals/styling-and-themes.md. */
 :root[data-theme="github-dark"] {
+  --warn: #e3b341;
   --image-dark: #121214;
   --image-light: #ffffff;
   --theme-name: "GitHub Dark";
@@ -8,10 +9,10 @@
   /* surfaces, from the editor out to raised hover states */
   --background: #0d1117; --sidebar: #010409; --card: #010409; --popover: #161b22; --secondary: #21262d; --muted: #161b22; --sidebar-accent: #161b22; --accent: #21262d;
   /* text: primary, secondary, tertiary */
-  --foreground: #e6edf3; --card-foreground: #e6edf3; --popover-foreground: #e6edf3; --secondary-foreground: #e6edf3; --accent-foreground: #e6edf3; --sidebar-foreground: #e6edf3; --sidebar-accent-foreground: #e6edf3; --muted-foreground: #8b949e; --faint: #6e7681;
+  --foreground: #e6edf3; --card-foreground: #e6edf3; --popover-foreground: #e6edf3; --secondary-foreground: #e6edf3; --accent-foreground: #e6edf3; --sidebar-foreground: #e6edf3; --sidebar-accent-foreground: #e6edf3; --muted-foreground: #8b949e; --faint: #8b949e;
   /* borders and accent */
-  --border: #30363d; --input: #21262d; --sidebar-border: #30363d; --primary: #1f6feb; --ring: #1f6feb; --sidebar-primary: #1f6feb; --sidebar-ring: #1f6feb; --primary-text: #58a6ff;
-  --primary-foreground: #fff; --sidebar-primary-foreground: #fff;
+  --border: #30363d; --input: #919ba6; --sidebar-border: #30363d; --primary: #2f81f7; --ring: #2f81f7; --sidebar-primary: #2f81f7; --sidebar-ring: #2f81f7; --primary-text: #58a6ff;
+  --primary-foreground: #010409; --sidebar-primary-foreground: #010409;
   /* selection, search matches, current line */
   --sel: rgba(56, 139, 253, 0.25); --mark: rgba(187, 128, 9, 0.4); --mark-active: #d29922; --cur: #161b22;
   /* elevation */

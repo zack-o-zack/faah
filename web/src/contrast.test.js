@@ -13,7 +13,7 @@ function contrast(a,b) {
   return (high+0.05)/(low+0.05);
 }
 
-for (const theme of ['catppuccin-mocha','light','dracula','solarized-light']) {
+for (const theme of ['catppuccin-mocha','light','dracula','solarized-light','github-dark']) {
   test(`${theme} keeps UI text, syntax and control edges legible on audited surfaces`, () => {
     const css=readFileSync(new URL(`../themes/${theme}.css`,import.meta.url),'utf8');
     const tokens=Object.fromEntries([...css.matchAll(/--([\w-]+):\s*(#[\da-f]+);/gi)].map(m=>[m[1],m[2]]));
