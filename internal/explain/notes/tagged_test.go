@@ -87,3 +87,5 @@ func TestTaggedUnclosedBlockThenResult(t *testing.T) {
 		t.Fatalf("text %q, result %q", got, sink.result.String())
 	}
 }
+
+func (s *textSink) Reasoning(text string) {}

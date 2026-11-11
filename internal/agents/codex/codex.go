@@ -34,7 +34,7 @@ func (*Agent) Run(ctx context.Context, t agents.Turn, sink agents.Sink) (agents.
 	if t.Tools != nil {
 		argv = agents.InsertAfterBinary(argv, []string{
 			"-c", fmt.Sprintf("mcp_servers.faah.url=%q", t.Tools.URL),
-			"-c", fmt.Sprintf("mcp_servers.faah.http_headers={Authorization=%q}", "Bearer "+t.Tools.Token),
+			"-c", fmt.Sprintf("mcp_servers.faah.http_headers={Authorization=%q}", t.Tools.Authorization),
 		})
 	}
 	return agents.Exec(ctx, name, t, argv, agents.PlainText, sink)

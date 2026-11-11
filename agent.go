@@ -2296,3 +2296,5 @@ func anchorSnippet(abs string, l1, l2 int) string {
 	}
 	return snip
 }
+
+func (s *threadSink) Reasoning(text string) {}

@@ -14,8 +14,8 @@ import (
 )
 
 // List returns one of each listed agent.
-func List() []agents.Agent {
-	return []agents.Agent{
+func List() []agents.Legacy {
+	return []agents.Legacy{
 		claude.New(),
 		codex.New(),
 		agy.New(),
@@ -26,7 +26,7 @@ func List() []agents.Agent {
 }
 
 // For returns the agent for a harness name, or a generic one.
-func For(name string) agents.Agent {
+func For(name string) agents.Legacy {
 	for _, a := range List() {
 		if a.Name() == name {
 			return a

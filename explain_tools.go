@@ -44,7 +44,7 @@ func (et *explainTools) endpoint(tok string) *agents.ToolEndpoint {
 	if u == nil {
 		return nil
 	}
-	return &agents.ToolEndpoint{URL: *u, Token: tok}
+	return &agents.ToolEndpoint{URL: *u, Authorization: "Bearer " + tok}
 }
 
 // AddNotes records notes on the turn the scope names, while it runs.

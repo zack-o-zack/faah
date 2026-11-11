@@ -36,8 +36,8 @@ const (
 
 // ToolEndpoint is where an MCP agent reaches faah's tools for one turn.
 type ToolEndpoint struct {
-	URL   string
-	Token string
+	URL           string
+	Authorization string
 }
 
 // Turn is one prompt for a harness to answer.
@@ -63,13 +63,14 @@ type Outcome struct {
 
 // Sink receives a turn's output as it arrives.
 type Sink interface {
+	Reasoning(text string)
 	Text(text string, block bool) // block marks a whole message, set off by a blank line
 	Step(label string)            // a tool the harness used, such as "Read auth.go"
 	Result(text string)           // the final answer, used when nothing was streamed
 }
 
 // Agent is one coding harness.
-type Agent interface {
+type Legacy interface {
 	Name() string
 	Caps() Caps
 	// ReadOnly rewrites a headless argv so the harness cannot change files,
@@ -85,11 +86,16 @@ type Agent interface {
 // Warmable is an Agent that can be started before its prompt is known and be
 // given the prompt on stdin later.
 type Warmable interface {
-	Agent
+	Legacy
 	// TurnArgv is the argv a turn runs: session and output flags when it has
 	// a session, tool flags when it has tools.
 	TurnArgv(t Turn) []string
 	StdinArgv(argv []string) []string
 	StdinMessage(prompt string) []byte
 	Stream(sink Sink) *Stream
+}
+
+type Agent interface {
+	Name() string
+	Open(context.Context, Open) (Session, error)
 }

@@ -65,3 +65,5 @@ func TestPlainTextKeepsLines(t *testing.T) {
 		t.Fatal("plain text never starts a session")
 	}
 }
+
+func (s *recSink) Reasoning(text string) {}

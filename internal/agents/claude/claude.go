@@ -50,7 +50,7 @@ func (*Agent) TurnArgv(t agents.Turn) []string {
 	}
 	if t.Tools != nil {
 		cfg, _ := json.Marshal(map[string]any{"mcpServers": map[string]any{"faah": map[string]any{
-			"type": "http", "url": t.Tools.URL, "headers": map[string]string{"Authorization": "Bearer " + t.Tools.Token},
+			"type": "http", "url": t.Tools.URL, "headers": map[string]string{"Authorization": t.Tools.Authorization},
 		}}})
 		extra = append(extra, "--mcp-config", string(cfg), "--strict-mcp-config",
 			"--allowedTools", "mcp__faah__annotate,mcp__faah__walkthrough")

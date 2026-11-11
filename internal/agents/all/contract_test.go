@@ -159,7 +159,7 @@ func TestAgentContract(t *testing.T) {
 			}
 			// A turn with tools adds the MCP flags. A tagged agent's argv does not change.
 			if want.tools != agents.ToolsNone {
-				ep := &agents.ToolEndpoint{URL: toolURL, Token: "tok"}
+				ep := &agents.ToolEndpoint{URL: toolURL, Authorization: "Bearer tok"}
 				if _, err := a.Run(ctx, agents.Turn{Dir: dir, Argv: argv, Prompt: "say hello", Tools: ep, Timeout: 5 * time.Second}, &sink{}); err != nil {
 					t.Fatal(err)
 				}
@@ -179,9 +179,11 @@ func TestAgentContract(t *testing.T) {
 }
 
 // noSession is the args an agent passes for a turn with no session.
-func noSession(a agents.Agent) string {
+func noSession(a agents.Legacy) string {
 	if a.Name() == "agy" {
 		return "--output-format stream-json -p say hello"
 	}
 	return "-p say hello"
 }
+
+func (s *sink) Reasoning(text string) {}
