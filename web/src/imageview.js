@@ -80,6 +80,8 @@ export function applyImageTransform(d = doc_()) {
 
   const natW = d.imageMeta?.width || img.naturalWidth || 100;
   const natH = d.imageMeta?.height || img.naturalHeight || 100;
+  img.width = natW;
+  img.height = natH;
 
   let currentScale = d.imageScale || 1;
   if (d.imageFit) {

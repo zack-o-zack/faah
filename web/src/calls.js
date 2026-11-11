@@ -121,8 +121,8 @@ function draw() {
     const calls = n.sites && n.sites.length > 1 ? ' &times;' + n.sites.length : '';
     const tip = t.path + ':' + t.line + (node.cycle ? '\n(recursive, already in this trail)' : '') + (n.detail ? '\n' + n.detail : '');
     html += '<div data-ui="cnode sym" class="flex min-w-0 items-center gap-2 p-2 cursor-pointer hover:bg-accent [&.sel]:bg-accent " data-i="' + i + '" style="padding-left:' + (6 + depth * 14) + 'px" title="' + esc(tip) + '">' +
-      '<span data-ui="car" class="w-4 shrink-0 cursor-pointer text-muted-foreground [&.shut]:-rotate-90' + (node.cycle ? ' cyc' : node.loading ? '' : node.open ? ' open' : ' shut') + '">' + arrow + '</span>' +
-      '<span class="kd" data-k="' + esc(n.kind) + '">' + esc(n.kind) + '</span>' +
+      '<span data-ui="car" class="w-4 shrink-0 cursor-pointer text-muted-foreground">' + arrow + '</span>' +
+      '<span class="badge" data-variant="secondary" data-k="' + esc(n.kind) + '">' + esc(n.kind) + '</span>' +
       '<span data-ui="sn" class="truncate">' + esc(n.name) + '</span>' +
       '<span data-ui="sl" class="ml-auto font-mono text-muted-foreground">' + esc(base(t.path)) + ':' + t.line + calls + '</span></div>';
     const pad = 'style="padding-left:' + (26 + (depth + 1) * 14) + 'px"';

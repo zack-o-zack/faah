@@ -18,6 +18,12 @@ import { COMMIT_STATUS, loadCommitFiles, cachedCommitFiles } from './commitfiles
 
 export const diffview = $('#diffview');
 const diffContent = $('#diffcontent');
+const DIFF_ROW_CLASSES = { ctx: 'diff-ctx', add: 'diff-add', del: 'diff-del' };
+const DIFF_SECTION_CLASSES = {
+  commit: 'diff-section diff-section-commit',
+  pr: 'diff-section diff-section-pr',
+  you: 'diff-section diff-section-you',
+};
 
 let shown = null; // doc the diff view is currently showing, null while hidden
 
@@ -246,14 +252,14 @@ export function focusDiffScope(d) {
 
 function createDiffSection(d, kind, title, sub, populateBody) {
   const sec = document.createElement('div');
-  sec.className = 'diff-section diff-section-' + kind;
+  sec.className = DIFF_SECTION_CLASSES[kind];
   const collapsedKey = kind + 'Collapsed';
   if (d[collapsedKey]) {
     sec.classList.add('collapsed');
   }
 
   const head = document.createElement('div');
-  head.setAttribute('data-ui', 'diff-section-head'); head.className = 'flex flex-wrap items-center gap-2 p-3 bg-muted cursor-pointer diff-section-head-' + kind;
+  head.setAttribute('data-ui', 'diff-section-head'); head.className = 'flex flex-wrap items-center gap-2 p-3 bg-muted cursor-pointer';
   head.title = 'Click to collapse/expand section';
 
   const t = document.createElement('span');
@@ -338,9 +344,9 @@ function commitStrip(d) {
     const g = COMMIT_STATUS[f.status] || ['git-M', f.status];
     const path = f.from ? esc(f.from) + ' → ' + esc(f.path) : esc(f.path);
     el.innerHTML =
-      '<span class="gs ' + g[0] + '" title="' + esc(g[1]) + '">' + esc(f.status) + '</span>' +
+      '<span class="badge [&.git-M]:text-primary-text [&.git-R]:text-primary-text [&.git-A]:text-gi [&.git-D]:text-gd ' + g[0] + '" title="' + esc(g[1]) + '">' + esc(f.status) + '</span>' +
       '<span data-ui="dcs-path" class="min-w-0 overflow-hidden whitespace-nowrap text-ellipsis text-muted-foreground" title="' + path + '">' + path + '</span>' +
-      (f.binary ? '' : (f.add ? '<span class="up-file-add">+' + f.add + '</span>' : '') + (f.del ? '<span class="up-file-del">&minus;' + f.del + '</span>' : '')) +
+      (f.binary ? '' : (f.add ? '<span class="text-gi">+' + f.add + '</span>' : '') + (f.del ? '<span class="text-gd">&minus;' + f.del + '</span>' : '')) +
       '<span class="flex-1 min-w-0"></span>' +
       '<span data-ui="dcs-pos" class="flex-none text-muted-foreground">' + (i + 1) + ' / ' + files.length + '</span>' +
       '<button type="button" aria-label="Previous file" data-commit-step="-1" title="Previous file in this commit"' + (commitStepTarget(files, i, -1) < 0 ? ' disabled' : '') + ' class="btn" data-control="dcs-step" data-variant="ghost" data-size="icon-xs">‹</button>' +
@@ -437,7 +443,7 @@ function reviewStrip(d) {
       '<button type="button" aria-label="Next file" data-review-step="1" title="Next changed file (]f)"' + (i >= files.length - 1 ? ' disabled' : '') + ' class="btn" data-control="dcs-step" data-variant="ghost" data-size="icon-xs">›</button>'
     : '';
   el.innerHTML =
-    (d.turnLabel ? '<span class="gs git-M">' + esc(d.turnLabel) + '</span>' : '') +
+    (d.turnLabel ? '<span class="badge text-primary-text">' + esc(d.turnLabel) + '</span>' : '') +
     '<span data-ui="dcs-path" class="min-w-0 overflow-hidden whitespace-nowrap text-ellipsis text-muted-foreground" title="' + esc(d.path) + '">' + esc(d.path) + '</span>' +
     '<span class="flex-1 min-w-0"></span>' +
     '<button type="button" data-hunk-step="-1" title="Previous diff hunk ([c)" class="btn" data-control="dcs-step dcs-hunk-btn" data-variant="outline" data-size="xs">↑ Hunk</button>' +
@@ -716,7 +722,8 @@ function unifiedTable(hunk, reviewable = true) {
 
   for (const row of hunk.rows) {
     const r = document.createElement('div');
-    r.className = 'group/line diff-row diff-' + row.type;
+    r.className = 'group/line diff-row';
+    r.classList.add(DIFF_ROW_CLASSES[row.type]);
     anchor(r, row, reviewable);
     r.append(
       lineCell(row.type === 'add' ? '' : row.oldLine, reviewable),
@@ -771,7 +778,8 @@ function pairRows(rows) {
 
 function splitSide(row, side, reviewable = true, diagMap = null) {
   const el = document.createElement('div');
-  el.className = 'group/line diff-side diff-side-' + side + (row ? ' diff-' + row.type : ' diff-blank');
+  el.className = 'group/line diff-side';
+  el.classList.add(side === 'left' ? 'diff-side-left' : 'diff-side-right', row ? DIFF_ROW_CLASSES[row.type] : 'diff-blank');
   if (!row) { el.append(lineCell('', reviewable), markerCell(''), codeCell(null)); return el; }
   const ln = side === 'left' ? row.oldLine : row.newLine;
   anchor(el, row, reviewable);

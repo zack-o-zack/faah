@@ -679,7 +679,7 @@ export function showVimHelp() {
     }).join('');
     return '<div data-ui="vim-help-section" class="flex flex-col gap-2">' +
       '<div data-ui="vim-sec-title" class="label text-primary-text">' + esc(sec.title) + '</div>' +
-      '<dl data-ui="help-grid vim-help-grid" class="grid grid-cols-[auto_1fr_auto_1fr] gap-3 items-center [&_dt]:flex [&_dt]:gap-1 [&_dt]:justify-end [&_dd]:text-muted-foreground grid-cols-[auto_1fr]">' + itemsHtml + '</dl>' +
+      '<dl data-ui="help-grid vim-help-grid" class="grid grid-cols-[auto_minmax(0,1fr)] gap-3 items-center [&_dt]:flex [&_dt]:gap-1 [&_dt]:justify-end [&_dd]:text-muted-foreground">' + itemsHtml + '</dl>' +
       '</div>';
   }).join('');
 
@@ -687,9 +687,8 @@ export function showVimHelp() {
     '<header class="flex-row! items-center justify-between">' +
     '<h2>Vim Keybindings</h2><span data-ui="help-version" class="p-3 font-mono text-primary-text">Modal Navigation</span>' +
     '<div data-ui="vim-toggle-row" class="flex items-center gap-2">' +
-    '<label data-ui="vim-switch-label" class="label label inline-flex items-center cursor-pointer select-none gap-2">' +
+    '<label data-ui="vim-switch-label" class="label inline-flex items-center cursor-pointer select-none gap-2">' +
     '<input type="checkbox" id="vim-toggle-input" ' + isChecked + ' class="input">' +
-    '<span class="vim-switch-slider"></span>' +
     '<span data-ui="vim-switch-text" class="font-mono text-muted-foreground">' + (vimEnabled ? 'Enabled' : 'Disabled') + '</span>' +
     '</label>' +
     '<button id="btn-close-vim-help" title="Close (Esc)" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Close (Esc)">✕</button>' +

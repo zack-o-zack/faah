@@ -58,7 +58,7 @@
             <span id="git-notice-title" class="git-notice-title min-w-0 flex-1 font-semibold wrap-anywhere"></span>
             <button id="git-notice-close" type="button" title="Dismiss" class="btn" data-control="git-notice-close" data-variant="ghost" data-size="icon-xs" aria-label="Dismiss">&times;</button>
           </div>
-          <div id="git-notice-text" data-ui="hint" class="git-notice-text max-h-40 overflow-y-auto whitespace-pre-wrap wrap-anywhere empty:hidden [&_code]:font-mono [&_.empty text-muted-foreground]:block [&_.empty text-muted-foreground]:text-muted-foreground"></div>
+          <div id="git-notice-text" data-ui="hint" class="git-notice-text max-h-40 overflow-y-auto whitespace-pre-wrap wrap-anywhere empty:hidden [&_code]:font-mono [&_[data-ui~=hint]]:block [&_[data-ui~=hint]]:text-muted-foreground"></div>
           <div id="git-notice-agent" class="git-agent-picker flex flex-col gap-2" hidden>
             <select id="git-sync-harness" title="Coding harness" class="select h-6! max-w-full text-xs!" data-control="agent-harness-select"></select>
             <select id="git-sync-model" title="Model" class="select h-6! max-w-full text-xs!" data-control="agent-model-select"></select>
@@ -634,7 +634,7 @@
       <span id="st-lsp" role="button" tabindex="0" title="Language Servers (Click to manage)" class="btn data-[state=ready]:text-gi data-[state=indexing]:text-primary-text data-[state=failed]:text-destructive" data-variant="outline" data-size="xs">LSP</span>
       <span id="sel-stats" class="hidden [#status.selecting_&]:inline-flex"></span>
       <span class="status-sep h-3 w-px shrink-0 bg-border [#status.selecting_#footer-actions+&]:hidden"></span>
-      <span id="st-metrics" role="button" tabindex="0" class="btn h-5! px-1! text-11! font-mono desktop:[&>:not(.shell-ico hidden desktop:block)]:hidden desktop:size-6! desktop:p-0!" data-control="status-metrics" data-variant="outline" data-size="xs">
+      <span id="st-metrics" role="button" tabindex="0" class="btn h-5! px-1! text-11! font-mono desktop:[&>:not(.shell-ico)]:hidden desktop:size-6! desktop:p-0!" data-control="status-metrics" data-variant="outline" data-size="xs">
         <svg class="shell-ico hidden desktop:block" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         <span class="metric"><span class="metric-label">CPU</span> <span id="st-cpu">--%</span></span>
         <span class="metric-divider text-muted-foreground">·</span>

@@ -214,7 +214,7 @@ export async function openFile(path, opts = {}) {
   }
   render();
   updateStatus();
-  if ($('#panel-outline')?.classList.contains('active')) loadOutline();
+  if ($('#pane-right-symbols')?.classList.contains('active')) loadOutline();
   if (push) pushHistory(path, line || d.cur);
   emit('tab:activated', { doc: d, prevDoc: prev });
 }
@@ -391,7 +391,7 @@ export async function reloadOpenTabs({ onlyIfChanged = false } = {}) {
     layout();
     vp.scrollTop = d.scrollTop;
     render();
-    if ($('#panel-outline')?.classList.contains('active')) loadOutline();
+    if ($('#pane-right-symbols')?.classList.contains('active')) loadOutline();
   }
 
   drawTabs();
@@ -579,7 +579,7 @@ export function switchTab(i) {
   drawTabs(); drawCrumbs(); layout();
   vp.scrollTop = S.tabs[i].scrollTop;
   render(); updateStatus();
-  if ($('#panel-outline')?.classList.contains('active')) loadOutline();
+  if ($('#pane-right-symbols')?.classList.contains('active')) loadOutline();
   pushHistory(S.tabs[i].path, S.tabs[i].cur);
   emit('tab:activated', { doc: S.tabs[i], prevDoc: prev });
 }

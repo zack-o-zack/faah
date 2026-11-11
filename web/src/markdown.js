@@ -259,6 +259,10 @@ function mdSetLink(a, href, base) {
 /* ---------- presentation ---------- */
 
 const MD_ALERTS = { note: 'Note', tip: 'Tip', important: 'Important', warning: 'Warning', caution: 'Caution' };
+const MD_ALERT_CLASSES = {
+  note: 'md-alert-note', tip: 'md-alert-tip', important: 'md-alert-important',
+  warning: 'md-alert-warning', caution: 'md-alert-caution',
+};
 
 function mdEnhance() {
   for (const q of $$('blockquote', mdArticle)) mdAlert(q);
@@ -297,7 +301,7 @@ function mdAlert(q) {
   title.className = 'md-alert-title';
   title.textContent = MD_ALERTS[kind];
   q.prepend(title);
-  q.classList.add('md-alert', 'md-alert-' + kind);
+  q.classList.add('md-alert', MD_ALERT_CLASSES[kind]);
 }
 
 /* ---------- position ---------- */

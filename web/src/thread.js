@@ -231,7 +231,11 @@ export function thrMd(src) {
         if (am) {
           const kind = am[1].toLowerCase();
           const titles = { note: 'Note', tip: 'Tip', important: 'Important', warning: 'Warning', caution: 'Caution' };
-          alertClass = ' thr-alert thr-alert-' + kind;
+          const alertClasses = {
+            note: 'thr-alert thr-alert-note', tip: 'thr-alert thr-alert-tip', important: 'thr-alert thr-alert-important',
+            warning: 'thr-alert thr-alert-warning', caution: 'thr-alert thr-alert-caution',
+          };
+          alertClass = alertClasses[kind];
           alertTitle = `<p class="thr-alert-title">${titles[kind]}</p>`;
           qLines.shift();
         }

@@ -786,7 +786,7 @@ async function stopWorkflow() {
 
 function wireHyperlinks() {
   document.addEventListener('click', (e) => {
-    const link = e.target.closest('a.thr-link, .review-code-ref');
+    const link = e.target.closest('a.thr-link');
     if (!link || !link.dataset.path) return;
 
     e.preventDefault();

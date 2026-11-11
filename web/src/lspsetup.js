@@ -107,7 +107,7 @@ function job(j) {
   const tail = (j.log || '').trimEnd().split('\n').slice(-12).join('\n');
   const log = tail ? '<pre>' + esc(tail) + '</pre>' : '';
   if (j.running) return '<div data-ui="lsp-job" class="p-3">Installing with <code>' + esc(j.cmd) + '</code>…' + log + '</div>';
-  if (j.error) return '<div data-ui="lsp-job" class="p-3 err">Install failed: ' + esc(j.error) + log + '</div>';
+  if (j.error) return '<div data-ui="lsp-job" class="p-3 text-destructive">Install failed: ' + esc(j.error) + log + '</div>';
   return '';
 }
 

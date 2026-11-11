@@ -457,7 +457,8 @@ export function initMetrics() {
    sheds detail in steps (see the fit-N variants on #status), least useful first,
    stopping at the first step that fits. A step comes back only with FIT_SLACK px
    to spare, so a 1px wobble of a resizer cannot flip it on every move. */
-const FIT_STEPS = 6, FIT_SLACK = 16;
+const FIT_CLASSES = ['fit-1', 'fit-2', 'fit-3', 'fit-4', 'fit-5', 'fit-6'];
+const FIT_STEPS = FIT_CLASSES.length, FIT_SLACK = 16;
 const statusEl = $('#status');
 const growEl = $('#status-spacer', statusEl);
 let fitLevel = 0;
@@ -468,7 +469,7 @@ let fitRAF = 0;
    overflow as a negative number. */
 function applyFit(n) {
   if (n !== appliedFit) {
-    for (let i = 1; i <= FIT_STEPS; i++) statusEl.classList.toggle('fit-' + i, i <= n);
+    FIT_CLASSES.forEach((className, index) => statusEl.classList.toggle(className, index < n));
     appliedFit = n;
   }
   return growEl.offsetWidth - (statusEl.scrollWidth - statusEl.clientWidth);

@@ -108,10 +108,10 @@ export async function loadReviewWalkthrough(showFeedback = false) {
       return;
     }
     if (leftContent) {
-      leftContent.innerHTML = `<div data-ui="review-empty-state" class="empty flex flex-col items-center justify-center text-center h-full p-3 text-muted-foreground"><p class="review-err-text">Failed to load code understanding: ${esc(err.message || String(err))}</p></div>`;
+      leftContent.innerHTML = `<div data-ui="review-empty-state" class="empty flex flex-col items-center justify-center text-center h-full p-3 text-muted-foreground"><p class="text-destructive">Failed to load code understanding: ${esc(err.message || String(err))}</p></div>`;
     }
     if (rightContent) {
-      rightContent.innerHTML = `<div data-ui="review-empty-state" class="empty flex flex-col items-center justify-center text-center h-full p-3 text-muted-foreground"><p class="review-err-text">Failed to load diffs.</p></div>`;
+      rightContent.innerHTML = `<div data-ui="review-empty-state" class="empty flex flex-col items-center justify-center text-center h-full p-3 text-muted-foreground"><p class="text-destructive">Failed to load diffs.</p></div>`;
     }
   }
 }
@@ -151,7 +151,7 @@ function renderWalkthroughView(data) {
   if (countCore) countCore.textContent = totalCore;
 
   if (statHeading) {
-    statHeading.innerHTML = `<strong>${totalFiles}</strong> files &middot; <span class="diff-stat-add">+${additions}</span> <span class="diff-stat-del">-${deletions}</span> &middot; ${data.baseRef || 'HEAD'} &rarr; ${data.headRef || 'now'}`;
+    statHeading.innerHTML = `<strong>${totalFiles}</strong> files &middot; <span class="font-semibold text-gi">+${additions}</span> <span class="font-semibold text-gd">-${deletions}</span> &middot; ${data.baseRef || 'HEAD'} &rarr; ${data.headRef || 'now'}`;
   }
 
   // Quick navigation chips for files
@@ -166,7 +166,7 @@ function renderWalkthroughView(data) {
       setPressed(chip, idx === 0);
       chip.dataset.path = f.path;
       const basename = f.path.split('/').pop();
-      chip.innerHTML = `<span class="review-file-nav-name" title="${esc(f.path)}">${esc(basename)}</span><span data-ui="review-file-nav-status" class="font-semibold ${f.status || 'M'}">${esc(f.status || 'M')}</span>`;
+      chip.innerHTML = `<span class="truncate" title="${esc(f.path)}">${esc(basename)}</span><span data-ui="review-file-nav-status" data-status="${esc(f.status || 'M')}" class="font-semibold data-[status=M]:text-warn data-[status=A]:text-gi data-[status=D]:text-gd">${esc(f.status || 'M')}</span>`;
       chip.onclick = () => {
         scrollToDiffFile(f.path);
         highlightActiveFileCard(f.path);
@@ -236,7 +236,7 @@ function renderUnderstandingCards(files) {
     const badge = document.createElement('span');
     badge.className = 'badge';
     badge.dataset.variant = 'outline';
-    badge.innerHTML = `<span class="diff-stat-add">+${file.additions}</span> <span class="diff-stat-del">-${file.deletions}</span>`;
+    badge.innerHTML = `<span class="font-semibold text-gi">+${file.additions}</span> <span class="font-semibold text-gd">-${file.deletions}</span>`;
 
     titleGroup.append(pathEl, badge);
 
@@ -297,7 +297,7 @@ function renderUnderstandingCards(files) {
 
 function createInsightSection(filePath, headingText, filterCategory, items, badgeClass) {
   const sec = document.createElement('div');
-  sec.setAttribute('data-ui', 'review-insight-sec'); sec.className = `p-3 sec-${filterCategory}`;
+  sec.setAttribute('data-ui', 'review-insight-sec'); sec.className = 'p-3';
   sec.dataset.category = filterCategory;
 
   const h = document.createElement('h4');
@@ -385,7 +385,7 @@ function renderDiffBlocks(files) {
 
     const statsSpan = document.createElement('span');
     statsSpan.setAttribute('data-ui', 'review-sticky-head-stats'); statsSpan.className = 'font-mono';
-    statsSpan.innerHTML = `<span class="diff-stat-add">+${file.additions}</span> <span class="diff-stat-del">-${file.deletions}</span>`;
+    statsSpan.innerHTML = `<span class="font-semibold text-gi">+${file.additions}</span> <span class="font-semibold text-gd">-${file.deletions}</span>`;
 
     left.append(fileIcon, pathSpan, statsSpan);
 
@@ -437,7 +437,8 @@ function renderDiffBlocks(files) {
 
         (hunk.rows || []).forEach(row => {
           const rowEl = document.createElement('div');
-          rowEl.className = `review-diff-row diff-type-${row.type || 'ctx'}`;
+          rowEl.className = 'review-diff-row';
+          rowEl.classList.add(row.type === 'add' ? 'diff-type-add' : row.type === 'del' ? 'diff-type-del' : 'diff-type-ctx');
           const lineNum = row.newLine || row.oldLine || 0;
           rowEl.id = `diff-line-${sanitizeId(file.path)}-${lineNum}`;
           rowEl.dataset.filePath = file.path;
