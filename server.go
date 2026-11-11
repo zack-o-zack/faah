@@ -525,6 +525,7 @@ func (s *Server) SetAgent(a *agentManager) {
 	if a != nil {
 		s.threads = newThreadManager(a, s.ix.Root())
 		s.threads.prContext = s.prThreadContext
+		s.threads.symbolHash = s.symbolHash
 		a.onEdit = func() {
 			if s.gitWatcher != nil {
 				s.gitWatcher.Trigger()

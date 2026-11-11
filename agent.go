@@ -1135,6 +1135,9 @@ type threadManager struct {
 	lastSave  time.Time
 	standby   explainStandby // a harness started ahead of the next explanation
 	tools     *explainTools  // annotate and walkthrough, for explain turns
+	// symbolHash is the callers and references hash of a symbol, set by the
+	// server; nil in tests that build a manager alone.
+	symbolHash func(rel string, line int, name string) string
 }
 
 // threadStorePath keeps every workspace's threads beside settings.json, never

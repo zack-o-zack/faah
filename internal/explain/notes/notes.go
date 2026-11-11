@@ -54,6 +54,7 @@ func DiskReader(root string) Reader {
 type View struct {
 	Thread string `json:"thread"`
 	Turn   int    `json:"turn"`
+	Index  int    `json:"index"` // in the turn's notes
 	Note
 	Stale string `json:"stale,omitempty"` // "text" when its code changed, "refs" when a symbol's uses did
 }

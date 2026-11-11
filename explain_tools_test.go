@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"faah/internal/explain/notes"
 )
@@ -117,4 +118,39 @@ func TestExplainNotesFollowTheCode(t *testing.T) {
 	if code, _ := agentGet(t, s, "/api/explain/notes?path=../x"); code != http.StatusBadRequest {
 		t.Fatalf("outside path = %d", code)
 	}
+}
+
+func waitFor(t *testing.T, ok func() bool) {
+	t.Helper()
+	deadline := time.Now().Add(10 * time.Second)
+	for !ok() {
+		if time.Now().After(deadline) {
+			t.Fatal("timed out")
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+}
+
+func TestExplainSymbolNoteNoticesNewUses(t *testing.T) {
+	root := t.TempDir()
+	writeExplainSource(t, root, explainGoSource)
+	s := explainServer(t, root, `printf 'ok\n'`)
+	_, m := agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "text": "helper"})
+	id := m["thread"].(map[string]any)["id"].(string)
+	waitThreadIdle(t, s, id)
+	s.threads.AddNotes(toolScope{tid: id, turn: 1}, []notes.Note{{Kind: "symbol", Path: "main.go", L1: 7, L2: 7, Symbol: "helper", Summary: "Empty.", Text: "func helper() {}"}})
+	waitFor(t, func() bool { return s.threads.Get(id).Turns[0].Notes[0].Refs != "" })
+	fresh := refsFresh
+	refsFresh = 0
+	t.Cleanup(func() { refsFresh = fresh })
+	if v := fileNotes(t, s, "main.go"); len(v) != 1 || v[0].Stale != "" {
+		t.Fatalf("before = %+v", v)
+	}
+	// A new caller in another file: the note stays put but is outdated.
+	os.WriteFile(filepath.Join(root, "other.go"), []byte("package main\n\nfunc other() { helper() }\n"), 0o644)
+	s.ix.Build()
+	waitFor(t, func() bool {
+		v := fileNotes(t, s, "main.go")
+		return len(v) == 1 && v[0].Stale == "refs" && v[0].L1 == 7
+	})
 }
