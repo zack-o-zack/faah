@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"faah/internal/agents"
+	"faah/internal/explain"
 	"faah/internal/explain/notes"
 )
 
@@ -101,7 +103,7 @@ func TestExplainNotesFollowTheCode(t *testing.T) {
 	_, m := agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "text": "helper"})
 	id := m["thread"].(map[string]any)["id"].(string)
 	waitThreadIdle(t, s, id)
-	s.threads.AddNotes(toolScope{tid: id, turn: 1}, []notes.Note{
+	saveNotes(s, toolScope{tid: id, turn: 1}, []notes.Note{
 		{Kind: "line", Path: "main.go", L1: 4, L2: 4, Summary: "Calls helper.", Text: "\thelper()"},
 		{Kind: "block", Path: "main.go", L1: 7, L2: 7, Summary: "Empty.", Text: "func helper() {}"},
 		{Kind: "line", Path: "main.go", L1: 4, L2: 4, Summary: "Calls helper, newer.", Text: "\thelper()"},
@@ -138,7 +140,7 @@ func TestExplainSymbolNoteNoticesNewUses(t *testing.T) {
 	_, m := agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "text": "helper"})
 	id := m["thread"].(map[string]any)["id"].(string)
 	waitThreadIdle(t, s, id)
-	s.threads.AddNotes(toolScope{tid: id, turn: 1}, []notes.Note{{Kind: "symbol", Path: "main.go", L1: 7, L2: 7, Symbol: "helper", Summary: "Empty.", Text: "func helper() {}"}})
+	saveNotes(s, toolScope{tid: id, turn: 1}, []notes.Note{{Kind: "symbol", Path: "main.go", L1: 7, L2: 7, Symbol: "helper", Summary: "Empty.", Text: "func helper() {}"}})
 	waitFor(t, func() bool { return s.threads.Get(id).Turns[0].Notes[0].Refs != "" })
 	fresh := refsFresh
 	refsFresh = 0
@@ -153,4 +155,41 @@ func TestExplainSymbolNoteNoticesNewUses(t *testing.T) {
 		v := fileNotes(t, s, "main.go")
 		return len(v) == 1 && v[0].Stale == "refs" && v[0].L1 == 7
 	})
+}
+
+// saveNotes adds notes to a turn that has ended, as the tools did while it ran.
+func saveNotes(s *Server, sc toolScope, ns []notes.Note) {
+	tm := s.threads
+	tm.mu.Lock()
+	defer tm.mu.Unlock()
+	tm.saveNotesLocked(sc, tm.turnLocked(sc), ns)
+}
+
+func TestExplainToolsRefuseAnEndedTurn(t *testing.T) {
+	root := t.TempDir()
+	writeExplainSource(t, root, explainGoSource)
+	s := explainServer(t, root, `printf 'ok\n'`)
+	_, m := agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "text": "helper"})
+	id := m["thread"].(map[string]any)["id"].(string)
+	waitThreadIdle(t, s, id)
+	sc := toolScope{tid: id, turn: 1}
+	s.threads.AddNotes(sc, []notes.Note{{Kind: "line", Path: "main.go", L1: 4, L2: 4, Summary: "late", Text: "\thelper()"}})
+	s.threads.AddWalkthrough(sc, notes.Walkthrough{Title: "late"})
+	if tr := s.threads.Get(id).Turns[0]; len(tr.Notes) != 0 || len(tr.Walkthroughs) != 0 {
+		t.Fatalf("an ended turn took %+v %+v", tr.Notes, tr.Walkthroughs)
+	}
+}
+
+func TestExplainReplayCarriesWhatWasShown(t *testing.T) {
+	th := &thread{Kind: "explain", ExplainKind: explain.KindBlock}
+	prior := []*threadTurn{{Prompt: "Explain", Reply: "See the notes.",
+		Notes:        []notes.Note{{Kind: "line", Path: "main.go", L1: 4, L2: 4, Summary: "Calls helper."}},
+		Walkthroughs: []notes.Walkthrough{{Title: "Flow", Steps: []notes.Step{{Path: "main.go", L1: 3, L2: 5, Title: "Main", Body: "Starts."}, {Path: "main.go", L1: 7, L2: 7, Title: "Helper", Body: "Ends."}}}},
+	}}
+	p := threadPrompt(th, prior, "expand step 2", true, "", false, agents.ToolsNone)
+	for _, want := range []string{"- line main.go:4: Calls helper.", `(walkthrough shown, "Flow":`, "2. main.go:7 Helper: Ends."} {
+		if !strings.Contains(p, want) {
+			t.Fatalf("replay lacks %q:\n%s", want, p)
+		}
+	}
 }

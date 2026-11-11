@@ -112,3 +112,31 @@ func Prompt(ch agents.ToolChannel) string {
 	}
 	return ""
 }
+
+// History writes what a turn showed on the code as text, for a conversation
+// replayed to a harness that does not remember it.
+func History(ns []Note, ws []Walkthrough) string {
+	var b strings.Builder
+	if len(ns) > 0 {
+		b.WriteString("(notes shown on the code:\n")
+		for _, n := range ns {
+			fmt.Fprintf(&b, "- %s %s: %s\n", n.Kind, lineRef(n.Path, n.L1, n.L2), n.Summary)
+		}
+		b.WriteString(")\n")
+	}
+	for _, w := range ws {
+		fmt.Fprintf(&b, "(walkthrough shown, %q:\n", w.Title)
+		for i, s := range w.Steps {
+			fmt.Fprintf(&b, "%d. %s %s: %s\n", i+1, lineRef(s.Path, s.L1, s.L2), s.Title, s.Body)
+		}
+		b.WriteString(")\n")
+	}
+	return b.String()
+}
+
+func lineRef(path string, l1, l2 int) string {
+	if l2 > l1 {
+		return fmt.Sprintf("%s:%d-%d", path, l1, l2)
+	}
+	return fmt.Sprintf("%s:%d", path, l1)
+}

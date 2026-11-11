@@ -6,14 +6,13 @@ import (
 	"path"
 	"regexp"
 	"strings"
-	"unicode/utf8"
 )
 
 const (
 	maxNotes   = 100
 	maxSteps   = 20
-	maxSummary = 120 // runes
-	maxBody    = 4000
+	maxSummary = 120  // runes
+	maxBody    = 4000 // runes
 	snapLines  = 3
 )
 
@@ -45,7 +44,7 @@ func checkNote(read Reader, n *Note) error {
 	if n.Summary == "" {
 		return errors.New("summary is empty")
 	}
-	n.Detail = cutBytes(strings.TrimSpace(n.Detail), maxBody)
+	n.Detail = cut(strings.TrimSpace(n.Detail), maxBody)
 	n.Path = cleanPath(n.Path)
 	lines, ok := read(n.Path)
 	if !ok {
@@ -84,7 +83,7 @@ func CheckWalkthrough(read Reader, w Walkthrough) (Walkthrough, error) {
 	for i := range w.Steps {
 		s := &w.Steps[i]
 		s.Title = cut(strings.TrimSpace(s.Title), maxSummary)
-		s.Body = cutBytes(strings.TrimSpace(s.Body), maxBody)
+		s.Body = cut(strings.TrimSpace(s.Body), maxBody)
 		s.Path = cleanPath(s.Path)
 		lines, ok := read(s.Path)
 		var err error
@@ -156,17 +155,6 @@ func cleanPath(p string) string {
 func cut(s string, n int) string {
 	if r := []rune(s); len(r) > n {
 		return string(r[:n])
-	}
-	return s
-}
-
-func cutBytes(s string, n int) string {
-	if len(s) <= n {
-		return s
-	}
-	s = s[:n]
-	for len(s) > 0 && !utf8.ValidString(s) {
-		s = s[:len(s)-1]
 	}
 	return s
 }

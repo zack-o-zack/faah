@@ -1394,6 +1394,9 @@ func threadPrompt(t *thread, prior []*threadTurn, message string, replay bool, p
 		var h strings.Builder
 		for _, tr := range prior {
 			fmt.Fprintf(&h, "User: %s\n\nAssistant: %s\n\n", tr.Prompt, strings.TrimSpace(tr.Reply))
+			if shown := notes.History(tr.Notes, tr.Walkthroughs); shown != "" {
+				h.WriteString(shown + "\n")
+			}
 			if len(tr.Changed) > 0 {
 				fmt.Fprintf(&h, "(files changed in that turn: %s)\n\n", strings.Join(tr.Changed, ", "))
 			}

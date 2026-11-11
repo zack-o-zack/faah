@@ -47,25 +47,30 @@ func (et *explainTools) endpoint(tok string) *agents.ToolEndpoint {
 	return &agents.ToolEndpoint{URL: *u, Token: tok}
 }
 
-// AddNotes records notes on the turn the scope names.
+// AddNotes records notes on the turn the scope names, while it runs.
 func (tm *threadManager) AddNotes(scope any, ns []notes.Note) {
 	sc, _ := scope.(toolScope)
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
-	if tr := tm.turnLocked(sc); tr != nil {
-		tm.hashNotes(sc, len(tr.Notes), ns)
-		tr.Notes = append(tr.Notes, ns...)
-		tm.saveLocked()
-		tm.publishThreadLocked(tm.threads[sc.tid])
+	if tr := tm.turnLocked(sc); tr != nil && tr.Running {
+		tm.saveNotesLocked(sc, tr, ns)
 	}
 }
 
-// AddWalkthrough records a walkthrough on the turn the scope names.
+func (tm *threadManager) saveNotesLocked(sc toolScope, tr *threadTurn, ns []notes.Note) {
+	tm.hashNotes(sc, len(tr.Notes), ns)
+	tr.Notes = append(tr.Notes, ns...)
+	tm.saveLocked()
+	tm.publishThreadLocked(tm.threads[sc.tid])
+}
+
+// AddWalkthrough records a walkthrough on the turn the scope names, while it
+// runs.
 func (tm *threadManager) AddWalkthrough(scope any, w notes.Walkthrough) {
 	sc, _ := scope.(toolScope)
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
-	if tr := tm.turnLocked(sc); tr != nil {
+	if tr := tm.turnLocked(sc); tr != nil && tr.Running {
 		tr.Walkthroughs = append(tr.Walkthroughs, w)
 		tm.saveLocked()
 		tm.publishThreadLocked(tm.threads[sc.tid])

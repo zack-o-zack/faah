@@ -104,3 +104,22 @@ func TestServerRefuses(t *testing.T) {
 		t.Fatalf("parse error = %d %v", code, m)
 	}
 }
+
+// A token revoked while its request body is still arriving does not act.
+func TestServerRevokedDuringBody(t *testing.T) {
+	s, tok := testServer()
+	pr, pw := io.Pipe()
+	r := httptest.NewRequest(http.MethodPost, "/api/mcp", pr)
+	r.Header.Set("Authorization", "Bearer "+tok)
+	w := httptest.NewRecorder()
+	done := make(chan struct{})
+	go func() { s.ServeHTTP(w, r); close(done) }()
+	pw.Write([]byte(`{"jsonrpc":"2.0","id":1,"method":"tools/call",`))
+	s.Tokens.Revoke(tok)
+	pw.Write([]byte(`"params":{"name":"echo","arguments":{}}}`))
+	pw.Close()
+	<-done
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("code = %d, body %s", w.Code, w.Body)
+	}
+}

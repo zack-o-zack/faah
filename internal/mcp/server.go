@@ -59,14 +59,20 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "POST only", http.StatusMethodNotAllowed)
 		return
 	}
-	scope, ok := s.Tokens.Lookup(strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "))
-	if !ok {
+	tok := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+	if _, ok := s.Tokens.Lookup(tok); !ok {
 		http.Error(w, "unknown token", http.StatusUnauthorized)
 		return
 	}
 	body, err := io.ReadAll(io.LimitReader(r.Body, maxBody))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	// Look again: the token may have been revoked while the body arrived.
+	scope, ok := s.Tokens.Lookup(tok)
+	if !ok {
+		http.Error(w, "unknown token", http.StatusUnauthorized)
 		return
 	}
 	body = []byte(strings.TrimSpace(string(body)))

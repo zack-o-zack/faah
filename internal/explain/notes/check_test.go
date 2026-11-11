@@ -37,7 +37,7 @@ func TestCheckNotes(t *testing.T) {
 	if n := ok[1]; n.L1 != 4 || n.L2 != 4 {
 		t.Fatalf("snapped note = %+v", n)
 	}
-	if n := ok[2]; len([]rune(n.Summary)) != 120 || len(n.Detail) != 4000 || n.Text != "func handle() {\n\tcheckToken(\"x\")\n}" {
+	if n := ok[2]; len([]rune(n.Summary)) != 120 || len(n.Detail) != 4000 || cut(strings.Repeat("詳", 5000), maxBody) != strings.Repeat("詳", 4000) || n.Text != "func handle() {\n\tcheckToken(\"x\")\n}" {
 		t.Fatalf("block note = %+v", n)
 	}
 	want := []string{

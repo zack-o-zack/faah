@@ -12,17 +12,19 @@ const openTag = "<faah:"
 var tagNames = []string{"annotate", "walkthrough"}
 
 // Tagged is a sink for a harness that writes its tool calls as tagged blocks
-// in its reply. Text outside the blocks passes on as it arrives; text that may
-// start a block is held until the block closes or turns out not to be one.
+// in its reply, each starting a line. Text outside the blocks passes on as it
+// arrives; text that may start a block is held until the block closes or turns
+// out not to be one. A tag inside a line, such as one quoted in prose, is text.
 type Tagged struct {
 	sink     agents.Sink
 	call     func(name string, args json.RawMessage)
 	held     string
+	bol      bool // the text passed on so far ends at the start of a line
 	streamed bool // text arrived, so the final answer repeats it
 }
 
 func NewTagged(sink agents.Sink, call func(name string, args json.RawMessage)) *Tagged {
-	return &Tagged{sink: sink, call: call}
+	return &Tagged{sink: sink, call: call, bol: true}
 }
 
 func (t *Tagged) Text(s string, block bool) {
@@ -58,24 +60,36 @@ func (t *Tagged) Flush() {
 // complete blocks, and keeps the rest in t.held.
 func (t *Tagged) take(s string) string {
 	var out strings.Builder
+	emit := func(text string) {
+		out.WriteString(text)
+		if text == "" {
+			return
+		}
+		rest := text
+		nl := strings.LastIndexByte(text, '\n')
+		if nl >= 0 {
+			rest = text[nl+1:]
+		}
+		t.bol = (nl >= 0 || t.bol) && strings.TrimLeft(rest, " \t") == ""
+	}
 	t.held = ""
 	for s != "" {
 		i := strings.Index(s, openTag)
 		if i < 0 {
 			keep := partialOpen(s)
-			out.WriteString(s[:len(s)-keep])
+			emit(s[:len(s)-keep])
 			t.held = s[len(s)-keep:]
 			break
 		}
-		out.WriteString(s[:i])
+		emit(s[:i])
 		s = s[i:]
 		name, ok := blockName(s)
-		if !ok {
-			if len(s) < len(openTag)+len("walkthrough>") && couldBeBlock(s) {
-				t.held = s // too short to tell yet
-				break
-			}
-			out.WriteString(openTag)
+		if !ok && t.bol && len(s) < len(openTag)+len("walkthrough>") && couldBeBlock(s) {
+			t.held = s // too short to tell yet
+			break
+		}
+		if !ok || !t.bol {
+			emit(openTag)
 			s = s[len(openTag):]
 			continue
 		}
@@ -87,10 +101,10 @@ func (t *Tagged) take(s string) string {
 		}
 		t.call(name, json.RawMessage(strings.TrimSpace(s[start:start+end])))
 		s = s[start+end+len("</faah:"+name+">"):]
+		t.bol = true // the block was a line of its own
 	}
 	return out.String()
 }
-
 func blockName(s string) (string, bool) {
 	for _, n := range tagNames {
 		if strings.HasPrefix(s, openTag+n+">") {
