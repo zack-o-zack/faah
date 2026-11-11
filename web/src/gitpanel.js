@@ -880,7 +880,7 @@ function renderRecentCommits(commits, max = 5) {
   if (!list) return;
   if (!commits || commits.length === 0) {
     renderedCommitsKey = '';
-    list.innerHTML = '<div class="git-commits-empty">No commits yet</div>';
+    list.innerHTML = '<div class="git-commits-empty py-2 text-center text-xs text-muted-foreground">No commits yet</div>';
     return;
   }
   const slice = max ? commits.slice(0, max) : commits;
@@ -892,13 +892,13 @@ function renderRecentCommits(commits, max = 5) {
   const focused = list.contains(document.activeElement) ? document.activeElement.closest('.git-commit')?.dataset.sha : null;
   list.innerHTML = slice.map(c => `
     <div class="git-commit" data-sha="${esc(c.full)}">
-      <div tabindex="0" role="button" aria-expanded="false" title="${esc(c.subject || '')} (${esc(c.author || '')}, ${esc(c.date || '')})&#10;Click to show changed files" class="git-commit-row">
-        <svg class="git-commit-caret" viewBox="0 0 10 10" width="8" height="8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 2L6.5 5L3.5 8"/></svg>
-        <svg class="git-commit-icon" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="2.8"/><line x1="8" y1="1" x2="8" y2="5.2"/><line x1="8" y1="10.8" x2="8" y2="15"/></svg>
-        <span class="git-commit-msg-text">${esc(c.subject || '(no message)')}</span>
+      <div tabindex="0" role="button" aria-expanded="false" title="${esc(c.subject || '')} (${esc(c.author || '')}, ${esc(c.date || '')})&#10;Click to show changed files" class="git-commit-row flex cursor-pointer select-none items-center gap-2 rounded px-2 py-1 text-xs hover:bg-accent focus-visible:outline-ring focus-visible:outline">
+        <svg class="git-commit-caret shrink-0 text-muted-foreground [.git-commit.expanded_&]:rotate-90" viewBox="0 0 10 10" width="8" height="8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 2L6.5 5L3.5 8"/></svg>
+        <svg class="git-commit-icon shrink-0 text-primary" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="2.8"/><line x1="8" y1="1" x2="8" y2="5.2"/><line x1="8" y1="10.8" x2="8" y2="15"/></svg>
+        <span class="git-commit-msg-text min-w-0 flex-1 truncate">${esc(c.subject || '(no message)')}</span>
         <button type="button" tabindex="-1" title="Copy SHA" class="btn" data-control="git-commit-sha" data-variant="outline" data-size="xs">${esc(c.hash)}</button>
       </div>
-      <div class="git-commit-files" hidden></div>
+      <div class="git-commit-files ml-3 flex flex-col gap-1 border-l pl-2" hidden></div>
     </div>
   `).join('');
   for (const sha of [...expandedCommits]) {
@@ -928,20 +928,20 @@ async function setCommitExpanded(el, open) {
   expandedCommits.add(sha);
   const cached = cachedCommitFiles(sha);
   if (cached) { drawCommitFiles(body, sha, cached); return; }
-  body.innerHTML = '<div class="git-commit-note">Loading…</div>';
+  body.innerHTML = '<div class="git-commit-note truncate px-3 py-1 text-xs text-muted-foreground">Loading…</div>';
   try {
     const files = await loadCommitFiles(sha);
     if (el.isConnected && expandedCommits.has(sha)) drawCommitFiles(body, sha, files);
   } catch (e) {
-    if (el.isConnected) body.innerHTML = `<div class="git-commit-note">${esc(e.message || 'Could not load commit')}</div>`;
+    if (el.isConnected) body.innerHTML = `<div class="git-commit-note truncate px-3 py-1 text-xs text-muted-foreground">${esc(e.message || 'Could not load commit')}</div>`;
   }
 }
 
 function drawCommitFiles(body, sha, files) {
   const c = listedCommits.get(sha);
-  const meta = c ? `<div class="git-commit-meta">${esc(c.author)} · ${esc(c.date)}</div>` : '';
+  const meta = c ? `<div class="git-commit-meta truncate px-3 py-1 text-xs text-muted-foreground">${esc(c.author)} · ${esc(c.date)}</div>` : '';
   if (!files.length) {
-    body.innerHTML = meta + '<div class="git-commit-note">No file changes</div>';
+    body.innerHTML = meta + '<div class="git-commit-note truncate px-3 py-1 text-xs text-muted-foreground">No file changes</div>';
     return;
   }
   body.innerHTML = meta;

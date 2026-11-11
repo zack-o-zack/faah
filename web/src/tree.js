@@ -52,10 +52,10 @@ export async function drawTree(dir, container, depth, isCurrent) {
     if (c.dir) {
       const dc = c.dirty ? ' dirty' : ''; // backend marks any ancestor of a change
       const ydc = c.yourDirty ? ' your-dirty' : '';
-      return '<div class="tw"><div class="tr group dir' + ig + dc + ydc + '" data-dir="' + esc(c.path) + '" style="padding-left:' + pad + 'px" title="Folder: ' + esc(c.path) + note + '">' +
-        '<span class="ar"></span><span class="nm">' + esc(c.name) + '</span>' + menuBtn + '</div>' +
+      return '<div class="tw block"><div class="tr flex min-h-6 cursor-pointer select-none items-center gap-1.5 pr-2 text-xs whitespace-nowrap hover:bg-sidebar-accent focus-visible:outline focus-visible:outline-ring [&.sel]:bg-sidebar-accent [&.ignored]:opacity-50 [&.git-M]:text-primary-text [&.git-R]:text-primary-text [&.git-A]:text-gi [&.git-untracked]:text-gi [&.git-D]:text-gd [&.git-D_.nm]:line-through [&.your-change]:font-semibold [&.file-viewed_.nm]:opacity-50 group dir' + ig + dc + ydc + '" data-dir="' + esc(c.path) + '" style="padding-left:' + pad + 'px" title="Folder: ' + esc(c.path) + note + '">' +
+        '<span class="ar size-2 shrink-0 border-r border-t border-muted-foreground rotate-45 group-[.open]:rotate-[135deg]"></span><span class="nm truncate group-[.dir.dirty]:after:ml-1 group-[.dir.dirty]:after:inline-block group-[.dir.dirty]:after:size-1 group-[.dir.dirty]:after:rounded-full group-[.dir.dirty]:after:bg-primary">' + esc(c.name) + '</span>' + menuBtn + '</div>' +
         // --guide is where the folder's chevron sits, for the desktop app's indent guide.
-        '<div class="kids" data-kids="' + esc(c.path) + '" style="--guide:' + (pad + 6) + 'px"></div></div>';
+        '<div class="kids hidden [&.open]:block" data-kids="' + esc(c.path) + '" style="--guide:' + (pad + 6) + 'px"></div></div>';
     }
     const g = GIT_STATUS[c.status];
     const gc = g ? ' dirty ' + g[0] : '';
@@ -68,8 +68,8 @@ export async function drawTree(dir, container, depth, isCurrent) {
     const isPartial = isStaged && !!c.partial;
     const sc = (isStaged ? ' is-staged' : '') + (isFileViewed(c.path) ? ' file-viewed' : '');
     const tick = showTick ? '<input type="checkbox" class="input size-[13px] shrink-0 ml-1" data-partial="' + isPartial + '" aria-label="Stage file" data-stage="' + esc(c.path) + '" title="' + stageTickTitle(isStaged, isPartial) + '"' + (isStaged ? ' checked' : '') + '>' : '';
-    return '<div class="tr group file' + ig + gc + yc + sc + '" data-file="' + esc(c.path) + '"' + (c.status ? ' data-st="' + esc(c.status) + '"' : '') + (c.yourStatus ? ' data-yst="' + esc(c.yourStatus) + '"' : '') + ' style="padding-left:' + (pad + 12) + 'px" title="Open ' + esc(c.path) + note + '">' +
-      '<span class="ic" data-t="' + fileKind(c.name) + '"></span><span class="nm">' + esc(c.name) + '</span>' + badge + tick + menuBtn + '</div>';
+    return '<div class="tr flex min-h-6 cursor-pointer select-none items-center gap-1.5 pr-2 text-xs whitespace-nowrap hover:bg-sidebar-accent focus-visible:outline focus-visible:outline-ring [&.sel]:bg-sidebar-accent [&.ignored]:opacity-50 [&.git-M]:text-primary-text [&.git-R]:text-primary-text [&.git-A]:text-gi [&.git-untracked]:text-gi [&.git-D]:text-gd [&.git-D_.nm]:line-through [&.your-change]:font-semibold [&.file-viewed_.nm]:opacity-50 group file' + ig + gc + yc + sc + '" data-file="' + esc(c.path) + '"' + (c.status ? ' data-st="' + esc(c.status) + '"' : '') + (c.yourStatus ? ' data-yst="' + esc(c.yourStatus) + '"' : '') + ' style="padding-left:' + (pad + 12) + 'px" title="Open ' + esc(c.path) + note + '">' +
+      '<span class="ic size-2 shrink-0 rounded-sm bg-faint [--dot:var(--faint)] data-[t=code]:bg-[var(--nf)] data-[t=data]:bg-[var(--kt)] data-[t=web]:bg-[var(--nt)] data-[t=img]:bg-[var(--nc)]" data-t="' + fileKind(c.name) + '"></span><span class="nm truncate group-[.dir.dirty]:after:ml-1 group-[.dir.dirty]:after:inline-block group-[.dir.dirty]:after:size-1 group-[.dir.dirty]:after:rounded-full group-[.dir.dirty]:after:bg-primary">' + esc(c.name) + '</span>' + badge + tick + menuBtn + '</div>';
   }).join('');
   for (const tick of container.querySelectorAll('[data-stage]')) tick.indeterminate = tick.dataset.partial === 'true';
   relabelTreeBadges();
@@ -391,7 +391,7 @@ export async function patchTreeGitStatus(statuses = {}, dirtyDirs = {}, staged =
       let badge = fileRow.querySelector('.gs');
       if (!badge) {
         badge = document.createElement('span');
-        badge.className = 'gs';
+        badge.className = 'gs ml-auto shrink-0 px-1 font-mono text-xs [&.git-M]:text-primary-text [&.git-R]:text-primary-text [&.git-A]:text-gi [&.git-untracked]:text-gi [&.git-D]:text-gd';
         fileRow.appendChild(badge);
       }
       badge.classList.toggle('gs-you', isYou);

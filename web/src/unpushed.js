@@ -100,20 +100,20 @@ function drawUnpushed() {
   el.innerHTML = upList.map(c => {
     const open = c.hash === upOpenSha;
     return '<div class="up-commit' + (open ? ' open' : '') + '" data-sha="' + esc(c.hash) + '">' +
-      '<div role="button" tabindex="0" title="' + esc(c.subject || '') + '" class="up-row">' +
-        '<span class="up-ar"></span>' +
-        '<span class="up-subject">' + esc(c.subject || '(no message)') + '</span>' +
-        '<span class="up-sha">' + esc(c.short || '') + '</span>' +
+      '<div role="button" tabindex="0" title="' + esc(c.subject || '') + '" class="up-row flex cursor-pointer select-none items-center gap-2 rounded px-2 py-1 text-xs hover:bg-accent focus-visible:outline-ring focus-visible:outline">' +
+        '<span class="up-ar size-2 shrink-0 border-r border-t border-muted-foreground rotate-45 [.up-commit.open_&]:rotate-[135deg]"></span>' +
+        '<span class="up-subject min-w-0 flex-1 truncate">' + esc(c.subject || '(no message)') + '</span>' +
+        '<span class="up-sha shrink-0 font-mono text-xs text-muted-foreground">' + esc(c.short || '') + '</span>' +
       '</div>' +
-      '<div class="up-files">' + (open ? openCommitRows(c.hash) : '') + '</div>' +
+      '<div class="up-files hidden [.up-commit.open_&]:block">' + (open ? openCommitRows(c.hash) : '') + '</div>' +
     '</div>';
   }).join('');
 }
 
 function openCommitRows(sha) {
   const all = upFiles.get(sha);
-  if (!all) return '<div class="up-note">Loading files…</div>';
-  if (!all.length) return '<div class="up-note">No files in this commit.</div>';
+  if (!all) return '<div class="up-note truncate px-3 py-1 text-xs text-muted-foreground">Loading files…</div>';
+  if (!all.length) return '<div class="up-note truncate px-3 py-1 text-xs text-muted-foreground">No files in this commit.</div>';
   const active = upActiveFile.startsWith(sha + '\0') ? upActiveFile.slice(sha.length + 1) : '';
   return commitFileRows(all, 0, upShown, active);
 }
@@ -195,7 +195,7 @@ function commitCardMarkup(d) {
 
   return '<div class="cc-head">' +
       '<span class="cc-sha" title="' + esc(d.hash) + '">' + esc(d.short) + '</span>' +
-      '<span class="grow"></span>' +
+      '<span class="flex-1 min-w-0"></span>' +
       '<button type="button" title="Copy the full SHA" class="btn" data-control="cc-copy" data-variant="outline" data-size="xs">Copy SHA</button>' +
     '</div>' +
     '<div class="cc-meta">' + who +
