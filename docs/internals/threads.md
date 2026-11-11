@@ -5,11 +5,11 @@ This document describes the design and implementation of threads, the long-runni
 - the store, turn runner, and event feed: [`agent.go`](../../agent.go)
 - the HTTP routing and handlers: [`server.go`](../../server.go)
 - the selected harness and change settling it reuses: [`agent.go`](../../agent.go)
-- each harness's flags, sessions, output parser and read-only mode: [`internal/agents`](../../internal/agents), one package per harness, listed in [`internal/agents/all/all.go`](../../internal/agents/all/all.go)
+- native agent sessions, protocol handling and Plan mode: [`internal/agents`](../../internal/agents), one package per harness, listed in [`internal/agents/all/all.go`](../../internal/agents/all/all.go)
 - Explain's selection checks, evidence, prompt and citation checks: [`internal/explain`](../../internal/explain)
 - the sidebar views, streams and composer: [`web/src/thread.js`](../../web/src/thread.js)
 
-Threads are the conversational sibling of [inline edits](agent-editing.md). They share the harness selection, the headless invocation contract, `changedSince` and `settle`. They differ in three ways: a thread persists, it continues one harness session across turns, and it has no overlap guard.
+Threads share agent selection, native sessions, `changedSince` and `settle`. [Inline and batch edits](agent-editing.md) are specialized threads with an overlap guard; ordinary conversations can work on any file. All thread kinds persist and support follow-ups.
 
 ## 1. Model
 
@@ -25,10 +25,10 @@ sequenceDiagram
     S-->>UI: event: thread:thread (snapshot)
     UI->>S: POST /api/threads/send {id, message}
     S->>G: gitSnapshotWorktree (beforeSHA)
-    S->>H: spawn with session flags and prompt
-    H-->>S: stdout (stream-json or plain lines)
+    S->>H: open or reuse native session; send prompt
+    H-->>S: native text, reasoning and tool events
     S-->>UI: event: delta / tool
-    H-->>S: exit
+    H-->>S: turn completion signal
     S->>G: gitSnapshotWorktree (afterSHA)
     S->>G: changedSince, settle (evict caches, close LSP docs)
     S-->>UI: event: thread (turn finished, changed files, SHAs)
@@ -41,34 +41,15 @@ The anchor's snippet is read by `readLineRange` on the server, so the client nev
 
 ## 2. Session Continuity
 
-A turn is a fresh process, so continuity is carried one of two ways:
+All five agents use native sessions. A thread retains a live `agents.Session` and persists `Session.ID()`. Follow-ups send only the new message. `agent_session.go` closes a session after ten idle minutes; subsequent messages reopen its saved native id. Deleting a thread, shutting down, changing agent/model/mode, or a turn error closes its live session and revokes its tool credential.
 
-| Mode | Harnesses | How |
-| --- | --- | --- |
-| Native session | `claude`, `cursor-agent`, `agy`, `gemini` | faah owns or tracks the session id. `claude`: `--session-id <uuid>` on the first turn, `--resume <uuid>` after. `agy`: captures `conversation_id` on first turn, then `--conversation <id>` every turn. `gemini`: `--session-id <uuid>` on first turn, `--resume <uuid>` after. `cursor-agent`: `create-chat` returns an id, then `--resume <id>` every turn. The harness keeps its own context, so a later turn sends only the new message. |
-| Replay | every other harness | Each turn's prompt carries the earlier turns as `User:` / `Assistant:` text, plus the files each turn changed, capped at `threadReplayMax` bytes (most recent kept). |
+If native resume fails, faah opens a new session and replays bounded history, including the annotations and walkthroughs the reader saw. Changing agent or model also starts a new session with that context. The last turn identifies which agent and model own the saved id. The anchor, evidence and ground rules are sent on the first turn and during recovery.
 
-Each agent in `internal/agents` adds its own session flags right after the binary (flag order does not matter to these CLIs), so the preset argv, including the model flag and permission mode, is unchanged. `Caps.Sessions` marks a native harness, and `Caps.NamesSession` one that names its own session (agy). `runTurn` asks the agent for a first session id with `NewSession`, and reads back the id it reported and whether the session is live from the `Outcome` of `Run`.
-
-### Adding a harness
-
-Create `internal/agents/<name>/` with a type that implements `agents.Agent`: its name, its `Caps`, a `ReadOnly` rewrite (or `agents.ErrNotReadOnly`), `NewSession`, and `Run`, which usually calls `agents.Exec` with the agent's argv and output parser. Add it to `List` in `internal/agents/all/all.go`, and give it a row in the `contract` table in `contract_test.go`: its `Caps`, the args its first and resumed turns run with, and whether its session is live after a turn. If its output is not plain text, add sample output to the `fixture` map. A harness that can be started before its prompt also implements `agents.Warmable`. Any harness that is not listed runs through `internal/agents/generic`: plain text, no sessions, no read-only mode.
-
-Two rules keep this honest:
-
-- **A session belongs to the harness that made it.** `SessionHarness` records the owner. Switching harness mid-thread clears the session, and the new harness is primed by replay.
-- **Only a live session is trusted.** `SessionLive` is set once the harness has really started the session (claude/agy/gemini reported a session id, or cursor-agent finished a turn). If a first turn failed before that, the next turn replays instead of resuming a session that may not exist.
-
-The anchor and ground rules ("you may read and edit any file, reply with a concise summary") go into the prompt only when the harness has no memory of them: the first turn, or a replay.
+See [Native agent sessions](agents.md) for the `Agent`/`Open`/`Session` interface, each process and protocol, Plan enforcement, MCP attachment.
 
 ## 3. Output and Streaming
 
-`claude`, `agy`, and `gemini` are run with `--output-format stream-json`. Each agent's `agents.Stream` reads stdout line by line through that agent's parser, and calls `threadSink`'s `Text`, `Step` and `Result`:
-
-- `claude`: assistant text blocks and tool uses (`agents.ToolLabel`).
-- `agy`: `step_update` text deltas stream tokens live; `step_update` tool calls stream step labels in real time.
-- `gemini`: assistant message deltas stream tokens live; `tool_use` events stream step labels in real time.
-- Every other harness has its stdout treated as the reply, line by line (`agents.PlainText`). stderr goes to a `tailBuffer` and is appended to the error only when the turn failed with no reply.
+Each adapter translates its native events into `threadSink.Text`, `Reasoning`, `Step`, and `Result`. Text streams into the reply, reasoning is kept separately, and tool activity becomes step labels. A turn finishes only on the protocol's completion event or an error. Diagnostics go to a bounded buffer and are appended to errors when a failed turn has no reply.
 
 The feed is Server-Sent Events at `/api/threads/stream`. The browser does not open it directly: browsers allow six HTTP/1.1 connections per host across all tabs, and a stream per feature used to take them all, after which every request queued forever. Instead the same events ride on the tab's one `/api/stream` connection (`web/src/stream.js`): `?threads=1` adds the list events as `threads:<event>`, and each `?thread=<id>` adds that thread's events as `thread:<event>` with payload `{id, data}`. A `thread=` id that no longer exists gets a `thread:deleted` on connect.
 
@@ -76,6 +57,7 @@ The feed is Server-Sent Events at `/api/threads/stream`. The browser does not op
 | --- | --- | --- |
 | `thread` | full thread | `?id=` subscribers: on connect, and when a turn starts or finishes |
 | `delta` | `{turn, text}` | `?id=` subscribers, as the reply grows |
+| `reasoning` | `{turn, text}` | `?id=` subscribers, as reasoning grows |
 | `tool` | `{turn, text}` | `?id=` subscribers |
 | `list` | all summaries | list subscribers, on connect |
 | `summary` | one summary | list subscribers, on any change |
@@ -91,11 +73,11 @@ It is saved when a turn starts, when it ends, on delete, and at most every two s
 
 ## 5. Concurrency
 
-One turn runs per thread at a time: sending to a busy thread returns `409`. Different threads, and threads alongside inline edits, run concurrently with no overlap guard: last write wins. Changing the harness is not blocked by running threads, unlike running inline edits, because a running turn already holds the argv it started with.
+One turn runs per thread at a time: sending to a busy thread returns `409`. Different threads, and threads alongside inline edits, run concurrently with no overlap guard: last write wins. Changing the selected agent does not alter a running turn, which already holds its session configuration. The next turn opens a session for the new selection.
 
 Because turns can overlap, a turn's `changed` list is what differed in the worktree between its start and end, which can include a concurrent turn's or edit's changes. It is a good answer to "what moved", and a slightly generous one to "what did this turn do".
 
-A turn is abandoned after 30 minutes (`threadTurnTimeout`). Stop cancels the process group; what it already wrote stays.
+A turn is abandoned after 30 minutes (`threadTurnTimeout`). Stop cancels the turn through the native protocol; what it already wrote stays.
 
 ## 6. Inline and Batch Edits as Threads
 
@@ -111,7 +93,7 @@ The first-turn prompt for these kinds asks for the change to be made and a one o
 
 To provide instant visual review and safe rollbacks of code modifications generated by a coding harness, faah isolates turn modifications using detached Git object snapshots:
 
-1. **Before Turn**: Prior to spawning the harness process, `tm.gitSnapshotWorktree()` creates an anonymous Git commit tree object in `.git/objects` representing the current working-tree state (`beforeSHA`), without modifying branch references or `.git/index`.
+1. **Before Turn**: Before sending the turn prompt, `tm.gitSnapshotWorktree()` creates an anonymous Git commit tree object in `.git/objects` representing the current working-tree state (`beforeSHA`), without modifying branch references or `.git/index`.
 2. **After Turn**: Once the harness finishes execution, a second snapshot is recorded (`afterSHA`), capturing the post-turn state.
 3. **Turn Diff Review**: The frontend allows users to click any changed file chip to view the exact diff introduced during that specific turn.
 4. **Turn Reversion**: `POST /api/threads/revert` with `{ id, turn }` restores only the files modified during that turn using `gitCheckoutSnapshotPaths(root, turn.BeforeSHA, changedPaths)`. The turn is flagged with `reverted: true`, preserving history and transcript context while cleanly reverting working-tree files.
@@ -122,14 +104,14 @@ To provide instant visual review and safe rollbacks of code modifications genera
 
 - **Classification:** `explain.Classify` rereads the selection from disk and answers 409 if it differs. One whole identifier is a symbol, and anything else is a block.
 - **Evidence:** `explain.Gather` builds a packet of at most 16 KB within an 8-second budget, through the `explain.Workspace` interface, which `explainWorkspace` in `explain.go` implements over the language-server manager, search, and the workspace paths. Without a ready server it falls back to the regex outline and whole-word search. Packets live in `<store>.explain/<thread>.md`, so the thread store stays small.
-- **Read-only:** `Send` passes every explain turn through the agent's `ReadOnly`, which refuses a harness or command it has no rewrite for, and any harness not in `agents.Verified`. opencode has no read-only flag, so its `ReadOnly` also returns the environment that defines a read-only `faah-explain` agent in `OPENCODE_CONFIG_CONTENT`. `explain_conformance_test.go`, behind the `harness` build tag, is the check that each allowed harness honors it.
+- **Read-only:** every explanation and follow-up uses `agents.ModePlan`. Each adapter enforces it through native permissions or sandbox settings, described in [Native agent sessions](agents.md#plan-mode). The opt-in `harness` conformance test checks real agents without becoming part of the default test suite.
 - **Reuse:** `ExplainKey` hashes the content that defines the explanation and leaves out line numbers. `EvidenceHash` covers callers and references and only marks a reused explanation as stale. `ExplainReader` keeps the `explain.reader` text the explanation was written for. Its prompt always uses that copy, and when the setting no longer matches, a reused explanation is stale with reason `reader`.
 - **Freshness:** gathering first syncs every open document with disk. Faah sends no file-watch events, so a change in a file the server has never opened can be missing from references and callers until that file is opened.
 - **Harness:** `explainHarness` resolves `explain.agent` and `explain.model` for explain turns only. A harness pinned with `-agent` wins.
 - **Prefetch:** `POST /api/explain/prepare` answers at once and gathers in a goroutine. `explainPrefetch` holds one selection; a new one cancels the one in flight. `/api/explain` uses prepared evidence only when the key (selection plus the file's size and modification time) matches and it is under 30 seconds old.
-- **Timing:** `threadTurn.FirstMs` records when the first words arrived, and `Warm` whether the harness was started ahead. `TestExplainBenchmark`, behind the `harness` build tag, times real explanations per harness and model.
+- **Timing:** `threadTurn.FirstMs` records when the first words arrived. `TestExplainBenchmark`, behind the `harness` build tag, times real explanations per harness and model.
 - **Citations:** at the end of a turn `explain.ValidateRefs` fills `threadTurn.Refs`. `thrInline` then links only those targets. `Reply` is left as written.
-- **Tools:** an explanation can call `annotate` (a list of notes on a symbol, a line or a block) and `walkthrough` (2 to 20 steps across files). `internal/explain/notes` holds the schemas and the checks; what passes is saved on `threadTurn.Notes` and `Walkthroughs`, and the agent gets back what was shown and why each other note was refused. How an agent calls them is its `Caps.Tools`. For `ToolsMCP` (claude, codex) faah serves MCP at `/api/mcp` (`internal/mcp`, JSON answers only) and `runTurn` issues a bearer token bound to the turn, revoked when the turn ends; the token, not `localPost`, guards the endpoint. For `ToolsTagged` (opencode, and agy until it moves to ACP) the agent writes `<faah:annotate>{…}</faah:annotate>` in its reply, and `notes.Tagged` takes the blocks out of the streamed text. `SetToolsAddr` sets the endpoint from the listen address, on loopback when faah listens on every interface.
+- **Tools:** every agent receives `annotate` (notes on symbols, lines or blocks) and `walkthrough` (2 to 20 steps across files) over MCP. `internal/explain/notes` validates calls, saves accepted results on the running turn, and returns what was shown or refused. `/api/mcp` uses a thread-bound session credential that remains valid between turns; tool calls require a running turn, and closing the native session revokes the credential. `SetToolsAddr` supplies the listening endpoint. See [MCP and credentials](agents.md#mcp-and-credentials) for transport headers and per-agent attachment.
 - **Notes:** `GET /api/explain/notes?path=` returns every note on a file, each found again with `notes.Locate` by the text it covered. A note whose text is gone stays at its saved line with `stale: "text"`. Where notes cover the same lines, the newest wins. A symbol note saves its callers and references hash (`explain.Gather`) in the background when it is added; the endpoint compares it with a hash it refreshes in the background at most every 10 seconds, and marks a change `stale: "refs"`.
 
 ## 7. HTTP Surface
@@ -145,8 +127,10 @@ To provide instant visual review and safe rollbacks of code modifications genera
 | `/api/threads/delete` | POST | Delete `?id=`, stopping its turn first. |
 | `/api/threads/revert` | POST | Revert file changes made by a specific turn (`{id, turn}`). |
 | `/api/threads/stream` | GET | SSE feed (section 3). The UI reads it through `/api/stream` instead. |
+| `/api/explain` | POST | Explain a saved selection or reopen its cached thread; `force` regenerates it. |
+| `/api/explain/prepare` | POST | Gather evidence for the current selection in advance. |
 | `/api/explain/notes` | GET | Notes on `?path=`, found again in the file as it is now (section 6c). |
-| `/api/mcp` | POST | MCP for explain tools. Needs the bearer token of a running turn (section 6c). |
+| `/api/mcp` | POST, DELETE | Authenticated Streamable HTTP MCP; initialize, discover and call tools, or close a transport session (section 6c). |
 
 Every mutating endpoint except `/api/mcp` is guarded by `localPost`, and carries the same security posture as inline edits: it runs a general-purpose coding agent with shell access as the user who started faah.
 
@@ -162,8 +146,7 @@ A thread in a PR session carries `scope` (`pr`, `mine`, `selection`) and `scopeS
 
 ## 9. Limits
 
-- Only `claude` and `cursor-agent` resume natively. Others are replayed, and replay is capped at 16 KB of history.
-- Reply streaming is per assistant message, not per token.
-- `cursor-agent`'s native path is built from its documented `create-chat` and `--resume` flags and was not run end to end here, since that harness needs a paid plan for named models.
+- Recovery replay is bounded by `threadReplayMax`; native sessions retain their own context.
+- Agent availability depends on local installation and credentials; Cursor also requires Node and npm.
 - Changes to gitignored files are invisible to `git status`, so they are not listed or reloaded.
 - A thread has one anchor. Moving code does not move it.

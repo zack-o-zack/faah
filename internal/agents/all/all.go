@@ -38,7 +38,7 @@ func For(name string) agents.Agent {
 // CheckPlan verifies that the agent has a native Plan policy.
 func CheckPlan(name string) error { return ValidateName(name) }
 
-// Names returns the supported agent names in picker order.
+// Names returns the supported agent names.
 func Names() []string {
 	names := []string{}
 	for _, a := range List() {

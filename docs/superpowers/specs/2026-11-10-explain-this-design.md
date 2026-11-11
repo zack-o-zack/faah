@@ -111,24 +111,9 @@ Follow-ups answer concisely and have no paragraph limit.
 
 ### Read-only enforcement
 
-`readOnlyArgv(name, argv)` rewrites the harness command before `threadArgv` runs. `Send` calls it for every `explain` turn.
+Each explanation opens an `agents.ModePlan` native session. Follow-ups retain that mode. All five supported agents attach faah’s tools through MCP and enforce Plan through native permissions, sandbox settings, or ACP permission answers. See [Native agent sessions](../../internals/agents.md#plan-mode) for each policy.
 
-| Harness | Rewrite |
-|---|---|
-| claude | Set `--permission-mode` to `plan` |
-| codex | Set `--sandbox` to `read-only` |
-| cursor-agent | Remove `--force`, add `--mode ask` |
-| agy | Set `--mode` to `plan` |
-| opencode | Add `--standalone --agent faah-explain` after `run`, and define that agent in `OPENCODE_CONFIG_CONTENT` with every permission denied except read, glob, grep and list |
-
-opencode has no read-only flag. Its default agent writes without asking, and permissions given only at the top level lose to an agent's own permissions in a project's `opencode.json`. An agent defined in `OPENCODE_CONFIG_CONTENT` wins over the user's and the project's config, even an agent of the same name. `--standalone` is needed because the shared background service loaded its config earlier and ignores the variable.
-
-`explainVerified` holds the harnesses that have passed conformance: claude, agy, codex and opencode. cursor-agent stays refused until it passes.
-
-- Any other harness returns an error. So does an allowlisted harness whose command lacks the expected flag, such as a custom `-agent` template.
-- The API returns 409 and the client shows "`<harness>` has no verified read-only mode".
-- A cached explanation still opens under such a harness. Only new turns are refused.
-- The flags come from each CLI's `--help`. A conformance test must pass before a harness stays on the allowlist. A harness that fails is removed. If claude's plan mode cannot produce an answer, use `--disallowedTools Edit Write NotebookEdit Bash` instead.
+Agent settings and `-agent` accept `claude`, `codex`, `agy`, `opencode`, or `cursor-agent`. Unknown names are refused with the supported-name list. A cached explanation can be reopened without starting an agent.
 
 If `changedSince` reports files after an `explain` turn, the turn shows "Files changed during this explanation" with the existing revert action. The check is a backstop. It can also catch the reader's own edits.
 
@@ -229,7 +214,7 @@ Errors:
 
 | File | Change |
 |---|---|
-| `explain.go` (new) | Classification, packet, prompt, key, hash, `readOnlyArgv`, reference validation, HTTP handler |
+| `explain.go` (new) | Selection, evidence, prompt, caching and HTTP handler, backed by `internal/explain` |
 | `agent.go` | `explain` kind, new thread fields, `Send` and `runTurn` hooks, prompt branch, pruning |
 | `server.go` | Route registration |
 | `web/src/selbar.js` | Return columns, add the action, `setExplainHandler`, `KeyX` |
@@ -247,7 +232,7 @@ Unit tests in `explain_test.go`:
 - One key for a workspace symbol reached from two call sites.
 - Packet priority, section caps, and the 16 KB limit, using a fake `codeIntel`.
 - The `text` fallback.
-- `readOnlyArgv` for each harness, a missing flag, and a custom template.
+- Native Plan permissions and MCP attachment for every supported adapter.
 - Reference validation: valid, out of range, snapped, missing file, escaping path.
 - Reuse table outcomes, follow-up read-only behavior, and pruning.
 
@@ -269,17 +254,10 @@ Manual acceptance with gopls on this repository:
 
 The current version is the MVP. These items come next. Their order is not decided.
 
-1. **Agent runtime.** Warm up login and startup before the first request. Set a default explain agent and model. Add other agent optimizations.
-   - Measured on one `agy` explanation of 175 seconds: 10 seconds of startup and 125 seconds in one reasoning step of 17,895 output tokens.
-   - Candidate fixes: run `agy` with `--effort low`, add line numbers to code in the packet so citing needs no rereads, and tell the agent the packet is sufficient for the selected code.
-   - Done: `explain.agent` and `explain.model` settings, first-words timing, a benchmark, and background evidence preparation on selection.
-   - Benchmark on this repository, first words then total: `claude` with haiku or sonnet about 7 to 8 seconds and 8 to 9 seconds; `agy` default 49 to 63 seconds and 52 to 67 seconds; `opencode` with claude-haiku-5-5 6.8 to 7.8 seconds and 6.9 to 7.9 seconds; `codex` default 14 to 16 seconds and about 17.6 seconds. Evidence gathering took 0.0 to 0.7 seconds.
-   - Warm-up does not apply to codex or opencode. Both read the whole prompt before they start, so a process started early saves nothing. codex starts in about 1.3 seconds. opencode normally runs through its own background service, but read-only explanations need `--standalone`, which adds about 1 second.
-   - Decided against: per-harness effort flags, and prompt limits on reading.
-   - Not done: a warm process for follow-up turns, which resume a session and need a different command.
+1. **Agent runtime** (done). Long-running native sessions, MCP tools on every agent, default explanation agent/model settings, first-words timing, and background evidence preparation. See [Agent Runtime](2026-11-11-agent-runtime-design.md).
 2. **Reader context.** Let the reader give the agent specific context, for example "please explain Go-related features in depth, I have no Go experience".
    - Done: the `explain.reader` setting, and no length or format limit in the prompt. See [the reader context design](2026-11-11-explain-reader-context-design.md).
 3. **Other displays.** Explore generative UI and other ways to display code information.
 4. **Walkthroughs with nested threads.** Add step-by-step walkthroughs of a flow, a diff, or a call chain. Give each stage a nested thread, similar to Slack, so a reader can explore one stage's code in depth without filling the main thread with questions.
-5. **IDE context as harness tools.** Give the harness live access to IDE context. Compare fast delivery options first, and do not assume MCP.
+5. **IDE context as harness tools.** Add live IDE context tools to faah’s MCP endpoint. Annotation and walkthrough delivery is complete.
 6. **Explain anything.** Extend Explain to files, flows, diffs, and other targets.

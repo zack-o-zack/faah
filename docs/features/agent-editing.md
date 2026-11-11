@@ -6,30 +6,19 @@ faah is intentionally designed as a read-optimized viewer rather than a traditio
 
 ## Overview & Core Purpose
 
-In modern AI-native development workflows, developers spend less time typing repetitive syntax and more time reviewing, directing, and guiding intelligent agents. Traditional IDEs carry massive authoring baggage—gigabytes of Electron RAM, plugin conflicts, and heavy text manipulation engines.
+faah sends your instruction to a supported local agent, streams its progress, and refreshes changed files when the turn finishes. Each edit keeps a native conversation, so you can follow up in its saved thread.
 
-faah decouples code viewing from code authoring. It provides a sub-millisecond, low-resource reading experience (~20–30 MB RSS) while seamlessly integrating with whichever CLI coding agent you already run on your machine (such as Claude Code, Gemini CLI, Cursor Agent, Antigravity, OpenCode, Codex, Aider, or Goose). You select the code, provide an instruction, and faah coordinates the background execution, streams the progress to your terminal, and automatically refreshes modified files upon completion.
+## Supported Agents and Models
 
----
+| Agent | Name for flags and settings |
+| --- | --- |
+| Claude Code | `claude` |
+| OpenAI Codex | `codex` |
+| Antigravity | `agy` |
+| OpenCode | `opencode` |
+| Cursor Agent | `cursor-agent` |
 
-## Supported Harnesses & Models
-
-faah auto-detects and integrates with all leading terminal coding harnesses:
-
-| Harness | Default Model | Execution Template |
-| :--- | :--- | :--- |
-| **Claude Code** | `haiku` | `claude --permission-mode acceptEdits --model haiku -p {prompt}` |
-| **Gemini CLI** | `gemini-2.5-flash-lite` | `gemini --approval-mode auto_edit -m gemini-2.5-flash-lite -p {prompt}` |
-| **Cursor Agent** | `gemini-3.6-flash-minimal` | `cursor-agent --force --model gemini-3.6-flash-minimal -p {prompt}` |
-| **Antigravity** | `gemini-3.6-flash-low` | `agy --dangerously-skip-permissions --mode accept-edits --model gemini-3.6-flash-low -p {prompt}` |
-| **OpenCode** | `opencode/big-pickle` | `opencode run -m opencode/big-pickle {prompt}` |
-| **OpenAI Codex** | `gpt-5-codex` | `codex exec --ask-for-approval never -m gpt-5-codex {prompt}` |
-| **Aider** | `claude-3-7-sonnet` | `aider --yes-always --no-auto-commits --model claude-3-7-sonnet --message {prompt}` |
-| **Goose** | `gpt-4o` | `goose run --no-session --model gpt-4o -t {prompt}` |
-
-By default, faah selects fast and cost-effective models for each harness, but allows you to select any supported model directly from the harness menu.
-
----
+Choose an installed agent and one of its available models in the picker. The agent must already be authenticated. Cursor also needs Node.js 22.13+ and npm 7+; faah installs its SDK helper outside the workspace.
 
 ## How an Agent Edit Works
 
@@ -88,8 +77,8 @@ The same harness and model you pick here are also used by the sidebar git panel'
 
 Agent preferences are managed in Settings (`Cmd/Ctrl+,`) or stored in `~/.faah/settings.json`:
 
-- **Agent: Harness** (`agent.harness`): The default CLI tool to execute (`claude`, `gemini`, `cursor-agent`, `agy`, `opencode`, `codex`, `aider`, `goose`).
-- **Agent: Timeout Seconds** (`agent.timeoutSeconds`): Maximum execution time before faah terminates the background process (defaults to `120` seconds, range `10`–`600`).
+- **Agent: Harness** (`agent.harness`): The default CLI tool to execute (`claude`, `codex`, `agy`, `opencode`, `cursor-agent`).
+- **Runtime limits**: thread turns have a 30-minute limit. Native sessions close after ten idle minutes and resume on the next message.
 - **CLI Flags**:
   - `faah -agent <name>`: Force a specific agent harness for the current session.
   - `faah -no-agent`: Completely disable agent editing capabilities.
@@ -98,4 +87,4 @@ Agent preferences are managed in Settings (`Cmd/Ctrl+,`) or stored in `~/.faah/s
 
 ## Technical Architecture Deep Dive
 
-For in-depth details on process spawning, headless argument construction, PID tracking, process group termination, and in-place document reconciliation, see [Harness Editing & Agent Dispatch Internals](../internals/agent-editing.md).
+For in-depth details on native sessions, Plan mode, MCP tools, and changed-file reloads, see [Agent Dispatch](../internals/agent-editing.md) and [Native Agent Sessions](../internals/agents.md).
