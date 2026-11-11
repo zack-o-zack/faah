@@ -67,6 +67,7 @@ func TestExplainHarnessConformance(t *testing.T) {
 			id := res["thread"].(map[string]any)["id"].(string)
 			th := waitHarnessIdle(t, s, id)
 			first := th.Turns[0]
+			t.Logf("tool steps: %q", first.Tools)
 			if first.Error != "" || strings.TrimSpace(first.Reply) == "" {
 				t.Fatalf("explanation failed: error %q, reply %q", first.Error, first.Reply)
 			}
