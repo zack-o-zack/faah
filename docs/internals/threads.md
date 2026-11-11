@@ -52,7 +52,7 @@ Each agent in `internal/agents` adds its own session flags right after the binar
 
 ### Adding a harness
 
-Create `internal/agents/<name>/` with a type that implements `agents.Agent`: its name, its `Caps`, a `ReadOnly` rewrite (or `agents.ErrNotReadOnly`), `NewSession`, and `Run`, which usually calls `agents.Exec` with the agent's argv and output parser. Add it to `List` in `internal/agents/all/all.go`. If its output is not plain text, add one line of it to the `fixture` map in `contract_test.go`. A harness that can be started before its prompt also implements `agents.Warmable`. Any harness that is not listed runs through `internal/agents/generic`: plain text, no sessions, no read-only mode.
+Create `internal/agents/<name>/` with a type that implements `agents.Agent`: its name, its `Caps`, a `ReadOnly` rewrite (or `agents.ErrNotReadOnly`), `NewSession`, and `Run`, which usually calls `agents.Exec` with the agent's argv and output parser. Add it to `List` in `internal/agents/all/all.go`, and give it a row in the `contract` table in `contract_test.go`: its `Caps`, the args its first and resumed turns run with, and whether its session is live after a turn. If its output is not plain text, add sample output to the `fixture` map. A harness that can be started before its prompt also implements `agents.Warmable`. Any harness that is not listed runs through `internal/agents/generic`: plain text, no sessions, no read-only mode.
 
 Two rules keep this honest:
 

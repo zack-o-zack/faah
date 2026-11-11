@@ -41,7 +41,6 @@ type explainStandby struct {
 
 type standbyProc struct {
 	key            string // harness and read-only argv a turn would run with
-	name           string
 	agent          agents.Warmable
 	sessionID      string // claude's, chosen at start; agy reports its own
 	cmd            *exec.Cmd
@@ -156,7 +155,7 @@ func startStandby(dir string, w agents.Warmable, key, sessionID string, argv []s
 		return nil, err
 	}
 	sp := &standbyProc{
-		key: key, name: w.Name(), agent: w, sessionID: sessionID, cmd: cmd, stdin: stdin,
+		key: key, agent: w, sessionID: sessionID, cmd: cmd, stdin: stdin,
 		stdout: &handoffWriter{}, stderr: &handoffWriter{}, exited: make(chan struct{}),
 	}
 	cmd.Stdout, cmd.Stderr = sp.stdout, sp.stderr
