@@ -18,7 +18,12 @@ globalThis.document = {
 };
 globalThis.window=globalThis;
 globalThis.location={href:'http://localhost/'};
-const { COMMANDS, palInput, openPalette, closePalette, refreshPaletteNow, acceptPalette } = await import('./palette.js');
+const { COMMANDS, overlay, palInput, openPalette, closePalette, refreshPaletteNow, acceptPalette } = await import('./palette.js');
+
+// Other browser-module tests can have initialized these exported DOM handles.
+overlay.showModal = () => {};
+overlay.close = () => {};
+palInput.setSelectionRange = () => {};
 
 test('immediate Enter executes the current query rather than the previous command', async () => {
   let oldRuns=0,newRuns=0;
