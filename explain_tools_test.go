@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -8,6 +9,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"faah/internal/explain/notes"
 )
 
 // mcpCall posts one tools/call to the server's MCP endpoint with a token and
@@ -70,5 +73,48 @@ func TestExplainTaggedBlocksLandOnTheTurn(t *testing.T) {
 	tr := th.Turns[0]
 	if strings.Contains(tr.Reply, "faah:annotate") || len(tr.Notes) != 1 || tr.Notes[0].Text != "\thelper()" {
 		t.Fatalf("reply = %q, notes = %+v, error = %s", tr.Reply, tr.Notes, tr.Error)
+	}
+}
+
+func agentGet(t *testing.T, s *Server, url string) (int, []byte) {
+	t.Helper()
+	rec := httptest.NewRecorder()
+	s.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, url, nil))
+	return rec.Code, rec.Body.Bytes()
+}
+
+func fileNotes(t *testing.T, s *Server, rel string) []notes.View {
+	t.Helper()
+	var res struct{ Notes []notes.View }
+	code, raw := agentGet(t, s, "/api/explain/notes?path="+rel)
+	if code != 200 || json.Unmarshal(raw, &res) != nil {
+		t.Fatalf("notes = %d %s", code, raw)
+	}
+	return res.Notes
+}
+
+func TestExplainNotesFollowTheCode(t *testing.T) {
+	root := t.TempDir()
+	writeExplainSource(t, root, explainGoSource)
+	s := explainServer(t, root, `printf 'ok\n'`)
+	_, m := agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "text": "helper"})
+	id := m["thread"].(map[string]any)["id"].(string)
+	waitThreadIdle(t, s, id)
+	s.threads.AddNotes(toolScope{tid: id, turn: 1}, []notes.Note{
+		{Kind: "line", Path: "main.go", L1: 4, L2: 4, Summary: "Calls helper.", Text: "\thelper()"},
+		{Kind: "block", Path: "main.go", L1: 7, L2: 7, Summary: "Empty.", Text: "func helper() {}"},
+		{Kind: "line", Path: "main.go", L1: 4, L2: 4, Summary: "Calls helper, newer.", Text: "\thelper()"},
+	})
+
+	if v := fileNotes(t, s, "main.go"); len(v) != 2 || v[0].L1 != 4 || v[0].Summary != "Calls helper, newer." || v[0].Stale != "" || v[1].L1 != 7 {
+		t.Fatalf("notes = %+v", v)
+	}
+	// Two lines added above: both notes move. The block's text changes: outdated.
+	writeExplainSource(t, root, "// a\n// b\n"+strings.Replace(explainGoSource, "func helper() {}", "func helper() { return }", 1))
+	if v := fileNotes(t, s, "main.go"); len(v) != 2 || v[0].L1 != 6 || v[0].Stale != "" || v[1].Stale != "text" || v[1].L1 != 7 {
+		t.Fatalf("after edit = %+v", v)
+	}
+	if code, _ := agentGet(t, s, "/api/explain/notes?path=../x"); code != http.StatusBadRequest {
+		t.Fatalf("outside path = %d", code)
 	}
 }

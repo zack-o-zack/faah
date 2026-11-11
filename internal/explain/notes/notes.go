@@ -49,3 +49,11 @@ func DiskReader(root string) Reader {
 		return lines, err == nil
 	}
 }
+
+// View is a saved note as the editor shows it now.
+type View struct {
+	Thread string `json:"thread"`
+	Turn   int    `json:"turn"`
+	Note
+	Stale string `json:"stale,omitempty"` // "text" when its code changed, "refs" when a symbol's uses did
+}

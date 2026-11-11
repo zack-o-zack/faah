@@ -25,9 +25,10 @@ func TestCheckNotes(t *testing.T) {
 		{Kind: "line", Path: "../etc/passwd", L1: 1, L2: 1, Summary: "outside"},
 		{Kind: "box", Path: "auth.go", L1: 1, L2: 1, Summary: "bad kind"},
 		{Kind: "line", Path: "auth.go", L1: 1, L2: 1, Summary: "  "},
+		{Kind: "line", Path: "./auth.go", L1: 1, Summary: "Cleaned path."},
 	}
 	ok, errs := CheckNotes(read, in)
-	if len(ok) != 3 {
+	if len(ok) != 4 || ok[3].Path != "auth.go" || ok[3].L2 != 1 {
 		t.Fatalf("kept %d notes: %+v\nerrors: %v", len(ok), ok, errs)
 	}
 	if n := ok[0]; n.L1 != 4 || n.L2 != 4 || n.Summary != "Reads the header." || n.Text != "func checkToken(h string) bool {" {

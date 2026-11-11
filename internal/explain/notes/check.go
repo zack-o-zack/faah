@@ -3,6 +3,7 @@ package notes
 import (
 	"errors"
 	"fmt"
+	"path"
 	"regexp"
 	"strings"
 	"unicode/utf8"
@@ -45,6 +46,7 @@ func checkNote(read Reader, n *Note) error {
 		return errors.New("summary is empty")
 	}
 	n.Detail = cutBytes(strings.TrimSpace(n.Detail), maxBody)
+	n.Path = cleanPath(n.Path)
 	lines, ok := read(n.Path)
 	if !ok {
 		return fmt.Errorf("%s is not a file in the workspace", n.Path)
@@ -83,6 +85,7 @@ func CheckWalkthrough(read Reader, w Walkthrough) (Walkthrough, error) {
 		s := &w.Steps[i]
 		s.Title = cut(strings.TrimSpace(s.Title), maxSummary)
 		s.Body = cutBytes(strings.TrimSpace(s.Body), maxBody)
+		s.Path = cleanPath(s.Path)
 		lines, ok := read(s.Path)
 		var err error
 		switch {
@@ -142,6 +145,12 @@ func findSymbol(lines []string, path, name string, line int) (int, error) {
 		return 0, fmt.Errorf("%s is not in %s", name, path)
 	}
 	return 0, fmt.Errorf("%s is not on %s:%d; it is on line %d", name, path, line, best)
+}
+
+// cleanPath writes a workspace path one way, so notes on a file are found
+// whichever way the agent wrote it.
+func cleanPath(p string) string {
+	return path.Clean(strings.ReplaceAll(strings.TrimSpace(p), "\\", "/"))
 }
 
 func cut(s string, n int) string {

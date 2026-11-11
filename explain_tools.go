@@ -1,11 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"net"
 	"net/http"
+	"sort"
 	"sync/atomic"
 
 	"faah/internal/agents"
+	"faah/internal/explain"
 	"faah/internal/explain/notes"
 	"faah/internal/mcp"
 )
@@ -98,4 +101,71 @@ func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.threads.tools.srv.ServeHTTP(w, r)
+}
+
+// FileNotes is every saved note on rel, found again in lines, the file as it
+// is now. A note whose code is gone stays where it was, marked "text". Where
+// notes cover the same code, the newest wins.
+func (tm *threadManager) FileNotes(rel string, lines []string) []notes.View {
+	tm.mu.Lock()
+	var views []notes.View
+	var when []int64
+	for _, t := range tm.threads {
+		if t.Kind != "explain" {
+			continue
+		}
+		for _, tr := range t.Turns {
+			for _, n := range tr.Notes {
+				if n.Path == rel {
+					views = append(views, notes.View{Thread: t.ID, Turn: tr.ID, Note: n})
+					when = append(when, tr.Started)
+				}
+			}
+		}
+	}
+	tm.mu.Unlock()
+
+	// Newest turn first, and within a turn the later note first.
+	idx := make([]int, len(views))
+	for i := range idx {
+		idx[i] = len(views) - 1 - i
+	}
+	sort.SliceStable(idx, func(a, b int) bool { return when[idx[a]] > when[idx[b]] })
+	seen := map[string]bool{}
+	out := make([]notes.View, 0, len(views))
+	for _, i := range idx {
+		v := views[i]
+		if l1, l2, ok := notes.Locate(lines, v.Text, v.L1); ok {
+			v.L1, v.L2 = l1, l2
+		} else {
+			v.Stale = "text"
+			v.L1, v.L2 = min(v.L1, len(lines)), min(v.L2, len(lines))
+		}
+		key := fmt.Sprintf("%s %d %d", v.Kind, v.L1, v.L2)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		out = append(out, v)
+	}
+	sort.SliceStable(out, func(a, b int) bool { return out[a].L1 < out[b].L1 })
+	return out
+}
+
+func (s *Server) handleExplainNotes(w http.ResponseWriter, r *http.Request) {
+	if !s.threadsOrFail(w) {
+		return
+	}
+	_, rel, ok := s.safePath(r.URL.Query().Get("path"))
+	abs, inside := explain.Resolve(s.ix.Root(), rel)
+	if !ok || !inside || rel == "" {
+		fail(w, http.StatusBadRequest, "bad path")
+		return
+	}
+	lines, err := explain.ReadLines(abs)
+	if err != nil {
+		fail(w, http.StatusNotFound, err.Error())
+		return
+	}
+	writeJSON(w, map[string]any{"notes": s.threads.FileNotes(rel, lines)})
 }
