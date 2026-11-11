@@ -803,6 +803,24 @@ func (s *Server) handleAgentHarnesses(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// Browsing an agent discovers its models without selecting it or writing settings.
+func (s *Server) handleAgentModels(w http.ResponseWriter, r *http.Request) {
+	if !s.agentOrFail(w) {
+		return
+	}
+	if r.Method != http.MethodGet {
+		fail(w, http.StatusMethodNotAllowed, "use GET to list models")
+		return
+	}
+	name := r.URL.Query().Get("name")
+	models, err := harness.DiscoverModels(r.Context(), name)
+	if err != nil {
+		fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	writeJSON(w, map[string]any{"models": models})
+}
+
 func (s *Server) handleAgentSelect(w http.ResponseWriter, r *http.Request) {
 	if !localPost(w, r) {
 		return
@@ -1080,10 +1098,10 @@ type thread struct {
 	// and EvidenceHash what surrounded that code; see explain.go. ExplainReader
 	// is the explain.reader text it was written for. The packet the harness
 	// reads is kept beside the store and loaded here for a turn.
-	ExplainKey    string          `json:"explain.Key,omitempty"`
-	ExplainKind   string          `json:"explainKind,omitempty"`
-	ExplainReader string          `json:"explainReader,omitempty"`
-	EvidenceHash  string          `json:"evidenceHash,omitempty"`
+	ExplainKey    string           `json:"explain.Key,omitempty"`
+	ExplainKind   string           `json:"explainKind,omitempty"`
+	ExplainReader string           `json:"explainReader,omitempty"`
+	EvidenceHash  string           `json:"evidenceHash,omitempty"`
 	Evidence      *explain.Summary `json:"evidence,omitempty"`
 	ExplainReq    *explain.Request `json:"explainReq,omitempty"`
 	packet        string

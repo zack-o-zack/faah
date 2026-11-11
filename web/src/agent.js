@@ -78,7 +78,17 @@ export function applyAgentMeta() {
   renderAgentPicker(gitPicker);
 }
 
-// All composers share the same provider/model picker and saved selection.
+// Model discovery is shared across composers, and browsing never saves a choice.
+const discoveredAgentModels = new Map();
+async function loadPickerModels(name) {
+  if (discoveredAgentModels.has(name)) return discoveredAgentModels.get(name);
+  const pending = api('/api/agent/models', { name }).then(j => j.models || []);
+  discoveredAgentModels.set(name, pending);
+  try { return await pending; }
+  catch (error) { discoveredAgentModels.delete(name); throw error; }
+}
+
+// All composers share the same agent/model picker and saved selection.
 function renderAgentPicker(picker, busy = false) {
   if (!picker) return;
   const ready = installed();
@@ -86,6 +96,7 @@ function renderAgentPicker(picker, busy = false) {
   const models = current?.models || [];
   updateAgentPicker(picker, {
     harnesses: ready,
+    loadModels: loadPickerModels,
     harness: current?.name || '',
     model: models.includes(chosenModel()) ? chosenModel() : models[0] || '',
     pinned: !!S.meta?.agentPinned,
