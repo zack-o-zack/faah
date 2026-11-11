@@ -1,10 +1,8 @@
 package all
 
 import (
-	"errors"
+	"strings"
 	"testing"
-
-	"faah/internal/agents"
 )
 
 func TestCheckPlanUsesNativePolicy(t *testing.T) {
@@ -13,7 +11,10 @@ func TestCheckPlanUsesNativePolicy(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if !errors.Is(CheckPlan("custom"), agents.ErrNotReadOnly) {
-		t.Fatal("custom command allowed Plan mode")
+	if For("custom") != nil {
+		t.Fatal("unknown agent got an adapter")
+	}
+	if err := CheckPlan("custom"); err == nil || !strings.Contains(err.Error(), "unknown agent custom; choose one of:") {
+		t.Fatalf("unknown agent: %v", err)
 	}
 }

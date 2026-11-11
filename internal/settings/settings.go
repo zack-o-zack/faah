@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+
+	"faah/internal/agents/all"
 )
 
 // faah keeps no state inside a workspace. The user's preferences and choices
@@ -332,7 +334,7 @@ var Schema = []SchemaItem{
 	{
 		Key:         "agent.harness",
 		Title:       "Coding Harness",
-		Description: "Coding agent harness invoked for code edits (e.g. claude, cursor-agent, agy, opencode, codex, aider, goose).",
+		Description: "Coding agent harness invoked for code edits (e.g. claude, codex, agy, opencode, cursor-agent).",
 		Category:    "Agent / AI",
 		Type:        "string",
 		Default:     "",
@@ -435,7 +437,7 @@ var Schema = []SchemaItem{
 	{
 		Key:         "explain.agent",
 		Title:       "Explain Agent",
-		Description: "The coding harness that writes explanations (claude, agy, codex or opencode). Leave empty to use the harness selected for editing. Ignored when faah is started with -agent.",
+		Description: "The coding harness that writes explanations (claude, codex, agy, opencode or cursor-agent). Leave empty to use the harness selected for editing. Ignored when faah is started with -agent.",
 		Category:    "Explain",
 		Type:        "string",
 		Default:     "",
@@ -649,6 +651,9 @@ func ReadRawJSON() string {
 
 // Write saves the agent and models choices while preserving other settings.
 func Write(s Settings) error {
+	if err := validateAgents(map[string]any{"agent": s.Agent}); err != nil {
+		return err
+	}
 	p := Path()
 	if p == "" {
 		return errors.New("no home directory to save settings in")
@@ -678,6 +683,9 @@ func Write(s Settings) error {
 
 // UpdateMap merges key-value pairs into settings.json without losing existing keys.
 func UpdateMap(updates map[string]any) error {
+	if err := validateAgents(updates); err != nil {
+		return err
+	}
 	p := Path()
 	if p == "" {
 		return errors.New("no home directory to save settings in")
@@ -765,6 +773,9 @@ func SaveRawJSON(rawJSON []byte) error {
 		return err
 	}
 
+	if err := validateAgents(m); err != nil {
+		return err
+	}
 	p := Path()
 	if p == "" {
 		return errors.New("no home directory to save settings in")
@@ -791,4 +802,23 @@ func writeRawMapLocked(p string, raw map[string]any) error {
 		return err
 	}
 	return os.WriteFile(p, append(data, '\n'), 0o644)
+}
+
+func validateAgents(values map[string]any) error {
+	for _, key := range []string{"agent", "agent.harness", "explain.agent"} {
+		value, ok := values[key]
+		if !ok || value == nil {
+			continue
+		}
+		name, ok := value.(string)
+		if !ok {
+			return errors.New(key + " must be an agent name")
+		}
+		if name != "" {
+			if err := all.ValidateName(name); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }

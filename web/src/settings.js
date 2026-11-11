@@ -259,7 +259,7 @@ const BUILTIN_SCHEMA = [
   {
     key: "agent.harness",
     title: "Coding Harness",
-    description: "Coding agent harness invoked for code edits (e.g. claude, cursor-agent, agy, opencode, codex, aider, goose).",
+    description: "Coding agent harness invoked for code edits (e.g. claude, codex, agy, opencode, cursor-agent).",
     category: "Agent / AI",
     type: "string",
     default: ""
@@ -725,6 +725,9 @@ function renderSettingsList() {
           ${step !== undefined ? `<span class="settings-tag tag-step">Step: <b>${step}</b></span>` : ''}
           ${presetPills}
         </div>`;
+    } else if (['agent.harness', 'explain.agent'].includes(key)) {
+      const names = ['', 'claude', 'codex', 'agy', 'opencode', 'cursor-agent'];
+      controlHtml = `<select class="settings-input" data-key="${esc(key)}">${names.map(name => `<option value="${name}"${String(val || '') === name ? ' selected' : ''}>${name || (key === 'explain.agent' ? 'Use editing agent' : 'No agent')}</option>`).join('')}</select>`;
     } else if (type === 'textarea') {
       const placeholder = key === 'git.commitMessageInstruction'
         ? 'Enter custom instructions for AI commit messages (e.g. Follow Conventional Commits, reference issue key from branch)...'
@@ -733,22 +736,6 @@ function renderSettingsList() {
     } else {
       const isSecret = item.secret || item.Secret;
       controlHtml = `<input type="${isSecret ? 'password' : 'text'}" class="settings-input" data-key="${esc(key)}" value="${esc(String(val || ''))}"${isSecret ? ' autocomplete="off"' : ''}>`;
-      let stringPresets = [];
-      if (key === 'agent.harness') {
-        stringPresets = ['claude', 'cursor-agent', 'agy', 'aider'];
-      }
-      const presetPills = stringPresets.length ? `
-        <div class="settings-apt-bar settings-apt-suggest">
-          <span class="settings-apt-label">Suggestions:</span>
-          <div class="settings-apt-pills">
-            ${stringPresets.map(s => {
-              const isSel = String(val) === s;
-              return `<button type="button" class="settings-pill-tag${isSel ? ' active' : ''}" data-set-key="${esc(key)}" data-set-val="${esc(s)}">${esc(s)}</button>`;
-            }).join('')}
-          </div>
-        </div>` : '';
-
-      aptValuesHtml = presetPills;
     }
 
     const resetBtn = modified
@@ -1072,7 +1059,7 @@ function initSettingsDOM() {
       let value;
       if (target.type === 'checkbox') {
         value = target.checked;
-      } else if (target.type === 'number') {
+     } else if (target.type === 'number') {
         value = parseFloat(target.value);
         // An out-of-range number is reported on the card and never saved.
         const card = target.closest('.settings-card');

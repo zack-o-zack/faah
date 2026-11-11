@@ -21,6 +21,9 @@ func TestMain(m *testing.M) {
 	}
 	if os.Getenv("FAAH_THREAD_CLAUDE_HELPER") == "1" {
 		b := strings.Join(os.Args[1:], " ")
+		if !strings.Contains(b, "--input-format stream-json") {
+			os.Exit(0)
+		}
 		os.WriteFile("claude-args.txt", []byte(b), 0600)
 		f, _ := os.OpenFile("claude-runs.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 		f.WriteString(b + "\n")
@@ -42,17 +45,6 @@ func TestMain(m *testing.M) {
 				}
 				enc.Encode(map[string]any{"type": "control_response", "response": map[string]any{"subtype": "success", "request_id": frame["request_id"], "response": map[string]any{}}})
 			case "user":
-				if script := os.Getenv("FAAH_EXPLAIN_SCRIPT"); script != "" {
-					prompt := frame["message"].(map[string]any)["content"].(string)
-					argv := append([]string{script}, os.Args[1:]...)
-					argv = append(argv, prompt)
-					cmd := exec.Command("/bin/sh", argv...)
-					cmd.Env = append(os.Environ(), "FAAH_TEST_MCP_URL="+endpoint.URL, "FAAH_TEST_MCP_TOKEN="+strings.TrimPrefix(endpoint.Headers["Authorization"], "Bearer "))
-					output, err := cmd.CombinedOutput()
-					enc.Encode(map[string]any{"type": "assistant", "message": map[string]any{"id": "answer", "content": []map[string]string{{"type": "text", "text": string(output)}}}})
-					enc.Encode(map[string]any{"type": "result", "is_error": err != nil, "result": string(output)})
-					continue
-				}
 
 				enc.Encode(map[string]any{"type": "assistant", "message": map[string]any{"content": []map[string]any{{"type": "tool_use", "name": "Read", "input": map[string]string{"file_path": "a.go"}}, {"type": "text", "text": "All good."}}}})
 				enc.Encode(map[string]any{"type": "result", "result": "All good."})
@@ -66,7 +58,7 @@ func TestMain(m *testing.M) {
 func TestThreadSessionIdleResumes(t *testing.T) {
 	root := t.TempDir()
 	fakeCLI(t, "claude")
-	s := agentServer(t, root, "claude -p {prompt}")
+	s := agentServer(t, root, "claude")
 	s.threads.sessionIdle = 15 * time.Millisecond
 	_, m := agentPostJSON(t, s, "/api/threads/create", map[string]any{"message": "hello"})
 	id := m["id"].(string)

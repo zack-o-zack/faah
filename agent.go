@@ -146,11 +146,12 @@ func (s *lineStreamer) Flush() {
 // line ranges: two harnesses rewriting the same lines produces a state nobody
 // can review afterwards, so overlapping ranges are refused rather than queued.
 type agentManager struct {
-	root string
-	lsp  *lspManager
+	root      string
+	lsp       *lspManager
+	openAgent func(string) agents.Agent
 
 	mu       sync.Mutex
-	selected string            // preset name, or the template itself when pinned
+	selected string            // native agent name
 	args     []string          // resolved argv, nil when nothing is selected
 	pinned   bool              // -agent was given, so the UI cannot change it
 	models   map[string]string // harness name -> selected model
@@ -164,14 +165,15 @@ type agentManager struct {
 }
 
 // newAgentManager wires discovery and restores the remembered choice. A flag
-// value pins a harness (or an arbitrary command template) for this run and is
+// value pins an agent for this run. This is
 // the only case that can fail: a bad -agent should stop startup, whereas a
 // stale settings file should just leave nothing selected.
 func newAgentManager(root, flagSpec string, lsp *lspManager) (*agentManager, error) {
 	m := &agentManager{
-		root:   root,
-		lsp:    lsp,
-		models: map[string]string{},
+		root:      root,
+		openAgent: all.For,
+		lsp:       lsp,
+		models:    map[string]string{},
 	}
 	s := settings.Read()
 	if s.Models != nil {
@@ -203,14 +205,16 @@ func newAgentManager(root, flagSpec string, lsp *lspManager) (*agentManager, err
 	return m, nil
 }
 
-// resolveAgentSpec turns a preset name or a command template into argv, and
-// verifies the binary exists now rather than at first use.
-func resolveAgentSpec(spec, model string) (string, []string, string, error) {
-	cmd, err := harness.Resolve(spec, model)
-	if err != nil {
+// resolveAgentSpec validates a native agent name and locates its executable.
+func resolveAgentSpec(name, model string) (string, []string, string, error) {
+	if err := all.ValidateName(name); err != nil {
 		return "", nil, "", err
 	}
-	return cmd.Name, cmd.Args, cmd.Model, nil
+	binary, ok := harness.LookPath(name)
+	if !ok {
+		return "", nil, "", fmt.Errorf("%s is not installed", name)
+	}
+	return name, []string{binary}, strings.TrimSpace(model), nil
 }
 
 // Detect reports every harness known and whether it is installed right
@@ -229,6 +233,9 @@ func (m *agentManager) Detect() []agentHarness {
 	detected := harness.Detect(savedModels)
 	out := make([]agentHarness, 0, len(detected))
 	for _, h := range detected {
+		if all.For(h.Name) == nil {
+			continue
+		}
 		var models []string
 		if h.Installed && h.Name == selected {
 			if list, err := harness.DiscoverModels(context.Background(), h.Name); err == nil {
@@ -241,7 +248,7 @@ func (m *agentManager) Detect() []agentHarness {
 		}
 		out = append(out, agentHarness{
 			Name:      h.Name,
-			Cmd:       h.Cmd,
+			Cmd:       h.Name,
 			Installed: h.Installed,
 			Path:      h.Path,
 			Models:    models,
@@ -344,8 +351,6 @@ func (m *agentManager) Select(name string, modelOpt ...string) error {
 		modelNote = fmt.Sprintf(" (%s)", chosenModel)
 	}
 	ui.Status("ok", "agent", fmt.Sprintf("%s%s", display, modelNote), 0, os.Stdout)
-	// Persist the spec as given, not the display name: a command template
-	// shortens to its binary for display and would not survive the round trip.
 	return settings.Write(settings.Settings{Agent: name, Models: savedModels})
 }
 
@@ -411,6 +416,7 @@ func (m *agentManager) StartPrompt(label, prompt string) (*agentJob, error) {
 	}
 	args := m.args
 	name := m.selected
+	model := m.models[name]
 	m.seq++
 	ctx, cancel := context.WithTimeout(context.Background(), agentTimeout)
 	job := &agentJob{
@@ -437,11 +443,11 @@ func (m *agentManager) StartPrompt(label, prompt string) (*agentJob, error) {
 
 	ui.Status("step", "agent", fmt.Sprintf("#%d %s%s · %s", job.ID, name, modelStr, label), 0, os.Stdout)
 
-	go m.run(ctx, cancel, job, args, prompt)
+	go m.run(ctx, cancel, job, args, model, prompt)
 	return m.Job(job.ID), nil
 }
 
-func (m *agentManager) run(ctx context.Context, cancel context.CancelFunc, job *agentJob, template []string, prompt string) {
+func (m *agentManager) run(ctx context.Context, cancel context.CancelFunc, job *agentJob, base []string, model, prompt string) {
 	defer cancel()
 	defer func() {
 		m.mu.Lock()
@@ -462,8 +468,8 @@ func (m *agentManager) run(ctx context.Context, cancel context.CancelFunc, job *
 	stdoutStreamer := newLineStreamer(job.out, ui.Faint("│", os.Stdout), os.Stdout)
 	stderrStreamer := newLineStreamer(job.stderr, ui.Dim("│", os.Stdout), os.Stdout)
 
-	a := all.For(job.Harness)
-	session, err := a.Open(ctx, agents.Open{Key: fmt.Sprintf("edit-%d", job.ID), Version: version, Dir: m.root, Base: template, Mode: agents.ModeEdit, Stderr: stderrStreamer})
+	a := m.openAgent(job.Harness)
+	session, err := a.Open(ctx, agents.Open{Key: fmt.Sprintf("edit-%d", job.ID), Version: version, Dir: m.root, Base: base, Model: model, Mode: agents.ModeEdit, Stderr: stderrStreamer})
 	if err == nil {
 		defer session.Close()
 		_, err = session.Prompt(ctx, prompt, &writerSink{Writer: stdoutStreamer})
@@ -1532,7 +1538,7 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 	}
 	tm.mu.Unlock()
 
-	a := all.For(r.name)
+	a := tm.agent.openAgent(r.name)
 	mode := agents.ModeEdit
 	if explaining {
 		mode = agents.ModePlan

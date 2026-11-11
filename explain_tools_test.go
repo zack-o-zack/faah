@@ -1,7 +1,10 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -11,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"faah/internal/agents"
 	"faah/internal/explain"
 	"faah/internal/explain/notes"
 )
@@ -44,12 +48,41 @@ func TestExplainToolCallsLandOnTheTurn(t *testing.T) {
 	root := t.TempDir()
 	writeExplainSource(t, root, explainGoSource)
 	// The fake agent calls annotate through its registered MCP endpoint.
-	script := `url="$FAAH_TEST_MCP_URL"; tok="$FAAH_TEST_MCP_TOKEN"
-printf 'tok=%s\n' "$tok"
-sid=$(curl -s -D - -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" -H "Authorization: Bearer $tok" -d '{"id":0,"method":"initialize"}' "$url" | tr -d '\r' | sed -n 's/^[Mm]cp-[Ss]ession-[Ii]d: //p')
-curl -s -H "Mcp-Session-Id: $sid" -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" -H "Authorization: Bearer $tok" -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"annotate","arguments":{"notes":[{"kind":"symbol","path":"main.go","l1":7,"symbol":"helper","summary":"Does nothing yet."}]}}}' "$url"
-`
-	s := explainServer(t, root, script)
+	s := fakeAgentServer(t, root, func(ctx context.Context, o agents.Open, _ string, sink agents.Sink) error {
+		if o.Tools == nil {
+			return fmt.Errorf("missing MCP endpoint")
+		}
+		sink.Text("tok="+strings.TrimPrefix(o.Tools.Authorization, "Bearer ")+"\n", false)
+		call := func(body, sid string) (string, error) {
+			req, err := http.NewRequestWithContext(ctx, http.MethodPost, o.Tools.URL, strings.NewReader(body))
+			if err != nil {
+				return "", err
+			}
+			req.Header.Set("Authorization", o.Tools.Authorization)
+			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set("Accept", "application/json, text/event-stream")
+			if sid != "" {
+				req.Header.Set("Mcp-Session-Id", sid)
+			}
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				return "", err
+			}
+			defer resp.Body.Close()
+			data, err := io.ReadAll(resp.Body)
+			sink.Text(string(data), false)
+			if resp.StatusCode != http.StatusOK {
+				return "", fmt.Errorf("MCP HTTP %d: %s", resp.StatusCode, data)
+			}
+			return resp.Header.Get("Mcp-Session-Id"), err
+		}
+		sid, err := call(`{"id":0,"method":"initialize"}`, "")
+		if err != nil {
+			return err
+		}
+		_, err = call(`{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"annotate","arguments":{"notes":[{"kind":"symbol","path":"main.go","l1":7,"symbol":"helper","summary":"Does nothing yet."}]}}}`, sid)
+		return err
+	})
 	ts := httptest.NewServer(s)
 	defer ts.Close()
 	s.SetToolsAddr(strings.TrimPrefix(ts.URL, "http://"))
@@ -89,7 +122,7 @@ func fileNotes(t *testing.T, s *Server, rel string) []notes.View {
 func TestExplainNotesFollowTheCode(t *testing.T) {
 	root := t.TempDir()
 	writeExplainSource(t, root, explainGoSource)
-	s := explainServer(t, root, `printf 'ok\n'`)
+	s := fakeAgentServer(t, root, fakeReply("ok\n"))
 	_, m := agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "text": "helper"})
 	id := m["thread"].(map[string]any)["id"].(string)
 	waitThreadIdle(t, s, id)
@@ -126,7 +159,7 @@ func waitFor(t *testing.T, ok func() bool) {
 func TestExplainSymbolNoteNoticesNewUses(t *testing.T) {
 	root := t.TempDir()
 	writeExplainSource(t, root, explainGoSource)
-	s := explainServer(t, root, `printf 'ok\n'`)
+	s := fakeAgentServer(t, root, fakeReply("ok\n"))
 	_, m := agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "text": "helper"})
 	id := m["thread"].(map[string]any)["id"].(string)
 	waitThreadIdle(t, s, id)
@@ -158,7 +191,7 @@ func saveNotes(s *Server, sc toolScope, ns []notes.Note) {
 func TestExplainToolsRefuseAnEndedTurn(t *testing.T) {
 	root := t.TempDir()
 	writeExplainSource(t, root, explainGoSource)
-	s := explainServer(t, root, `printf 'ok\n'`)
+	s := fakeAgentServer(t, root, fakeReply("ok\n"))
 	_, m := agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "text": "helper"})
 	id := m["thread"].(map[string]any)["id"].(string)
 	waitThreadIdle(t, s, id)
