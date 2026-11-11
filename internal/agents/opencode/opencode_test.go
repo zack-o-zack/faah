@@ -99,6 +99,7 @@ func (f *fake) serve(w http.ResponseWriter, r *http.Request) {
 		f.emit(id, "permission.asked", map[string]any{"id": "perm_in", "resources": []string{"file.go"}})
 		f.emit(id, "permission.asked", map[string]any{"id": "perm_out", "resources": []string{"/outside"}})
 		f.emit(id, "permission.asked", map[string]any{"id": "perm_bash", "action": "bash", "resources": []string{"rm -rf /"}})
+		f.emit(id, "permission.asked", map[string]any{"id": "perm_shell", "action": "shell", "resources": []string{"go test ./..."}})
 		f.emit(id, "form.asked", map[string]any{"id": "form"})
 		kind := "succeeded"
 		if text == "failed" || text == "interrupted" {
@@ -201,7 +202,7 @@ func TestOpenCodeSessions(t *testing.T) {
 				if r.Path == "/api/session" {
 					expected := []rule{{"edit", "*", "ask"}, {"edit", filepath.ToSlash(o.Dir) + "/*", "allow"}, {"bash", "*", "ask"}, {"external_directory", "*", "ask"}}
 					if mode == agents.ModePlan {
-						expected = append(expected, rule{"edit", "*", "deny"})
+						expected = append(expected, rule{"edit", "*", "deny"}, rule{"bash", "*", "deny"}, rule{"shell", "*", "deny"})
 					}
 					expected = append(expected, rule{"faah-*", "*", "deny"}, rule{"faah-thread_a_*", "*", "allow"})
 					raw, _ := json.Marshal(expected)
@@ -218,7 +219,7 @@ func TestOpenCodeSessions(t *testing.T) {
 				}
 				if strings.HasSuffix(r.Path, "/agent") {
 					switches++
-					if r.Body["agent"] != "plan" {
+					if r.Body["agent"] != "faah-plan" {
 						t.Fatal(r)
 					}
 				}
@@ -230,7 +231,7 @@ func TestOpenCodeSessions(t *testing.T) {
 				}
 				if strings.HasSuffix(r.Path, "/reply") {
 					want := "reject"
-					if mode == agents.ModeEdit && strings.Contains(r.Path, "perm_in") {
+					if mode == agents.ModeEdit && (strings.Contains(r.Path, "perm_in") || strings.Contains(r.Path, "perm_bash") || strings.Contains(r.Path, "perm_shell")) {
 						want = "once"
 					}
 					if r.Body["decision"] != want {
@@ -352,7 +353,7 @@ func TestMain(m *testing.M) {
 			port = strings.TrimPrefix(a, "--port=")
 		}
 	}
-	if os.Getenv("OPENCODE_SERVER_PASSWORD") != "" || os.Getenv("OPENCODE_CONFIG_CONTENT") != "user config" {
+	if os.Getenv("OPENCODE_SERVER_PASSWORD") != "" || !validHelperConfig(os.Getenv("OPENCODE_CONFIG_CONTENT")) {
 		os.Exit(3)
 	}
 	password := os.Getenv("OPENCODE_PASSWORD")
@@ -392,7 +393,7 @@ func TestMain(m *testing.M) {
 
 func TestOpenCodeProcessRestartAndIdle(t *testing.T) {
 	exe, _ := os.Executable()
-	o := agents.Open{Base: []string{exe}, Dir: t.TempDir(), Env: []string{"FAAH_OPENCODE_HELPER=1", "OPENCODE_CONFIG_CONTENT=user config", "OPENCODE_SERVER_PASSWORD=remove"}}
+	o := agents.Open{Base: []string{exe}, Dir: t.TempDir(), Env: []string{"FAAH_OPENCODE_HELPER=1", `OPENCODE_CONFIG_CONTENT={"model":"user/model","agents":{"plan":{"disabled":true},"custom":{"mode":"subagent"}}}`, "OPENCODE_SERVER_PASSWORD=remove"}}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	a := New()
@@ -492,5 +493,31 @@ func TestOpenCodeSharedIdleOwnership(t *testing.T) {
 	case <-srv.done:
 	case <-time.After(time.Second):
 		t.Fatal("last session did not retire server")
+	}
+}
+
+func validHelperConfig(content string) bool {
+	var c struct {
+		Model  string
+		Agents map[string]json.RawMessage
+	}
+	if json.Unmarshal([]byte(content), &c) != nil {
+		return false
+	}
+	var p struct {
+		Mode        string
+		Permissions []rule
+	}
+	if json.Unmarshal(c.Agents["faah-plan"], &p) != nil {
+		return false
+	}
+	return c.Model == "user/model" && string(c.Agents["plan"]) == `{"disabled":true}` && string(c.Agents["custom"]) == `{"mode":"subagent"}` && p.Mode == "primary" && reflect.DeepEqual(p.Permissions, []rule{{"edit", "*", "deny"}, {"bash", "*", "deny"}, {"shell", "*", "deny"}})
+}
+
+func TestOpenCodeInvalidConfig(t *testing.T) {
+	for _, content := range []string{`bad`, `null`, `{"agents":[]}`, `{"agents":null}`} {
+		if _, err := planConfig(content); err == nil {
+			t.Fatalf("accepted %s", content)
+		}
 	}
 }

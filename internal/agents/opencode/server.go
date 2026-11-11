@@ -165,9 +165,11 @@ func launch(ctx context.Context, o agents.Open, binary string) (*server, error) 
 	}
 	delete(envMap, "OPENCODE_SERVER_PASSWORD")
 	envMap["OPENCODE_PASSWORD"] = password
-	if _, ok := envMap["OPENCODE_CONFIG_CONTENT"]; !ok {
-		envMap["OPENCODE_CONFIG_CONTENT"] = "{}"
+	content, err := planConfig(envMap["OPENCODE_CONFIG_CONTENT"])
+	if err != nil {
+		return nil, err
 	}
+	envMap["OPENCODE_CONFIG_CONTENT"] = content
 	env := []string{}
 	for k, v := range envMap {
 		env = append(env, k+"="+v)
@@ -398,4 +400,35 @@ func canonical(path string) (string, error) {
 		suffix = append(suffix, filepath.Base(p))
 		p = parent
 	}
+}
+
+// planConfig adds a private read-only profile without enabling the user's plan
+// agent or discarding their models, providers, or other agent definitions.
+func planConfig(content string) (string, error) {
+	config := map[string]json.RawMessage{}
+	if strings.TrimSpace(content) != "" {
+		if err := json.Unmarshal([]byte(content), &config); err != nil {
+			return "", fmt.Errorf("opencode config: %w", err)
+		}
+		if config == nil {
+			return "", errors.New("opencode config must be an object")
+		}
+	}
+	profiles := map[string]json.RawMessage{}
+	if raw, ok := config["agents"]; ok {
+		if err := json.Unmarshal(raw, &profiles); err != nil {
+			return "", fmt.Errorf("opencode agents config: %w", err)
+		}
+		if profiles == nil {
+			return "", errors.New("opencode agents config must be an object")
+		}
+	}
+	profiles["faah-plan"], _ = json.Marshal(map[string]any{
+		"mode": "primary", "description": "Read-only code explanations and planning",
+		"system":      "Explore, explain, and plan using read-only tools. Do not create, modify, or delete files. Answer the user directly and use the provided annotation and walkthrough tools when helpful.",
+		"permissions": []rule{{"edit", "*", "deny"}, {"bash", "*", "deny"}, {"shell", "*", "deny"}},
+	})
+	config["agents"], _ = json.Marshal(profiles)
+	b, err := json.Marshal(config)
+	return string(b), err
 }

@@ -59,7 +59,7 @@ type rule struct {
 func rules(o agents.Open, name string) []rule {
 	r := []rule{{"edit", "*", "ask"}, {"edit", filepath.ToSlash(o.Dir) + "/*", "allow"}, {"bash", "*", "ask"}, {"external_directory", "*", "ask"}}
 	if o.Mode == agents.ModePlan {
-		r = append(r, rule{"edit", "*", "deny"})
+		r = append(r, rule{"edit", "*", "deny"}, rule{"bash", "*", "deny"}, rule{"shell", "*", "deny"})
 	}
 	r = append(r, rule{"faah-*", "*", "deny"})
 	if o.Tools != nil {
@@ -220,7 +220,7 @@ func (s *session) Prompt(ctx context.Context, text string, sink agents.Sink) (ag
 	}
 	agent := "build"
 	if s.o.Mode == agents.ModePlan {
-		agent = "plan"
+		agent = "faah-plan"
 	}
 	if agent != s.agent {
 		if err := s.server.call(ctx, "POST", s.path()+"/agent", map[string]string{"agent": agent}, nil); err != nil {
@@ -285,8 +285,11 @@ func (s *session) Prompt(ctx context.Context, text string, sink agents.Sink) (ag
 				return out, context.Canceled
 			case "permission.asked":
 				decision := "reject"
-				// Shell resources are commands, so they cannot establish path containment.
-				if s.o.Mode == agents.ModeEdit && d.Action != "bash" && len(d.Resources) > 0 {
+				// Edit sessions execute shell commands unattended on the user's behalf.
+				if s.o.Mode == agents.ModeEdit && (d.Action == "bash" || d.Action == "shell") {
+					decision = "once"
+				}
+				if s.o.Mode == agents.ModeEdit && d.Action != "bash" && d.Action != "shell" && len(d.Resources) > 0 {
 					allow := true
 					for _, r := range d.Resources {
 						if !inside(s.o.Dir, r) {
