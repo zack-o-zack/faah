@@ -5,6 +5,8 @@ This document describes the design and implementation of threads, the long-runni
 - the store, turn runner, and event feed: [`agent.go`](../../agent.go)
 - the HTTP routing and handlers: [`server.go`](../../server.go)
 - the selected harness and change settling it reuses: [`agent.go`](../../agent.go)
+- each harness's flags, sessions, output parser and read-only mode: [`internal/agents`](../../internal/agents), one package per harness, listed in [`internal/agents/all/all.go`](../../internal/agents/all/all.go)
+- Explain's selection checks, evidence, prompt and citation checks: [`internal/explain`](../../internal/explain)
 - the sidebar views, streams and composer: [`web/src/thread.js`](../../web/src/thread.js)
 
 Threads are the conversational sibling of [inline edits](agent-editing.md). They share the harness selection, the headless invocation contract, `changedSince` and `settle`. They differ in three ways: a thread persists, it continues one harness session across turns, and it has no overlap guard.
@@ -46,7 +48,11 @@ A turn is a fresh process, so continuity is carried one of two ways:
 | Native session | `claude`, `cursor-agent`, `agy`, `gemini` | faah owns or tracks the session id. `claude`: `--session-id <uuid>` on the first turn, `--resume <uuid>` after. `agy`: captures `conversation_id` on first turn, then `--conversation <id>` every turn. `gemini`: `--session-id <uuid>` on first turn, `--resume <uuid>` after. `cursor-agent`: `create-chat` returns an id, then `--resume <id>` every turn. The harness keeps its own context, so a later turn sends only the new message. |
 | Replay | every other harness | Each turn's prompt carries the earlier turns as `User:` / `Assistant:` text, plus the files each turn changed, capped at `threadReplayMax` bytes (most recent kept). |
 
-`threadArgv` injects the session flags right after the binary (flag order does not matter to these CLIs), so the preset argv, including the model flag and permission mode, is unchanged. Only harnesses whose flags were verified are in the native list; adding one is a case in `threadArgv` and `threadNative`.
+Each agent in `internal/agents` adds its own session flags right after the binary (flag order does not matter to these CLIs), so the preset argv, including the model flag and permission mode, is unchanged. `Caps.Sessions` marks a native harness, and `Caps.NamesSession` one that names its own session (agy). `runTurn` asks the agent for a first session id with `NewSession`, and reads back the id it reported and whether the session is live from the `Outcome` of `Run`.
+
+### Adding a harness
+
+Create `internal/agents/<name>/` with a type that implements `agents.Agent`: its name, its `Caps`, a `ReadOnly` rewrite (or `agents.ErrNotReadOnly`), `NewSession`, and `Run`, which usually calls `agents.Exec` with the agent's argv and output parser. Add it to `List` in `internal/agents/all/all.go`, and give it a row in the `contract` table in `contract_test.go`: its `Caps`, the args its first and resumed turns run with, and whether its session is live after a turn. If its output is not plain text, add sample output to the `fixture` map. A harness that can be started before its prompt also implements `agents.Warmable`. Any harness that is not listed runs through `internal/agents/generic`: plain text, no sessions, no read-only mode.
 
 Two rules keep this honest:
 
@@ -57,12 +63,12 @@ The anchor and ground rules ("you may read and edit any file, reply with a conci
 
 ## 3. Output and Streaming
 
-`claude`, `agy`, and `gemini` are run with `--output-format stream-json`. `threadSink` reads stdout line by line and dispatches to harness-specific parsers:
+`claude`, `agy`, and `gemini` are run with `--output-format stream-json`. Each agent's `agents.Stream` reads stdout line by line through that agent's parser, and calls `threadSink`'s `Text`, `Step` and `Result`:
 
-- `claude` (`parseClaudeEvent`): assistant text blocks and tool uses (`toolLabel`).
-- `agy` (`parseAgyEvent`): `step_update` text deltas stream tokens live; `step_update` tool calls stream step labels in real time.
-- `gemini` (`parseGeminiEvent`): assistant message deltas stream tokens live; `tool_use` events stream step labels in real time.
-- Every other harness has its stdout treated as the reply, line by line. stderr goes to a `tailBuffer` and is appended to the error only when the turn failed with no reply.
+- `claude`: assistant text blocks and tool uses (`agents.ToolLabel`).
+- `agy`: `step_update` text deltas stream tokens live; `step_update` tool calls stream step labels in real time.
+- `gemini`: assistant message deltas stream tokens live; `tool_use` events stream step labels in real time.
+- Every other harness has its stdout treated as the reply, line by line (`agents.PlainText`). stderr goes to a `tailBuffer` and is appended to the error only when the turn failed with no reply.
 
 The feed is Server-Sent Events at `/api/threads/stream`. The browser does not open it directly: browsers allow six HTTP/1.1 connections per host across all tabs, and a stream per feature used to take them all, after which every request queued forever. Instead the same events ride on the tab's one `/api/stream` connection (`web/src/stream.js`): `?threads=1` adds the list events as `threads:<event>`, and each `?thread=<id>` adds that thread's events as `thread:<event>` with payload `{id, data}`. A `thread=` id that no longer exists gets a `thread:deleted` on connect.
 
@@ -114,16 +120,16 @@ To provide instant visual review and safe rollbacks of code modifications genera
 
 `POST /api/explain` (`explain.go`) creates a thread of `Kind: "explain"`. A harness cannot reach the language server, so faah gathers the evidence first and passes it in the prompt.
 
-- **Classification:** `classifyExplain` rereads the selection from disk and answers 409 if it differs. One whole identifier is a symbol, and anything else is a block.
-- **Evidence:** `gatherExplain` builds a packet of at most 16 KB within an 8-second budget, through the `codeIntel` interface. Without a ready server it falls back to the regex outline and whole-word search. Packets live in `<store>.explain/<thread>.md`, so the thread store stays small.
-- **Read-only:** `Send` passes every explain turn through `readOnlyArgv`, which refuses a harness or command it has no rewrite for. opencode has no read-only flag, so `runTurn` also passes `explainEnv`, which defines a read-only `faah-explain` agent in `OPENCODE_CONFIG_CONTENT`. `explain_conformance_test.go`, behind the `harness` build tag, is the check that each allowed harness honors it.
+- **Classification:** `explain.Classify` rereads the selection from disk and answers 409 if it differs. One whole identifier is a symbol, and anything else is a block.
+- **Evidence:** `explain.Gather` builds a packet of at most 16 KB within an 8-second budget, through the `explain.Workspace` interface, which `explainWorkspace` in `explain.go` implements over the language-server manager, search, and the workspace paths. Without a ready server it falls back to the regex outline and whole-word search. Packets live in `<store>.explain/<thread>.md`, so the thread store stays small.
+- **Read-only:** `Send` passes every explain turn through the agent's `ReadOnly`, which refuses a harness or command it has no rewrite for, and any harness not in `agents.Verified`. opencode has no read-only flag, so its `ReadOnly` also returns the environment that defines a read-only `faah-explain` agent in `OPENCODE_CONFIG_CONTENT`. `explain_conformance_test.go`, behind the `harness` build tag, is the check that each allowed harness honors it.
 - **Reuse:** `ExplainKey` hashes the content that defines the explanation and leaves out line numbers. `EvidenceHash` covers callers and references and only marks a reused explanation as stale. `ExplainReader` keeps the `explain.reader` text the explanation was written for. Its prompt always uses that copy, and when the setting no longer matches, a reused explanation is stale with reason `reader`.
 - **Freshness:** gathering first syncs every open document with disk. Faah sends no file-watch events, so a change in a file the server has never opened can be missing from references and callers until that file is opened.
 - **Harness:** `explainHarness` resolves `explain.agent` and `explain.model` for explain turns only. A harness pinned with `-agent` wins.
 - **Prefetch:** `POST /api/explain/prepare` answers at once and gathers in a goroutine. `explainPrefetch` holds one selection; a new one cancels the one in flight. `/api/explain` uses prepared evidence only when the key (selection plus the file's size and modification time) matches and it is under 30 seconds old.
-- **Warm-up:** `explain_standby.go` keeps one claude or agy process started with the argv of the next first turn, prompt left empty and `--input-format stream-json` added, waiting on stdin. It is started 5 seconds after faah starts, on each prepare request, and after a turn uses one. `runTurn` takes it only when the key (harness plus read-only argv, model included) matches, writes the prompt as one stream-json line, and replays the output held so far into the sink, so agy's conversation id still arrives. It is stopped after 10 minutes unused, when the settings change, and at shutdown. One that exits unused blocks a new start for a minute. Turn it off with `explain.warmup`.
+- **Warm-up:** `explain_standby.go` keeps one process of an `agents.Warmable` agent (claude or agy) started with the argv of the next first turn, prompt left empty and `--input-format stream-json` added, waiting on stdin. It is started 5 seconds after faah starts, on each prepare request, and after a turn uses one. `runTurn` takes it only when the key (harness plus read-only argv, model included) matches, writes the prompt as one stream-json line, and replays the output held so far into the sink, so agy's conversation id still arrives. It is stopped after 10 minutes unused, when the settings change, and at shutdown. One that exits unused blocks a new start for a minute. Turn it off with `explain.warmup`.
 - **Timing:** `threadTurn.FirstMs` records when the first words arrived, and `Warm` whether the harness was started ahead. `TestExplainBenchmark`, behind the `harness` build tag, times real explanations per harness and model.
-- **Citations:** at the end of a turn `validateExplainRefs` fills `threadTurn.Refs`. `thrInline` then links only those targets. `Reply` is left as written.
+- **Citations:** at the end of a turn `explain.ValidateRefs` fills `threadTurn.Refs`. `thrInline` then links only those targets. `Reply` is left as written.
 
 ## 7. HTTP Surface
 

@@ -2,6 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"faah/internal/agents"
+	"faah/internal/agents/all"
+	"faah/internal/agents/claude"
 	"os"
 	"path/filepath"
 	"slices"
@@ -43,6 +46,14 @@ printf '{"type":"assistant","message":{"content":[{"type":"text","text":"ok"}]}}
 	return s, root
 }
 
+// standbyCur reads the standby under its lock: its watcher clears it when the
+// process exits.
+func standbyCur(s *Server) *standbyProc {
+	s.threads.standby.mu.Lock()
+	defer s.threads.standby.mu.Unlock()
+	return s.threads.standby.cur
+}
+
 func standbyLines(t *testing.T, root, name string) []string {
 	t.Helper()
 	data, _ := os.ReadFile(filepath.Join(root, name))
@@ -61,14 +72,14 @@ func waitStarts(t *testing.T, s *Server, n int32) {
 }
 
 func TestStandbyArgvReadsPromptFromStdin(t *testing.T) {
-	got := standbyArgv([]string{"claude", "--permission-mode", "plan", "-p", "{prompt}"})
+	got := claude.New().StdinArgv([]string{"claude", "--permission-mode", "plan", "-p", "{prompt}"})
 	want := []string{"claude", "--input-format", "stream-json", "--permission-mode", "plan", "-p", ""}
 	if !slices.Equal(got, want) {
 		t.Fatalf("argv = %q", got)
 	}
 	for name, field := range map[string]string{"claude": "type", "agy": "event"} {
 		var m map[string]any
-		if err := json.Unmarshal(standbyMessage(name, "hi"), &m); err != nil || m[field] != "user" {
+		if err := json.Unmarshal(all.For(name).(agents.Warmable).StdinMessage("hi"), &m); err != nil || m[field] != "user" {
 			t.Fatalf("%s message = %v (%v)", name, m, err)
 		}
 	}
@@ -107,7 +118,7 @@ func TestExplainStandbyTakesFirstTurn(t *testing.T) {
 func TestExplainStandbyFollowsSettings(t *testing.T) {
 	s, _ := standbyServer(t)
 	s.threads.warmExplain()
-	first := s.threads.standby.cur
+	first := standbyCur(s)
 
 	explainSettings(t, map[string]any{"explain.model": "sonnet"})
 	s.threads.warmExplain()
@@ -119,9 +130,9 @@ func TestExplainStandbyFollowsSettings(t *testing.T) {
 	}
 
 	explainSettings(t, map[string]any{"explain.warmup": false})
-	second := s.threads.standby.cur
+	second := standbyCur(s)
 	s.threads.warmExplain()
-	if s.threads.standby.cur != nil {
+	if standbyCur(s) != nil {
 		t.Fatal("warm-up is off, yet a standby is kept")
 	}
 	<-second.exited
@@ -130,7 +141,7 @@ func TestExplainStandbyFollowsSettings(t *testing.T) {
 func TestExplainStandbyGoneRunsColdAndBacksOff(t *testing.T) {
 	s, root := standbyServer(t)
 	s.threads.warmExplain()
-	sp := s.threads.standby.cur
+	sp := standbyCur(s)
 	standbyKill(sp.cmd) // dies on its own, as far as faah knows
 	<-sp.exited
 	deadline := time.Now().Add(5 * time.Second)

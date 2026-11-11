@@ -13,6 +13,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"faah/internal/explain"
 	"faah/internal/settings"
 	"faah/internal/ui"
 )
@@ -75,7 +76,7 @@ type explainPrepared struct {
 	done      chan struct{}
 	cancel    context.CancelFunc
 	cancelled bool // set under explainPrefetch.mu when a newer selection replaced it
-	ev        explainEvidence
+	ev        explain.Evidence
 	at        time.Time
 }
 
@@ -89,7 +90,7 @@ type explainPrefetch struct {
 }
 
 // explainPrepareKey identifies a selection and the state of its file.
-func explainPrepareKey(abs string, req explainRequest) string {
+func explainPrepareKey(abs string, req explain.Request) string {
 	h := sha256.New()
 	col := func(c *int) int {
 		if c == nil {
@@ -105,14 +106,14 @@ func explainPrepareKey(abs string, req explainRequest) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-func (s *Server) gatherExplainEvidence(ctx context.Context, target explainTarget, lines []string) explainEvidence {
+func (s *Server) gatherExplainEvidence(ctx context.Context, target explain.Target, lines []string) explain.Evidence {
 	s.explainPre.gathers.Add(1)
-	return gatherExplain(ctx, s.explainDeps(), target, lines)
+	return explain.Gather(ctx, explainWorkspace{s.lsp, s}, target, lines)
 }
 
 // prepareExplain starts gathering evidence in the background and returns at
 // once. Asking again for the selection already prepared does nothing.
-func (s *Server) prepareExplain(key string, target explainTarget, lines []string) {
+func (s *Server) prepareExplain(key string, target explain.Target, lines []string) {
 	pre := &s.explainPre
 	pre.mu.Lock()
 	if cur := pre.cur; cur != nil {
@@ -131,7 +132,7 @@ func (s *Server) prepareExplain(key string, target explainTarget, lines []string
 		cur.cancelled = true
 		cur.cancel()
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), explainBudget)
+	ctx, cancel := context.WithTimeout(context.Background(), explain.Budget)
 	p := &explainPrepared{key: key, done: make(chan struct{}), cancel: cancel}
 	pre.cur = p
 	pre.mu.Unlock()
@@ -146,24 +147,24 @@ func (s *Server) prepareExplain(key string, target explainTarget, lines []string
 
 // preparedExplain returns evidence prepared for key, waiting for it if it is
 // still being gathered. It reports false when there is none worth using.
-func (s *Server) preparedExplain(ctx context.Context, key string) (explainEvidence, bool) {
+func (s *Server) preparedExplain(ctx context.Context, key string) (explain.Evidence, bool) {
 	pre := &s.explainPre
 	pre.mu.Lock()
 	p := pre.cur
 	pre.mu.Unlock()
 	if p == nil || p.key != key {
-		return explainEvidence{}, false
+		return explain.Evidence{}, false
 	}
 	select {
 	case <-p.done:
 	case <-ctx.Done():
-		return explainEvidence{}, false
+		return explain.Evidence{}, false
 	}
 	pre.mu.Lock()
 	cancelled := p.cancelled
 	pre.mu.Unlock()
 	if cancelled || time.Since(p.at) > explainPreparedTTL {
-		return explainEvidence{}, false
+		return explain.Evidence{}, false
 	}
 	return p.ev, true
 }
@@ -180,7 +181,7 @@ func (s *Server) handleExplainPrepare(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, map[string]any{"prepared": false})
 		return
 	}
-	var req explainRequest
+	var req explain.Request
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		fail(w, 400, "bad request")
 		return

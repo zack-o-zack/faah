@@ -7,6 +7,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"faah/internal/explain"
 )
 
 // ---------------------------------------------------------------- threads
@@ -18,7 +20,7 @@ type explainResult struct {
 	StaleReason string
 }
 
-func explainTitle(t explainTarget) string {
+func explainTitle(t explain.Target) string {
 	if t.Name != "" {
 		return "Explain " + t.Name
 	}
@@ -33,7 +35,7 @@ func explainTurnOK(t *thread) bool {
 }
 
 // explain opens the explanation matching this evidence, or starts a new one.
-func (tm *threadManager) explain(target explainTarget, req explainRequest, ev explainEvidence) (*explainResult, error) {
+func (tm *threadManager) explain(target explain.Target, req explain.Request, ev explain.Evidence) (*explainResult, error) {
 	reader := explainReader()
 	tm.mu.Lock()
 	for _, t := range tm.threads {
@@ -42,7 +44,7 @@ func (tm *threadManager) explain(target explainTarget, req explainRequest, ev ex
 		}
 		if t.running() || (!req.Force && explainTurnOK(t)) {
 			res := &explainResult{Thread: cloneThread(t), Cached: true}
-			res.StaleReason = explainStaleReason(t.EvidenceHash, ev.Hash)
+			res.StaleReason = explain.StaleReason(t.EvidenceHash, ev.Hash)
 			if t.ExplainReader != reader {
 				res.StaleReason = "reader"
 			}
