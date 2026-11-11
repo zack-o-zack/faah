@@ -46,6 +46,14 @@ printf '{"type":"assistant","message":{"content":[{"type":"text","text":"ok"}]}}
 	return s, root
 }
 
+// standbyCur reads the standby under its lock: its watcher clears it when the
+// process exits.
+func standbyCur(s *Server) *standbyProc {
+	s.threads.standby.mu.Lock()
+	defer s.threads.standby.mu.Unlock()
+	return s.threads.standby.cur
+}
+
 func standbyLines(t *testing.T, root, name string) []string {
 	t.Helper()
 	data, _ := os.ReadFile(filepath.Join(root, name))
@@ -110,7 +118,7 @@ func TestExplainStandbyTakesFirstTurn(t *testing.T) {
 func TestExplainStandbyFollowsSettings(t *testing.T) {
 	s, _ := standbyServer(t)
 	s.threads.warmExplain()
-	first := s.threads.standby.cur
+	first := standbyCur(s)
 
 	explainSettings(t, map[string]any{"explain.model": "sonnet"})
 	s.threads.warmExplain()
@@ -122,9 +130,9 @@ func TestExplainStandbyFollowsSettings(t *testing.T) {
 	}
 
 	explainSettings(t, map[string]any{"explain.warmup": false})
-	second := s.threads.standby.cur
+	second := standbyCur(s)
 	s.threads.warmExplain()
-	if s.threads.standby.cur != nil {
+	if standbyCur(s) != nil {
 		t.Fatal("warm-up is off, yet a standby is kept")
 	}
 	<-second.exited
@@ -133,7 +141,7 @@ func TestExplainStandbyFollowsSettings(t *testing.T) {
 func TestExplainStandbyGoneRunsColdAndBacksOff(t *testing.T) {
 	s, root := standbyServer(t)
 	s.threads.warmExplain()
-	sp := s.threads.standby.cur
+	sp := standbyCur(s)
 	standbyKill(sp.cmd) // dies on its own, as far as faah knows
 	<-sp.exited
 	deadline := time.Now().Add(5 * time.Second)
