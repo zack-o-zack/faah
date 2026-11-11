@@ -16,6 +16,17 @@ import (
 )
 
 func TestMain(m *testing.M) {
+	if path := os.Getenv("FAAH_CURSOR_LOCK_HELPER"); path != "" {
+		lock, err := lockInstall(context.Background(), path)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		defer lock.Close()
+		fmt.Println("locked")
+		bufio.NewScanner(os.Stdin).Scan()
+		os.Exit(0)
+	}
 	if os.Getenv("FAAH_CURSOR_HELPER") == "1" {
 		enc := json.NewEncoder(os.Stdout)
 		scan := bufio.NewScanner(os.Stdin)

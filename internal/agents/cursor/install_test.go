@@ -1,10 +1,12 @@
 package cursor
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -124,15 +126,65 @@ func TestCursorInstallFailureAndLock(t *testing.T) {
 		t.Fatalf("failed install was marked complete: %v", err)
 	}
 	lock := filepath.Join(dir, "install.lock")
-	if _, err := os.Stat(lock); !os.IsNotExist(err) {
-		t.Fatalf("failed install kept the lock: %v", err)
-	}
-	if err := os.WriteFile(lock, nil, 0600); err != nil {
+	holder, err := lockInstall(context.Background(), lock)
+	if err != nil {
 		t.Fatal(err)
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
+	defer holder.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 150*time.Millisecond)
+	defer cancel()
 	if _, err := prepareCache(ctx, dir); err == nil || !strings.Contains(err.Error(), "install lock") {
 		t.Fatal(err)
 	}
+}
+
+func TestCursorStaleInstallLock(t *testing.T) {
+	dir := t.TempDir()
+	for _, name := range []string{"install.lock", "installed"} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(sdkVersion), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
+	defer cancel()
+	if got, err := prepareCache(ctx, dir); err != nil || got != dir {
+		t.Fatalf("stale lock blocked installation: dir=%q err=%v", got, err)
+	}
+}
+
+func TestCursorInstallLockReleasedOnProcessDeath(t *testing.T) {
+	exe, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(t.TempDir(), "install.lock")
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	owner := exec.CommandContext(ctx, exe)
+	owner.Env = append(os.Environ(), "FAAH_CURSOR_LOCK_HELPER="+path)
+	output, err := owner.StdoutPipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	input, err := owner.StdinPipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer input.Close()
+	if err := owner.Start(); err != nil {
+		t.Fatal(err)
+	}
+	defer owner.Process.Kill()
+	scan := bufio.NewScanner(output)
+	if !scan.Scan() || scan.Text() != "locked" {
+		owner.Wait()
+		t.Fatal("lock holder did not start")
+	}
+	owner.Process.Kill()
+	owner.Wait()
+	lock, err := lockInstall(ctx, path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lock.Close()
 }

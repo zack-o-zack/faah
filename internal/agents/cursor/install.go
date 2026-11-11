@@ -44,23 +44,11 @@ func prepareCache(ctx context.Context, dir string) (string, error) {
 	if err = os.MkdirAll(dir, 0700); err != nil {
 		return "", err
 	}
-	lock := filepath.Join(dir, "install.lock")
-	for {
-		f, e := os.OpenFile(lock, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
-		if e == nil {
-			f.Close()
-			break
-		}
-		if !os.IsExist(e) {
-			return "", e
-		}
-		select {
-		case <-ctx.Done():
-			return "", fmt.Errorf("cursor SDK install lock: %w", ctx.Err())
-		case <-time.After(100 * time.Millisecond):
-		}
+	lock, err := lockInstall(ctx, filepath.Join(dir, "install.lock"))
+	if err != nil {
+		return "", err
 	}
-	defer os.Remove(lock)
+	defer lock.Close()
 	if err = writeChanged(filepath.Join(dir, "helper.mjs"), helper); err != nil {
 		return "", err
 	}
@@ -81,6 +69,33 @@ func prepareCache(ctx context.Context, dir string) (string, error) {
 		}
 	}
 	return dir, nil
+}
+
+func lockInstall(ctx context.Context, path string) (*os.File, error) {
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0600)
+	if err != nil {
+		return nil, err
+	}
+	for {
+		if err := ctx.Err(); err != nil {
+			file.Close()
+			return nil, fmt.Errorf("cursor SDK install lock: %w", err)
+		}
+		locked, err := tryInstallLock(file)
+		if err != nil {
+			file.Close()
+			return nil, fmt.Errorf("cursor SDK install lock: %w", err)
+		}
+		if locked {
+			return file, nil
+		}
+		select {
+		case <-ctx.Done():
+			file.Close()
+			return nil, fmt.Errorf("cursor SDK install lock: %w", ctx.Err())
+		case <-time.After(100 * time.Millisecond):
+		}
+	}
 }
 
 func writeChanged(path string, b []byte) error {
