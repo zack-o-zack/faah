@@ -43,6 +43,8 @@ type standbyProc struct {
 	key            string // harness and read-only argv a turn would run with
 	agent          agents.Warmable
 	sessionID      string // claude's, chosen at start; agy reports its own
+	token          string // for faah's tools, bound to the turn that takes it over
+	revoke         func() // revokes token
 	cmd            *exec.Cmd
 	stdin          io.WriteCloser
 	stdout, stderr *handoffWriter
@@ -91,7 +93,20 @@ func (tm *threadManager) warmExplain() {
 		return
 	}
 	sessionID := w.NewSession(context.Background(), tm.root, ro)
-	sp, err := startStandby(tm.root, w, key, sessionID, w.StdinArgv(w.TurnArgv(agents.Turn{Argv: ro, SessionID: sessionID})))
+	turn := agents.Turn{Argv: ro, SessionID: sessionID}
+	tok := ""
+	if w.Caps().Tools == agents.ToolsMCP {
+		tok = tm.tools.tokens.Issue(nil) // bound when a turn takes it over
+		turn.Tools = tm.tools.endpoint(tok)
+	}
+	sp, err := startStandby(tm.root, w, key, sessionID, w.StdinArgv(w.TurnArgv(turn)))
+	if tok != "" {
+		if err != nil || turn.Tools == nil {
+			tm.tools.tokens.Revoke(tok)
+		} else {
+			sp.token, sp.revoke = tok, func() { tm.tools.tokens.Revoke(tok) }
+		}
+	}
 	if err != nil {
 		sb.failed = time.Now()
 		ui.Status("err", "explain", "could not start "+name+" ahead: "+err.Error(), 0, os.Stdout)
@@ -114,6 +129,9 @@ func (tm *threadManager) warmExplain() {
 		if sb.cur == sp { // exited on its own, unused
 			sb.cur = nil
 			sb.failed = time.Now()
+			if sp.revoke != nil {
+				sp.revoke()
+			}
 			ui.Status("err", "explain", fmt.Sprintf("%s started ahead exited: %v", name, sp.err), 0, os.Stdout)
 		}
 	}()
@@ -181,6 +199,9 @@ func (sp *standbyProc) alive() bool {
 func (sp *standbyProc) kill() {
 	if sp.alive() {
 		standbyKill(sp.cmd)
+	}
+	if sp.revoke != nil {
+		sp.revoke()
 	}
 }
 

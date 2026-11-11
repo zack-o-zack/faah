@@ -1052,6 +1052,9 @@ type threadTurn struct {
 	// Refs holds the citations in an explanation's reply that passed checking,
 	// by target as written.
 	Refs map[string]explain.Ref `json:"refs,omitempty"`
+	// What an explanation showed on the code through the explain tools.
+	Notes        []notes.Note        `json:"notes,omitempty"`
+	Walkthroughs []notes.Walkthrough `json:"walkthroughs,omitempty"`
 }
 
 // thread is the persisted conversation. Path and lines are where it was
@@ -1131,6 +1134,7 @@ type threadManager struct {
 	subs      map[string]map[chan threadEvent]struct{}
 	lastSave  time.Time
 	standby   explainStandby // a harness started ahead of the next explanation
+	tools     *explainTools  // annotate and walkthrough, for explain turns
 }
 
 // threadStorePath keeps every workspace's threads beside settings.json, never
@@ -1154,6 +1158,7 @@ func newThreadManager(a *agentManager, root string) *threadManager {
 		jobs:    map[int64]*threadJobRef{},
 		subs:    map[string]map[chan threadEvent]struct{}{},
 	}
+	tm.tools = newExplainTools(tm)
 	tm.load()
 	a.threadJob = tm.job
 	a.threadCancel = tm.cancelJob
@@ -1279,6 +1284,8 @@ func cloneThread(t *thread) *thread {
 		tc := *tr
 		tc.Tools = append([]string(nil), tr.Tools...)
 		tc.Changed = append([]string(nil), tr.Changed...)
+		tc.Notes = append([]notes.Note(nil), tr.Notes...)
+		tc.Walkthroughs = append([]notes.Walkthrough(nil), tr.Walkthroughs...)
 		c.Turns[i] = &tc
 	}
 	return &c
@@ -1561,10 +1568,38 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 		turnSession = sessionID
 	}
 
+	// An explanation's tool calls land on this turn: over MCP with a token
+	// that works until the turn ends, or as tagged blocks pulled out of the
+	// reply.
+	scope := toolScope{tid: r.tid, turn: r.turn.ID}
+	var tools *agents.ToolEndpoint
+	if explaining && caps.Tools == agents.ToolsMCP {
+		tok := ""
+		if standby != nil && standby.token != "" {
+			tok = standby.token
+			tm.tools.tokens.Bind(tok, scope)
+		} else {
+			tok = tm.tools.tokens.Issue(scope)
+		}
+		defer tm.tools.tokens.Revoke(tok)
+		tools = tm.tools.endpoint(tok)
+	}
+	var turnSink agents.Sink = sink
+	var tagged *notes.Tagged
+	if explaining && caps.Tools == agents.ToolsTagged {
+		read := notes.DiskReader(tm.root)
+		tagged = notes.NewTagged(sink, func(name string, args json.RawMessage) {
+			if _, err := notes.Apply(read, tm, scope, name, args); err != nil {
+				ui.Status("err", "explain", fmt.Sprintf("%s %s: %v", r.tid, name, err), 0, os.Stdout)
+			}
+		})
+		turnSink = tagged
+	}
+
 	var out agents.Outcome
 	var err error
 	if standby != nil {
-		st := standby.agent.Stream(sink)
+		st := standby.agent.Stream(turnSink)
 		err = standby.run(ctx, prompt, st, stderr, threadTurnTimeout)
 		var failed error
 		out, failed = st.Close()
@@ -1575,9 +1610,12 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 	} else {
 		out, err = a.Run(ctx, agents.Turn{
 			Dir: tm.root, Argv: r.base, Env: r.env, Model: r.model, Prompt: prompt,
-			SessionID: turnSession, Resume: live, Timeout: threadTurnTimeout,
+			SessionID: turnSession, Resume: live, Tools: tools, Timeout: threadTurnTimeout,
 			LogBytes: agentLogBytes, Stderr: stderr,
-		}, sink)
+		}, turnSink)
+	}
+	if tagged != nil {
+		tagged.Flush()
 	}
 
 	changed := changedSince(tm.root, before)
