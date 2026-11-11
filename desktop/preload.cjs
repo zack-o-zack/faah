@@ -14,7 +14,7 @@ function markShell() {
 }
 
 // Preload can run before <html> exists. Marking it from here is still ahead of
-// first paint, so desktop.css never shows a frame of the browser layout.
+// first paint, so desktop variants apply before the first frame.
 if (!markShell()) {
   new MutationObserver((_records, observer) => {
     if (markShell()) observer.disconnect();

@@ -8,7 +8,7 @@ state isolated from the real profile.
 | Measure | Baseline | Budget |
 |---|---|---|
 | `web/app.js` | 365,493 bytes | under +5% |
-| `web/style.css` | 183,208 bytes | under +5%, excluding `desktop.css` |
+| `web/tailwind.css` | 183,208 bytes | under +5%, historical stylesheet baseline |
 | Cold start to workbench loaded | 1,812 ms (median of 3) | no worse |
 | First contentful paint, workbench | 656 ms (median of 3) | no worse |
 | Memory, workbench idle, Electron plus backend | 368 MB (median of 5, range 359–396) | no worse |

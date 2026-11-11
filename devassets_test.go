@@ -40,7 +40,7 @@ func TestDevRootServesBuiltStylesheetFromDisk(t *testing.T) {
 	t.Cleanup(func() { assets, devRoot = oldAssets, oldRoot })
 	assets, devRoot = os.DirFS(root), root
 	s, _ := newTestServer(t)
-	for _, want := range []string{"body{color:red}", "body{color:blue}"} {
+	for _, want := range []string{"body{color:var(--foreground)}", "body{background:var(--background)}"} {
 		if err := os.WriteFile(filepath.Join(root, "web", "app.css"), []byte(want), 0644); err != nil {
 			t.Fatal(err)
 		}

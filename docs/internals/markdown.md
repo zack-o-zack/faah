@@ -180,7 +180,7 @@ These cases come from the browser checks run against the implementation:
 - Interactive Lightbox (`#img-lightbox`). Clicking a standalone image opens a centered modal over a blurred backdrop (`rgba(0, 0, 0, 0.72)` + `backdrop-filter: blur(8px)`). The lightbox displays natural dimensions, offers an "Open in Tab" button (to promote the image into a dedicated image tab), a "Copy Path" button, and dismisses on `Esc` or backdrop click.
 - Broken image recovery. An error event listener registered during the capture phase on `#md` detects failed image loads and replaces the element with a styled `.md-img-broken` card displaying the missing path. See [Image Viewer Architecture](image-viewer.md) for full details.
 
-Styles live under `/* ---------- markdown preview ---------- */` in [`web/style.css`](../../web/style.css). They read only existing theme tokens, so all themes work without changes. Alerts set a local `--alert` property from existing tokens: Note `--accent`, Tip `--gi`, Important `--nc`, Warning `--mark-active`, Caution `--err`. [`styling-and-themes.md`](styling-and-themes.md) lists every token the preview uses.
+Styles live in the Markdown section of `@layer components` in [`web/tailwind.css`](../../web/tailwind.css). They read only theme tokens, so all themes work without changes. Alerts set a local `--alert` property from existing tokens: Note `--primary`, Tip `--gi`, Important `--nc`, Warning `--mark-active`, Caution `--destructive`. [`styling-and-themes.md`](styling-and-themes.md) lists every token the preview uses.
 
 ### Mermaid Diagrams
 

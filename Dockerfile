@@ -14,7 +14,7 @@ WORKDIR /build
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-# Copy generated bundle into web/
+# Copy generated JavaScript and the compiled Tailwind stylesheet into web/
 COPY --from=web-builder /build/web/app.js /build/web/app.css /build/web/workbench.js /build/web/holding.js ./web/
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /bin/faah .
 

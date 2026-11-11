@@ -13,7 +13,7 @@ test('stylesheets swap in place and page assets reload', () => {
 });
 
 test('bundler inputs and unrelated files are ignored', () => {
-  for (const css of ['style.css', 'workbench.css', 'desktop.css', 'tailwind.css']) assert.equal(reloadKind(css), null);
+  assert.equal(reloadKind('tailwind.css'), null);
   assert.equal(reloadKind(path.join('src', 'main.js')), null);
   assert.equal(reloadKind(path.join('vendor', 'mermaid.min.js.gz')), null);
   assert.equal(reloadKind('.DS_Store'), null);

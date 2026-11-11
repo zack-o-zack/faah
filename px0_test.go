@@ -70,7 +70,7 @@ func TestThemesStylesheetJoinsEveryThemeFile(t *testing.T) {
 	if len(files) == 0 {
 		t.Fatal("no themes in web/themes")
 	}
-	// Tokens with no fallback in style.css. Keep in sync with docs/internals/styling-and-themes.md.
+	// Required theme tokens read by the Tailwind entry. Keep in sync with docs/internals/styling-and-themes.md.
 	required := []string{
 		"--background", "--foreground", "--card", "--card-foreground", "--popover", "--popover-foreground",
 		"--secondary", "--secondary-foreground", "--muted", "--muted-foreground", "--accent", "--accent-foreground",
@@ -1021,7 +1021,7 @@ func TestSetRawHeaders(t *testing.T) {
 		{"index.html", "application/octet-stream", "index.html"},
 		{"app.js", "application/octet-stream", "app.js"},
 		{"main.go", "application/octet-stream", "main.go"},
-		{"nested/path/style.css", "application/octet-stream", "style.css"},
+		{"nested/path/theme.css", "application/octet-stream", "theme.css"},
 		{"assets/logo.png", "image/png", "logo.png"},
 		{"assets/photo.jpg", "image/jpeg", "photo.jpg"},
 		{"assets/anim.gif", "image/gif", "anim.gif"},
