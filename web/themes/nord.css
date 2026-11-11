@@ -4,11 +4,11 @@
   color-scheme: dark;
 
   /* surfaces, from the editor out to raised hover states */
-  --background: #2e3440; --sidebar: #292e39; --card: #292e39; --popover: #3b4252; --secondary: #3b4252; --muted: #3b4252; --sidebar-accent: #3b4252; --accent: #434c5e;
+  --background: #2e3440; --sidebar: #292e39; --card: #292e39; --popover: #3b4252; --secondary: #434c5e; --muted: #3b4252; --sidebar-accent: #3b4252; --accent: #434c5e;
   /* text: primary, secondary, tertiary */
   --foreground: #d8dee9; --card-foreground: #d8dee9; --popover-foreground: #d8dee9; --secondary-foreground: #d8dee9; --accent-foreground: #d8dee9; --sidebar-foreground: #d8dee9; --sidebar-accent-foreground: #d8dee9; --muted-foreground: #a5aebd; --faint: #616e88;
   /* borders and accent */
-  --border: #3b4252; --input: #3b4252; --sidebar-border: #3b4252; --primary: #88c0d0; --ring: #88c0d0; --sidebar-primary: #88c0d0; --sidebar-ring: #88c0d0; --primary-text: #8fbcbb; --primary-foreground: #2e3440; --sidebar-primary-foreground: #2e3440;
+  --border: #3b4252; --input: #434c5e; --sidebar-border: #3b4252; --primary: #88c0d0; --ring: #88c0d0; --sidebar-primary: #88c0d0; --sidebar-ring: #88c0d0; --primary-text: #8fbcbb; --primary-foreground: #2e3440; --sidebar-primary-foreground: #2e3440;
   /* selection, search matches, current line */
   --sel: #434c5e; --mark: rgba(235, 203, 139, 0.25); --mark-active: #d08770; --cur: #353b49;
   /* elevation */

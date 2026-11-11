@@ -599,7 +599,7 @@ function renderSettingsNav() {
   const cats = getSettingCategories();
   nav.innerHTML = cats.map(cat => {
     const active = cat === activeSettingsCategory ? ' active' : '';
-    return `<button aria-pressed="${!!active}" data-variant="${active ? 'secondary' : 'ghost'}" data-cat="${esc(cat)}" class="btn w-full justify-start" data-control="settings-nav-item" data-size="xs">${esc(cat)}</button>`;
+    return `<button aria-pressed="${!!active}" data-variant="${active ? 'secondary' : 'ghost'}" data-cat="${esc(cat)}" class="btn w-full justify-start aria-pressed:text-primary-text" data-control="settings-nav-item" data-size="xs">${esc(cat)}</button>`;
   }).join('');
 }
 

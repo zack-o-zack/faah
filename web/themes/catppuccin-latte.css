@@ -6,7 +6,7 @@
   color-scheme: light;
 
   /* surfaces, from the editor out to raised hover states */
-  --background: #eff1f5; --sidebar: #e6e9ef; --card: #e6e9ef; --popover: #dce0e8; --secondary: #dce0e8; --muted: #dce0e8; --sidebar-accent: #dce0e8; --accent: #ccd0da;
+  --background: #eff1f5; --sidebar: #e6e9ef; --card: #e6e9ef; --popover: #dce0e8; --secondary: #ccd0da; --muted: #dce0e8; --sidebar-accent: #dce0e8; --accent: #ccd0da;
   /* text: primary, secondary, tertiary */
   --foreground: #4c4f69; --card-foreground: #4c4f69; --popover-foreground: #4c4f69; --secondary-foreground: #4c4f69; --accent-foreground: #4c4f69; --sidebar-foreground: #4c4f69; --sidebar-accent-foreground: #4c4f69; --muted-foreground: #5c5f77; --faint: #8c8fa1;
   /* borders and accent */

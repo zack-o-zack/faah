@@ -76,11 +76,11 @@ The explorer header controls use the same tokenized `.mini` button style as Re-i
   color-scheme: dark;
 
   /* surfaces, from the editor out to raised hover states */
-  --background: #002b36; --sidebar: #00212b; --card: #00212b; --popover: #073642; --secondary: #073642; --muted: #073642; --sidebar-accent: #073642; --accent: #0d4452;
+  --background: #002b36; --sidebar: #00212b; --card: #00212b; --popover: #073642; --secondary: #0d4452; --muted: #073642; --sidebar-accent: #073642; --accent: #0d4452;
   /* text: primary, secondary, tertiary */
   --foreground: #93a1a1; --card-foreground: #93a1a1; --popover-foreground: #93a1a1; --secondary-foreground: #93a1a1; --accent-foreground: #93a1a1; --sidebar-foreground: #93a1a1; --sidebar-accent-foreground: #93a1a1; --muted-foreground: #839496; --faint: #586e75;
   /* borders and accent */
-  --border: #073642; --input: #073642; --sidebar-border: #073642; --primary: #268bd2; --ring: #268bd2; --sidebar-primary: #268bd2; --sidebar-ring: #268bd2; --primary-text: #2aa198; --primary-foreground: #fdf6e3; --sidebar-primary-foreground: #fdf6e3;
+  --border: #073642; --input: #0d4452; --sidebar-border: #073642; --primary: #268bd2; --ring: #268bd2; --sidebar-primary: #268bd2; --sidebar-ring: #268bd2; --primary-text: #2aa198; --primary-foreground: #fdf6e3; --sidebar-primary-foreground: #fdf6e3;
   /* selection, search matches, current line */
   --sel: #274642; --mark: rgba(181, 137, 0, 0.2); --mark-active: #b58900; --cur: #04313c;
   /* elevation */
@@ -107,8 +107,8 @@ Four progressive elevation steps radiating from the editor viewport outward:
 | ------ | -------- | ----------------------------------------------------------------------------------------------------------------------- |
 | `--background` | Yes      | Editor background, line gutter, active tab, text inputs, hovercard signature block, Markdown preview background.        |
 | `--sidebar`, `--card`| Yes      | File explorer sidebar, tab bar, right inspector, status bar, hovercard action row, Markdown code blocks and table headers.|
-| `--popover`, `--secondary`, `--muted`| Yes      | Floating surfaces (hovercard, findbar, command palette, shortcut cheatsheet, toast), row hover state, keycaps, badge fills.|
-| `--accent`| Yes      | Small button hovers (close tab, status bar icons), active status buttons, double-click occurrence highlight, scrollbar thumb.|
+| `--popover`, `--muted`| Yes      | Floating surfaces (hovercard, findbar, command palette, shortcut cheatsheet, toast), row hover state and keycaps.|
+| `--secondary`, `--accent`| Yes      | Secondary badge fills, pressed controls, small button hovers (close tab, status bar icons), active status buttons, double-click occurrence highlight, scrollbar thumb.|
 
 ### Text & Contrast Tokens
 
@@ -125,6 +125,7 @@ Four progressive elevation steps radiating from the editor viewport outward:
 
 | Token            | Required | Controls                                                                                                |
 | ---------------- | -------- | ------------------------------------------------------------------------------------------------------- |
+| `--input` | Yes | Control edges and dark translucent control fills: accent surface in dark themes, divider colour in light themes. |
 | `--border`         | Yes      | Dividers, pane borders, occurrence outlines, Markdown table borders, code block borders.                |
 | `--primary`       | Yes      | Active tab top indicator, input focus borders, resizer drag handle, Ctrl+hover link underlines, button hovers.|
 | `--primary-text`    | Yes      | Accent-colored text: active inspector tab, palette match characters, Markdown links, status button hovers.|
@@ -134,7 +135,7 @@ Four progressive elevation steps radiating from the editor viewport outward:
 | `--cur`          | Yes      | Active line background and current gutter cell highlight.                                               |
 | `--shadow`       | Yes      | Elevation box-shadow for floating overlays (palette, hovercard, findbar).                                |
 
-The paired surface tokens keep the same palette value: `--card` uses the sidebar value; `--popover`, `--secondary`, `--muted` and `--sidebar-accent` share the raised surface value. All `*-foreground` surface tokens use `--foreground`. `--input` and `--sidebar-border` share `--border`; `--ring`, `--sidebar-ring` and `--sidebar-primary` share `--primary`. `--sidebar-primary-foreground` shares `--primary-foreground` (required in every theme). `--destructive` is the UI error colour; `--err` remains the syntax error colour. Desktop focus shadows use `--focus-shadow`, while `--ring` is a colour.
+The paired surface tokens keep the same palette value: `--card` uses the sidebar value; `--popover`, `--muted` and `--sidebar-accent` share the raised surface value. All `*-foreground` surface tokens use `--foreground`. `--sidebar-border` shares `--border`. `--input` shares `--accent` in dark themes for visible control edges and translucent fills, and `--border` in light themes; `--ring`, `--sidebar-ring` and `--sidebar-primary` share `--primary`. `--sidebar-primary-foreground` shares `--primary-foreground` (required in every theme). `--destructive` is the UI error colour; `--err` remains the syntax error colour. Desktop focus shadows use `--focus-shadow`, while `--ring` is a colour.
 
 ### Syntax Highlighting Tokens
 

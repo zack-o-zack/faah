@@ -47,11 +47,11 @@ export async function drawTree(dir, container, depth, isCurrent) {
     // Ignored by .gitignore: still browsable, dimmed, and absent from search.
     const ig = c.ignored ? ' ignored' : '';
     const note = c.ignored ? ' (ignored by .gitignore, not searched)' : '';
-    const menuBtn = '<button title="Actions" aria-label="Actions" tabindex="-1" class="btn size-4! p-0! ml-auto" data-control="tr-menu-btn" data-variant="ghost" data-size="icon-xs"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><circle cx="2.5" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13.5" cy="8" r="1.5"/></svg></button>';
+    const menuBtn = '<button title="Actions" aria-label="Actions" tabindex="-1" class="btn size-3.5! shrink-0 p-0! ml-auto opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-[.sel]:opacity-100" data-control="tr-menu-btn" data-variant="ghost" data-size="icon-xs"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><circle cx="2.5" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13.5" cy="8" r="1.5"/></svg></button>';
     if (c.dir) {
       const dc = c.dirty ? ' dirty' : ''; // backend marks any ancestor of a change
       const ydc = c.yourDirty ? ' your-dirty' : '';
-      return '<div class="tw"><div class="tr dir' + ig + dc + ydc + '" data-dir="' + esc(c.path) + '" style="padding-left:' + pad + 'px" title="Folder: ' + esc(c.path) + note + '">' +
+      return '<div class="tw"><div class="tr group dir' + ig + dc + ydc + '" data-dir="' + esc(c.path) + '" style="padding-left:' + pad + 'px" title="Folder: ' + esc(c.path) + note + '">' +
         '<span class="ar"></span><span class="nm">' + esc(c.name) + '</span>' + menuBtn + '</div>' +
         // --guide is where the folder's chevron sits, for the desktop app's indent guide.
         '<div class="kids" data-kids="' + esc(c.path) + '" style="--guide:' + (pad + 6) + 'px"></div></div>';
@@ -66,8 +66,8 @@ export async function drawTree(dir, container, depth, isCurrent) {
     const isStaged = !!(showTick && c.staged);
     const isPartial = isStaged && !!c.partial;
     const sc = (isStaged ? ' is-staged' : '') + (isFileViewed(c.path) ? ' file-viewed' : '');
-    const tick = showTick ? '<button type="button" data-partial="' + isPartial + '" aria-label="Stage file" data-stage="' + esc(c.path) + '" aria-pressed="' + (isStaged ? 'true' : 'false') + '" title="' + stageTickTitle(isStaged, isPartial) + '" class="btn size-4! p-0!" data-size="icon-xs" data-variant="' + (isStaged ? 'secondary' : 'outline') + '">' + (isPartial ? '−' : isStaged ? '✓' : '') + '</button>' : '';
-    return '<div class="tr file' + ig + gc + yc + sc + '" data-file="' + esc(c.path) + '"' + (c.status ? ' data-st="' + esc(c.status) + '"' : '') + (c.yourStatus ? ' data-yst="' + esc(c.yourStatus) + '"' : '') + ' style="padding-left:' + (pad + 12) + 'px" title="Open ' + esc(c.path) + note + '">' +
+    const tick = showTick ? '<button type="button" data-partial="' + isPartial + '" aria-label="Stage file" data-stage="' + esc(c.path) + '" aria-pressed="' + (isStaged ? 'true' : 'false') + '" title="' + stageTickTitle(isStaged, isPartial) + '" class="btn size-[13px]! shrink-0 rounded-[4px]! p-0! ml-1 text-10! border-input! aria-pressed:bg-primary! aria-pressed:border-primary! aria-pressed:text-primary-foreground! data-[partial=true]:bg-transparent! data-[partial=true]:border-destructive! data-[partial=true]:text-destructive!" data-size="icon-xs" data-variant="' + (isStaged ? 'secondary' : 'outline') + '">' + (isPartial ? '!' : isStaged ? '✓' : '') + '</button>' : '';
+    return '<div class="tr group file' + ig + gc + yc + sc + '" data-file="' + esc(c.path) + '"' + (c.status ? ' data-st="' + esc(c.status) + '"' : '') + (c.yourStatus ? ' data-yst="' + esc(c.yourStatus) + '"' : '') + ' style="padding-left:' + (pad + 12) + 'px" title="Open ' + esc(c.path) + note + '">' +
       '<span class="ic" data-t="' + fileKind(c.name) + '"></span><span class="nm">' + esc(c.name) + '</span>' + badge + tick + menuBtn + '</div>';
   }).join('');
   relabelTreeBadges();
@@ -420,7 +420,7 @@ export async function patchTreeGitStatus(statuses = {}, dirtyDirs = {}, staged =
         if (!tick) {
           tick = document.createElement('button');
           tick.type = 'button';
-          tick.className = 'btn size-4! p-0!';
+          tick.className = 'btn size-[13px]! shrink-0 rounded-[4px]! p-0! ml-1 text-10! border-input! aria-pressed:bg-primary! aria-pressed:border-primary! aria-pressed:text-primary-foreground! data-[partial=true]:bg-transparent! data-[partial=true]:border-destructive! data-[partial=true]:text-destructive!';
           tick.setAttribute('aria-label', 'Stage file');
           tick.dataset.variant = 'outline';
           tick.dataset.size = 'icon-xs';
@@ -429,7 +429,7 @@ export async function patchTreeGitStatus(statuses = {}, dirtyDirs = {}, staged =
         }
         tick.dataset.partial = String(isPartial);
         tick.dataset.variant = isStaged ? 'secondary' : 'outline';
-        tick.textContent = isPartial ? '−' : isStaged ? '✓' : '';
+        tick.textContent = isPartial ? '!' : isStaged ? '✓' : '';
         tick.setAttribute('aria-pressed', isStaged ? 'true' : 'false');
         tick.title = stageTickTitle(isStaged, isPartial);
       } else if (tick) {
@@ -669,7 +669,7 @@ export function initTree() {
           const partial = s !== staged && wasPartial; // only a rollback restores it
           el.dataset.partial = String(partial);
           el.dataset.variant = s ? 'secondary' : 'outline';
-          el.textContent = partial ? '−' : s ? '✓' : '';
+          el.textContent = partial ? '!' : s ? '✓' : '';
           el.setAttribute('aria-pressed', s ? 'true' : 'false');
           el.title = stageTickTitle(s, partial);
           el.closest('.tr.file')?.classList.toggle('is-staged', s);
