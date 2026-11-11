@@ -45,9 +45,11 @@ Explain always opens a Plan session. Inline edits, ordinary conversations, and p
 | Agent | Enforcement |
 | --- | --- |
 | Claude | Native `plan` permission mode, a Read/Glob/Grep tool set, and control-protocol approval limited to those tools and `mcp__faah__*`. |
-| Codex | Plan collaboration mode, a read-only sandbox, untrusted approval policy, and refusal of command, file-change, and permission approvals. |
+| Codex | Plan collaboration mode, the private `faah-plan` read-only permissions profile, untrusted approval policy, and refusal of command, file-change, and permission approvals. |
 | Antigravity | Requests native plan mode when advertised. ACP permissions allow read/search/think/fetch and refuse other operations; faah advertises no filesystem or terminal capabilities. |
 | OpenCode | Private `faah-plan` profile plus session rules deny `edit`, `bash`, `shell`, `webfetch`, `websearch`, and `execute`. Denying `execute` also closes its built-in HTTP `fetch` path; faah's direct MCP tools remain allowed. Permission requests are rejected. |
 | Cursor | SDK `mode: "plan"` with local sandboxing enabled. |
+
+Codex's `faah-plan` profile extends `:read-only` and denies reads of `~/.codex/rules`. In Codex 0.167.1, any denied-read restriction prevents execution-policy allow rules from bypassing the filesystem sandbox. This keeps shell-based file reading available without trusting user rules to preserve read-only execution. Both thread creation/resumption and each turn select this profile; Edit keeps the user's rules and ordinary workspace-write policy. Disabling shell and unified execution would also remove Codex's file-reading path. The rule-ignore loader option is not exposed by the app-server thread configuration.
 
 Protocol fakes test session reuse, completion, cancellation, permissions, and MCP attachment without model calls. Real-agent conformance is opt-in under the `harness` build tag.

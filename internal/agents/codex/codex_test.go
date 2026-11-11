@@ -192,7 +192,18 @@ func TestCodexProtocol(t *testing.T) {
 				t.Fatal(frames[:2])
 			}
 			config := frames[2]["params"].(map[string]any)["config"]
+			threadParams := frames[2]["params"].(map[string]any)
+			if mode == agents.ModePlan && (threadParams["permissions"] != "faah-plan" || threadParams["approvalPolicy"] != "untrusted") {
+				t.Fatal(threadParams)
+			}
 			wantConfig := map[string]any{"mcp_servers.faah": map[string]any{"url": o.Tools.URL, "http_headers": map[string]any{"Authorization": o.Tools.Authorization}, "tool_timeout_sec": float64(3900), "omit_tools_from": []any{"code_mode", "deferred"}}, "mcp_optional_startup_grace_ms": float64(10000)}
+			if mode == agents.ModePlan {
+				home, err := os.UserHomeDir()
+				if err != nil {
+					t.Fatal(err)
+				}
+				wantConfig["permissions.faah-plan"] = map[string]any{"extends": ":read-only", "filesystem": map[string]any{filepath.Join(home, ".codex", "rules"): "deny"}}
+			}
 			if !reflect.DeepEqual(config, wantConfig) {
 				t.Fatalf("config: %#v", config)
 			}
@@ -209,7 +220,11 @@ func TestCodexProtocol(t *testing.T) {
 			if mode == agents.ModePlan {
 				policy, sandbox = "untrusted", "readOnly"
 			}
-			if p["approvalPolicy"] != policy || p["sandboxPolicy"].(map[string]any)["type"] != sandbox || p["model"] != o.Model || p["cwd"] != o.Dir {
+			sandboxOK := p["permissions"] == "faah-plan" && p["sandboxPolicy"] == nil
+			if mode == agents.ModeEdit {
+				sandboxOK = p["sandboxPolicy"].(map[string]any)["type"] == sandbox && p["permissions"] == nil
+			}
+			if p["approvalPolicy"] != policy || !sandboxOK || p["model"] != o.Model || p["cwd"] != o.Dir {
 				t.Fatal(p)
 			}
 			for i, f := range frames[4:] {
