@@ -18,8 +18,8 @@ const req = async (path, body) => {
   return j;
 };
 
-const ICON_DIR = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
-const ICON_PR = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M6 8.5v7M18 15.5V9a3 3 0 0 0-3-3h-4"/><polyline points="13 4 11 6 13 8"/></svg>';
+const ICON_DIR = '<span class="icon-[lucide--folder] size-3.5 shrink-0" aria-hidden="true"></span>';
+const ICON_PR = '<span class="icon-[lucide--git-pull-request] size-3.5 shrink-0" aria-hidden="true"></span>';
 
 let state = { items: [], cwd: '', home: '', sep: '/' };
 let browsePath = '';
@@ -222,15 +222,15 @@ function rowHtml(it) {
   const sub = it.state === 'starting' && it.progress ? it.progress : pr ? `${it.repo}#${it.number}` : tildify(it.path);
   const st = it.state === 'stopped' && !it.error ? '' :
     `<span class="badge shrink-0" data-variant="${it.state === 'failed' ? 'destructive' : 'secondary'}" title="${esc(it.error || it.state)}">${esc(it.state === 'stopped' ? 'exited' : it.state)}</span>`;
-  return `<li><a class="item group min-w-0 desktop:p-2" href="${esc(it.href)}" data-id="${esc(it.id)}">
+  return `<li><a class="item group min-w-0 hover:bg-accent" data-size="xs" href="${esc(it.href)}" data-id="${esc(it.id)}">
     <span class="${pr ? 'inline-flex shrink-0 text-gi' : 'inline-flex shrink-0 text-muted-foreground'}">${pr ? ICON_PR : ICON_DIR}</span>
     <span class="flex flex-1 min-w-0 flex-col"><span class="truncate">${esc(title)}</span><span class="truncate font-mono text-xs text-muted-foreground">${esc(sub)}</span></span>
     ${st}
     <span class="shrink-0 text-xs text-muted-foreground">${esc(ago(it.lastOpened))}</span>
-    <span class="flex shrink-0 gap-1">
-      <button type="button" data-act="pin" aria-pressed="${it.pinned}" title="${it.pinned ? 'Unpin' : 'Pin to top'}" aria-label="${it.pinned ? 'Unpin' : 'Pin'}" class="btn aria-pressed:visible" data-variant="${it.pinned ? 'secondary' : 'ghost'}" data-size="icon-xs">${it.pinned ? '★' : '☆'}</button>
-      ${it.state === 'running' ? '<button type="button" data-act="stop" title="Stop this workspace" aria-label="Stop" class="btn" data-variant="outline" data-size="xs">■</button>' : ''}
-      <button type="button" data-act="remove" title="Remove from the list" aria-label="Remove" class="btn" data-variant="outline" data-size="xs">✕</button>
+    <span class="flex shrink-0 gap-0.5">
+      <button type="button" data-act="pin" aria-pressed="${it.pinned}" title="${it.pinned ? 'Unpin' : 'Pin to top'}" aria-label="${it.pinned ? 'Unpin' : 'Pin'}" class="btn opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 aria-pressed:opacity-100" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--star] size-3.5 ${it.pinned ? 'text-warn' : ''}" aria-hidden="true"></span></button>
+      ${it.state === 'running' ? '<button type="button" data-act="stop" title="Stop this workspace" aria-label="Stop" class="btn" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--square] size-3 text-destructive" aria-hidden="true"></span></button>' : ''}
+      <button type="button" data-act="remove" title="Remove from the list" aria-label="Remove" class="btn opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--x] size-3.5" aria-hidden="true"></span></button>
     </span>
   </a></li>`;
 }
@@ -261,20 +261,6 @@ async function refresh() {
     renderRecent();
   }
   $('#st-ver').textContent = state.version ? 'v' + state.version : '';
-  const cwd = $('#wb-cwd');
-  cwd.hidden = !state.cwd;
-  cwd.replaceChildren();
-  const openLabel = document.createElement('span');
-  openLabel.className = 'shrink-0';
-  openLabel.textContent = 'Open';
-  const pathLabel = document.createElement('span');
-  pathLabel.className = 'min-w-0 truncate [direction:rtl] text-left';
-  const pathText = document.createElement('bdi');
-  pathText.textContent = tildify(state.cwd);
-  pathLabel.append(pathText);
-  cwd.append(openLabel, pathLabel);
-  cwd.setAttribute('aria-label', 'Open ' + tildify(state.cwd));
-  cwd.title = 'Open the folder faah was started in: ' + state.cwd;
   if (!browsePath) browse(state.cwd);
 }
 
@@ -331,11 +317,11 @@ async function browse(path) {
   $('#wb-path').title = r.path;
   $('#wb-up').disabled = !r.parent;
   $('#wb-up').dataset.path = r.parent || '';
-  $('#wb-dirs').innerHTML = r.entries.length ? r.entries.map(e => `<li><div class="item group min-w-0 desktop:p-2" tabindex="0" data-path="${esc(e.path)}">
+  $('#wb-dirs').innerHTML = r.entries.length ? r.entries.map(e => `<li><div class="item group min-w-0 cursor-pointer hover:bg-accent" data-size="xs" tabindex="0" data-path="${esc(e.path)}" title="Browse ${esc(e.name)}">
     <span class="inline-flex shrink-0 text-muted-foreground">${ICON_DIR}</span>
     <span class="flex flex-1 min-w-0 flex-col"><span class="truncate">${esc(e.name)}</span></span>
     ${e.git ? '<span class="badge" data-variant="secondary" data-control="wb-git">git</span>' : ''}
-    <span class="flex shrink-0 gap-1"><button type="button" data-act="open" title="Open ${esc(e.name)}" class="btn" data-variant="outline" data-size="xs">${pendingPR ? 'Use' : 'Open'}</button></span>
+    <span class="flex shrink-0 gap-1"><button type="button" data-act="open" title="Open ${esc(e.name)}" class="btn opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100" data-variant="ghost" data-size="xs">${pendingPR ? 'Use' : 'Open'}</button></span>
   </div></li>`).join('') : '<li class="empty p-4 text-muted-foreground">No folders here.</li>';
 }
 
@@ -361,7 +347,6 @@ $('#wb-clone-form').addEventListener('submit', e => {
 });
 $('#wb-clone-managed').addEventListener('click', () => pendingPR && open(pendingPR, 'managed'));
 $('#wb-clone-cancel').addEventListener('click', cancelClone);
-$('#wb-cwd').addEventListener('click', () => open(state.cwd));
 $('#wb-open-here').addEventListener('click', () => browsePath && useFolder(browsePath));
 $('#wb-up').addEventListener('click', e => { const p = e.currentTarget.dataset.path; if (p) browse(p); });
 $('#wb-hidden').addEventListener('change', () => browse(browsePath));

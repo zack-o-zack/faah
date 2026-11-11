@@ -285,7 +285,7 @@ export function renderTipMarkdown(src) {
 
   // 2. Extract code blocks / inline code
   s = s.replace(/(`+)([\s\S]*?[^`])\1(?!`)/g, (_, q, code) => {
-    codes.push('<code data-ui="tip-code" class="font-mono bg-muted text-primary-text">' + escapeTipHtml(code.trim()) + '</code>');
+    codes.push('<code data-ui="tip-code" class="rounded bg-muted px-1 py-px font-mono text-[0.85em] text-foreground">' + escapeTipHtml(code.trim()) + '</code>');
     return '%%PXCODE' + (codes.length - 1) + '%%';
   });
 

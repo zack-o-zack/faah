@@ -92,7 +92,7 @@ test('toggles between vertical and horizontal review layout', () => {
   assert.equal(reviewView.classList.contains('layout-vertical'), true);
 });
 
-test('pending stages use SVG edit controls, a run button and no empty question banner', async () => {
+test('pending stages use icon edit controls, a run button and no empty question banner', async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async () => ({
     ok: true,
@@ -109,7 +109,7 @@ test('pending stages use SVG edit controls, a run button and no empty question b
     assert.match(messages, /data-variant="primary"/);
     const cards = elements.get('review-stages-container').children;
     const card = cards[cards.length - 1].innerHTML;
-    assert.match(card, /aria-label="Edit this stage"><svg/);
+    assert.match(card, /aria-label="Edit this stage"><span class="icon-\[lucide--square-pen\]/);
     assert.doesNotMatch(card, /✏/);
     elements.get('btn-edit-stage-inline').onclick();
     assert.equal(elements.get('review-stage-inline-editor').hidden, false);

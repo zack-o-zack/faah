@@ -1261,8 +1261,8 @@ var holdingTmpl = template.Must(template.New("holding").Parse(`<!doctype html>
 <link rel="stylesheet" href="static/themes.css">
 </head>
 <body class="before:desktop:fixed before:desktop:inset-x-0 before:desktop:top-0 before:desktop:h-[var(--titlebar-h,38px)] before:desktop:[-webkit-app-region:drag] before:desktop:content-['']">
-<button data-desktop-menu title="Menu" aria-label="Application menu" class="btn desktop-menu-btn hidden! win-linux:inline-flex! fixed top-2 left-2 z-1 [-webkit-app-region:no-drag]" data-variant="outline" data-size="xs">
-  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+<button data-desktop-menu title="Menu" aria-label="Application menu" class="btn desktop-menu-btn hidden! win-linux:inline-flex! fixed top-2 left-2 z-1 [-webkit-app-region:no-drag]" data-variant="ghost" data-size="icon-xs">
+  <span class="icon-[lucide--menu] size-3.5" aria-hidden="true"></span>
 </button>
 <main class="card mx-4 mt-[18vh] max-w-xl sm:mx-auto">
   <div class="flex items-end gap-2 px-6">

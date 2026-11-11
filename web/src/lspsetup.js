@@ -115,7 +115,7 @@ function wire(el, d, onReady) {
   el.querySelectorAll('[data-install]').forEach(b => b.addEventListener('click', async () => {
     el.querySelectorAll('[data-install]').forEach(x => { x.disabled = true; });
     try { await apiPost('/api/lsp/install', { server: b.dataset.install, option: b.dataset.option }); }
-    catch (e) { showToast('!', e.message); }
+    catch (e) { showToast('error', e.message); }
     renderLspSetup(el, onReady);
   }));
   el.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', () => {

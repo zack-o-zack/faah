@@ -49,11 +49,11 @@ let stageThread = null; // { id, t, release }: the stage thread shown, and its l
 let lastJumpContext = null; // { path, line, stageTitle }
 
 const statusIcons = {
-  pending: '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
-  running: '<svg class="spin" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg>',
-  completed: '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>',
-  failed: '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
-  stopped: '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><rect x="9" y="9" width="6" height="6"/></svg>'
+  pending: '<span class="icon-[lucide--clock] size-3.5 shrink-0" aria-hidden="true"></span>',
+  running: '<span class="icon-[lucide--loader-circle] size-3.5 shrink-0 animate-spin" aria-hidden="true"></span>',
+  completed: '<span class="icon-[lucide--circle-check] size-3.5 shrink-0" aria-hidden="true"></span>',
+  failed: '<span class="icon-[lucide--circle-alert] size-3.5 shrink-0" aria-hidden="true"></span>',
+  stopped: '<span class="icon-[lucide--circle-stop] size-3.5 shrink-0" aria-hidden="true"></span>'
 };
 
 // Safe property getters supporting both lower and upper case keys from Go JSON
@@ -403,8 +403,8 @@ function renderPipeline() {
       </button>
       <div data-ui="review-stage-card-actions" class="flex flex-wrap items-center gap-1">
         <span class="badge mr-auto" data-variant="secondary">${status}</span>
-        <button type="button" title="Edit this stage" class="btn" data-control="mini review-stage-card-edit-btn" data-variant="ghost" data-size="icon-xs" aria-label="Edit this stage"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-        <button type="button" title="Remove stage from workflow" aria-label="Remove stage" class="btn" data-control="mini review-stage-remove-btn" data-variant="ghost" data-size="icon-xs"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+        <button type="button" title="Edit this stage" class="btn" data-control="mini review-stage-card-edit-btn" data-variant="ghost" data-size="icon-xs" aria-label="Edit this stage"><span class="icon-[lucide--square-pen] size-3.5 shrink-0" aria-hidden="true"></span></button>
+        <button type="button" title="Remove stage from workflow" aria-label="Remove stage" class="btn" data-control="mini review-stage-remove-btn" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true"></span></button>
       </div>
     `;
 
@@ -449,7 +449,7 @@ function renderPipeline() {
 async function removeStage(idx) {
   const stages = getWorkflowStages();
   if (stages.length <= 1) {
-    showToast('Workflow must have at least one stage');
+    showToast('error', 'Workflow must have at least one stage');
     return;
   }
   const def = stages[idx];
@@ -469,7 +469,7 @@ async function removeStage(idx) {
     renderPipeline();
     renderActiveStage();
   } catch (err) {
-    showToast('!', err.message);
+    showToast('error', err.message);
   }
 }
 
@@ -610,7 +610,7 @@ function wireInlineStageEditor() {
 
       try {
         await saveConfigToServer();
-        showToast('Stage updated successfully', 'success', 2000);
+        showToast('success', 'Stage updated', 2000);
         const inlineEditor = $('#review-stage-inline-editor');
         const questionBanner = $('#review-question-banner');
         if (inlineEditor) inlineEditor.hidden = true;
@@ -618,7 +618,7 @@ function wireInlineStageEditor() {
         renderPipeline();
         renderActiveStage();
       } catch (err) {
-        showToast('!', err.message);
+        showToast('error', err.message);
       }
     };
   }
@@ -678,7 +678,7 @@ function renderThreadTranscript(t) {
         <div class="thr-tools">
           <div class="thr-tools-title">Analysis Steps (${tools.length})</div>
           <div class="thr-tools-list">
-            ${tools.map(tl => `<div class="thr-tool-item">• ${esc(tl)}</div>`).join('')}
+            ${tools.map(tl => `<div class="thr-tool-item flex items-center gap-2"><span class="size-1 shrink-0 rounded-full bg-muted-foreground"></span>${esc(tl)}</div>`).join('')}
           </div>
         </div>
       `;
@@ -726,7 +726,7 @@ function wireComposeActions() {
     const currentStageState = runStages ? runStages[activeStageIdx] : null;
     const threadId = currentStageState ? getThreadId(currentStageState) : '';
     if (!threadId) {
-      showToast('Run the stage first before asking follow-up questions.');
+      showToast('info', 'Run the stage first before asking follow-up questions.');
       return;
     }
 
@@ -735,7 +735,7 @@ function wireComposeActions() {
     try {
       await apiPostJson('/api/threads/send', { id: threadId, message: msg });
     } catch (err) {
-      showToast('!', err.message);
+      showToast('error', err.message);
     } finally {
       sendBtn.disabled = false;
     }
@@ -769,7 +769,7 @@ async function runWorkflow(stageIndex = 0) {
       updateBackgroundStatusDot();
     }
   } catch (err) {
-    showToast('!', 'Failed to start review workflow: ' + err.message);
+    showToast('error', 'Failed to start review workflow: ' + err.message);
   }
 }
 
@@ -783,7 +783,7 @@ async function stopWorkflow() {
       updateBackgroundStatusDot();
     }
   } catch (err) {
-    showToast('!', err.message);
+    showToast('error', err.message);
   }
 }
 
@@ -848,7 +848,7 @@ function wireAddStageModal() {
       const prompt = (promptIn?.value || '').trim();
 
       if (!title) {
-        showToast('Please provide a stage title');
+        showToast('error', 'Give the stage a title');
         return;
       }
 
@@ -875,7 +875,7 @@ function wireAddStageModal() {
         renderPipeline();
         renderActiveStage();
       } catch (err) {
-        showToast('!', err.message);
+        showToast('error', err.message);
       }
     };
   }

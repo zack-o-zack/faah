@@ -259,7 +259,7 @@ async function doCommit() {
     }
     toggleCommitMsgBox(false);
     clearGitNotice();
-    showToast('✓', 'Committed');
+    showToast('success', 'Committed');
     if (btn) {
       btn.textContent = 'Commit';
       flashActionSuccess(btn, 'Committed');
@@ -288,7 +288,7 @@ async function doPush(force = false) {
     rewritten = false;
     emitSync();
     clearGitNotice();
-    showToast('✓', S.meta?.pr ? `${force ? 'Force-pushed' : 'Pushed'} to PR #${S.meta.pr.number}` : 'Pushed');
+    showToast('success', S.meta?.pr ? `${force ? 'Force-pushed' : 'Pushed'} to PR #${S.meta.pr.number}` : 'Pushed');
     if (btn) {
       btn.textContent = 'Push';
       flashActionSuccess(btn, 'Pushed');
@@ -319,7 +319,7 @@ async function doPull() {
   try {
     const j = await apiPostJson('/api/git/pull', {});
     clearGitNotice();
-    showToast('✓', j.message || 'Pulled');
+    showToast('success', j.message || 'Pulled');
     if (btn) {
       btn.textContent = 'Pull';
       flashActionSuccess(btn, 'Pulled');
@@ -782,7 +782,7 @@ async function commitWithMessage(message, btn) {
       ta.classList.remove('border-warn!');
     }
     clearGitNotice();
-    showToast('✓', 'Committed with AI');
+    showToast('success', 'Committed with AI');
     await fetchRecentCommits();
     await refreshUnpushed();
     await triggerRefresh();
@@ -893,12 +893,12 @@ function renderRecentCommits(commits, max = 5) {
   list.innerHTML = slice.map(c => `
     <div class="git-commit" data-sha="${esc(c.full)}">
       <div tabindex="0" role="button" aria-expanded="false" title="${esc(c.subject || '')} (${esc(c.author || '')}, ${esc(c.date || '')})&#10;Click to show changed files" class="git-commit-row flex cursor-pointer select-none items-center gap-2 rounded px-2 py-1 text-xs hover:bg-accent focus-visible:outline-ring focus-visible:outline">
-        <svg class="git-commit-caret shrink-0 text-muted-foreground [.git-commit.expanded_&]:rotate-90" viewBox="0 0 10 10" width="8" height="8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 2L6.5 5L3.5 8"/></svg>
-        <svg class="git-commit-icon shrink-0 text-primary" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="2.8"/><line x1="8" y1="1" x2="8" y2="5.2"/><line x1="8" y1="10.8" x2="8" y2="15"/></svg>
+        <span class="icon-[lucide--chevron-right] size-2 shrink-0 git-commit-caret text-muted-foreground [.git-commit.expanded_&]:rotate-90" aria-hidden="true"></span>
+        <span class="icon-[lucide--git-commit-vertical] size-3 shrink-0 git-commit-icon text-primary" aria-hidden="true"></span>
         <span class="git-commit-msg-text min-w-0 flex-1 truncate">${esc(c.subject || '(no message)')}</span>
-        <button type="button" tabindex="-1" title="Copy SHA" class="btn" data-control="git-commit-sha" data-variant="outline" data-size="xs">${esc(c.hash)}</button>
+        <button type="button" tabindex="-1" title="Copy SHA" class="btn h-5 px-1 font-mono text-muted-foreground" data-control="git-commit-sha" data-variant="ghost" data-size="xs">${esc(c.hash)}</button>
       </div>
-      <div class="git-commit-files ml-3 flex flex-col gap-1 border-l pl-2" hidden></div>
+      <div class="git-commit-files ml-3 flex flex-col border-l pl-1" hidden></div>
     </div>
   `).join('');
   for (const sha of [...expandedCommits]) {

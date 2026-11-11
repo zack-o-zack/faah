@@ -285,7 +285,7 @@ function createDiffSection(d, kind, title, sub, populateBody) {
   btn.dataset.size = 'icon-xs';
   btn.title = 'Collapse/Expand';
   btn.setAttribute('aria-label', 'Collapse or expand diff section');
-  btn.innerHTML = '&#9662;';
+  btn.innerHTML = '<span class="icon-[lucide--chevron-down] size-3.5" aria-hidden="true"></span>';
   head.append(btn);
 
   const body = document.createElement('div');
@@ -342,15 +342,15 @@ function commitStrip(d) {
     if (i < 0) { el.remove(); return; }
     const f = files[i];
     const g = COMMIT_STATUS[f.status] || ['git-M', f.status];
-    const path = f.from ? esc(f.from) + ' → ' + esc(f.path) : esc(f.path);
+    const path = f.from ? esc(f.from) + ' <span class="icon-[lucide--arrow-right] size-3 align-[-2px]" aria-hidden="true"></span> ' + esc(f.path) : esc(f.path);
     el.innerHTML =
       '<span class="badge [&.git-M]:text-primary-text [&.git-R]:text-primary-text [&.git-A]:text-gi [&.git-D]:text-gd ' + g[0] + '" title="' + esc(g[1]) + '">' + esc(f.status) + '</span>' +
       '<span data-ui="dcs-path" class="min-w-0 overflow-hidden whitespace-nowrap text-ellipsis text-muted-foreground" title="' + path + '">' + path + '</span>' +
       (f.binary ? '' : (f.add ? '<span class="text-gi">+' + f.add + '</span>' : '') + (f.del ? '<span class="text-gd">&minus;' + f.del + '</span>' : '')) +
       '<span class="flex-1 min-w-0"></span>' +
       '<span data-ui="dcs-pos" class="flex-none text-muted-foreground">' + (i + 1) + ' / ' + files.length + '</span>' +
-      '<button type="button" aria-label="Previous file" data-commit-step="-1" title="Previous file in this commit"' + (commitStepTarget(files, i, -1) < 0 ? ' disabled' : '') + ' class="btn" data-control="dcs-step" data-variant="ghost" data-size="icon-xs">‹</button>' +
-      '<button type="button" aria-label="Next file" data-commit-step="1" title="Next file in this commit"' + (commitStepTarget(files, i, 1) < 0 ? ' disabled' : '') + ' class="btn" data-control="dcs-step" data-variant="ghost" data-size="icon-xs">›</button>';
+      '<button type="button" aria-label="Previous file" data-commit-step="-1" title="Previous file in this commit"' + (commitStepTarget(files, i, -1) < 0 ? ' disabled' : '') + ' class="btn" data-control="dcs-step" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--chevron-left] size-3.5" aria-hidden="true"></span></button>' +
+      '<button type="button" aria-label="Next file" data-commit-step="1" title="Next file in this commit"' + (commitStepTarget(files, i, 1) < 0 ? ' disabled' : '') + ' class="btn" data-control="dcs-step" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--chevron-right] size-3.5" aria-hidden="true"></span></button>';
     el.dataset.i = i;
   };
   const have = cachedCommitFiles(d.diffRef);
@@ -439,16 +439,16 @@ function reviewStrip(d) {
   const viewed = isFileViewed(d.path);
   const posHtml = files.length > 0 && i >= 0
     ? '<span data-ui="dcs-pos" class="flex-none text-muted-foreground">' + (i + 1) + ' / ' + files.length + '</span>' +
-      '<button type="button" aria-label="Previous file" data-review-step="-1" title="Previous changed file ([f)"' + (i <= 0 ? ' disabled' : '') + ' class="btn" data-control="dcs-step" data-variant="ghost" data-size="icon-xs">‹</button>' +
-      '<button type="button" aria-label="Next file" data-review-step="1" title="Next changed file (]f)"' + (i >= files.length - 1 ? ' disabled' : '') + ' class="btn" data-control="dcs-step" data-variant="ghost" data-size="icon-xs">›</button>'
+      '<button type="button" aria-label="Previous file" data-review-step="-1" title="Previous changed file ([f)"' + (i <= 0 ? ' disabled' : '') + ' class="btn" data-control="dcs-step" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--chevron-left] size-3.5" aria-hidden="true"></span></button>' +
+      '<button type="button" aria-label="Next file" data-review-step="1" title="Next changed file (]f)"' + (i >= files.length - 1 ? ' disabled' : '') + ' class="btn" data-control="dcs-step" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--chevron-right] size-3.5" aria-hidden="true"></span></button>'
     : '';
   el.innerHTML =
     (d.turnLabel ? '<span class="badge text-primary-text">' + esc(d.turnLabel) + '</span>' : '') +
     '<span data-ui="dcs-path" class="min-w-0 overflow-hidden whitespace-nowrap text-ellipsis text-muted-foreground" title="' + esc(d.path) + '">' + esc(d.path) + '</span>' +
     '<span class="flex-1 min-w-0"></span>' +
-    '<button type="button" data-hunk-step="-1" title="Previous diff hunk ([c)" class="btn" data-control="dcs-step dcs-hunk-btn" data-variant="outline" data-size="xs">↑ Hunk</button>' +
-    '<button type="button" data-hunk-step="1" title="Next diff hunk (]c)" class="btn" data-control="dcs-step dcs-hunk-btn" data-variant="outline" data-size="xs">↓ Hunk</button>' +
-    '<button type="button" aria-pressed="' + viewed + '" data-variant="' + (viewed ? 'secondary' : 'ghost') + '" data-toggle-viewed="1" title="Mark file as viewed and advance to next unviewed file" class="btn" data-control="dcs-viewed" data-size="xs">✓ Viewed</button>' +
+    '<button type="button" data-hunk-step="-1" title="Previous diff hunk ([c)" class="btn" data-control="dcs-step dcs-hunk-btn" data-variant="outline" data-size="xs"><span class="icon-[lucide--arrow-up] size-3.5" aria-hidden="true"></span> Hunk</button>' +
+    '<button type="button" data-hunk-step="1" title="Next diff hunk (]c)" class="btn" data-control="dcs-step dcs-hunk-btn" data-variant="outline" data-size="xs"><span class="icon-[lucide--arrow-down] size-3.5" aria-hidden="true"></span> Hunk</button>' +
+    '<button type="button" aria-pressed="' + viewed + '" data-variant="' + (viewed ? 'secondary' : 'ghost') + '" data-toggle-viewed="1" title="Mark file as viewed and advance to next unviewed file" class="btn" data-control="dcs-viewed" data-size="xs"><span class="icon-[lucide--check] size-3.5" aria-hidden="true"></span> Viewed</button>' +
     posHtml;
   return el;
 }
@@ -518,7 +518,7 @@ function hunkHeader(hunk, idx = 0, canActOnHunk = false) {
   expandBtn.dataset.size = 'xs';
   expandBtn.dataset.hunkExpand = String(idx);
   expandBtn.title = 'Expand surrounding context lines';
-  expandBtn.textContent = '↕ Expand';
+  expandBtn.innerHTML = '<span class="icon-[lucide--chevrons-up-down] size-3" aria-hidden="true"></span> Expand';
   el.append(expandBtn);
 
   if (canActOnHunk) {
@@ -580,7 +580,7 @@ async function applyHunkAction(d, hunk, action) {
     d.diffScroll = diffview.scrollTop;
     syncDiffView(true);
   } catch (e) {
-    showToast('Hunk ' + action + ' failed: ' + e.message, 'error', 4000);
+    showToast('error', 'Hunk ' + action + ' failed: ' + e.message, 4000);
   }
 }
 
@@ -688,10 +688,9 @@ function buildDiagMap(d = doc_()) {
   const map = new Map();
   for (const diag of d.diagnostics) {
     if (!diag.line) continue;
-    const prefix = diag.severity === 1 ? '■ ' : '▲ ';
     const prev = map.get(diag.line);
     if (!prev || diag.severity === 1) {
-      map.set(diag.line, prefix + diag.message);
+      map.set(diag.line, { text: (diag.message || '').split('\n')[0], warn: diag.severity !== 1 });
     }
   }
   return map;
@@ -845,7 +844,9 @@ function codeCell(arg, diagMap = null) {
     return el;
   }
   if (diagMap && arg.newLine !== undefined && diagMap.has(arg.newLine)) {
-    el.dataset.diag = diagMap.get(arg.newLine);
+    const diag = diagMap.get(arg.newLine);
+    el.dataset.diag = diag.text;
+    if (diag.warn) el.dataset.diagWarn = '';
   }
   el.innerHTML = arg.html || esc(arg.text || '') || '&nbsp;';
   return el;
@@ -1214,7 +1215,6 @@ export function initDiff() {
   });
   const menu = $('#diff-menu');
   if (menu) {
-    for (const item of menu.querySelectorAll('button')) item.classList.remove('btn');
     const group = $('#diff-switch');
     const showMenu = open => { menu.setAttribute('aria-hidden', String(!open)); $('#diff-btn')?.setAttribute('aria-expanded', String(open)); };
     group.addEventListener('keydown', e => { if (e.key === 'Escape') showMenu(false); });

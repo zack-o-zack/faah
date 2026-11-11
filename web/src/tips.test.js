@@ -26,7 +26,7 @@ test('renderTipMarkdown formats bold, italic, code, and escapes html', () => {
 
   assert.ok(output.includes('<strong>bold</strong>'));
   assert.ok(output.includes('<em>italic</em>'));
-  assert.ok(output.includes('<code data-ui="tip-code" class="font-mono bg-muted text-primary-text">code</code>'));
+  assert.ok(output.includes('<code data-ui="tip-code" class="rounded bg-muted px-1 py-px font-mono text-[0.85em] text-foreground">code</code>'));
   assert.ok(!output.includes('<script>'));
   assert.ok(output.includes('&lt;script&gt;alert(1)&lt;/script&gt;'));
 });

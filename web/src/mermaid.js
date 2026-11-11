@@ -19,8 +19,8 @@ let mermaidLastThemeKey = null;
 
 const MERMAID_ZOOM_LEVELS = [0.25, 0.35, 0.5, 0.65, 0.8, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 4.0];
 const MERMAID_DEFAULT_ZOOM = 5; // index 5 is 1.0 (100%)
-const MERMAID_ICON_EXPAND = 'M9 2h5v5M14 2L9 7M7 14H2v-5M2 14l5-5';
-const MERMAID_ICON_COLLAPSE = 'M14 7h-5V2M9 7l5-5M2 9h5v5M7 9L2 14';
+const MERMAID_ICON_EXPAND = 'icon-[lucide--maximize-2]';
+const MERMAID_ICON_COLLAPSE = 'icon-[lucide--minimize-2]';
 
 export function exitMermaidFullscreen() {
   const fs = /** @type {(HTMLElement & { __exitFullscreen?: () => void }) | null} */ (document.querySelector('.md-mermaid.is-fullscreen'));
@@ -201,7 +201,7 @@ function mermaidZoomButton(label, icon) {
   button.dataset.size = 'icon-xs';
   button.title = label;
   button.setAttribute('aria-label', label);
-  button.innerHTML = `<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${icon}"/></svg>`;
+  button.innerHTML = `<span class="${icon} size-3.5" aria-hidden="true"></span>`;
   return button;
 }
 
@@ -222,7 +222,7 @@ function setupDiagramControlsAndPan(output, canvas, svg) {
   controls.setAttribute('role', 'group');
   controls.setAttribute('aria-label', 'Diagram zoom controls');
 
-  const zoomOut = mermaidZoomButton('Zoom out diagram (or Ctrl+Scroll)', 'M3 8h10');
+  const zoomOut = mermaidZoomButton('Zoom out diagram (or Ctrl+Scroll)', 'icon-[lucide--minus]');
   const labelBtn = document.createElement('button');
   labelBtn.type = 'button';
   labelBtn.className = 'btn';
@@ -232,10 +232,10 @@ function setupDiagramControlsAndPan(output, canvas, svg) {
   labelBtn.title = 'Click to toggle 100% / Fit';
   labelBtn.setAttribute('aria-label', 'Toggle zoom');
 
-  const zoomIn = mermaidZoomButton('Zoom in diagram (or Ctrl+Scroll)', 'M3 8h10M8 3v10');
-  const fitBtn = mermaidZoomButton('Fit diagram to view', 'M2 6V3a1 1 0 0 1 1-1h3m4 0h3a1 1 0 0 1 1 1v3m0 4v3a1 1 0 0 1-1 1h-3M6 14H3a1 1 0 0 1-1-1v-3');
+  const zoomIn = mermaidZoomButton('Zoom in diagram (or Ctrl+Scroll)', 'icon-[lucide--plus]');
+  const fitBtn = mermaidZoomButton('Fit diagram to view', 'icon-[lucide--scan]');
   const fullscreenBtn = mermaidZoomButton('Full screen', MERMAID_ICON_EXPAND);
-  const closeBtn = mermaidZoomButton('Close full screen (Esc)', 'M3.5 3.5l9 9M12.5 3.5l-9 9');
+  const closeBtn = mermaidZoomButton('Close full screen (Esc)', 'icon-[lucide--x]');
   closeBtn.classList.add('md-mermaid-fs-only');
 
   const fsClose = document.createElement('button');
@@ -246,7 +246,7 @@ function setupDiagramControlsAndPan(output, canvas, svg) {
   fsClose.dataset.size = 'icon-xs';
   fsClose.title = 'Close full screen (Esc)';
   fsClose.setAttribute('aria-label', 'Close full screen');
-  fsClose.innerHTML = '<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>';
+  fsClose.innerHTML = '<span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true"></span>';
 
   const setScale = (scale) => {
     currentScale = Math.max(0.2, Math.min(5.0, scale));
@@ -293,7 +293,7 @@ function setupDiagramControlsAndPan(output, canvas, svg) {
     const label = isFs ? 'Exit full screen (Esc)' : 'Full screen';
     fullscreenBtn.title = label;
     fullscreenBtn.setAttribute('aria-label', label);
-    fullscreenBtn.innerHTML = `<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${icon}"/></svg>`;
+    fullscreenBtn.innerHTML = `<span class="${icon} size-3.5" aria-hidden="true"></span>`;
   };
 
   const onFsKeyDown = (e) => {

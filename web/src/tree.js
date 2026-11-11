@@ -48,7 +48,7 @@ export async function drawTree(dir, container, depth, isCurrent) {
     // Ignored by .gitignore: still browsable, dimmed, and absent from search.
     const ig = c.ignored ? ' ignored' : '';
     const note = c.ignored ? ' (ignored by .gitignore, not searched)' : '';
-    const menuBtn = '<button title="Actions" aria-label="Actions" tabindex="0" class="btn shrink-0 ml-auto opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-[.sel]:opacity-100" data-control="tr-menu-btn" data-variant="ghost" data-size="icon-xs"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><circle cx="2.5" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13.5" cy="8" r="1.5"/></svg></button>';
+    const menuBtn = '<button title="Actions" aria-label="Actions" tabindex="0" class="btn shrink-0 ml-auto opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-[.sel]:opacity-100" data-control="tr-menu-btn" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--ellipsis] size-3 shrink-0" aria-hidden="true"></span></button>';
     if (c.dir) {
       const dc = c.dirty ? ' dirty' : ''; // backend marks any ancestor of a change
       const ydc = c.yourDirty ? ' your-dirty' : '';
@@ -62,14 +62,14 @@ export async function drawTree(dir, container, depth, isCurrent) {
     const isYou = !!c.yourStatus;
     const yc = (isYou ? ' your-change' : '') + (prFileMap()?.[c.path] ? ' pr-file' : '');
     const youBadge = isYou ? '<span class="badge" data-variant="outline" data-control="gs-you-tag" title="Modified by you in this review session">YOU</span>' : '';
-    const badge = g ? '<span class="gs' + (isYou ? ' gs-you' : '') + '" title="' + (isYou ? 'Your change (' + c.yourStatus + '), git: ' + g[1] : 'git: ' + g[1]) + '">' + esc(c.status) + '</span>' + youBadge : '';
+    const badge = g ? '<span class="gs w-3 text-center font-mono' + (isYou ? ' gs-you' : '') + '" title="' + (isYou ? 'Your change (' + c.yourStatus + '), git: ' + g[1] : 'git: ' + g[1]) + '">' + esc(c.status) + '</span>' + youBadge : '';
     const showTick = S.meta?.pr ? isYou : !!g;
     const isStaged = !!(showTick && c.staged);
     const isPartial = isStaged && !!c.partial;
     const sc = (isStaged ? ' is-staged' : '') + (isFileViewed(c.path) ? ' file-viewed' : '');
     const tick = showTick ? '<label class="inline-flex size-6 shrink-0 items-center justify-center cursor-pointer" data-stage-target><input type="checkbox" class="input" data-partial="' + isPartial + '" aria-label="Stage file" data-stage="' + esc(c.path) + '" title="' + stageTickTitle(isStaged, isPartial) + '"' + (isStaged ? ' checked' : '') + '></label>' : '';
     return '<div class="tr flex min-h-6 cursor-pointer select-none items-center gap-1.5 pr-2 text-xs whitespace-nowrap hover:bg-sidebar-accent focus-visible:outline focus-visible:outline-ring [&.sel]:bg-sidebar-accent [&.ignored]:opacity-50 [&.git-M]:text-primary-text [&.git-R]:text-primary-text [&.git-A]:text-gi [&.git-untracked]:text-gi [&.git-D]:text-gd [&.git-D_.nm]:line-through [&.your-change]:font-semibold [.scope-pr_&.your-change]:font-normal [&.file-viewed_.nm]:opacity-50 group file' + ig + gc + yc + sc + '" data-file="' + esc(c.path) + '"' + (c.status ? ' data-st="' + esc(c.status) + '"' : '') + (c.yourStatus ? ' data-yst="' + esc(c.yourStatus) + '"' : '') + ' style="padding-left:' + (pad + 12) + 'px" title="Open ' + esc(c.path) + note + '">' +
-      '<span class="ic size-2 shrink-0 rounded-sm bg-faint [--dot:var(--faint)] data-[t=code]:bg-[var(--nf)] data-[t=data]:bg-[var(--kt)] data-[t=web]:bg-[var(--nt)] data-[t=img]:bg-[var(--nc)]" data-t="' + fileKind(c.name) + '"></span><button type="button" class="nm min-h-6 min-w-6 text-left focus-visible:outline focus-visible:outline-ring truncate group-[.dir.dirty]:after:ml-1 group-[.dir.dirty]:after:inline-block group-[.dir.dirty]:after:size-1 group-[.dir.dirty]:after:rounded-full group-[.dir.dirty]:after:bg-primary">' + esc(c.name) + '</button>' + badge + tick + menuBtn + '</div>';
+      '<span class="ic size-2 shrink-0 rounded-sm bg-faint [--dot:var(--faint)] data-[t=code]:bg-[var(--nf)] data-[t=data]:bg-[var(--kt)] data-[t=web]:bg-[var(--nt)] data-[t=img]:bg-[var(--nc)]" data-t="' + fileKind(c.name) + '"></span><button type="button" class="nm min-h-6 min-w-6 text-left focus-visible:outline focus-visible:outline-ring truncate group-[.dir.dirty]:after:ml-1 group-[.dir.dirty]:after:inline-block group-[.dir.dirty]:after:size-1 group-[.dir.dirty]:after:rounded-full group-[.dir.dirty]:after:bg-primary">' + esc(c.name) + '</button><span class="ml-auto flex shrink-0 items-center gap-0.5">' + badge + tick + menuBtn + '</span></div>';
   }).join('');
   for (const tick of container.querySelectorAll('[data-stage]')) tick.indeterminate = tick.dataset.partial === 'true';
   relabelTreeBadges();
@@ -234,7 +234,7 @@ export async function expandAllDirs() {
   } finally {
     if (version === expansionVersion) {
       setExpandBusy(false);
-      if (failed) showToast('!', failed + (failed === 1 ? ' folder could not be loaded' : ' folders could not be loaded'));
+      if (failed) showToast('error', failed + (failed === 1 ? ' folder could not be loaded' : ' folders could not be loaded'));
     }
   }
 }
@@ -391,8 +391,9 @@ export async function patchTreeGitStatus(statuses = {}, dirtyDirs = {}, staged =
       let badge = fileRow.querySelector('.gs');
       if (!badge) {
         badge = document.createElement('span');
-        badge.className = 'gs ml-auto shrink-0 px-1 font-mono text-xs [&.git-M]:text-primary-text [&.git-R]:text-primary-text [&.git-A]:text-gi [&.git-untracked]:text-gi [&.git-D]:text-gd';
-        fileRow.appendChild(badge);
+        badge.className = 'gs w-3 text-center font-mono';
+        // Status, stage tick and menu share the row's trailing column.
+        (fileRow.querySelector('[data-stage-target]') || fileRow.querySelector('[data-control~=tr-menu-btn]')).before(badge);
       }
       badge.classList.toggle('gs-you', isYou);
       badge.title = isYou ? 'Your change (' + yourStatuses[p] + '), git: ' + g[1] : 'git: ' + g[1];
@@ -431,7 +432,7 @@ export async function patchTreeGitStatus(statuses = {}, dirtyDirs = {}, staged =
           label.className = 'inline-flex size-6 shrink-0 items-center justify-center cursor-pointer';
           label.setAttribute('data-stage-target', '');
           label.append(tick);
-          fileRow.insertBefore(label, fileRow.querySelector('[data-control~=tr-menu-btn]'));
+          fileRow.querySelector('[data-control~=tr-menu-btn]').before(label);
         }
         tick.dataset.partial = String(isPartial);
         tick.checked = isStaged;
@@ -449,8 +450,6 @@ export async function patchTreeGitStatus(statuses = {}, dirtyDirs = {}, staged =
       const tick = fileRow.querySelector('[data-stage]');
       if (tick) (tick.closest('[data-stage-target]') || tick).remove();
     }
-    const menuBtn = fileRow.querySelector('[data-control~=tr-menu-btn]');
-    if (menuBtn) fileRow.appendChild(menuBtn);
   }
 
   // Clean up any remaining .your-change on files no longer in yourStatuses

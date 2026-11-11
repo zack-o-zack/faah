@@ -44,7 +44,7 @@ async function submitNewItem() {
   const currentType = modal.dataset.type || 'file';
   const val = modalInput.value.trim().replace(/^\/+|\/+$/g, '');
   if (!val) {
-    showToast('!', 'Path cannot be empty');
+    showToast('error', 'Path cannot be empty');
     return;
   }
 
@@ -52,7 +52,7 @@ async function submitNewItem() {
   try {
     const res = await apiPostJson('/api/fs/new', { path: val, type: currentType });
     closeNewItemModal();
-    showToast('✓', (currentType === 'dir' ? 'Created folder ' : 'Created ') + res.path);
+    showToast('success', (currentType === 'dir' ? 'Created folder ' : 'Created ') + res.path);
 
     const parentDir = val.includes('/') ? val.substring(0, val.lastIndexOf('/')) : '';
     await drawTree('', treeEl, 0);
@@ -67,7 +67,7 @@ async function submitNewItem() {
       await enterEditMode();
     }
   } catch (err) {
-    showToast('!', 'Failed to create: ' + (err.message || 'unknown error'));
+    showToast('error', 'Failed to create: ' + (err.message || 'unknown error'));
   } finally {
     if (btnOk) btnOk.disabled = false;
   }

@@ -1,5 +1,6 @@
 @import "tailwindcss" source(none);
 @import "basecoat-css/vega";
+@plugin "@iconify/tailwind4";
 
 @source "./index.html";
 @source "./workbench.html";
@@ -77,6 +78,12 @@
 @layer components {
 
   ::selection { background: var(--sel); }
+
+  /* An empty state that is only a sentence flows as text, so inline keys and code stay in the line. */
+  .empty:not(:has(> :is(header, section, footer, figure))) { @apply block; }
+
+  /* Segmented toggles: the off segments recede so the chosen one reads at a glance. */
+  .button-group > .btn[aria-pressed='false'] { @apply text-muted-foreground hover:text-foreground; }
 
   @keyframes explorer-progress { 50% { opacity: .45; } }
 
@@ -381,9 +388,6 @@
   }
   .shake { animation: shake 0.28s ease-in-out; }
 
-  .spin svg, svg.spin {
-    animation: spin 0.75s linear infinite;
-  }
 
   body.vim-normal-caret #caret {
     width: var(--cw, 8.5px) !important;
@@ -469,17 +473,13 @@
 
   .c[data-diag]::after, .diff-code[data-diag]::after {
     content: attr(data-diag);
-    margin-left: 16px;
-    padding: 1px 6px;
-    border-radius: 3px;
+    margin-left: 2rem;
     font-size: var(--t-11);
-    font-style: italic;
-    background: var(--gd-bg);
-    color: var(--destructive);
-    border: 1px solid color-mix(in srgb, var(--gd) 28%, transparent);
+    color: color-mix(in srgb, var(--destructive) 75%, transparent);
     pointer-events: none;
     white-space: pre;
   }
+  .row-has-warn .c[data-diag]::after, .diff-code[data-diag-warn]::after { color: color-mix(in srgb, var(--warn) 75%, transparent); }
 
   .g.gut-diag-err {
     color: var(--destructive) !important;
@@ -548,6 +548,4 @@
     padding-right: 14px;
   }
 
-  /* Shared by JavaScript-driven loading states. */
-  @keyframes spin { to { transform: rotate(360deg); } }
 }

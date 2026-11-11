@@ -11,12 +11,12 @@ export const toastEl = $('#toast');
 let toastTimer = 0;
 let toastLeaveTimer = 0;
 
-export function showToast(accentText, text, duration = 2200) {
+export function showToast(kind, text, duration = 2200) {
   if (!toastEl) return;
   clearTimeout(toastTimer);
   clearTimeout(toastLeaveTimer);
 
-  toastEl.innerHTML = toastMarkup(accentText, text);
+  toastEl.innerHTML = toastMarkup(kind, text);
   toastEl.hidden = false;
   toastTimer = setTimeout(() => {
     toastEl.firstElementChild?.setAttribute('aria-hidden', 'true');
@@ -30,7 +30,7 @@ export function flashActionSuccess(el, text = 'Done', duration = 1200) {
   if (!label) return;
   if (el._flashTimer) clearTimeout(el._flashTimer);
   else el._oldText = label.textContent;
-  label.textContent = text.startsWith('✓') ? text : '✓ ' + text;
+  label.textContent = text;
   el.classList.add('text-gi!', 'border-gi!');
   el._flashTimer = setTimeout(() => {
     if (el._oldText !== undefined) label.textContent = el._oldText;
@@ -57,12 +57,12 @@ export async function copyToClipboard(text, notify = 'Copied', triggerEl = null)
       document.execCommand('copy');
       ok = true;
     } catch (err) {
-      showToast('!', 'Failed to copy to clipboard');
+      showToast('error', 'Failed to copy to clipboard');
     }
     document.body.removeChild(ta);
   }
   if (ok) {
-    if (notify) showToast('✓', notify);
+    if (notify) showToast('success', notify);
     if (triggerEl) flashActionSuccess(triggerEl, 'Copied');
   }
 }
@@ -101,6 +101,6 @@ export async function copyRichToClipboard(plainText, htmlText, notify = 'Copied'
   if (!ok) {
     return copyToClipboard(plainText, notify, triggerEl);
   }
-  if (notify) showToast('✓', notify);
+  if (notify) showToast('success', notify);
   if (triggerEl) flashActionSuccess(triggerEl, 'Copied');
 }

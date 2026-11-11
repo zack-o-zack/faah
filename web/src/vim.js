@@ -691,7 +691,7 @@ export function showVimHelp() {
     '<input type="checkbox" id="vim-toggle-input" ' + isChecked + ' class="input">' +
     '<span data-ui="vim-switch-text" class="font-mono text-muted-foreground">' + (vimEnabled ? 'Enabled' : 'Disabled') + '</span>' +
     '</label>' +
-    '<button id="btn-close-vim-help" title="Close (Esc)" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Close (Esc)">✕</button>' +
+    '<button id="btn-close-vim-help" title="Close (Esc)" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Close (Esc)"><span class="icon-[lucide--x] size-3.5" aria-hidden="true"></span></button>' +
     '</div>' +
     '</header>' +
     '<section data-ui="vim-help-content" class="flex flex-col overflow-y-auto gap-2">' + sectionsHtml + '</section>' +
@@ -711,7 +711,7 @@ export function showVimHelp() {
       setVimModeEnabled(active, true);
       const txt = modal.querySelector('[data-ui~=vim-switch-text]');
       if (txt) txt.textContent = active ? 'Enabled' : 'Disabled';
-      showToast('✓', active ? 'Vim mode enabled' : 'Vim mode disabled');
+      showToast('success', active ? 'Vim mode enabled' : 'Vim mode disabled');
     });
   }
 

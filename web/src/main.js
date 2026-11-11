@@ -110,11 +110,11 @@ initPRScope();
     back.className = 'btn';
     back.dataset.control = 'icon-action wb-back';
     back.dataset.variant = 'ghost';
-    back.dataset.size = 'xs';
+    back.dataset.size = 'icon-xs';
     back.href = S.meta.workbench;
     back.title = 'Back to the faah workbench';
     back.setAttribute('aria-label', 'Back to the faah workbench');
-    back.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>';
+    back.innerHTML = '<span class="icon-[lucide--layout-grid] size-3.5" aria-hidden="true"></span>';
     $('#root-name').before(back);
   }
   if (S.meta.version) {
@@ -126,10 +126,8 @@ initPRScope();
       stVerEl.title = `faah v${S.meta.version} (Click for shortcuts & help)`;
     }
   }
-  // The desktop app drops the sidebar footer: the version sits on the title row
-  // and Settings joins the status bar.
+  // The desktop app keeps its footer for the workspace; Settings joins the status bar.
   if (document.documentElement.hasAttribute('data-shell')) {
-    $('#side .panel-actions').before($('#st-ver'));
     $('#status').append($('#btn-settings'));
   }
   updateStatus();

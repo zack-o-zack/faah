@@ -66,7 +66,7 @@ async function drawPreview(d) {
     } catch (e) {
       d.mdError = e.message; // this tab falls back to its source
       if (gen === mdGen && mdShown === d) {
-        showToast('!', 'No preview for ' + d.name + ': ' + e.message);
+        showToast('error', 'No preview for ' + d.name + ': ' + e.message);
         syncPreview();
         updateStatus();
       }
@@ -113,7 +113,7 @@ function scheduleMermaidThemeRender() {
 export function togglePreview() {
   const d = doc_();
   if (d && d.isEditing) return;
-  if (!previewKind(d)) { showToast('!', 'Preview works on Markdown, CSV and TSV files'); return; }
+  if (!previewKind(d)) { showToast('error', 'Preview works on Markdown, CSV and TSV files'); return; }
   hideHover();
   exitMermaidFullscreen();
   if (previewing(d)) {
@@ -306,7 +306,7 @@ function mdEnhance() {
     copy.title = 'Copy code';
     copy.setAttribute('aria-label', 'Copy code');
     // An icon, not a label: find in the preview walks text nodes.
-    copy.innerHTML = '<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 3.5V3a1.5 1.5 0 0 0-1.5-1.5H4A1.5 1.5 0 0 0 2.5 3v5A1.5 1.5 0 0 0 4 9.5h.5"/></svg>';
+    copy.innerHTML = '<span class="icon-[lucide--copy] size-3.5 shrink-0" aria-hidden="true"></span>';
     const toolbar = document.createElement('div');
     toolbar.className = 'flex items-center justify-between gap-2 border border-b-0 rounded-t-md bg-sidebar px-3 py-1 text-xs text-muted-foreground';
     const language = document.createElement('span');
@@ -423,7 +423,7 @@ async function mdFollow(path, anchor) {
   const line = /^L(\d+)/.exec(anchor);
   await openFile(path, line ? { line: +line[1] } : {});
   const nd = doc_();
-  if (!nd || nd.path !== path) { showToast('!', 'Cannot open ' + path); return; }
+  if (!nd || nd.path !== path) { showToast('error', 'Cannot open ' + path); return; }
   if (anchor && !line) {
     const el = mdDrawn === nd && mdFindAnchor(anchor);
     if (el) mdScrollTo(el); else nd.mdAnchor = anchor;
@@ -527,10 +527,10 @@ export function initMarkdown() {
       if (pre) {
         copyToClipboard(pre.textContent || '', 'Copied code block');
         copy.classList.add('copied');
-        copy.innerHTML = '<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3.5 8.5 6.5 11.5 12.5 5.5"/></svg>';
+        copy.innerHTML = '<span class="icon-[lucide--check] size-3.5 shrink-0" aria-hidden="true"></span>';
         setTimeout(() => {
           copy.classList.remove('copied');
-          copy.innerHTML = '<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 3.5V3a1.5 1.5 0 0 0-1.5-1.5H4A1.5 1.5 0 0 0 2.5 3v5A1.5 1.5 0 0 0 4 9.5h.5"/></svg>';
+          copy.innerHTML = '<span class="icon-[lucide--copy] size-3.5 shrink-0" aria-hidden="true"></span>';
         }, 1400);
       }
       return;
@@ -558,7 +558,7 @@ export function initMarkdown() {
       const path = img.dataset.rawPath || img.dataset.origSrc || img.getAttribute('src') || 'image';
       const fallback = document.createElement('div');
       fallback.className = 'md-img-broken';
-      fallback.innerHTML = '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 14l5-5 3 3 4-4"/><circle cx="5.5" cy="5.5" r="1.5"/><line x1="2" y1="2" x2="14" y2="14"/></svg><span>Image not found: ' + esc(path) + '</span>';
+      fallback.innerHTML = '<span class="icon-[lucide--image-off] size-4 shrink-0" aria-hidden="true"></span><span>Image not found: ' + esc(path) + '</span>';
       img.replaceWith(fallback);
     }
   }, true);

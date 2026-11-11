@@ -3,7 +3,7 @@ import { showHoverAtCaret } from './hover.js';
 import { $, esc, S, doc_, api, debounce, withKeys } from './state.js';
 import { render, toggleWordWrap } from './renderer.js';
 import { openFile, centerLine, closeTab, closeAllTabs, reopenClosedTab } from './tabs.js';
-import { updateStatus, openLspMenu } from './status.js';
+import { updateStatus, openLspMenu, startAllLsp, stopAllLsp } from './status.js';
 import { pushHistory } from './history.js';
 import { showPanel, reindexWorkspace } from './panels.js';
 import { openFind } from './find.js';
@@ -87,6 +87,8 @@ export const COMMANDS = [
   { name: withKeys('Show Call Trail: Callers / Callees ({Alt+Shift+H})'), run: () => showCalls() },
   { name: 'Language Servers: Setup & Manage…', run: () => openLspMenu() },
   { name: 'Set Up Language Server…', run: () => openLspMenu() },
+  { name: 'Language Servers: Start All', run: startAllLsp },
+  { name: 'Language Servers: Stop All', run: stopAllLsp },
   { name: 'Toggle Right Sidebar / Inspector', run: () => {
     if (document.body.classList.contains('right-hidden')) showRightInspector();
     else hideRightInspector();
@@ -114,12 +116,12 @@ export const COMMANDS = [
 ];
 
 export const PAL_MODES = {
-  file: { tag: 'File', hint: 'Type to fuzzy-match any file. Prefix : for a line, @ for a symbol, > for a command.' },
-  symbol: { tag: 'Symbol', hint: 'Symbols in the active file.' },
-  line: { tag: 'Line', hint: 'Enter a line number.' },
-  command: { tag: 'Command', hint: '' },
-  theme: { tag: 'Theme', hint: 'Arrows preview a theme. Enter keeps it, Esc restores the previous one.' },
-  openpr: { tag: 'Open PR', hint: 'Full pull request URL (e.g. https://github.com/owner/repo/pull/123), then Enter.' },
+  file: { tag: 'File', placeholder: 'Search files by name', hint: 'Type to fuzzy-match any file. Prefix : for a line, @ for a symbol, > for a command.' },
+  symbol: { tag: 'Symbol', placeholder: 'Go to symbol', hint: 'Symbols in the active file.' },
+  line: { tag: 'Line', placeholder: 'Go to line', hint: 'Enter a line number.' },
+  command: { tag: 'Command', placeholder: 'Run a command', hint: '' },
+  theme: { tag: 'Theme', placeholder: 'Select a theme', hint: 'Arrows preview a theme. Enter keeps it, Esc restores the previous one.' },
+  openpr: { tag: 'Open PR', placeholder: 'Paste a pull request URL', hint: 'Full pull request URL (e.g. https://github.com/owner/repo/pull/123), then Enter.' },
 };
 
 export function openPalette(mode, seed) {
@@ -128,6 +130,7 @@ export function openPalette(mode, seed) {
   palInput.value = seed !== undefined ? seed : ({ symbol: '@', line: ':', command: '>' }[mode] || '');
   $('#pal-mode').textContent = PAL_MODES[mode].tag;
   $('#pal-hint').textContent = PAL_MODES[mode].hint;
+  palInput.placeholder = PAL_MODES[mode].placeholder;
   palInput.focus();
   palInput.setSelectionRange(palInput.value.length, palInput.value.length);
   refreshPalette();
@@ -164,6 +167,7 @@ export async function refreshPaletteNow() {
   pal.mode = mode;
   $('#pal-mode').textContent = PAL_MODES[mode].tag;
   $('#pal-hint').textContent = PAL_MODES[mode].hint;
+  palInput.placeholder = PAL_MODES[mode].placeholder;
   const q = raw.trim();
 
   if (mode === 'line') {

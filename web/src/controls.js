@@ -3,7 +3,9 @@ export function setPressed(control, pressed) {
   if (!control) return;
   control.setAttribute('aria-pressed', String(!!pressed));
   if (control.getAttribute('role') === 'tab') control.setAttribute('aria-selected', String(!!pressed));
-  control.dataset.variant = pressed ? 'secondary' : 'ghost';
+  // Grouped segments keep their outline so the group reads as one control.
+  const off = control.closest?.('.button-group') ? 'outline' : 'ghost';
+  control.dataset.variant = pressed ? 'secondary' : off;
 }
 
 /** Let focused controls own ordinary navigation; editor shortcuts keep modifiers. */

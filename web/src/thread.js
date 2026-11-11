@@ -12,8 +12,8 @@ import { layout, render } from './renderer.js';
 import { registerAgentPicker, reloadWorkspace } from './agent.js';
 import { onStream, setStreamTopic, watchThread } from './stream.js';
 
-const COPY_ICON = '<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 3.5V3a1.5 1.5 0 0 0-1.5-1.5H4A1.5 1.5 0 0 0 2.5 3v5A1.5 1.5 0 0 0 4 9.5h.5"/></svg>';
-const COPIED_ICON = '<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3.5 8.5 6.5 11.5 12.5 5.5"/></svg>';
+const COPY_ICON = '<span class="icon-[lucide--copy] size-3 shrink-0" aria-hidden="true"></span>';
+const COPIED_ICON = '<span class="icon-[lucide--check] size-3 shrink-0" aria-hidden="true"></span>';
 
 /* A thread is a long-running conversation with the coding harness, kept on the
    server. It starts from a spot in the code but is not limited to it: the
@@ -444,7 +444,7 @@ function thrDrawList() {
     '<div data-ui="thr-item" class="item cursor-pointer hover:bg-accent [&.sel]:bg-accent' + (thr.cur && thr.cur.id === t.id ? ' sel' : '') + '" data-id="' + esc(t.id) + '" role="button" tabindex="0">' +
     '<div data-ui="thr-item-title" class="label flex items-center min-w-0 gap-2 font-semibold">' + (t.running ? '<span data-ui="thr-spin" class="size-3 shrink-0 rounded-full border-2 border-border border-t-primary animate-spin" title="Working"></span>' : t.failed ? '<span data-ui="thr-fail" class="flex-none font-semibold text-destructive" title="Last reply failed">!</span>' : '') +
     '<span data-ui="thr-item-title-text" class="flex-1 min-w-0 overflow-hidden whitespace-nowrap text-ellipsis">' + esc(t.title) + '</span>' + (t.kind ? '<span class="badge" data-variant="outline" data-control="thr-kind">' + (t.kind === 'batch' || t.kind === 'explain' ? t.kind : 'inline') + '</span>' : '') +
-    '<button data-del="' + esc(t.id) + '" title="Delete this thread" aria-label="Delete thread" class="btn" data-control="thr-item-del mini" data-variant="ghost" data-size="icon-xs"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>' +
+    '<button data-del="' + esc(t.id) + '" title="Delete this thread" aria-label="Delete thread" class="btn" data-control="thr-item-del mini" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--trash-2] size-3 shrink-0" aria-hidden="true"></span></button>' +
     '</div>' +
     '<div data-ui="thr-item-meta" class="flex justify-between gap-2 font-mono text-muted-foreground"><span data-ui="thr-item-ref" class="overflow-hidden whitespace-nowrap text-ellipsis">' + esc(thrRefText(t)) + '</span>' +
     '<span>' + t.turns + (t.turns === 1 ? ' turn' : ' turns') + ' · ' + thrAgo(t.updated) + '</span></div></div>').join('');
@@ -587,7 +587,7 @@ function thrRenderScope() {
 async function thrPickScope(scope) {
   if (thr.cur) {
     try { thr.cur = await apiPostJson('/api/threads/scope', { id: thr.cur.id, scope }); }
-    catch (e) { showToast('!', e.message); return; }
+    catch (e) { showToast('error', e.message); return; }
   } else if (thr.draft) {
     thr.draft.scope = scope;
   }
@@ -701,7 +701,7 @@ function thrBack() {
 /* Starts a draft: anchored to info's range, or to the workspace when info is
    omitted. Nothing is created on the server until the first message is sent. */
 export function newThread(info) {
-  if (!thr.avail) { showToast('!', 'Threads need a coding harness: run faah without -no-agent'); return; }
+  if (!thr.avail) { showToast('error', 'Threads need a coding harness: run faah without -no-agent'); return; }
   thr.opening = null;
   thrCloseStream();
   thr.cur = null;
@@ -760,7 +760,7 @@ function prepareExplain(info) {
 
 export function explainSelection(info) {
   const d = doc_();
-  if (d && d.path === info.path && d.dirty) { showToast('!', 'Save the file to explain the current code'); return; }
+  if (d && d.path === info.path && d.dirty) { showToast('error', 'Save the file to explain the current code'); return; }
   const { path, l1, c1, l2, c2, text } = info;
   thrExplain({ path, l1, c1, l2, c2, text });
 }
@@ -784,7 +784,7 @@ async function thrSend() {
     }
     thrEl.input.value = '';
   } catch (e) {
-    showToast('!', e.message);
+    showToast('error', e.message);
   } finally {
     thr.sending = false;
     thrRenderState();
@@ -800,13 +800,13 @@ export async function deleteThread(id) {
     await apiPost('/api/threads/delete', { id });
     if (thr.cur && thr.cur.id === id) thrBack();
   } catch (e) {
-    showToast('!', e.message);
+    showToast('error', e.message);
   }
 }
 
 export function deleteCurrentThread() {
   if (thr.cur) deleteThread(thr.cur.id);
-  else showToast('!', 'No thread currently open');
+  else showToast('error', 'No thread currently open');
 }
 
 export function initThreads() {
@@ -850,7 +850,7 @@ export function initThreads() {
   })();
   thrEl.send.addEventListener('click', thrSend);
   thrEl.stop.addEventListener('click', () => {
-    if (thr.cur) apiPost('/api/threads/cancel', { id: thr.cur.id }).catch(e => showToast('!', e.message));
+    if (thr.cur) apiPost('/api/threads/cancel', { id: thr.cur.id }).catch(e => showToast('error', e.message));
   });
   thrEl.del.addEventListener('click', () => {
     if (thr.cur) deleteThread(thr.cur.id);
@@ -902,11 +902,11 @@ export function initThreads() {
           thr.cur = updated;
           thrRenderState();
           reloadWorkspace(null, 'Reverted turn #' + turnId);
-          showToast('Reverted turn #' + turnId, 'success', 2500);
+          showToast('success', 'Reverted turn #' + turnId, 2500);
         })
         .catch(err => {
           rev.disabled = false;
-          showToast('!', 'Revert failed: ' + err.message);
+          showToast('error', 'Revert failed: ' + err.message);
         });
       return;
     }

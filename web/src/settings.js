@@ -603,6 +603,12 @@ function renderSettingsNav() {
   }).join('');
 }
 
+/** A switch saves a boolean, or its on/off strings when the setting is an on/off choice. */
+function switchValue(input) {
+  if (input.dataset.on === undefined) return input.checked;
+  return input.checked ? input.dataset.on : input.dataset.off;
+}
+
 function isSettingModified(key, val, defVal) {
   if (val === undefined || val === null) return false;
   if (defVal === undefined || defVal === null) return val !== '';
@@ -656,45 +662,25 @@ function renderSettingsList() {
     const def = defaults[key] !== undefined ? defaults[key] : itemDef;
     const val = currentSettings[key] !== undefined ? currentSettings[key] : def;
     const modified = isSettingModified(key, currentSettings[key], def);
-    const modClass = modified ? ' is-modified' : '';
+
+    const segment = (value, label, selected) => `<button type="button" aria-pressed="${selected}" data-variant="${selected ? 'secondary' : 'outline'}" data-set-key="${esc(key)}" data-set-val="${esc(String(value))}" class="btn" data-control="settings-pill-tag" data-size="sm">${esc(String(label))}</button>`;
 
     let controlHtml = '';
-    let aptValuesHtml = '';
+    let belowHtml = '';
 
     if (type === 'boolean') {
       const checked = (val === true || val === 'true') ? 'checked' : '';
-      controlHtml = `
-        <label class="label">
-          <input aria-label="${esc(title)}" role="switch" type="checkbox" id="setting-${esc(key)}" data-key="${esc(key)}" ${checked} class="input">
-
-        </label>`;
-      const isT = val === true || val === 'true';
-      aptValuesHtml = `
-        <div data-ui="settings-apt-bar" class="flex flex-wrap items-center gap-2 [&>.button-group]:flex-wrap">
-          <span data-ui="settings-apt-label" class="label text-muted-foreground">Allowed Values:</span>
-          <div class="button-group" role="group">
-            <button type="button" aria-pressed="${isT}" data-variant="${isT ? 'secondary' : 'ghost'}" data-set-key="${esc(key)}" data-set-val="true" title="Set to true" class="btn" data-control="settings-pill-tag" data-size="xs">true</button>
-            <button type="button" aria-pressed="${!isT}" data-variant="${!isT ? 'secondary' : 'ghost'}" data-set-key="${esc(key)}" data-set-val="false" title="Set to false" class="btn" data-control="settings-pill-tag" data-size="xs">false</button>
-          </div>
-        </div>`;
+      controlHtml = `<input aria-label="${esc(title)}" role="switch" type="checkbox" id="setting-${esc(key)}" data-key="${esc(key)}" ${checked} class="input">`;
     } else if (type === 'select') {
       const opts = item.options || item.Options || [];
-      const optHtml = opts.map(o => {
-        const sel = String(o) === String(val) ? 'selected' : '';
-        return `<option value="${esc(o)}" ${sel}>${esc(o)}${String(o) === String(def) ? ' (default)' : ''}</option>`;
-      }).join('');
-      controlHtml = `<select id="setting-${esc(key)}" data-key="${esc(key)}" class="select max-w-full" data-control="settings-select">${optHtml}</select>`;
-      const pills = opts.map(o => {
-        const isSel = String(o) === String(val);
-        return `<button type="button" aria-pressed="${isSel}" data-variant="${isSel ? 'secondary' : 'ghost'}" data-set-key="${esc(key)}" data-set-val="${esc(String(o))}" title="Select ${esc(String(o))}" class="btn" data-control="settings-pill-tag" data-size="xs">${esc(String(o))}</button>`;
-      }).join('');
-      aptValuesHtml = `
-        <div data-ui="settings-apt-bar" class="flex flex-wrap items-center gap-2 [&>.button-group]:flex-wrap">
-          <span data-ui="settings-apt-label" class="label text-muted-foreground">Options:</span>
-          <div class="button-group" role="group">
-            ${pills}
-          </div>
-        </div>`;
+      if (opts.length === 2 && opts.includes('on') && opts.includes('off')) {
+        controlHtml = `<input aria-label="${esc(title)}" role="switch" type="checkbox" id="setting-${esc(key)}" data-key="${esc(key)}" data-on="on" data-off="off" ${val === 'on' ? 'checked' : ''} class="input">`;
+      } else if (opts.length <= 3) {
+        controlHtml = `<div class="button-group" role="group" aria-label="${esc(title)}">${opts.map(o => segment(o, o, String(o) === String(val))).join('')}</div>`;
+      } else {
+        const optHtml = opts.map(o => `<option value="${esc(o)}" ${String(o) === String(val) ? 'selected' : ''}>${esc(o)}</option>`).join('');
+        controlHtml = `<select id="setting-${esc(key)}" data-key="${esc(key)}" class="select w-48" data-control="settings-select">${optHtml}</select>`;
+      }
     } else if (type === 'number') {
       const min = item.min !== undefined ? item.min : item.Min;
       const max = item.max !== undefined ? item.max : item.Max;
@@ -702,88 +688,53 @@ function renderSettingsList() {
       const minAttr = min !== undefined ? `min="${min}"` : '';
       const maxAttr = max !== undefined ? `max="${max}"` : '';
       const stepAttr = step !== undefined ? `step="${step}"` : 'step="1"';
-      controlHtml = `<input type="number" id="setting-${esc(key)}" data-key="${esc(key)}" value="${esc(String(val))}" ${minAttr} ${maxAttr} ${stepAttr} class="input w-28" data-control="settings-input settings-input-num">`;
+      controlHtml = `<input type="number" id="setting-${esc(key)}" data-key="${esc(key)}" value="${esc(String(val))}" ${minAttr} ${maxAttr} ${stepAttr} class="input w-24 text-right tabular-nums" data-control="settings-input settings-input-num">`;
 
       let numberPresets = [];
       if (key === 'editor.fontSize') numberPresets = [12, 13, 13.5, 14, 16, 18];
       else if (key === 'editor.lineHeight') numberPresets = [18, 20, 21, 24, 28];
       else if (key === 'search.maxResults') numberPresets = [200, 500, 1000, 5000];
       else if (key === 'agent.timeoutSeconds') numberPresets = [60, 120, 180, 300];
-
-      const presetPills = numberPresets.length ? `
-        <span data-ui="settings-apt-label" class="label text-muted-foreground">Presets:</span>
-        <div class="button-group" role="group">
-          ${numberPresets.map(n => {
-            const isSel = Number(val) === n;
-            return `<button type="button" aria-pressed="${isSel}" data-variant="${isSel ? 'secondary' : 'ghost'}" data-set-key="${esc(key)}" data-set-val="${n}" class="btn" data-control="settings-pill-tag" data-size="xs">${n}</button>`;
-          }).join('')}
-        </div>` : '';
-
-      aptValuesHtml = `
-        <div data-ui="settings-apt-bar" class="flex flex-wrap items-center gap-2 [&>.button-group]:flex-wrap">
-          <span class="badge" data-variant="secondary" data-control="settings-tag">Min: <b>${min !== undefined ? min : '—'}</b></span>
-          <span class="badge" data-variant="secondary" data-control="settings-tag">Max: <b>${max !== undefined ? max : '—'}</b></span>
-          ${step !== undefined ? `<span class="badge" data-variant="secondary" data-control="settings-tag">Step: <b>${step}</b></span>` : ''}
-          ${presetPills}
-        </div>`;
+      if (numberPresets.length) {
+        belowHtml = `<div class="button-group mt-2" role="group" aria-label="${esc(title)} presets">${numberPresets.map(n => segment(n, n, Number(val) === n)).join('')}</div>`;
+      }
     } else if (type === 'textarea') {
       const placeholder = key === 'git.commitMessageInstruction'
-        ? 'Enter custom instructions for AI commit messages (e.g. Follow Conventional Commits, reference issue key from branch)...'
-        : 'Enter instructions...';
-      controlHtml = `<textarea id="setting-${esc(key)}" data-key="${esc(key)}" rows="6" spellcheck="false" placeholder="${esc(placeholder)}" class="textarea resize-y" data-control="settings-input settings-textarea">${esc(String(val || ''))}</textarea>`;
+        ? 'e.g. Follow Conventional Commits and reference the issue key from the branch name'
+        : 'Enter instructions';
+      belowHtml = `<textarea id="setting-${esc(key)}" data-key="${esc(key)}" rows="5" spellcheck="false" placeholder="${esc(placeholder)}" class="textarea mt-2 w-full resize-y font-mono text-xs" data-control="settings-input settings-textarea">${esc(String(val || ''))}</textarea>`;
     } else {
       const isSecret = item.secret || item.Secret;
-      controlHtml = `<input type="${isSecret ? 'password' : 'text'}" id="setting-${esc(key)}" data-key="${esc(key)}" value="${esc(String(val || ''))}"${isSecret ? ' autocomplete="off"' : ''} class="input" data-control="settings-input">`;
-      let stringPresets = [];
+      controlHtml = `<input type="${isSecret ? 'password' : 'text'}" id="setting-${esc(key)}" data-key="${esc(key)}" value="${esc(String(val || ''))}"${isSecret ? ' autocomplete="off"' : ''} class="input w-64" data-control="settings-input">`;
       if (key === 'agent.harness') {
-        stringPresets = ['claude', 'gemini', 'cursor-agent', 'agy', 'aider'];
+        const stringPresets = ['claude', 'gemini', 'cursor-agent', 'agy', 'aider'];
+        belowHtml = `<div class="button-group mt-2" role="group" aria-label="${esc(title)} suggestions">${stringPresets.map(p => segment(p, p, String(val) === p)).join('')}</div>`;
       }
-      const presetPills = stringPresets.length ? `
-        <div data-ui="settings-apt-bar" class="flex flex-wrap items-center gap-2 [&>.button-group]:flex-wrap settings-apt-suggest">
-          <span data-ui="settings-apt-label" class="label text-muted-foreground">Suggestions:</span>
-          <div class="button-group" role="group">
-            ${stringPresets.map(s => {
-              const isSel = String(val) === s;
-              return `<button type="button" aria-pressed="${isSel}" data-variant="${isSel ? 'secondary' : 'ghost'}" data-set-key="${esc(key)}" data-set-val="${esc(s)}" class="btn" data-control="settings-pill-tag" data-size="xs">${esc(s)}</button>`;
-            }).join('')}
-          </div>
-        </div>` : '';
-
-      aptValuesHtml = presetPills;
     }
 
+    const shownDefault = def === '' || def === undefined || def === null ? 'empty' : String(def);
     const resetBtn = modified
-      ? `<button data-reset="${esc(key)}" title="Reset to default (${esc(String(def))})" class="btn" data-control="settings-reset-btn" data-variant="outline" data-size="xs">Reset</button>`
+      ? `<button type="button" data-reset="${esc(key)}" title="Reset to default (${esc(shownDefault)})" class="btn" data-control="settings-reset-btn" data-variant="ghost" data-size="sm">Reset</button>`
       : '';
 
     const extraAction = (key === 'editor.vimMode') ? `
-      <div>
-        <button type="button" class="btn" data-control="settings-btn-link btn-vim-cheatsheet-trigger" data-variant="link" data-size="xs">
-          <span>View Vim Keybindings Cheat Sheet</span><kbd class="kbd has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="footer-kbd">?</kbd>
-        </button>
-      </div>` : '';
-
-    const cardClass = modified ? 'field min-w-0 border-l-2 border-primary pl-4' : 'field min-w-0';
+      <button type="button" class="btn self-start -ml-2 mt-1" data-control="settings-btn-link btn-vim-cheatsheet-trigger" title="Also opens with ? in Normal mode" data-variant="link" data-size="sm">
+        Vim keybindings cheat sheet
+      </button>` : '';
 
     return `
-      <div data-ui="settings-card" class="${cardClass}" data-setting="${esc(key)}">
-        <div data-ui="settings-card-left" class="flex min-w-0 flex-col gap-2">
-          <div data-ui="settings-card-header" class="flex flex-wrap items-center gap-2">
+      <div data-ui="settings-card" class="field gap-6 border-b border-border py-4 last:border-b-0" data-orientation="horizontal" data-setting="${esc(key)}">
+        <section data-ui="settings-card-left" class="min-w-0 gap-1">
+          <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
             <label for="setting-${esc(key)}" class="label">${esc(title)}</label>
-            <span data-ui="settings-card-key" class="font-mono text-muted-foreground">${esc(key)}</span>
-            <span class="badge" data-variant="secondary" data-control="settings-tag">${esc(cat)}</span>
-            <span class="badge" data-variant="secondary" data-control="settings-tag">${esc(type)}</span>
+            <code class="font-mono text-xs text-muted-foreground">${esc(key)}</code>
+            ${modified ? '<span class="badge" data-variant="outline">Modified</span>' : ''}
           </div>
-          <div data-ui="settings-card-desc" class="text-muted-foreground">${esc(desc)}</div>
-          ${aptValuesHtml}
+          <p class="text-sm text-muted-foreground">${esc(desc)}</p>
+          ${belowHtml}
           ${extraAction}
-          <div data-ui="settings-card-meta" class="flex items-center flex-wrap gap-2">
-            ${(type !== 'textarea' && key !== 'git.commitMessageInstruction') ? `<span class="badge" data-variant="secondary" data-control="settings-tag">Current: <b>${esc(String(val))}</b></span>` : ''}
-            <span class="badge" data-variant="secondary" data-control="settings-tag">Default: <code>${esc(String(def))}</code></span>
-            ${modified ? `<span class="badge" data-variant="secondary" data-control="settings-tag">Modified</span>` : ''}
-          </div>
-        </div>
-        <div data-ui="settings-card-right" class="flex flex-wrap items-center gap-2 min-w-0 [&>.input]:min-w-0 [&>.select]:max-w-full">
+        </section>
+        <div data-ui="settings-card-right" class="flex shrink-0 items-center gap-2">
           ${resetBtn}
           ${controlHtml}
         </div>
@@ -810,8 +761,7 @@ function setSaveStatus(state, msg) {
     statusEl.classList.add('is-saving');
     statusText.textContent = msg || 'Saving changes...';
     if (statusIcon) {
-      statusIcon.style.animation = 'spin 0.8s linear infinite';
-      statusIcon.innerHTML = '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-dasharray="28" stroke-dashoffset="14" stroke-width="2.5"/>';
+      statusIcon.className = 'icon-[lucide--loader-circle] size-3.5 shrink-0 animate-spin';
     }
     if (saveBtn) saveBtn.disabled = true;
     if (saveLabel) saveLabel.textContent = 'Saving...';
@@ -819,17 +769,17 @@ function setSaveStatus(state, msg) {
     statusEl.classList.add('is-saved');
     statusText.textContent = msg || 'All changes saved';
     if (statusIcon) {
-      statusIcon.style.animation = '';
-      statusIcon.innerHTML = '<polyline points="20 6 9 17 4 12"/>';
+      statusIcon.className = 'icon-[lucide--check] size-3.5 shrink-0';
     }
     if (saveBtn) {
-      saveBtn.disabled = false;
+      // Nothing left to save until the next edit.
+      saveBtn.disabled = true;
       const saveIcon = saveBtn.querySelector('.settings-btn-save-icon');
-      if (saveIcon) saveIcon.innerHTML = '<polyline points="20 6 9 17 4 12"/>';
+      if (saveIcon) saveIcon.className = 'icon-[lucide--check] size-3.5 shrink-0 settings-btn-save-icon';
       if (saveLabel) saveLabel.textContent = 'Saved';
       setTimeout(() => {
         if (saveIcon) {
-          saveIcon.innerHTML = '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>';
+          saveIcon.className = 'icon-[lucide--save] size-3.5 shrink-0 settings-btn-save-icon';
         }
         if (saveLabel) saveLabel.textContent = 'Save';
       }, 2000);
@@ -838,14 +788,13 @@ function setSaveStatus(state, msg) {
     statusEl.classList.add('is-unsaved');
     statusText.textContent = msg || 'Unsaved changes';
     if (statusIcon) {
-      statusIcon.style.animation = '';
-      statusIcon.innerHTML = '<circle cx="12" cy="12" r="5" fill="currentColor"/>';
+      statusIcon.className = 'icon-[lucide--circle-dot] size-3.5 shrink-0';
     }
     if (saveBtn) {
       saveBtn.disabled = false;
       const saveIcon = saveBtn.querySelector('.settings-btn-save-icon');
       if (saveIcon) {
-        saveIcon.innerHTML = '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>';
+        saveIcon.className = 'icon-[lucide--save] size-3.5 shrink-0 settings-btn-save-icon';
       }
       if (saveLabel) saveLabel.textContent = 'Save';
     }
@@ -853,8 +802,7 @@ function setSaveStatus(state, msg) {
     statusEl.classList.add('is-error');
     statusText.textContent = msg || 'Failed to save';
     if (statusIcon) {
-      statusIcon.style.animation = '';
-      statusIcon.innerHTML = '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>';
+      statusIcon.className = 'icon-[lucide--circle-alert] size-3.5 shrink-0';
     }
     if (saveBtn) {
       saveBtn.disabled = false;
@@ -902,7 +850,7 @@ async function handleExplicitSave() {
   if (activeEl && activeEl.dataset?.key && activeEl.closest('#settings-list')) {
     const key = activeEl.dataset.key;
     let val = /** @type {any} */ (activeEl.value);
-    if (activeEl instanceof HTMLInputElement && activeEl.type === 'checkbox') val = activeEl.checked;
+    if (activeEl instanceof HTMLInputElement && activeEl.type === 'checkbox') val = switchValue(activeEl);
     else if (activeEl.type === 'number') val = parseFloat(val);
     pendingSettingsChanges[key] = val;
   }
@@ -932,10 +880,10 @@ async function handleExplicitSave() {
     renderSettingsList();
 
     setSaveStatus('saved', 'Settings saved successfully');
-    showToast('✓', 'Settings saved');
+    showToast('success', 'Settings saved');
   } catch (err) {
     setSaveStatus('error', 'Failed to save: ' + (err.message || 'unknown error'));
-    showToast('!', err.message || 'Failed to save settings');
+    showToast('error', err.message || 'Failed to save settings');
   }
 }
 
@@ -976,7 +924,7 @@ async function handleSaveRawSettings() {
       }, 2500);
     }
     setSaveStatus('saved', 'Settings saved successfully');
-    showToast('✓', 'Settings saved');
+    showToast('success', 'Settings saved');
   } catch (err) {
     if (errEl) {
       errEl.textContent = 'Failed to save: ' + err.message;
@@ -1018,7 +966,7 @@ function initSettingsDOM() {
   $('#settings-path')?.addEventListener('click', () => {
     if (settingsData.path) {
       navigator.clipboard.writeText(settingsData.path);
-      showToast('✓', 'Copied settings path to clipboard', 2000);
+      showToast('success', 'Copied settings path to clipboard', 2000);
     }
   });
 
@@ -1068,7 +1016,7 @@ function initSettingsDOM() {
 
       let value;
       if (target.type === 'checkbox') {
-        value = target.checked;
+        value = switchValue(target);
       } else if (target.type === 'number') {
         value = parseFloat(target.value);
         // An out-of-range number is reported on the card and never saved.
@@ -1119,6 +1067,7 @@ function initSettingsDOM() {
   }
 
   // JSON Raw view buttons
+  $('#settings-raw-editor')?.addEventListener('input', () => setSaveStatus('unsaved', 'Unsaved changes'));
   $('#btn-settings-save-raw')?.addEventListener('click', handleSaveRawSettings);
   $('#btn-settings-reset-raw')?.addEventListener('click', () => {
     const rawEditor = $('#settings-raw-editor');

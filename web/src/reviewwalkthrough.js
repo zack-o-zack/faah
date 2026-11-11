@@ -85,7 +85,7 @@ export async function loadReviewWalkthrough(showFeedback = false) {
   const rightContent = $('#review-diff-content');
 
   if (showFeedback && showToast) {
-    showToast('Refreshing walkthrough & diff...', 1500);
+    showToast('info', 'Refreshing walkthrough & diff...', 1500);
   }
 
   if (leftContent && (!walkthroughData || showFeedback)) {
@@ -151,7 +151,7 @@ function renderWalkthroughView(data) {
   if (countCore) countCore.textContent = totalCore;
 
   if (statHeading) {
-    statHeading.innerHTML = `<strong>${totalFiles}</strong> files &middot; <span class="font-semibold text-gi">+${additions}</span> <span class="font-semibold text-gd">-${deletions}</span> &middot; ${data.baseRef || 'HEAD'} &rarr; ${data.headRef || 'now'}`;
+    statHeading.innerHTML = `<strong>${totalFiles}</strong> files &middot; <span class="font-semibold text-gi">+${additions}</span> <span class="font-semibold text-gd">-${deletions}</span> &middot; ${data.baseRef || 'HEAD'} <span class="icon-[lucide--arrow-right] size-3 align-[-2px]" aria-hidden="true"></span> ${data.headRef || 'now'}`;
   }
 
   // Quick navigation chips for files
@@ -179,7 +179,7 @@ function renderWalkthroughView(data) {
     if (leftContent) {
       leftContent.innerHTML = `
         <div data-ui="review-empty-state" class="empty flex flex-col items-center justify-center text-center h-full p-3 text-muted-foreground">
-          <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="20 6 9 17 4 12"/></svg>
+          <span class="icon-[lucide--check] size-3.5 shrink-0" aria-hidden="true"></span>
           <h3>Working Tree is Clean</h3>
           <p>No modified files or uncommitted diffs found against ${esc(data.baseRef || 'HEAD')}.</p>
         </div>`;
@@ -187,7 +187,7 @@ function renderWalkthroughView(data) {
     if (rightContent) {
       rightContent.innerHTML = `
         <div data-ui="review-empty-state" class="empty flex flex-col items-center justify-center text-center h-full p-3 text-muted-foreground">
-          <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span class="icon-[lucide--file] size-3.5 shrink-0" aria-hidden="true"></span>
           <h3>No Diffs to Display</h3>
           <p>Make local changes or switch branches to inspect diffs and code understanding.</p>
         </div>`;
@@ -247,7 +247,7 @@ function renderUnderstandingCards(files) {
     jumpBtn.dataset.size = 'xs';
     jumpBtn.title = 'Jump to file diff';
     jumpBtn.setAttribute('aria-label', 'Jump to file diff');
-    jumpBtn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>';
+    jumpBtn.innerHTML = '<span class="icon-[lucide--chevron-right] size-3 shrink-0" aria-hidden="true"></span>';
     jumpBtn.onclick = () => scrollToDiffFile(file.path);
 
     head.append(titleGroup, jumpBtn);
@@ -267,19 +267,19 @@ function renderUnderstandingCards(files) {
 
     // 1. Fast Returns & Bailouts
     if (returns.length > 0) {
-      const secReturns = createInsightSection(file.path, '⚡ Fast Returns & Guardrails', 'fastReturns', returns, 'badge-returns');
+      const secReturns = createInsightSection(file.path, 'Fast Returns & Guardrails', 'fastReturns', returns, 'badge-returns');
       body.append(secReturns);
     }
 
     // 2. Edge Cases & Errors
     if (edges.length > 0) {
-      const secEdges = createInsightSection(file.path, '⚠️ Edge Cases & Failure Exits', 'edgeCases', edges, 'badge-edge');
+      const secEdges = createInsightSection(file.path, 'Edge Cases & Failure Exits', 'edgeCases', edges, 'badge-edge');
       body.append(secEdges);
     }
 
     // 3. Core Logic
     if (core.length > 0) {
-      const secCore = createInsightSection(file.path, '🎯 Core Logic & Happy Path', 'coreLogic', core, 'badge-core');
+      const secCore = createInsightSection(file.path, 'Core Logic & Happy Path', 'coreLogic', core, 'badge-core');
       body.append(secCore);
     }
 
@@ -302,7 +302,8 @@ function createInsightSection(filePath, headingText, filterCategory, items, badg
 
   const h = document.createElement('h4');
   h.setAttribute('data-ui', 'review-insight-heading'); h.className = 'label flex items-center justify-between font-semibold text-muted-foreground';
-  h.innerHTML = `<span>${esc(headingText)}</span> <span class="badge" data-variant="secondary">${items.length}</span>`;
+  const glyph = { fastReturns: 'icon-[lucide--zap]', edgeCases: 'icon-[lucide--triangle-alert]', coreLogic: 'icon-[lucide--target]' }[filterCategory] || '';
+  h.innerHTML = `<span class="flex items-center gap-2"><span class="${glyph} size-3.5" aria-hidden="true"></span>${esc(headingText)}</span> <span class="badge" data-variant="secondary">${items.length}</span>`;
   sec.append(h);
 
   const list = document.createElement('div');
@@ -377,7 +378,7 @@ function renderDiffBlocks(files) {
 
     const fileIcon = document.createElement('span');
     fileIcon.setAttribute('data-ui', 'review-file-icon'); fileIcon.className = 'flex items-center text-muted-foreground';
-    fileIcon.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+    fileIcon.innerHTML = '<span class="icon-[lucide--file] size-3.5 shrink-0" aria-hidden="true"></span>';
 
     const pathSpan = document.createElement('span');
     pathSpan.setAttribute('data-ui', 'review-sticky-head-path'); pathSpan.className = 'overflow-hidden whitespace-nowrap text-ellipsis font-mono font-semibold';

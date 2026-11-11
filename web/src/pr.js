@@ -119,7 +119,7 @@ function renderBar() {
   if (mb) mb.hidden = !meta.merged;
   $('#pr-title').textContent = meta.title;
   $('#pr-title').title = meta.title;
-  $('#pr-refs').textContent = meta.base + ' ← ' + meta.head;
+  $('#pr-refs').innerHTML = esc(meta.base) + ' <span class="icon-[lucide--arrow-left] size-3 align-[-2px]" aria-hidden="true"></span> ' + esc(meta.head);
   $('#pr-draft-count').textContent = comments.length
     ? (comments.length + (comments.length === 1 ? ' draft comment' : ' draft comments'))
     : '';
@@ -204,9 +204,9 @@ async function sendNewIssueComment() {
     ta.value = '';
     expandedKeys.add('issue:' + c.id);
     renderCommentsPanel();
-    showToast('✓', 'Comment posted');
+    showToast('success', 'Comment posted');
   } catch (e) {
-    showToast('!', e.message || 'Could not post comment');
+    showToast('error', e.message || 'Could not post comment');
   } finally {
     if (btn) btn.disabled = false;
   }
@@ -222,7 +222,7 @@ function setBatchBtnLabel(btn, text) {
 async function batchApplyComments() {
   const applicable = comments.filter(c => c.path && c.line && c.body?.trim());
   if (!applicable.length) {
-    showToast('!', 'No draft comments with line locations to apply');
+    showToast('error', 'No draft comments with line locations to apply');
     return;
   }
   const btn = $('#pr-batch-apply');
@@ -238,14 +238,14 @@ async function batchApplyComments() {
   }));
   try {
     const job = await apiPostJson('/api/agent/batch', { edits });
-    showToast('AI', `Batch applying ${edits.length} comments with ${job.harness || 'agent'}...`);
+    showToast('info', `Batch applying ${edits.length} comments with ${job.harness || 'agent'}...`);
     pollPRBatch(job.id, applicable.length);
   } catch (e) {
     if (btn) {
       btn.disabled = false;
       setBatchBtnLabel(btn, 'Batch Apply');
     }
-    showToast('!', e.message || 'Could not dispatch batch edit');
+    showToast('error', e.message || 'Could not dispatch batch edit');
   }
 }
 
@@ -265,11 +265,11 @@ async function pollPRBatch(id, count) {
         setBatchBtnLabel(btn, 'Batch Apply');
       }
       if (j.error) {
-        showToast('!', `Agent error: ${j.error}`);
+        showToast('error', `Agent error: ${j.error}`);
         if (j.changed?.length) await reloadWorkspace(null);
         return;
       }
-      showToast('✓', `Batch applied ${count} comments!`);
+      showToast('success', `Batch applied ${count} comments!`);
       await reloadWorkspace(null);
       await refreshComments();
     } catch (e) {
@@ -277,7 +277,7 @@ async function pollPRBatch(id, count) {
         btn.disabled = false;
         setBatchBtnLabel(btn, 'Batch Apply');
       }
-      showToast('!', e.message || 'Batch failed');
+      showToast('error', e.message || 'Batch failed');
     }
   };
   setTimeout(poll, 400);
@@ -291,7 +291,7 @@ async function submitReview(event) {
   const bodyEl = $('#pr-review-body');
   const body = bodyEl ? bodyEl.value.trim() : '';
   if (event === 'REQUEST_CHANGES' && !body && !comments.length) {
-    showToast('!', 'Add a comment or review body before requesting changes');
+    showToast('error', 'Add a comment or review body before requesting changes');
     return;
   }
   try {
@@ -302,12 +302,12 @@ async function submitReview(event) {
     renderBar();
     renderCommentsPanel();
     renderMarkersForActiveDoc();
-    showToast('✓', event === 'APPROVE' ? 'Review approved'
+    showToast('success', event === 'APPROVE' ? 'Review approved'
       : event === 'REQUEST_CHANGES' ? 'Changes requested'
       : 'Review comment submitted');
     refreshMergeStatus(); // an approval can be what branch protection was waiting for
   } catch (e) {
-    showToast('!', e.message || 'Could not submit review');
+    showToast('error', e.message || 'Could not submit review');
   }
 }
 
@@ -427,7 +427,7 @@ export function openCommentComposer(info) {
   box.innerHTML =
     '<div data-ui="agent-head" class="flex items-center gap-2 font-mono"><span class="sel-chip">Review Comment</span>' +
     '<span role="button" tabindex="0" title="Jump to this line" class="btn" data-control="agent-ref" data-variant="ghost" data-size="xs">' + esc(ref) + '</span>' +
-    '<span class="flex-1 min-w-0"></span><button title="Close (Esc)" class="btn" data-control="agent-close" data-variant="ghost" data-size="icon-xs" aria-label="Close (Esc)">✕</button></div>' +
+    '<span class="flex-1 min-w-0"></span><button title="Close (Esc)" class="btn" data-control="agent-close" data-variant="ghost" data-size="icon-xs" aria-label="Close (Esc)"><span class="icon-[lucide--x] size-3.5" aria-hidden="true"></span></button></div>' +
     '<div data-ui="agent-compose" class="flex flex-col gap-2 in-[.queued]:hidden">' +
     '<textarea rows="3" spellcheck="false" autocomplete="off" placeholder="Leave a comment on this line... (' + esc(modEnter) + ' to add)" class="textarea resize-y" data-control="agent-input"></textarea>' +
     '<div data-ui="agent-err" class="alert flex flex-col overflow-y-auto gap-2 p-3 font-mono" hidden></div>' +
@@ -493,7 +493,7 @@ function closeAllComposers() {
 
 /* ---------- gutter markers on the active diff ---------- */
 
-const COMMENT_ICON = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+const COMMENT_ICON = '<span class="icon-[lucide--message-square] size-3 shrink-0" aria-hidden="true"></span>';
 
 function renderMarkersForActiveDoc() {
   if (!meta) return;
@@ -669,9 +669,9 @@ async function sendThreadReply(row) {
     reviewComments.push(c);
     renderCommentsPanel();
     renderMarkersForActiveDoc();
-    showToast('✓', 'Reply posted');
+    showToast('success', 'Reply posted');
   } catch (e) {
-    showToast('!', e.message || 'Could not reply');
+    showToast('error', e.message || 'Could not reply');
   } finally {
     if (btn) btn.disabled = false;
   }
@@ -685,7 +685,7 @@ async function deleteDraft(id) {
     renderCommentsPanel();
     renderMarkersForActiveDoc();
   } catch (e) {
-    showToast('!', e.message || 'Could not delete draft');
+    showToast('error', e.message || 'Could not delete draft');
   }
 }
 
@@ -713,7 +713,7 @@ function issueCommentCardHtml(c) {
   const open = expandedKeys.has(key);
   return '<details data-ui="acc-item pr-comment-card" class="card flex flex-col gap-2 p-3 [&.reply]:ml-4 [&.draft]:border-dashed group/accordion' + '"' + (open ? ' open' : '') + ' data-acc="' + esc(key) + '">' +
     '<summary data-ui="acc-head" class="flex items-center gap-2 min-w-0 cursor-pointer">' +
-      '<span data-ui="acc-chevron" class="group-open/accordion:rotate-90">&#8250;</span>' +
+      '<span data-ui="acc-chevron" class="icon-[lucide--chevron-right] size-3.5 shrink-0 text-muted-foreground group-open/accordion:rotate-90" aria-hidden="true"></span>' +
       '<span data-ui="pr-issue-comment-author" class="">' + esc(c.author || 'unknown') + '</span>' +
       '<span data-ui="pr-issue-comment-time" class="text-muted-foreground">' + esc(fmtTime(c.createdAt)) + '</span>' +
       '<span data-ui="acc-preview" class="flex-1 truncate text-muted-foreground group-open/accordion:hidden">' + esc(c.body) + '</span>' +
@@ -765,7 +765,7 @@ function threadHtml(path, t, key) {
   const preview = root ? root.body : (t.drafts[0]?.body || '');
   return '<details data-ui="acc-item pr-comment-thread" class="card flex flex-col gap-2 p-3 group/accordion' + '"' + (open ? ' open' : '') + ' data-thread-key="' + esc(key) + '" data-acc="' + esc(accKey) + '">' +
     '<summary data-ui="acc-head" class="flex items-center gap-2 min-w-0 cursor-pointer">' +
-      '<span data-ui="acc-chevron" class="group-open/accordion:rotate-90">&#8250;</span>' +
+      '<span data-ui="acc-chevron" class="icon-[lucide--chevron-right] size-3.5 shrink-0 text-muted-foreground group-open/accordion:rotate-90" aria-hidden="true"></span>' +
       '<span data-ui="pr-comment-loc" class="inline-flex items-center cursor-pointer w-fit gap-2 p-3 font-mono text-primary-text" data-path="' + esc(path) + '" data-line="' + t.line + '">' + esc(loc) + '</span>' +
       '<span data-ui="pr-issue-comment-author" class="">' + esc(root ? (root.author || 'unknown') : 'you') + '</span>' +
       countBadge +
@@ -838,9 +838,9 @@ export async function launchPR(target) {
   if (S.meta?.workbench) return launchPRInWorkbench(target);
   try {
     await apiPostJson('/api/pr/launch', { target });
-    showToast('✓', 'Opening PR in a new tab…');
+    showToast('success', 'Opening PR in a new tab…');
   } catch (e) {
-    showToast('!', e.message || 'Could not launch PR review');
+    showToast('error', e.message || 'Could not launch PR review');
   }
 }
 
@@ -860,7 +860,7 @@ async function launchPRInWorkbench(target) {
     else location.href = href;
   } catch (e) {
     tab?.close();
-    showToast('!', e.message || 'Could not launch PR review');
+    showToast('error', e.message || 'Could not launch PR review');
   }
 }
 

@@ -146,6 +146,6 @@ async function submitForgeConnect() {
   let msg = `Connected to ${label}`;
   if (!res.saved) msg += ' for this session (a token for another host is already saved)';
   if (res.validated && !res.writeAccess) msg += '. Read access only: Approve and Merge need push access to this repository';
-  showToast('✓', msg, res.validated && !res.writeAccess ? 6000 : 3000);
+  showToast('success', msg, res.validated && !res.writeAccess ? 6000 : 3000);
   emit('forge:connected', res);
 }

@@ -49,7 +49,7 @@ export async function showCalls(arg) {
   // Without a server there is nothing to trace: offer to install or start one, then come back here.
   if (S.lsp.state === 'off' || S.lsp.state === 'failed') {
     T = null;
-    $('#right-calls-target').textContent = at ? at.word : '-';
+    $('#right-calls-target').textContent = at ? at.word : '';
     renderLspSetup(listEl(), () => showCalls(arg));
     return;
   }
@@ -117,7 +117,7 @@ function draw() {
   const walk = (node, depth) => {
     const i = flat.push(node) - 1;
     const n = node.n, t = target(node);
-    const arrow = node.cycle ? '&#8635;' : node.loading ? '&#8230;' : node.open ? '&#9660;' : '&#9654;';
+    const arrow = node.cycle ? '<span class="icon-[lucide--repeat] size-3" aria-hidden="true"></span>' : node.loading ? '<span class="icon-[lucide--loader-circle] size-3 animate-spin" aria-hidden="true"></span>' : node.open ? '<span class="icon-[lucide--chevron-down] size-3" aria-hidden="true"></span>' : '<span class="icon-[lucide--chevron-right] size-3" aria-hidden="true"></span>';
     const calls = n.sites && n.sites.length > 1 ? ' &times;' + n.sites.length : '';
     const tip = t.path + ':' + t.line + (node.cycle ? '\n(recursive, already in this trail)' : '') + (n.detail ? '\n' + n.detail : '');
     html += '<div data-ui="cnode sym" class="flex min-w-0 items-center gap-2 p-2 cursor-pointer hover:bg-accent [&.sel]:bg-accent " data-i="' + i + '" style="padding-left:' + (6 + depth * 14) + 'px" title="' + esc(tip) + '">' +

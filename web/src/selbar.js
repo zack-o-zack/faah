@@ -306,7 +306,7 @@ export function selectAll() {
   }, () => {
     if (allText !== text) return;
     clearSelectAll();
-    showToast('!', 'Could not read ' + d.path);
+    showToast('error', 'Could not read ' + d.path);
   });
 }
 
@@ -496,7 +496,7 @@ export function initSelectionBar() {
       if (allInfo && allInfo.text) {
         e.preventDefault();
         e.clipboardData.setData('text/plain', allInfo.text);
-        showToast('✓', 'Copied ' + d.path + ' (' + d.total.toLocaleString() + ' lines)');
+        showToast('success', 'Copied ' + d.path + ' (' + d.total.toLocaleString() + ' lines)');
         return;
       }
     }
@@ -508,11 +508,11 @@ export function initSelectionBar() {
         if (info.html) {
           e.clipboardData.setData('text/html', info.html);
         }
-        showToast('✓', 'Copied formatted text (' + info.text.length.toLocaleString() + ' chars)');
+        showToast('success', 'Copied formatted text (' + info.text.length.toLocaleString() + ' chars)');
       } else {
         e.clipboardData.setData('text/plain', info.text);
         const lines = info.l2 - info.l1 + 1;
-        showToast('✓', 'Copied ' + (lines === 1 ? '1 line' : lines + ' lines'));
+        showToast('success', 'Copied ' + (lines === 1 ? '1 line' : lines + ' lines'));
       }
     }
   });

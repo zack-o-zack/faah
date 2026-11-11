@@ -65,10 +65,10 @@ const extraPickers = new Set();
 export function registerAgentPicker(picker) {
   extraPickers.add(picker);
   picker.harnessSelect.addEventListener('change', () => {
-    if (picker.harnessSelect.value) select(picker.harnessSelect.value, msg => showToast('!', msg));
+    if (picker.harnessSelect.value) select(picker.harnessSelect.value, msg => showToast('error', msg));
   });
   picker.modelSelect.addEventListener('change', () => {
-    select(picker.harnessSelect.value || chosen(), picker.modelSelect.value, msg => showToast('!', msg));
+    select(picker.harnessSelect.value || chosen(), picker.modelSelect.value, msg => showToast('error', msg));
   });
   updateSessionMeta(picker);
 }
@@ -313,7 +313,7 @@ export function openAgentEdit(info) {
   if (!info) return;
   for (const s of sessions.values()) {
     if (rangesOverlap(s.target, info)) {
-      showToast('!', 'Overlaps the edit already open on ' + targetRef(s.target));
+      showToast('error', 'Overlaps the edit already open on ' + targetRef(s.target));
       return;
     }
   }
@@ -460,7 +460,7 @@ async function cancelSession(session) {
   resetHint(session);
   syncBatchBar();
   refreshStatusNote();
-  showToast('!', 'Cancelled edit on ' + targetRef(session.target));
+  showToast('error', 'Cancelled edit on ' + targetRef(session.target));
   if (jobId) {
     try {
       await apiPost('/api/agent/cancel', { id: jobId });
@@ -510,10 +510,10 @@ function attachAlreadyRunningCancel(errContainer) {
     btn.textContent = 'Cancelling...';
     try {
       await apiPost('/api/agent/cancel', { id: 0 });
-      showToast('✓', 'Cancelled running edit');
+      showToast('success', 'Cancelled running edit');
       errContainer.hidden = true;
     } catch (err) {
-      showToast('!', 'Failed to cancel: ' + err.message);
+      showToast('error', 'Failed to cancel: ' + err.message);
       btn.disabled = false;
       btn.textContent = 'Cancel in-flight edit';
     }
@@ -630,7 +630,7 @@ async function showPicker(session) {
 
   const ready = list.filter(h => h.installed);
   if (!ready.length) {
-    showToast('!', 'Could not find any coding harness like Claude Code, OpenCode, Codex, Antigravity, Aider, etc. Install one and restart faah.', 6000);
+    showToast('error', 'Could not find any coding harness like Claude Code, OpenCode, Codex, Antigravity, Aider, etc. Install one and restart faah.', 6000);
     session.pickEl.innerHTML = '<div data-ui="hint" class="empty text-muted-foreground" style="line-height: 1.5; padding: 4px 2px;">' +
       'Could not find any coding harness like <b>Claude Code</b>, <b>OpenCode</b>, <b>Codex</b>, <b>Antigravity</b> (<code>agy</code>), <b>Aider</b>, <b>Goose</b>, <b>Gemini CLI</b>, or <b>Cursor Agent</b>.<br><br>' +
       'Please install a coding harness, make sure it is on your <code>PATH</code>, and restart faah after that.</div>';
@@ -827,10 +827,10 @@ export async function submitBatch() {
   }
   if (!targets.length) {
     if (ready.length > 0) {
-      showToast('!', 'Please enter an instruction for the remaining comment(s)');
+      showToast('error', 'Please enter an instruction for the remaining comment(s)');
       ready[0].input.focus();
     } else {
-      showToast('!', 'All open edits are already in progress');
+      showToast('error', 'All open edits are already in progress');
     }
     return;
   }
@@ -841,7 +841,7 @@ export async function submitBatch() {
 
   const harnessName = chosen();
   if (!harnessName) {
-    showToast('!', 'Please select a coding harness first');
+    showToast('error', 'Please select a coding harness first');
     return;
   }
 
@@ -938,13 +938,13 @@ async function finishBatch(targets, j) {
 
   const changed = j.changed || [];
   if (!changed.length && j.tracked !== false) {
-    showToast('✓', 'Finished batch edit with no file changes. Saved in Threads');
+    showToast('success', 'Finished batch edit with no file changes. Saved in Threads');
     return;
   }
 
   const focusTarget = currentTargets[0]?.session?.target;
   if (!await reloadWorkspace(focusTarget, 'Batch edited')) return;
-  showToast('✓', (!changed.length ? 'Reloaded workspace'
+  showToast('success', (!changed.length ? 'Reloaded workspace'
     : changed.length === 1 ? 'Updated ' + changed[0] + ' (' + currentTargets.length + ' edits)'
     : 'Updated ' + changed.length + ' files across ' + currentTargets.length + ' edits') + '. Saved in Threads', 3200);
 }
@@ -968,7 +968,7 @@ async function cancelBatch() {
   activeBatchTargets = null;
   syncBatchBar();
   refreshStatusNote();
-  showToast('!', 'Cancelled batch edit');
+  showToast('error', 'Cancelled batch edit');
   if (id) {
     try {
       await apiPost('/api/agent/cancel', { id });
@@ -1027,12 +1027,12 @@ async function finish(session, j) {
      means "unknown" rather than "nothing" and everything is reloaded. */
   const changed = j.changed || [];
   if (!changed.length && j.tracked !== false) {
-    showToast('✓', 'Finished with no file changes. Saved in Threads');
+    showToast('success', 'Finished with no file changes. Saved in Threads');
     return;
   }
 
   if (!await reloadWorkspace(editTarget, 'Edited')) return;
-  showToast('✓', (!changed.length ? 'Reloaded the workspace'
+  showToast('success', (!changed.length ? 'Reloaded the workspace'
     : changed.length === 1 ? 'Updated ' + changed[0]
       : 'Updated ' + changed.length + ' files') + '. Saved in Threads', 3200);
 }
@@ -1052,7 +1052,7 @@ export function reloadWorkspace(focus, what = 'Changed') {
       }
       await refreshTree();
     } catch (e) {
-      showToast('!', what + ', but the reload failed: ' + e.message);
+      showToast('error', what + ', but the reload failed: ' + e.message);
       return false;
     }
     return true;
@@ -1088,14 +1088,14 @@ export function initAgent() {
     gitHarness.addEventListener('change', async () => {
       const hName = gitHarness.value;
       if (!hName) return;
-      await select(hName, msg => showToast('!', msg));
+      await select(hName, msg => showToast('error', msg));
     });
   }
   if (gitModel) {
     gitModel.addEventListener('change', async () => {
       const hName = gitHarness?.value || chosen();
       const mName = gitModel.value;
-      await select(hName, mName, msg => showToast('!', msg));
+      await select(hName, mName, msg => showToast('error', msg));
     });
   }
 

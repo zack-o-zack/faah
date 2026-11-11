@@ -205,7 +205,7 @@ function renderMenu() {
   const n = info?.commits?.length || 0;
   menu.innerHTML = allowed().map(m =>
     `<button type="button" role="menuitemradio" aria-checked="${m === cur}" data-method="${m}" class="btn" data-variant="outline" data-size="xs">` +
-    `<span data-ui="pr-merge-menu-check" class="flex-none text-primary-text">${m === cur ? '&#10003;' : ''}</span>` +
+    `<span data-ui="pr-merge-menu-check" class="flex-none text-primary-text">${m === cur ? '<span class="icon-[lucide--check] size-3.5" aria-hidden="true"></span>' : ''}</span>` +
     `<span data-ui="pr-merge-menu-text" class="flex flex-col gap-2 text-muted-foreground"><b>${esc(METHODS[m].label)}</b><span>${esc(METHODS[m].explain(n, baseBranch()))}</span></span></button>`
   ).join('');
   for (const b of menu.querySelectorAll('button')) {
@@ -307,7 +307,7 @@ function renderDialog() {
   const meta = ctx.meta();
   const n = info.commits?.length || 0;
   $('#pr-merge-title').textContent = `Merge pull request #${meta.number}`;
-  $('#pr-merge-refs').innerHTML = `${codeHtml(meta.head)} &rarr; ${codeHtml(baseBranch())}`;
+  $('#pr-merge-refs').innerHTML = `${codeHtml(meta.head)} <span class="icon-[lucide--arrow-right] size-3 align-[-2px]" aria-hidden="true"></span> ${codeHtml(baseBranch())}`;
 
   const methods = $('#pr-merge-methods');
   methods.innerHTML = allowed().map(k =>
@@ -408,7 +408,7 @@ async function confirmMerge() {
     return;
   }
   closeDialog();
-  showToast('✓', `${METHODS[method].done} into ${baseBranch()}`);
+  showToast('success', `${METHODS[method].done} into ${baseBranch()}`);
   await ctx.onMerged(); // re-reads the PR, and with it this status
 }
 

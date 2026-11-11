@@ -73,7 +73,7 @@ export function renderRightResults(word, hits, server, isExact) {
 
   for (const f of grouped) {
     html += '<div data-ui="rfile" class="flex items-center gap-2 p-2 cursor-pointer hover:bg-accent select-none [&.closed_[data-ui~=ar]]:-rotate-90" data-toggle="r-' + esc(f.path) + '" title="' + esc(f.path) + '">' +
-      '<span data-ui="ar" class="shrink-0 text-muted-foreground">&#9660;</span>' +
+      '<span data-ui="ar" class="icon-[lucide--chevron-down] size-3 shrink-0 text-muted-foreground" aria-hidden="true"></span>' +
       '<span data-ui="fp" class="truncate min-w-0">' + esc(displayPath(f.path)) + '</span>' +
       '<span data-ui="cnt" class="badge ml-auto">' + f.matches.length + '</span></div>' +
       '<div data-group="r-' + esc(f.path) + '">';
@@ -189,7 +189,7 @@ export function initInspector() {
       const hidden = g.style.display === 'none';
       g.style.display = hidden ? '' : 'none';
       const ar = $('[data-ui~=ar]', t);
-      if (ar) ar.innerHTML = hidden ? '&#9660;' : '&#9654;';
+      if (ar) ar.classList.toggle('-rotate-90', !hidden);
       t.classList.toggle('closed', !hidden);
       return;
     }

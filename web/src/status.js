@@ -113,21 +113,35 @@ export function setLspState(j) {
   drawLspStatus();
 }
 
+// The last language server list fetched, and when the status chip last asked for one.
+let lastLspData = null;
+let lspCountAt = 0;
+
 export function drawLspStatus() {
   const el = $('#st-lsp');
   if (!el) return;
-  const anyRunning = S.lsp.anyRunning || S.lsp.state === 'ready' || S.lsp.state === 'indexing';
-  el.textContent = 'LSP';
-  if (anyRunning) {
-    el.dataset.state = S.lsp.state === 'indexing' ? 'indexing' : 'ready';
-    el.title = 'Language Servers: Active (Click to manage)';
-  } else if (S.lsp.state === 'failed') {
-    el.dataset.state = 'failed';
-    el.title = 'Language Server failed (Click to manage)';
-  } else {
-    el.dataset.state = 'off';
-    el.title = 'Language Servers: Stopped (Click to manage)';
+  const servers = lastLspData?.servers || [];
+  const running = servers.filter(s => s.running).length;
+  const available = servers.filter(s => s.installed).length;
+  const anyRunning = running > 0 || S.lsp.anyRunning || S.lsp.state === 'ready' || S.lsp.state === 'indexing';
+  // A server started on its own since the list was fetched: fetch it again.
+  if (anyRunning !== running > 0 && Date.now() - lspCountAt > 3000) {
+    lspCountAt = Date.now();
+    void refreshLspMenu();
   }
+  let dot = 'bg-faint', title = 'Language servers: stopped (click to manage)';
+  if (anyRunning) {
+    dot = S.lsp.state === 'indexing' ? 'bg-warn' : 'bg-gi';
+    title = `Language servers: ${running || 1} of ${available || running || 1} running (click to manage)`;
+  } else if (S.lsp.state === 'failed') {
+    dot = 'bg-gd';
+    title = 'A language server failed (click to manage)';
+  }
+  // Counts appear once the server list is known and something is running.
+  const count = anyRunning && available ? `<span class="tabular-nums">${running}/${available}</span> ` : '';
+  el.innerHTML = `<span class="size-1.5 shrink-0 rounded-full ${dot}" aria-hidden="true"></span>${count}LSP`;
+  el.title = title;
+  el.setAttribute('aria-label', title);
 }
 
 function shortLang(lang) {
@@ -142,7 +156,6 @@ function shortLang(lang) {
 }
 
 const lspMenuEl = $('#lsp-menu');
-let lastLspData = null;
 let lspPollTimer = null;
 let pollActive = false;
 const installingServers = new Set();
@@ -155,6 +168,7 @@ export function startLspPoll() {
     try {
       const data = await api('/api/lsp/servers');
       if (data) {
+        lastLspData = data;
         S.lsp.anyRunning = data.anyRunning;
         drawLspStatus();
         if (lspMenuEl && !lspMenuEl.hidden) {
@@ -166,7 +180,7 @@ export function startLspPoll() {
         for (const s of data.servers || []) {
           if (installingServers.has(s.name) && s.installed && !s.running && s.state !== 'installing') {
             installingServers.delete(s.name);
-            showToast('✓', `${s.name} installed. Starting…`);
+            showToast('success', `${s.name} installed. Starting…`);
             apiPost('/api/lsp/start', { server: s.name }).then(d => {
               if (d) {
                 S.lsp.anyRunning = d.anyRunning;
@@ -196,71 +210,54 @@ export function renderLspMenu(data) {
   const servers = data.servers || [];
   const anyRunning = !!data.anyRunning;
 
-  let headAction = '';
-  if (servers.length > 0) {
-    if (anyRunning) {
-      headAction = `<button id="lsp-action-all" data-action="stop-all" title="Stop all running language servers" class="btn" data-control="lsp-menu-head-action" data-variant="outline" data-size="xs">Stop All</button>`;
-    } else {
-      const anyInstalled = servers.some(s => s.installed);
-      if (anyInstalled) {
-        headAction = `<button id="lsp-action-all" data-action="start-all" title="Start all available language servers" class="btn" data-control="lsp-menu-head-action" data-variant="outline" data-size="xs">Start All</button>`;
-      }
-    }
-  }
-
   let rows = '';
   if (servers.length === 0) {
-    rows = `<div data-ui="lsp-empty-note" class="empty text-center p-3 text-muted-foreground">No language servers detected for workspace</div>`;
+    rows = `<div data-ui="lsp-empty-note" class="col-span-full py-2 text-muted-foreground">No language servers detected for workspace</div>`;
   } else {
+    const act = (name, kind, label, cls) => `<button data-name="${esc(name)}" data-act="${kind}" title="${label} ${esc(name)}" aria-label="${label} ${esc(name)}" class="btn ${cls}" data-control="lsp-btn" data-variant="ghost" data-size="icon-xs"><span class="${kind === 'start' ? 'icon-[lucide--play]' : 'icon-[lucide--square]'} size-3" aria-hidden="true"></span></button>`;
     rows = servers.map(s => {
-      let dotClass = s.state || 'stopped';
-      let metaText = '';
+      // The dot carries the state (a spinner while it changes); text appears only
+      // when it says something the dot cannot.
+      let dot = 'bg-faint';
+      let busy = false;
+      let note = '';
       let btnHtml = '';
 
       if (s.state === 'installing' || installingServers.has(s.name)) {
-        dotClass = 'starting';
-        metaText = 'Installing…';
-        btnHtml = `<button disabled class="btn" data-control="lsp-btn" data-variant="outline" data-size="xs">Installing…</button>`;
-      } else if (s.running) {
-        dotClass = s.state === 'indexing' ? 'indexing' : 'ready';
-        metaText = s.memBytes ? fmtBytes(s.memBytes) : 'Running';
-        btnHtml = `<button data-name="${esc(s.name)}" data-act="stop" title="Stop ${esc(s.name)}" class="btn" data-control="lsp-btn lsp-btn-stop" data-variant="outline" data-size="xs">Stop</button>`;
+        busy = true;
+        btnHtml = '<span></span>';
       } else if (s.state === 'starting') {
-        dotClass = 'starting';
-        metaText = 'Starting…';
-        btnHtml = `<button data-name="${esc(s.name)}" data-act="stop" title="Stop ${esc(s.name)}" class="btn" data-control="lsp-btn lsp-btn-stop" data-variant="outline" data-size="xs">Stop</button>`;
+        busy = true;
+        btnHtml = act(s.name, 'stop', 'Stop', 'text-destructive');
+      } else if (s.running) {
+        dot = s.state === 'indexing' ? 'bg-warn' : 'bg-gi';
+        note = s.memBytes ? fmtBytes(s.memBytes) : '';
+        btnHtml = act(s.name, 'stop', 'Stop', 'text-destructive');
       } else if (s.state === 'failed') {
-        dotClass = 'failed';
-        metaText = s.error ? esc(s.error) : 'Failed';
-        btnHtml = `<button data-name="${esc(s.name)}" data-act="start" title="Restart ${esc(s.name)}" class="btn" data-control="lsp-btn lsp-btn-start" data-variant="outline" data-size="xs">Start</button>`;
+        dot = 'bg-gd';
+        note = 'Failed';
+        btnHtml = act(s.name, 'start', 'Restart', 'text-muted-foreground hover:text-foreground');
       } else if (s.installed) {
-        dotClass = 'stopped';
-        metaText = 'Stopped';
-        btnHtml = `<button data-name="${esc(s.name)}" data-act="start" title="Start ${esc(s.name)}" class="btn" data-control="lsp-btn lsp-btn-start" data-variant="outline" data-size="xs">Start</button>`;
+        btnHtml = act(s.name, 'start', 'Start', 'text-muted-foreground hover:text-foreground');
       } else {
-        dotClass = 'missing';
-        if (s.error) {
-          metaText = 'Install failed';
-        } else {
-          metaText = 'Not installed';
-        }
+        note = s.error ? 'Install failed' : 'Not installed';
         if (s.autoOpt !== undefined && s.autoOpt >= 0) {
-          btnHtml = `<button data-name="${esc(s.name)}" data-opt="${s.autoOpt}" data-act="install" title="Install ${esc(s.name)}" class="btn" data-control="lsp-btn lsp-btn-install" data-variant="outline" data-size="xs">Install</button>`;
+          btnHtml = `<button data-name="${esc(s.name)}" data-opt="${s.autoOpt}" data-act="install" title="Install ${esc(s.name)}" class="btn" data-control="lsp-btn" data-variant="ghost" data-size="xs">Install</button>`;
         } else if (s.options && s.options.length > 0) {
-          btnHtml = `<button data-cmd="${esc(s.options[0].cmd)}" data-act="copy" title="Copy install command: ${esc(s.options[0].cmd)}" class="btn" data-control="lsp-btn lsp-btn-copy" data-variant="outline" data-size="xs">Copy Cmd</button>`;
+          btnHtml = `<button data-cmd="${esc(s.options[0].cmd)}" data-act="copy" title="Copy install command: ${esc(s.options[0].cmd)}" class="btn" data-control="lsp-btn" data-variant="ghost" data-size="xs">Copy command</button>`;
         } else {
-          btnHtml = `<span data-ui="lsp-meta-dim" class="whitespace-nowrap font-mono text-muted-foreground">Manual</span>`;
+          btnHtml = '<span></span>';
         }
       }
+      const dotHtml = busy
+        ? '<span data-ui="lsp-dot" class="icon-[lucide--loader-circle] size-3 animate-spin text-muted-foreground" aria-label="Working"></span>'
+        : `<span data-ui="lsp-dot" class="mx-0.5 size-2 rounded-full ${dot}"></span>`;
 
       return `
-        <div data-ui="lsp-server-row" class="flex items-center justify-between gap-2 p-3">
-          <div data-ui="lsp-server-info" class="flex items-center min-w-0 gap-2">
-            <span data-ui="lsp-dot" class="size-2 shrink-0 rounded-full bg-muted-foreground [&.ready]:bg-gi [&.failed]:bg-gd [&.indexing]:bg-warn [&.starting]:bg-warn ${dotClass}"></span>
-            <span data-ui="lsp-server-name" class="font-mono">${esc(s.name)}</span>
-            <span data-ui="lsp-server-lang" class="whitespace-nowrap text-muted-foreground">${esc(shortLang(s.lang))}</span>
-          </div>
-          <span data-ui="lsp-server-meta" class="whitespace-nowrap font-mono text-muted-foreground" title="${esc(s.error || metaText)}">${metaText}</span>
+        <div data-ui="lsp-server-row" class="contents">
+          ${dotHtml}
+          <span data-ui="lsp-server-info" class="min-w-0 truncate"><span data-ui="lsp-server-name" class="font-medium">${esc(s.name)}</span> <span data-ui="lsp-server-lang" class="text-muted-foreground">${esc(shortLang(s.lang))}</span></span>
+          <span data-ui="lsp-server-meta" class="max-w-40 truncate text-right tabular-nums text-muted-foreground" title="${esc(s.error || note)}">${esc(note)}</span>
           ${btnHtml}
         </div>
       `;
@@ -268,11 +265,8 @@ export function renderLspMenu(data) {
   }
 
   lspMenuEl.innerHTML = `
-    <div data-ui="lsp-menu-head" class="flex items-center justify-between">
-      <span>Language Servers</span>
-      ${headAction}
-    </div>
-    <div data-ui="lsp-server-list" class="flex flex-col gap-2">
+    <div data-ui="lsp-menu-head" class="px-2 pt-1.5 pb-1 text-xs font-medium text-muted-foreground">Language servers</div>
+    <div data-ui="lsp-server-list" class="grid grid-cols-[auto_1fr_auto_auto] items-center gap-x-3 gap-y-0.5 pl-2 text-xs">
       ${rows}
     </div>
   `;
@@ -280,6 +274,27 @@ export function renderLspMenu(data) {
   if (servers.some(s => s.state === 'installing')) {
     startLspPoll();
   }
+}
+
+/** Start every installed language server (command palette). */
+export async function startAllLsp() {
+  const data = await apiPost('/api/lsp/start', { server: 'all' });
+  if (!data) return;
+  lastLspData = data;
+  S.lsp.anyRunning = data.anyRunning;
+  drawLspStatus();
+  if (lspMenuEl && !lspMenuEl.hidden) renderLspMenu(data);
+}
+
+/** Stop every running language server (command palette). */
+export async function stopAllLsp() {
+  const data = await apiPost('/api/lsp/stop');
+  if (!data) return;
+  lastLspData = data;
+  S.lsp.anyRunning = data.anyRunning;
+  S.lsp.state = 'off';
+  drawLspStatus();
+  if (lspMenuEl && !lspMenuEl.hidden) renderLspMenu(data);
 }
 
 export function closeLspMenu() {
@@ -299,6 +314,7 @@ export async function refreshLspMenu() {
   try {
     const data = await api('/api/lsp/servers');
     if (data) {
+      lastLspData = data;
       S.lsp.anyRunning = data.anyRunning;
       drawLspStatus();
       if (lspMenuEl && !lspMenuEl.hidden) {
@@ -321,7 +337,7 @@ export async function openLspMenu() {
     S.lsp.anyRunning = data.anyRunning;
     drawLspStatus();
   } catch {
-    lspMenuEl.innerHTML = `<div data-ui="lsp-empty-note" class="empty text-center p-3 text-muted-foreground">Failed to load language servers</div>`;
+    lspMenuEl.innerHTML = `<div data-ui="lsp-empty-note" class="col-span-full py-2 text-muted-foreground">Failed to load language servers</div>`;
   }
 }
 
@@ -335,6 +351,7 @@ export async function toggleLspMenu() {
 }
 
 export function initLspMenu() {
+  void refreshLspMenu(); // the status chip counts running servers
   const contEl = $('#st-lsp');
   if (contEl) {
     contEl.addEventListener('click', (e) => {
@@ -354,30 +371,6 @@ export function initLspMenu() {
       const btn = e.target.closest('button');
       if (!btn) return;
       e.stopPropagation();
-
-      if (btn.id === 'lsp-action-all') {
-        const action = btn.dataset.action;
-        btn.disabled = true;
-        try {
-          if (action === 'stop-all') {
-            const data = await apiPost('/api/lsp/stop');
-            if (data) {
-              S.lsp.anyRunning = data.anyRunning;
-              S.lsp.state = 'off';
-              renderLspMenu(data);
-              drawLspStatus();
-            }
-          } else if (action === 'start-all') {
-            const data = await apiPost('/api/lsp/start', { server: 'all' });
-            if (data) {
-              S.lsp.anyRunning = data.anyRunning;
-              renderLspMenu(data);
-              drawLspStatus();
-            }
-          }
-        } catch {}
-        return;
-      }
 
       const name = btn.dataset.name;
       const act = btn.dataset.act;
@@ -402,16 +395,15 @@ export function initLspMenu() {
           }
         } else if (act === 'install') {
           const opt = btn.dataset.opt || '0';
-          btn.textContent = 'Installing…';
           installingServers.add(name);
           try {
             await apiPost('/api/lsp/install', { server: name, option: opt });
-            showToast('✓', `Installing ${name} in background…`);
+            showToast('success', `Installing ${name} in background…`);
             startLspPoll();
             await refreshLspMenu();
           } catch (err) {
             installingServers.delete(name);
-            showToast('!', err.message || 'Install failed');
+            showToast('error', err.message || 'Install failed');
             await refreshLspMenu();
           }
         } else if (act === 'copy') {
