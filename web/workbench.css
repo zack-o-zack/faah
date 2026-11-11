@@ -4,7 +4,6 @@
    lays them out. Colours come from theme tokens only. */
 #wb-app { display: flex; flex-direction: column; height: 100vh; }
 .wb-scroll { flex: 1; min-height: 0; overflow: auto; }
-.wb .grow { flex: 1; }
 .wb-faint { color: var(--faint); }
 
 .wb-main { max-width: 1100px; margin: 0 auto; padding: 40px 16px 32px; }

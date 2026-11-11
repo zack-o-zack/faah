@@ -80,16 +80,8 @@ a.cc-who:hover { color: var(--primary-text); }
 .cc-add { color: var(--gi); }
 .cc-del { color: var(--gd); }
 
-.git-nudge-btn {
-  flex: none; width: 24px; height: 24px; padding: 0;
-  display: inline-flex; align-items: center; justify-content: center;
-  border: 1px solid var(--border); border-radius: var(--r);
-  background: var(--muted); color: var(--faint); cursor: pointer;
-  transition: color .15s, border-color .15s, background-color .15s;
-}
-.git-nudge-btn:hover {
-  color: var(--foreground); border-color: var(--primary); background: var(--accent);
-}
+
+
 @keyframes git-notice-spin { to { transform: rotate(360deg); } }
 
 /* ---------- search panel ---------- */

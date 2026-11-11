@@ -269,7 +269,7 @@ function createDiffSection(d, kind, title, sub, populateBody) {
   }
 
   const grow = document.createElement('span');
-  grow.className = 'grow';
+  grow.className = 'flex-1 min-w-0';
   head.append(grow);
 
   const btn = document.createElement('button');
@@ -501,7 +501,7 @@ function hunkHeader(hunk, idx = 0, canActOnHunk = false) {
   el.append(label);
 
   const grow = document.createElement('span');
-  grow.className = 'grow';
+  grow.className = 'flex-1 min-w-0';
   el.append(grow);
 
   const expandBtn = document.createElement('button');
