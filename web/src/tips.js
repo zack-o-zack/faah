@@ -242,7 +242,7 @@ export function renderTipsList() {
             <h4 class="tip-item-title">${esc(tip.title)}</h4>
           </div>
           <div class="tip-item-meta">
-            <button class="tip-tag-pill" data-tag="${esc(tag)}" title="Filter by ${esc(tag)}">${esc(tag)}</button>
+            <button data-tag="${esc(tag)}" title="Filter by ${esc(tag)}" class="btn badge" data-control="tip-tag-pill" data-variant="ghost" data-size="xs">${esc(tag)}</button>
           </div>
         </header>
         <div class="tip-item-content">${renderTipMarkdown(tip.content)}</div>
@@ -253,7 +253,7 @@ export function renderTipsList() {
   listEl.innerHTML = html;
 
   // Tag filter clicking
-  listEl.querySelectorAll('.tip-tag-pill').forEach(btn => {
+  listEl.querySelectorAll('[data-control~=tip-tag-pill]').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const tag = btn.dataset.tag;

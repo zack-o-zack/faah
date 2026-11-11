@@ -367,21 +367,21 @@ function createSession(info) {
     jobId: null,
     harness: '',
     el,
-    refEl: el.querySelector('.agent-ref'),
+    refEl: el.querySelector('[data-control~=agent-ref]'),
     metaEl: el.querySelector('.agent-meta'),
-    harnessSelect: el.querySelector('.agent-harness-select'),
-    modelSelect: el.querySelector('.agent-model-select'),
-    closeBtn: el.querySelector('.agent-close'),
+    harnessSelect: el.querySelector('[data-control~=agent-harness-select]'),
+    modelSelect: el.querySelector('[data-control~=agent-model-select]'),
+    closeBtn: el.querySelector('[data-control~=agent-close]'),
     pickEl: el.querySelector('.agent-pick'),
     composeEl: el.querySelector('.agent-compose'),
-    input: el.querySelector('.agent-input'),
-    sendBtn: el.querySelector('.agent-send'),
-    nowBtn: el.querySelector('.agent-now:not(.agent-open-thread)'),
-    threadBtn: el.querySelector('.agent-open-thread'),
+    input: el.querySelector('[data-control~=agent-input]'),
+    sendBtn: el.querySelector('[data-control~=agent-send]'),
+    nowBtn: el.querySelector('[data-control~=agent-now]:not([data-control~=agent-open-thread])'),
+    threadBtn: el.querySelector('[data-control~=agent-open-thread]'),
     threadId: '',
-    queuedEl: el.querySelector('.agent-queued'),
+    queuedEl: el.querySelector('[data-control~=agent-queued]'),
     queued: false,
-    cancelBtn: el.querySelector('.agent-cancel'),
+    cancelBtn: el.querySelector('[data-control~=agent-cancel]'),
     hintEl: el.querySelector('.agent-hint'),
     errEl: el.querySelector('.agent-err'),
   };
@@ -497,7 +497,10 @@ function attachAlreadyRunningCancel(errContainer) {
   row.className = 'agent-err-actions';
   const btn = document.createElement('button');
   btn.type = 'button';
-  btn.className = 'agent-err-cancel-btn';
+  btn.className = 'btn';
+  btn.dataset.control = 'agent-err-cancel-btn';
+  btn.dataset.variant = 'ghost';
+  btn.dataset.size = 'xs';
   btn.textContent = 'Cancel in-flight edit';
   btn.title = 'Stop and cancel running edits on the server';
   btn.onclick = async (e) => {
@@ -640,7 +643,7 @@ async function showPicker(session) {
   session.pickEl.querySelectorAll('[data-pick]').forEach(b => {
     b.addEventListener('click', () => pick(session, b.dataset.pick));
   });
-  session.pickEl.querySelectorAll('.agent-model-select').forEach(sel => {
+  session.pickEl.querySelectorAll('[data-control~=agent-model-select]').forEach(sel => {
     sel.addEventListener('change', async (e) => {
       e.stopPropagation();
       await select(sel.dataset.harness, sel.value, msg => showErr(session, msg));
@@ -654,13 +657,13 @@ function optionsHtml(ready, settingsPath) {
   for (const h of ready) {
     const isSelected = h.name === chosen();
     html += '<div class="agent-opt-wrap">' +
-      '<button class="agent-opt' + (isSelected ? ' on' : '') + '" data-pick="' + esc(h.name) + '">' +
+      '<button aria-pressed="' + isSelected + '" data-variant="' + (isSelected ? 'secondary' : 'ghost') + '" data-pick="' + esc(h.name) + '" class="btn" data-control="agent-opt" data-size="xs">' +
       '<span class="agent-opt-name">' + esc(h.name) + '</span>' +
       '<code class="agent-opt-cmd">' + esc(h.cmd) + '</code></button>';
     if (isSelected && h.models && h.models.length > 0) {
       html += '<div class="agent-model-row">' +
         '<span class="agent-model-label">Model:</span>' +
-        '<select class="agent-model-select" data-harness="' + esc(h.name) + '">';
+        '<select data-harness="' + esc(h.name) + '" class="select h-6! max-w-full text-xs!" data-control="agent-model-select">';
       for (const m of h.models) {
         const sel = m === (h.model || chosenModel()) ? ' selected' : '';
         html += '<option value="' + esc(m) + '"' + sel + '>' + esc(m) + '</option>';

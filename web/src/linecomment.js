@@ -12,13 +12,13 @@ let pressedSel = null;
 
 export function initLineComment() {
   document.addEventListener('mousedown', e => {
-    const btn = /** @type {HTMLElement|null} */ (e.target)?.closest?.('.line-btn');
+    const btn = /** @type {HTMLElement|null} */ (e.target)?.closest?.('[data-control~=line-btn]');
     pressedSel = btn ? getSelectedRangeInfo() : null;
     if (btn) e.preventDefault(); // keep the selection alive
   }, true);
   document.addEventListener('click', e => {
     const target = /** @type {HTMLElement|null} */ (e.target);
-    const btn = target?.closest('.line-btn');
+    const btn = target?.closest('[data-control~=line-btn]');
     if (!btn) return;
     e.preventDefault();
     e.stopPropagation();

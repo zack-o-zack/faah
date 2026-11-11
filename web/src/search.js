@@ -1,3 +1,4 @@
+import { setPressed } from './controls.js';
 // web/src/search.js
 import { $, $$, esc, api, debounce } from './state.js';
 import { openFile } from './tabs.js';
@@ -31,9 +32,9 @@ export const runSearch = debounce(async () => {
   resultsEl.innerHTML = '<div class="hint">searching…</div>';
   const params = {
     q, glob: $('#glob')?.value || '',
-    case: $('#o-case')?.classList.contains('on') ? 1 : '',
-    word: $('#o-word')?.classList.contains('on') ? 1 : '',
-    re: $('#o-re')?.classList.contains('on') ? 1 : '',
+    case: $('#o-case')?.getAttribute('aria-pressed') === 'true' ? 1 : '',
+    word: $('#o-word')?.getAttribute('aria-pressed') === 'true' ? 1 : '',
+    re: $('#o-re')?.getAttribute('aria-pressed') === 'true' ? 1 : '',
   };
   try {
     const j = await api('/api/search', params, { signal: controller.signal });
@@ -111,7 +112,7 @@ export function initSearch() {
 
   $('#q')?.addEventListener('input', runSearch);
   $('#glob')?.addEventListener('input', runSearch);
-  $$('.opt').forEach(b => b.addEventListener('click', () => { b.classList.toggle('on'); runSearch(); }));
+  $$('[data-control~=opt]').forEach(b => b.addEventListener('click', () => { setPressed(b, b.getAttribute('aria-pressed') !== 'true'); runSearch(); }));
   $('#q')?.addEventListener('keydown', e => {
     if (e.key === 'Enter') { e.preventDefault(); const f = $('.rline', resultsEl); if (f) f.click(); }
   });

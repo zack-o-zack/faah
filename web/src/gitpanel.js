@@ -442,7 +442,9 @@ function notice({ tone = 'err', title, html = '', picker = false, actions = [], 
     const b = document.createElement('button');
     b.type = 'button';
     b.textContent = a.label;
-    if (a.primary) b.className = 'primary';
+    b.className = 'btn';
+    b.dataset.size = 'xs';
+    b.dataset.variant = a.primary ? 'primary' : 'outline';
     if (a.title) b.title = a.title;
     b.addEventListener('click', () => {
       for (const x of $('#git-notice-actions').children) x.disabled = true;
@@ -890,11 +892,11 @@ function renderRecentCommits(commits, max = 5) {
   const focused = list.contains(document.activeElement) ? document.activeElement.closest('.git-commit')?.dataset.sha : null;
   list.innerHTML = slice.map(c => `
     <div class="git-commit" data-sha="${esc(c.full)}">
-      <div class="git-commit-row" tabindex="0" role="button" aria-expanded="false" title="${esc(c.subject || '')} (${esc(c.author || '')}, ${esc(c.date || '')})&#10;Click to show changed files">
+      <div tabindex="0" role="button" aria-expanded="false" title="${esc(c.subject || '')} (${esc(c.author || '')}, ${esc(c.date || '')})&#10;Click to show changed files" class="git-commit-row">
         <svg class="git-commit-caret" viewBox="0 0 10 10" width="8" height="8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 2L6.5 5L3.5 8"/></svg>
         <svg class="git-commit-icon" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="2.8"/><line x1="8" y1="1" x2="8" y2="5.2"/><line x1="8" y1="10.8" x2="8" y2="15"/></svg>
         <span class="git-commit-msg-text">${esc(c.subject || '(no message)')}</span>
-        <button type="button" class="git-commit-sha" tabindex="-1" title="Copy SHA">${esc(c.hash)}</button>
+        <button type="button" tabindex="-1" title="Copy SHA" class="btn" data-control="git-commit-sha" data-variant="outline" data-size="xs">${esc(c.hash)}</button>
       </div>
       <div class="git-commit-files" hidden></div>
     </div>
@@ -949,7 +951,7 @@ function drawCommitFiles(body, sha, files) {
 // Builds the next page of rows; returns the index of the first one added.
 function appendCommitFiles(body, sha, files) {
   const from = body.querySelectorAll('.up-file').length;
-  body.querySelector('.up-more')?.remove();
+  body.querySelector('[data-control~=up-more]')?.remove();
   body.insertAdjacentHTML('beforeend', commitFileRows(files, from, from + COMMIT_FILES_PAGE, activeCommitPath(sha)));
   return from;
 }
@@ -1001,13 +1003,13 @@ function initCommitList() {
   const list = $('#git-commits-list');
   if (!list) return;
   list.addEventListener('click', e => {
-    const sha = e.target.closest('.git-commit-sha');
+    const sha = e.target.closest('[data-control~=git-commit-sha]');
     if (sha) {
       e.stopPropagation();
       copyToClipboard(sha.textContent, 'Copied ' + sha.textContent, sha);
       return;
     }
-    const more = e.target.closest('.up-more');
+    const more = e.target.closest('[data-control~=up-more]');
     if (more) { showMoreCommitFiles(more.closest('.git-commit')); return; }
     const file = e.target.closest('.up-file');
     if (file) { openCommitPath(file.closest('.git-commit'), file.dataset.path); return; }
@@ -1020,21 +1022,21 @@ function initCommitList() {
   });
   list.addEventListener('dblclick', e => {
     const row = e.target.closest('.git-commit-row');
-    if (!row || e.target.closest('.git-commit-sha')) return;
+    if (!row || e.target.closest('[data-control~=git-commit-sha]')) return;
     openFirstCommitFile(row.closest('.git-commit'));
   });
   list.addEventListener('keydown', e => {
-    const item = e.target.closest('.git-commit-row, .up-file, .up-more');
+    const item = e.target.closest('.git-commit-row, .up-file, [data-control~=up-more]');
     if (!item) return;
     const el = item.closest('.git-commit');
     const isRow = item.classList.contains('git-commit-row');
-    if (item.classList.contains('up-more') && (e.key === 'Enter' || e.key === ' ')) {
+    if (item.matches('[data-control~=up-more]') && (e.key === 'Enter' || e.key === ' ')) {
       e.preventDefault();
       const first = showMoreCommitFiles(el);
       el.querySelectorAll('.up-file')[first]?.focus();
       return;
     }
-    const items = [...list.querySelectorAll('.git-commit-row, .git-commit.expanded .up-file, .git-commit.expanded .up-more')];
+    const items = [...list.querySelectorAll('.git-commit-row, .git-commit.expanded .up-file, .git-commit.expanded [data-control~=up-more]')];
     const at = items.indexOf(item);
     switch (e.key) {
       case 'ArrowDown': items[at + 1]?.focus(); break;

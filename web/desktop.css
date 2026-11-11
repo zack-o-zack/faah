@@ -27,87 +27,11 @@
   --ctl-sm: 24px; --ctl-md: 28px; --ctl-lg: 36px;
   --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px;
 }
-/* At this size the control radius would turn the checkbox into a circle. */
-[data-shell] .tr .stage-tick { border-radius: 3px; }
 
 /* Buttons: small and medium sizes, default and primary weights. Controls inside
    code rows, tree rows, and the crowded sidebar header stay compact. */
 :root[data-shell] { --focus-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 45%, transparent); }
 [data-shell] #status { height: 28px; }
-
-[data-shell] :is(.mini:not(.panel-actions .mini, .panel-head .wb-back), .top-bar-btn.open-right, .dcs-step:not(.dcs-hunk-btn), .tip-btn-nav) {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: var(--ctl-sm); height: var(--ctl-sm); padding: 0; flex: none; box-sizing: border-box;
-}
-[data-shell] .mini:not(.panel-actions .mini, .panel-head .wb-back) { margin-left: 0; color: var(--muted-foreground); }
-
-[data-shell] :is(.footer-btn, .top-bar-btn:not(.open-right), .dcs-hunk-btn, .dcs-viewed, .diff-hunk-btn, .tip-btn-all) {
-  height: var(--ctl-sm); padding: 0 var(--space-2); font: var(--t-12) var(--ui); box-sizing: border-box;
-}
-[data-shell] .footer-btn { color: var(--muted-foreground); opacity: 1; }
-[data-shell] .footer-btn:hover, [data-shell] .footer-btn.active { background: var(--muted); color: var(--foreground); }
-
-[data-shell] :is(.wb-btn, .git-panel-actions .footer-btn, .git-generate-btn, .settings-btn-save),
-[data-shell] #git-generate-msg {
-  height: var(--ctl-md); padding: 0 var(--space-3); font: 500 var(--t-13) var(--ui);
-  border-radius: var(--r); box-sizing: border-box;
-}
-/* Beside a text field, a button stretches to the field's height. */
-[data-shell] .wb-open .wb-btn { height: auto; }
-[data-shell] .wb-btn:not(.wb-primary), [data-shell] .git-panel-actions .footer-btn {
-  background: var(--muted); border: 1px solid var(--border); color: var(--foreground);
-}
-[data-shell] .wb-btn:not(.wb-primary):hover,
-[data-shell] .git-panel-actions .footer-btn:hover:not(:disabled) { background: var(--accent); border-color: var(--border); }
-
-[data-shell] :is(.mini, .top-bar-btn, .footer-btn, .wb-btn, .git-generate-btn, .settings-btn-save, .dcs-step, .dcs-viewed, .diff-hunk-btn, .tip-btn-nav, .tip-btn-all):focus-visible {
-  outline: 0; box-shadow: var(--focus-shadow);
-}
-
-/* Fields: one height, surface, and focus state. Find, palette, and filter fields
-   stay borderless because their surrounding bar already draws the edge. */
-[data-shell] :is(.settings-input, .settings-select, .search-form input, .pr-merge-input, .fs-modal-input, .review-inline-input, .review-config-field input) {
-  height: var(--ctl-md); padding: 0 10px; font: var(--t-13)/1.45 var(--ui); color: var(--foreground);
-  background: var(--background); border: 1px solid var(--border); border-radius: var(--r); box-sizing: border-box;
-}
-[data-shell] :is(.settings-textarea, .pr-merge-body, .agent-input, .git-commit-msg, .review-inline-textarea, .review-config-field textarea) {
-  height: auto; padding: 6px 10px; font: var(--t-13)/1.45 var(--ui); color: var(--foreground);
-  background: var(--background); border: 1px solid var(--border); border-radius: var(--r); box-sizing: border-box;
-}
-/* Commit messages are wrapped by column, so they stay monospaced. */
-[data-shell] textarea.git-commit-msg { font-family: var(--mono); }
-[data-shell] :is(.agent-harness-select, .agent-model-select) {
-  height: var(--ctl-sm); padding: 0 6px; font-family: var(--ui); font-size: var(--t-12); box-sizing: border-box;
-}
-[data-shell] .wb-field input {
-  height: var(--ctl-lg); padding: 0 12px; font: var(--t-14)/1.45 var(--ui);
-  background: var(--background); border-radius: var(--r-lg); box-sizing: border-box;
-}
-[data-shell] :is(.settings-input, .settings-select, .search-form input, .pr-merge-input, .fs-modal-input, .review-inline-input, .review-inline-textarea, .review-config-field input, .review-config-field textarea, .agent-input, .git-commit-msg, .agent-harness-select, .agent-model-select, .wb-field input):focus {
-  outline: 0; border-color: var(--primary); box-shadow: var(--focus-shadow);
-}
-
-/* Segmented controls: a sunken track with the selected segment raised in a
-   neutral, so the accent stays for primary actions. The sidebar's file and
-   changes switch keeps its icon size to fit the crowded header. */
-[data-shell] :is(.view-switch, .settings-mode-switch, .calls-dir, .sidebar-toggle) {
-  height: var(--ctl-md); gap: 2px; padding: 2px;
-  background: var(--muted); border: 0; border-radius: var(--r); box-sizing: border-box;
-}
-[data-shell] :is(.view-switch, .settings-mode-switch, .calls-dir) > button,
-[data-shell] .diff-seg > button {
-  height: 100%; padding: 0 10px; font: var(--t-12)/1 var(--ui);
-  color: var(--muted-foreground); background: transparent; border: 0; border-radius: 4px; box-shadow: none;
-}
-[data-shell] .sidebar-toggle { height: var(--ctl-sm); }
-[data-shell] .sidebar-toggle .toggle-btn { width: 20px; height: 100%; border-radius: 4px; box-shadow: none; }
-[data-shell] :is(.view-switch, .settings-mode-switch, .calls-dir, .sidebar-toggle) button:hover:not(:disabled) { color: var(--foreground); }
-[data-shell] :is(.view-switch, .settings-mode-switch, .calls-dir, .sidebar-toggle) button:is(.on, .active) {
-  background: var(--accent); color: var(--foreground); font-weight: 500;
-}
-[data-shell] :is(.view-switch, .settings-mode-switch, .calls-dir, .sidebar-toggle) button:focus-visible {
-  outline: 0; box-shadow: var(--focus-shadow);
-}
 
 /* Tabs: rounded items floating in their bar instead of cells joined by
    dividers. Hover is a lighter wash than the selected tab so the two never match. */
@@ -121,11 +45,6 @@
 }
 [data-shell] .tab:hover { background: color-mix(in srgb, var(--muted) 55%, transparent); color: var(--foreground); }
 [data-shell] .tab.active { background: var(--muted); color: var(--foreground); font-weight: 500; box-shadow: none; }
-[data-shell] .tab .x { width: 16px; height: 16px; border-radius: 4px; }
-[data-shell] .inspector-tab { height: var(--ctl-sm); padding: 0 8px; color: var(--muted-foreground); border-radius: var(--r); }
-[data-shell] .inspector-tab:hover { color: var(--foreground); background: color-mix(in srgb, var(--muted) 55%, transparent); }
-[data-shell] .inspector-tab.active { color: var(--foreground); background: var(--muted); font-weight: 500; }
-[data-shell] :is(.tab .x, .inspector-tab):focus-visible { outline: 0; box-shadow: var(--focus-shadow); }
 
 /* Headers: sentence-weight labels in place of small spaced capitals. Panel
    headers read as titles; section titles inside a panel stay secondary. */
@@ -163,70 +82,25 @@
   padding: 4px; gap: 1px; background: var(--muted); border: 1px solid var(--border);
   border-radius: var(--r-lg); box-shadow: var(--shadow);
 }
-[data-shell] :is(.wb-suggest li, .wb-menu li, .diff-menu-item, .sel-menu-item, .pr-merge-menu button) {
-  min-height: var(--ctl-md); padding: 4px 8px; box-sizing: border-box;
-  font-family: var(--ui); font-size: var(--t-13); color: var(--foreground); border-radius: var(--r);
-}
-[data-shell] :is(.wb-suggest li[aria-selected="true"], .wb-suggest li:hover, .wb-menu li[aria-selected="true"],
-  .diff-menu-item:hover, .sel-menu-item:hover, .pr-merge-menu button:hover) {
-  background: var(--accent); color: var(--foreground);
-}
+
 /* The check marks the current choice, so the highlight is left to the pointer. */
-[data-shell] .diff-menu-item.active:not(:hover) { background: none; }
+
 [data-shell] .diff-menu { min-width: 220px; }
 [data-shell] .diff-item-desc { white-space: nowrap; }
-[data-shell] .sel-menu-item:disabled:hover { background: none; color: var(--faint); }
-[data-shell] .sel-menu-item:focus-visible { outline: 0; box-shadow: var(--focus-shadow); }
+
 [data-shell] .diff-item-title { font-size: var(--t-13); font-weight: 500; }
 [data-shell] .diff-item-desc { font-size: var(--t-12); }
-[data-shell] .diff-menu-item.active .diff-item-check { color: var(--foreground); }
-[data-shell] .diff-menu-item.active .diff-item-badge { background: var(--muted); color: var(--muted-foreground); }
+
 /* Modals: header and footer sit on the dialog surface, divided by lines, instead
    of on a second gray band. Settings navigation uses the inset row pattern. */
 [data-shell] :is(.settings-header, .settings-footer, .fs-modal-header, .fs-modal-footer) { background: transparent; }
 [data-shell] :is(.settings-title-group h2, .fs-modal-title) { font-size: var(--t-14); font-weight: 600; }
 [data-shell] .help-header h2 { font-size: var(--t-14); letter-spacing: 0; text-transform: none; color: var(--foreground); }
 /* Dialog actions borrow the status bar's button class; give them the medium size. */
-[data-shell] .fs-modal-footer .footer-btn {
-  height: var(--ctl-md); padding: 0 var(--space-3); font: 500 var(--t-13) var(--ui);
-  color: var(--foreground); background: var(--muted); border: 1px solid var(--border); border-radius: var(--r);
-}
-[data-shell] .fs-modal-footer .footer-btn:hover { background: var(--accent); }
-[data-shell] .fs-modal-footer .footer-btn.primary { color: var(--primary-foreground); background: var(--primary); border-color: var(--primary); }
-[data-shell] .fs-modal-footer .footer-btn.primary:hover { background: var(--primary); filter: brightness(1.08); }
-[data-shell] .settings-nav { padding: 8px; gap: 1px; }
-[data-shell] .settings-nav-item {
-  height: var(--ctl-md); padding: 0 10px; flex: none; box-sizing: border-box;
-  font-size: var(--t-13); border-left: 0; border-radius: var(--r);
-}
-[data-shell] .settings-nav-item:hover { background: color-mix(in srgb, var(--muted) 55%, transparent); }
-[data-shell] .settings-nav-item.active { color: var(--foreground); background: var(--muted); font-weight: 500; }
-[data-shell] .settings-nav-item:focus-visible { outline: 0; box-shadow: var(--focus-shadow); }
 
-/* Keys and tags: a shortcut is one cap per key with a raised bottom edge, in the
-   system font so the platform's key symbols render. Tags share the cap's size
-   but stay flat, which is what tells the two apart. */
-[data-shell] kbd {
-  display: inline-flex; align-items: center; justify-content: center;
-  min-width: 20px; height: 20px; padding: 0 5px; box-sizing: border-box;
-  font: 500 12px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  color: var(--muted-foreground); background: var(--accent); border: 0; border-radius: 5px;
-  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .45), 0 0 0 1px color-mix(in srgb, var(--foreground) 8%, transparent);
-}
+[data-shell] .settings-nav { padding: 8px; gap: 1px; }
+
 /* A shortcut's outer <kbd> only groups its caps. */
-[data-shell] kbd:has(> kbd) {
-  gap: 3px; min-width: 0; height: auto; padding: 0; background: none; box-shadow: none;
-}
-[data-shell] :is(.footer-btn, .sel-menu-item):hover kbd > kbd { color: var(--foreground); }
-[data-shell] :is(.settings-tag, .settings-pill-tag) {
-  display: inline-flex; align-items: center; height: 20px; padding: 0 6px; box-sizing: border-box;
-  font: 500 var(--t-12)/1 var(--ui); border: 0; border-radius: 5px;
-}
-[data-shell] .settings-tag:is(.tag-type, .tag-range, .tag-step) { background: var(--accent); color: var(--muted-foreground); }
-[data-shell] .settings-tag :is(b, code) { font-family: var(--mono); }
-[data-shell] .settings-pill-tag { background: var(--accent); color: var(--muted-foreground); }
-[data-shell] .settings-pill-tag:hover { background: color-mix(in srgb, var(--foreground) 14%, var(--accent)); color: var(--foreground); }
-[data-shell] .settings-pill-tag.active { background: var(--primary); color: var(--primary-foreground); }
 
 [data-shell] :is(.diff-menu-header, .lsp-menu-head) {
   font-size: var(--t-12); font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--muted-foreground);
@@ -237,7 +111,7 @@
   --titlebar-left: 0px;
   --titlebar-right: 0px;
 }
-:root[data-platform="mac"] { --titlebar-left: 76px; }
+:root[data-titlebar][data-platform="mac"] { --titlebar-left: 76px; }
 /* Width of the native min/max/close buttons, reported by Chromium. */
 :root[data-platform="win"] {
   --titlebar-right: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw));
@@ -256,9 +130,7 @@
 [data-titlebar] body.side-hidden .main-top-bar { padding-left: calc(8px + var(--titlebar-left)); }
 
 /* Only the rightmost bar sits under the Windows controls. */
-[data-titlebar] body.right-hidden.threads-hidden .main-top-bar,
-[data-titlebar] body:not(.threads-hidden) .threads-head,
-[data-titlebar] body.threads-hidden:not(.right-hidden) #right-side .inspector-head {
+[data-titlebar] body.right-hidden.threads-hidden .main-top-bar, [data-titlebar] body:not(.threads-hidden) .threads-head, [data-titlebar] body.threads-hidden:not(.right-hidden) #right-side .inspector-head {
   padding-right: calc(8px + var(--titlebar-right));
 }
 
@@ -299,58 +171,24 @@
   flex: 0 0 calc(100% + var(--titlebar-left, 0px)); margin-left: calc(-1 * var(--titlebar-left, 0px));
   height: var(--ctl-sm);
 }
-[data-shell] .panel-actions .sidebar-toggle { margin-right: auto; }
 
-[data-shell] #footer-actions .footer-btn:not([data-action="search"], [data-action="quick-open"]),
-[data-shell] #footer-actions :is(.footer-btn-label, .footer-kbd),
-[data-shell] .status-metrics > :not(.shell-ico) { display: none; }
-[data-shell] #footer-actions .footer-btn, [data-shell] .status-metrics {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: var(--ctl-sm); height: var(--ctl-sm); padding: 0; box-sizing: border-box;
-  color: var(--muted-foreground); background: none; border: 0; border-radius: var(--r); opacity: 1;
-}
-[data-shell] #footer-actions .footer-btn:hover, [data-shell] .status-metrics:hover { color: var(--foreground); background: var(--muted); }
-[data-shell] .status-metrics:focus-visible { outline: 0; box-shadow: var(--focus-shadow); }
+
+
+
+
 
 /* Disclosure arrows: the tree's stroked chevron in place of a filled triangle. */
-[data-shell] :is(.pr-comments-collapse, .pr-merge-caret, .rfile .ar, .car:is(.open, .shut)) { font-size: 0; }
-[data-shell] :is(.pr-comments-collapse, .rfile .ar, .car:is(.open, .shut)) {
-  display: inline-flex; align-items: center; justify-content: center; flex: none;
-  width: 16px; height: 16px; padding: 0; color: var(--muted-foreground); transition: transform .12s ease;
-}
-[data-shell] :is(.pr-comments-collapse, .pr-merge-caret, .rfile .ar, .car:is(.open, .shut))::before {
-  content: ""; width: 4px; height: 4px; margin-top: -2px;
-  border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg);
-}
+
 [data-shell] :is(.rfile.closed .ar, .car.shut) { transform: rotate(-90deg); }
 
-/* Settings: a card is its title, description, and control. The control already
-   shows the value and its choices, so the tags that repeated them are gone. */
 /* Settings are rows divided by a line, not boxes. */
 [data-shell] .settings-list { gap: 0; padding: 4px 28px 24px 24px; }
 /* The native arrow sits against the border, so selects draw their own. */
-[data-shell] select:is(.settings-select, .agent-harness-select, .agent-model-select) {
-  appearance: none; padding-right: 28px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8a93' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-  background-repeat: no-repeat; background-position: right 9px center;
-}
+
 [data-shell] .settings-card, [data-shell] .settings-card.is-modified {
   padding: 14px 0; background: none; border: 0; border-bottom: 1px solid var(--border); border-radius: 0;
 }
 [data-shell] .settings-card:last-child { border-bottom: 0; }
-[data-shell] :is(.settings-tag:is(.tag-cat, .tag-type), .settings-apt-bar:not(.settings-apt-suggest), .settings-card-meta) { display: none; }
+
 [data-shell] .settings-card-right { gap: var(--space-2); }
 [data-shell] .settings-card-textarea .settings-card-right { flex-wrap: wrap; justify-content: flex-end; }
-[data-shell] .settings-card-textarea .settings-textarea { flex: 1 0 100%; }
-[data-shell] .settings-reset-btn {
-  height: var(--ctl-sm); padding: 0 var(--space-2); font: var(--t-12) var(--ui);
-  color: var(--muted-foreground); background: none; border-radius: var(--r);
-}
-[data-shell] .settings-reset-btn:hover { color: var(--foreground); background: var(--accent); }
-[data-shell] .settings-reset-btn:focus-visible { outline: 0; box-shadow: var(--focus-shadow); }
-[data-shell] .settings-switch { width: 32px; height: 18px; }
-[data-shell] .settings-slider { border: 0; border-radius: 9px; background: color-mix(in srgb, var(--foreground) 22%, var(--muted)); }
-[data-shell] .settings-slider:before { left: 2px; bottom: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; }
-[data-shell] .settings-switch input:checked + .settings-slider { background: var(--primary); }
-[data-shell] .settings-switch input:checked + .settings-slider:before { transform: translateX(14px); }
-[data-shell] .settings-switch input:focus-visible + .settings-slider { box-shadow: var(--focus-shadow); }

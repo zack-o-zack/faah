@@ -1,3 +1,4 @@
+import { setPressed } from './controls.js';
 // web/src/thread.js
 import { $, $$, S, esc, doc_, api, apiPost, apiPostJson, applyKeyLabels } from './state.js';
 import { on } from './bus.js';
@@ -188,7 +189,7 @@ export function thrMd(src) {
         i++;
       }
       const code = esc(codeLines.join('\n'));
-      html += `<div class="thr-pre"` + (lang ? ` data-lang="${esc(lang)}"` : '') + `><pre><code>` + code + `</code></pre><button class="thr-copy" title="Copy code" aria-label="Copy code">` + COPY_ICON + `</button></div>`;
+      html += `<div class="thr-pre"` + (lang ? ` data-lang="${esc(lang)}"` : '') + `><pre><code>` + code + `</code></pre><button title="Copy code" aria-label="Copy code" class="btn absolute top-2 right-2" data-control="thr-copy" data-variant="ghost" data-size="icon-xs">` + COPY_ICON + `</button></div>`;
       continue;
     }
 
@@ -316,7 +317,7 @@ export function thrMd(src) {
           const taskMatch = /^\[([ xX])\] +(.*)$/.exec(itemText);
           if (taskMatch) {
             const checked = taskMatch[1].toLowerCase() === 'x';
-            taskInput = `<input type="checkbox" disabled${checked ? ' checked' : ''}> `;
+            taskInput = `<input type="checkbox" disabled${checked ? ' checked' : ''} class="input"> `;
             itemText = taskMatch[2];
           }
 
@@ -387,7 +388,7 @@ export function thrMd(src) {
 export function showThreadsSidebar() {
   hideRightInspector();
   document.body.classList.remove('threads-hidden');
-  $('#btn-top-threads')?.classList.add('active');
+  setPressed($('#btn-top-threads'), true);
   if (!thr.cur && !thr.draft) thrShow('list');
   thrDrawList();
   layout();
@@ -396,7 +397,7 @@ export function showThreadsSidebar() {
 
 export function hideThreadsSidebar() {
   document.body.classList.add('threads-hidden');
-  $('#btn-top-threads')?.classList.remove('active');
+  setPressed($('#btn-top-threads'), false);
   layout();
   render();
 }
@@ -438,8 +439,8 @@ function thrDrawList() {
   thrEl.list.innerHTML = items.map(t =>
     '<div class="thr-item' + (thr.cur && thr.cur.id === t.id ? ' sel' : '') + '" data-id="' + esc(t.id) + '" role="button" tabindex="0">' +
     '<div class="thr-item-title">' + (t.running ? '<span class="thr-spin" title="Working"></span>' : t.failed ? '<span class="thr-fail" title="Last reply failed">!</span>' : '') +
-    '<span class="thr-item-title-text">' + esc(t.title) + '</span>' + (t.kind ? '<span class="thr-kind">' + (t.kind === 'batch' || t.kind === 'explain' ? t.kind : 'inline') + '</span>' : '') +
-    '<button class="thr-item-del mini" data-del="' + esc(t.id) + '" title="Delete this thread" aria-label="Delete thread"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>' +
+    '<span class="thr-item-title-text">' + esc(t.title) + '</span>' + (t.kind ? '<span class="badge" data-variant="outline" data-control="thr-kind">' + (t.kind === 'batch' || t.kind === 'explain' ? t.kind : 'inline') + '</span>' : '') +
+    '<button data-del="' + esc(t.id) + '" title="Delete this thread" aria-label="Delete thread" class="btn" data-control="thr-item-del mini" data-variant="ghost" data-size="icon-xs"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>' +
     '</div>' +
     '<div class="thr-item-meta"><span class="thr-item-ref">' + esc(thrRefText(t)) + '</span>' +
     '<span>' + t.turns + (t.turns === 1 ? ' turn' : ' turns') + ' · ' + thrAgo(t.updated) + '</span></div></div>').join('');
@@ -501,9 +502,9 @@ function thrExplainFoot() {
   let h = '<div class="thr-evidence"><span>' + esc(explainEvidenceLine(t.evidence)) + '</span>';
   if (thr.stale && thr.stale.id === t.id) {
     h += '<span class="thr-stale">' + esc(explainStaleLabel(thr.stale.reason)) + '</span>' +
-      '<button type="button" class="thr-evidence-btn" data-explain-again>Refresh</button>';
+      '<button type="button" data-explain-again class="btn" data-control="thr-evidence-btn" data-variant="outline" data-size="xs">Refresh</button>';
   } else if (t.explainReq) {
-    h += '<button type="button" class="thr-evidence-btn" data-explain-again>Re-explain</button>';
+    h += '<button type="button" data-explain-again class="btn" data-control="thr-evidence-btn" data-variant="outline" data-size="xs">Re-explain</button>';
   }
   return h + '</div>';
 }
@@ -529,11 +530,11 @@ function thrTurnHtml(turn) {
     if (turn.changed && turn.changed.length) {
       const revertHtml = turn.beforeSha
         ? (turn.reverted
-          ? '<span class="thr-reverted-badge">Reverted</span>'
-          : '<button type="button" class="thr-revert-btn" data-revert-turn="' + turn.id + '" title="Revert files modified in this turn back to pre-turn snapshot">Revert turn</button>')
+          ? '<span class="badge" data-variant="outline" data-control="thr-reverted-badge">Reverted</span>'
+          : '<button type="button" data-revert-turn="' + turn.id + '" title="Revert files modified in this turn back to pre-turn snapshot" class="btn" data-control="thr-revert-btn" data-variant="outline" data-size="xs">Revert turn</button>')
         : '';
       h += '<div class="thr-changed"><div class="thr-changed-head"><span class="thr-changed-label">' + (thr.cur?.kind === 'explain' ? 'Files changed during this explanation' : 'Changed ' + turn.changed.length + (turn.changed.length === 1 ? ' file' : ' files')) + '</span>' + revertHtml + '</div>' +
-        turn.changed.map(p => '<button class="thr-file" data-path="' + esc(p) + '" data-turn-id="' + turn.id + '" title="Review changes in ' + esc(p) + '">' + esc(p) + '</button>').join('') + '</div>';
+        turn.changed.map(p => '<button data-path="' + esc(p) + '" data-turn-id="' + turn.id + '" title="Review changes in ' + esc(p) + '" class="btn" data-control="thr-file" data-variant="outline" data-size="xs">' + esc(p) + '</button>').join('') + '</div>';
     } else if (turn.tracked === false) {
       h += '<div class="thr-changed"><span class="thr-changed-label">Changes unknown outside a git repository; the workspace was reloaded.</span></div>';
     }
@@ -573,7 +574,7 @@ function thrRenderScope() {
   const anchored = !!t.path;
   for (const b of el.querySelectorAll('button[data-scope]')) {
     const on_ = b.dataset.scope === scope;
-    b.classList.toggle('active', on_);
+    setPressed(b, on_);
     b.setAttribute('aria-pressed', on_ ? 'true' : 'false');
     if (b.dataset.scope === 'selection') b.disabled = !anchored;
   }
@@ -861,7 +862,7 @@ export function initThreads() {
     if (p) openFile(p, { line: +thrEl.anchor.dataset.line || 1 });
   });
   thrEl.msgs.addEventListener('click', e => {
-    const cp = /** @type {HTMLElement|null} */ (e.target)?.closest('.thr-copy');
+    const cp = /** @type {HTMLElement|null} */ (e.target)?.closest('[data-control~=thr-copy]');
     if (cp) {
       const code = cp.closest('.thr-pre')?.querySelector('code')?.textContent || '';
       if (code) {
@@ -905,7 +906,7 @@ export function initThreads() {
         });
       return;
     }
-    const f = /** @type {HTMLElement|null} */ (e.target)?.closest('.thr-file');
+    const f = /** @type {HTMLElement|null} */ (e.target)?.closest('[data-control~=thr-file]');
     if (f) {
       const turnId = +f.dataset.turnId;
       const turn = thr.cur?.turns?.find(x => x.id === turnId);
@@ -947,7 +948,7 @@ export function initThreads() {
   });
   $$('[data-thr-filter]').forEach(b => b.addEventListener('click', () => {
     thr.filter = b.dataset.thrFilter;
-    $$('[data-thr-filter]').forEach(x => x.classList.toggle('on', x === b));
+    $$('[data-thr-filter]').forEach(x => setPressed(x, x === b));
     thrDrawList();
   }));
   on('tab:activated', () => { if (thr.filter === 'file') thrDrawList(); });
@@ -955,7 +956,7 @@ export function initThreads() {
   on('threads:reveal', () => showThreadsSidebar());
   on('threads:open', id => { if (id) openThread(id); });
   on('threads:drafts', n => {
-    $$('.thr-tab-count').forEach(c => {
+    $$('[data-control~=thr-tab-count]').forEach(c => {
       c.hidden = !n;
       c.textContent = n;
       c.title = n + (n === 1 ? ' comment' : ' comments') + ' waiting to be applied';

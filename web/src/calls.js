@@ -1,3 +1,4 @@
+import { setPressed } from './controls.js';
 // web/src/calls.js
 import { $, $$, esc, S, doc_, api, keyLabel } from './state.js';
 import { updateStatus, setStatusNote, setLspState } from './status.js';
@@ -100,7 +101,7 @@ async function expand(node) {
 
 function setDir(dir) {
   dirPref = dir;
-  $$('#calls-dir [data-dir]').forEach(b => b.classList.toggle('on', b.dataset.dir === dir));
+  $$('#calls-dir [data-dir]').forEach(b => setPressed(b, b.dataset.dir === dir));
   if (!T || T.dir === dir) return;
   T.dir = dir;
   for (const r of T.roots) Object.assign(r, { kids: null, open: false, loading: false, err: '' });
@@ -146,7 +147,7 @@ export function initCalls() {
     if (b) setDir(b.dataset.dir);
   });
 
-  $('.inspector-tab[data-itab="calls"]')?.addEventListener('click', () => {
+  $('[data-control~=inspector-tab][data-itab="calls"]')?.addEventListener('click', () => {
     if (!T && (S.at || S.lsp.state === 'off' || S.lsp.state === 'failed')) showCalls(S.at);
   });
 

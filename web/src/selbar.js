@@ -253,7 +253,7 @@ function showSelectionBar(info) {
       if (btnPreviewText) btnPreviewText.hidden = false;
       if (btnMarkdown) {
         btnMarkdown.hidden = false;
-        const l = btnMarkdown.querySelector('.footer-btn-label');
+        const l = btnMarkdown.querySelector('.bar-action-label');
         if (l) l.textContent = 'Copy Raw Markdown';
       }
     } else {
@@ -456,7 +456,10 @@ function openSelMenu(x, y, keep = (item) => true) {
     if (item.sel === 'explain' && !canExplain(info)) continue;
 
     const btn = document.createElement('button');
-    btn.className = 'sel-menu-item';
+    btn.className = 'btn w-full justify-start';
+    btn.dataset.control = 'sel-menu-item';
+    btn.dataset.variant = 'ghost';
+    btn.dataset.size = 'xs';
     btn.dataset.sel = item.sel;
     btn.setAttribute('role', 'menuitem');
     btn.title = item.label + (item.keys ? ` (${keyLabel(item.keys)})` : '');
@@ -465,7 +468,7 @@ function openSelMenu(x, y, keep = (item) => true) {
     btn.append(label);
     if (item.keys) {
       const kbd = document.createElement('kbd');
-      kbd.className = 'footer-kbd';
+      kbd.className = 'kbd has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1';
       kbd.innerHTML = shortcutHtml(item.keys);
       btn.append(kbd);
     }
@@ -574,4 +577,3 @@ export function initSelectionBar() {
   document.addEventListener('scroll', closeSelMenu, true);
   on('tab:activated', clearSelectAll);
 }
-

@@ -90,12 +90,12 @@ export async function showHover(at, x, y) {
     (j.signature ? '<div class="sig">' + j.signature + '</div>' : '') +
     (j.doc ? '<div class="doc">' + esc(j.doc) + '</div>' : '') +
     '<div class="actions">' +
-      '<button id="hc-def-src" title="' + withKeys('Jump to definition in Source ({Mod+Click})') + '">Definition (Source)</button>' +
-      '<button id="hc-def-diff" title="' + withKeys('Jump to definition in Diff ({Mod+Alt+Click})') + '">Definition (Diff)</button>' +
-      '<button id="hc-copy-ref" title="Copy file and line reference">Copy Ref</button>' +
-      '<button id="hc-copy-ai" title="Copy snippet with file path and line numbers">Copy with Context</button>' +
-      '<button id="hc-find-refs" title="Find all usages across codebase">Usages</button>' +
-      '<button id="hc-calls" title="' + withKeys('Trace callers and callees ({Alt+Shift+H})') + '">Calls</button>' +
+      '<button id="hc-def-src" title="' + withKeys('Jump to definition in Source ({Mod+Click})') + '" class="btn" data-variant="outline" data-size="xs">Definition (Source)</button>' +
+      '<button id="hc-def-diff" title="' + withKeys('Jump to definition in Diff ({Mod+Alt+Click})') + '" class="btn" data-variant="outline" data-size="xs">Definition (Diff)</button>' +
+      '<button id="hc-copy-ref" title="Copy file and line reference" class="btn" data-variant="outline" data-size="xs">Copy Ref</button>' +
+      '<button id="hc-copy-ai" title="Copy snippet with file path and line numbers" class="btn" data-variant="outline" data-size="xs">Copy with Context</button>' +
+      '<button id="hc-find-refs" title="Find all usages across codebase" class="btn" data-variant="outline" data-size="xs">Usages</button>' +
+      '<button id="hc-calls" title="' + withKeys('Trace callers and callees ({Alt+Shift+H})') + '" class="btn" data-variant="outline" data-size="xs">Calls</button>' +
     '</div>' +
     '<div class="foot"><b>' + esc(j.server || 'lsp') + '</b>' +
     '<span>' + withKeys('{Mod+Click} source') + '</span>' +

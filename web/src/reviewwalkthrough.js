@@ -1,3 +1,4 @@
+import { setPressed } from './controls.js';
 // web/src/reviewwalkthrough.js
 import { $, $$, esc, api } from './state.js';
 import { showToast } from './ui.js';
@@ -24,11 +25,11 @@ export function setWalkthroughSubTab(tab) {
 
   if (tab === 'walkthrough') {
     if (btnWalkthrough) {
-      btnWalkthrough.classList.add('active');
+      setPressed(btnWalkthrough, true);
       if (btnWalkthrough.setAttribute) btnWalkthrough.setAttribute('aria-selected', 'true');
     }
     if (btnStages) {
-      btnStages.classList.remove('active');
+      setPressed(btnStages, false);
       if (btnStages.setAttribute) btnStages.setAttribute('aria-selected', 'false');
     }
     if (viewWalkthrough) viewWalkthrough.hidden = false;
@@ -41,11 +42,11 @@ export function setWalkthroughSubTab(tab) {
     }
   } else {
     if (btnWalkthrough) {
-      btnWalkthrough.classList.remove('active');
+      setPressed(btnWalkthrough, false);
       if (btnWalkthrough.setAttribute) btnWalkthrough.setAttribute('aria-selected', 'false');
     }
     if (btnStages) {
-      btnStages.classList.add('active');
+      setPressed(btnStages, true);
       if (btnStages.setAttribute) btnStages.setAttribute('aria-selected', 'true');
     }
     if (viewWalkthrough) viewWalkthrough.hidden = true;
@@ -68,11 +69,11 @@ export function initReviewWalkthrough() {
   }
 
   // Filter chips (All, Returns, Edge Cases, Core)
-  const chips = $$('.review-chip');
+  const chips = $$('[data-control~=review-chip]');
   chips.forEach(chip => {
     chip.onclick = () => {
-      chips.forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
+      chips.forEach(c => setPressed(c, false));
+      setPressed(chip, true);
       activeFilter = chip.dataset.filter || 'all';
       applyWalkthroughFilter();
     };
@@ -158,7 +159,11 @@ function renderWalkthroughView(data) {
     filesNav.innerHTML = '';
     files.forEach((f, idx) => {
       const chip = document.createElement('button');
-      chip.className = 'review-file-nav-chip' + (idx === 0 ? ' active' : '');
+      chip.dataset.control = 'review-file-nav-chip';
+      chip.dataset.size = 'xs';
+      chip.dataset.variant = 'ghost';
+      chip.className = 'btn';
+      setPressed(chip, idx === 0);
       chip.dataset.path = f.path;
       const basename = f.path.split('/').pop();
       chip.innerHTML = `<span class="review-file-nav-name" title="${esc(f.path)}">${esc(basename)}</span><span class="review-file-nav-status ${f.status || 'M'}">${esc(f.status || 'M')}</span>`;
@@ -229,14 +234,19 @@ function renderUnderstandingCards(files) {
     pathEl.title = file.path;
 
     const badge = document.createElement('span');
-    badge.className = 'review-card-badge';
+    badge.className = 'badge';
+    badge.dataset.variant = 'outline';
     badge.innerHTML = `<span class="diff-stat-add">+${file.additions}</span> <span class="diff-stat-del">-${file.deletions}</span>`;
 
     titleGroup.append(pathEl, badge);
 
     const jumpBtn = document.createElement('button');
-    jumpBtn.className = 'mini review-card-jump-btn';
+    jumpBtn.className = 'btn';
+    jumpBtn.dataset.control = 'icon-action review-card-jump-btn';
+    jumpBtn.dataset.variant = 'ghost';
+    jumpBtn.dataset.size = 'xs';
     jumpBtn.title = 'Jump to file diff';
+    jumpBtn.setAttribute('aria-label', 'Jump to file diff');
     jumpBtn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>';
     jumpBtn.onclick = () => scrollToDiffFile(file.path);
 
@@ -292,7 +302,7 @@ function createInsightSection(filePath, headingText, filterCategory, items, badg
 
   const h = document.createElement('h4');
   h.className = 'review-insight-heading';
-  h.innerHTML = `<span>${esc(headingText)}</span> <span class="review-insight-count ${badgeClass}">${items.length}</span>`;
+  h.innerHTML = `<span>${esc(headingText)}</span> <span class="badge" data-variant="secondary">${items.length}</span>`;
   sec.append(h);
 
   const list = document.createElement('div');
@@ -309,7 +319,10 @@ function createInsightSection(filePath, headingText, filterCategory, items, badg
     row.className = 'review-insight-top';
 
     const pill = document.createElement('button');
-    pill.className = 'review-line-pill';
+    pill.className = 'btn';
+    pill.dataset.control = 'review-line-pill';
+    pill.dataset.variant = 'ghost';
+    pill.dataset.size = 'xs';
     pill.textContent = item.endLine && item.endLine !== item.line ? `L${item.line}–${item.endLine}` : `L${item.line}`;
     pill.title = 'Click to scroll diff to this line';
     pill.onclick = (e) => {
@@ -318,7 +331,8 @@ function createInsightSection(filePath, headingText, filterCategory, items, badg
     };
 
     const kindBadge = document.createElement('span');
-    kindBadge.className = `review-kind-badge kind-${item.kind || 'general'}`;
+    kindBadge.className = 'badge text-primary-text';
+    kindBadge.dataset.variant = 'outline';
     kindBadge.textContent = item.kind || 'guard';
 
     const expl = document.createElement('span');
@@ -383,6 +397,7 @@ function renderDiffBlocks(files) {
     viewedLabel.className = 'review-viewed-toggle';
     const viewedCheckbox = document.createElement('input');
     viewedCheckbox.type = 'checkbox';
+    viewedCheckbox.className = 'input';
     viewedCheckbox.checked = walkthroughViewedFiles.has(file.path);
     viewedCheckbox.onchange = () => {
       if (viewedCheckbox.checked) {
@@ -549,12 +564,12 @@ function highlightActiveFileCard(filePath, shouldScrollLeft = false) {
   }
 
   // Update quick nav chips
-  const chips = $$('.review-file-nav-chip');
+  const chips = $$('[data-control~=review-file-nav-chip]');
   chips.forEach(chip => {
     if (chip.dataset.path === filePath) {
-      chip.classList.add('active');
+      setPressed(chip, true);
     } else {
-      chip.classList.remove('active');
+      setPressed(chip, false);
     }
   });
 }

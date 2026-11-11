@@ -1,3 +1,4 @@
+import { setPressed } from './controls.js';
 // web/src/prscope.js
 // PR review sidebar scope: "All PR changes" vs "Yours".
 //
@@ -30,7 +31,7 @@ function apply() {
   treeEl.classList.toggle('no-yours', yours && yourCount === 0);
   for (const btn of b.querySelectorAll('button[data-scope]')) {
     const on_ = btn.dataset.scope === (yours ? 'yours' : 'all');
-    btn.classList.toggle('active', on_);
+    setPressed(btn, on_);
     btn.setAttribute('aria-pressed', on_ ? 'true' : 'false');
   }
   relabelTreeBadges();

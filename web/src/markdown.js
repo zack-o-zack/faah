@@ -185,6 +185,8 @@ function mdSanitize(html, docPath) {
         c === 'md-code' || c.startsWith('footnote') || (tag === 'i' && MD_TOKENS.has(c)));
       if (keep.length) el.className = keep.join(' ');
     }
+    if (tag === 'input') el.className = 'input mr-2';
+    if (tag === 'kbd') el.className = 'kbd';
     if (tag === 'input') /** @type {HTMLInputElement} */ (el).disabled = true;
     if (tag === 'img') mdSetImage(el, mdURL(attrs.src || ''), base);
     if (tag === 'a' && attrs.href) mdSetLink(el, mdURL(attrs.href), base);
@@ -266,7 +268,10 @@ function mdEnhance() {
     if (pre.dataset.lang) wrap.dataset.lang = pre.dataset.lang;
     pre.replaceWith(wrap);
     const copy = document.createElement('button');
-    copy.className = 'md-copy';
+    copy.className = 'btn absolute top-2 right-2';
+    copy.dataset.control = 'md-copy';
+    copy.dataset.variant = 'ghost';
+    copy.dataset.size = 'xs';
     copy.title = 'Copy code';
     copy.setAttribute('aria-label', 'Copy code');
     // An icon, not a label: find in the preview walks text nodes.
@@ -480,7 +485,7 @@ export function initMarkdown() {
 
   mdArticle.addEventListener('click', e => {
     if (e.target.closest('.csv-open-source')) { togglePreview(); return; }
-    const copy = e.target.closest('.md-copy');
+    const copy = e.target.closest('[data-control~=md-copy]');
     if (copy) {
       const pre = $('pre', copy.parentElement);
       if (pre) {
@@ -526,7 +531,7 @@ export function initMarkdown() {
   const lb = $('#img-lightbox');
   if (lb) {
     lb.addEventListener('click', e => {
-      if (e.target.closest('.lightbox-close') || e.target.classList.contains('lightbox-backdrop')) {
+      if (e.target.closest('[data-control~=lightbox-close]') || e.target.classList.contains('lightbox-backdrop')) {
         lb.hidden = true;
       }
     });
@@ -556,7 +561,7 @@ export function getFragmentPlainText(frag) {
     const diagram = wrap.querySelector('.md-mermaid');
     if (source && diagram) diagram.replaceWith(document.createTextNode(source.textContent || ''));
   }
-  const bad = clone.querySelectorAll?.('.md-copy, .line-btn, [hidden], svg, style, script');
+  const bad = clone.querySelectorAll?.('[data-control~=md-copy], [data-control~=line-btn], [hidden], svg, style, script');
   if (bad) {
     for (const b of bad) b.remove();
   }
@@ -573,7 +578,7 @@ export function getFragmentHtml(frag) {
       diagram.remove();
     }
   }
-  const bad = clone.querySelectorAll?.('.md-copy, .line-btn, [hidden]');
+  const bad = clone.querySelectorAll?.('[data-control~=md-copy], [data-control~=line-btn], [hidden]');
   if (bad) {
     for (const b of bad) b.remove();
   }
@@ -600,7 +605,7 @@ export function domToMarkdown(node) {
   if (node.nodeType === 3) return node.nodeValue;
   if (node.nodeType !== 1 && node.nodeType !== 11) return '';
 
-  if (node.matches && (node.matches('.md-copy, .line-btn, [hidden], svg') || node.classList?.contains('md-copy'))) {
+  if (node.matches && (node.matches('[data-control~=md-copy], [data-control~=line-btn], [hidden], svg') || node.classList?.contains('md-copy'))) {
     return '';
   }
 

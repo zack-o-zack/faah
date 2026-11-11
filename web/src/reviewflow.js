@@ -1,3 +1,4 @@
+import { setPressed } from './controls.js';
 // web/src/reviewflow.js
 import { $, $$, S, esc, api, apiPostJson, keyLabel } from './state.js';
 import { openFile } from './tabs.js';
@@ -133,8 +134,8 @@ export function setMode(mode) {
 
   if (mode === 'review') {
     document.body.classList.add('in-review-mode');
-    if (btnCode) btnCode.classList.remove('active');
-    if (btnReview) btnReview.classList.add('active');
+    if (btnCode) setPressed(btnCode, false);
+    if (btnReview) setPressed(btnReview, true);
     if (editor) editor.hidden = true;
     if (reviewView) reviewView.hidden = false;
     if (returnPill) returnPill.hidden = true;
@@ -149,8 +150,8 @@ export function setMode(mode) {
     connectWorkflowStream();
   } else {
     document.body.classList.remove('in-review-mode');
-    if (btnReview) btnReview.classList.remove('active');
-    if (btnCode) btnCode.classList.add('active');
+    if (btnReview) setPressed(btnReview, false);
+    if (btnCode) setPressed(btnCode, true);
     if (reviewView) reviewView.hidden = true;
     if (editor) editor.hidden = false;
     disconnectWorkflowStream();
@@ -399,20 +400,20 @@ function renderPipeline() {
         <div class="review-stage-card-desc" title="${esc(question)}">${esc(question)}</div>
       </div>
       <div class="review-stage-card-actions">
-        <span class="review-stage-card-tag">${status}</span>
-        <button type="button" class="mini review-stage-card-edit-btn" title="Edit this stage">✏️</button>
-        <button type="button" class="mini review-stage-remove-btn" title="Remove stage from workflow" aria-label="Remove stage">&times;</button>
+        <span class="badge" data-variant="secondary">${status}</span>
+        <button type="button" title="Edit this stage" class="btn" data-control="mini review-stage-card-edit-btn" data-variant="ghost" data-size="icon-xs" aria-label="Edit this stage">✏️</button>
+        <button type="button" title="Remove stage from workflow" aria-label="Remove stage" class="btn" data-control="mini review-stage-remove-btn" data-variant="ghost" data-size="icon-xs">&times;</button>
       </div>
     `;
 
     card.onclick = (e) => {
-      if (e.target.closest('.review-stage-remove-btn') || e.target.closest('.review-stage-card-edit-btn')) return;
+      if (e.target.closest('[data-control~=review-stage-remove-btn]') || e.target.closest('[data-control~=review-stage-card-edit-btn]')) return;
       activeStageIdx = idx;
       renderPipeline();
       renderActiveStage();
     };
 
-    const editBtn = card.querySelector('.review-stage-card-edit-btn');
+    const editBtn = card.querySelector('[data-control~=review-stage-card-edit-btn]');
     if (editBtn) {
       editBtn.onclick = (e) => {
         e.stopPropagation();
@@ -423,7 +424,7 @@ function renderPipeline() {
       };
     }
 
-    const removeBtn = card.querySelector('.review-stage-remove-btn');
+    const removeBtn = card.querySelector('[data-control~=review-stage-remove-btn]');
     if (removeBtn) {
       removeBtn.onclick = async (e) => {
         e.stopPropagation();
@@ -513,7 +514,8 @@ function renderActiveStage() {
   const status = currentStageState ? getStatus(currentStageState) : 'pending';
   if (tag) {
     tag.textContent = status;
-    tag.className = `review-status-tag ${status}`;
+    tag.className = 'badge';
+    tag.dataset.variant = status === 'failed' ? 'destructive' : 'secondary';
   }
 
   // Hide inline editor when changing stages
@@ -530,7 +532,7 @@ function renderActiveStage() {
     msgsEl.innerHTML = `
       <div class="review-thread-placeholder">
         <p>This stage has not been executed yet.</p>
-        <button id="btn-start-single-stage" class="footer-btn">Run Stage ${activeStageIdx + 1} Now</button>
+        <button id="btn-start-single-stage" class="btn h-5! px-1! text-11!" data-control="bar-action" data-variant="ghost" data-size="xs">Run Stage ${activeStageIdx + 1} Now</button>
       </div>
     `;
     const startSingle = $('#btn-start-single-stage');

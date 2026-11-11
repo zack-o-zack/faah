@@ -1,3 +1,4 @@
+import { setPressed } from './controls.js';
 // web/src/imageview.js
 import { $, S, doc_, esc } from './state.js';
 import { on } from './bus.js';
@@ -112,7 +113,7 @@ export function applyImageTransform(d = doc_()) {
   const pixelBtn = $('#iv-pixel');
   if (pixelBtn) {
     pixelBtn.textContent = d.imagePixelated ? 'Pixelated' : 'Smooth';
-    pixelBtn.classList.toggle('active', !!d.imagePixelated);
+    setPressed(pixelBtn, !!d.imagePixelated);
   }
 
   const metaEl = $('#iv-meta');

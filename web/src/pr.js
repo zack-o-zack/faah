@@ -212,10 +212,10 @@ async function sendNewIssueComment() {
   }
 }
 
-// Only the label swaps text; the icon markup (SVG + .footer-btn-label span,
+// Only the label swaps text; the icon markup (SVG + .bar-action-label span,
 // see index.html) stays put so the button never reverts to a plain-text look.
 function setBatchBtnLabel(btn, text) {
-  const label = btn?.querySelector('.footer-btn-label');
+  const label = btn?.querySelector('.bar-action-label');
   if (label) label.textContent = text; else if (btn) btn.textContent = text;
 }
 
@@ -426,13 +426,13 @@ export function openCommentComposer(info) {
   const modEnter = keyLabel('Mod+Enter');
   box.innerHTML =
     '<div class="agent-head"><span class="sel-chip">Review Comment</span>' +
-    '<span class="agent-ref" role="button" tabindex="0" title="Jump to this line">' + esc(ref) + '</span>' +
-    '<span class="grow"></span><button class="agent-close" title="Close (Esc)">✕</button></div>' +
+    '<span role="button" tabindex="0" title="Jump to this line" class="btn" data-control="agent-ref" data-variant="ghost" data-size="xs">' + esc(ref) + '</span>' +
+    '<span class="grow"></span><button title="Close (Esc)" class="btn" data-control="agent-close" data-variant="ghost" data-size="icon-xs" aria-label="Close (Esc)">✕</button></div>' +
     '<div class="agent-compose">' +
-    '<textarea class="agent-input" rows="3" spellcheck="false" autocomplete="off" placeholder="Leave a comment on this line... (' + esc(modEnter) + ' to add)"></textarea>' +
+    '<textarea rows="3" spellcheck="false" autocomplete="off" placeholder="Leave a comment on this line... (' + esc(modEnter) + ' to add)" class="textarea resize-y" data-control="agent-input"></textarea>' +
     '<div class="agent-err" hidden></div>' +
     '<div class="agent-foot"><span class="agent-hint">' + esc(modEnter) + ' to add, Esc to cancel</span>' +
-    '<button class="agent-send" title="Add comment (' + esc(modEnter) + ')">Add Comment</button></div></div>';
+    '<button title="Add comment (' + esc(modEnter) + ')" class="btn" data-control="agent-send" data-variant="primary" data-size="xs">Add Comment</button></div></div>';
 
   const entry = { box, path: info.path, side, line };
   openBoxes.set(id, entry);
@@ -443,17 +443,17 @@ export function openCommentComposer(info) {
   positionBox(entry);
   const target = findDiffRowEl(info.path, side, line);
   if (target) { target.scrollIntoView({ block: 'center', behavior: 'smooth' }); flashDiffRow(target); }
-  const ta = /** @type {HTMLTextAreaElement|null} */ (box.querySelector('.agent-input'));
+  const ta = /** @type {HTMLTextAreaElement|null} */ (box.querySelector('[data-control~=agent-input]'));
   if (ta) ta.focus();
 
-  box.querySelector('.agent-ref')?.addEventListener('click', () => revealComposer(entry));
+  box.querySelector('[data-control~=agent-ref]')?.addEventListener('click', () => revealComposer(entry));
 
   const close = () => {
     openBoxes.delete(id);
     box.remove();
     if (!list().children.length) list().hidden = true;
   };
-  box.querySelector('.agent-close')?.addEventListener('click', close);
+  box.querySelector('[data-control~=agent-close]')?.addEventListener('click', close);
 
   const send = async () => {
     if (!ta) return;
@@ -476,7 +476,7 @@ export function openCommentComposer(info) {
       }
     }
   };
-  box.querySelector('.agent-send')?.addEventListener('click', send);
+  box.querySelector('[data-control~=agent-send]')?.addEventListener('click', send);
   ta?.addEventListener('keydown', (/** @type {KeyboardEvent} */ e) => {
     if (e.key === 'Escape') { e.preventDefault(); close(); }
     else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); send(); }
@@ -608,7 +608,7 @@ function wireCommentsPanel() {
   }
 
   $('#pr-comments-list')?.addEventListener('click', e => {
-    const replyBtn = e.target.closest('.pr-issue-comment-reply-btn');
+    const replyBtn = e.target.closest('[data-control~=pr-issue-comment-reply-btn]');
     if (replyBtn) {
       const ta = $('#pr-issue-compose-body');
       if (ta) {
@@ -624,12 +624,12 @@ function wireCommentsPanel() {
       openFile(loc.dataset.path, { line: +loc.dataset.line });
       return;
     }
-    const delBtn = e.target.closest('.pr-comment-delete-btn');
+    const delBtn = e.target.closest('[data-control~=pr-comment-delete-btn]');
     if (delBtn) {
       deleteDraft(+delBtn.dataset.draftId);
       return;
     }
-    const sendBtn = e.target.closest('.reply-send');
+    const sendBtn = e.target.closest('[data-control~=reply-send]');
     if (sendBtn) {
       const row = sendBtn.closest('.pr-comment-reply-row');
       sendThreadReply(row);
@@ -640,7 +640,7 @@ function wireCommentsPanel() {
   });
 
   $('#pr-comments-list')?.addEventListener('keydown', e => {
-    if (!e.target.closest('.reply-input')) return;
+    if (!e.target.closest('[data-control~=reply-input]')) return;
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
       sendThreadReply(e.target.closest('.pr-comment-reply-row'));
@@ -654,11 +654,11 @@ async function sendThreadReply(row) {
     nudgeForgeToken('to reply to comments');
     return;
   }
-  const ta = row.querySelector('.reply-input');
+  const ta = row.querySelector('[data-control~=reply-input]');
   const body = ta?.value.trim();
   if (!body) return;
   const commentId = +row.dataset.replyTo;
-  const btn = row.querySelector('.reply-send');
+  const btn = row.querySelector('[data-control~=reply-send]');
   if (btn) btn.disabled = true;
   try {
     const c = await apiPostJson('/api/pr/comments/review-reply', { commentId, body });
@@ -716,7 +716,7 @@ function issueCommentCardHtml(c) {
     '</div>' +
     '<div class="acc-body">' +
       '<div class="pr-issue-comment-body">' + esc(c.body) + '</div>' +
-      '<button class="pr-issue-comment-reply-btn" data-author="' + esc(c.author || '') + '">Reply</button>' +
+      '<button data-author="' + esc(c.author || '') + '" class="btn" data-control="pr-issue-comment-reply-btn" data-variant="outline" data-size="xs">Reply</button>' +
     '</div>' +
   '</div>';
 }
@@ -736,7 +736,7 @@ function draftCardHtml(c) {
     '<div class="pr-issue-comment-head"><span class="pr-issue-comment-author">You (draft, not yet submitted)</span></div>' +
     '<div class="pr-issue-comment-body">' + esc(c.body) + '</div>' +
     '<div class="pr-comment-card-actions">' +
-      '<button class="pr-comment-delete-btn" data-draft-id="' + c.id + '">Delete draft</button>' +
+      '<button data-draft-id="' + c.id + '" class="btn" data-control="pr-comment-delete-btn" data-variant="destructive" data-size="xs">Delete draft</button>' +
     '</div>' +
   '</div>';
 }
@@ -750,14 +750,14 @@ function threadHtml(path, t, key) {
   const canReply = !!root;
   const replyRow = canReply
     ? '<div class="pr-comment-reply-row" data-reply-to="' + root.id + '">' +
-      '<textarea class="pr-review-body reply-input" rows="1" spellcheck="false" autocomplete="off" placeholder="Reply..."></textarea>' +
-      '<button class="footer-btn reply-send">Reply</button>' +
+      '<textarea rows="1" spellcheck="false" autocomplete="off" placeholder="Reply..." class="textarea resize-y" data-control="pr-review-body reply-input"></textarea>' +
+      '<button class="btn" data-control="bar-action reply-send" data-variant="ghost" data-size="xs">Reply</button>' +
       '</div>'
     : '';
   const accKey = 'thread:' + key;
   const open = expandedKeys.has(accKey);
   const total = sortedExisting.length + t.drafts.length;
-  const countBadge = total > 1 ? '<span class="acc-count">' + total + '</span>' : '';
+  const countBadge = total > 1 ? '<span class="badge" data-variant="secondary">' + total + '</span>' : '';
   const preview = root ? root.body : (t.drafts[0]?.body || '');
   return '<div class="pr-comment-thread acc-item' + (open ? ' open' : '') + '" data-thread-key="' + esc(key) + '" data-acc="' + esc(accKey) + '">' +
     '<div class="acc-head">' +
@@ -864,9 +864,12 @@ function injectFooterButton() {
   const sel = $('#footer-sel');
   if (!sel || sel.querySelector('[data-sel="review-comment"]')) return;
   const btn = document.createElement('button');
-  btn.className = 'footer-btn';
+  btn.className = 'btn';
+  btn.dataset.control = 'bar-action';
+  btn.dataset.variant = 'ghost';
+  btn.dataset.size = 'xs';
   btn.dataset.sel = 'review-comment';
   btn.title = withKeys('Add a review comment on this selection ({Alt+R})');
-  btn.innerHTML = '<span class="footer-btn-label">Comment</span><kbd class="footer-kbd">' + shortcutHtml('Alt+R') + '</kbd>';
+  btn.innerHTML = '<span class="bar-action-label">Comment</span><kbd class="kbd has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="footer-kbd">' + shortcutHtml('Alt+R') + '</kbd>';
   sel.append(btn);
 }

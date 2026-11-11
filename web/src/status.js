@@ -1,3 +1,4 @@
+import { setPressed } from './controls.js';
 import { $, S, doc_, api, apiPost, esc, withKeys } from './state.js';
 import { previewing, previewKind } from './markdown.js';
 import { layoutPref } from './diff.js';
@@ -24,8 +25,8 @@ export function updateStatus() {
   const mdBtn = $('[data-action="md-preview"]');
   if (mdBtn) {
     mdBtn.hidden = !isMd;
-    mdBtn.classList.toggle('active', shown);
-    const l = $('.footer-btn-label', mdBtn);
+    setPressed(mdBtn, shown);
+    const l = $('.bar-action-label', mdBtn);
     if (l && isMd) l.textContent = label;
   }
   const sw = $('#md-switch');
@@ -35,7 +36,7 @@ export function updateStatus() {
     if (pb && isMd) pb.textContent = label;
     document.body.classList.toggle('md-tab', isMd);
     for (const b of sw.children) {
-      if (b.dataset.md) b.classList.toggle('on', isMd && (b.dataset.md === 'preview') === shown);
+      if (b.dataset.md) setPressed(b, isMd && (b.dataset.md === 'preview') === shown);
     }
   }
 
@@ -54,19 +55,19 @@ export function updateStatus() {
     if (btn) {
       btn.disabled = !hasDiff;
       btn.classList.toggle('disabled', !hasDiff);
-      btn.classList.toggle('on', hasDiff && isDiffOn);
+      setPressed(btn, hasDiff && isDiffOn);
       btn.title = hasDiff
         ? withKeys(`Show changes against HEAD, ${currentLayout === 'unified' ? 'unified' : 'split'} ({Mod+D})`)
         : 'There are no git modified files.';
     }
     const srcBtn = $('#diff-source');
     if (srcBtn) {
-      srcBtn.classList.toggle('on', !hasDiff || !isDiffOn);
+      setPressed(srcBtn, !hasDiff || !isDiffOn);
       srcBtn.title = withKeys('Show the file ({Mod+D})');
     }
-    const menuItems = dsw.querySelectorAll('.diff-menu-item');
+    const menuItems = dsw.querySelectorAll('[data-control~=diff-menu-item]');
     for (const item of menuItems) {
-      item.classList.toggle('active', item.dataset.diffOpt === currentLayout);
+      setPressed(item, item.dataset.diffOpt === currentLayout);
     }
   }
 
@@ -192,11 +193,11 @@ export function renderLspMenu(data) {
   let headAction = '';
   if (servers.length > 0) {
     if (anyRunning) {
-      headAction = `<button class="lsp-menu-head-action" id="lsp-action-all" data-action="stop-all" title="Stop all running language servers">Stop All</button>`;
+      headAction = `<button id="lsp-action-all" data-action="stop-all" title="Stop all running language servers" class="btn" data-control="lsp-menu-head-action" data-variant="outline" data-size="xs">Stop All</button>`;
     } else {
       const anyInstalled = servers.some(s => s.installed);
       if (anyInstalled) {
-        headAction = `<button class="lsp-menu-head-action" id="lsp-action-all" data-action="start-all" title="Start all available language servers">Start All</button>`;
+        headAction = `<button id="lsp-action-all" data-action="start-all" title="Start all available language servers" class="btn" data-control="lsp-menu-head-action" data-variant="outline" data-size="xs">Start All</button>`;
       }
     }
   }
@@ -213,23 +214,23 @@ export function renderLspMenu(data) {
       if (s.state === 'installing' || installingServers.has(s.name)) {
         dotClass = 'starting';
         metaText = 'Installing…';
-        btnHtml = `<button class="lsp-btn" disabled>Installing…</button>`;
+        btnHtml = `<button disabled class="btn" data-control="lsp-btn" data-variant="outline" data-size="xs">Installing…</button>`;
       } else if (s.running) {
         dotClass = s.state === 'indexing' ? 'indexing' : 'ready';
         metaText = s.memBytes ? fmtBytes(s.memBytes) : 'Running';
-        btnHtml = `<button class="lsp-btn lsp-btn-stop" data-name="${esc(s.name)}" data-act="stop" title="Stop ${esc(s.name)}">Stop</button>`;
+        btnHtml = `<button data-name="${esc(s.name)}" data-act="stop" title="Stop ${esc(s.name)}" class="btn" data-control="lsp-btn lsp-btn-stop" data-variant="outline" data-size="xs">Stop</button>`;
       } else if (s.state === 'starting') {
         dotClass = 'starting';
         metaText = 'Starting…';
-        btnHtml = `<button class="lsp-btn lsp-btn-stop" data-name="${esc(s.name)}" data-act="stop" title="Stop ${esc(s.name)}">Stop</button>`;
+        btnHtml = `<button data-name="${esc(s.name)}" data-act="stop" title="Stop ${esc(s.name)}" class="btn" data-control="lsp-btn lsp-btn-stop" data-variant="outline" data-size="xs">Stop</button>`;
       } else if (s.state === 'failed') {
         dotClass = 'failed';
         metaText = s.error ? esc(s.error) : 'Failed';
-        btnHtml = `<button class="lsp-btn lsp-btn-start" data-name="${esc(s.name)}" data-act="start" title="Restart ${esc(s.name)}">Start</button>`;
+        btnHtml = `<button data-name="${esc(s.name)}" data-act="start" title="Restart ${esc(s.name)}" class="btn" data-control="lsp-btn lsp-btn-start" data-variant="outline" data-size="xs">Start</button>`;
       } else if (s.installed) {
         dotClass = 'stopped';
         metaText = 'Stopped';
-        btnHtml = `<button class="lsp-btn lsp-btn-start" data-name="${esc(s.name)}" data-act="start" title="Start ${esc(s.name)}">Start</button>`;
+        btnHtml = `<button data-name="${esc(s.name)}" data-act="start" title="Start ${esc(s.name)}" class="btn" data-control="lsp-btn lsp-btn-start" data-variant="outline" data-size="xs">Start</button>`;
       } else {
         dotClass = 'missing';
         if (s.error) {
@@ -238,9 +239,9 @@ export function renderLspMenu(data) {
           metaText = 'Not installed';
         }
         if (s.autoOpt !== undefined && s.autoOpt >= 0) {
-          btnHtml = `<button class="lsp-btn lsp-btn-install" data-name="${esc(s.name)}" data-opt="${s.autoOpt}" data-act="install" title="Install ${esc(s.name)}">Install</button>`;
+          btnHtml = `<button data-name="${esc(s.name)}" data-opt="${s.autoOpt}" data-act="install" title="Install ${esc(s.name)}" class="btn" data-control="lsp-btn lsp-btn-install" data-variant="outline" data-size="xs">Install</button>`;
         } else if (s.options && s.options.length > 0) {
-          btnHtml = `<button class="lsp-btn lsp-btn-copy" data-cmd="${esc(s.options[0].cmd)}" data-act="copy" title="Copy install command: ${esc(s.options[0].cmd)}">Copy Cmd</button>`;
+          btnHtml = `<button data-cmd="${esc(s.options[0].cmd)}" data-act="copy" title="Copy install command: ${esc(s.options[0].cmd)}" class="btn" data-control="lsp-btn lsp-btn-copy" data-variant="outline" data-size="xs">Copy Cmd</button>`;
         } else {
           btnHtml = `<span class="lsp-meta-dim">Manual</span>`;
         }

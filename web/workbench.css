@@ -12,27 +12,13 @@
 .wb-hero .empty-logo { margin-bottom: 10px; }
 .wb-tagline { margin: 0; color: var(--faint); }
 
-.wb-btn {
-  display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px;
-  border: 1px solid var(--border); border-radius: var(--r); background: var(--sidebar);
-  color: var(--foreground); text-decoration: none; white-space: nowrap; font-size: var(--t-12);
-}
-.wb-btn:hover { background: var(--muted); }
-.wb-btn.wb-primary { background: var(--primary); border-color: var(--primary); color: var(--primary-foreground); }
-.wb-btn.wb-primary:hover { filter: brightness(1.08); }
-.wb-btn:focus-visible, .wb-link:focus-visible, .wb-row:focus-visible { outline: 1px solid var(--ring); outline-offset: 1px; }
-.wb-link { color: var(--primary-text); font: var(--t-11) var(--ui); text-transform: none; letter-spacing: 0; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.wb-link:hover { text-decoration: underline; }
+.wb-row:focus-visible { outline: 1px solid var(--ring); outline-offset: 1px; }
 
 .wb-open { display: flex; gap: 8px; }
 .wb-field { position: relative; flex: 1; min-width: 0; }
-.wb-field input {
-  width: 100%; padding: 8px 10px; font-family: var(--mono); font-size: var(--t-13);
-  border: 1px solid var(--border); border-radius: var(--r); background: var(--sidebar);
-}
-.wb-field input:focus { border-color: var(--primary); }
+
 .wb-keys { margin: 8px 0 0; color: var(--faint); font-size: var(--t-11); }
-.wb-keys kbd { padding: 1px 4px; }
+
 .wb-msg { margin: 8px 0 0; color: var(--destructive); font-size: var(--t-12); }
 
 /* Folder completion under a path input. */
@@ -59,7 +45,7 @@
 .wb-panel { border: 1px solid var(--border); border-radius: var(--r-lg); background: var(--sidebar); min-width: 0; }
 .wb-panel .panel-head { border-bottom: 1px solid var(--border); }
 .wb-check { display: inline-flex; align-items: center; gap: 4px; font: var(--t-11) var(--ui); text-transform: none; letter-spacing: 0; color: var(--faint); cursor: pointer; }
-.wb-check input { accent-color: var(--primary); }
+
 .wb-empty { margin: 0; padding: 16px 12px; color: var(--faint); font-size: var(--t-12); }
 
 .wb-list { list-style: none; margin: 0; padding: 4px 0; max-height: 56vh; overflow: auto; }
@@ -73,9 +59,7 @@
 .wb-row .wb-when { flex: none; color: var(--faint); font-size: var(--t-11); }
 .wb-row .wb-acts { flex: none; display: flex; gap: 2px; visibility: hidden; }
 .wb-row:hover .wb-acts, .wb-row:focus-within .wb-acts, .wb-row .wb-acts .on { visibility: visible; }
-.wb-acts button { padding: 2px 5px; border-radius: var(--r); color: var(--faint); font-size: var(--t-12); }
-.wb-acts button:hover { color: var(--foreground); background: var(--accent); }
-.wb-acts button.on { color: var(--primary-text); }
+
 .wb-sep { margin: 4px 12px; border-top: 1px solid var(--border); }
 
 .wb-state { flex: none; font-size: var(--t-11); display: inline-flex; align-items: center; gap: 4px; color: var(--faint); }
@@ -85,11 +69,9 @@
 .wb-state.failed { color: var(--destructive); }
 
 .wb-crumbs { display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-bottom: 1px solid var(--border); }
-.wb-crumbs .mini { margin-left: 0; display: inline-flex; padding: 3px; }
+
 .wb-path { flex: 1; min-width: 0; font: var(--t-12) var(--mono); color: var(--muted-foreground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
 .wb-dirs .wb-row { cursor: pointer; }
-.wb-git { flex: none; font-size: var(--t-10); padding: 0 5px; border: 1px solid var(--border); border-radius: var(--r); color: var(--gi); }
-.wb-clone-mode .wb-dirs .wb-git { border-color: var(--gi); }
 
 /* The app's status bar, standing alone at the bottom of the page. */
 .wb-status { gap: 10px; }

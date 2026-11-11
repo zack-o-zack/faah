@@ -152,7 +152,7 @@ function attachComplete(input, list, onFolder) {
     list.innerHTML = items.map((e, i) => `<li role="option" data-i="${i}" aria-selected="${i === sel}">
       <span class="wb-ico">${ICON_DIR}</span>
       <span class="wb-sg-name"><b>${esc(e.name.slice(0, prefix.length))}</b>${esc(e.name.slice(prefix.length))}</span>
-      ${e.git ? '<span class="wb-git">git</span>' : ''}
+      ${e.git ? '<span class="badge" data-variant="secondary" data-control="wb-git">git</span>' : ''}
       <span class="wb-sg-path">${esc(e.path)}</span></li>`).join('');
     list.hidden = !items.length;
     input.setAttribute('aria-expanded', String(!list.hidden));
@@ -227,9 +227,9 @@ function rowHtml(it) {
     ${st}
     <span class="wb-when">${esc(ago(it.lastOpened))}</span>
     <span class="wb-acts">
-      <button type="button" data-act="pin" class="${it.pinned ? 'on' : ''}" title="${it.pinned ? 'Unpin' : 'Pin to top'}" aria-label="${it.pinned ? 'Unpin' : 'Pin'}">${it.pinned ? '★' : '☆'}</button>
-      ${it.state === 'running' ? '<button type="button" data-act="stop" title="Stop this workspace" aria-label="Stop">■</button>' : ''}
-      <button type="button" data-act="remove" title="Remove from the list" aria-label="Remove">✕</button>
+      <button type="button" data-act="pin" aria-pressed="${it.pinned}" title="${it.pinned ? 'Unpin' : 'Pin to top'}" aria-label="${it.pinned ? 'Unpin' : 'Pin'}" class="btn aria-pressed:visible" data-variant="${it.pinned ? 'secondary' : 'ghost'}" data-size="icon-xs">${it.pinned ? '★' : '☆'}</button>
+      ${it.state === 'running' ? '<button type="button" data-act="stop" title="Stop this workspace" aria-label="Stop" class="btn" data-variant="outline" data-size="xs">■</button>' : ''}
+      <button type="button" data-act="remove" title="Remove from the list" aria-label="Remove" class="btn" data-variant="outline" data-size="xs">✕</button>
     </span>
   </a></li>`;
 }
@@ -323,8 +323,8 @@ async function browse(path) {
   $('#wb-dirs').innerHTML = r.entries.length ? r.entries.map(e => `<li><div class="wb-row" tabindex="0" data-path="${esc(e.path)}">
     <span class="wb-ico">${ICON_DIR}</span>
     <span class="wb-text"><span class="wb-title">${esc(e.name)}</span></span>
-    ${e.git ? '<span class="wb-git">git</span>' : ''}
-    <span class="wb-acts"><button type="button" data-act="open" title="Open ${esc(e.name)}">${pendingPR ? 'Use' : 'Open'}</button></span>
+    ${e.git ? '<span class="badge" data-variant="secondary" data-control="wb-git">git</span>' : ''}
+    <span class="wb-acts"><button type="button" data-act="open" title="Open ${esc(e.name)}" class="btn" data-variant="outline" data-size="xs">${pendingPR ? 'Use' : 'Open'}</button></span>
   </div></li>`).join('') : '<li class="wb-empty">No folders here.</li>';
 }
 

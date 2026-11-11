@@ -1,3 +1,4 @@
+import { setPressed } from './controls.js';
 // web/src/inspector.js
 import { $, $$, esc, S, doc_, api } from './state.js';
 import { emit } from './bus.js';
@@ -10,15 +11,15 @@ import { displayPath, cancelSearch } from './search.js';
 import { groupHits, flashFind, canAskServer, lspCall, positionNow } from './lsp.js';
 
 export function firstInspectorTab() {
-  const first = Array.from($$('.inspector-tab')).find(b => !b.hidden);
+  const first = Array.from($$('[data-control~=inspector-tab]')).find(b => !b.hidden);
   return first?.dataset.itab || 'refs';
 }
 
 export function showRightInspector(tab) {
   document.body.classList.add('threads-hidden');
-  $('#btn-top-threads')?.classList.remove('active');
+  setPressed($('#btn-top-threads'), false);
   document.body.classList.remove('right-hidden');
-  $('#btn-open-right')?.classList.add('active');
+  setPressed($('#btn-open-right'), true);
   setRightInspectorTab(tab || firstInspectorTab());
   layout();
   render();
@@ -27,14 +28,14 @@ export function showRightInspector(tab) {
 export function hideRightInspector() {
   cancelSearch();
   document.body.classList.add('right-hidden');
-  $('#btn-open-right')?.classList.remove('active');
+  setPressed($('#btn-open-right'), false);
   layout();
   render();
 }
 
 export function setRightInspectorTab(tab) {
   if (tab !== 'search') cancelSearch();
-  $$('.inspector-tab').forEach(b => b.classList.toggle('active', b.dataset.itab === tab));
+  $$('[data-control~=inspector-tab]').forEach(b => setPressed(b, b.dataset.itab === tab));
   $('#pane-right-refs')?.classList.toggle('active', tab === 'refs');
   $('#pane-right-symbols')?.classList.toggle('active', tab === 'symbols');
   $('#pane-right-calls')?.classList.toggle('active', tab === 'calls');
@@ -137,7 +138,7 @@ export async function inspectReferences(arg) {
 }
 
 export function initInspector() {
-  $$('.inspector-tab').forEach(btn => btn.addEventListener('click', () => {
+  $$('[data-control~=inspector-tab]').forEach(btn => btn.addEventListener('click', () => {
     setRightInspectorTab(btn.dataset.itab);
   }));
 

@@ -100,7 +100,7 @@ function drawUnpushed() {
   el.innerHTML = upList.map(c => {
     const open = c.hash === upOpenSha;
     return '<div class="up-commit' + (open ? ' open' : '') + '" data-sha="' + esc(c.hash) + '">' +
-      '<div class="up-row" role="button" tabindex="0" title="' + esc(c.subject || '') + '">' +
+      '<div role="button" tabindex="0" title="' + esc(c.subject || '') + '" class="up-row">' +
         '<span class="up-ar"></span>' +
         '<span class="up-subject">' + esc(c.subject || '(no message)') + '</span>' +
         '<span class="up-sha">' + esc(c.short || '') + '</span>' +
@@ -172,7 +172,7 @@ async function showCommitCard(sha, x, y) {
   placeCommitCard(el, live.x, live.y);
   keeper.open(live);
 
-  el.querySelector('.cc-copy')?.addEventListener('click', e => {
+  el.querySelector('[data-control~=cc-copy]')?.addEventListener('click', e => {
     e.stopPropagation();
     copyToClipboard(d.hash, 'Copied ' + d.short, e.currentTarget);
   });
@@ -196,7 +196,7 @@ function commitCardMarkup(d) {
   return '<div class="cc-head">' +
       '<span class="cc-sha" title="' + esc(d.hash) + '">' + esc(d.short) + '</span>' +
       '<span class="grow"></span>' +
-      '<button class="cc-copy" type="button" title="Copy the full SHA">Copy SHA</button>' +
+      '<button type="button" title="Copy the full SHA" class="btn" data-control="cc-copy" data-variant="outline" data-size="xs">Copy SHA</button>' +
     '</div>' +
     '<div class="cc-meta">' + who +
       '<span class="cc-dot">·</span>' +
@@ -255,7 +255,7 @@ export function initUnpushed() {
   }
 
   el.addEventListener('click', e => {
-    if (e.target.closest('.up-more')) { upShown += COMMIT_FILES_PAGE; drawUnpushed(); return; }
+    if (e.target.closest('[data-control~=up-more]')) { upShown += COMMIT_FILES_PAGE; drawUnpushed(); return; }
     const file = e.target.closest('.up-file');
     if (file) {
       const sha = file.closest('.up-commit')?.dataset.sha;
@@ -275,7 +275,7 @@ export function initUnpushed() {
 
   el.addEventListener('keydown', e => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
-    if (e.target.closest('.up-more')) {
+    if (e.target.closest('[data-control~=up-more]')) {
       e.preventDefault();
       const first = upShown;
       upShown += COMMIT_FILES_PAGE;

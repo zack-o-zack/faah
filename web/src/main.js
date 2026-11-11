@@ -107,7 +107,10 @@ initPRScope();
   if (S.meta.workbench) {
     // Opened from the workbench (workbench.go): link back to it.
     const back = document.createElement('a');
-    back.className = 'mini wb-back';
+    back.className = 'btn';
+    back.dataset.control = 'icon-action wb-back';
+    back.dataset.variant = 'ghost';
+    back.dataset.size = 'xs';
     back.href = S.meta.workbench;
     back.title = 'Back to the faah workbench';
     back.setAttribute('aria-label', 'Back to the faah workbench');

@@ -91,7 +91,10 @@ function updateVimStatus() {
   chip.hidden = !vimEnabled;
   if (!vimEnabled) return;
 
-  chip.className = 'status-vim-chip';
+  chip.className = 'btn h-5! text-10! font-mono';
+  chip.dataset.control = 'status-vim-chip';
+  chip.dataset.variant = vimMode === 'NORMAL' ? 'primary' : 'secondary';
+  chip.dataset.size = 'xs';
   let modeLabel = vimMode;
   if (vimMode === 'VISUAL_LINE') {
     chip.classList.add('mode-visual-line');
@@ -683,17 +686,17 @@ export function showVimHelp() {
     '<div class="help-header vim-help-header">' +
     '<div class="vim-help-title"><h2>Vim Keybindings</h2><span class="help-version">Modal Navigation</span></div>' +
     '<div class="vim-toggle-row">' +
-    '<label class="vim-switch-label">' +
-    '<input type="checkbox" id="vim-toggle-input" ' + isChecked + '>' +
+    '<label class="label vim-switch-label">' +
+    '<input type="checkbox" id="vim-toggle-input" ' + isChecked + ' class="input">' +
     '<span class="vim-switch-slider"></span>' +
     '<span class="vim-switch-text">' + (vimEnabled ? 'Enabled' : 'Disabled') + '</span>' +
     '</label>' +
-    '<button id="btn-close-vim-help" class="mini" title="Close (Esc)">✕</button>' +
+    '<button id="btn-close-vim-help" title="Close (Esc)" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Close (Esc)">✕</button>' +
     '</div>' +
     '</div>' +
     '<div class="vim-help-content">' + sectionsHtml + '</div>' +
     '<div class="vim-help-footer">' +
-    '<button id="btn-switch-to-std-help" class="settings-btn-link" title="View Standard Shortcuts (?)">View Standard Shortcuts (?)</button>' +
+    '<button id="btn-switch-to-std-help" title="View Standard Shortcuts (?)" class="btn" data-control="settings-btn-link" data-variant="link" data-size="xs">View Standard Shortcuts (?)</button>' +
     '<span class="agent-hint">Press Esc or click outside to dismiss</span>' +
     '</div>' +
     '</div>';

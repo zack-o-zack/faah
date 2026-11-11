@@ -1,3 +1,4 @@
+import { setPressed } from './controls.js';
 // web/src/diff.js
 // Git diff view for the active tab: renders the file's unified diff against
 // HEAD in a dedicated overlay (like the Markdown preview), in either a
@@ -272,8 +273,12 @@ function createDiffSection(d, kind, title, sub, populateBody) {
   head.append(grow);
 
   const btn = document.createElement('button');
-  btn.className = 'pr-comments-collapse diff-section-collapse';
+  btn.className = 'btn';
+  btn.dataset.control = 'pr-comments-collapse diff-section-collapse';
+  btn.dataset.variant = 'ghost';
+  btn.dataset.size = 'xs';
   btn.title = 'Collapse/Expand';
+  btn.setAttribute('aria-label', 'Collapse or expand diff section');
   btn.innerHTML = '&#9662;';
   head.append(btn);
 
@@ -338,8 +343,8 @@ function commitStrip(d) {
       (f.binary ? '' : (f.add ? '<span class="up-file-add">+' + f.add + '</span>' : '') + (f.del ? '<span class="up-file-del">&minus;' + f.del + '</span>' : '')) +
       '<span class="grow"></span>' +
       '<span class="dcs-pos">' + (i + 1) + ' / ' + files.length + '</span>' +
-      '<button type="button" class="dcs-step" data-commit-step="-1" title="Previous file in this commit"' + (commitStepTarget(files, i, -1) < 0 ? ' disabled' : '') + '>‹</button>' +
-      '<button type="button" class="dcs-step" data-commit-step="1" title="Next file in this commit"' + (commitStepTarget(files, i, 1) < 0 ? ' disabled' : '') + '>›</button>';
+      '<button type="button" aria-label="Previous file" data-commit-step="-1" title="Previous file in this commit"' + (commitStepTarget(files, i, -1) < 0 ? ' disabled' : '') + ' class="btn" data-control="dcs-step" data-variant="outline" data-size="xs">‹</button>' +
+      '<button type="button" aria-label="Next file" data-commit-step="1" title="Next file in this commit"' + (commitStepTarget(files, i, 1) < 0 ? ' disabled' : '') + ' class="btn" data-control="dcs-step" data-variant="outline" data-size="xs">›</button>';
     el.dataset.i = i;
   };
   const have = cachedCommitFiles(d.diffRef);
@@ -428,16 +433,16 @@ function reviewStrip(d) {
   const viewed = isFileViewed(d.path);
   const posHtml = files.length > 0 && i >= 0
     ? '<span class="dcs-pos">' + (i + 1) + ' / ' + files.length + '</span>' +
-      '<button type="button" class="dcs-step" data-review-step="-1" title="Previous changed file ([f)"' + (i <= 0 ? ' disabled' : '') + '>‹</button>' +
-      '<button type="button" class="dcs-step" data-review-step="1" title="Next changed file (]f)"' + (i >= files.length - 1 ? ' disabled' : '') + '>›</button>'
+      '<button type="button" aria-label="Previous file" data-review-step="-1" title="Previous changed file ([f)"' + (i <= 0 ? ' disabled' : '') + ' class="btn" data-control="dcs-step" data-variant="outline" data-size="xs">‹</button>' +
+      '<button type="button" aria-label="Next file" data-review-step="1" title="Next changed file (]f)"' + (i >= files.length - 1 ? ' disabled' : '') + ' class="btn" data-control="dcs-step" data-variant="ghost" data-size="icon-xs">›</button>'
     : '';
   el.innerHTML =
     (d.turnLabel ? '<span class="gs git-M">' + esc(d.turnLabel) + '</span>' : '') +
     '<span class="dcs-path" title="' + esc(d.path) + '">' + esc(d.path) + '</span>' +
     '<span class="grow"></span>' +
-    '<button type="button" class="dcs-step dcs-hunk-btn" data-hunk-step="-1" title="Previous diff hunk ([c)">↑ Hunk</button>' +
-    '<button type="button" class="dcs-step dcs-hunk-btn" data-hunk-step="1" title="Next diff hunk (]c)">↓ Hunk</button>' +
-    '<button type="button" class="dcs-viewed' + (viewed ? ' active' : '') + '" data-toggle-viewed="1" title="Mark file as viewed and advance to next unviewed file">✓ Viewed</button>' +
+    '<button type="button" data-hunk-step="-1" title="Previous diff hunk ([c)" class="btn" data-control="dcs-step dcs-hunk-btn" data-variant="outline" data-size="xs">↑ Hunk</button>' +
+    '<button type="button" data-hunk-step="1" title="Next diff hunk (]c)" class="btn" data-control="dcs-step dcs-hunk-btn" data-variant="outline" data-size="xs">↓ Hunk</button>' +
+    '<button type="button" aria-pressed="' + viewed + '" data-variant="' + (viewed ? 'secondary' : 'ghost') + '" data-toggle-viewed="1" title="Mark file as viewed and advance to next unviewed file" class="btn" data-control="dcs-viewed" data-size="xs">✓ Viewed</button>' +
     posHtml;
   return el;
 }
@@ -501,7 +506,10 @@ function hunkHeader(hunk, idx = 0, canActOnHunk = false) {
 
   const expandBtn = document.createElement('button');
   expandBtn.type = 'button';
-  expandBtn.className = 'diff-hunk-btn diff-hunk-expand';
+  expandBtn.className = 'btn';
+  expandBtn.dataset.control = 'diff-hunk-btn diff-hunk-expand';
+  expandBtn.dataset.variant = 'ghost';
+  expandBtn.dataset.size = 'xs';
   expandBtn.dataset.hunkExpand = String(idx);
   expandBtn.title = 'Expand surrounding context lines';
   expandBtn.textContent = '↕ Expand';
@@ -515,7 +523,11 @@ function hunkHeader(hunk, idx = 0, canActOnHunk = false) {
     ]) {
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'diff-hunk-btn' + extraCls;
+      btn.className = 'btn';
+      btn.dataset.control = 'diff-hunk-btn';
+      btn.dataset.variant = 'outline';
+      btn.dataset.size = 'xs';
+      if (extraCls) btn.dataset.hunkAction = extraCls.trim();
       btn.dataset.hunkAct = act;
       btn.title = title;
       btn.textContent = text;
@@ -704,7 +716,7 @@ function unifiedTable(hunk, reviewable = true) {
 
   for (const row of hunk.rows) {
     const r = document.createElement('div');
-    r.className = 'diff-row diff-' + row.type;
+    r.className = 'group/line diff-row diff-' + row.type;
     anchor(r, row, reviewable);
     r.append(
       lineCell(row.type === 'add' ? '' : row.oldLine, reviewable),
@@ -759,7 +771,7 @@ function pairRows(rows) {
 
 function splitSide(row, side, reviewable = true, diagMap = null) {
   const el = document.createElement('div');
-  el.className = 'diff-side diff-side-' + side + (row ? ' diff-' + row.type : ' diff-blank');
+  el.className = 'group/line diff-side diff-side-' + side + (row ? ' diff-' + row.type : ' diff-blank');
   if (!row) { el.append(lineCell('', reviewable), markerCell(''), codeCell(null)); return el; }
   const ln = side === 'left' ? row.oldLine : row.newLine;
   anchor(el, row, reviewable);
@@ -791,7 +803,10 @@ function lineCell(n, reviewable = true) {
     el.classList.add('diff-ln-nav');
     el.title = 'Open in file view at line ' + n;
     const btn = document.createElement('span');
-    btn.className = 'line-btn';
+    btn.className = 'btn absolute left-0 top-1/2 -translate-y-1/2 max-w-full truncate h-4! px-1! text-9! opacity-0 pointer-events-none group-hover/line:opacity-100 group-hover/line:pointer-events-auto group-[.agent-anchor]/line:opacity-100 group-[.agent-anchor]/line:pointer-events-auto';
+    btn.dataset.control = 'line-btn';
+    btn.dataset.variant = 'ghost';
+    btn.dataset.size = 'xs';
     btn.setAttribute('role', 'button');
     btn.title = (S.meta?.pr && reviewable) ? 'Thread, review comment and line actions' : 'Thread and line actions';
     btn.textContent = 'Edit';
@@ -1085,7 +1100,7 @@ export function initDiff() {
   });
   diffContent.addEventListener('mousedown', e => {
     if (e.button !== 0) return;
-    if (e.target.closest('.line-btn') || e.target.closest('.diff-ln-nav')) return;
+    if (e.target.closest('[data-control~=line-btn]') || e.target.closest('.diff-ln-nav')) return;
     const diffCode = e.target.closest('.diff-code');
     if (!diffCode) return;
     const w = wordAtPoint(e.clientX, e.clientY);
@@ -1136,7 +1151,7 @@ export function initDiff() {
       const d = doc_();
       if (!d) return;
       const nowViewed = toggleFileViewed(d.path);
-      viewedBtn.classList.toggle('active', nowViewed);
+      setPressed(viewedBtn, nowViewed);
       if (nowViewed) {
         const files = currentChangedFiles(d);
         const curIdx = files.findIndex(f => f.path === d.path);
@@ -1160,7 +1175,7 @@ export function initDiff() {
       if (!step.disabled && next && commitStepHandler) commitStepHandler(d, next);
       return;
     }
-    if (e.target.closest('.line-btn')) return;
+    if (e.target.closest('[data-control~=line-btn]')) return;
     const cell = e.target.closest('.diff-ln-nav');
     if (cell) {
       const rowEl = cell.closest('[data-l], [data-at]');

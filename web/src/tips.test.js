@@ -42,9 +42,9 @@ test('renderTipMarkdown formats kbd and KBD tags as styled HTML', () => {
   const input = 'Press <kbd>Cmd</kbd> + <kbd>P</kbd> or <KBD>Enter</KBD> to confirm.';
   const output = renderTipMarkdown(input);
 
-  assert.ok(output.includes('<kbd class="tip-kbd">Cmd</kbd>'));
-  assert.ok(output.includes('<kbd class="tip-kbd">P</kbd>'));
-  assert.ok(output.includes('<kbd class="tip-kbd">Enter</kbd>'));
+  assert.ok(output.includes('<kbd class="kbd" data-control="tip-kbd">Cmd</kbd>'));
+  assert.ok(output.includes('<kbd class="kbd" data-control="tip-kbd">P</kbd>'));
+  assert.ok(output.includes('<kbd class="kbd" data-control="tip-kbd">Enter</kbd>'));
   assert.ok(!output.includes('&lt;kbd&gt;'));
   assert.ok(!output.includes('&lt;KBD&gt;'));
 });
@@ -53,7 +53,7 @@ test('renderTipMarkdown formats shortcut braces into kbd elements', () => {
   const input = 'Press {Mod+P} to open files.';
   const output = renderTipMarkdown(input);
 
-  assert.ok(output.includes('<kbd class="tip-kbd">Mod+P</kbd>'));
+  assert.ok(output.includes('<kbd class="kbd" data-control="tip-kbd">Mod+P</kbd>'));
 });
 
 test('escapeTipHtml properly escapes special characters', () => {

@@ -1,3 +1,4 @@
+import { setPressed } from './controls.js';
 // web/src/renderer.js
 import { $, S, doc_, api, esc, LH, CHUNK, OVERSCAN } from './state.js';
 import { vp, sizer, rowsEl, editor } from './ui.js';
@@ -241,7 +242,7 @@ export function applyEditorTypography(fontSize, fontFamily, lineHeight, tabSize)
 
 export function updateEditorOptionControls() {
   const wrapBtn = $('[data-action="wrap"]');
-  if (wrapBtn) wrapBtn.classList.toggle('active', !!S.wrap);
+  if (wrapBtn) setPressed(wrapBtn, !!S.wrap);
 }
 
 let raf = 0;
@@ -363,8 +364,8 @@ export function paint() {
       const label = '  — ' + (dg.source ? dg.source + ': ' : '') + (dg.message || '').split('\n')[0];
       cAttr = ' data-diag="' + esc(label) + '" title="' + esc(dg.message || '') + '"';
     }
-    html += '<div class="' + rc + '" data-l="' + n + '">' +
-      '<div class="' + gc + '"><span class="line-btn" role="button" data-l="' + n + '" title="Thread and line actions">Edit</span>' + n + '</div><div class="c"' + cAttr + '>' + (body === undefined ? '' : body) + '</div></div>';
+    html += '<div class="' + rc + ' group/line" data-l="' + n + '">' +
+      '<div class="' + gc + '"><span role="button" data-l="' + n + '" title="Thread and line actions" class="btn absolute left-0 top-1/2 -translate-y-1/2 max-w-full truncate h-4! px-1! text-9! opacity-0 pointer-events-none group-hover/line:opacity-100 group-hover/line:pointer-events-auto group-[.agent-anchor]/line:opacity-100 group-[.agent-anchor]/line:pointer-events-auto" data-control="line-btn" data-variant="ghost" data-size="xs">Edit</span>' + n + '</div><div class="c"' + cAttr + '>' + (body === undefined ? '' : body) + '</div></div>';
   }
   const sel = saveSelection();
   const y0 = w ? w.offsets[first] : first * lh;

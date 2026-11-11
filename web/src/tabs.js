@@ -53,7 +53,10 @@ function openTabMenu(index, x, y) {
   for (const { action, label, disabled } of actions) {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'sel-menu-item';
+    button.className = 'btn w-full justify-start';
+    button.dataset.control = 'sel-menu-item';
+    button.dataset.variant = 'ghost';
+    button.dataset.size = 'xs';
     button.dataset.tabAction = action;
     button.setAttribute('role', 'menuitem');
     button.textContent = label;
@@ -540,7 +543,7 @@ export function drawTabs() {
     // Pinned to a commit: the tab is not the working tree, and it should say so.
     (t.diffRef ? '<span class="tab-ref">@' + esc(t.diffRef.slice(0, 7)) + '</span>' : '') +
     (t.dirty ? '<span class="tab-dirty-dot" title="Unsaved changes">●</span>' : '') +
-    '<span class="x" data-close="' + i + '" title="' + withKeys('Close tab ({Alt+W})') + '"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 2l6 6M8 2l-6 6"/></svg></span></div>').join('');
+    '<button type="button" class="btn size-4! p-0!" data-variant="ghost" data-size="icon-xs" aria-label="Close tab" data-close="' + i + '" title="' + withKeys('Close tab ({Alt+W})') + '"><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2 2l6 6M8 2l-6 6"/></svg></button></div>').join('');
   const act = $('#tabs .tab.active');
   if (act) act.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 }

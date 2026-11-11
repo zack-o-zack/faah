@@ -64,8 +64,8 @@ export function showHelp() {
   const ver = S.meta?.version ? ` <span class="help-version">v${esc(S.meta.version)}</span>` : '';
   h.innerHTML = '<div class="help-card"><div class="help-header"><h2>Keyboard Shortcuts</h2>' + ver +
     '<div style="margin-left:auto;display:flex;gap:12px;align-items:center;">' +
-    '<button id="btn-switch-to-tips" class="settings-btn-link" style="font-size:12px;cursor:pointer;" title="View Tips & Tricks">💡 Tips & Tricks</button>' +
-    '<button id="btn-switch-to-vim-help" class="settings-btn-link" style="font-size:12px;cursor:pointer;" title="View Vim Keybindings">View Vim Keybindings</button>' +
+    '<button id="btn-switch-to-tips" style="font-size:12px;cursor:pointer;" title="View Tips & Tricks" class="btn" data-control="settings-btn-link" data-variant="link" data-size="xs">💡 Tips & Tricks</button>' +
+    '<button id="btn-switch-to-vim-help" style="font-size:12px;cursor:pointer;" title="View Vim Keybindings" class="btn" data-control="settings-btn-link" data-variant="link" data-size="xs">View Vim Keybindings</button>' +
     '</div></div><dl class="help-grid">' +
     SHORTCUTS.map(([combos, v]) => {
       const comboList = Array.isArray(combos) ? combos : [combos];
@@ -96,7 +96,7 @@ export function initShortcuts() {
 
   // Footer quick action buttons
   $('#footer-actions')?.addEventListener('click', e => {
-    const btn = e.target.closest('.footer-btn');
+    const btn = e.target.closest('[data-control~=bar-action]');
     if (!btn) return;
     const act = btn.dataset.action;
     if (act === 'quick-open') openPalette('file');

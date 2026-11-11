@@ -43,7 +43,7 @@ export function commitFileRows(files, from, to, active = '') {
   for (let i = from; i < to; i++) html += commitFileRow(files[i], files[i].path === active);
   const left = files.length - to;
   if (left > 0) {
-    html += '<div class="up-more" role="button" tabindex="0">Show ' + Math.min(left, COMMIT_FILES_PAGE) +
+    html += '<div class="btn w-full" data-control="up-more" data-variant="ghost" data-size="xs" role="button" tabindex="0">Show ' + Math.min(left, COMMIT_FILES_PAGE) +
       ' more · ' + left.toLocaleString() + ' remaining</div>';
   }
   return html;

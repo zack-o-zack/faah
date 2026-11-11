@@ -1260,7 +1260,7 @@ var holdingTmpl = template.Must(template.New("holding").Parse(`<!doctype html>
 <link rel="stylesheet" href="static/themes.css">
 </head>
 <body class="wb">
-<button class="desktop-menu-btn" data-desktop-menu title="Menu" aria-label="Application menu">
+<button data-desktop-menu title="Menu" aria-label="Application menu" class="btn desktop-menu-btn" data-variant="outline" data-size="xs">
   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
 </button>
 <main class="wb-holding">
@@ -1275,7 +1275,7 @@ var holdingTmpl = template.Must(template.New("holding").Parse(`<!doctype html>
   <p class="wb-holding-msg">Could not open <b>{{.Title}}</b></p>
   <pre class="wb-error">{{.Error}}</pre>
   {{end}}
-  <p class="wb-holding-actions">{{if .Retry}}<a class="wb-btn wb-primary" href="{{.Retry}}">Retry</a>{{end}}{{if .Choose}}<a class="wb-btn wb-primary" href="{{.Choose}}">Choose a clone</a>{{end}}<a class="wb-btn" href="{{.Base}}">Back to workbench</a></p>
+  <p class="wb-holding-actions">{{if .Retry}}<a class="btn" data-variant="primary" data-size="default" href="{{.Retry}}">Retry</a>{{end}}{{if .Choose}}<a class="btn" data-variant="primary" data-size="default" href="{{.Choose}}">Choose a clone</a>{{end}}<a class="btn" data-variant="outline" data-size="default" href="{{.Base}}">Back to workbench</a></p>
 </main>
 </body>
 </html>

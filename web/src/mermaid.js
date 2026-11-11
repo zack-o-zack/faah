@@ -195,7 +195,10 @@ function getFitScale(output, naturalWidth, naturalHeight) {
 function mermaidZoomButton(label, icon) {
   const button = document.createElement('button');
   button.type = 'button';
-  button.className = 'md-mermaid-zoom';
+  button.className = 'btn';
+  button.dataset.control = 'md-mermaid-zoom';
+  button.dataset.variant = 'ghost';
+  button.dataset.size = 'xs';
   button.title = label;
   button.setAttribute('aria-label', label);
   button.innerHTML = `<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${icon}"/></svg>`;
@@ -222,7 +225,10 @@ function setupDiagramControlsAndPan(output, canvas, svg) {
   const zoomOut = mermaidZoomButton('Zoom out diagram (or Ctrl+Scroll)', 'M3 8h10');
   const labelBtn = document.createElement('button');
   labelBtn.type = 'button';
-  labelBtn.className = 'md-mermaid-zoom md-mermaid-zoom-label';
+  labelBtn.className = 'btn';
+  labelBtn.dataset.control = 'md-mermaid-zoom md-mermaid-zoom-label';
+  labelBtn.dataset.variant = 'ghost';
+  labelBtn.dataset.size = 'xs';
   labelBtn.title = 'Click to toggle 100% / Fit';
   labelBtn.setAttribute('aria-label', 'Toggle zoom');
 
@@ -234,7 +240,10 @@ function setupDiagramControlsAndPan(output, canvas, svg) {
 
   const fsClose = document.createElement('button');
   fsClose.type = 'button';
-  fsClose.className = 'md-mermaid-fs-close';
+  fsClose.className = 'btn';
+  fsClose.dataset.control = 'md-mermaid-fs-close';
+  fsClose.dataset.variant = 'ghost';
+  fsClose.dataset.size = 'xs';
   fsClose.title = 'Close full screen (Esc)';
   fsClose.setAttribute('aria-label', 'Close full screen');
   fsClose.innerHTML = '<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>';

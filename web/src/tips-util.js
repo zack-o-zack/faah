@@ -277,9 +277,9 @@ export function renderTipMarkdown(src) {
   const codes = [];
   const kbds = [];
 
-  // 1. Extract <kbd>...</kbd> tags (case-insensitive) before HTML escaping
+  // 1. Extract <kbd class="kbd">...</kbd> tags (case-insensitive) before HTML escaping
   let s = src.replace(/<kbd>([\s\S]*?)<\/kbd>/gi, (_, text) => {
-    kbds.push('<kbd class="tip-kbd">' + escapeTipHtml(text.trim()) + '</kbd>');
+    kbds.push('<kbd class="kbd" data-control="tip-kbd">' + escapeTipHtml(text.trim()) + '</kbd>');
     return '%%PXKBD' + (kbds.length - 1) + '%%';
   });
 
@@ -302,7 +302,7 @@ export function renderTipMarkdown(src) {
 
   // 5. Keyboard shortcuts in braces: e.g. {Mod+P}
   s = s.replace(/\{([A-Za-z0-9+]+)\}/g, (_, k) => {
-    return `<kbd class="tip-kbd">${escapeTipHtml(k)}</kbd>`;
+    return `<kbd class="kbd" data-control="tip-kbd">${escapeTipHtml(k)}</kbd>`;
   });
 
   // 6. Links: [text](url)

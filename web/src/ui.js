@@ -42,7 +42,7 @@ export function showToast(accentText, text, duration = 2200) {
 
 export function flashActionSuccess(el, text = 'Done', duration = 1200) {
   if (!el) return;
-  const label = el.querySelector?.('.footer-btn-label') || el.querySelector?.('span') || el;
+  const label = el.querySelector?.('.bar-action-label') || el.querySelector?.('span') || el;
   if (!label) return;
   if (el._flashTimer) clearTimeout(el._flashTimer);
   else el._oldText = label.textContent;
@@ -120,4 +120,3 @@ export async function copyRichToClipboard(plainText, htmlText, notify = 'Copied'
   if (notify) showToast('✓', notify);
   if (triggerEl) flashActionSuccess(triggerEl, 'Copied');
 }
-

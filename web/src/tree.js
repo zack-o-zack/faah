@@ -1,3 +1,4 @@
+import { setPressed } from './controls.js';
 // web/src/tree.js
 import { $, $$, esc, api, apiPost, apiPostJson, S } from './state.js';
 import { openFile } from './tabs.js';
@@ -46,7 +47,7 @@ export async function drawTree(dir, container, depth, isCurrent) {
     // Ignored by .gitignore: still browsable, dimmed, and absent from search.
     const ig = c.ignored ? ' ignored' : '';
     const note = c.ignored ? ' (ignored by .gitignore, not searched)' : '';
-    const menuBtn = '<button class="tr-menu-btn" title="Actions" aria-label="Actions" tabindex="-1"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><circle cx="2.5" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13.5" cy="8" r="1.5"/></svg></button>';
+    const menuBtn = '<button title="Actions" aria-label="Actions" tabindex="-1" class="btn size-4! p-0! ml-auto" data-control="tr-menu-btn" data-variant="ghost" data-size="icon-xs"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><circle cx="2.5" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13.5" cy="8" r="1.5"/></svg></button>';
     if (c.dir) {
       const dc = c.dirty ? ' dirty' : ''; // backend marks any ancestor of a change
       const ydc = c.yourDirty ? ' your-dirty' : '';
@@ -59,13 +60,13 @@ export async function drawTree(dir, container, depth, isCurrent) {
     const gc = g ? ' dirty ' + g[0] : '';
     const isYou = !!c.yourStatus;
     const yc = (isYou ? ' your-change' : '') + (prFileMap()?.[c.path] ? ' pr-file' : '');
-    const youBadge = isYou ? '<span class="gs-you-tag" title="Modified by you in this review session">YOU</span>' : '';
+    const youBadge = isYou ? '<span class="badge" data-variant="outline" data-control="gs-you-tag" title="Modified by you in this review session">YOU</span>' : '';
     const badge = g ? '<span class="gs' + (isYou ? ' gs-you' : '') + '" title="' + (isYou ? 'Your change (' + c.yourStatus + '), git: ' + g[1] : 'git: ' + g[1]) + '">' + esc(c.status) + '</span>' + youBadge : '';
     const showTick = S.meta?.pr ? isYou : !!g;
     const isStaged = !!(showTick && c.staged);
     const isPartial = isStaged && !!c.partial;
     const sc = (isStaged ? ' is-staged' : '') + (isFileViewed(c.path) ? ' file-viewed' : '');
-    const tick = showTick ? '<button type="button" class="stage-tick' + (isStaged ? ' staged' : '') + (isPartial ? ' partial' : '') + '" data-stage="' + esc(c.path) + '" aria-pressed="' + (isStaged ? 'true' : 'false') + '" title="' + stageTickTitle(isStaged, isPartial) + '"></button>' : '';
+    const tick = showTick ? '<button type="button" data-partial="' + isPartial + '" aria-label="Stage file" data-stage="' + esc(c.path) + '" aria-pressed="' + (isStaged ? 'true' : 'false') + '" title="' + stageTickTitle(isStaged, isPartial) + '" class="btn size-4! p-0!" data-size="icon-xs" data-variant="' + (isStaged ? 'secondary' : 'outline') + '">' + (isPartial ? '−' : isStaged ? '✓' : '') + '</button>' : '';
     return '<div class="tr file' + ig + gc + yc + sc + '" data-file="' + esc(c.path) + '"' + (c.status ? ' data-st="' + esc(c.status) + '"' : '') + (c.yourStatus ? ' data-yst="' + esc(c.yourStatus) + '"' : '') + ' style="padding-left:' + (pad + 12) + 'px" title="Open ' + esc(c.path) + note + '">' +
       '<span class="ic" data-t="' + fileKind(c.name) + '"></span><span class="nm">' + esc(c.name) + '</span>' + badge + tick + menuBtn + '</div>';
   }).join('');
@@ -366,9 +367,9 @@ export async function patchTreeGitStatus(statuses = {}, dirtyDirs = {}, staged =
       fileRow.classList.remove('dirty', 'is-staged', 'git-M', 'git-A', 'git-D', 'git-untracked', 'git-R', 'your-change');
       const badge = fileRow.querySelector('.gs');
       if (badge) badge.remove();
-      const youTag = fileRow.querySelector('.gs-you-tag');
+      const youTag = fileRow.querySelector('[data-control~=gs-you-tag]');
       if (youTag) youTag.remove();
-      const tick = fileRow.querySelector('.stage-tick');
+      const tick = fileRow.querySelector('[data-stage]');
       if (tick) tick.remove();
     }
   }
@@ -395,11 +396,13 @@ export async function patchTreeGitStatus(statuses = {}, dirtyDirs = {}, staged =
       badge.title = isYou ? 'Your change (' + yourStatuses[p] + '), git: ' + g[1] : 'git: ' + g[1];
       badge.textContent = code;
 
-      let youTag = fileRow.querySelector('.gs-you-tag');
+      let youTag = fileRow.querySelector('[data-control~=gs-you-tag]');
       if (isYou) {
         if (!youTag) {
           youTag = document.createElement('span');
-          youTag.className = 'gs-you-tag';
+          youTag.className = 'badge';
+          youTag.dataset.variant = 'outline';
+          youTag.dataset.control = 'gs-you-tag';
           youTag.title = 'Modified by you in this review session';
           youTag.textContent = 'YOU';
           badge.after(youTag);
@@ -412,17 +415,21 @@ export async function patchTreeGitStatus(statuses = {}, dirtyDirs = {}, staged =
       const isStaged = !!(showTick && staged[p]);
       const isPartial = isStaged && !!partial[p];
       fileRow.classList.toggle('is-staged', isStaged);
-      let tick = fileRow.querySelector('.stage-tick');
+      let tick = fileRow.querySelector('[data-stage]');
       if (showTick) {
         if (!tick) {
           tick = document.createElement('button');
           tick.type = 'button';
-          tick.className = 'stage-tick';
+          tick.className = 'btn size-4! p-0!';
+          tick.setAttribute('aria-label', 'Stage file');
+          tick.dataset.variant = 'outline';
+          tick.dataset.size = 'icon-xs';
           tick.dataset.stage = p;
           fileRow.appendChild(tick);
         }
-        tick.classList.toggle('staged', isStaged);
-        tick.classList.toggle('partial', isPartial);
+        tick.dataset.partial = String(isPartial);
+        tick.dataset.variant = isStaged ? 'secondary' : 'outline';
+        tick.textContent = isPartial ? '−' : isStaged ? '✓' : '';
         tick.setAttribute('aria-pressed', isStaged ? 'true' : 'false');
         tick.title = stageTickTitle(isStaged, isPartial);
       } else if (tick) {
@@ -432,12 +439,12 @@ export async function patchTreeGitStatus(statuses = {}, dirtyDirs = {}, staged =
       fileRow.classList.remove('dirty', 'is-staged', 'your-change');
       const badge = fileRow.querySelector('.gs');
       if (badge) badge.remove();
-      const youTag = fileRow.querySelector('.gs-you-tag');
+      const youTag = fileRow.querySelector('[data-control~=gs-you-tag]');
       if (youTag) youTag.remove();
-      const tick = fileRow.querySelector('.stage-tick');
+      const tick = fileRow.querySelector('[data-stage]');
       if (tick) tick.remove();
     }
-    const menuBtn = fileRow.querySelector('.tr-menu-btn');
+    const menuBtn = fileRow.querySelector('[data-control~=tr-menu-btn]');
     if (menuBtn) fileRow.appendChild(menuBtn);
   }
 
@@ -448,9 +455,9 @@ export async function patchTreeGitStatus(statuses = {}, dirtyDirs = {}, staged =
     if (!yourStatuses[p]) {
       fileRow.classList.remove('your-change');
       fileRow.querySelector('.gs')?.classList.remove('gs-you');
-      fileRow.querySelector('.gs-you-tag')?.remove();
+      fileRow.querySelector('[data-control~=gs-you-tag]')?.remove();
       if (S.meta?.pr) {
-        fileRow.querySelector('.stage-tick')?.remove();
+        fileRow.querySelector('[data-stage]')?.remove();
       }
     }
   }
@@ -507,8 +514,8 @@ export async function setSidebarMode(mode, { expandDirty = true } = {}) {
 
   if (mode === 'git' && hasGitView()) {
     treeEl.classList.add('changed-only');
-    btnChanged?.classList.add('active');
-    btnFiles?.classList.remove('active');
+    setPressed(btnChanged, true);
+    setPressed(btnFiles, false);
     if (btnCollapse) btnCollapse.hidden = false;
     if (btnExpand) btnExpand.hidden = false;
     expansionVersion++;
@@ -516,8 +523,8 @@ export async function setSidebarMode(mode, { expandDirty = true } = {}) {
     if (expandDirty) await expandDirtyDirs();
   } else {
     treeEl.classList.remove('changed-only');
-    btnFiles?.classList.add('active');
-    btnChanged?.classList.remove('active');
+    setPressed(btnFiles, true);
+    setPressed(btnChanged, false);
     if (btnCollapse) btnCollapse.hidden = false;
     if (btnExpand) btnExpand.hidden = false;
   }
@@ -559,7 +566,10 @@ export function openTreeMenu(row, x, y) {
 
   for (const item of items) {
     const btn = document.createElement('button');
-    btn.className = 'sel-menu-item';
+    btn.className = 'btn w-full justify-start';
+    btn.dataset.control = 'sel-menu-item';
+    btn.dataset.variant = 'ghost';
+    btn.dataset.size = 'xs';
     btn.dataset.action = item.action;
     btn.setAttribute('role', 'menuitem');
     const label = document.createElement('span');
@@ -636,7 +646,7 @@ export function initTree() {
   });
 
   treeEl.addEventListener('click', async e => {
-    const menuBtn = e.target.closest('.tr-menu-btn');
+    const menuBtn = e.target.closest('[data-control~=tr-menu-btn]');
     if (menuBtn) {
       e.stopPropagation();
       e.preventDefault();
@@ -647,18 +657,19 @@ export function initTree() {
       }
       return;
     }
-    const tick = e.target.closest('.stage-tick');
+    const tick = e.target.closest('[data-stage]');
     if (tick) {
       e.stopPropagation();
       e.preventDefault();
       const path = tick.dataset.stage;
-      const wasPartial = tick.classList.contains('partial');
-      const staged = wasPartial || !tick.classList.contains('staged');
+      const wasPartial = tick.dataset.partial === 'true';
+      const staged = wasPartial || tick.getAttribute('aria-pressed') !== 'true';
       const applyOptimistic = s => {
-        for (const el of $$('.stage-tick[data-stage="' + CSS.escape(path) + '"]')) {
+        for (const el of $$('[data-stage="' + CSS.escape(path) + '"]')) {
           const partial = s !== staged && wasPartial; // only a rollback restores it
-          el.classList.toggle('staged', s);
-          el.classList.toggle('partial', partial);
+          el.dataset.partial = String(partial);
+          el.dataset.variant = s ? 'secondary' : 'outline';
+          el.textContent = partial ? '−' : s ? '✓' : '';
           el.setAttribute('aria-pressed', s ? 'true' : 'false');
           el.title = stageTickTitle(s, partial);
           el.closest('.tr.file')?.classList.toggle('is-staged', s);

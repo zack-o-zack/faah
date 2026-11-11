@@ -203,7 +203,7 @@ function renderMenu() {
   const cur = chosenMethod();
   const n = info?.commits?.length || 0;
   menu.innerHTML = allowed().map(m =>
-    `<button type="button" role="menuitemradio" aria-checked="${m === cur}" data-method="${m}">` +
+    `<button type="button" role="menuitemradio" aria-checked="${m === cur}" data-method="${m}" class="btn" data-variant="outline" data-size="xs">` +
     `<span class="pr-merge-menu-check">${m === cur ? '&#10003;' : ''}</span>` +
     `<span class="pr-merge-menu-text"><b>${esc(METHODS[m].label)}</b><span>${esc(METHODS[m].explain(n, baseBranch()))}</span></span></button>`
   ).join('');
@@ -309,7 +309,7 @@ function renderDialog() {
 
   const methods = $('#pr-merge-methods');
   methods.innerHTML = allowed().map(k =>
-    `<button type="button" role="radio" aria-checked="${k === method}" data-method="${k}" class="${k === method ? 'on' : ''}">${esc(METHODS[k].label)}</button>`
+    `<button type="button" role="radio" aria-checked="${k === method}" data-method="${k}" class="btn" aria-pressed="${k === method}" data-variant="${k === method ? 'secondary' : 'ghost'}" data-size="xs">${esc(METHODS[k].label)}</button>`
   ).join('');
   for (const b of methods.querySelectorAll('button')) {
     b.addEventListener('click', () => {
