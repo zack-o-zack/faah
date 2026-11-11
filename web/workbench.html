@@ -21,7 +21,10 @@
 <div id="wb-app" class="flex h-dvh flex-col">
   <div class="flex min-h-0 flex-1 flex-col">
     <main class="mx-auto flex min-h-0 w-full max-w-[720px] flex-1 flex-col px-4 pt-14">
-      <h1 class="sr-only">faah workbench</h1>
+      <header class="mb-5 flex shrink-0 items-center gap-2">
+        <h1 class="flex"><img class="hidden h-5 w-auto dark:block" src="static/logo-dark.svg" alt="faah" width="35" height="13"><img class="block h-5 w-auto dark:hidden" src="static/logo-light.svg" alt="faah" width="35" height="13"></h1>
+        <span id="st-ver" class="font-mono text-xs text-muted-foreground" title="faah version"></span>
+      </header>
       <form id="wb-open" class="dropdown-menu relative block shrink-0" autocomplete="off">
         <div class="input-group group/field h-10">
           <span data-align="inline-start"><span id="wb-kind" class="icon-[lucide--search] size-4" aria-hidden="true"></span></span>
@@ -100,8 +103,6 @@
   <!-- Same status bar as the app: logo and version, then the CPU · RAM · LSP
        chip, here summed over the workbench and every running workspace. -->
   <footer id="status" class="flex shrink-0 items-center gap-2 overflow-hidden whitespace-nowrap border-t bg-sidebar px-2 py-1 font-mono text-xs text-muted-foreground select-none [&>*]:shrink-0 [&_.metric-label]:max-[560px]:hidden">
-    <span id="st-ver" class="px-1" title="faah version"></span>
-    <span class="h-3 w-px bg-border empty:hidden [&:has(+#st-running:empty)]:hidden"></span>
     <span id="st-running" class="inline-flex items-center gap-1.5 empty:hidden"></span>
     <span class="flex-1"></span>
     <span id="st-metrics" role="button" tabindex="0" class="btn font-mono desktop:[&>:not(.shell-ico)]:hidden" data-control="status-metrics" data-variant="ghost" data-size="xs" aria-label="Process metrics: the workbench plus every running workspace">
