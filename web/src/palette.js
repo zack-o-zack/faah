@@ -227,7 +227,7 @@ export function drawPalette() {
     return;
   }
   palList.innerHTML = pal.items.map((it, i) =>
-    '<div role="menuitem" class="whitespace-normal! [&_b]:text-primary-text ' + (i === pal.sel ? 'active' : '') + '" data-selected="' + (i === pal.sel) + '" data-i="' + i + '">' +
+    '<div role="menuitem" class="whitespace-normal! data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground [&_b]:text-primary-text ' + (i === pal.sel ? 'active' : '') + '" data-selected="' + (i === pal.sel) + '" data-i="' + i + '">' +
     '<span class="min-w-0 flex-1 whitespace-normal! wrap-anywhere">' + (it.raw ? it.label : esc(it.label)) + '</span>' +
     '<span class="max-w-[35%] truncate">' + (it.raw ? it.sub : esc(it.sub || '')) + '</span>' +
     (it.right ? '<span class="badge ml-auto" data-variant="outline">' + esc(it.right) + '</span>' : '') + '</div>').join('');

@@ -112,7 +112,7 @@ function updateVimStatus() {
   if (vimPending) extra += vimPending;
 
   if (extra) {
-    chip.innerHTML = esc(modeLabel) + ' <span class="status-vim-pending">' + esc(extra) + '</span>';
+    chip.innerHTML = esc(modeLabel) + ' <span class="badge font-mono">' + esc(extra) + '</span>';
   } else {
     chip.textContent = modeLabel;
   }

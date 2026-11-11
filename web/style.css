@@ -80,10 +80,6 @@ a.cc-who:hover { color: var(--primary-text); }
 .cc-add { color: var(--gi); }
 .cc-del { color: var(--gd); }
 
-
-
-@keyframes git-notice-spin { to { transform: rotate(360deg); } }
-
 /* ---------- search panel ---------- */
 .search-form { padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; }
 
@@ -733,8 +729,6 @@ body.word-wrap .editview-gutter { white-space: normal; }
   padding: 0 4px; display: inline-flex; align-items: center; justify-content: center;
 }
 .bar-action-icon svg { display: block; }
-@keyframes sel-in { from { opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { }
 
 /* ---------- language server setup (calls pane) ---------- */
 .lsp-setup { padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; font-size: var(--t-12); line-height: 1.55; color: var(--muted-foreground); }
@@ -829,31 +823,7 @@ body.word-wrap .editview-gutter { white-space: normal; }
 .help-grid dd { margin: 0 22px 0 0; color: var(--muted-foreground); }
 
 /* ---------- Vim Mode Status Chip & Caret ---------- */
-.status-vim-chip {
-  font: 700 var(--t-10)/1.4 var(--mono);
-  padding: 1px 6px;
-  border-radius: var(--r);
-  background: var(--primary);
-  color: var(--primary-foreground, #fff);
-  letter-spacing: 0.05em;
-  cursor: pointer;
-  user-select: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  text-transform: uppercase;
-  transition: opacity .15s ease, background .15s ease;
-}
-.status-vim-chip:hover { filter: brightness(1.1); }
-.status-vim-chip.mode-normal { background: var(--primary); color: var(--primary-foreground); }
-.status-vim-chip.mode-visual, .status-vim-chip.mode-visual-line { background: var(--mark-active, #eab308); color: #000; }
-.status-vim-pending {
-  font-weight: 500;
-  opacity: 0.85;
-  background: rgba(0, 0, 0, 0.25);
-  padding: 0 4px;
-  border-radius: 2px;
-}
+
 body.vim-normal-caret #caret {
   width: var(--cw, 8.5px) !important;
   opacity: 0.65;
