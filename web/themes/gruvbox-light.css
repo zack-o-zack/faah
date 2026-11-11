@@ -10,7 +10,7 @@
   /* text: primary, secondary, tertiary */
   --foreground: #3c3836; --card-foreground: #3c3836; --popover-foreground: #3c3836; --secondary-foreground: #3c3836; --accent-foreground: #3c3836; --sidebar-foreground: #3c3836; --sidebar-accent-foreground: #3c3836; --muted-foreground: #665c54; --faint: #928374;
   /* borders and accent */
-  --border: #d5c4a1; --input: #d5c4a1; --sidebar-border: #d5c4a1; --primary: #b57614; --ring: #b57614; --sidebar-primary: #b57614; --sidebar-ring: #b57614; --primary-text: #af3a03; --primary-foreground: #fbf1c7; --sidebar-primary-foreground: #fbf1c7;
+  --border: #d5c4a1; --input: #d5c4a1; --sidebar-border: #d5c4a1; --primary: #8e5b0a; --ring: #b57614; --sidebar-primary: #8e5b0a; --sidebar-ring: #b57614; --primary-text: #af3a03; --primary-foreground: #fbf1c7; --sidebar-primary-foreground: #fbf1c7;
   /* selection, search matches, current line */
   --sel: #d5c4a1; --mark: rgba(215, 153, 33, 0.25); --mark-active: #fabd2f; --cur: #f5eac0;
   --on-mark-active: var(--foreground);

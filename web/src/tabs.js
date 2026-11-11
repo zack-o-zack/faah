@@ -540,7 +540,7 @@ export function drawTabs() {
     '<div class="tab flex shrink-0 max-w-64 cursor-pointer select-none items-center gap-2 rounded px-3 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground [&.active]:bg-accent [&.active]:text-foreground [&.tab-deleted_.tn]:line-through' + (i === S.active ? ' active' : '') + (t.isImage ? ' tab-image' : '') + (t.deleted ? ' tab-deleted' : '') + (t.dirty ? ' tab-dirty' : '') + '" data-i="' + i +
     '" title="' + esc(t.path) + (t.diffRef ? ' — in commit ' + esc(t.diffRef.slice(0, 7)) : '') + '">' +
     (t.isImage ? '<svg class="tab-icon shrink-0 text-primary" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="12" height="12" rx="2"/><circle cx="5.5" cy="5.5" r="1.5"/><path d="M14 10l-3.5-3.5L3 14"/></svg>' : '') +
-    '<button type="button" class="tn min-h-6 min-w-0 truncate text-left focus-visible:outline focus-visible:outline-ring" aria-pressed="' + (i === S.active) + '">' + esc(t.name) + '</button>' +
+    '<button type="button" class="tn min-h-6 min-w-6 truncate text-left focus-visible:outline focus-visible:outline-ring" aria-pressed="' + (i === S.active) + '">' + esc(t.name) + '</button>' +
     // Pinned to a commit: the tab is not the working tree, and it should say so.
     (t.diffRef ? '<span class="tab-ref shrink-0 font-mono text-xs text-muted-foreground">@' + esc(t.diffRef.slice(0, 7)) + '</span>' : '') +
     (t.dirty ? '<span class="tab-dirty-dot text-primary" title="Unsaved changes">●</span>' : '') +

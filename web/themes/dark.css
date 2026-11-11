@@ -12,7 +12,7 @@
   --foreground: #c0caf5; --card-foreground: #c0caf5; --popover-foreground: #c0caf5; --secondary-foreground: #c0caf5; --accent-foreground: #c0caf5; --sidebar-foreground: #c0caf5; --sidebar-accent-foreground: #c0caf5; --muted-foreground: #7aa2f7; --faint: #565f89;
   /* borders and accent */
   --border: #24283b; --input: #292e42; --sidebar-border: #24283b; --primary: #7aa2f7; --ring: #7aa2f7; --sidebar-primary: #7aa2f7; --sidebar-ring: #7aa2f7; --primary-text: #7dcfff;
-  --primary-foreground: #fff; --sidebar-primary-foreground: #fff;
+  --primary-foreground: #1a1b26; --sidebar-primary-foreground: #1a1b26;
   /* selection, search matches, current line */
   --sel: #283457; --mark: rgba(224, 175, 104, 0.3); --mark-active: #ff9e64; --cur: #1e2030;
   /* elevation */

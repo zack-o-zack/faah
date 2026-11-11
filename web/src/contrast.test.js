@@ -26,3 +26,14 @@ for (const theme of ['catppuccin-mocha','light','dracula','solarized-light']) {
     expect(contrast(tokens.primary,tokens['primary-foreground'])).toBeGreaterThanOrEqual(4.5);
   });
 }
+
+// Filled primary actions must be readable in every bundled theme, including
+// the theme selected by an unseeded workbench detector session.
+import { readdirSync } from 'node:fs';
+test('every bundled theme supplies accessible filled primary actions', () => {
+  for (const file of readdirSync(new URL('../themes/',import.meta.url)).filter(f=>f.endsWith('.css'))) {
+    const css=readFileSync(new URL(`../themes/${file}`,import.meta.url),'utf8');
+    const tokens=Object.fromEntries([...css.matchAll(/--([\w-]+):\s*(#[\da-f]+);/gi)].map(m=>[m[1],m[2]]));
+    expect(contrast(tokens.primary,tokens['primary-foreground']),file).toBeGreaterThanOrEqual(4.5);
+  }
+});

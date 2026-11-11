@@ -96,8 +96,8 @@ function loadMermaidRuntime() {
   return mermaidRuntimePromise;
 }
 
-function mermaidColor(styles, name, fallback) {
-  return styles.getPropertyValue(name).trim() || fallback;
+function mermaidColor(styles, name) {
+  return styles.getPropertyValue(name).trim();
 }
 
 function getThemeKey() {
@@ -119,24 +119,24 @@ function mermaidConfig() {
     theme: 'base',
     themeVariables: {
       darkMode: dark,
-      background: mermaidColor(styles, '--background', dark ? '#0d1117' : '#ffffff'),
-      primaryColor: mermaidColor(styles, '--sidebar', dark ? '#010409' : '#f7f8fa'),
-      primaryTextColor: mermaidColor(styles, '--foreground', dark ? '#e6edf3' : '#24292f'),
-      primaryBorderColor: mermaidColor(styles, '--border', dark ? '#30363d' : '#d0d7de'),
-      secondaryColor: mermaidColor(styles, '--muted', dark ? '#161b22' : '#edf0f5'),
-      secondaryTextColor: mermaidColor(styles, '--foreground', dark ? '#e6edf3' : '#24292f'),
-      secondaryBorderColor: mermaidColor(styles, '--border', dark ? '#30363d' : '#d0d7de'),
-      tertiaryColor: mermaidColor(styles, '--background', dark ? '#0d1117' : '#ffffff'),
-      tertiaryTextColor: mermaidColor(styles, '--muted-foreground', dark ? '#8b949e' : '#57606a'),
-      tertiaryBorderColor: mermaidColor(styles, '--border', dark ? '#30363d' : '#d0d7de'),
-      lineColor: mermaidColor(styles, '--muted-foreground', dark ? '#8b949e' : '#57606a'),
-      textColor: mermaidColor(styles, '--foreground', dark ? '#e6edf3' : '#24292f'),
-      mainBkg: mermaidColor(styles, '--sidebar', dark ? '#010409' : '#f7f8fa'),
-      nodeBorder: mermaidColor(styles, '--border', dark ? '#30363d' : '#d0d7de'),
-      clusterBkg: mermaidColor(styles, '--background', dark ? '#0d1117' : '#ffffff'),
-      clusterBorder: mermaidColor(styles, '--border', dark ? '#30363d' : '#d0d7de'),
-      edgeLabelBackground: mermaidColor(styles, '--background', dark ? '#0d1117' : '#ffffff'),
-      fontFamily: mermaidColor(styles, '--ui', 'sans-serif'),
+      background: mermaidColor(styles, '--background'),
+      primaryColor: mermaidColor(styles, '--sidebar'),
+      primaryTextColor: mermaidColor(styles, '--foreground'),
+      primaryBorderColor: mermaidColor(styles, '--border'),
+      secondaryColor: mermaidColor(styles, '--muted'),
+      secondaryTextColor: mermaidColor(styles, '--foreground'),
+      secondaryBorderColor: mermaidColor(styles, '--border'),
+      tertiaryColor: mermaidColor(styles, '--background'),
+      tertiaryTextColor: mermaidColor(styles, '--muted-foreground'),
+      tertiaryBorderColor: mermaidColor(styles, '--border'),
+      lineColor: mermaidColor(styles, '--muted-foreground'),
+      textColor: mermaidColor(styles, '--foreground'),
+      mainBkg: mermaidColor(styles, '--sidebar'),
+      nodeBorder: mermaidColor(styles, '--border'),
+      clusterBkg: mermaidColor(styles, '--background'),
+      clusterBorder: mermaidColor(styles, '--border'),
+      edgeLabelBackground: mermaidColor(styles, '--background'),
+      fontFamily: mermaidColor(styles, '--ui'),
     },
   };
 }
@@ -446,7 +446,7 @@ function mermaidOutputFor(wrap) {
   if (!output) {
     output = document.createElement('div');
     output.className = 'md-mermaid';
-    wrap.prepend(output);
+    wrap.insertBefore(output, wrap.querySelector(':scope > pre'));
   }
   return output;
 }
