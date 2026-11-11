@@ -269,7 +269,9 @@ async function refresh() {
   openLabel.textContent = 'Open';
   const pathLabel = document.createElement('span');
   pathLabel.className = 'min-w-0 truncate [direction:rtl] text-left';
-  pathLabel.textContent = tildify(state.cwd);
+  const pathText = document.createElement('bdi');
+  pathText.textContent = tildify(state.cwd);
+  pathLabel.append(pathText);
   cwd.append(openLabel, pathLabel);
   cwd.setAttribute('aria-label', 'Open ' + tildify(state.cwd));
   cwd.title = 'Open the folder faah was started in: ' + state.cwd;
