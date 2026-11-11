@@ -210,8 +210,8 @@ A small indicator at the top right of the editor while an explanation runs. It s
 
 Each phase is a pull request, based on the one before it.
 
-0. **Refactor, no change in behavior.** `internal/agents` with one adapter per harness, `internal/explain`, and `Workspace`. The existing tests pass unchanged, and a contract test runs every agent in `all/` against a fake binary.
-1. **Tools and the MCP endpoint.** The endpoint and tokens, the claude and codex channels, tagged blocks for opencode, the checks, saving, staleness, the prompt, and the API. Notes show as a plain list in the thread.
+0. **Refactor, no change in behavior** (done). `internal/agents` with one adapter per harness, `internal/explain`, and `Workspace`. The existing tests pass unchanged, and a contract test runs every agent in `all/` against a fake binary.
+1. **Tools and the MCP endpoint** (done). The endpoint and tokens, the claude and codex channels, tagged blocks for opencode, the checks, saving, staleness, the prompt, and the API. Notes show as a plain list in the thread.
 2. **agy over ACP.** The ACP client, the long-running process, `faah mcp-bridge`, and the end of the agy stdin standby.
 3. **Orb,** and Explain no longer opening the sidebar.
 4. **Notes in the editor.** Virtual rows, ghost summaries, margin notes, hover dimming, Refresh, dismiss, and Toggle Notes.

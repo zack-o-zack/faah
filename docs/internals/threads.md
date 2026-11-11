@@ -130,6 +130,8 @@ To provide instant visual review and safe rollbacks of code modifications genera
 - **Warm-up:** `explain_standby.go` keeps one process of an `agents.Warmable` agent (claude or agy) started with the argv of the next first turn, prompt left empty and `--input-format stream-json` added, waiting on stdin. It is started 5 seconds after faah starts, on each prepare request, and after a turn uses one. `runTurn` takes it only when the key (harness plus read-only argv, model included) matches, writes the prompt as one stream-json line, and replays the output held so far into the sink, so agy's conversation id still arrives. It is stopped after 10 minutes unused, when the settings change, and at shutdown. One that exits unused blocks a new start for a minute. Turn it off with `explain.warmup`.
 - **Timing:** `threadTurn.FirstMs` records when the first words arrived, and `Warm` whether the harness was started ahead. `TestExplainBenchmark`, behind the `harness` build tag, times real explanations per harness and model.
 - **Citations:** at the end of a turn `explain.ValidateRefs` fills `threadTurn.Refs`. `thrInline` then links only those targets. `Reply` is left as written.
+- **Tools:** an explanation can call `annotate` (a list of notes on a symbol, a line or a block) and `walkthrough` (2 to 20 steps across files). `internal/explain/notes` holds the schemas and the checks; what passes is saved on `threadTurn.Notes` and `Walkthroughs`, and the agent gets back what was shown and why each other note was refused. How an agent calls them is its `Caps.Tools`. For `ToolsMCP` (claude, codex) faah serves MCP at `/api/mcp` (`internal/mcp`, JSON answers only) and `runTurn` issues a bearer token bound to the turn, revoked when the turn ends; the token, not `localPost`, guards the endpoint. A warm-up process is started with an unbound token, which works for the handshake only until the turn that takes the process binds it. For `ToolsTagged` (opencode, and agy until it moves to ACP) the agent writes `<faah:annotate>{…}</faah:annotate>` in its reply, and `notes.Tagged` takes the blocks out of the streamed text. `SetToolsAddr` sets the endpoint from the listen address, on loopback when faah listens on every interface.
+- **Notes:** `GET /api/explain/notes?path=` returns every note on a file, each found again with `notes.Locate` by the text it covered. A note whose text is gone stays at its saved line with `stale: "text"`. Where notes cover the same lines, the newest wins. A symbol note saves its callers and references hash (`explain.Gather`) in the background when it is added; the endpoint compares it with a hash it refreshes in the background at most every 10 seconds, and marks a change `stale: "refs"`.
 
 ## 7. HTTP Surface
 
@@ -144,8 +146,10 @@ To provide instant visual review and safe rollbacks of code modifications genera
 | `/api/threads/delete` | POST | Delete `?id=`, stopping its turn first. |
 | `/api/threads/revert` | POST | Revert file changes made by a specific turn (`{id, turn}`). |
 | `/api/threads/stream` | GET | SSE feed (section 3). The UI reads it through `/api/stream` instead. |
+| `/api/explain/notes` | GET | Notes on `?path=`, found again in the file as it is now (section 6c). |
+| `/api/mcp` | POST | MCP for explain tools. Needs the bearer token of a running turn (section 6c). |
 
-Every mutating endpoint is guarded by `localPost`, and carries the same security posture as inline edits: it runs a general-purpose coding agent with shell access as the user who started faah.
+Every mutating endpoint except `/api/mcp` is guarded by `localPost`, and carries the same security posture as inline edits: it runs a general-purpose coding agent with shell access as the user who started faah.
 
 ## 8. Frontend
 

@@ -29,6 +29,9 @@ func TestApplyAnnotate(t *testing.T) {
 	if _, err := Apply(read, r, "turn", "annotate", json.RawMessage(`{"notes":[{"kind":"line","path":"auth.go","l1":99,"summary":"bad"}]}`)); err == nil {
 		t.Fatal("a call with no valid note must be an error")
 	}
+	if _, err := Apply(read, r, "turn", "annotate", json.RawMessage(`{"notes":[`)); err == nil || !strings.HasPrefix(err.Error(), "arguments: ") {
+		t.Fatalf("bad JSON error = %v", err)
+	}
 	if _, err := Apply(read, r, nil, "annotate", json.RawMessage(args)); err == nil {
 		t.Fatal("a call without a turn must be refused")
 	}
