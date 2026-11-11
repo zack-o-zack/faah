@@ -31,8 +31,8 @@
           <input id="wb-target" type="text" spellcheck="false" autocapitalize="off" autofocus
                  placeholder="Folder path or pull request URL"
                  aria-label="Folder path or pull request URL" aria-autocomplete="list" aria-controls="wb-suggest">
-          <button type="submit" data-align="inline-end" class="btn me-1.5! gap-2 pe-1.5" data-variant="primary" data-size="sm" aria-label="Open">
-            <span class="max-sm:hidden">Open</span><kbd class="kbd h-5 min-w-5 bg-primary-foreground/15 px-1 text-current" aria-hidden="true"><span class="icon-[lucide--corner-down-left] size-3"></span></kbd>
+          <button id="wb-go" type="submit" data-align="inline-end" class="btn me-1.5! gap-2 pe-1.5" data-variant="primary" data-size="sm" aria-label="Open" disabled>
+            <span id="wb-go-label" class="max-sm:hidden">Open</span><kbd class="kbd h-5 min-w-5 bg-primary-foreground/15 px-1 text-current" aria-hidden="true"><span class="icon-[lucide--corner-down-left] size-3"></span></kbd>
           </button>
         </div>
         <ul id="wb-suggest" data-popover class="absolute inset-x-0 top-full z-[60] mt-1 max-h-80 w-full! overflow-auto" role="listbox" hidden></ul>

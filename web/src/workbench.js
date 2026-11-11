@@ -184,6 +184,7 @@ function attachComplete(input, list, onFolder) {
     const e = items[i];
     if (!e) return;
     input.value = e.path;
+    input.dispatchEvent(new Event('valuechange'));
     onFolder?.(e.path);
     input.focus();
     fetchNow();
@@ -204,6 +205,7 @@ function attachComplete(input, list, onFolder) {
       accept(sel >= 0 ? sel : 0);
     } else if (e.key === 'Enter' && sel >= 0) {
       input.value = items[sel].path;
+      input.dispatchEvent(new Event('valuechange'));
       close();
     } else if (e.key === 'Escape') {
       e.preventDefault();
@@ -406,12 +408,26 @@ const useFolder = path => (pendingPR ? open(pendingPR, path) : open(path));
 
 /* ---------- wiring ---------- */
 
-// The field's icon says what it recognised: a pull request, a folder, or nothing yet.
-const kindIcon = v => (looksLikeURL(v) ? 'icon-[lucide--git-pull-request]' : v.trim() ? 'icon-[lucide--folder]' : 'icon-[lucide--search]');
-$('#wb-target').addEventListener('input', e => {
-  $('#wb-kind').className = kindIcon(e.target.value) + ' size-4';
-  msg('');
-});
+// The field's icon and the Open button say what was recognised: a pull
+// request link, some other link (which cannot be opened), a folder, or nothing yet.
+const PR_LINK = /\/(pull|pulls|merge_requests)\/\d+/;
+const FIELD_KINDS = {
+  empty: { icon: 'icon-[lucide--search]', label: 'Open', ok: false },
+  pr: { icon: 'icon-[lucide--git-pull-request]', label: 'Review PR', ok: true },
+  link: { icon: 'icon-[lucide--link]', label: 'Open', ok: false },
+  dir: { icon: 'icon-[lucide--folder]', label: 'Open folder', ok: true },
+};
+function syncField() {
+  const v = $('#wb-target').value.trim();
+  const kind = FIELD_KINDS[!v ? 'empty' : looksLikeURL(v) ? (PR_LINK.test(v) ? 'pr' : 'link') : 'dir'];
+  $('#wb-kind').className = kind.icon + ' size-4';
+  $('#wb-go-label').textContent = kind.label;
+  $('#wb-go').setAttribute('aria-label', kind.label);
+  $('#wb-go').disabled = !kind.ok;
+  $('#wb-go').title = kind === FIELD_KINDS.link ? 'Only pull and merge request links can be opened' : '';
+}
+$('#wb-target').addEventListener('input', () => { syncField(); msg(''); });
+$('#wb-target').addEventListener('valuechange', syncField);
 
 for (const t of TABS) $('#wb-tab-' + t).addEventListener('click', () => selectTab(t));
 $('#wb-tabs [role=tablist]').addEventListener('keydown', e => {
@@ -556,5 +572,6 @@ const openParam = new URLSearchParams(location.search).get('open');
 if (openParam) {
   history.replaceState(null, '', location.pathname);
   $('#wb-target').value = openParam;
+  syncField();
   open(openParam);
 }
