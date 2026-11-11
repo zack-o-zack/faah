@@ -56,13 +56,13 @@ func TestMain(m *testing.M) {
 			respond(map[string]any{})
 		case "thread/start":
 			threads++
-			respond(map[string]any{"thread": map[string]string{"id": fmt.Sprint("thread-", threads)}})
+			respond(map[string]any{"model": "reported-model", "thread": map[string]string{"id": fmt.Sprint("thread-", threads)}})
 		case "thread/resume":
 			if f.Params["threadId"] == "archived" && held["unarchived"] == "" {
 				enc.Encode(map[string]any{"id": f.ID, "error": map[string]any{"code": -1, "message": "thread archived"}})
 				continue
 			}
-			respond(map[string]any{"thread": map[string]any{"id": f.Params["threadId"]}})
+			respond(map[string]any{"model": "reported-model", "thread": map[string]any{"id": f.Params["threadId"]}})
 		case "thread/unarchive":
 			held["unarchived"] = "yes"
 			respond(map[string]any{})
@@ -100,6 +100,9 @@ func TestMain(m *testing.M) {
 				emit("error", map[string]any{"threadId": thread, "error": map[string]string{"message": "notification broke"}})
 				continue
 			}
+			if text == "retry" {
+				emit("error", map[string]any{"threadId": thread, "willRetry": true, "error": map[string]string{"message": "transient"}})
+			}
 			finish(thread, turn)
 		case "turn/interrupt":
 			respond(map[string]any{})
@@ -125,16 +128,17 @@ func setup(t *testing.T) (context.Context, agents.Open) {
 	t.Cleanup(cancel)
 	t.Cleanup(func() {
 		shared.Lock()
-		if shared.idle != nil {
-			shared.idle.Stop()
+		for key, pool := range shared.servers {
+			if pool.idle != nil {
+				pool.idle.Stop()
+			}
+			if pool.server != nil {
+				pool.server.process.Close()
+				<-pool.server.done
+			}
+			delete(shared.servers, key)
 		}
-		srv := shared.server
-		shared.server = nil
 		shared.Unlock()
-		if srv != nil {
-			srv.process.Close()
-			<-srv.done
-		}
 	})
 	exe, _ := os.Executable()
 	return ctx, agents.Open{Base: []string{exe, "exec", "-p", "{prompt}", "--sandbox", "workspace-write"}, Dir: t.TempDir(), Model: "test-model", Version: "1.2.3", Env: []string{"FAAH_CODEX_HELPER=1", "FAAH_CODEX_LOG=" + filepath.Join(t.TempDir(), "wire")}, Tools: &agents.ToolEndpoint{URL: "http://localhost/api/mcp", Authorization: "Bearer secret"}}
@@ -193,6 +197,14 @@ func TestCodexProtocol(t *testing.T) {
 				t.Fatalf("config: %#v", config)
 			}
 			p := frames[3]["params"].(map[string]any)
+			// Experimental v2/TurnStartParams.json defines collaborationMode.settings.model.
+			modeName := "default"
+			if mode == agents.ModePlan {
+				modeName = "plan"
+			}
+			if !reflect.DeepEqual(p["collaborationMode"], map[string]any{"mode": modeName, "settings": map[string]any{"model": o.Model}}) {
+				t.Fatal(p)
+			}
 			policy, sandbox := "on-request", "workspaceWrite"
 			if mode == agents.ModePlan {
 				policy, sandbox = "untrusted", "readOnly"
@@ -384,7 +396,7 @@ func TestCodexIdleProcess(t *testing.T) {
 	}
 	s.Close()
 	shared.Lock()
-	idle := shared.idle
+	idle := sharedFor(o).idle
 	shared.Unlock()
 	if idle != nil {
 		t.Fatal("scheduled shutdown with a live session")
@@ -392,7 +404,7 @@ func TestCodexIdleProcess(t *testing.T) {
 	o.Resume = second.ID()
 	second.Close()
 	shared.Lock()
-	shared.idle.Reset(time.Millisecond)
+	sharedFor(o).idle.Reset(time.Millisecond)
 	shared.Unlock()
 	select {
 	case <-srv.done:
@@ -414,5 +426,41 @@ func TestCodexLaunchArgs(t *testing.T) {
 	want := []string{"codex", "--config", "feature=true", "app-server"}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatal(got)
+	}
+}
+
+func TestCodexReportedModelRetryAndSeparateArgv(t *testing.T) {
+	ctx, o := setup(t)
+	o.Model = ""
+	a, err := New().Open(ctx, o)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer a.Close()
+	if _, err = a.Prompt(ctx, "retry", &capture{}); err != nil {
+		t.Fatal(err)
+	}
+	frames := wire(t, o)
+	for _, f := range frames {
+		if f["method"] == "turn/start" {
+			p := f["params"].(map[string]any)
+			settings := p["collaborationMode"].(map[string]any)["settings"].(map[string]any)
+			if settings["model"] != "reported-model" {
+				t.Fatal(p)
+			}
+		}
+	}
+	if a.(*session).model != "reported-model" {
+		t.Fatal("missing reported model")
+	}
+	other := o
+	other.Base = append(append([]string{}, o.Base...), "--different")
+	b, err := New().Open(ctx, other)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer b.Close()
+	if a.(*session).server == b.(*session).server {
+		t.Fatal("different argv shared a process")
 	}
 }

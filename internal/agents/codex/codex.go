@@ -28,9 +28,26 @@ const serverIdle = 30 * time.Second
 
 var shared struct {
 	sync.Mutex
+	servers map[string]*sharedServer
+}
+
+type sharedServer struct {
 	server *server
 	refs   int
 	idle   *time.Timer
+}
+
+func serverKey(o agents.Open) string { b, _ := json.Marshal(launchArgs(o.Base)); return string(b) }
+
+func sharedFor(o agents.Open) *sharedServer {
+	if shared.servers == nil {
+		shared.servers = map[string]*sharedServer{}
+	}
+	key := serverKey(o)
+	if shared.servers[key] == nil {
+		shared.servers[key] = &sharedServer{}
+	}
+	return shared.servers[key]
 }
 
 type envelope struct {
@@ -220,6 +237,7 @@ func (s *server) answer(f envelope, session *session) {
 type session struct {
 	o      agents.Open
 	id     string
+	model  string
 	mu     sync.Mutex
 	server *server
 	queue  []envelope
@@ -237,35 +255,37 @@ func (*Agent) Open(ctx context.Context, o agents.Open) (agents.Session, error) {
 	s := &session{o: o, id: o.Resume, wake: make(chan struct{}, 1), closed: make(chan struct{})}
 	shared.Lock()
 	defer shared.Unlock()
-	if shared.idle != nil {
-		shared.idle.Stop()
-		shared.idle = nil
+	pool := sharedFor(o)
+	if pool.idle != nil {
+		pool.idle.Stop()
+		pool.idle = nil
 	}
 	if err := s.connect(ctx); err != nil {
-		scheduleIdle()
+		scheduleIdle(pool)
 		return nil, err
 	}
-	shared.refs++
+	pool.refs++
 	return s, nil
 }
 
 // connect runs under the shared lock; native ids survive process restarts.
 func (s *session) connect(ctx context.Context) error {
-	if shared.server != nil {
+	pool := sharedFor(s.o)
+	if pool.server != nil {
 		select {
-		case <-shared.server.done:
-			shared.server = nil
+		case <-pool.server.done:
+			pool.server = nil
 		default:
 		}
 	}
-	if shared.server == nil {
+	if pool.server == nil {
 		srv, err := launch(ctx, s.o)
 		if err != nil {
 			return err
 		}
-		shared.server = srv
+		pool.server = srv
 	}
-	srv := shared.server
+	srv := pool.server
 	s.mu.Lock()
 	same := s.server == srv
 	s.mu.Unlock()
@@ -295,6 +315,7 @@ func (s *session) connect(ctx context.Context) error {
 		return err
 	}
 	var r struct {
+		Model  string `json:"model"`
 		Thread struct {
 			ID string `json:"id"`
 		} `json:"thread"`
@@ -312,6 +333,10 @@ func (s *session) connect(ctx context.Context) error {
 	}
 	s.mu.Lock()
 	s.server = srv
+	s.model = s.o.Model
+	if s.model == "" {
+		s.model = r.Model
+	}
 	s.queue = nil
 	s.mu.Unlock()
 	srv.mu.Lock()
@@ -358,8 +383,11 @@ func (s *session) Prompt(ctx context.Context, text string, sink agents.Sink) (ag
 	if s.o.Model != "" {
 		params["model"] = s.o.Model
 	}
-	// This CLI schema has no collaborationMode field on turn/start. The
-	// read-only sandbox and approval policy enforce Plan independently.
+	mode := "default"
+	if s.o.Mode == agents.ModePlan {
+		mode = "plan"
+	}
+	params["collaborationMode"] = map[string]any{"mode": mode, "settings": map[string]any{"model": s.model}}
 	if s.o.Mode == agents.ModePlan {
 		params["approvalPolicy"] = "untrusted"
 		params["sandboxPolicy"] = map[string]string{"type": "readOnly"}
@@ -426,6 +454,9 @@ func (s *session) Prompt(ctx context.Context, text string, sink agents.Sink) (ag
 					sink.Step(agents.ToolLabel(p.Item.Tool, nil))
 				}
 			case "error":
+				if p.WillRetry {
+					continue
+				}
 				if p.Error != nil {
 					return out, p.Error
 				}
@@ -471,21 +502,21 @@ func (s *session) Interrupt(ctx context.Context) error {
 	return err
 }
 
-func scheduleIdle() {
-	if shared.refs != 0 || shared.server == nil {
+func scheduleIdle(pool *sharedServer) {
+	if pool.refs != 0 || pool.server == nil {
 		return
 	}
-	srv := shared.server
+	srv := pool.server
 	var timer *time.Timer
 	timer = time.AfterFunc(serverIdle, func() {
 		shared.Lock()
 		defer shared.Unlock()
-		if shared.refs == 0 && shared.server == srv && shared.idle == timer {
+		if pool.refs == 0 && pool.server == srv && pool.idle == timer {
 			srv.process.Close()
-			shared.server = nil
+			pool.server = nil
 		}
 	})
-	shared.idle = timer
+	pool.idle = timer
 }
 
 // Close detaches the conversation and releases the shared process when idle.
@@ -494,6 +525,7 @@ func (s *session) Close() error {
 		close(s.closed)
 		shared.Lock()
 		defer shared.Unlock()
+		pool := sharedFor(s.o)
 		s.mu.Lock()
 		srv := s.server
 		s.mu.Unlock()
@@ -504,8 +536,8 @@ func (s *session) Close() error {
 			}
 			srv.mu.Unlock()
 		}
-		shared.refs--
-		scheduleIdle()
+		pool.refs--
+		scheduleIdle(pool)
 	})
 	return nil
 }
