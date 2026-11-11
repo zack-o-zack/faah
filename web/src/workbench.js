@@ -362,8 +362,8 @@ function renderPath(path) {
 }
 
 function renderDirs() {
-  $('#wb-dirs').innerHTML = dirEntries.length ? dirEntries.map((e, i) => `<li role="option" id="wb-dir-${i}" data-i="${i}" aria-selected="${i === dirSel}" class="${e.name.startsWith('.') && i !== dirSel ? 'opacity-50 ' : ''}flex h-7 cursor-pointer select-none items-center gap-2 rounded-md px-2 text-sm hover:bg-accent/60 aria-selected:bg-primary aria-selected:text-primary-foreground">
-    <span class="icon-[lucide--folder] size-4 shrink-0 ${i === dirSel ? '' : 'text-muted-foreground'}" aria-hidden="true"></span>
+  $('#wb-dirs').innerHTML = dirEntries.length ? dirEntries.map((e, i) => `<li role="option" id="wb-dir-${i}" data-i="${i}" aria-selected="${i === dirSel}" class="${e.name.startsWith('.') ? 'opacity-50 ' : ''}flex h-7 cursor-pointer select-none items-center gap-2 rounded-md px-2 text-sm hover:bg-accent/60 aria-selected:bg-accent">
+    <span class="icon-[lucide--folder] size-4 shrink-0 text-muted-foreground" aria-hidden="true"></span>
     <span class="min-w-0 flex-1 truncate">${esc(e.name)}</span>
     ${e.git ? '<span class="text-xs opacity-70">git</span>' : ''}
   </li>`).join('') : '<li class="py-8 text-center text-sm text-muted-foreground">No folders here.</li>';
@@ -390,14 +390,12 @@ async function browse(path, select = '') {
   } finally {
     $('#wb-dirs').classList.remove('opacity-60');
   }
-  // Going up keeps the folder you came from selected.
-  const from = browsePath;
   browsePath = r.path;
   renderPath(r.path);
   $('#wb-up').disabled = !r.parent;
   $('#wb-up').dataset.path = r.parent || '';
   dirEntries = r.entries;
-  dirSel = dirEntries.findIndex(e => e.path === (select || from));
+  dirSel = select ? dirEntries.findIndex(e => e.path === select) : -1;
   renderDirs();
 }
 
