@@ -117,7 +117,7 @@ Tokens are stored in your faah settings file (`~/.faah/settings.json`, or `$XDG_
 - The diff is computed against the merge-base between the PR head and its target branch, the same diff the forge shows.
 
 ### 2. Live Agent Synchronization
-When you or your background AI coding agents (Claude Code, Gemini CLI, Cursor Agent, Antigravity, Aider, etc.) make edits to the PR checkout from other terminals:
+When you or your background AI coding agents (Claude Code, Codex, Antigravity, OpenCode, or Cursor Agent) make edits to the PR checkout from other terminals:
 - faah's real-time file watcher picks up modifications without full re-indexing.
 - Gutter diffs, status badges, and open tabs reload live in the browser.
 

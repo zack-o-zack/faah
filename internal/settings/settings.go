@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+
+	"faah/internal/agents/all"
 )
 
 // faah keeps no state inside a workspace. The user's preferences and choices
@@ -46,7 +48,6 @@ type Settings struct {
 	ExplainAgent                *string  `json:"explain.agent,omitempty"`
 	ExplainModel                *string  `json:"explain.model,omitempty"`
 	ExplainPrefetch             *bool    `json:"explain.prefetch,omitempty"`
-	ExplainWarmup               *bool    `json:"explain.warmup,omitempty"`
 	ExplainReader               *string  `json:"explain.reader,omitempty"`
 }
 
@@ -333,7 +334,7 @@ var Schema = []SchemaItem{
 	{
 		Key:         "agent.harness",
 		Title:       "Coding Harness",
-		Description: "Coding agent harness invoked for code edits (e.g. claude, gemini, cursor-agent, agy, opencode, codex, aider, goose).",
+		Description: "Coding agent harness invoked for code edits (e.g. claude, codex, agy, opencode, cursor-agent).",
 		Category:    "Agent / AI",
 		Type:        "string",
 		Default:     "",
@@ -436,7 +437,7 @@ var Schema = []SchemaItem{
 	{
 		Key:         "explain.agent",
 		Title:       "Explain Agent",
-		Description: "The coding harness that writes explanations (claude, agy, codex or opencode). Leave empty to use the harness selected for editing. Ignored when faah is started with -agent.",
+		Description: "The coding harness that writes explanations (claude, codex, agy, opencode or cursor-agent). Leave empty to use the harness selected for editing. Ignored when faah is started with -agent.",
 		Category:    "Explain",
 		Type:        "string",
 		Default:     "",
@@ -453,14 +454,6 @@ var Schema = []SchemaItem{
 		Key:         "explain.prefetch",
 		Title:       "Prepare Explanations on Selection",
 		Description: "Gathers definitions, callers and references in the background when you select code, so Explain starts sooner.",
-		Category:    "Explain",
-		Type:        "boolean",
-		Default:     true,
-	},
-	{
-		Key:         "explain.warmup",
-		Title:       "Keep Explain Agent Started",
-		Description: "Keeps one explain agent (claude or agy) started and waiting, so an explanation skips the seconds the agent takes to start. It is stopped after 10 minutes unused.",
 		Category:    "Explain",
 		Type:        "boolean",
 		Default:     true,
@@ -553,7 +546,7 @@ func readSettingsLocked() Settings {
 		}
 	}
 	// Bi-directional bridge between models <-> agent.models
-	if s.Models == nil || len(s.Models) == 0 {
+	if len(s.Models) == 0 {
 		if am, ok := raw["agent.models"].(map[string]any); ok {
 			s.Models = make(map[string]string, len(am))
 			for k, v := range am {
@@ -658,6 +651,9 @@ func ReadRawJSON() string {
 
 // Write saves the agent and models choices while preserving other settings.
 func Write(s Settings) error {
+	if err := validateAgents(map[string]any{"agent": s.Agent}); err != nil {
+		return err
+	}
 	p := Path()
 	if p == "" {
 		return errors.New("no home directory to save settings in")
@@ -674,7 +670,7 @@ func Write(s Settings) error {
 		delete(raw, "agent.harness")
 	}
 
-	if s.Models != nil && len(s.Models) > 0 {
+	if len(s.Models) > 0 {
 		raw["models"] = s.Models
 		raw["agent.models"] = s.Models
 	} else if s.Agent == "" {
@@ -687,6 +683,9 @@ func Write(s Settings) error {
 
 // UpdateMap merges key-value pairs into settings.json without losing existing keys.
 func UpdateMap(updates map[string]any) error {
+	if err := validateAgents(updates); err != nil {
+		return err
+	}
 	p := Path()
 	if p == "" {
 		return errors.New("no home directory to save settings in")
@@ -774,6 +773,9 @@ func SaveRawJSON(rawJSON []byte) error {
 		return err
 	}
 
+	if err := validateAgents(m); err != nil {
+		return err
+	}
 	p := Path()
 	if p == "" {
 		return errors.New("no home directory to save settings in")
@@ -800,4 +802,23 @@ func writeRawMapLocked(p string, raw map[string]any) error {
 		return err
 	}
 	return os.WriteFile(p, append(data, '\n'), 0o644)
+}
+
+func validateAgents(values map[string]any) error {
+	for _, key := range []string{"agent", "agent.harness", "explain.agent"} {
+		value, ok := values[key]
+		if !ok || value == nil {
+			continue
+		}
+		name, ok := value.(string)
+		if !ok {
+			return errors.New(key + " must be an agent name")
+		}
+		if name != "" {
+			if err := all.ValidateName(name); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }

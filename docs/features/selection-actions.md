@@ -42,7 +42,7 @@ Copies a rich, self-contained Markdown block specifically structured for AI mode
 Immediately searches the workspace for all occurrences and references of the selected symbol, opening the results cleanly in the right-hand Inspector pane.
 
 ### 7. Edit with Agent (`Alt+E`)
-Opens the inline coding agent composer directly above the selection, allowing you to instruct an AI coding agent (Claude Code, Gemini CLI, Cursor Agent, Antigravity, etc.) to modify the highlighted code in place.
+Opens the inline coding agent composer at the top of the Threads pane, allowing you to instruct an AI coding agent (Claude Code, Codex, Antigravity, OpenCode, or Cursor Agent) to modify the highlighted code in place.
 
 ---
 

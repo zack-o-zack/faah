@@ -34,7 +34,16 @@ func post(t *testing.T, s *Server, tok, body string) (int, map[string]any) {
 	if tok != "" {
 		r.Header.Set("Authorization", "Bearer "+tok)
 	}
+	r.Header.Set("Content-Type", "application/json")
+	r.Header.Set("Accept", "application/json, text/event-stream")
 	w := httptest.NewRecorder()
+	if !strings.Contains(body, `"method":"initialize"`) && body != "not json" && tok != "" && tok != "wrong" {
+		init := httptest.NewRequest("POST", "/api/mcp", strings.NewReader(`{"id":0,"method":"initialize"}`))
+		init.Header = r.Header.Clone()
+		iw := httptest.NewRecorder()
+		s.ServeHTTP(iw, init)
+		r.Header.Set("Mcp-Session-Id", iw.Header().Get("Mcp-Session-Id"))
+	}
 	s.ServeHTTP(w, r)
 	var m map[string]any
 	b, _ := io.ReadAll(w.Body)
@@ -95,6 +104,8 @@ func TestServerRefuses(t *testing.T) {
 	}
 	r := httptest.NewRequest(http.MethodGet, "/api/mcp", nil)
 	r.Header.Set("Authorization", "Bearer "+tok)
+	r.Header.Set("Content-Type", "application/json")
+	r.Header.Set("Accept", "application/json, text/event-stream")
 	w := httptest.NewRecorder()
 	s.ServeHTTP(w, r)
 	if w.Code != http.StatusMethodNotAllowed {
@@ -111,6 +122,8 @@ func TestServerRevokedDuringBody(t *testing.T) {
 	pr, pw := io.Pipe()
 	r := httptest.NewRequest(http.MethodPost, "/api/mcp", pr)
 	r.Header.Set("Authorization", "Bearer "+tok)
+	r.Header.Set("Content-Type", "application/json")
+	r.Header.Set("Accept", "application/json, text/event-stream")
 	w := httptest.NewRecorder()
 	done := make(chan struct{})
 	go func() { s.ServeHTTP(w, r); close(done) }()

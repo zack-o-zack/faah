@@ -622,11 +622,9 @@ func injectDeletedNodes(children map[string][]Node, gs map[string]string, staged
 		}
 		apply(p, st, staged != nil && staged[p], yst)
 	}
-	if ys != nil {
-		for p, st := range ys {
-			if gs == nil || gs[p] == "" {
-				apply(p, "", staged != nil && staged[p], st)
-			}
+	for p, st := range ys {
+		if gs == nil || gs[p] == "" {
+			apply(p, "", staged != nil && staged[p], st)
 		}
 	}
 }
@@ -954,4 +952,3 @@ func (ix *Index) TouchPath(rel string) {
 		}
 	}
 }
-

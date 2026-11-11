@@ -56,7 +56,7 @@ The sidebar's git panel is the one part of this feature that *does* write to the
 ## Developer Workflows & Practical Value
 
 ### Continuous Auditing of AI Agent Edits
-When an AI coding agent (Claude Code, Gemini CLI, Cursor Agent, Antigravity, Aider) edits your code in the background:
+When an AI coding agent (Claude Code, Codex, Antigravity, OpenCode, or Cursor Agent) edits your code in the background:
 1. Switch to the **Git Changes** view in the sidebar to isolate touched files.
 2. Status badges and gutter markers update in real time as the agent writes to disk.
 3. Open any modified file and press **`Cmd/Ctrl+D`** to review side-by-side changes against `HEAD`.

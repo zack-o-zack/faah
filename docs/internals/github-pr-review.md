@@ -212,7 +212,7 @@ The file also has `tabs`, `active` and `openDirs` fields, and `/api/session` sti
 - `POST /api/pr/comments/delete`: Deletes a draft by ID.
 
 ### Batch Apply with Coding Agents (`⚡ Batch Apply`)
-Users can delegate all drafted PR comments directly to an AI coding agent (Claude Code, Gemini CLI, Cursor Agent, Antigravity, etc.). The agent harness receives the comments as targeted editing instructions and modifies the worktree files directly.
+Users can delegate all drafted PR comments directly to an AI coding agent (Claude Code, Codex, Antigravity, OpenCode, or Cursor Agent). The agent harness receives the comments as targeted editing instructions and modifies the worktree files directly.
 
 ### Formal Review Submission
 - `POST /api/pr/submit`: Requires auth token.

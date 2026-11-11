@@ -21,7 +21,7 @@ Detailed walkthroughs of all faah features, capabilities, developer workflows, a
 - **[Pull Request Review](features/github-pr-review.md)**: Full-tree PR checkout, merge-base diffs, review verdicts, AI conflict resolution and merging, across four forges (`faah <pr-url>`).
 - **[Git Awareness & Visual Diff Viewer](features/git-integration.md)**: Status badges, dirty ancestor trees, gutter markers, side-by-side / unified diffs with intra-line character highlights (`Cmd/Ctrl+D`), and sidebar git panel with AI commit messages and AI rebase/merge.
 - **[Direct File Editing & Creation](features/file-editing.md)**: In-browser edit and save (`Cmd/Ctrl+E`, `Cmd/Ctrl+S`), new files and folders.
-- **[Editing with Coding Agents](features/agent-editing.md)**: Delegating code changes to Claude Code, Gemini CLI, Cursor Agent, Antigravity, OpenCode, Codex, Aider, and Goose.
+- **[Editing with Coding Agents](features/agent-editing.md)**: Delegating code changes to Claude Code, Codex, Antigravity, OpenCode, and Cursor Agent.
 - **[Threads](features/threads.md)**: Multi-turn agent conversations with file access, live turn diffs, and persistent history (`Alt+T`).
 - **[LSP & Semantic Code Intelligence](features/lsp-code-intelligence.md)**: Go to Definition (`F12`), References (`Shift+F12`), Call Trails (`Alt+Shift+H`), and Hover cards.
 - **[Rendered Markdown Preview](features/markdown-preview.md)**: GFM rendering, syntax-highlighted code fences with copy buttons, and synchronized scrolling (`Alt+M`).

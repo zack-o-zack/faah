@@ -23,7 +23,6 @@ func TestExplainBenchmark(t *testing.T) {
 	if spec == "" {
 		t.Skip("FAAH_EXPLAIN_BENCH is not set")
 	}
-	verifyHarnesses(t, "claude", "codex", "cursor-agent", "agy", "opencode")
 	isolateSettings(t)
 	root, err := os.Getwd()
 	if err != nil {
@@ -52,6 +51,7 @@ func TestExplainBenchmark(t *testing.T) {
 				return
 			} else {
 				m.selected, m.args, m.pinned = n, args, true
+				// Native adapters read Open.Model from the manager, not argv.
 				m.models[n] = chosen
 			}
 			ix := NewIndex(root)
