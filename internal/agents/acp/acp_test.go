@@ -351,15 +351,9 @@ func TestACPContainment(t *testing.T) {
 }
 
 func TestACPArgs(t *testing.T) {
-	for _, name := range []string{"agy", "gemini"} {
-		got := Args([]string{name, "-p", "{prompt}", "--output-format", "stream-json", "--mode", "plan", "--conversation", "old", "--unknown", "--sandbox"}, name)
-		sub := "--acp"
-		if name == "agy" {
-			sub = "acp"
-		}
-		if !reflect.DeepEqual(got, []string{name, sub, "--sandbox"}) {
-			t.Fatal(got)
-		}
+	got := Args([]string{"agy", "-p", "{prompt}", "--output-format", "stream-json", "--mode", "plan", "--conversation", "old", "--unknown", "--sandbox"}, "agy")
+	if !reflect.DeepEqual(got, []string{"agy", "acp", "--sandbox"}) {
+		t.Fatal(got)
 	}
 }
 

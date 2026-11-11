@@ -7,27 +7,15 @@ func Args(base []string, name string) []string {
 	if len(base) == 0 {
 		base = []string{name}
 	}
-	sub := "--acp"
-	if name == "agy" {
-		sub = "acp"
-	}
-	out := []string{base[0], sub}
+	out := []string{base[0], "acp"}
 	values := map[string]bool{}
 	switches := map[string]bool{}
-	if name == "agy" {
-		for _, f := range []string{"--add-dir", "--agent", "--log-file", "--cli_log_file"} {
-			values[f] = true
-		}
-		switches["--disable-telemetry"] = true
-		switches["--sandbox"] = true
-	} else {
-		for _, f := range []string{"--extensions", "-e", "--include-directories", "--policy", "--admin-policy"} {
-			values[f] = true
-		}
-		switches["--debug"] = true
-		switches["--sandbox"] = true
-		switches["--skip-trust"] = true
+	for _, f := range []string{"--add-dir", "--agent", "--log-file", "--cli_log_file"} {
+		values[f] = true
 	}
+	switches["--disable-telemetry"] = true
+	switches["--sandbox"] = true
+
 	for i := 1; i < len(base); i++ {
 		a := base[i]
 		key, _, equal := strings.Cut(a, "=")

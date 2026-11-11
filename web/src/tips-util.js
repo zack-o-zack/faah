@@ -170,7 +170,7 @@ export const DEFAULT_TIPS = [
     title: "Start an AI Agent Thread",
     category: "AI",
     tag: "Agent",
-    content: "Select code and press **`Alt + T`** to start a multi-turn conversation anchored to that code. Changes can be watched live or dispatched to Claude Code, Gemini CLI, Cursor Agent, Antigravity, or Codex.",
+    content: "Select code and press **`Alt + T`** to start a multi-turn conversation anchored to that code. Changes can be watched live or dispatched to Claude Code, Cursor Agent, Antigravity, or Codex.",
     shortcut: "Alt+T"
   },
   {

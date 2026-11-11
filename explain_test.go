@@ -284,7 +284,7 @@ func TestExplainAgentSettingYieldsToPinnedHarness(t *testing.T) {
 	writeExplainSource(t, root, explainGoSource)
 	fakeCLI(t, "claude")
 	s := explainServer(t, root, `printf 'ok\n'`)
-	explainSettings(t, map[string]any{"explain.agent": "gemini"})
+	explainSettings(t, map[string]any{"explain.agent": "agy"})
 	_, res := agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "text": "helper"})
 	th := waitThreadIdle(t, s, res["thread"].(map[string]any)["id"].(string))
 	if th.Turns[0].Harness != "claude" {

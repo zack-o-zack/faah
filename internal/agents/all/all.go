@@ -10,7 +10,6 @@ import (
 	"faah/internal/agents/claude"
 	"faah/internal/agents/codex"
 	"faah/internal/agents/cursor"
-	"faah/internal/agents/gemini"
 	"faah/internal/agents/generic"
 	"faah/internal/agents/opencode"
 )
@@ -23,7 +22,6 @@ func List() []agents.Agent {
 		agy.New(),
 		opencode.New(),
 		cursor.New(),
-		gemini.New(),
 	}
 }
 

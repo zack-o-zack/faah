@@ -43,7 +43,7 @@ func TestAgentContract(t *testing.T) {
 				claudeContract(t, a)
 			case "codex":
 				codexContract(t, a)
-			case "agy", "gemini":
+			case "agy":
 				acpContract(t, a)
 			case "opencode":
 				opencodeContract(t, a)
