@@ -419,3 +419,27 @@ func TestExplainPrepareOffAndBadInput(t *testing.T) {
 		t.Fatal("nothing should have been gathered")
 	}
 }
+
+func TestExplainPromptNamesTheTools(t *testing.T) {
+	th := &thread{Kind: "explain", ExplainKind: explain.KindBlock}
+	if p := threadPrompt(th, nil, "Explain main.go:1-2", false, "", false, agents.ToolsMCP); !strings.Contains(p, "two tools, annotate and walkthrough") {
+		t.Fatalf("MCP prompt = %s", p)
+	}
+	if p := threadPrompt(th, nil, "Explain main.go:1-2", false, "", false, agents.ToolsTagged); !strings.Contains(p, "<faah:annotate>") {
+		t.Fatalf("tagged prompt = %s", p)
+	}
+	if p := threadPrompt(th, nil, "Explain main.go:1-2", false, "", false, agents.ToolsNone); strings.Contains(p, "annotate") {
+		t.Fatalf("no-tools prompt = %s", p)
+	}
+	if p := threadPrompt(&thread{}, nil, "hi", false, "", false, agents.ToolsMCP); strings.Contains(p, "annotate") {
+		t.Fatal("only explanations are told about the tools")
+	}
+}
+
+// Saved threads keep their explanation key under the name they always had.
+func TestExplainKeySavedName(t *testing.T) {
+	b, _ := json.Marshal(&thread{ExplainKey: "k"})
+	if !strings.Contains(string(b), `"explainKey":"k"`) {
+		t.Fatalf("thread JSON = %s", b)
+	}
+}

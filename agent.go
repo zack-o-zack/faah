@@ -23,6 +23,7 @@ import (
 	"faah/internal/agents"
 	"faah/internal/agents/all"
 	"faah/internal/explain"
+	"faah/internal/explain/notes"
 	"faah/internal/render"
 	"faah/internal/settings"
 	"faah/internal/ui"
@@ -1080,10 +1081,10 @@ type thread struct {
 	// and EvidenceHash what surrounded that code; see explain.go. ExplainReader
 	// is the explain.reader text it was written for. The packet the harness
 	// reads is kept beside the store and loaded here for a turn.
-	ExplainKey    string          `json:"explain.Key,omitempty"`
-	ExplainKind   string          `json:"explainKind,omitempty"`
-	ExplainReader string          `json:"explainReader,omitempty"`
-	EvidenceHash  string          `json:"evidenceHash,omitempty"`
+	ExplainKey    string           `json:"explainKey,omitempty"`
+	ExplainKind   string           `json:"explainKind,omitempty"`
+	ExplainReader string           `json:"explainReader,omitempty"`
+	EvidenceHash  string           `json:"evidenceHash,omitempty"`
 	Evidence      *explain.Summary `json:"evidence,omitempty"`
 	ExplainReq    *explain.Request `json:"explainReq,omitempty"`
 	packet        string
@@ -1347,11 +1348,12 @@ func (tm *threadManager) SetScope(id, scope string) error {
 // threadPrompt composes what the harness is told for one turn. The anchor and
 // ground rules go in only when the harness has no memory of them: the first
 // turn, or a replay after a harness switch.
-func threadPrompt(t *thread, prior []*threadTurn, message string, replay bool, prCtx string, scopeChanged bool) string {
+func threadPrompt(t *thread, prior []*threadTurn, message string, replay bool, prCtx string, scopeChanged bool, tools agents.ToolChannel) string {
 	var b strings.Builder
 	if len(prior) == 0 || replay {
 		if t.Kind == "explain" {
 			b.WriteString(explain.Instructions(t.ExplainKind, t.ExplainReader))
+			b.WriteString(notes.Prompt(tools))
 		} else if t.Kind == "edit" || t.Kind == "batch" {
 			b.WriteString("Carry out the edit request below by editing files in place. ")
 			b.WriteString("Change only what it asks for; you may touch other files if the change needs it. ")
@@ -1543,7 +1545,7 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 			tm.mu.Unlock()
 		}
 	}
-	prompt := threadPrompt(t, r.prior, r.message, replay, prCtx, scopeChanged)
+	prompt := threadPrompt(t, r.prior, r.message, replay, prCtx, scopeChanged, caps.Tools)
 
 	if ui.Verbose {
 		ui.VerbosePrompt(0, r.name, prompt, os.Stdout)

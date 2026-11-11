@@ -17,7 +17,7 @@ import (
 // inside the prompt. The harness runs read-only and only writes the words.
 
 const (
-	explainPromptVersion = 1
+	explainPromptVersion = 2
 	explainMaxLines      = 400
 	explainMaxFileBytes  = 8 << 20
 	PacketMax            = 16 << 10
