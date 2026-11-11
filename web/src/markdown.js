@@ -271,7 +271,7 @@ function mdEnhance() {
     copy.className = 'btn absolute top-2 right-2';
     copy.dataset.control = 'md-copy';
     copy.dataset.variant = 'ghost';
-    copy.dataset.size = 'xs';
+    copy.dataset.size = 'icon-xs';
     copy.title = 'Copy code';
     copy.setAttribute('aria-label', 'Copy code');
     // An icon, not a label: find in the preview walks text nodes.

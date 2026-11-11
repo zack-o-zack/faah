@@ -148,13 +148,8 @@
   content: ""; position: fixed; inset: 0 0 auto; height: var(--titlebar-h);
   -webkit-app-region: drag;
 }
-.wb .desktop-menu-btn {
-  position: fixed; top: 7px; left: 8px; z-index: 1; width: 24px; height: 24px;
-  align-items: center; justify-content: center; padding: 0;
-  background: transparent; border: none; border-radius: var(--r); color: var(--muted-foreground); cursor: pointer;
-  -webkit-app-region: no-drag;
-}
-.wb .desktop-menu-btn:hover { background: var(--muted); color: var(--foreground); }
+
+
 
 /* Chrome: the sidebar footer is gone. The version sits on the title row, the
    tree's actions get a row of their own, and the status bar keeps icons whose

@@ -198,7 +198,7 @@ function mermaidZoomButton(label, icon) {
   button.className = 'btn';
   button.dataset.control = 'md-mermaid-zoom';
   button.dataset.variant = 'ghost';
-  button.dataset.size = 'xs';
+  button.dataset.size = 'icon-xs';
   button.title = label;
   button.setAttribute('aria-label', label);
   button.innerHTML = `<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${icon}"/></svg>`;
@@ -243,7 +243,7 @@ function setupDiagramControlsAndPan(output, canvas, svg) {
   fsClose.className = 'btn';
   fsClose.dataset.control = 'md-mermaid-fs-close';
   fsClose.dataset.variant = 'ghost';
-  fsClose.dataset.size = 'xs';
+  fsClose.dataset.size = 'icon-xs';
   fsClose.title = 'Close full screen (Esc)';
   fsClose.setAttribute('aria-label', 'Close full screen');
   fsClose.innerHTML = '<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>';

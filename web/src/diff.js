@@ -276,7 +276,7 @@ function createDiffSection(d, kind, title, sub, populateBody) {
   btn.className = 'btn';
   btn.dataset.control = 'pr-comments-collapse diff-section-collapse';
   btn.dataset.variant = 'ghost';
-  btn.dataset.size = 'xs';
+  btn.dataset.size = 'icon-xs';
   btn.title = 'Collapse/Expand';
   btn.setAttribute('aria-label', 'Collapse or expand diff section');
   btn.innerHTML = '&#9662;';
@@ -343,8 +343,8 @@ function commitStrip(d) {
       (f.binary ? '' : (f.add ? '<span class="up-file-add">+' + f.add + '</span>' : '') + (f.del ? '<span class="up-file-del">&minus;' + f.del + '</span>' : '')) +
       '<span class="grow"></span>' +
       '<span class="dcs-pos">' + (i + 1) + ' / ' + files.length + '</span>' +
-      '<button type="button" aria-label="Previous file" data-commit-step="-1" title="Previous file in this commit"' + (commitStepTarget(files, i, -1) < 0 ? ' disabled' : '') + ' class="btn" data-control="dcs-step" data-variant="outline" data-size="xs">‹</button>' +
-      '<button type="button" aria-label="Next file" data-commit-step="1" title="Next file in this commit"' + (commitStepTarget(files, i, 1) < 0 ? ' disabled' : '') + ' class="btn" data-control="dcs-step" data-variant="outline" data-size="xs">›</button>';
+      '<button type="button" aria-label="Previous file" data-commit-step="-1" title="Previous file in this commit"' + (commitStepTarget(files, i, -1) < 0 ? ' disabled' : '') + ' class="btn" data-control="dcs-step" data-variant="ghost" data-size="icon-xs">‹</button>' +
+      '<button type="button" aria-label="Next file" data-commit-step="1" title="Next file in this commit"' + (commitStepTarget(files, i, 1) < 0 ? ' disabled' : '') + ' class="btn" data-control="dcs-step" data-variant="ghost" data-size="icon-xs">›</button>';
     el.dataset.i = i;
   };
   const have = cachedCommitFiles(d.diffRef);
@@ -433,7 +433,7 @@ function reviewStrip(d) {
   const viewed = isFileViewed(d.path);
   const posHtml = files.length > 0 && i >= 0
     ? '<span class="dcs-pos">' + (i + 1) + ' / ' + files.length + '</span>' +
-      '<button type="button" aria-label="Previous file" data-review-step="-1" title="Previous changed file ([f)"' + (i <= 0 ? ' disabled' : '') + ' class="btn" data-control="dcs-step" data-variant="outline" data-size="xs">‹</button>' +
+      '<button type="button" aria-label="Previous file" data-review-step="-1" title="Previous changed file ([f)"' + (i <= 0 ? ' disabled' : '') + ' class="btn" data-control="dcs-step" data-variant="ghost" data-size="icon-xs">‹</button>' +
       '<button type="button" aria-label="Next file" data-review-step="1" title="Next changed file (]f)"' + (i >= files.length - 1 ? ' disabled' : '') + ' class="btn" data-control="dcs-step" data-variant="ghost" data-size="icon-xs">›</button>'
     : '';
   el.innerHTML =
