@@ -143,6 +143,14 @@ func Bridge(ctx context.Context, input io.Reader, output io.Writer, endpoint, au
 		if json.Unmarshal(line, &f) != nil {
 			continue
 		}
+		// Newer clients probe discovery before falling back to initialize.
+		// Queuing this request would deadlock negotiation on both sides.
+		if f.Method == "server/discover" {
+			if len(f.ID) > 0 {
+				failure(f.ID, -32601, fmt.Errorf("Method not found: server/discover"))
+			}
+			continue
+		}
 		if f.Method != "initialize" && !initialized {
 			waiting = append(waiting, queued{line, f.ID})
 			continue

@@ -1,10 +1,12 @@
 package mcp
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -138,5 +140,57 @@ func TestBridgeNegotiationAndConcurrentCalls(t *testing.T) {
 	}
 	if strings.Count(out.String(), "\n") != 3 || strings.Contains(out.String(), `"error"`) {
 		t.Fatal(out.String())
+	}
+}
+
+// The client waits for discovery before sending initialize, so this must use
+// live pipes: a preloaded input would conceal the negotiation deadlock.
+func TestBridgeDiscoveryFallback(t *testing.T) {
+	s, tok := testServer()
+	ts := httptest.NewServer(s)
+	defer ts.Close()
+	input, client := io.Pipe()
+	output, bridge := io.Pipe()
+	defer input.Close()
+	defer client.Close()
+	defer output.Close()
+	defer bridge.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	done := make(chan error, 1)
+	go func() { done <- Bridge(ctx, input, bridge, ts.URL, "Bearer "+tok) }()
+	// Closing the pipes on timeout also unblocks a regression stuck in Scan.
+	timer := time.AfterFunc(3*time.Second, func() { input.Close(); output.Close() })
+	defer timer.Stop()
+	scan := bufio.NewScanner(output)
+	exchange := func(request string) map[string]any {
+		t.Helper()
+		if _, err := fmt.Fprintln(client, request); err != nil {
+			t.Fatal(err)
+		}
+		if !scan.Scan() {
+			t.Fatal("bridge did not respond", scan.Err())
+		}
+		var f map[string]any
+		if err := json.Unmarshal(scan.Bytes(), &f); err != nil {
+			t.Fatal(err)
+		}
+		return f
+	}
+	f := exchange(`{"jsonrpc":"2.0","id":1,"method":"server/discover"}`)
+	if f["error"].(map[string]any)["code"] != float64(-32601) {
+		t.Fatal(f)
+	}
+	f = exchange(`{"jsonrpc":"2.0","id":2,"method":"initialize","params":{"protocolVersion":"2025-11-25"}}`)
+	if f["error"] != nil {
+		t.Fatal(f)
+	}
+	f = exchange(`{"jsonrpc":"2.0","id":3,"method":"tools/list"}`)
+	if f["error"] != nil || len(f["result"].(map[string]any)["tools"].([]any)) != 1 {
+		t.Fatal(f)
+	}
+	client.Close()
+	if err := <-done; err != nil {
+		t.Fatal(err)
 	}
 }
