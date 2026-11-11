@@ -46,7 +46,6 @@ type Settings struct {
 	ExplainAgent                *string  `json:"explain.agent,omitempty"`
 	ExplainModel                *string  `json:"explain.model,omitempty"`
 	ExplainPrefetch             *bool    `json:"explain.prefetch,omitempty"`
-	ExplainWarmup               *bool    `json:"explain.warmup,omitempty"`
 	ExplainReader               *string  `json:"explain.reader,omitempty"`
 }
 
@@ -453,14 +452,6 @@ var Schema = []SchemaItem{
 		Key:         "explain.prefetch",
 		Title:       "Prepare Explanations on Selection",
 		Description: "Gathers definitions, callers and references in the background when you select code, so Explain starts sooner.",
-		Category:    "Explain",
-		Type:        "boolean",
-		Default:     true,
-	},
-	{
-		Key:         "explain.warmup",
-		Title:       "Keep Explain Agent Started",
-		Description: "Keeps one explain agent (claude or agy) started and waiting, so an explanation skips the seconds the agent takes to start. It is stopped after 10 minutes unused.",
 		Category:    "Explain",
 		Type:        "boolean",
 		Default:     true,

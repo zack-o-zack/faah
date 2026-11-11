@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"faah/internal/agents"
-	"github.com/px0-ai/harness"
 )
 
 const name = "agy"
@@ -46,18 +45,6 @@ func (*Agent) TurnArgv(t agents.Turn) []string {
 	}
 	return agents.InsertAfterBinary(t.Argv, extra)
 }
-
-// StdinArgv reads the prompt from stdin as one stream-json message.
-func (*Agent) StdinArgv(argv []string) []string {
-	return agents.StdinArgv(argv, harness.Placeholder)
-}
-
-func (*Agent) StdinMessage(prompt string) []byte {
-	b, _ := json.Marshal(map[string]any{"event": "user", "message": map[string]any{"role": "user", "content": prompt}})
-	return append(b, '\n')
-}
-
-func (*Agent) Stream(sink agents.Sink) *agents.Stream { return agents.NewStream(parse, sink) }
 
 // parse reads one line of `agy --output-format stream-json`.
 func parse(line string) []agents.Event {

@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -17,14 +19,14 @@ import (
 	"faah/internal/mcp"
 )
 
-// toolScope is the turn a token acts for.
+// toolScope binds a session credential to its thread.
 type toolScope struct {
 	tid  string
 	turn int
 }
 
 // explainTools serves annotate and walkthrough to explain turns over MCP. A
-// turn gets a token of its own, revoked when the turn ends.
+// session gets a token of its own, revoked when the session closes.
 type explainTools struct {
 	tokens mcp.Tokens
 	srv    *mcp.Server
@@ -34,7 +36,22 @@ type explainTools struct {
 
 func newExplainTools(tm *threadManager) *explainTools {
 	et := &explainTools{}
-	et.srv = &mcp.Server{Name: "faah", Version: version, Tokens: &et.tokens, Tools: notes.Tools(notes.DiskReader(tm.root), tm)}
+	tools := notes.Tools(notes.DiskReader(tm.root), tm)
+	for i := range tools {
+		call := tools[i].Call
+		tools[i].Call = func(ctx context.Context, scope any, args json.RawMessage) (string, error) {
+			sc, _ := scope.(toolScope)
+			tm.mu.Lock()
+			tr := tm.turnLocked(sc)
+			running := tr != nil && tr.Running
+			tm.mu.Unlock()
+			if !running {
+				return "", errors.New("no explanation is running")
+			}
+			return call(ctx, scope, args)
+		}
+	}
+	et.srv = &mcp.Server{Name: "faah", Version: version, Tokens: &et.tokens, Tools: tools}
 	return et
 }
 
@@ -83,7 +100,7 @@ func (tm *threadManager) turnLocked(sc toolScope) *threadTurn {
 		return nil
 	}
 	for _, tr := range t.Turns {
-		if tr.ID == sc.turn {
+		if tr.ID == sc.turn || (sc.turn == 0 && tr.Running) {
 			return tr
 		}
 	}

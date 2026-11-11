@@ -3,7 +3,6 @@ package agents
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"strings"
 )
 
 // NewUUID returns a random version 4 UUID, the form claude and gemini accept
@@ -36,15 +35,4 @@ func InsertAfterBinary(argv, extra []string) []string {
 	out = append(out, argv[0])
 	out = append(out, extra...)
 	return append(out, argv[1:]...)
-}
-
-// StdinArgv makes a print-mode argv read its prompt as stream-json on stdin:
-// it adds --input-format stream-json and empties the prompt placeholder.
-func StdinArgv(argv []string, placeholder string) []string {
-	out := make([]string, 0, len(argv)+2)
-	out = append(out, argv[0], "--input-format", "stream-json")
-	for _, a := range argv[1:] {
-		out = append(out, strings.ReplaceAll(a, placeholder, ""))
-	}
-	return out
 }

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"faah/internal/agents"
+	"faah/internal/agents/percmd"
 )
 
 func verifyHarnesses(t *testing.T, names ...string) {
@@ -60,6 +61,13 @@ func TestReadOnlyArgv(t *testing.T) {
 
 // readOnly is the argv half of an agent's read-only rewrite.
 func readOnly(name string, argv []string) ([]string, error) {
-	out, _, err := For(name).ReadOnly(argv)
+	if name == "claude" {
+		out, ok := agents.SetFlag(argv, "--permission-mode", "plan")
+		if !ok {
+			return nil, agents.ErrNotReadOnly
+		}
+		return out, nil
+	}
+	out, _, err := For(name).(*percmd.Agent).Legacy.ReadOnly(argv)
 	return out, err
 }

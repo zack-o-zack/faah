@@ -83,18 +83,6 @@ type Legacy interface {
 	Run(ctx context.Context, t Turn, sink Sink) (Outcome, error)
 }
 
-// Warmable is an Agent that can be started before its prompt is known and be
-// given the prompt on stdin later.
-type Warmable interface {
-	Legacy
-	// TurnArgv is the argv a turn runs: session and output flags when it has
-	// a session, tool flags when it has tools.
-	TurnArgv(t Turn) []string
-	StdinArgv(argv []string) []string
-	StdinMessage(prompt string) []byte
-	Stream(sink Sink) *Stream
-}
-
 type Agent interface {
 	Name() string
 	Open(context.Context, Open) (Session, error)

@@ -136,4 +136,4 @@ func partialOpen(s string) int {
 	return 0
 }
 
-func (s *Tagged) Reasoning(text string) {}
+func (s *Tagged) Reasoning(text string) { s.sink.Reasoning(text) }

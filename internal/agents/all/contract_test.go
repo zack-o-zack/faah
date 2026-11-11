@@ -1,7 +1,9 @@
 package all
 
 import (
+	"bufio"
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -10,6 +12,7 @@ import (
 	"time"
 
 	"faah/internal/agents"
+	"faah/internal/agents/percmd"
 )
 
 type sink struct{ text, steps []string }
@@ -49,10 +52,7 @@ type expect struct {
 const toolURL = "ht" + "tp://127.0.0.1:1/api/mcp"
 
 var contract = map[string]expect{
-	"claude": {caps: agents.Caps{Sessions: true}, live: true, steps: true, tools: agents.ToolsMCP,
-		toolArgs: `--mcp-config {"mcpServers":{"faah":{"headers":{"Authorization":"Bearer tok"},"type":"http","url":"` + toolURL + `"}}} --strict-mcp-config --allowedTools mcp__faah__annotate,mcp__faah__walkthrough`,
-		first:    "--output-format stream-json --verbose --session-id {sid} -p say hello",
-		resume:   "--output-format stream-json --verbose --resume {sid} -p say hello"},
+
 	"agy": {caps: agents.Caps{Sessions: true, NamesSession: true}, live: true, steps: true, tools: agents.ToolsTagged,
 		first:  "--output-format stream-json -p say hello",
 		resume: "--output-format stream-json --conversation c123 -p say hello"},
@@ -76,6 +76,10 @@ func TestAgentContract(t *testing.T) {
 	seen := map[string]bool{}
 	for _, a := range List() {
 		a := a
+		if a.Name() == "claude" {
+			t.Run("claude", func(t *testing.T) { claudeContract(t, a) })
+			continue
+		}
 		t.Run(a.Name(), func(t *testing.T) {
 			want, ok := contract[a.Name()]
 			if !ok {
@@ -88,11 +92,11 @@ func TestAgentContract(t *testing.T) {
 			if For(a.Name()).Name() != a.Name() {
 				t.Fatal("For does not find the listed agent")
 			}
-			if c := a.Caps(); c.Sessions != want.caps.Sessions || c.NamesSession != want.caps.NamesSession {
+			if c := a.(*percmd.Agent).Legacy.Caps(); c.Sessions != want.caps.Sessions || c.NamesSession != want.caps.NamesSession {
 				t.Fatalf("caps = %+v, want %+v", c, want.caps)
 			}
-			if a.Caps().Tools != want.tools {
-				t.Fatalf("tools = %v, want %v", a.Caps().Tools, want.tools)
+			if a.(*percmd.Agent).Legacy.Caps().Tools != want.tools {
+				t.Fatalf("tools = %v, want %v", a.(*percmd.Agent).Legacy.Caps().Tools, want.tools)
 			}
 			dir := t.TempDir()
 			lines := fixture[a.Name()]
@@ -112,15 +116,18 @@ func TestAgentContract(t *testing.T) {
 				return strings.Join(strings.Fields(string(b)), " ")
 			}
 
-			sid := a.NewSession(ctx, dir, argv)
-			if want.caps.Sessions && !want.caps.NamesSession && sid == "" {
-				t.Fatal("NewSession gave no id")
-			}
-			s := &sink{}
-			out, err := a.Run(ctx, agents.Turn{Dir: dir, Argv: argv, Prompt: "say hello", SessionID: sid, Timeout: 5 * time.Second}, s)
+			session, err := a.Open(ctx, agents.Open{Dir: dir, Base: argv})
 			if err != nil {
 				t.Fatal(err)
 			}
+			defer session.Close()
+			sid := session.ID()
+			s := &sink{}
+			out, err := session.Prompt(ctx, "say hello", s)
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			if got, w := args(), strings.ReplaceAll(want.first, "{sid}", sid); got != w {
 				t.Fatalf("first turn args = %q, want %q", got, w)
 			}
@@ -134,33 +141,30 @@ func TestAgentContract(t *testing.T) {
 				t.Fatalf("steps = %q, want some: %v", s.steps, want.steps)
 			}
 
-			next := sid // as runTurn does: a reported id is used only when none was given
-			if next == "" {
-				next = out.SessionID
-			}
-			if _, err := a.Run(ctx, agents.Turn{Dir: dir, Argv: argv, Prompt: "say hello", SessionID: next, Resume: out.Live, Timeout: 5 * time.Second}, &sink{}); err != nil {
+			if _, err := session.Prompt(ctx, "say hello", &sink{}); err != nil {
 				t.Fatal(err)
 			}
-			if got, w := args(), strings.ReplaceAll(want.resume, "{sid}", sid); got != w {
+
+			expected := strings.ReplaceAll(want.resume, "{sid}", sid)
+			if !want.caps.Sessions {
+				expected = "-p ### Earlier in this conversation User: say hello Assistant: hello ### Current request say hello"
+			}
+			if got, w := args(), expected; got != w {
 				t.Fatalf("follow-up args = %q, want %q", got, w)
 			}
 			if strings.Join(argv, " ") != bin+" -p {prompt}" {
 				t.Fatalf("Run changed its argv: %q", argv)
 			}
 
-			// Without a session, an agent that is given its ids runs the argv unchanged.
-			if c := a.Caps(); c.Sessions && !c.NamesSession {
-				if _, err := a.Run(ctx, agents.Turn{Dir: dir, Argv: argv, Prompt: "say hello", Timeout: 5 * time.Second}, &sink{}); err != nil {
-					t.Fatal(err)
-				}
-				if got := args(); got != "-p say hello" {
-					t.Fatalf("no session, but args = %q", got)
-				}
-			}
 			// A turn with tools adds the MCP flags. A tagged agent's argv does not change.
 			if want.tools != agents.ToolsNone {
 				ep := &agents.ToolEndpoint{URL: toolURL, Authorization: "Bearer tok"}
-				if _, err := a.Run(ctx, agents.Turn{Dir: dir, Argv: argv, Prompt: "say hello", Tools: ep, Timeout: 5 * time.Second}, &sink{}); err != nil {
+				withTools, err := a.Open(ctx, agents.Open{Dir: dir, Base: argv, Tools: ep})
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer withTools.Close()
+				if _, err := withTools.Prompt(ctx, "say hello", &sink{}); err != nil {
 					t.Fatal(err)
 				}
 				w := want.toolArgs
@@ -171,7 +175,7 @@ func TestAgentContract(t *testing.T) {
 					t.Fatalf("tool args = %q, want %q", got, w)
 				}
 			}
-			if _, _, err := a.ReadOnly(argv); err != nil && !strings.Contains(err.Error(), agents.ErrNotReadOnly.Error()) {
+			if _, _, err := a.(*percmd.Agent).Legacy.ReadOnly(argv); err != nil && !strings.Contains(err.Error(), agents.ErrNotReadOnly.Error()) {
 				t.Fatalf("ReadOnly error must wrap ErrNotReadOnly: %v", err)
 			}
 		})
@@ -179,7 +183,7 @@ func TestAgentContract(t *testing.T) {
 }
 
 // noSession is the args an agent passes for a turn with no session.
-func noSession(a agents.Legacy) string {
+func noSession(a agents.Agent) string {
 	if a.Name() == "agy" {
 		return "--output-format stream-json -p say hello"
 	}
@@ -187,3 +191,46 @@ func noSession(a agents.Legacy) string {
 }
 
 func (s *sink) Reasoning(text string) {}
+
+func TestMain(m *testing.M) {
+	if os.Getenv("FAAH_CONTRACT_CLAUDE") == "1" {
+		scan := bufio.NewScanner(os.Stdin)
+		enc := json.NewEncoder(os.Stdout)
+		for scan.Scan() {
+			var f map[string]any
+			json.Unmarshal(scan.Bytes(), &f)
+			if f["type"] == "control_request" {
+				enc.Encode(map[string]any{"type": "control_response", "response": map[string]any{"subtype": "success", "request_id": f["request_id"], "response": map[string]any{}}})
+			}
+			if f["type"] == "user" {
+				for _, line := range fixture["claude"] {
+					os.Stdout.WriteString(line + "\n")
+				}
+				enc.Encode(map[string]any{"type": "result"})
+			}
+		}
+		os.Exit(0)
+	}
+	os.Exit(m.Run())
+}
+func claudeContract(t *testing.T, a agents.Agent) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	exe, _ := os.Executable()
+	session, err := a.Open(ctx, agents.Open{Base: []string{exe}, Env: []string{"FAAH_CONTRACT_CLAUDE=1"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer session.Close()
+	id := session.ID()
+	if id == "" {
+		t.Fatal("missing native id")
+	}
+	for i := 0; i < 2; i++ {
+		sink := &sink{}
+		out, err := session.Prompt(ctx, "say hello", sink)
+		if err != nil || out.SessionID != id || strings.Join(sink.text, "") != "hello" || len(sink.steps) != 1 {
+			t.Fatalf("%+v %+v %v", out, sink, err)
+		}
+	}
+}

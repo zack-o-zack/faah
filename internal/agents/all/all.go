@@ -11,26 +11,34 @@ import (
 	"faah/internal/agents/gemini"
 	"faah/internal/agents/generic"
 	"faah/internal/agents/opencode"
+	"faah/internal/agents/percmd"
 )
 
 // List returns one of each listed agent.
-func List() []agents.Legacy {
-	return []agents.Legacy{
+func List() []agents.Agent {
+	return []agents.Agent{
 		claude.New(),
-		codex.New(),
-		agy.New(),
-		opencode.New(),
-		cursor.New(),
-		gemini.New(),
+		percmd.Wrap(codex.New()),
+		percmd.Wrap(agy.New()),
+		percmd.Wrap(opencode.New()),
+		percmd.Wrap(cursor.New()),
+		percmd.Wrap(gemini.New()),
 	}
 }
 
 // For returns the agent for a harness name, or a generic one.
-func For(name string) agents.Legacy {
+func For(name string) agents.Agent {
 	for _, a := range List() {
 		if a.Name() == name {
 			return a
 		}
 	}
-	return generic.New(name)
+	return percmd.Wrap(generic.New(name))
+}
+
+func Channel(a agents.Agent) agents.ToolChannel {
+	if p, ok := a.(*percmd.Agent); ok {
+		return p.Legacy.Caps().Tools
+	}
+	return agents.ToolsMCP
 }

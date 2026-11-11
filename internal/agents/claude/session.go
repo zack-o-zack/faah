@@ -23,6 +23,8 @@ type session struct {
 	events  chan frame
 	done    chan struct{}
 	turn    sync.Mutex
+	closed  chan struct{}
+	once    sync.Once
 }
 type content struct {
 	Type     string          `json:"type"`
@@ -105,7 +107,7 @@ func (*Agent) Open(ctx context.Context, o agents.Open) (agents.Session, error) {
 	if err != nil {
 		return nil, err
 	}
-	s := &session{id: id, mode: o.Mode, process: p, pending: map[string]chan frame{}, events: make(chan frame, 256), done: make(chan struct{})}
+	s := &session{id: id, mode: o.Mode, process: p, pending: map[string]chan frame{}, events: make(chan frame, 256), done: make(chan struct{}), closed: make(chan struct{})}
 	go s.read()
 	initCtx, cancel := context.WithTimeout(ctx, 90*time.Second)
 	defer cancel()
@@ -143,10 +145,10 @@ func (s *session) control(ctx context.Context, req any) error {
 			return errors.New(f.Response.Error)
 		}
 		var result struct {
-			Failed []string `json:"failed"`
+			Failed json.RawMessage `json:"failed"`
 		}
 		json.Unmarshal(f.Response.Response, &result)
-		if len(result.Failed) > 0 {
+		if len(result.Failed) > 0 && string(result.Failed) != "{}" && string(result.Failed) != "[]" && string(result.Failed) != "null" {
 			return fmt.Errorf("MCP registration failed: %v", result.Failed)
 		}
 		return nil
@@ -170,7 +172,10 @@ func (s *session) read() {
 			ch := s.pending[f.Response.RequestID]
 			s.mu.Unlock()
 			if ch != nil {
-				ch <- f
+				select {
+				case ch <- f:
+				default:
+				}
 			}
 		case "control_request":
 			response := map[string]any{"subtype": "success", "request_id": f.RequestID}
@@ -192,7 +197,11 @@ func (s *session) read() {
 			_ = s.send(map[string]any{"type": "control_response", "response": response})
 		case "control_cancel_request":
 		default:
-			s.events <- f
+			select {
+			case s.events <- f:
+			case <-s.closed:
+				return
+			}
 		}
 	}
 }
@@ -280,4 +289,4 @@ func (s *session) Prompt(ctx context.Context, text string, sink agents.Sink) (ag
 func (s *session) Interrupt(ctx context.Context) error {
 	return s.control(ctx, map[string]any{"subtype": "interrupt"})
 }
-func (s *session) Close() error { return s.process.Close() }
+func (s *session) Close() error { s.once.Do(func() { close(s.closed) }); return s.process.Close() }

@@ -276,7 +276,6 @@ The current version is the MVP. These items come next. Their order is not decide
    - Benchmark on this repository, first words then total: `claude` with haiku or sonnet about 7 to 8 seconds and 8 to 9 seconds; `agy` default 49 to 63 seconds and 52 to 67 seconds; `opencode` with claude-haiku-5-5 6.8 to 7.8 seconds and 6.9 to 7.9 seconds; `codex` default 14 to 16 seconds and about 17.6 seconds. Evidence gathering took 0.0 to 0.7 seconds.
    - Warm-up does not apply to codex or opencode. Both read the whole prompt before they start, so a process started early saves nothing. codex starts in about 1.3 seconds. opencode normally runs through its own background service, but read-only explanations need `--standalone`, which adds about 1 second.
    - Decided against: per-harness effort flags, and prompt limits on reading.
-   - Done: warm-up. One `claude` or `agy` process is started ahead and waits for the prompt on stdin (`explain.warmup`). Measured on a small fixture, click to done: `claude` haiku 6.8 and 12.3 seconds cold, 5.7 and 11.5 warm; `agy` default 47 and 67 seconds cold, 34 and 39 warm.
    - Not done: a warm process for follow-up turns, which resume a session and need a different command.
 2. **Reader context.** Let the reader give the agent specific context, for example "please explain Go-related features in depth, I have no Go experience".
    - Done: the `explain.reader` setting, and no length or format limit in the prompt. See [the reader context design](2026-11-11-explain-reader-context-design.md).

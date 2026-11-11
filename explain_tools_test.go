@@ -21,10 +21,23 @@ import (
 func mcpCall(t *testing.T, s *Server, tok, name, args string) int {
 	t.Helper()
 	body := `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"` + name + `","arguments":` + args + `}}`
+	headers := http.Header{}
+	headers.Set("Authorization", "Bearer "+tok)
+	headers.Set("Content-Type", "application/json")
+	headers.Set("Accept", "application/json, text/event-stream")
+	init := httptest.NewRequest(http.MethodPost, "/api/mcp", strings.NewReader(`{"id":0,"method":"initialize"}`))
+	init.Header = headers.Clone()
+	iw := httptest.NewRecorder()
+	s.ServeHTTP(iw, init)
 	r := httptest.NewRequest(http.MethodPost, "/api/mcp", strings.NewReader(body))
-	r.Header.Set("Authorization", "Bearer "+tok)
+	r.Header = headers.Clone()
+	r.Header.Set("Mcp-Session-Id", iw.Header().Get("Mcp-Session-Id"))
 	w := httptest.NewRecorder()
 	s.ServeHTTP(w, r)
+	if w.Code == 200 && !strings.Contains(w.Body.String(), "no explanation is running") {
+		t.Fatalf("idle call: %s", w.Body)
+	}
+
 	return w.Code
 }
 
@@ -52,12 +65,12 @@ curl -s -H "Mcp-Session-Id: $sid" -H "Content-Type: application/json" -H "Accept
 	if n := tr.Notes; len(n) != 1 || n[0].Symbol != "helper" || n[0].L1 != 7 || n[0].Text != "func helper() {}" {
 		t.Fatalf("notes = %+v\nreply: %s\nerror: %s", n, tr.Reply, tr.Error)
 	}
-	// The token stops working when the turn ends.
-	tok := regexp.MustCompile(`tok=(\w+)`).FindStringSubmatch(tr.Reply)
+	// The session credential remains valid between turns; tools refuse idle calls.
+	tok := regexp.MustCompile(`tok=([A-Za-z0-9_-]+)`).FindStringSubmatch(tr.Reply)
 	if tok == nil {
 		t.Fatalf("no token in %q", tr.Reply)
 	}
-	if code := mcpCall(t, s, tok[1], "annotate", `{"notes":[]}`); code != http.StatusUnauthorized {
+	if code := mcpCall(t, s, tok[1], "annotate", `{"notes":[]}`); code != http.StatusOK {
 		t.Fatalf("after the turn, a call = %d", code)
 	}
 }

@@ -5,7 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"faah/internal/agents"
+	"fmt"
 	"os"
+	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -13,15 +16,47 @@ import (
 
 func TestMain(m *testing.M) {
 	if os.Getenv("FAAH_CLAUDE_HELPER") == "1" {
+		if path := os.Getenv("FAAH_HELPER_LOG"); path != "" {
+			b, _ := json.Marshal(os.Args[1:])
+			os.WriteFile(path+".argv", b, 0600)
+		}
+		pending := 0
 		scan := bufio.NewScanner(os.Stdin)
 		enc := json.NewEncoder(os.Stdout)
 		for scan.Scan() {
 			var f map[string]any
 			json.Unmarshal(scan.Bytes(), &f)
+			if path := os.Getenv("FAAH_HELPER_LOG"); path != "" {
+				file, _ := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+				file.Write(append(scan.Bytes(), '\n'))
+				file.Close()
+			}
+			if f["type"] == "control_response" {
+				pending--
+				if pending == 0 {
+					enc.Encode(map[string]any{"type": "result"})
+				}
+				continue
+			}
 			if f["type"] == "control_request" {
+				if f["request"].(map[string]any)["subtype"] == "mcp_set_servers" && os.Getenv("FAAH_ATTACH_FAIL") == "1" {
+					enc.Encode(map[string]any{"type": "control_response", "response": map[string]any{"subtype": "error", "request_id": f["request_id"], "error": "attachment refused"}})
+					continue
+				}
 				enc.Encode(map[string]any{"type": "control_response", "response": map[string]any{"subtype": "success", "request_id": f["request_id"], "response": map[string]any{}}})
 			} else if f["type"] == "user" {
 				text := f["message"].(map[string]any)["content"].(string)
+				if text == "permissions" {
+					for i, name := range []string{"Read", "Glob", "Grep", "mcp__faah__annotate", "Bash", "ExitPlanMode"} {
+						enc.Encode(map[string]any{"type": "control_request", "request_id": fmt.Sprint(i), "request": map[string]any{"subtype": "can_use_tool", "tool_name": name, "input": map[string]string{"x": "y"}, "tool_use_id": name}})
+						pending++
+					}
+					enc.Encode(map[string]any{"type": "control_request", "request_id": "e", "request": map[string]any{"subtype": "elicitation"}})
+					pending++
+					enc.Encode(map[string]any{"type": "control_request", "request_id": "u", "request": map[string]any{"subtype": "unknown"}})
+					pending++
+					continue
+				}
 				if text == "crash" {
 					os.Stderr.WriteString("broken child")
 					os.Exit(2)
@@ -49,7 +84,7 @@ func (c *capture) Text(t string, _ bool) { c.text += t }
 func (c *capture) Reasoning(t string)    { c.reason += t }
 func (c *capture) Step(t string)         { c.steps = append(c.steps, t) }
 func (c *capture) Result(string)         {}
-func TestSessionTurns(t *testing.T) {
+func TestAgentSessionTurns(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	exe, _ := os.Executable()
@@ -82,6 +117,80 @@ func TestSessionTurns(t *testing.T) {
 		t.Fatal("resume changed id")
 	}
 	if _, err = resumed.Prompt(ctx, "crash", &capture{}); err == nil || !strings.Contains(err.Error(), "broken child") {
+		t.Fatal(err)
+	}
+}
+
+func TestAgentSessionControlAndArgv(t *testing.T) {
+	exe, _ := os.Executable()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	for _, mode := range []agents.Mode{agents.ModePlan, agents.ModeEdit} {
+		path := filepath.Join(t.TempDir(), "wire")
+		s, err := New().Open(ctx, agents.Open{Base: []string{exe}, Model: "-model", Mode: mode, Env: []string{"FAAH_CLAUDE_HELPER=1", "FAAH_HELPER_LOG=" + path}, Tools: &agents.ToolEndpoint{URL: "http://localhost/api/mcp", Authorization: "Bearer token"}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err = s.Prompt(ctx, "permissions", &capture{}); err != nil {
+			t.Fatal(err)
+		}
+		s.Close()
+		wire, _ := os.ReadFile(path)
+		lines := strings.Split(strings.TrimSpace(string(wire)), "\n")
+		var frames []map[string]any
+		for _, line := range lines {
+			var f map[string]any
+			if json.Unmarshal([]byte(line), &f) != nil {
+				t.Fatal(line)
+			}
+			frames = append(frames, f)
+		}
+		if frames[0]["request"].(map[string]any)["subtype"] != "initialize" {
+			t.Fatal(frames[0])
+		}
+		request := frames[1]["request"].(map[string]any)
+		want := map[string]any{"subtype": "mcp_set_servers", "servers": map[string]any{"faah": map[string]any{"type": "http", "url": "http://localhost/api/mcp", "headers": map[string]any{"Authorization": "Bearer token"}, "timeout": float64(3900000)}}}
+		if !reflect.DeepEqual(request, want) {
+			t.Fatalf("MCP request: %#v", request)
+		}
+		if frames[2]["type"] != "user" {
+			t.Fatal("prompt preceded registration")
+		}
+		for i, f := range frames[3:9] {
+			response := f["response"].(map[string]any)["response"].(map[string]any)
+			behavior := "allow"
+			if mode == agents.ModePlan && i >= 4 {
+				behavior = "deny"
+			}
+			if response["behavior"] != behavior {
+				t.Fatalf("permission %d: %v", i, response)
+			}
+			if behavior == "allow" && !reflect.DeepEqual(response["updatedInput"], map[string]any{"x": "y"}) {
+				t.Fatal(response)
+			}
+		}
+		if frames[9]["response"].(map[string]any)["response"].(map[string]any)["action"] != "decline" {
+			t.Fatal("elicitation accepted")
+		}
+		if frames[10]["response"].(map[string]any)["subtype"] != "error" {
+			t.Fatal("unknown request accepted")
+		}
+		argv, _ := os.ReadFile(path + ".argv")
+		if !strings.Contains(string(argv), "--model=-model") {
+			t.Fatal(string(argv))
+		}
+		if mode == agents.ModePlan && !strings.Contains(string(argv), "Read,Glob,Grep") {
+			t.Fatal(string(argv))
+		}
+	}
+}
+
+func TestAgentSessionAttachmentFailure(t *testing.T) {
+	exe, _ := os.Executable()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_, err := New().Open(ctx, agents.Open{Base: []string{exe}, Env: []string{"FAAH_CLAUDE_HELPER=1", "FAAH_ATTACH_FAIL=1"}, Tools: &agents.ToolEndpoint{URL: "http://localhost/api/mcp", Authorization: "Bearer token"}})
+	if err == nil || !strings.Contains(err.Error(), "attachment refused") {
 		t.Fatal(err)
 	}
 }

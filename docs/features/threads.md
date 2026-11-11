@@ -62,7 +62,7 @@ Explaining the same code again reopens the earlier conversation, even if the cod
 
 `explain.reader` is added to the explain agent's prompt to describe the reader, for example `I'm new to Go`.
 
-Explanations can run on their own harness and model: claude, agy, codex or opencode. Set `explain.agent` and `explain.model` in settings, for example `claude` and `haiku`; left empty, Explain uses the harness selected for editing. When you select code, faah prepares the evidence in the background so Explain starts sooner. Turn that off with `explain.prefetch`. With claude or agy, faah also keeps one agent process started and waiting, which skips most of its start-up time: about 1 second for claude and 10 for agy. The process is stopped after 10 minutes unused. Turn that off with `explain.warmup`.
+Explanations can run on their own harness and model: claude, agy, codex or opencode. Set `explain.agent` and `explain.model` in settings, for example `claude` and `haiku`; left empty, Explain uses the harness selected for editing. When you select code, faah prepares the evidence in the background so Explain starts sooner. Turn that off with `explain.prefetch`.
 
 Explanations never change your files. They need a harness with a read-only mode, and they read the saved file, so save your edits first.
 

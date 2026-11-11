@@ -977,19 +977,9 @@ func (t *thread) Error() string {
 
 func TestThreadClaudeSessionResume(t *testing.T) {
 	root := t.TempDir()
-	dir := t.TempDir()
-	log := filepath.Join(dir, "argv.log")
-	// A stand-in named claude: records its argv and emits stream-json.
-	script := "#!/bin/sh\nprintf '%s\\n' \"$*\" >> " + log + "\n" +
-		`printf '{"type":"system","subtype":"init","session_id":"x"}\n'` + "\n" +
-		`printf '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"a.go"}}]}}\n'` + "\n" +
-		`printf '{"type":"assistant","message":{"content":[{"type":"text","text":"All good."}]}}\n'` + "\n" +
-		`printf '{"type":"result","is_error":false,"result":"All good."}\n'` + "\n"
-	bin := filepath.Join(dir, "claude")
-	if err := os.WriteFile(bin, []byte(script), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	s := agentServer(t, root, bin)
+	fakeCLI(t, "claude")
+	s := agentServer(t, root, "claude")
+	log := filepath.Join(root, "claude-runs.txt")
 
 	_, m := agentPostJSON(t, s, "/api/threads/create", map[string]any{"message": "look around"})
 	id := m["id"].(string)
@@ -1006,20 +996,28 @@ func TestThreadClaudeSessionResume(t *testing.T) {
 	data, _ := os.ReadFile(log)
 	var lines []string
 	for _, l := range strings.Split(string(data), "\n") {
-		if strings.HasPrefix(l, "--output-format") { // the first prompt spans several lines
+		if strings.Contains(l, "--output-format") { // the first prompt spans several lines
 			lines = append(lines, l)
 		}
 	}
-	if len(lines) != 2 {
-		t.Fatalf("harness ran %d times, want 2:\n%s", len(lines), data)
+	if len(lines) != 1 {
+		t.Fatalf("harness ran %d times, want 1:\n%s", len(lines), data)
 	}
 	sid := th.SessionID
 	if sid == "" || !strings.Contains(lines[0], "--session-id "+sid) {
 		t.Fatalf("first run should start session %q: %s", sid, lines[0])
 	}
-	if !strings.Contains(lines[1], "--resume "+sid) || strings.Contains(lines[1], "Earlier in this conversation") {
-		t.Fatalf("second run should resume without replay: %s", lines[1])
+	// Recreate the manager against the same persisted thread store.
+	s.threads.Close()
+	s.threads = newThreadManager(s.agent, root)
+	agentPostJSON(t, s, "/api/threads/send", map[string]any{"id": id, "message": "after restart"})
+	th = waitThreadIdle(t, s, id)
+	data, _ = os.ReadFile(log)
+	lines = strings.Split(strings.TrimSpace(string(data)), "\n")
+	if len(lines) != 2 || !strings.Contains(lines[1], "--resume "+sid) || th.Error() != "" {
+		t.Fatalf("resume: %s, %s", data, th.Error())
 	}
+
 }
 
 func TestThreadBusyAndCancel(t *testing.T) {

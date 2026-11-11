@@ -76,16 +76,3 @@ func (ts *Tokens) RevokeScope(match func(any) bool) {
 		}
 	}
 }
-func (ts *Tokens) Lookup(tok string) (any, bool) { return ts.Resolve(tok) }
-func (ts *Tokens) Bind(tok string, scope any) bool {
-	ts.mu.Lock()
-	defer ts.mu.Unlock()
-	h := sha256.Sum256([]byte(tok))
-	c, ok := ts.m[h]
-	if !ok {
-		return false
-	}
-	c.scope = scope
-	ts.m[h] = c
-	return true
-}

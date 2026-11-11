@@ -19,16 +19,26 @@ type Process struct {
 	tail   []byte
 	err    error
 	once   sync.Once
+	stop   chan struct{}
 }
 
 func Start(argv []string, dir string, env []string, stderr io.Writer) (*Process, error) {
 	if len(argv) == 0 {
 		return nil, fmt.Errorf("empty agent command")
 	}
-	cmd := exec.Command(argv[0], argv[1:]...)
+	cmd, release, detach, err := command(argv)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
+	started := false
+	defer func() {
+		if !started {
+			detach()
+		}
+	}()
 	cmd.Dir = dir
 	cmd.Env = env
-	group(cmd)
 	in, err := cmd.StdinPipe()
 	if err != nil {
 		return nil, err
@@ -38,7 +48,7 @@ func Start(argv []string, dir string, env []string, stderr io.Writer) (*Process,
 		in.Close()
 		return nil, err
 	}
-	p := &Process{Cmd: cmd, stdin: in, Lines: make(chan []byte, 64), Exited: make(chan struct{})}
+	p := &Process{Cmd: cmd, stdin: in, Lines: make(chan []byte, 64), Exited: make(chan struct{}), stop: make(chan struct{})}
 	cmd.Stderr = tailWriter{p}
 	if stderr != nil {
 		cmd.Stderr = io.MultiWriter(tailWriter{p}, stderr)
@@ -48,14 +58,22 @@ func Start(argv []string, dir string, env []string, stderr io.Writer) (*Process,
 		out.Close()
 		return nil, err
 	}
+	started = true
 	go func() {
+		defer detach()
 		scan := bufio.NewScanner(out)
 		scan.Buffer(make([]byte, 65536), 16<<20)
 		for scan.Scan() {
 			line := append([]byte(nil), scan.Bytes()...)
-			p.Lines <- line
+			select {
+			case p.Lines <- line:
+			case <-p.stop:
+			}
 		}
 		scanErr := scan.Err()
+		if scanErr != nil {
+			p.Close()
+		}
 		err := cmd.Wait()
 		if scanErr != nil {
 			err = scanErr
@@ -94,6 +112,7 @@ func (p *Process) Error() error {
 }
 func (p *Process) Close() error {
 	p.once.Do(func() {
+		close(p.stop)
 		terminate(p.Cmd)
 		go func() { timer := time.NewTimer(5 * time.Second); defer timer.Stop(); <-timer.C; kill(p.Cmd) }()
 	})

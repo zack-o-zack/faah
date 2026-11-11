@@ -327,9 +327,6 @@ func main() {
 	if !*noUpdate {
 		go update.AutoUpdate(version)
 	}
-	if pxSrv.threads != nil {
-		time.AfterFunc(explainStandbyDelay, pxSrv.threads.warmExplain)
-	}
 
 	// Language servers are children that can hold gigabytes. Shut them down on
 	// the way out rather than leaving them for the OS to reap.

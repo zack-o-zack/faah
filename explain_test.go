@@ -202,6 +202,18 @@ func explainSettings(t *testing.T, values map[string]any) {
 func fakeCLI(t *testing.T, name string) {
 	t.Helper()
 	dir := t.TempDir()
+	if name == "claude" {
+		exe, err := os.Executable()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err = os.Symlink(exe, filepath.Join(dir, name)); err != nil {
+			t.Fatal(err)
+		}
+		t.Setenv("FAAH_THREAD_CLAUDE_HELPER", "1")
+		t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
+		return
+	}
 	body := "#!/bin/sh\nprintf '%s\\n' \"$@\" > " + name + "-args.txt\nprintf 'ok\\n'\n"
 	if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0o755); err != nil {
 		t.Fatal(err)

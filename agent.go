@@ -462,16 +462,14 @@ func (m *agentManager) run(ctx context.Context, cancel context.CancelFunc, job *
 	stdoutStreamer := newLineStreamer(job.out, ui.Faint("│", os.Stdout), os.Stdout)
 	stderrStreamer := newLineStreamer(job.stderr, ui.Dim("│", os.Stdout), os.Stdout)
 
-	res := harness.Run(ctx, harness.Command{Name: job.Harness, Args: template}, prompt, harness.Options{
-		Dir:      m.root,
-		Timeout:  agentTimeout,
-		LogBytes: agentLogBytes,
-		Stdout:   stdoutStreamer,
-		Stderr:   stderrStreamer,
-	})
+	a := all.For(job.Harness)
+	session, err := a.Open(ctx, agents.Open{Dir: m.root, Base: sessionBase(job.Harness, template), Mode: agents.ModePlan, Stderr: stderrStreamer})
+	if err == nil {
+		defer session.Close()
+		_, err = session.Prompt(ctx, prompt, &writerSink{Writer: stdoutStreamer})
+	}
 	stdoutStreamer.Flush()
 	stderrStreamer.Flush()
-	err := res.Err
 
 	changed := changedSince(m.root, before)
 	m.settle(changed)
@@ -479,7 +477,7 @@ func (m *agentManager) run(ctx context.Context, cancel context.CancelFunc, job *
 	m.mu.Lock()
 	job.Running = false
 	job.Changed = changed
-	job.Ms = res.Duration.Milliseconds()
+	job.Ms = time.Since(job.start).Milliseconds()
 	if err != nil {
 		job.Error = err.Error()
 	}
@@ -1035,6 +1033,7 @@ type threadTurn struct {
 	ID        int      `json:"id"`
 	Prompt    string   `json:"prompt"`
 	Reply     string   `json:"reply"`
+	Reasoning string   `json:"reasoning,omitempty"`
 	Tools     []string `json:"tools,omitempty"`     // what the harness did, one line each
 	Changed   []string `json:"changed,omitempty"`   // files this turn touched
 	BeforeSHA string   `json:"beforeSha,omitempty"` // ref-free git snapshot commit before the turn ran
@@ -1048,7 +1047,6 @@ type threadTurn struct {
 	Started   int64    `json:"started"` // unix ms
 	Ms        int64    `json:"ms"`
 	FirstMs   int64    `json:"firstMs,omitempty"` // until the first words of the reply arrived
-	Warm      bool     `json:"warm,omitempty"`    // the harness was started ahead of the turn
 	// Refs holds the citations in an explanation's reply that passed checking,
 	// by target as written.
 	Refs map[string]explain.Ref `json:"refs,omitempty"`
@@ -1133,8 +1131,9 @@ type threadManager struct {
 	jobs      map[int64]*threadJobRef // inline/batch edits, polled as agent jobs
 	subs      map[string]map[chan threadEvent]struct{}
 	lastSave  time.Time
-	standby   explainStandby // a harness started ahead of the next explanation
-	tools     *explainTools  // annotate and walkthrough, for explain turns
+	sessions  map[string]*threadSession
+	closed    bool
+	tools     *explainTools // annotate and walkthrough, for explain turns
 	// symbolHash is the callers and references hash of a symbol, set by the
 	// server; nil in tests that build a manager alone.
 	symbolHash func(rel string, line int, name string) string
@@ -1153,13 +1152,14 @@ func threadStorePath(root string) string {
 
 func newThreadManager(a *agentManager, root string) *threadManager {
 	tm := &threadManager{
-		agent:   a,
-		root:    root,
-		file:    threadStorePath(root),
-		threads: map[string]*thread{},
-		cancels: map[string]context.CancelFunc{},
-		jobs:    map[int64]*threadJobRef{},
-		subs:    map[string]map[chan threadEvent]struct{}{},
+		agent:    a,
+		root:     root,
+		file:     threadStorePath(root),
+		threads:  map[string]*thread{},
+		sessions: map[string]*threadSession{},
+		cancels:  map[string]context.CancelFunc{},
+		jobs:     map[int64]*threadJobRef{},
+		subs:     map[string]map[chan threadEvent]struct{}{},
 	}
 	tm.tools = newExplainTools(tm)
 	tm.load()
@@ -1462,17 +1462,22 @@ func (tm *threadManager) Send(id, message string) (*thread, error) {
 		return nil, errThreadBusy
 	}
 	var env []string
-	if t.Kind == "explain" {
-		readOnly, e, err := all.For(name).ReadOnly(base)
-		if err != nil {
-			tm.mu.Unlock()
-			return nil, err
-		}
-		base, env = readOnly, e
+	mode := agents.ModeEdit
+	if explaining {
+		mode = agents.ModePlan
 	}
-	// A session id belongs to the harness that made it. Switching harness
-	// starts a fresh session there, primed by replaying the transcript.
-	if t.SessionHarness != name {
+	if explaining && rNotVerified(name) {
+		tm.mu.Unlock()
+		return nil, agents.ErrNotReadOnly
+	}
+	if tm.closed {
+		tm.mu.Unlock()
+		return nil, errors.New("thread manager is closed")
+	}
+	if live := tm.sessions[id]; live != nil && (live.name != name || live.model != model || live.mode != mode) {
+		tm.closeSessionLocked(id)
+	}
+	if t.SessionHarness != name || (len(t.Turns) > 0 && t.Turns[len(t.Turns)-1].Model != model) {
 		t.SessionID, t.SessionLive, t.SessionHarness = "", false, name
 	}
 	prior := make([]*threadTurn, 0, len(t.Turns))
@@ -1513,7 +1518,7 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 		tm.mu.Unlock()
 		return
 	}
-	sessionID, live := t.SessionID, t.SessionLive
+	sessionID := t.SessionID
 	explaining := t.Kind == "explain"
 	if explaining && t.packet == "" {
 		t.packet = tm.readExplainPacket(t.ID)
@@ -1521,29 +1526,47 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 	tm.mu.Unlock()
 
 	a := all.For(r.name)
-	caps := a.Caps()
-	// An explanation's first turn takes the harness started ahead, if it was
-	// started with this turn's argv.
-	var standby *standbyProc
-	if explaining && sessionID == "" && len(r.prior) == 0 {
-		if standby = tm.standby.take(standbyKey(r.name, r.base)); standby != nil {
-			sessionID = standby.sessionID
+	channel := all.Channel(a)
+	mode := agents.ModeEdit
+	if explaining {
+		mode = agents.ModePlan
+	}
+	tm.mu.Lock()
+	liveSession := tm.sessions[r.tid]
+	tm.mu.Unlock()
+	stderr := &tailBuffer{max: agentLogBytes}
+	replay := len(r.prior) > 0 && sessionID == "" && liveSession == nil
+	var openErr error
+	if liveSession == nil {
+		tok := tm.tools.tokens.Issue(toolScope{tid: r.tid})
+		o := agents.Open{Dir: tm.root, Base: sessionBase(r.name, r.base), Env: r.env, Model: r.model, Mode: mode, Resume: sessionID, Tools: tm.tools.endpoint(tok), Stderr: stderr}
+		var opened agents.Session
+		opened, openErr = a.Open(ctx, o)
+		if openErr != nil && sessionID != "" {
+			o.Resume = ""
+			opened, openErr = a.Open(ctx, o)
+			replay = true
+		}
+		if openErr != nil {
+			tm.tools.tokens.Revoke(tok)
+		} else {
+			liveSession = &threadSession{session: opened, token: tok, name: r.name, model: r.model, mode: mode}
+			tm.mu.Lock()
+			if tm.closed || tm.threads[r.tid] == nil {
+				opened.Close()
+				tm.tools.tokens.Revoke(tok)
+				openErr = errors.New("thread closed")
+			} else {
+				tm.sessions[r.tid] = liveSession
+				t.SessionID = opened.ID()
+				tm.saveLocked()
+			}
+			tm.mu.Unlock()
 		}
 	}
-	if sessionID == "" && caps.Sessions {
-		sessionID = a.NewSession(ctx, tm.root, r.base)
+	if liveSession != nil {
+		tm.tools.tokens.Touch(toolScope{tid: r.tid})
 	}
-	native := caps.Sessions && (sessionID != "" || caps.NamesSession)
-	// Only a session the harness really started remembers the conversation.
-	// Anything else, including a session whose first turn failed, is replayed.
-	replay := len(r.prior) > 0 && !(native && live)
-
-	tm.mu.Lock()
-	if t := tm.threads[r.tid]; t != nil && native && sessionID != "" {
-		t.SessionID = sessionID
-	}
-	tm.mu.Unlock()
-
 	prCtx, scopeChanged := "", false
 	if tm.prContext != nil {
 		tm.mu.Lock()
@@ -1558,7 +1581,7 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 			tm.mu.Unlock()
 		}
 	}
-	prompt := threadPrompt(t, r.prior, r.message, replay, prCtx, scopeChanged, caps.Tools)
+	prompt := threadPrompt(t, r.prior, r.message, replay, prCtx, scopeChanged, channel)
 
 	if ui.Verbose {
 		ui.VerbosePrompt(0, r.name, prompt, os.Stdout)
@@ -1567,32 +1590,11 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 	before := worktreeSnapshot(tm.root)
 	beforeSHA := gitSnapshotWorktree(tm.root)
 	started := time.Now()
-	stderr := &tailBuffer{max: agentLogBytes}
 	sink := &threadSink{tm: tm, tid: r.tid, turn: r.turn, began: started}
-	turnSession := ""
-	if native {
-		turnSession = sessionID
-	}
-
-	// An explanation's tool calls land on this turn: over MCP with a token
-	// that works until the turn ends, or as tagged blocks pulled out of the
-	// reply.
-	scope := toolScope{tid: r.tid, turn: r.turn.ID}
-	var tools *agents.ToolEndpoint
-	if explaining && caps.Tools == agents.ToolsMCP {
-		tok := ""
-		if standby != nil && standby.token != "" {
-			tok = standby.token
-			tm.tools.tokens.Bind(tok, scope)
-		} else {
-			tok = tm.tools.tokens.Issue(scope)
-		}
-		defer tm.tools.tokens.Revoke(tok)
-		tools = tm.tools.endpoint(tok)
-	}
+	scope := toolScope{tid: r.tid}
 	var turnSink agents.Sink = sink
 	var tagged *notes.Tagged
-	if explaining && caps.Tools == agents.ToolsTagged {
+	if explaining && channel == agents.ToolsTagged {
 		read := notes.DiskReader(tm.root)
 		tagged = notes.NewTagged(sink, func(name string, args json.RawMessage) {
 			if _, err := notes.Apply(read, tm, scope, name, args); err != nil {
@@ -1603,22 +1605,9 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 	}
 
 	var out agents.Outcome
-	var err error
-	if standby != nil {
-		st := standby.agent.Stream(turnSink)
-		err = standby.run(ctx, prompt, st, stderr, threadTurnTimeout)
-		var failed error
-		out, failed = st.Close()
-		if err == nil {
-			err = failed
-		}
-		go tm.warmExplain() // ready for the next one
-	} else {
-		out, err = a.Run(ctx, agents.Turn{
-			Dir: tm.root, Argv: r.base, Env: r.env, Model: r.model, Prompt: prompt,
-			SessionID: turnSession, Resume: live, Tools: tools, Timeout: threadTurnTimeout,
-			LogBytes: agentLogBytes, Stderr: stderr,
-		}, turnSink)
+	err := openErr
+	if err == nil {
+		out, err = liveSession.session.Prompt(ctx, prompt, turnSink)
 	}
 	if tagged != nil {
 		tagged.Flush()
@@ -1645,7 +1634,6 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 		}
 		r.turn.Running = false
 		r.turn.Ms = time.Since(started).Milliseconds()
-		r.turn.Warm = standby != nil
 		r.turn.Changed = changed
 		r.turn.BeforeSHA = beforeSHA
 		r.turn.AfterSHA = afterSHA
@@ -1661,6 +1649,9 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 			r.turn.Error = msg
 		}
 		t.Updated = time.Now().UnixMilli()
+		if err != nil {
+			tm.closeSessionLocked(r.tid)
+		}
 		delete(tm.cancels, r.tid)
 		tm.saveLocked()
 		tm.publishThreadLocked(t)
@@ -1671,11 +1662,7 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 	if err != nil {
 		ui.Status("err", "thread", fmt.Sprintf("%s turn %d failed in %s: %s", r.tid, r.turn.ID, dur, err.Error()), 0, os.Stdout)
 	} else {
-		warm := ""
-		if standby != nil {
-			warm = ", started ahead"
-		}
-		ui.Status("ok", "thread", fmt.Sprintf("%s turn %d · %s, first words after %s%s  (%d files changed)", r.tid, r.turn.ID, dur, ui.FmtDuration(time.Duration(r.turn.FirstMs)*time.Millisecond), warm, len(changed)), 0, os.Stdout)
+		ui.Status("ok", "thread", fmt.Sprintf("%s turn %d · %s, first words after %s  (%d files changed)", r.tid, r.turn.ID, dur, ui.FmtDuration(time.Duration(r.turn.FirstMs)*time.Millisecond), len(changed)), 0, os.Stdout)
 	}
 }
 
@@ -1701,6 +1688,7 @@ func (tm *threadManager) Delete(id string) bool {
 	if cancel := tm.cancels[id]; cancel != nil {
 		cancel()
 	}
+	tm.closeSessionLocked(id)
 	delete(tm.threads, id)
 	tm.removeExplainPacket(id)
 	tm.saveLocked()
@@ -1710,12 +1698,16 @@ func (tm *threadManager) Delete(id string) bool {
 }
 
 func (tm *threadManager) Close() {
-	tm.standby.stop()
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
 	for _, cancel := range tm.cancels {
 		cancel()
 	}
+	tm.closed = true
+	for id := range tm.sessions {
+		tm.closeSessionLocked(id)
+	}
+
 }
 
 // RevertTurn restores the files touched by a specific turn back to their
@@ -2297,4 +2289,60 @@ func anchorSnippet(abs string, l1, l2 int) string {
 	return snip
 }
 
-func (s *threadSink) Reasoning(text string) {}
+func (s *threadSink) Reasoning(text string) {
+	s.tm.mu.Lock()
+	defer s.tm.mu.Unlock()
+	s.turn.Reasoning += text
+	s.tm.publishLocked(s.tid, "reasoning", map[string]any{"turn": s.turn.ID, "text": text})
+	s.tm.maybeSaveLocked()
+}
+
+type writerSink struct {
+	io.Writer
+	wrote bool
+}
+
+func (s *writerSink) Text(t string, _ bool) { s.wrote = true; _, _ = io.WriteString(s.Writer, t) }
+func (s *writerSink) Reasoning(string)      {}
+func (s *writerSink) Step(string)           {}
+func (s *writerSink) Result(t string) {
+	if !s.wrote {
+		_, _ = io.WriteString(s.Writer, t)
+	}
+}
+
+type threadSession struct {
+	session            agents.Session
+	token, name, model string
+	mode               agents.Mode
+}
+
+func (tm *threadManager) closeSessionLocked(id string) {
+	if s := tm.sessions[id]; s != nil {
+		s.session.Close()
+		tm.tools.tokens.Revoke(s.token)
+		delete(tm.sessions, id)
+	}
+	tm.tools.tokens.RevokeScope(func(scope any) bool { sc, ok := scope.(toolScope); return ok && sc.tid == id })
+}
+func rNotVerified(name string) bool { return name != "claude" && !agents.Verified[name] }
+func sessionBase(name string, base []string) []string {
+	if name != "claude" {
+		return base
+	}
+	out := []string{base[0]}
+	for i := 1; i < len(base); i++ {
+		switch base[i] {
+		case "--permission-mode", "--model":
+			i++
+		case "-p", "--print":
+			if i+1 < len(base) && base[i+1] == "{prompt}" {
+				i++
+			}
+		case "{prompt}":
+		default:
+			out = append(out, base[i])
+		}
+	}
+	return out
+}

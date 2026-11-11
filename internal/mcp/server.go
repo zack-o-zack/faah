@@ -29,8 +29,7 @@ type Tool struct {
 	Call func(ctx context.Context, scope any, args json.RawMessage) (string, error)
 }
 
-// Server answers MCP requests POSTed as JSON-RPC, one message or a batch.
-// It has no streams and no sessions: every answer is a JSON body.
+// Server serves JSON-RPC requests within authenticated transport sessions.
 type Server struct {
 	Name, Version string
 	Tools         []Tool
@@ -43,8 +42,6 @@ const (
 	maxBody         = 1 << 20
 	protocolVersion = "2025-06-18"
 )
-
-var protocols = map[string]bool{"2024-11-05": true, "2025-03-26": true, "2025-06-18": true}
 
 type request struct {
 	ID     json.RawMessage `json:"id"`
@@ -195,7 +192,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("MCP-Protocol-Version", protocolVersion)
 	var out []response
 	for _, q := range reqs {
-		if len(q.ID) == 0 || string(q.ID) == "null" {
+		if len(q.ID) == 0 || string(q.ID) == "null" || q.Method == "" {
 			continue // a notification: nothing to answer
 		}
 		res, e := s.handle(r.Context(), scope, q)
