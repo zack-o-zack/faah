@@ -109,8 +109,9 @@ func explainStaleReason(old, cur string) string {
 	return ""
 }
 
-// explainInstructions opens the first prompt of an explanation.
-func explainInstructions(kind string) string {
+// explainInstructions opens the first prompt of an explanation. Length and
+// format are left to the agent and to what the reader asks for.
+func explainInstructions(kind, reader string) string {
 	question := "Explain what this code does, what it takes as input, and what its effects are."
 	switch kind {
 	case explainWorkspace:
@@ -124,11 +125,13 @@ func explainInstructions(kind string) string {
 	b.WriteString("You are helping someone understand code in this workspace. ")
 	b.WriteString("This is a read-only conversation: do not create, edit, or delete anything.\n\n")
 	b.WriteString(question + "\n\n")
-	b.WriteString("Write your first answer as one paragraph of at most 120 words, with no headings or lists. ")
+	if reader = strings.TrimSpace(reader); reader != "" {
+		b.WriteString("The reader says about themselves: " + strconv.Quote(reader) + ". Shape the explanation for them.\n\n")
+	}
 	b.WriteString("Rely on the evidence below first, and read other files only when it is not enough. ")
 	b.WriteString("Cite code as [label](path:line) or [label](path:start-end) with workspace-relative paths, where the label is the symbol's name when there is one. ")
 	b.WriteString("If the evidence does not establish something, say so instead of guessing. ")
-	b.WriteString("Answer later questions in this conversation concisely, citing code the same way.\n\n")
+	b.WriteString("Answer later questions in this conversation citing code the same way.\n\n")
 	return b.String()
 }
 

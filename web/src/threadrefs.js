@@ -27,4 +27,4 @@ export function explainEvidenceLine(ev) {
   return parts.join(' · ');
 }
 
-export const explainStaleLabel = reason => (reason === 'callers' ? 'Callers changed' : 'References changed');
+export const explainStaleLabel = reason => ({ reader: 'Written for a different reader', callers: 'Callers changed' })[reason] || 'References changed';

@@ -623,6 +623,54 @@ func fakeCLI(t *testing.T, name string) {
 	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
 }
 
+func TestExplainInstructionsLeaveLengthToTheReader(t *testing.T) {
+	plain := explainInstructions(explainBlock, "  ")
+	for _, limit := range []string{"120 words", "one paragraph", "concisely", "The reader says"} {
+		if strings.Contains(plain, limit) {
+			t.Errorf("instructions without a reader contain %q:\n%s", limit, plain)
+		}
+	}
+	got := explainInstructions(explainBlock, "new to Go")
+	if !strings.Contains(got, `The reader says about themselves: "new to Go". Shape the explanation for them.`) {
+		t.Fatalf("instructions = %s", got)
+	}
+}
+
+func TestExplainWritesForTheReader(t *testing.T) {
+	root := t.TempDir()
+	writeExplainSource(t, root, explainGoSource)
+	s := explainServer(t, root, `printf '%s\n' "$@" > args.txt; printf 'ok\n'`)
+	explainSettings(t, map[string]any{"explain.reader": " new to Go "})
+	req := map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "text": "helper"}
+
+	_, m := agentPostJSON(t, s, "/api/explain", req)
+	id := m["thread"].(map[string]any)["id"].(string)
+	if th := waitThreadIdle(t, s, id); th.ExplainReader != "new to Go" {
+		t.Fatalf("reader = %q", th.ExplainReader)
+	}
+	args, _ := os.ReadFile(filepath.Join(root, "args.txt"))
+	if !strings.Contains(string(args), `"new to Go"`) {
+		t.Fatalf("args = %s", args)
+	}
+
+	// Another reader: the old explanation opens, marked for Refresh.
+	explainSettings(t, map[string]any{"explain.reader": "Go expert"})
+	_, m = agentPostJSON(t, s, "/api/explain", req)
+	if m["cached"] != true || m["stale"] != true || m["staleReason"] != "reader" {
+		t.Fatalf("explain after reader change = %v", m)
+	}
+
+	// The thread keeps the reader it was written for.
+	if code, _ := agentPostJSON(t, s, "/api/threads/send", map[string]any{"id": id, "message": "and main?"}); code != 200 {
+		t.Fatalf("send = %d", code)
+	}
+	waitThreadIdle(t, s, id)
+	args, _ = os.ReadFile(filepath.Join(root, "args.txt"))
+	if !strings.Contains(string(args), `"new to Go"`) || strings.Contains(string(args), "Go expert") {
+		t.Fatalf("follow-up args = %s", args)
+	}
+}
+
 func TestExplainUsesItsOwnAgentAndModel(t *testing.T) {
 	root := t.TempDir()
 	writeExplainSource(t, root, explainGoSource)
