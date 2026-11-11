@@ -39,7 +39,8 @@ mcp_servers.faah.url=*) url=${a#*=}; url=${url#\"}; url=${url%\"} ;;
 mcp_servers.faah.http_headers=*) tok=${a#*Bearer }; tok=${tok%%\"*} ;;
 esac; done
 printf 'tok=%s\n' "$tok"
-curl -s -H "Authorization: Bearer $tok" -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"annotate","arguments":{"notes":[{"kind":"symbol","path":"main.go","l1":7,"symbol":"helper","summary":"Does nothing yet."}]}}}' "$url"
+sid=$(curl -s -D - -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" -H "Authorization: Bearer $tok" -d '{"id":0,"method":"initialize"}' "$url" | tr -d '\r' | sed -n 's/^[Mm]cp-[Ss]ession-[Ii]d: //p')
+curl -s -H "Mcp-Session-Id: $sid" -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" -H "Authorization: Bearer $tok" -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"annotate","arguments":{"notes":[{"kind":"symbol","path":"main.go","l1":7,"symbol":"helper","summary":"Does nothing yet."}]}}}' "$url"
 `
 	s := explainServer(t, root, script)
 	ts := httptest.NewServer(s)
