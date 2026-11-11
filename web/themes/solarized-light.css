@@ -8,9 +8,9 @@
   /* surfaces, from the editor out to raised hover states */
   --background: #fdf6e3; --sidebar: #eee8d5; --card: #eee8d5; --popover: #e9e2cb; --secondary: #ddd6c1; --muted: #e9e2cb; --sidebar-accent: #e9e2cb; --accent: #ddd6c1;
   /* text: primary, secondary, tertiary */
-  --foreground: #586e75; --card-foreground: #586e75; --popover-foreground: #586e75; --secondary-foreground: #586e75; --accent-foreground: #586e75; --sidebar-foreground: #586e75; --sidebar-accent-foreground: #586e75; --muted-foreground: #657b83; --faint: #93a1a1;
+  --foreground: #40565d; --card-foreground: #40565d; --popover-foreground: #40565d; --secondary-foreground: #40565d; --accent-foreground: #40565d; --sidebar-foreground: #40565d; --sidebar-accent-foreground: #40565d; --muted-foreground: #455b62; --faint: #455b62;
   /* borders and accent */
-  --border: #ddd6c1; --input: #ddd6c1; --sidebar-border: #ddd6c1; --primary: #268bd2; --ring: #268bd2; --sidebar-primary: #268bd2; --sidebar-ring: #268bd2; --primary-text: #2aa198; --primary-foreground: #fdf6e3; --sidebar-primary-foreground: #fdf6e3;
+  --border: #b1aa96; --input: #6a736f; --sidebar-border: #b1aa96; --primary: #176a9a; --ring: #176a9a; --sidebar-primary: #176a9a; --sidebar-ring: #176a9a; --primary-text: #14675f; --primary-foreground: #fdf6e3; --sidebar-primary-foreground: #fdf6e3;
   /* selection, search matches, current line */
   --sel: #dfd8c2; --mark: rgba(181, 137, 0, 0.16); --mark-active: #e6c35c; --cur: #f5eedb;
   --on-mark-active: var(--foreground);
@@ -18,12 +18,12 @@
   --shadow: 0 4px 16px rgba(88, 110, 117, 0.18);
 
   /* syntax */
-  --k: #859900; --kt: #b58900; --nf: #268bd2; --nc: #b58900; --nb: #cb4b16;
-  --nv: #268bd2; --no: #2aa198; --na: #586e75; --nt: #268bd2; --nd: #cb4b16;
-  --np: #586e75; --s: #2aa198; --m: #d33682; --o: #859900; --p: #657b83;
-  --c: #93a1a1; --cp: #cb4b16; --destructive: #dc322f; --err: #dc322f;
+  --k: #536000; --kt: #745500; --nf: #14638d; --nc: #745500; --nb: #a13b12;
+  --nv: #14638d; --no: #14675f; --na: #40565d; --nt: #14638d; --nd: #a13b12;
+  --np: #40565d; --s: #14675f; --m: #a32765; --o: #536000; --p: #455b62;
+  --c: #455b62; --cp: #a13b12; --destructive: #aa2725; --err: #aa2725;
 
   /* diffs and status */
-  --gi: #859900; --gd: #dc322f;
-  --gi-bg: rgba(133, 153, 0, 0.14); --gd-bg: rgba(220, 50, 47, 0.12);
+  --gi: #536000; --gd: #aa2725;
+  --gi-bg: rgba(89, 103, 0, 0.14); --gd-bg: rgba(170, 39, 37, 0.12);
 }

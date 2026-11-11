@@ -8,21 +8,21 @@
   /* surfaces, from the editor out to raised hover states */
   --background: #282a36; --sidebar: #21222c; --card: #21222c; --popover: #343746; --secondary: #44475a; --muted: #343746; --sidebar-accent: #343746; --accent: #44475a;
   /* text: primary, secondary, tertiary */
-  --foreground: #f8f8f2; --card-foreground: #f8f8f2; --popover-foreground: #f8f8f2; --secondary-foreground: #f8f8f2; --accent-foreground: #f8f8f2; --sidebar-foreground: #f8f8f2; --sidebar-accent-foreground: #f8f8f2; --muted-foreground: #bcc2cd; --faint: #6272a4;
+  --foreground: #f8f8f2; --card-foreground: #f8f8f2; --popover-foreground: #f8f8f2; --secondary-foreground: #f8f8f2; --accent-foreground: #f8f8f2; --sidebar-foreground: #f8f8f2; --sidebar-accent-foreground: #f8f8f2; --muted-foreground: #bcc2cd; --faint: #bcc2cd;
   /* borders and accent */
-  --border: #191a21; --input: #44475a; --sidebar-border: #191a21; --primary: #bd93f9; --ring: #bd93f9; --sidebar-primary: #bd93f9; --sidebar-ring: #bd93f9; --primary-text: #ff79c6; --primary-foreground: #282a36; --sidebar-primary-foreground: #282a36;
+  --border: #191a21; --input: #a3aabb; --sidebar-border: #191a21; --primary: #bd93f9; --ring: #bd93f9; --sidebar-primary: #bd93f9; --sidebar-ring: #bd93f9; --primary-text: #ff9bd5; --primary-foreground: #282a36; --sidebar-primary-foreground: #282a36;
   /* selection, search matches, current line */
   --sel: #44475a; --mark: rgba(241, 250, 140, 0.25); --mark-active: #ffb86c; --cur: #2e303e;
   /* elevation */
   --shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
 
   /* syntax */
-  --k: #ff79c6; --kt: #8be9fd; --nf: #50fa7b; --nc: #8be9fd; --nb: #8be9fd;
-  --nv: #f8f8f2; --no: #bd93f9; --na: #50fa7b; --nt: #ff79c6; --nd: #50fa7b;
-  --np: #f8f8f2; --s: #f1fa8c; --m: #bd93f9; --o: #ff79c6; --p: #f8f8f2;
-  --c: #6272a4; --cp: #ff79c6; --destructive: #ff5555; --err: #ff5555;
+  --k: #ff9bd5; --kt: #8be9fd; --nf: #50fa7b; --nc: #8be9fd; --nb: #8be9fd;
+  --nv: #f8f8f2; --no: #d1b1ff; --na: #50fa7b; --nt: #ff9bd5; --nd: #50fa7b;
+  --np: #f8f8f2; --s: #f1fa8c; --m: #d1b1ff; --o: #ff9bd5; --p: #f8f8f2;
+  --c: #bcc2cd; --cp: #ff9bd5; --destructive: #ffa0a0; --err: #ffa0a0;
 
   /* diffs and status */
-  --gi: #50fa7b; --gd: #ff5555;
+  --gi: #50fa7b; --gd: #ffa0a0;
   --gi-bg: rgba(80, 250, 123, 0.14); --gd-bg: rgba(255, 85, 85, 0.14);
 }

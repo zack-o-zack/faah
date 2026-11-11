@@ -9,9 +9,9 @@
   /* surfaces, from the editor out to raised hover states */
   --background: #ffffff; --sidebar: #f7f8fa; --card: #f7f8fa; --popover: #edf0f5; --secondary: #e1e5ee; --muted: #edf0f5; --sidebar-accent: #edf0f5; --accent: #e1e5ee;
   /* text: primary, secondary, tertiary */
-  --foreground: #24292f; --card-foreground: #24292f; --popover-foreground: #24292f; --secondary-foreground: #24292f; --accent-foreground: #24292f; --sidebar-foreground: #24292f; --sidebar-accent-foreground: #24292f; --muted-foreground: #57606a; --faint: #8c959f;
+  --foreground: #24292f; --card-foreground: #24292f; --popover-foreground: #24292f; --secondary-foreground: #24292f; --accent-foreground: #24292f; --sidebar-foreground: #24292f; --sidebar-accent-foreground: #24292f; --muted-foreground: #57606a; --faint: #57606a;
   /* borders and accent */
-  --border: #d0d7de; --input: #d0d7de; --sidebar-border: #d0d7de; --primary: #0969da; --ring: #0969da; --sidebar-primary: #0969da; --sidebar-ring: #0969da; --primary-text: #0550ae;
+  --border: #d0d7de; --input: #727b86; --sidebar-border: #d0d7de; --primary: #0969da; --ring: #0969da; --sidebar-primary: #0969da; --sidebar-ring: #0969da; --primary-text: #0550ae;
   --primary-foreground: #fff; --sidebar-primary-foreground: #fff;
   /* selection, search matches, current line */
   --sel: #b6e3ff; --mark: #fff8c5; --mark-active: #fae17d; --cur: #f3f6f9;
@@ -20,10 +20,10 @@
   --shadow: 0 4px 16px rgba(31, 35, 40, 0.18);
 
   /* syntax */
-  --k: #cf222e; --kt: #0550ae; --nf: #8250df; --nc: #953800; --nb: #0550ae;
-  --nv: #953800; --no: #0550ae; --na: #0550ae; --nt: #116329; --nd: #8250df;
-  --np: #0550ae; --s: #0a3069; --m: #0550ae; --o: #cf222e; --p: #57606a;
-  --c: #6e7781; --cp: #cf222e; --destructive: #cf222e; --err: #cf222e;
+  --k: #ba1c28; --kt: #0550ae; --nf: #7544cb; --nc: #953800; --nb: #0550ae;
+  --nv: #953800; --no: #0550ae; --na: #0550ae; --nt: #116329; --nd: #7544cb;
+  --np: #0550ae; --s: #0a3069; --m: #0550ae; --o: #ba1c28; --p: #57606a;
+  --c: #57606a; --cp: #ba1c28; --destructive: #ba1c28; --err: #ba1c28;
 
   /* diffs and status */
   --gi: #116329; --gd: #82071e;
