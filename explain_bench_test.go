@@ -52,6 +52,7 @@ func TestExplainBenchmark(t *testing.T) {
 				return
 			} else {
 				m.selected, m.args, m.pinned = n, args, true
+				// Native adapters read Open.Model from the manager, not argv.
 				m.models[n] = chosen
 			}
 			ix := NewIndex(root)

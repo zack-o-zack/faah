@@ -42,16 +42,16 @@ func TestExplainHarnessConformance(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if model := models[name]; model != "" {
-				if _, m.args, _, err = resolveAgentSpec(name, model); err != nil {
-					t.Fatal(err)
-				}
+			// Native adapters read Open.Model from the manager, not argv.
+			m.models[name] = models[name]
+			if _, m.args, _, err = resolveAgentSpec(name, models[name]); err != nil {
+				t.Fatal(err)
 			}
 			ix := NewIndex(root)
 			ix.Build()
 			s := NewServer(ix, nil)
 			s.SetAgent(m)
-			s.threads.file = "" // nothing from this run is worth keeping
+			s.threads.file = ""         // nothing from this run is worth keeping
 			ts := httptest.NewServer(s) // where MCP harnesses reach the tools
 			t.Cleanup(ts.Close)
 			s.SetToolsAddr(strings.TrimPrefix(ts.URL, "ht"+"tp://"))
