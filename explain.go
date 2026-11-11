@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"faah/internal/agents"
 	"faah/internal/symbols"
 	"faah/internal/ui"
 )
@@ -52,7 +53,7 @@ var (
 	errExplainBlank       = errors.New("nothing is selected")
 	errExplainTooLong     = fmt.Errorf("select %d lines or fewer", explainMaxLines)
 	errExplainMismatch    = errors.New("save the file to explain the current code")
-	errHarnessNotReadOnly = errors.New("no verified read-only mode")
+	errHarnessNotReadOnly = agents.ErrNotReadOnly
 
 	explainIdentRe = regexp.MustCompile(`[\p{L}_$][\p{L}\p{N}_$]*`)
 	explainWholeID = regexp.MustCompile(`^[\p{L}_$][\p{L}\p{N}_$]*$`)

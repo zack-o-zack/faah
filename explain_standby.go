@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -12,6 +11,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"faah/internal/agents"
+	"faah/internal/agents/all"
 	"faah/internal/settings"
 	"faah/internal/ui"
 
@@ -41,6 +42,7 @@ type explainStandby struct {
 type standbyProc struct {
 	key            string // harness and read-only argv a turn would run with
 	name           string
+	agent          agents.Warmable
 	sessionID      string // claude's, chosen at start; agy reports its own
 	cmd            *exec.Cmd
 	stdin          io.WriteCloser
@@ -54,29 +56,6 @@ func standbyKey(name string, argv []string) string {
 	return name + "\x00" + strings.Join(argv, "\x00")
 }
 
-// standbyArgv is a first turn's argv with the prompt read from stdin. Both
-// harnesses still want -p, so it is given an empty prompt.
-func standbyArgv(argv []string) []string {
-	out := make([]string, 0, len(argv)+2)
-	out = append(out, argv[0], "--input-format", "stream-json")
-	for _, a := range argv[1:] {
-		out = append(out, strings.ReplaceAll(a, harness.Placeholder, ""))
-	}
-	return out
-}
-
-// standbyMessage is the prompt as one stream-json input line.
-func standbyMessage(name, prompt string) []byte {
-	m := map[string]any{"message": map[string]any{"role": "user", "content": prompt}}
-	if name == "agy" {
-		m["event"] = "user"
-	} else {
-		m["type"] = "user"
-	}
-	b, _ := json.Marshal(m)
-	return append(b, '\n')
-}
-
 // warmExplain makes sure a standby is waiting for the explain harness as it is
 // configured now, replacing one started for another. Starting one forks a
 // process, so callers run this in its own goroutine.
@@ -87,11 +66,12 @@ func (tm *threadManager) warmExplain() {
 		return
 	}
 	name, base, _ := tm.explainHarness()
-	if base == nil || (name != "claude" && name != "agy") {
+	w, ok := all.For(name).(agents.Warmable)
+	if base == nil || !ok {
 		sb.stop()
 		return
 	}
-	ro, err := readOnlyArgv(name, base)
+	ro, _, err := w.ReadOnly(base)
 	if err != nil {
 		sb.stop()
 		return
@@ -111,11 +91,8 @@ func (tm *threadManager) warmExplain() {
 	if time.Since(sb.failed) < explainStandbyRetry {
 		return
 	}
-	sessionID := ""
-	if name == "claude" {
-		sessionID = newUUID()
-	}
-	sp, err := startStandby(tm.root, name, key, sessionID, standbyArgv(threadArgv(name, ro, sessionID, false)))
+	sessionID := w.NewSession(context.Background(), tm.root, ro)
+	sp, err := startStandby(tm.root, w, key, sessionID, w.StdinArgv(w.TurnArgv(ro, sessionID, false)))
 	if err != nil {
 		sb.failed = time.Now()
 		ui.Status("err", "explain", "could not start "+name+" ahead: "+err.Error(), 0, os.Stdout)
@@ -169,7 +146,7 @@ func (sb *explainStandby) stop() {
 	}
 }
 
-func startStandby(dir, name, key, sessionID string, argv []string) (*standbyProc, error) {
+func startStandby(dir string, w agents.Warmable, key, sessionID string, argv []string) (*standbyProc, error) {
 	cmd := exec.Command(argv[0], argv[1:]...)
 	cmd.Dir = dir
 	cmd.WaitDelay = 2 * time.Second // do not wait forever on output pipes held open by children
@@ -179,7 +156,7 @@ func startStandby(dir, name, key, sessionID string, argv []string) (*standbyProc
 		return nil, err
 	}
 	sp := &standbyProc{
-		key: key, name: name, sessionID: sessionID, cmd: cmd, stdin: stdin,
+		key: key, name: w.Name(), agent: w, sessionID: sessionID, cmd: cmd, stdin: stdin,
 		stdout: &handoffWriter{}, stderr: &handoffWriter{}, exited: make(chan struct{}),
 	}
 	cmd.Stdout, cmd.Stderr = sp.stdout, sp.stderr
@@ -214,7 +191,7 @@ func (sp *standbyProc) run(ctx context.Context, prompt string, stdout, stderr io
 	sp.stdout.attach(stdout)
 	sp.stderr.attach(stderr)
 	go func() { // a harness that stops reading must not hold the turn here
-		sp.stdin.Write(standbyMessage(sp.name, prompt))
+		sp.stdin.Write(sp.agent.StdinMessage(prompt))
 		sp.stdin.Close()
 	}()
 	timer := time.NewTimer(timeout)

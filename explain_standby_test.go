@@ -2,6 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"faah/internal/agents"
+	"faah/internal/agents/all"
+	"faah/internal/agents/claude"
 	"os"
 	"path/filepath"
 	"slices"
@@ -61,14 +64,14 @@ func waitStarts(t *testing.T, s *Server, n int32) {
 }
 
 func TestStandbyArgvReadsPromptFromStdin(t *testing.T) {
-	got := standbyArgv([]string{"claude", "--permission-mode", "plan", "-p", "{prompt}"})
+	got := claude.New().StdinArgv([]string{"claude", "--permission-mode", "plan", "-p", "{prompt}"})
 	want := []string{"claude", "--input-format", "stream-json", "--permission-mode", "plan", "-p", ""}
 	if !slices.Equal(got, want) {
 		t.Fatalf("argv = %q", got)
 	}
 	for name, field := range map[string]string{"claude": "type", "agy": "event"} {
 		var m map[string]any
-		if err := json.Unmarshal(standbyMessage(name, "hi"), &m); err != nil || m[field] != "user" {
+		if err := json.Unmarshal(all.For(name).(agents.Warmable).StdinMessage("hi"), &m); err != nil || m[field] != "user" {
 			t.Fatalf("%s message = %v (%v)", name, m, err)
 		}
 	}

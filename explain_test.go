@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"faah/internal/agents"
 	"faah/internal/settings"
 	"faah/internal/symbols"
 )
@@ -354,52 +355,12 @@ func TestExplainKeyAndHash(t *testing.T) {
 // the thread path can be tested without a conformance run.
 func verifyHarnesses(t *testing.T, names ...string) {
 	t.Helper()
-	prev := explainVerified
-	explainVerified = map[string]bool{}
+	prev := agents.Verified
+	agents.Verified = map[string]bool{}
 	for _, n := range names {
-		explainVerified[n] = true
+		agents.Verified[n] = true
 	}
-	t.Cleanup(func() { explainVerified = prev })
-}
-
-func TestReadOnlyArgvRefusesUnverified(t *testing.T) {
-	for _, name := range []string{"cursor-agent", "gemini"} {
-		if _, err := readOnlyArgv(name, []string{name, "--sandbox", "workspace-write", "--force"}); !errors.Is(err, errHarnessNotReadOnly) {
-			t.Errorf("%s err = %v, want it refused until it passes conformance", name, err)
-		}
-	}
-}
-
-func TestReadOnlyArgv(t *testing.T) {
-	verifyHarnesses(t, "claude", "codex", "cursor-agent", "agy", "opencode")
-	cases := []struct {
-		name string
-		in   []string
-		want []string
-	}{
-		{"claude", []string{"claude", "--permission-mode", "acceptEdits", "-p", "{prompt}"}, []string{"claude", "--permission-mode", "plan", "-p", "{prompt}"}},
-		{"codex", []string{"codex", "exec", "--sandbox", "workspace-write", "{prompt}"}, []string{"codex", "exec", "--sandbox", "read-only", "{prompt}"}},
-		{"cursor-agent", []string{"cursor-agent", "--force", "-p", "{prompt}"}, []string{"cursor-agent", "--mode", "ask", "-p", "{prompt}"}},
-		{"agy", []string{"agy", "--dangerously-skip-permissions", "--mode", "accept-edits", "-p", "{prompt}"}, []string{"agy", "--dangerously-skip-permissions", "--mode", "plan", "-p", "{prompt}"}},
-		{"opencode", []string{"opencode", "run", "-m", "x/y", "{prompt}"}, []string{"opencode", "run", "--standalone", "--agent", "faah-explain", "-m", "x/y", "{prompt}"}},
-	}
-	for _, c := range cases {
-		got, err := readOnlyArgv(c.name, c.in)
-		if err != nil || !reflect.DeepEqual(got, c.want) {
-			t.Errorf("%s = %v, %v; want %v", c.name, got, err, c.want)
-		}
-	}
-	refused := map[string][]string{
-		"opencode": {"opencode", "{prompt}"},
-		"claude":   {"claude", "-p", "{prompt}"},
-		"codex":    {"codex", "exec", "{prompt}"},
-		"harness":  {"/tmp/harness.sh", "{prompt}"},
-	}
-	for name, argv := range refused {
-		if _, err := readOnlyArgv(name, argv); !errors.Is(err, errHarnessNotReadOnly) {
-			t.Errorf("%s err = %v", name, err)
-		}
-	}
+	t.Cleanup(func() { agents.Verified = prev })
 }
 
 func TestValidateExplainRefs(t *testing.T) {

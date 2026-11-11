@@ -12,7 +12,7 @@ import (
 )
 
 // Runs each installed read-only harness through a real explanation and then
-// asks it to write a file. A harness that fails does not belong in readOnlyArgv.
+// asks it to write a file. A harness that fails does not belong in agents.Verified.
 // FAAH_CONFORMANCE_MODELS picks a model per harness ("opencode:opencode-go/claude-haiku-5-5").
 //
 //	go test -tags harness -run TestExplainHarnessConformance -timeout 9m .

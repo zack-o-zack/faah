@@ -894,27 +894,6 @@ func TestCommitMessagePrompt(t *testing.T) {
 
 
 
-func TestThreadArgv(t *testing.T) {
-	tpl := []string{"/bin/claude", "--permission-mode", "acceptEdits", "-p", "{prompt}"}
-	first := strings.Join(threadArgv("claude", tpl, "U", false), " ")
-	if !strings.Contains(first, "--session-id U") || strings.Contains(first, "--resume") || !strings.Contains(first, "stream-json") {
-		t.Fatalf("first turn argv = %s", first)
-	}
-	next := strings.Join(threadArgv("claude", tpl, "U", true), " ")
-	if !strings.Contains(next, "--resume U") || strings.Contains(next, "--session-id") {
-		t.Fatalf("resume argv = %s", next)
-	}
-	if got := strings.Join(threadArgv("cursor-agent", []string{"/bin/cursor-agent", "-p", "{prompt}"}, "C", true), " "); !strings.Contains(got, "--resume C") {
-		t.Fatalf("cursor argv = %s", got)
-	}
-	if got := threadArgv("codex", tpl, "", false); len(got) != len(tpl) {
-		t.Fatalf("unsupported harness argv changed: %v", got)
-	}
-	if tpl[1] != "--permission-mode" {
-		t.Fatal("threadArgv mutated its template")
-	}
-}
-
 func TestThreadPrompt(t *testing.T) {
 	th := &thread{Path: "main.go", L1: 3, L2: 4, Snippet: "func main() {}"}
 	first := threadPrompt(th, nil, "why?", false, "", false)
