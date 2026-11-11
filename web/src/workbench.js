@@ -232,7 +232,8 @@ function rowHtml(it) {
     ? '<span class="icon-[lucide--loader-circle] size-4 animate-spin text-muted-foreground" aria-hidden="true"></span>'
     : pr ? '<span class="icon-[lucide--git-pull-request] size-4 text-gi" aria-hidden="true"></span>'
     : '<span class="icon-[lucide--folder] size-4 text-muted-foreground" aria-hidden="true"></span>';
-  const act = (name, label, iconClass) => `<button type="button" data-act="${name}" title="${label}" aria-label="${label}" class="btn" data-variant="ghost" data-size="icon-xs"><span class="${iconClass}" aria-hidden="true"></span></button>`;
+  // The row itself is hovered, so its buttons answer on a surface of their own.
+  const act = (name, label, iconClass, tone = 'text-muted-foreground hover:bg-background hover:text-foreground') => `<button type="button" data-act="${name}" title="${label}" aria-label="${label}" class="btn ${tone}" data-variant="ghost" data-size="icon-sm"><span class="${iconClass}" aria-hidden="true"></span></button>`;
   const pin = it.pinned
     ? act('pin', 'Unpin', 'icon-[lucide--pin-off] size-3.5')
     : act('pin', 'Pin to the top', 'icon-[lucide--pin] size-3.5');
@@ -245,7 +246,7 @@ function rowHtml(it) {
     <aside class="flex shrink-0 items-center gap-1">
       <span class="w-16 text-right text-xs tabular-nums text-muted-foreground group-hover:hidden group-focus-within:hidden max-sm:hidden">${esc(ago(it.lastOpened))}</span>
       <span class="hidden gap-0.5 group-hover:flex group-focus-within:flex">${pin}${act('remove', 'Remove from the list', 'icon-[lucide--x] size-3.5')}</span>
-      ${s === 'running' ? act('stop', 'Stop this workspace', 'icon-[lucide--square] size-3 text-destructive') : ''}
+      ${s === 'running' ? act('stop', 'Stop this workspace', 'icon-[lucide--square] size-3.5', 'text-destructive hover:bg-destructive/15 hover:text-destructive') : ''}
     </aside>
   </a></li>`;
 }
