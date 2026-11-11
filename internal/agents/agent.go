@@ -5,44 +5,15 @@ package agents
 import (
 	"context"
 	"errors"
-	"io"
-	"time"
 )
 
-// ErrNotReadOnly means a harness has no read-only mode that passed the
-// conformance test in explain_conformance_test.go.
-var ErrNotReadOnly = errors.New("no verified read-only mode")
-
-// Verified lists the harnesses whose read-only mode passed the conformance
-// test. cursor-agent has a rewrite but has not yet passed, so it stays off
-// until it does. Tests may replace the map.
-var Verified = map[string]bool{"claude": true, "agy": true, "codex": true, "opencode": true}
-
-// Caps says what a harness can do.
-type Caps struct {
-	Sessions     bool // remembers a conversation by session id, so a follow-up needs no replay
-	NamesSession bool // picks its own session id and reports it, instead of being given one
-}
+// ErrNotReadOnly means an adapter cannot enforce Plan mode.
+var ErrNotReadOnly = errors.New("no read-only mode")
 
 // ToolEndpoint is where an MCP agent reaches faah's tools for one turn.
 type ToolEndpoint struct {
 	URL           string
 	Authorization string
-}
-
-// Turn is one prompt for a harness to answer.
-type Turn struct {
-	Dir       string
-	Argv      []string // headless argv, already made read-only when it has to be
-	Env       []string // extra KEY=VALUE entries
-	Model     string
-	Prompt    string
-	SessionID string        // "" when there is no session for this turn
-	Resume    bool          // the session is live: continue it instead of starting it
-	Tools     *ToolEndpoint // nil when the turn has no tools
-	Timeout   time.Duration
-	LogBytes  int
-	Stderr    io.Writer
 }
 
 // Outcome is what a turn leaves behind for the next one.
@@ -59,20 +30,7 @@ type Sink interface {
 	Result(text string)           // the final answer, used when nothing was streamed
 }
 
-// Agent is one coding harness.
-type Legacy interface {
-	Name() string
-	Caps() Caps
-	// ReadOnly rewrites a headless argv so the harness cannot change files,
-	// and returns any environment that needs. It fails with ErrNotReadOnly.
-	ReadOnly(argv []string) ([]string, []string, error)
-	// NewSession returns the id for a conversation's first turn, or "" when
-	// the harness keeps no session or names its own.
-	NewSession(ctx context.Context, dir string, argv []string) string
-	// Run answers one turn and blocks until the harness exits.
-	Run(ctx context.Context, t Turn, sink Sink) (Outcome, error)
-}
-
+// Agent opens native coding conversations.
 type Agent interface {
 	Name() string
 	Open(context.Context, Open) (Session, error)

@@ -1468,7 +1468,7 @@ func (tm *threadManager) Send(id, message string) (*thread, error) {
 		mode = agents.ModePlan
 	}
 	if explaining {
-		if err := all.CheckPlan(name, base); err != nil {
+		if err := all.CheckPlan(name); err != nil {
 			tm.mu.Unlock()
 			return nil, err
 		}

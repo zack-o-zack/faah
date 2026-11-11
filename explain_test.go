@@ -9,22 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"faah/internal/agents"
 	"faah/internal/explain"
 	"faah/internal/settings"
 )
-
-// verifyHarnesses allows the given harnesses for one test, so the rewrites and
-// the thread path can be tested without a conformance run.
-func verifyHarnesses(t *testing.T, names ...string) {
-	t.Helper()
-	prev := agents.Verified
-	agents.Verified = map[string]bool{}
-	for _, n := range names {
-		agents.Verified[n] = true
-	}
-	t.Cleanup(func() { agents.Verified = prev })
-}
 
 // explainServer supplies shell output through a fake native Claude session.
 func explainServer(t *testing.T, root, body string) *Server {
@@ -131,7 +118,7 @@ func TestExplainRefusesHarnessWithoutReadOnly(t *testing.T) {
 	writeExplainSource(t, root, explainGoSource)
 	s := agentServer(t, root, writeHarness(t, `printf 'ok\n'`))
 	code, m := agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "text": "helper"})
-	if code != 409 || !strings.Contains(m["error"].(string), "no verified read-only mode") {
+	if code != 409 || !strings.Contains(m["error"].(string), s.agent.Name()+" cannot run explanations read-only") {
 		t.Fatalf("explain = %d %v", code, m)
 	}
 	if len(s.threads.List()) != 0 {

@@ -3,6 +3,8 @@
 package all
 
 import (
+	"fmt"
+
 	"faah/internal/agents"
 	"faah/internal/agents/agy"
 	"faah/internal/agents/claude"
@@ -11,7 +13,6 @@ import (
 	"faah/internal/agents/gemini"
 	"faah/internal/agents/generic"
 	"faah/internal/agents/opencode"
-	"faah/internal/agents/percmd"
 )
 
 // List returns one of each listed agent.
@@ -33,14 +34,15 @@ func For(name string) agents.Agent {
 			return a
 		}
 	}
-	return percmd.Wrap(generic.New(name))
+	return generic.New(name)
 }
 
-// CheckPlan checks whether the adapter can enforce a read-only turn.
-func CheckPlan(name string, base []string) error {
-	if p, ok := For(name).(*percmd.Agent); ok {
-		_, _, err := p.Legacy.ReadOnly(base)
-		return err
+// CheckPlan refuses commands without a native Plan policy.
+func CheckPlan(name string) error {
+	for _, a := range List() {
+		if a.Name() == name {
+			return nil
+		}
 	}
-	return nil
+	return fmt.Errorf("%s cannot run explanations read-only: %w", name, agents.ErrNotReadOnly)
 }

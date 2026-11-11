@@ -23,7 +23,6 @@ func TestExplainBenchmark(t *testing.T) {
 	if spec == "" {
 		t.Skip("FAAH_EXPLAIN_BENCH is not set")
 	}
-	verifyHarnesses(t, "claude", "codex", "cursor-agent", "agy", "opencode")
 	isolateSettings(t)
 	root, err := os.Getwd()
 	if err != nil {

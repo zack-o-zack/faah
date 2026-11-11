@@ -14,13 +14,12 @@ import (
 
 // Runs each installed read-only harness through a real explanation and then
 // asks it to write a file. The explanation must show something on the code
-// through annotate or walkthrough. A harness that fails does not belong in agents.Verified.
+// through annotate or walkthrough. A failed policy must be fixed before enabling the adapter.
 // FAAH_CONFORMANCE_MODELS picks a model per harness ("opencode:opencode-go/claude-haiku-5-5").
 //
 //	go test -tags harness -run TestExplainHarnessConformance -timeout 9m .
 func TestExplainHarnessConformance(t *testing.T) {
 	names := []string{"claude", "codex", "cursor-agent", "agy", "opencode"}
-	verifyHarnesses(t, names...)
 	models := map[string]string{}
 	for _, pair := range strings.Split(os.Getenv("FAAH_CONFORMANCE_MODELS"), ",") {
 		if name, model, ok := strings.Cut(strings.TrimSpace(pair), ":"); ok {
