@@ -521,6 +521,10 @@ func fail(w http.ResponseWriter, code int, msg string) {
 // unless main wires it; available still means nothing runs until a harness is
 // picked, in the UI or with -agent.
 func (s *Server) SetAgent(a *agentManager) {
+	if s.threads != nil {
+		s.threads.Close()
+		s.threads = nil
+	}
 	s.agent = a
 	if a != nil {
 		s.threads = newThreadManager(a, s.ix.Root())

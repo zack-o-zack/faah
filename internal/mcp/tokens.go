@@ -1,53 +1,121 @@
-// Package mcp serves tools to coding harnesses over the Model Context
-// Protocol's Streamable HTTP transport, answering every request in JSON.
+// Package mcp serves faah tools over Streamable HTTP.
 package mcp
 
 import (
 	"crypto/rand"
-	"encoding/hex"
+	"crypto/sha256"
+	"encoding/base64"
+	"reflect"
 	"sync"
+	"time"
 )
 
-// Tokens maps bearer tokens to what each one acts for. A token issued with a
-// nil scope works for the handshake but not for tool calls until it is bound.
-type Tokens struct {
-	mu sync.Mutex
-	m  map[string]any
+type credential struct {
+	scope any
+	alive time.Time
 }
 
+// Tokens holds hashed, scoped credentials with a 24-hour idle expiry.
+type Tokens struct {
+	mu      sync.Mutex
+	m       map[[32]byte]credential
+	now     func() time.Time
+	servers map[*Server]struct{}
+}
+
+func (ts *Tokens) clock() time.Time {
+	if ts.now != nil {
+		return ts.now()
+	}
+	return time.Now()
+}
+
+// Issue creates a credential bound to scope.
 func (ts *Tokens) Issue(scope any) string {
-	var b [24]byte
-	rand.Read(b[:])
-	tok := hex.EncodeToString(b[:])
+	var b [32]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		panic(err)
+	}
+	tok := base64.RawURLEncoding.EncodeToString(b[:])
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
 	if ts.m == nil {
-		ts.m = map[string]any{}
+		ts.m = map[[32]byte]credential{}
 	}
-	ts.m[tok] = scope
+	ts.m[sha256.Sum256([]byte(tok))] = credential{scope, ts.clock()}
 	return tok
 }
 
-// Bind sets the scope of a live token.
-func (ts *Tokens) Bind(tok string, scope any) bool {
+// Resolve validates a credential and refreshes its idle expiry.
+func (ts *Tokens) Resolve(tok string) (any, bool) {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
-	if _, ok := ts.m[tok]; !ok {
-		return false
+	h := sha256.Sum256([]byte(tok))
+	c, ok := ts.m[h]
+	if !ok || tok == "" {
+		return nil, false
 	}
-	ts.m[tok] = scope
-	return true
+	if ts.clock().Sub(c.alive) >= 24*time.Hour {
+		ts.dropSessionsLocked(h)
+		return nil, false
+	}
+	c.alive = ts.clock()
+	ts.m[h] = c
+	return c.scope, true
 }
 
-func (ts *Tokens) Lookup(tok string) (any, bool) {
+// Touch refreshes credentials bound to scope.
+func (ts *Tokens) Touch(scope any) {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
-	s, ok := ts.m[tok]
-	return s, ok && tok != ""
+	for h, c := range ts.m {
+		if reflect.DeepEqual(c.scope, scope) {
+			if ts.clock().Sub(c.alive) >= 24*time.Hour {
+				ts.dropSessionsLocked(h)
+			}
+			c.alive = ts.clock()
+			ts.m[h] = c
+		}
+	}
 }
 
+// Revoke invalidates one credential.
 func (ts *Tokens) Revoke(tok string) {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
-	delete(ts.m, tok)
+	hash := sha256.Sum256([]byte(tok))
+	delete(ts.m, hash)
+	ts.dropSessionsLocked(hash)
+}
+
+// RevokeScope invalidates credentials whose scopes match.
+func (ts *Tokens) RevokeScope(match func(any) bool) {
+	ts.mu.Lock()
+	defer ts.mu.Unlock()
+	for h, c := range ts.m {
+		if match(c.scope) {
+			delete(ts.m, h)
+			ts.dropSessionsLocked(h)
+		}
+	}
+}
+
+func (ts *Tokens) validLocked(hash [32]byte) bool {
+	credential, ok := ts.m[hash]
+	return ok && ts.clock().Sub(credential.alive) < 24*time.Hour
+}
+
+func (ts *Tokens) dropSessionsLocked(hash [32]byte) {
+	for server := range ts.servers {
+		server.mu.Lock()
+		for sid, owner := range server.sessions {
+			if owner == hash {
+				delete(server.sessions, sid)
+			}
+		}
+		if len(server.sessions) == 0 {
+			delete(ts.servers, server)
+		}
+		server.mu.Unlock()
+	}
 }

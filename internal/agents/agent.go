@@ -5,54 +5,15 @@ package agents
 import (
 	"context"
 	"errors"
-	"io"
-	"time"
 )
 
-// ErrNotReadOnly means a harness has no read-only mode that passed the
-// conformance test in explain_conformance_test.go.
-var ErrNotReadOnly = errors.New("no verified read-only mode")
+// ErrNotReadOnly means an adapter cannot enforce Ask mode.
+var ErrNotReadOnly = errors.New("no read-only mode")
 
-// Verified lists the harnesses whose read-only mode passed the conformance
-// test. cursor-agent has a rewrite but has not yet passed, so it stays off
-// until it does. Tests may replace the map.
-var Verified = map[string]bool{"claude": true, "agy": true, "codex": true, "opencode": true}
-
-// Caps says what a harness can do.
-type Caps struct {
-	Sessions     bool        // remembers a conversation by session id, so a follow-up needs no replay
-	NamesSession bool        // picks its own session id and reports it, instead of being given one
-	Tools        ToolChannel // how the agent can call faah's tools
-}
-
-// ToolChannel is how an agent can call faah's tools.
-type ToolChannel int
-
-const (
-	ToolsNone   ToolChannel = iota
-	ToolsMCP                // MCP over HTTP, given in Turn.Tools
-	ToolsTagged             // tagged blocks in the reply, see internal/explain/notes
-)
-
-// ToolEndpoint is where an MCP agent reaches faah's tools for one turn.
+// ToolEndpoint gives a native session access to faah's MCP tools.
 type ToolEndpoint struct {
-	URL   string
-	Token string
-}
-
-// Turn is one prompt for a harness to answer.
-type Turn struct {
-	Dir       string
-	Argv      []string // headless argv, already made read-only when it has to be
-	Env       []string // extra KEY=VALUE entries
-	Model     string
-	Prompt    string
-	SessionID string        // "" when there is no session for this turn
-	Resume    bool          // the session is live: continue it instead of starting it
-	Tools     *ToolEndpoint // nil when the turn has no tools
-	Timeout   time.Duration
-	LogBytes  int
-	Stderr    io.Writer
+	URL           string
+	Authorization string
 }
 
 // Outcome is what a turn leaves behind for the next one.
@@ -63,33 +24,14 @@ type Outcome struct {
 
 // Sink receives a turn's output as it arrives.
 type Sink interface {
+	Reasoning(text string)
 	Text(text string, block bool) // block marks a whole message, set off by a blank line
 	Step(label string)            // a tool the harness used, such as "Read auth.go"
 	Result(text string)           // the final answer, used when nothing was streamed
 }
 
-// Agent is one coding harness.
+// Agent opens native coding conversations.
 type Agent interface {
 	Name() string
-	Caps() Caps
-	// ReadOnly rewrites a headless argv so the harness cannot change files,
-	// and returns any environment that needs. It fails with ErrNotReadOnly.
-	ReadOnly(argv []string) ([]string, []string, error)
-	// NewSession returns the id for a conversation's first turn, or "" when
-	// the harness keeps no session or names its own.
-	NewSession(ctx context.Context, dir string, argv []string) string
-	// Run answers one turn and blocks until the harness exits.
-	Run(ctx context.Context, t Turn, sink Sink) (Outcome, error)
-}
-
-// Warmable is an Agent that can be started before its prompt is known and be
-// given the prompt on stdin later.
-type Warmable interface {
-	Agent
-	// TurnArgv is the argv a turn runs: session and output flags when it has
-	// a session, tool flags when it has tools.
-	TurnArgv(t Turn) []string
-	StdinArgv(argv []string) []string
-	StdinMessage(prompt string) []byte
-	Stream(sink Sink) *Stream
+	Open(context.Context, Open) (Session, error)
 }

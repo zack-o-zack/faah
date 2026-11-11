@@ -48,7 +48,6 @@ func (g *explainGather) symbol(ctx context.Context, enc explainSpan, hasEnc bool
 		}
 	}
 
-	body := enc.Text
 	switch {
 	case def.Ext:
 		ev.Kind = KindExternal
@@ -58,8 +57,7 @@ func (g *explainGather) symbol(ctx context.Context, enc explainSpan, hasEnc bool
 		ev.Key = Key(ev.Kind, ev.Source, t.Rel, t.Name, enc.Text)
 	default:
 		ev.Kind = KindSymbol
-		var end int
-		body, end = g.definitionBody(def)
+		body, end := g.definitionBody(def)
 		ev.Key = Key(ev.Kind, ev.Source, def.Path, t.Name, body)
 		sections = append(sections, Section{fmt.Sprintf("Definition: %s:%s", def.Path, codeintel.LineRef(def.Line, end)), numberedBlock(def.Path, body, def.Line, explainBodyMax)})
 	}

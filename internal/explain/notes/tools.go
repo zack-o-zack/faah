@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"strings"
 
-	"faah/internal/agents"
 	"faah/internal/mcp"
 )
 
@@ -50,12 +49,6 @@ func Apply(read Reader, rec Recorder, scope any, name string, args json.RawMessa
 		if err := json.Unmarshal(args, &in); err != nil {
 			return "", fmt.Errorf("arguments: %v", err)
 		}
-		if in.Notes == nil { // a tagged block may hold one note on its own
-			var one Note
-			if json.Unmarshal(args, &one) == nil && one.Kind != "" {
-				in.Notes = []Note{one}
-			}
-		}
 		ok, errs := CheckNotes(read, in.Notes)
 		if len(ok) == 0 {
 			return "", errors.New(strings.Join(errs, "\n"))
@@ -94,23 +87,12 @@ func Tools(read Reader, rec Recorder) []mcp.Tool {
 	}
 }
 
-// Prompt tells the agent how to show its explanation, for its tool channel.
-func Prompt(ch agents.ToolChannel) string {
-	const use = "Show your explanation on the code. Use annotate for code that can be explained where it is: " +
-		"a symbol, a line, or a block; one call can carry many notes, up to a whole file. " +
+// Prompt tells the agent how to show its explanation over MCP.
+func Prompt() string {
+	return "faah gives you two tools, annotate and walkthrough. Show your explanation on the code. " +
+		"Use annotate for a symbol, a line, or a block; one call can carry many notes, up to a whole file. " +
 		"Use walkthrough for behavior that spans several functions or files. Choose what fits the question. " +
 		"Text you write outside the tools goes into the conversation beside the code, so keep it short.\n\n"
-	switch ch {
-	case agents.ToolsMCP:
-		return "faah gives you two tools, annotate and walkthrough. " + use
-	case agents.ToolsTagged:
-		return "faah shows two kinds of tool call that you write in your reply, each on its own lines, " +
-			"as one JSON object between tags. faah removes them from the text and draws them on the code.\n" +
-			"<faah:annotate>{\"notes\":[{\"kind\":\"symbol|line|block\",\"path\":\"…\",\"l1\":0,\"l2\":0,\"symbol\":\"…\",\"summary\":\"…\",\"detail\":\"…\"}]}</faah:annotate>\n" +
-			"<faah:walkthrough>{\"title\":\"…\",\"steps\":[{\"path\":\"…\",\"l1\":0,\"l2\":0,\"title\":\"…\",\"body\":\"…\"}]}</faah:walkthrough>\n" +
-			"Paths are workspace-relative and lines 1-based. summary is one line of at most 120 characters. " + use
-	}
-	return ""
 }
 
 // History writes what a turn showed on the code as text, for a conversation

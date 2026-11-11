@@ -3,13 +3,14 @@
 package all
 
 import (
+	"fmt"
+	"strings"
+
 	"faah/internal/agents"
 	"faah/internal/agents/agy"
 	"faah/internal/agents/claude"
 	"faah/internal/agents/codex"
 	"faah/internal/agents/cursor"
-	"faah/internal/agents/gemini"
-	"faah/internal/agents/generic"
 	"faah/internal/agents/opencode"
 )
 
@@ -21,16 +22,35 @@ func List() []agents.Agent {
 		agy.New(),
 		opencode.New(),
 		cursor.New(),
-		gemini.New(),
 	}
 }
 
-// For returns the agent for a harness name, or a generic one.
+// For returns the named agent, or nil when the name is unknown.
 func For(name string) agents.Agent {
 	for _, a := range List() {
 		if a.Name() == name {
 			return a
 		}
 	}
-	return generic.New(name)
+	return nil
+}
+
+// CheckAsk verifies that the agent has a read-only Ask policy.
+func CheckAsk(name string) error { return ValidateName(name) }
+
+// Names returns the supported agent names.
+func Names() []string {
+	names := []string{}
+	for _, a := range List() {
+		names = append(names, a.Name())
+	}
+	return names
+}
+
+// ValidateName rejects names without a native adapter.
+func ValidateName(name string) error {
+	if For(name) == nil {
+		return fmt.Errorf("unknown agent %s; choose one of: %s", name, strings.Join(Names(), ", "))
+	}
+	return nil
 }
