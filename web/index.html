@@ -291,13 +291,15 @@
       <div id="hovercard" role="region" aria-label="Symbol documentation" tabindex="-1" class="card absolute z-[60] w-[calc(100%_-_24px)] max-w-[580px] max-h-[min(70vh,calc(100%_-_16px))] overflow-auto gap-0" hidden></div>
 
       <!-- Find in File (Ctrl+F) Overlay Bar -->
-      <div id="findbar" class="card absolute top-2 right-[22px] z-20 flex-row items-center gap-1" hidden>
-        <input id="find-input" aria-label="Find in file" type="text" spellcheck="false" placeholder="Find" autocomplete="off" class="input border-0! shadow-none! bg-transparent! h-6! w-[190px]!">
+      <div id="findbar" class="card absolute top-2 right-2 z-20 w-96 max-w-[calc(100%_-_16px)] flex-row flex-wrap items-center gap-2" hidden>
+        <input id="find-input" aria-label="Find in file" type="text" spellcheck="false" placeholder="Find" autocomplete="off" class="input min-w-24 flex-1">
+        <div class="ml-auto flex items-center gap-1">
         <button id="find-case" title="Match case" class="btn" data-variant="outline" data-size="xs">Aa</button>
         <span id="find-count" class="min-w-16 text-right font-mono text-muted-foreground">0</span>
         <button id="find-prev" title="Previous ({Shift+Enter})" class="btn" data-variant="ghost" data-size="icon-xs" aria-label="Previous ({Shift+Enter})">&#8593;</button>
         <button id="find-next" title="Next ({Enter})" class="btn" data-variant="ghost" data-size="icon-xs" aria-label="Next ({Enter})">&#8595;</button>
         <button id="find-close" title="Close ({Esc})" class="btn" data-variant="ghost" data-size="icon-xs" aria-label="Close ({Esc})">&#10005;</button>
+        </div>
       </div>
 
       <template id="agentbox-tpl">
