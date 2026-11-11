@@ -20,6 +20,7 @@
 6. Keep every `id`, `role`, `aria-*`, `data-*` and `hidden` attribute that JavaScript or tests read.
 7. After each phase: `node scripts/build-web.js`, `node scripts/check-web.js`, `bun test web/src/`, `go test ./...`, `npm test --prefix desktop` all pass.
 8. Commit messages: imperative sentence case, no AI attribution, no names of other products.
+9. The goal is a working app on the new system, not visual parity. Use Basecoat components with their default look and only the layout utilities they need (position, size, gap, overflow). Do not add utilities or overrides to reproduce old sizes, spacing, colours or radii, and delete shims whose only job was to keep the old look. Screenshots are checked for broken behaviour, clipping, overflow and unreadable states.
 
 ## Token vocabulary (phase 1)
 
@@ -94,7 +95,7 @@ Basecoat already maps `--color-background`, `--color-primary`, `--color-sidebar`
 
 Each phase is one brief to the implementing agent and ends with before and after screenshots of the same screens in Catppuccin Mocha (dark) and Paper (light).
 
-### Phase 1: Build pipeline and tokens (no intended visual change)
+### Phase 1: Build pipeline and tokens
 
 **Files:**
 - Create: `web/tailwind.css` (entry), root `package-lock.json`
