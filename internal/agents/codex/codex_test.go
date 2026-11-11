@@ -76,9 +76,16 @@ func TestMain(m *testing.M) {
 				os.Stderr.WriteString("fake codex crashed")
 				os.Exit(2)
 			}
+			if text == "notification-only" {
+				emit("turn/started", map[string]any{"threadId": thread, "turn": map[string]string{"id": turn}})
+				continue
+			}
+			if text == "delayed" {
+				time.Sleep(200 * time.Millisecond)
+			}
 			respond(map[string]any{"turn": map[string]string{"id": turn}})
 			emit("turn/started", map[string]any{"threadId": thread, "turn": map[string]string{"id": turn}})
-			if text == "hold" {
+			if text == "hold" || text == "delayed" {
 				continue
 			}
 			emit("item/agentMessage/delta", map[string]string{"threadId": thread, "turnId": turn, "itemId": "answer", "delta": text})
@@ -110,6 +117,59 @@ func TestMain(m *testing.M) {
 		}
 	}
 	os.Exit(0)
+}
+
+func TestCodexCancelAndCloseInterruptPendingTurns(t *testing.T) {
+	for _, text := range []string{"hold", "delayed", "notification-only"} {
+		for _, action := range []string{"cancel", "close"} {
+			t.Run(text+"/"+action, func(t *testing.T) {
+				ctx, o := setup(t)
+				ctx, cancel := context.WithCancel(ctx)
+				defer cancel()
+				s, err := New().Open(ctx, o)
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer s.Close()
+				done := make(chan error, 1)
+				go func() { _, err := s.Prompt(ctx, text, &capture{}); done <- err }()
+				deadline := time.After(2 * time.Second)
+				for {
+					started := false
+					for _, frame := range wire(t, o) {
+						started = started || frame["method"] == "turn/start"
+					}
+					if started {
+						break
+					}
+					select {
+					case <-deadline:
+						t.Fatal("turn/start not sent")
+					case <-time.After(time.Millisecond):
+					}
+				}
+				if action == "cancel" {
+					cancel()
+				} else if err := s.Close(); err != nil {
+					t.Fatal(err)
+				}
+				select {
+				case err := <-done:
+					if err == nil {
+						t.Fatal("turn unexpectedly completed")
+					}
+				case <-time.After(6 * time.Second):
+					t.Fatal("turn did not stop")
+				}
+				for _, frame := range wire(t, o) {
+					if frame["method"] == "turn/interrupt" {
+						return
+					}
+				}
+				t.Fatal("native turn was not interrupted")
+			})
+		}
+	}
 }
 
 type capture struct {

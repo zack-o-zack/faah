@@ -20,12 +20,14 @@ import (
 )
 
 type fake struct {
-	t       *testing.T
-	mu      sync.Mutex
-	calls   []request
-	streams int
-	clients map[chan event]bool
-	next    int
+	t             *testing.T
+	mu            sync.Mutex
+	calls         []request
+	streams       int
+	clients       map[chan event]bool
+	promptStarted chan struct{}
+	promptRelease chan struct{}
+	next          int
 }
 
 type request struct {
@@ -88,6 +90,15 @@ func (f *fake) serve(w http.ResponseWriter, r *http.Request) {
 	case strings.HasSuffix(r.URL.Path, "/prompt"):
 		id := strings.Split(r.URL.Path, "/")[3]
 		text, _ := body["text"].(string)
+		if text == "delayed" {
+			close(f.promptStarted)
+			select {
+			case <-f.promptRelease:
+			case <-r.Context().Done():
+			}
+			w.WriteHeader(204)
+			return
+		}
 		if text == "hold" {
 			w.WriteHeader(204)
 			return
@@ -253,6 +264,50 @@ func TestOpenCodeSessions(t *testing.T) {
 				t.Fatal(err)
 			}
 			resumed.Close()
+		})
+	}
+}
+
+func TestOpenCodeCancelAndCloseInterruptPendingPrompt(t *testing.T) {
+	for _, action := range []string{"cancel", "close"} {
+		t.Run(action, func(t *testing.T) {
+			f, _, o := fixture(t)
+			f.promptStarted = make(chan struct{})
+			f.promptRelease = make(chan struct{})
+			defer close(f.promptRelease)
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			s, err := New().Open(ctx, o)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer s.Close()
+			done := make(chan error, 1)
+			go func() { _, err := s.Prompt(ctx, "delayed", &capture{}); done <- err }()
+			select {
+			case <-f.promptStarted:
+			case <-time.After(time.Second):
+				t.Fatal("prompt not sent")
+			}
+			if action == "cancel" {
+				cancel()
+			} else if err := s.Close(); err != nil {
+				t.Fatal(err)
+			}
+			select {
+			case <-done:
+			case <-time.After(6 * time.Second):
+				cancel()
+				t.Fatal("prompt did not stop")
+			}
+			f.mu.Lock()
+			defer f.mu.Unlock()
+			for _, call := range f.calls {
+				if call.Path == "/api/session/"+s.ID()+"/interrupt" {
+					return
+				}
+			}
+			t.Fatal("native session was not interrupted")
 		})
 	}
 }

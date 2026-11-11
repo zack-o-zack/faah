@@ -181,6 +181,14 @@ func (s *session) Close() error {
 	var err error
 	s.once.Do(func() {
 		close(s.closed)
+		s.mu.Lock()
+		active := s.active
+		s.mu.Unlock()
+		if active {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			err = s.Interrupt(ctx)
+			cancel()
+		}
 		s.server.mu.Lock()
 		delete(s.server.routes, s.id)
 		s.server.mu.Unlock()
@@ -239,15 +247,46 @@ func (s *session) Prompt(ctx context.Context, text string, sink agents.Sink) (ag
 		}
 	}
 	s.mu.Lock()
+	select {
+	case <-s.closed:
+		s.mu.Unlock()
+		return out, errors.New("opencode session closed")
+	default:
+	}
 	s.active = true
 	s.queue = nil
 	s.mu.Unlock()
-	defer func() { s.mu.Lock(); s.active = false; s.queue = nil; s.mu.Unlock() }()
+	promptCtx, cancelPrompt := context.WithCancel(ctx)
+	go func() {
+		select {
+		case <-s.closed:
+			cancelPrompt()
+		case <-promptCtx.Done():
+		}
+	}()
+	defer func() {
+		closed := false
+		select {
+		case <-s.closed:
+			closed = true
+		default:
+		}
+		if ctx.Err() != nil || closed {
+			interruptCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			_ = s.Interrupt(interruptCtx)
+			cancel()
+		}
+		cancelPrompt()
+		s.mu.Lock()
+		s.active = false
+		s.queue = nil
+		s.mu.Unlock()
+	}()
 	b := make([]byte, 16)
 	if _, err := rand.Read(b); err != nil {
 		return out, err
 	}
-	if err := s.server.call(ctx, "POST", s.path()+"/prompt", map[string]string{"id": "msg_" + hex.EncodeToString(b), "text": text}, nil); err != nil {
+	if err := s.server.call(promptCtx, "POST", s.path()+"/prompt", map[string]string{"id": "msg_" + hex.EncodeToString(b), "text": text}, nil); err != nil {
 		if s.server.process != nil {
 			select {
 			case <-s.server.process.Exited:
@@ -317,7 +356,6 @@ func (s *session) Prompt(ctx context.Context, text string, sink agents.Sink) (ag
 		select {
 		case <-s.wake:
 		case <-ctx.Done():
-			_ = s.Interrupt(context.Background())
 			return out, ctx.Err()
 		case <-s.closed:
 			return out, errors.New("opencode session closed")

@@ -221,17 +221,18 @@ func (s *server) answer(f envelope, session *session) {
 }
 
 type session struct {
-	o      agents.Open
-	id     string
-	model  string
-	mu     sync.Mutex
-	server *server
-	queue  []envelope
-	wake   chan struct{}
-	closed chan struct{}
-	turnID string
-	turn   sync.Mutex
-	once   sync.Once
+	o         agents.Open
+	id        string
+	model     string
+	mu        sync.Mutex
+	server    *server
+	queue     []envelope
+	wake      chan struct{}
+	closed    chan struct{}
+	turnID    string
+	turnReady chan struct{}
+	turn      sync.Mutex
+	once      sync.Once
 }
 
 // Open starts or resumes a conversation on the shared process.
@@ -345,6 +346,21 @@ func (s *session) ID() string { return s.id }
 
 func (s *session) enqueue(f envelope) {
 	s.mu.Lock()
+	if f.Method == "turn/started" && s.turnReady != nil {
+		var params struct {
+			Turn struct {
+				ID string `json:"id"`
+			} `json:"turn"`
+		}
+		if json.Unmarshal(f.Params, &params) == nil && params.Turn.ID != "" {
+			s.turnID = params.Turn.ID
+			select {
+			case <-s.turnReady:
+			default:
+				close(s.turnReady)
+			}
+		}
+	}
 	s.queue = append(s.queue, f)
 	s.mu.Unlock()
 	select {
@@ -370,10 +386,37 @@ func (s *session) Prompt(ctx context.Context, text string, sink agents.Sink) (ag
 		return out, err
 	}
 	s.mu.Lock()
+	select {
+	case <-s.closed:
+		s.mu.Unlock()
+		return out, errors.New("codex session is closed")
+	default:
+	}
 	srv := s.server
 	s.queue = nil
 	s.turnID = ""
+	ready := make(chan struct{})
+	s.turnReady = ready
 	s.mu.Unlock()
+	startCtx, cancelStart := context.WithCancel(context.Background())
+	defer func() {
+		closed := false
+		select {
+		case <-s.closed:
+			closed = true
+		default:
+		}
+		if ctx.Err() != nil || closed {
+			interruptCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			_ = s.Interrupt(interruptCtx)
+			cancel()
+		}
+		cancelStart()
+		s.mu.Lock()
+		s.turnID = ""
+		s.turnReady = nil
+		s.mu.Unlock()
+	}()
 	params := map[string]any{"threadId": s.id, "cwd": s.o.Dir, "input": []any{map[string]string{"type": "text", "text": text}}, "approvalPolicy": "on-request", "sandboxPolicy": map[string]string{"type": "workspaceWrite"}}
 	if s.o.Model != "" {
 		params["model"] = s.o.Model
@@ -388,20 +431,41 @@ func (s *session) Prompt(ctx context.Context, text string, sink agents.Sink) (ag
 		delete(params, "sandboxPolicy")
 		params["permissions"] = "faah-plan"
 	}
-	result, err := srv.call(ctx, "turn/start", params)
-	if err != nil {
-		return out, err
+	started := make(chan error, 1)
+	go func() {
+		result, err := srv.call(startCtx, "turn/start", params)
+		var response struct {
+			Turn struct {
+				ID string `json:"id"`
+			} `json:"turn"`
+		}
+		if err == nil {
+			err = json.Unmarshal(result, &response)
+		}
+		s.mu.Lock()
+		if s.turnReady == ready {
+			if response.Turn.ID != "" {
+				s.turnID = response.Turn.ID
+			}
+			select {
+			case <-ready:
+			default:
+				close(ready)
+			}
+		}
+		s.mu.Unlock()
+		started <- err
+	}()
+	select {
+	case err := <-started:
+		if err != nil {
+			return out, err
+		}
+	case <-ctx.Done():
+		return out, ctx.Err()
+	case <-s.closed:
+		return out, errors.New("codex session is closed")
 	}
-	var r struct {
-		Turn struct {
-			ID string `json:"id"`
-		} `json:"turn"`
-	}
-	json.Unmarshal(result, &r)
-	s.mu.Lock()
-	s.turnID = r.Turn.ID
-	s.mu.Unlock()
-	defer func() { s.mu.Lock(); s.turnID = ""; s.mu.Unlock() }()
 	lastItem := ""
 	hadText := false
 	for {
@@ -477,10 +541,6 @@ func (s *session) Prompt(ctx context.Context, text string, sink agents.Sink) (ag
 		case <-s.closed:
 			return out, errors.New("codex session is closed")
 		case <-ctx.Done():
-			c, cancel := context.WithTimeout(context.Background(), time.Second)
-			_ = s.Interrupt(c)
-			cancel()
-			s.Close()
 			return out, ctx.Err()
 		}
 	}
@@ -489,8 +549,18 @@ func (s *session) Prompt(ctx context.Context, text string, sink agents.Sink) (ag
 // Interrupt asks the server to stop the active native turn.
 func (s *session) Interrupt(ctx context.Context) error {
 	s.mu.Lock()
-	srv, id := s.server, s.turnID
+	srv, id, ready := s.server, s.turnID, s.turnReady
 	s.mu.Unlock()
+	if id == "" && ready != nil {
+		select {
+		case <-ready:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+		s.mu.Lock()
+		id = s.turnID
+		s.mu.Unlock()
+	}
 	if srv == nil || id == "" {
 		return nil
 	}
@@ -519,6 +589,9 @@ func scheduleIdle(pool *sharedServer) {
 func (s *session) Close() error {
 	s.once.Do(func() {
 		close(s.closed)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		_ = s.Interrupt(ctx)
+		cancel()
 		shared.Lock()
 		defer shared.Unlock()
 		pool := sharedFor(s.o)
