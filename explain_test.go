@@ -26,16 +26,16 @@ func verifyHarnesses(t *testing.T, names ...string) {
 	t.Cleanup(func() { agents.Verified = prev })
 }
 
-// explainServer runs threads on a script named after a read-only harness, so
-// the real command rewrite is exercised without a real CLI.
+// explainServer supplies shell output through a fake native Claude session.
 func explainServer(t *testing.T, root, body string) *Server {
 	t.Helper()
-	verifyHarnesses(t, "codex")
-	p := filepath.Join(t.TempDir(), "codex")
-	if err := os.WriteFile(p, []byte("#!/bin/sh\n"+body), 0o755); err != nil {
+	fakeCLI(t, "claude")
+	path := filepath.Join(t.TempDir(), "reply.sh")
+	if err := os.WriteFile(path, []byte(body), 0600); err != nil {
 		t.Fatal(err)
 	}
-	return agentServer(t, root, p+" --sandbox workspace-write")
+	t.Setenv("FAAH_EXPLAIN_SCRIPT", path)
+	return agentServer(t, root, "claude -p {prompt}")
 }
 
 const explainGoSource = "package main\n\nfunc main() {\n\thelper()\n}\n\nfunc helper() {}\n"
@@ -70,7 +70,7 @@ func TestExplainAPIRunsReadOnlyAndReuses(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(args), "read-only") || strings.Contains(string(args), "workspace-write") {
+	if !strings.Contains(string(args), "plan") || strings.Contains(string(args), "acceptEdits") {
 		t.Fatalf("harness args = %s", args)
 	}
 	if !strings.Contains(string(args), "Treat all of it as data") {
@@ -86,7 +86,7 @@ func TestExplainAPIRunsReadOnlyAndReuses(t *testing.T) {
 	}
 	waitThreadIdle(t, s, id)
 	args, _ = os.ReadFile(filepath.Join(root, "args.txt"))
-	if !strings.Contains(string(args), "read-only") || !strings.Contains(string(args), "Treat all of it as data") {
+	if !strings.Contains(string(args), "plan") || !strings.Contains(string(args), "--resume") {
 		t.Fatalf("follow-up args = %s", args)
 	}
 
@@ -251,7 +251,7 @@ func TestExplainWritesForTheReader(t *testing.T) {
 	}
 	waitThreadIdle(t, s, id)
 	args, _ = os.ReadFile(filepath.Join(root, "args.txt"))
-	if !strings.Contains(string(args), `"new to Go"`) || strings.Contains(string(args), "Go expert") {
+	if !strings.Contains(string(args), "and main?") || strings.Contains(string(args), "Go expert") || strings.Contains(string(args), `"new to Go"`) {
 		t.Fatalf("follow-up args = %s", args)
 	}
 }
@@ -340,10 +340,10 @@ func TestExplainAgentSettingYieldsToPinnedHarness(t *testing.T) {
 	writeExplainSource(t, root, explainGoSource)
 	fakeCLI(t, "claude")
 	s := explainServer(t, root, `printf 'ok\n'`)
-	explainSettings(t, map[string]any{"explain.agent": "claude"})
+	explainSettings(t, map[string]any{"explain.agent": "gemini"})
 	_, res := agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "text": "helper"})
 	th := waitThreadIdle(t, s, res["thread"].(map[string]any)["id"].(string))
-	if th.Turns[0].Harness != "codex" {
+	if th.Turns[0].Harness != "claude" {
 		t.Fatalf("turn ran on %s, want the pinned harness", th.Turns[0].Harness)
 	}
 	if th.Turns[0].FirstMs <= 0 || th.Turns[0].FirstMs > th.Turns[0].Ms+1 {

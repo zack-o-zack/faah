@@ -35,7 +35,6 @@ func TestReadOnlyArgv(t *testing.T) {
 		want []string
 	}{
 		{"claude", []string{"claude", "--permission-mode", "acceptEdits", "-p", "{prompt}"}, []string{"claude", "--permission-mode", "plan", "-p", "{prompt}"}},
-		{"codex", []string{"codex", "exec", "--sandbox", "workspace-write", "{prompt}"}, []string{"codex", "exec", "--sandbox", "read-only", "{prompt}"}},
 		{"cursor-agent", []string{"cursor-agent", "--force", "-p", "{prompt}"}, []string{"cursor-agent", "--mode", "ask", "-p", "{prompt}"}},
 		{"agy", []string{"agy", "--dangerously-skip-permissions", "--mode", "accept-edits", "-p", "{prompt}"}, []string{"agy", "--dangerously-skip-permissions", "--mode", "plan", "-p", "{prompt}"}},
 		{"opencode", []string{"opencode", "run", "-m", "x/y", "{prompt}"}, []string{"opencode", "run", "--standalone", "--agent", "faah-explain", "-m", "x/y", "{prompt}"}},
@@ -49,7 +48,6 @@ func TestReadOnlyArgv(t *testing.T) {
 	refused := map[string][]string{
 		"opencode": {"opencode", "{prompt}"},
 		"claude":   {"claude", "-p", "{prompt}"},
-		"codex":    {"codex", "exec", "{prompt}"},
 		"harness":  {"/tmp/harness.sh", "{prompt}"},
 	}
 	for name, argv := range refused {
@@ -70,4 +68,15 @@ func readOnly(name string, argv []string) ([]string, error) {
 	}
 	out, _, err := For(name).(*percmd.Agent).Legacy.ReadOnly(argv)
 	return out, err
+}
+
+func TestCheckPlanUsesNativePolicy(t *testing.T) {
+	for _, name := range []string{"claude", "codex"} {
+		if err := CheckPlan(name, []string{name, "-p", "{prompt}"}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := CheckPlan("gemini", []string{"gemini", "-p", "{prompt}"}); !errors.Is(err, agents.ErrNotReadOnly) {
+		t.Fatal(err)
+	}
 }

@@ -130,6 +130,11 @@ func (p *Process) Error() error {
 func (p *Process) Close() error {
 	p.once.Do(func() {
 		close(p.stop)
+		select {
+		case <-p.Exited:
+			return
+		default:
+		}
 		terminate(p.Cmd)
 		go func() {
 			timer := time.NewTimer(5 * time.Second)

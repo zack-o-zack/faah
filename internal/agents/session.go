@@ -9,26 +9,33 @@ import (
 type Mode int
 
 const (
+	// ModeEdit permits workspace changes.
 	ModeEdit Mode = iota
+	// ModePlan enforces read-only operation.
 	ModePlan
 )
 
 // Open configures a native agent session.
 type Open struct {
-	Dir    string
-	Model  string
-	Mode   Mode
-	Resume string
-	Tools  *ToolEndpoint
-	Env    []string
-	Base   []string
-	Stderr io.Writer
+	Version string
+	Dir     string
+	Model   string
+	Mode    Mode
+	Resume  string
+	Tools   *ToolEndpoint
+	Env     []string
+	Base    []string
+	Stderr  io.Writer
 }
 
 // Session holds a resumable conversation.
 type Session interface {
+	// ID returns the native conversation identifier.
 	ID() string
+	// Prompt streams a turn through its native completion signal.
 	Prompt(context.Context, string, Sink) (Outcome, error)
+	// Interrupt stops the active turn.
 	Interrupt(context.Context) error
+	// Close releases the live session.
 	Close() error
 }

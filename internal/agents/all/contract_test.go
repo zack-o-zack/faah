@@ -62,8 +62,6 @@ var contract = map[string]expect{
 	"cursor-agent": {caps: agents.Caps{Sessions: true}, live: true,
 		first:  "--resume {sid} -p say hello",
 		resume: "--resume {sid} -p say hello"},
-	"codex": {first: "-p say hello", resume: "-p say hello", tools: agents.ToolsMCP,
-		toolArgs: `-c mcp_servers.faah.url="` + toolURL + `" -c mcp_servers.faah.http_headers={Authorization="Bearer tok"} -p say hello`},
 	"opencode": {first: "-p say hello", resume: "-p say hello", tools: agents.ToolsTagged},
 }
 
@@ -76,6 +74,10 @@ func TestAgentContract(t *testing.T) {
 	seen := map[string]bool{}
 	for _, a := range List() {
 		a := a
+		if a.Name() == "codex" {
+			t.Run("codex", func(t *testing.T) { codexContract(t, a) })
+			continue
+		}
 		if a.Name() == "claude" {
 			t.Run("claude", func(t *testing.T) { claudeContract(t, a) })
 			continue
@@ -193,6 +195,25 @@ func noSession(a agents.Agent) string {
 func (s *sink) Reasoning(text string) {}
 
 func TestMain(m *testing.M) {
+	if os.Getenv("FAAH_CONTRACT_CODEX") == "1" {
+		scan := bufio.NewScanner(os.Stdin)
+		enc := json.NewEncoder(os.Stdout)
+		for scan.Scan() {
+			var f map[string]any
+			json.Unmarshal(scan.Bytes(), &f)
+			switch f["method"] {
+			case "initialize":
+				enc.Encode(map[string]any{"id": f["id"], "result": map[string]any{}})
+			case "thread/start", "thread/resume":
+				enc.Encode(map[string]any{"id": f["id"], "result": map[string]any{"thread": map[string]string{"id": "native"}}})
+			case "turn/start":
+				enc.Encode(map[string]any{"id": f["id"], "result": map[string]any{"turn": map[string]string{"id": "turn"}}})
+				enc.Encode(map[string]any{"method": "item/agentMessage/delta", "params": map[string]string{"threadId": "native", "turnId": "turn", "delta": "hello"}})
+				enc.Encode(map[string]any{"method": "turn/completed", "params": map[string]any{"threadId": "native", "turn": map[string]string{"id": "turn", "status": "completed"}}})
+			}
+		}
+		os.Exit(0)
+	}
 	if os.Getenv("FAAH_CONTRACT_CLAUDE") == "1" {
 		scan := bufio.NewScanner(os.Stdin)
 		enc := json.NewEncoder(os.Stdout)
@@ -231,6 +252,25 @@ func claudeContract(t *testing.T, a agents.Agent) {
 		out, err := session.Prompt(ctx, "say hello", sink)
 		if err != nil || out.SessionID != id || strings.Join(sink.text, "") != "hello" || len(sink.steps) != 1 {
 			t.Fatalf("%+v %+v %v", out, sink, err)
+		}
+	}
+}
+
+func codexContract(t *testing.T, a agents.Agent) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	exe, _ := os.Executable()
+	o := agents.Open{Base: []string{exe}, Env: []string{"FAAH_CONTRACT_CODEX=1"}}
+	s, err := a.Open(ctx, o)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	for i := 0; i < 2; i++ {
+		c := &sink{}
+		out, err := s.Prompt(ctx, "hello", c)
+		if err != nil || !out.Live || out.SessionID != "native" || strings.Join(c.text, "") != "hello" {
+			t.Fatalf("%+v %+v %v", out, c, err)
 		}
 	}
 }

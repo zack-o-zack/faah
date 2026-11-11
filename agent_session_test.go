@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -19,13 +20,33 @@ func TestMain(m *testing.M) {
 		f.Close()
 		scan := bufio.NewScanner(os.Stdin)
 		enc := json.NewEncoder(os.Stdout)
+		var endpoint struct {
+			URL     string            `json:"url"`
+			Headers map[string]string `json:"headers"`
+		}
 		for scan.Scan() {
 			var frame map[string]any
 			json.Unmarshal(scan.Bytes(), &frame)
 			switch frame["type"] {
 			case "control_request":
+				if request, ok := frame["request"].(map[string]any); ok && request["subtype"] == "mcp_set_servers" {
+					data, _ := json.Marshal(request["servers"].(map[string]any)["faah"])
+					json.Unmarshal(data, &endpoint)
+				}
 				enc.Encode(map[string]any{"type": "control_response", "response": map[string]any{"subtype": "success", "request_id": frame["request_id"], "response": map[string]any{}}})
 			case "user":
+				if script := os.Getenv("FAAH_EXPLAIN_SCRIPT"); script != "" {
+					prompt := frame["message"].(map[string]any)["content"].(string)
+					argv := append([]string{script}, os.Args[1:]...)
+					argv = append(argv, prompt)
+					cmd := exec.Command("/bin/sh", argv...)
+					cmd.Env = append(os.Environ(), "FAAH_TEST_MCP_URL="+endpoint.URL, "FAAH_TEST_MCP_TOKEN="+strings.TrimPrefix(endpoint.Headers["Authorization"], "Bearer "))
+					output, err := cmd.CombinedOutput()
+					enc.Encode(map[string]any{"type": "assistant", "message": map[string]any{"id": "answer", "content": []map[string]string{{"type": "text", "text": string(output)}}}})
+					enc.Encode(map[string]any{"type": "result", "is_error": err != nil, "result": string(output)})
+					continue
+				}
+
 				enc.Encode(map[string]any{"type": "assistant", "message": map[string]any{"content": []map[string]any{{"type": "tool_use", "name": "Read", "input": map[string]string{"file_path": "a.go"}}, {"type": "text", "text": "All good."}}}})
 				enc.Encode(map[string]any{"type": "result", "result": "All good."})
 			}

@@ -18,7 +18,7 @@ import (
 func List() []agents.Agent {
 	return []agents.Agent{
 		claude.New(),
-		percmd.Wrap(codex.New()),
+		codex.New(),
 		percmd.Wrap(agy.New()),
 		percmd.Wrap(opencode.New()),
 		percmd.Wrap(cursor.New()),
@@ -36,6 +36,7 @@ func For(name string) agents.Agent {
 	return percmd.Wrap(generic.New(name))
 }
 
+// Channel returns the adapter’s tool transport.
 func Channel(a agents.Agent) agents.ToolChannel {
 	if p, ok := a.(*percmd.Agent); ok {
 		return p.Legacy.Caps().Tools

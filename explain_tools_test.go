@@ -44,13 +44,8 @@ func mcpCall(t *testing.T, s *Server, tok, name, args string) int {
 func TestExplainToolCallsLandOnTheTurn(t *testing.T) {
 	root := t.TempDir()
 	writeExplainSource(t, root, explainGoSource)
-	// The fake codex finds faah's endpoint and token in its -c flags and calls
-	// annotate with curl, as a real harness would over MCP.
-	script := `url=""; tok=""
-for a in "$@"; do case "$a" in
-mcp_servers.faah.url=*) url=${a#*=}; url=${url#\"}; url=${url%\"} ;;
-mcp_servers.faah.http_headers=*) tok=${a#*Bearer }; tok=${tok%%\"*} ;;
-esac; done
+	// The fake agent calls annotate through its registered MCP endpoint.
+	script := `url="$FAAH_TEST_MCP_URL"; tok="$FAAH_TEST_MCP_TOKEN"
 printf 'tok=%s\n' "$tok"
 sid=$(curl -s -D - -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" -H "Authorization: Bearer $tok" -d '{"id":0,"method":"initialize"}' "$url" | tr -d '\r' | sed -n 's/^[Mm]cp-[Ss]ession-[Ii]d: //p')
 curl -s -H "Mcp-Session-Id: $sid" -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" -H "Authorization: Bearer $tok" -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"annotate","arguments":{"notes":[{"kind":"symbol","path":"main.go","l1":7,"symbol":"helper","summary":"Does nothing yet."}]}}}' "$url"

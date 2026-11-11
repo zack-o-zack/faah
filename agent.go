@@ -463,7 +463,7 @@ func (m *agentManager) run(ctx context.Context, cancel context.CancelFunc, job *
 	stderrStreamer := newLineStreamer(job.stderr, ui.Dim("│", os.Stdout), os.Stdout)
 
 	a := all.For(job.Harness)
-	session, err := a.Open(ctx, agents.Open{Dir: m.root, Base: template, Mode: agents.ModePlan, Stderr: stderrStreamer})
+	session, err := a.Open(ctx, agents.Open{Version: version, Dir: m.root, Base: template, Mode: agents.ModeEdit, Stderr: stderrStreamer})
 	if err == nil {
 		defer session.Close()
 		_, err = session.Prompt(ctx, prompt, &writerSink{Writer: stdoutStreamer})
@@ -1462,21 +1462,24 @@ func (tm *threadManager) Send(id, message string) (*thread, error) {
 		tm.mu.Unlock()
 		return nil, errThreadBusy
 	}
-	if live := tm.sessions[id]; live != nil && live.idle != nil {
-		live.idle.Stop()
-	}
 	var env []string
 	mode := agents.ModeEdit
 	if explaining {
 		mode = agents.ModePlan
 	}
-	if err := all.CheckPlan(name, base); explaining && err != nil {
-		tm.mu.Unlock()
-		return nil, err
+	if explaining {
+		if err := all.CheckPlan(name, base); err != nil {
+			tm.mu.Unlock()
+			return nil, err
+		}
 	}
 	if tm.closed {
 		tm.mu.Unlock()
 		return nil, errors.New("thread manager is closed")
+	}
+	if live := tm.sessions[id]; live != nil && live.idle != nil {
+		live.idle.Stop()
+		live.idle = nil
 	}
 	if live := tm.sessions[id]; live != nil && (live.name != name || live.model != model || live.mode != mode) {
 		tm.closeSessionLocked(id)
@@ -1543,7 +1546,7 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 	var openErr error
 	if liveSession == nil {
 		tok := tm.tools.tokens.Issue(toolScope{tid: r.tid})
-		o := agents.Open{Dir: tm.root, Base: r.base, Env: r.env, Model: r.model, Mode: mode, Resume: sessionID, Tools: tm.tools.endpoint(tok), Stderr: stderr}
+		o := agents.Open{Version: version, Dir: tm.root, Base: r.base, Env: r.env, Model: r.model, Mode: mode, Resume: sessionID, Tools: tm.tools.endpoint(tok), Stderr: stderr}
 		var opened agents.Session
 		opened, openErr = a.Open(ctx, o)
 		if openErr != nil && sessionID != "" {

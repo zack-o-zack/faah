@@ -1,9 +1,10 @@
 package main
 
 import (
-	"faah/internal/agents"
 	"io"
 	"time"
+
+	"faah/internal/agents"
 )
 
 const threadSessionIdle = 10 * time.Minute
@@ -66,11 +67,13 @@ func (tm *threadManager) idleSessionLocked(id string) {
 	if d == 0 {
 		d = threadSessionIdle
 	}
-	s.idle = time.AfterFunc(d, func() {
+	var timer *time.Timer
+	timer = time.AfterFunc(d, func() {
 		tm.mu.Lock()
 		defer tm.mu.Unlock()
-		if tm.sessions[id] == s && tm.threads[id] != nil && !tm.threads[id].running() {
+		if tm.sessions[id] == s && s.idle == timer && tm.threads[id] != nil && !tm.threads[id].running() {
 			tm.closeSessionLocked(id)
 		}
 	})
+	s.idle = timer
 }
