@@ -332,7 +332,7 @@
           <button id="btn-review-tab-walkthrough" role="tab" aria-selected="true" title="Scrollytelling code diff and guardrail understanding" class="btn" data-control="review-sub-tab" data-variant="secondary" data-size="xs" aria-pressed="true">
             <span class="icon-[lucide--zap] size-3.5 shrink-0" aria-hidden="true"></span>
             <span>Diff & Understanding</span>
-            <span id="review-walkthrough-files-badge" class="badge" data-variant="secondary">0 files</span>
+            <span id="review-walkthrough-files-badge" class="badge" data-variant="secondary">0</span>
           </button>
           <button id="btn-review-tab-stages" role="tab" aria-selected="false" title="AI review pipeline stages" class="btn" data-control="review-sub-tab" data-variant="ghost" data-size="xs">
             <span class="icon-[lucide--square-check-big] size-3.5 shrink-0" aria-hidden="true"></span>
@@ -346,9 +346,9 @@
         <div id="review-walkthrough-toolbar" data-ui="review-walkthrough-toolbar" class="flex items-center gap-2">
           <div data-ui="review-filter-chips" class="flex flex-wrap items-center gap-2 button-group" role="group" aria-label="Filter insights">
             <button data-filter="all" title="Show all insights" class="btn" data-control="review-chip" data-variant="secondary" data-size="xs" aria-pressed="true">All</button>
-            <button data-filter="fastReturns" title="Fast returns & guardrails" class="btn" data-control="review-chip" data-variant="ghost" data-size="xs"><span class="icon-[lucide--zap] size-3 shrink-0" aria-hidden="true"></span> Returns (<span id="wt-count-returns">0</span>)</button>
-            <button data-filter="edgeCases" title="Error & edge case exits" class="btn" data-control="review-chip" data-variant="ghost" data-size="xs"><span class="icon-[lucide--triangle-alert] size-3 shrink-0" aria-hidden="true"></span> Edge Cases (<span id="wt-count-edge">0</span>)</button>
-            <button data-filter="coreLogic" title="Core happy-path modifications" class="btn" data-control="review-chip" data-variant="ghost" data-size="xs"><span class="icon-[lucide--target] size-3 shrink-0" aria-hidden="true"></span> Core (<span id="wt-count-core">0</span>)</button>
+            <button data-filter="fastReturns" title="Fast returns & guardrails" class="btn" data-control="review-chip" data-variant="ghost" data-size="xs"><span class="icon-[lucide--zap] size-3 shrink-0" aria-hidden="true"></span>Returns <span id="wt-count-returns" class="tabular-nums opacity-70">0</span></button>
+            <button data-filter="edgeCases" title="Error & edge case exits" class="btn" data-control="review-chip" data-variant="ghost" data-size="xs"><span class="icon-[lucide--triangle-alert] size-3 shrink-0" aria-hidden="true"></span>Edge cases <span id="wt-count-edge" class="tabular-nums opacity-70">0</span></button>
+            <button data-filter="coreLogic" title="Core happy-path modifications" class="btn" data-control="review-chip" data-variant="ghost" data-size="xs"><span class="icon-[lucide--target] size-3 shrink-0" aria-hidden="true"></span>Core <span id="wt-count-core" class="tabular-nums opacity-70">0</span></button>
           </div>
           <button id="btn-refresh-walkthrough" title="Refresh walkthrough and diff" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Refresh walkthrough and diff">
             <span class="icon-[lucide--rotate-cw] size-3.5 shrink-0" aria-hidden="true"></span>
@@ -360,12 +360,9 @@
       <div id="review-walkthrough-view" data-ui="review-walkthrough-view" class="flex flex-row flex-1 min-h-0 overflow-hidden h-full">
         <!-- Left: Understanding Pane -->
         <aside id="review-understanding-pane" data-ui="review-understanding-pane" class="flex w-96 max-w-1/2 min-h-0 shrink-0 flex-col overflow-hidden">
-          <div data-ui="review-pane-header" class="flex flex-col gap-2 p-3">
-            <div data-ui="review-pane-title" class="flex flex-wrap items-baseline justify-between gap-2">
-              <span data-ui="review-pane-heading" class="label font-semibold">Code Understanding & Guardrails</span>
-              <span id="review-understanding-stat" data-ui="review-pane-sub" class="text-muted-foreground">Fast returns, edge cases & core logic</span>
-            </div>
-            <div id="review-understanding-files-nav" data-ui="review-files-quick-nav" class="flex overflow-x-auto gap-2"></div>
+          <div data-ui="review-pane-header" class="flex flex-col gap-1 px-3 pt-3">
+            <span data-ui="review-pane-heading" class="text-sm font-semibold">Code Understanding & Guardrails</span>
+            <span id="review-understanding-stat" data-ui="review-pane-sub" class="text-xs text-muted-foreground">Fast returns, edge cases & core logic</span>
           </div>
           <div id="review-understanding-content" data-ui="review-understanding-content" class="flex flex-col flex-1 min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain gap-2 p-3">
             <div data-ui="review-empty-state" class="empty flex flex-col items-center justify-center text-center h-full p-3 text-muted-foreground"><div data-ui="review-spinner" class="size-6 rounded-full border-2 border-border border-t-primary animate-spin"></div><p>Analyzing code changes...</p></div>

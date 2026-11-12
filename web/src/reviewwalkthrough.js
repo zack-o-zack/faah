@@ -116,11 +116,19 @@ export async function loadReviewWalkthrough(showFeedback = false) {
   }
 }
 
+// A full commit hash says nothing a short one doesn't, at a fifth the width.
+const shortRef = ref => /^[0-9a-f]{40}$/i.test(ref) ? ref.slice(0, 7) : ref;
+
+// +12 −3, leaving out a side with nothing on it.
+function lineStats(add, del) {
+  return [add ? `<span class="font-semibold text-gi">+${add}</span>` : '', del ? `<span class="font-semibold text-gd">−${del}</span>` : '']
+    .filter(Boolean).join(' ') || '<span class="text-muted-foreground">no line changes</span>';
+}
+
 function renderWalkthroughView(data) {
   const leftContent = $('#review-understanding-content');
   const rightContent = $('#review-diff-content');
   const filesBadge = $('#review-walkthrough-files-badge');
-  const filesNav = $('#review-understanding-files-nav');
   const statHeading = $('#review-understanding-stat');
 
   const files = data.files || [];
@@ -129,7 +137,7 @@ function renderWalkthroughView(data) {
   const deletions = data.totalDeletions || 0;
 
   if (filesBadge) {
-    filesBadge.textContent = `${totalFiles} file${totalFiles === 1 ? '' : 's'}`;
+    filesBadge.textContent = String(totalFiles);
   }
 
   let totalReturns = 0;
@@ -151,28 +159,7 @@ function renderWalkthroughView(data) {
   if (countCore) countCore.textContent = totalCore;
 
   if (statHeading) {
-    statHeading.innerHTML = `<strong>${totalFiles}</strong> files &middot; <span class="font-semibold text-gi">+${additions}</span> <span class="font-semibold text-gd">-${deletions}</span> &middot; ${data.baseRef || 'HEAD'} <span class="icon-[lucide--arrow-right] size-3 align-[-2px]" aria-hidden="true"></span> ${data.headRef || 'now'}`;
-  }
-
-  // Quick navigation chips for files
-  if (filesNav) {
-    filesNav.innerHTML = '';
-    files.forEach((f, idx) => {
-      const chip = document.createElement('button');
-      chip.dataset.control = 'review-file-nav-chip';
-      chip.dataset.size = 'xs';
-      chip.dataset.variant = 'ghost';
-      chip.className = 'btn';
-      setPressed(chip, idx === 0);
-      chip.dataset.path = f.path;
-      const basename = f.path.split('/').pop();
-      chip.innerHTML = `<span class="truncate" title="${esc(f.path)}">${esc(basename)}</span><span data-ui="review-file-nav-status" data-status="${esc(f.status || 'M')}" class="font-semibold data-[status=M]:text-warn data-[status=A]:text-gi data-[status=D]:text-gd">${esc(f.status || 'M')}</span>`;
-      chip.onclick = () => {
-        scrollToDiffFile(f.path);
-        highlightActiveFileCard(f.path);
-      };
-      filesNav.appendChild(chip);
-    });
+    statHeading.innerHTML = `${totalFiles} files &middot; ${lineStats(additions, deletions)} &middot; <span class="font-mono">${esc(shortRef(data.baseRef || 'HEAD'))} <span class="icon-[lucide--arrow-right] size-3 align-[-2px]" aria-hidden="true"></span> ${esc(shortRef(data.headRef || 'now'))}</span>`;
   }
 
   if (files.length === 0) {
@@ -212,7 +199,7 @@ function renderUnderstandingCards(files) {
 
   files.forEach((file) => {
     const card = document.createElement('article');
-    card.setAttribute('data-ui', 'review-file-card'); card.className = 'card shrink-0 overflow-hidden [&.active-file-card]:ring-2 [&.active-file-card]:ring-ring [&.is-viewed]:opacity-60';
+    card.setAttribute('data-ui', 'review-file-card'); card.className = 'card shrink-0 gap-0! py-0! overflow-hidden [&.active-file-card]:ring-2 [&.active-file-card]:ring-ring [&.is-viewed]:opacity-60';
     card.id = `card-file-${sanitizeId(file.path)}`;
     card.dataset.filePath = file.path;
 
@@ -223,20 +210,19 @@ function renderUnderstandingCards(files) {
 
     // Header
     const head = document.createElement('header');
-    head.setAttribute('data-ui', 'review-card-head'); head.className = 'flex items-center justify-between gap-2 p-3';
+    head.setAttribute('data-ui', 'review-card-head'); head.className = 'flex items-center justify-between gap-2 px-3 py-2';
 
     const titleGroup = document.createElement('div');
     titleGroup.setAttribute('data-ui', 'review-card-title-group'); titleGroup.className = 'flex items-center min-w-0 gap-2';
 
     const pathEl = document.createElement('h3');
-    pathEl.setAttribute('data-ui', 'review-card-path'); pathEl.className = 'overflow-hidden whitespace-nowrap text-ellipsis font-mono font-semibold';
+    pathEl.setAttribute('data-ui', 'review-card-path'); pathEl.className = 'min-w-0 truncate font-mono text-xs font-semibold';
     pathEl.textContent = file.path;
     pathEl.title = file.path;
 
     const badge = document.createElement('span');
-    badge.className = 'badge';
-    badge.dataset.variant = 'outline';
-    badge.innerHTML = `<span class="font-semibold text-gi">+${file.additions}</span> <span class="font-semibold text-gd">-${file.deletions}</span>`;
+    badge.className = 'shrink-0 font-mono text-xs';
+    badge.innerHTML = lineStats(file.additions, file.deletions);
 
     titleGroup.append(pathEl, badge);
 
@@ -256,7 +242,7 @@ function renderUnderstandingCards(files) {
     // Summary statement
     if (und.summary) {
       const summaryEl = document.createElement('div');
-      summaryEl.setAttribute('data-ui', 'review-card-summary'); summaryEl.className = 'p-3 text-muted-foreground';
+      summaryEl.setAttribute('data-ui', 'review-card-summary'); summaryEl.className = 'px-3 pb-2 text-xs text-muted-foreground';
       summaryEl.textContent = und.summary;
       card.append(summaryEl);
     }
@@ -285,7 +271,7 @@ function renderUnderstandingCards(files) {
 
     if (returns.length === 0 && edges.length === 0 && core.length === 0) {
       const emptyNote = document.createElement('div');
-      emptyNote.setAttribute('data-ui', 'review-card-empty-note'); emptyNote.className = 'empty p-3 text-muted-foreground';
+      emptyNote.setAttribute('data-ui', 'review-card-empty-note'); emptyNote.className = 'px-3 pb-2 text-xs text-muted-foreground';
       emptyNote.textContent = 'Standard modification with clean linear execution flow.';
       body.append(emptyNote);
     }
@@ -297,33 +283,32 @@ function renderUnderstandingCards(files) {
 
 function createInsightSection(filePath, headingText, filterCategory, items, badgeClass) {
   const sec = document.createElement('div');
-  sec.setAttribute('data-ui', 'review-insight-sec'); sec.className = 'p-3';
+  sec.setAttribute('data-ui', 'review-insight-sec'); sec.className = 'flex flex-col gap-1.5 border-t px-3 py-2';
   sec.dataset.category = filterCategory;
 
   const h = document.createElement('h4');
-  h.setAttribute('data-ui', 'review-insight-heading'); h.className = 'label flex items-center justify-between font-semibold text-muted-foreground';
+  h.setAttribute('data-ui', 'review-insight-heading'); h.className = 'flex items-center justify-between text-xs font-medium text-muted-foreground';
   const glyph = { fastReturns: 'icon-[lucide--zap]', edgeCases: 'icon-[lucide--triangle-alert]', coreLogic: 'icon-[lucide--target]' }[filterCategory] || '';
-  h.innerHTML = `<span class="flex items-center gap-2"><span class="${glyph} size-3.5" aria-hidden="true"></span>${esc(headingText)}</span> <span class="badge" data-variant="secondary">${items.length}</span>`;
+  h.innerHTML = `<span class="flex items-center gap-2"><span class="${glyph} size-3.5" aria-hidden="true"></span>${esc(headingText)}</span> <span class="tabular-nums">${items.length}</span>`;
   sec.append(h);
 
   const list = document.createElement('div');
-  list.setAttribute('data-ui', 'review-insight-list'); list.className = 'flex flex-col gap-2';
+  list.setAttribute('data-ui', 'review-insight-list'); list.className = 'flex flex-col gap-1';
 
   items.forEach(item => {
     const itemEl = document.createElement('div');
-    itemEl.setAttribute('data-ui', 'review-insight-item'); itemEl.className = 'item cursor-pointer [&.active-insight-item]:bg-accent';
+    itemEl.setAttribute('data-ui', 'review-insight-item'); itemEl.className = 'flex min-w-0 cursor-pointer flex-col gap-1 rounded-md px-1.5 py-1 hover:bg-accent/50 [&.active-insight-item]:bg-accent';
     itemEl.id = `insight-${sanitizeId(filePath)}-${item.line}`;
     itemEl.dataset.filePath = filePath;
     itemEl.dataset.line = item.line;
 
     const row = document.createElement('div');
-    row.setAttribute('data-ui', 'review-insight-top'); row.className = 'flex items-center gap-2';
+    row.setAttribute('data-ui', 'review-insight-top'); row.className = 'flex min-w-0 items-center gap-2 text-xs';
 
     const pill = document.createElement('button');
-    pill.className = 'btn';
+    pill.type = 'button';
+    pill.className = 'shrink-0 font-mono text-muted-foreground tabular-nums hover:text-foreground hover:underline';
     pill.dataset.control = 'review-line-pill';
-    pill.dataset.variant = 'ghost';
-    pill.dataset.size = 'xs';
     pill.textContent = item.endLine && item.endLine !== item.line ? `L${item.line}–${item.endLine}` : `L${item.line}`;
     pill.title = 'Click to scroll diff to this line';
     pill.onclick = (e) => {
@@ -332,18 +317,18 @@ function createInsightSection(filePath, headingText, filterCategory, items, badg
     };
 
     const kindBadge = document.createElement('span');
-    kindBadge.className = 'badge text-primary-text';
+    kindBadge.className = 'badge shrink-0 text-primary-text';
     kindBadge.dataset.variant = 'outline';
     kindBadge.textContent = item.kind || 'guard';
 
     const expl = document.createElement('span');
-    expl.setAttribute('data-ui', 'review-insight-expl'); expl.className = 'overflow-hidden whitespace-nowrap text-ellipsis';
+    expl.setAttribute('data-ui', 'review-insight-expl'); expl.className = 'min-w-0 flex-1 truncate';
     expl.textContent = item.explanation || '';
 
     row.append(pill, kindBadge, expl);
 
     const code = document.createElement('pre');
-    code.setAttribute('data-ui', 'review-insight-code'); code.className = 'overflow-x-auto whitespace-pre p-3 font-mono';
+    code.setAttribute('data-ui', 'review-insight-code'); code.className = 'overflow-x-auto whitespace-pre rounded bg-muted px-2 py-1 font-mono text-xs';
     code.textContent = item.text || '';
 
     itemEl.append(row, code);
@@ -365,13 +350,13 @@ function renderDiffBlocks(files) {
 
   files.forEach(file => {
     const block = document.createElement('div');
-    block.setAttribute('data-ui', 'review-diff-file-block'); block.className = 'relative';
+    block.setAttribute('data-ui', 'review-diff-file-block'); block.className = 'relative mb-3 overflow-clip rounded-md border';
     block.id = `diff-file-${sanitizeId(file.path)}`;
     block.dataset.filePath = file.path;
 
     // Sticky File Header
     const stickyHeader = document.createElement('div');
-    stickyHeader.setAttribute('data-ui', 'review-diff-file-sticky-header'); stickyHeader.className = 'sticky top-0 z-20 flex flex-wrap items-center justify-between gap-2 bg-sidebar p-3';
+    stickyHeader.setAttribute('data-ui', 'review-diff-file-sticky-header'); stickyHeader.className = 'sticky top-0 z-20 flex flex-wrap items-center justify-between gap-2 border-b bg-sidebar px-3 py-2 text-xs';
 
     const left = document.createElement('div');
     left.setAttribute('data-ui', 'review-sticky-head-left'); left.className = 'flex items-center min-w-0 gap-2';
@@ -381,12 +366,12 @@ function renderDiffBlocks(files) {
     fileIcon.innerHTML = '<span class="icon-[lucide--file] size-3.5 shrink-0" aria-hidden="true"></span>';
 
     const pathSpan = document.createElement('span');
-    pathSpan.setAttribute('data-ui', 'review-sticky-head-path'); pathSpan.className = 'overflow-hidden whitespace-nowrap text-ellipsis font-mono font-semibold';
+    pathSpan.setAttribute('data-ui', 'review-sticky-head-path'); pathSpan.className = 'min-w-0 truncate font-mono font-semibold';
     pathSpan.textContent = file.path;
 
     const statsSpan = document.createElement('span');
-    statsSpan.setAttribute('data-ui', 'review-sticky-head-stats'); statsSpan.className = 'font-mono';
-    statsSpan.innerHTML = `<span class="font-semibold text-gi">+${file.additions}</span> <span class="font-semibold text-gd">-${file.deletions}</span>`;
+    statsSpan.setAttribute('data-ui', 'review-sticky-head-stats'); statsSpan.className = 'shrink-0 font-mono';
+    statsSpan.innerHTML = lineStats(file.additions, file.deletions);
 
     left.append(fileIcon, pathSpan, statsSpan);
 
@@ -432,7 +417,7 @@ function renderDiffBlocks(files) {
     } else {
       hunks.forEach((hunk, hIdx) => {
         const hunkHead = document.createElement('div');
-        hunkHead.setAttribute('data-ui', 'review-diff-hunk-header'); hunkHead.className = 'select-none p-3 text-muted-foreground';
+        hunkHead.setAttribute('data-ui', 'review-diff-hunk-header'); hunkHead.className = 'select-none bg-muted/40 px-3 py-1 font-mono text-xs text-muted-foreground';
         hunkHead.textContent = `@@ -${hunk.oldStart || 0} +${hunk.newStart || 0} @@ ${hunk.section || ''}`;
         hunksTable.append(hunkHead);
 
@@ -564,16 +549,6 @@ function highlightActiveFileCard(filePath, shouldScrollLeft = false) {
       }
     }
   }
-
-  // Update quick nav chips
-  const chips = $$('[data-control~=review-file-nav-chip]');
-  chips.forEach(chip => {
-    if (chip.dataset.path === filePath) {
-      setPressed(chip, true);
-    } else {
-      setPressed(chip, false);
-    }
-  });
 }
 
 function highlightActiveInsight(filePath, line) {
