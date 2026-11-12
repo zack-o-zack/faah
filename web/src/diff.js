@@ -1211,25 +1211,11 @@ export function initDiff() {
   });
   $('#diff-btn')?.addEventListener('click', e => {
     e.stopPropagation();
-    toggleDiff();
+    if (!doc_()?.diffMode) setDiffMode(layoutPref() || 'split');
   });
-  const menu = $('#diff-menu');
-  if (menu) {
-    const group = $('#diff-switch');
-    const showMenu = open => { menu.setAttribute('aria-hidden', String(!open)); $('#diff-btn')?.setAttribute('aria-expanded', String(open)); };
-    group.addEventListener('keydown', e => { if (e.key === 'Escape') showMenu(false); });
-    group.addEventListener('pointerenter', () => showMenu(true));
-    group.addEventListener('pointerleave', () => showMenu(false));
-    group.addEventListener('focusin', () => showMenu(true));
-    group.addEventListener('focusout', e => { if (!group.contains(e.relatedTarget)) showMenu(false); });
-    menu.addEventListener('click', e => {
-      const item = e.target.closest('[data-diff-opt]');
-      if (!item) return;
-      e.stopPropagation();
-      setDiffMode(item.dataset.diffOpt);
-      item.blur();
-    });
-  }
+  $('#diff-layout')?.addEventListener('click', () => {
+    setDiffMode(doc_()?.diffMode === 'unified' ? 'split' : 'unified');
+  });
   on('tab:activated', () => syncDiffView());
   on('tabs:cleared', () => syncDiffView());
 }

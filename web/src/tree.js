@@ -519,11 +519,11 @@ export function updateSidebarToggleState() {
   if (!S.meta?.git) {
     btnChanged.title = 'Git not available in workspace';
   } else if (!available) {
-    btnChanged.title = 'There are no git modified files.';
+    btnChanged.title = 'No changed files';
   } else if (!(S.meta.gitChanges > 0)) {
-    btnChanged.title = 'Git changes (working tree clean — showing unpushed commits)';
+    btnChanged.title = 'Changed files only (working tree clean, showing unpushed commits)';
   } else {
-    btnChanged.title = 'Git changes (show changed files only)';
+    btnChanged.title = 'Changed files only';
   }
 }
 

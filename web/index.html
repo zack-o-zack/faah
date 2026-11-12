@@ -17,7 +17,7 @@
 <div id="app" class="flex h-dvh overflow-hidden">
   <!-- SECTION: Sidebar (File explorer tree) -->
   <aside id="side" class="flex w-[340px] shrink-0 flex-col overflow-hidden border-r bg-sidebar text-sidebar-foreground [body.side-hidden_&]:hidden">
-    <header class="panel-head desktop:min-h-[var(--titlebar-h,2.5rem)] desktop:[-webkit-app-region:drag] desktop:[&_button]:[-webkit-app-region:no-drag] desktop:[&_a]:[-webkit-app-region:no-drag] desktop:[&_[role=group]]:[-webkit-app-region:no-drag] desktop:[&_[role=tab]]:[-webkit-app-region:no-drag] desktop:pl-[calc(0.75rem+var(--titlebar-left,0px))] desktop:flex-wrap desktop:pt-0 [&_.panel-actions]:desktop:w-[calc(100%+var(--titlebar-left,0px))] [&_.panel-actions]:desktop:-ml-[var(--titlebar-left,0px)] flex shrink-0 items-center gap-2 border-b px-3 py-2 text-xs font-medium"><span class="side-logo flex min-w-0 flex-1 items-center gap-2 desktop:h-[var(--titlebar-h,38px)] [&_img]:h-4 [&_img]:w-auto" title="faah"><img class="hidden dark:block" src="static/logo-dark.svg" alt="faah" width="35" height="13"><img class="block dark:hidden" src="static/logo-light.svg" alt="faah" width="35" height="13"><span id="st-ver" class="status-ver cursor-pointer rounded px-1 font-mono text-xs text-muted-foreground hover:bg-accent hover:text-foreground" title="faah Version"></span></span><span class="panel-actions ml-auto flex shrink-0 items-center gap-1"><div class="button-group mr-1" role="group" aria-label="Explorer view mode"><button id="btn-files" title="File Explorer (show all files)" aria-label="File Explorer" class="btn" data-control="view-choice" data-variant="secondary" data-size="icon-xs" aria-pressed="true"><span class="icon-[lucide--folder] size-3 shrink-0" aria-hidden="true"></span></button><button id="btn-changed" title="Git changes (show changed files only)" aria-label="Git changes" class="btn" data-control="view-choice" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--git-branch] size-3 shrink-0" aria-hidden="true"></span></button></div><button id="btn-new-file" title="New File" aria-label="New File" class="btn ml-auto" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--file-plus] size-3.5 shrink-0" aria-hidden="true"></span></button><button id="btn-new-folder" title="New Folder" aria-label="New Folder" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--folder-plus] size-3.5 shrink-0" aria-hidden="true"></span></button><button id="btn-collapse-tree" title="Collapse all folders" aria-label="Collapse all folders" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--chevrons-up] size-3.5 shrink-0" aria-hidden="true"></span></button><button id="btn-expand-tree" title="Expand all project folders (ignored folders stay closed)" aria-label="Expand all project folders" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--chevrons-down] size-3.5 shrink-0" aria-hidden="true"></span></button><button id="btn-reindex" title="Re-index" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Re-index"><span class="icon-[lucide--rotate-cw] size-3.5 shrink-0" aria-hidden="true"></span></button></span></header>
+    <header class="panel-head desktop:min-h-[var(--titlebar-h,2.5rem)] desktop:[-webkit-app-region:drag] desktop:[&_button]:[-webkit-app-region:no-drag] desktop:[&_a]:[-webkit-app-region:no-drag] desktop:[&_[role=group]]:[-webkit-app-region:no-drag] desktop:[&_[role=tab]]:[-webkit-app-region:no-drag] desktop:pl-[calc(0.75rem+var(--titlebar-left,0px))] desktop:flex-wrap desktop:pt-0 [&_.panel-actions]:desktop:w-[calc(100%+var(--titlebar-left,0px))] [&_.panel-actions]:desktop:-ml-[var(--titlebar-left,0px)] flex shrink-0 items-center gap-2 border-b px-3 py-2 text-xs font-medium"><span class="side-logo flex min-w-0 flex-1 items-center gap-2 overflow-hidden [&_img]:shrink-0 desktop:h-[var(--titlebar-h,38px)] [&_img]:h-4 [&_img]:w-auto" title="faah"><img class="hidden dark:block" src="static/logo-dark.svg" alt="faah" width="35" height="13"><img class="block dark:hidden" src="static/logo-light.svg" alt="faah" width="35" height="13"><span id="st-ver" class="status-ver min-w-0 truncate cursor-pointer rounded px-1 font-mono text-xs text-muted-foreground hover:bg-accent hover:text-foreground" title="faah Version"></span></span><span class="panel-actions ml-auto flex shrink-0 items-center gap-1"><div class="button-group mr-1" role="group" aria-label="Explorer view mode"><button id="btn-files" title="All files" class="btn" data-control="view-choice" data-variant="secondary" data-size="xs" aria-pressed="true"><span class="icon-[lucide--folder] size-3 shrink-0" aria-hidden="true"></span><span>Files</span></button><button id="btn-changed" title="Changed files only" class="btn" data-control="view-choice" data-variant="ghost" data-size="xs"><span class="icon-[lucide--git-branch] size-3 shrink-0" aria-hidden="true"></span><span>Diff</span></button></div><button id="btn-new-file" title="New File" aria-label="New File" class="btn ml-auto" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--file-plus] size-3.5 shrink-0" aria-hidden="true"></span></button><button id="btn-new-folder" title="New Folder" aria-label="New Folder" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--folder-plus] size-3.5 shrink-0" aria-hidden="true"></span></button><button id="btn-collapse-tree" title="Collapse all folders" aria-label="Collapse all folders" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--chevrons-up] size-3.5 shrink-0" aria-hidden="true"></span></button><button id="btn-expand-tree" title="Expand all project folders (ignored folders stay closed)" aria-label="Expand all project folders" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--chevrons-down] size-3.5 shrink-0" aria-hidden="true"></span></button><button id="btn-reindex" title="Re-index" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Re-index"><span class="icon-[lucide--rotate-cw] size-3.5 shrink-0" aria-hidden="true"></span></button></span></header>
     <!-- PR review only (web/src/prscope.js): whole PR vs just your own changes -->
     <div id="scope-bar" class="scope-bar shrink-0 border-b p-2" hidden>
       <div class="button-group w-full" role="group" aria-label="Changes to show">
@@ -48,8 +48,6 @@
         <span id="git-branch" class="git-branch truncate font-medium"></span>
         <span id="git-counts" class="git-counts shrink-0 font-mono text-xs text-muted-foreground"></span>
         <span class="flex-1 min-w-0"></span>
-        <button id="git-pull" type="button" title="Pull changes from remote" aria-label="Pull" class="btn gap-1 px-1.5!" data-variant="ghost" data-size="xs"><span data-ui="icon" class="icon-[lucide--arrow-down] size-3.5 shrink-0" aria-hidden="true"></span><span data-ui="label" class="font-mono tabular-nums empty:hidden"></span></button>
-        <button id="git-push" type="button" title="No unpushed commits to push" aria-label="Push" disabled class="btn gap-1 px-1.5!" data-variant="ghost" data-size="xs"><span data-ui="icon" class="icon-[lucide--arrow-up] size-3.5 shrink-0" aria-hidden="true"></span><span data-ui="label" class="font-mono tabular-nums empty:hidden"></span></button>
         <button id="git-panel-collapse" title="Collapse" class="btn" data-control="pr-comments-collapse" data-variant="ghost" data-size="icon-xs" aria-label="Collapse"><span class="icon-[lucide--chevron-down] size-3.5 shrink-0" aria-hidden="true"></span></button>
       </div>
       <div id="git-panel-body" class="git-panel-body flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-3">
@@ -78,11 +76,22 @@
               <button id="git-generate-msg" type="button" title="Write a message for these changes" aria-label="Write a message for these changes" class="btn" data-variant="special" data-size="icon-xs"><span data-ui="icon" class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true"></span></button>
             </footer>
           </div>
-          <button id="git-commit" type="button" disabled class="btn w-full" data-variant="primary" data-size="sm"><span data-ui="icon" class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true"></span><span data-ui="label">Commit</span></button>
         </div>
-        <div id="git-clean-state" class="git-clean-state flex items-center justify-center gap-2 rounded border border-dashed p-3 text-xs text-muted-foreground [&_svg]:shrink-0 [&_svg]:text-primary" hidden>
-          <span class="icon-[lucide--check] size-3.5 shrink-0" aria-hidden="true"></span>
-          <span>Working tree clean</span>
+        <div id="git-action-row" class="flex items-stretch gap-2">
+          <button id="git-commit" type="button" disabled class="btn min-w-0 flex-1" data-variant="primary" data-size="sm"><span data-ui="icon" class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true"></span><span data-ui="label">Commit</span></button>
+          <div id="git-clean-state" class="git-clean-state flex min-w-0 flex-1 items-center justify-center gap-2 rounded border border-dashed px-3 py-1.5 text-xs text-muted-foreground [&_svg]:shrink-0 [&_svg]:text-primary" hidden>
+            <span class="icon-[lucide--check] size-3.5 shrink-0" aria-hidden="true"></span>
+            <span>Working tree clean</span>
+          </div>
+          <div id="git-sync-group" class="button-group" role="group" aria-label="Sync with remote">
+            <button id="git-sync" type="button" title="git sync: pull, then push" aria-label="git sync" class="btn gap-1 px-2!" data-variant="secondary" data-size="sm"><span data-ui="icon" class="icon-[lucide--refresh-cw] size-3.5 shrink-0" aria-hidden="true"></span><span id="git-sync-counts" class="font-mono tabular-nums text-muted-foreground empty:hidden"></span></button>
+            <button id="git-sync-caret" type="button" title="git sync, git pull or git push" aria-label="Sync actions" aria-haspopup="menu" aria-expanded="false" class="btn border-l border-background" data-variant="secondary" data-size="icon-sm"><span class="icon-[lucide--chevron-down] size-3.5 shrink-0" aria-hidden="true"></span></button>
+          </div>
+          <div id="git-sync-menu" role="menu" aria-label="Sync actions" hidden>
+            <button id="git-sync-item" type="button" title="Pull, then push" class="flex w-full items-start gap-2 text-left"><span data-ui="icon" class="icon-[lucide--refresh-cw] mt-0.5 size-3.5 shrink-0" aria-hidden="true"></span><span class="flex min-w-0 flex-col items-start"><span>git sync</span><span class="text-xs text-muted-foreground">Pull new commits, then push yours</span></span><span data-ui="label" class="ml-auto font-mono tabular-nums text-muted-foreground empty:hidden"></span></button>
+            <button id="git-pull" type="button" title="Pull changes from remote" class="flex w-full items-start gap-2 text-left"><span data-ui="icon" class="icon-[lucide--arrow-down] mt-0.5 size-3.5 shrink-0" aria-hidden="true"></span><span class="flex min-w-0 flex-col items-start"><span>git pull</span><span class="text-xs text-muted-foreground">Bring in new commits from the remote</span></span><span data-ui="label" class="ml-auto font-mono tabular-nums text-muted-foreground empty:hidden"></span></button>
+            <button id="git-push" type="button" title="No unpushed commits to push" disabled class="flex w-full items-start gap-2 text-left"><span data-ui="icon" class="icon-[lucide--arrow-up] mt-0.5 size-3.5 shrink-0" aria-hidden="true"></span><span class="flex min-w-0 flex-col items-start"><span>git push</span><span class="text-xs text-muted-foreground">Send your commits to the remote</span></span><span data-ui="label" class="ml-auto font-mono tabular-nums text-muted-foreground empty:hidden"></span></button>
+          </div>
         </div>
         <div id="git-recent-commits" class="git-recent-commits mt-1 flex flex-col gap-1 border-t pt-2">
           <div class="git-recent-head flex items-center justify-between">
@@ -93,8 +102,7 @@
         </div>
       </div>
     </div>
-    <footer class="side-foot flex shrink-0 items-center gap-2 border-t px-2 py-1">
-      <span id="root-name" class="min-w-0 flex-1 truncate text-right text-xs font-medium"></span>
+    <footer class="side-foot flex shrink-0 items-center justify-end gap-2 border-t px-2 py-1 desktop:hidden">
       <span class="side-actions flex shrink-0 items-center gap-1 desktop:hidden">
       <a class="btn" data-variant="ghost" data-size="icon-xs" href="https://github.com/zack-o-zack/faah" target="_blank" rel="noopener" title="faah on GitHub" aria-label="faah on GitHub">
         <span class="icon-[lucide--github] size-3.5 shrink-0" aria-hidden="true"></span>
@@ -117,78 +125,32 @@
 
   <!-- SECTION: Main Editor Area -->
   <main id="main" class="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-    <!-- Top Control Bar (Level 1 Menu): Mode toggle + View actions -->
-    <header id="main-top-bar" class="main-top-bar desktop:min-h-[var(--titlebar-h,2.5rem)] desktop:[-webkit-app-region:drag] desktop:[&_button]:[-webkit-app-region:no-drag] desktop:[&_a]:[-webkit-app-region:no-drag] desktop:[&_[role=group]]:[-webkit-app-region:no-drag] desktop:[&_[role=tab]]:[-webkit-app-region:no-drag] [body.side-hidden_&]:desktop:pl-[calc(0.5rem+var(--titlebar-left,0px))] desktop:pr-[calc(0.5rem+var(--titlebar-right,0px))] z-[7] flex shrink-0 items-center justify-between gap-2 border-b bg-sidebar px-2 py-1">
+    <!-- Top Control Bar (Level 1 Menu) -->
+    <header id="main-top-bar" class="main-top-bar desktop:min-h-[var(--titlebar-h,2.5rem)] desktop:[-webkit-app-region:drag] desktop:[&_button]:[-webkit-app-region:no-drag] desktop:[&_a]:[-webkit-app-region:no-drag] desktop:[&_[role=group]]:[-webkit-app-region:no-drag] desktop:[&_[role=tab]]:[-webkit-app-region:no-drag] [body.side-hidden_&]:desktop:pl-[calc(0.5rem+var(--titlebar-left,0px))] desktop:pr-[calc(0.5rem+var(--titlebar-right,0px))] relative z-[7] flex shrink-0 items-center justify-between gap-2 border-b bg-sidebar px-2 py-1">
       <!-- Desktop app on Windows and Linux only (desktop variants, desktop/preload.cjs) -->
       <button data-desktop-menu title="Menu" aria-label="Application menu" class="btn desktop-menu-btn hidden! win-linux:inline-flex!" data-control="header-action" data-variant="ghost" data-size="xs">
         <span class="icon-[lucide--menu] size-3 shrink-0" aria-hidden="true"></span>
       </button>
-      <!-- Workplace mode switch: Code Mode vs Review Mode -->
-      <div id="mode-switch" class="button-group" role="tablist" aria-label="Workplace Mode">
-        <button role="tab" id="btn-mode-code" title="Code Mode ({Mod+Shift+C})" class="btn" data-variant="secondary" data-size="xs" aria-pressed="true" aria-selected="true">
-          <span class="icon-[lucide--code] size-3 shrink-0" aria-hidden="true"></span>
-          <span>Code</span>
-        </button>
-        <button role="tab" id="btn-mode-review" aria-selected="false" aria-pressed="false" title="Review Workflow ({Mod+Shift+V})" class="btn" data-variant="outline" data-size="xs">
-          <span class="icon-[lucide--file-text] size-3 shrink-0" aria-hidden="true"></span>
-          <span>Review</span>
-          <span id="review-badge-status" data-ui="review-status-dot" class="inline-block" hidden></span>
-        </button>
+      <!-- Opens the pull request (or, outside a PR session, the local changes): files, review pipeline, PR footer and comments -->
+      <button type="button" id="btn-pr-toggle" title="Changed files, review pipeline and PR comments ({Mod+Shift+V})" class="btn [body.in-review-mode_&]:hidden desktop:[-webkit-app-region:no-drag]" data-variant="primary" data-size="xs">
+        <svg class="size-3.5 shrink-0 [body:not(.pr-mode)_&]:hidden" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg>
+        <span class="icon-[lucide--list-checks] size-3.5 shrink-0 [body.pr-mode_&]:hidden!" aria-hidden="true"></span>
+        <span class="[body:not(.pr-mode)_&]:hidden">PR <span data-ui="pr-num" class="tabular-nums"></span></span>
+        <span class="[body.pr-mode_&]:hidden">Overview</span>
+        <span data-ui="review-status-dot" class="size-1.5 shrink-0 rounded-full bg-warn animate-pulse" title="Review pipeline running" hidden></span>
+      </button>
+      <!-- Takes the PR button's place while the PR view is open -->
+      <button type="button" id="btn-pr-close" title="Back to the editor ({Mod+Shift+V})" class="btn [body:not(.in-review-mode)_&]:hidden desktop:[-webkit-app-region:no-drag]" data-variant="primary" data-size="xs"><span class="icon-[lucide--arrow-left] size-3.5 shrink-0" aria-hidden="true"></span><span>Back to editor</span></button>
+      <div class="main-top-bar-spacer flex-1"></div>
+      <!-- Project name, centred on the bar -->
+      <!-- Sized to the name alone, so it never sits over the bar's buttons -->
+      <div data-ui="top-title" class="absolute left-1/2 flex min-w-0 max-w-[min(24rem,40%)] -translate-x-1/2 items-center gap-1">
+        <span id="root-name" class="min-w-0 truncate text-xs font-medium text-muted-foreground"></span>
       </div>
 
-      <div class="main-top-bar-spacer flex-1"></div>
-
-      <!-- View-mode switches: Diff, Markdown preview, Edit controls, Sidebar toggle -->
-      <div id="view-switches" class="flex items-center gap-2">
-        <!-- Markdown tabs only: switch between the rendered file and its source -->
-        <div id="md-switch" class="button-group" role="group" aria-label="Preview or source" hidden>
-          <button data-md="preview" title="Rendered view ({Alt+M})" class="btn" data-variant="outline" data-size="xs">Preview</button>
-          <button data-md="source" title="File source ({Alt+M})" class="btn" data-variant="outline" data-size="xs">Source</button>
-        </div>
-        <!-- Modified files in a git repo only: view the file's diff against HEAD -->
-        <div id="diff-switch" class="button-group" role="group" aria-label="File or changes" hidden>
-          <button id="diff-source" data-diff-opt="source" title="Show the file ({Mod+D})" class="btn" data-variant="outline" data-size="xs">File</button>
-          <div class="dropdown-menu">
-          <button id="diff-btn" title="Show changes against HEAD ({Mod+D})" class="btn" data-variant="outline" data-size="xs">
-            <span class="icon-[lucide--git-branch] size-3 shrink-0 diff-btn-icon" aria-hidden="true"></span>
-            <span class="diff-btn-label">Changes</span>
-            <span class="icon-[lucide--chevron-down] size-2 shrink-0 diff-caret" aria-hidden="true"></span>
-          </button>
-          <div id="diff-menu" class="absolute right-0 left-auto min-w-max m-0" data-popover aria-hidden="true" role="menu">
-            <div role="heading" class="px-2 py-1 text-11 text-muted-foreground">Diff View Mode</div>
-            <button type="button" data-diff-opt="split" role="menuitemradio" title="Side-by-side split diff view" class="w-full pr-8 text-left" data-control="diff-menu-item">
-              <span data-indicator aria-hidden="true"><span class="icon-[lucide--check] size-3.5 shrink-0" aria-hidden="true"></span></span>
-              <div data-ui="diff-item-content" class="flex flex-col flex-1 min-w-0">
-                <span data-ui="diff-item-title" class="font-medium">Split</span>
-                <span data-ui="diff-item-desc" class="text-xs text-muted-foreground">Side by side (default)</span>
-              </div>
-            </button>
-            <button type="button" data-diff-opt="unified" role="menuitemradio" title="Inline unified diff view" class="w-full pr-8 text-left" data-control="diff-menu-item">
-              <span data-indicator aria-hidden="true"><span class="icon-[lucide--check] size-3.5 shrink-0" aria-hidden="true"></span></span>
-              <div data-ui="diff-item-content" class="flex flex-col flex-1 min-w-0">
-                <span data-ui="diff-item-title" class="font-medium">Unified</span>
-                <span data-ui="diff-item-desc" class="text-xs text-muted-foreground">One column, inline</span>
-              </div>
-            </button>
-          </div>
-          </div>
-        </div>
-        <!-- Direct file edit controls -->
-        <div id="edit-switch" class="button-group" role="group" aria-label="Edit controls" hidden>
-          <button id="btn-edit-mode" title="Edit this file ({Mod+E})" class="btn" data-variant="ghost" data-size="xs">
-            <span class="icon-[lucide--square-pen] size-3 shrink-0" aria-hidden="true"></span>
-            <span>Edit</span>
-          </button>
-          <button id="btn-save-file" title="Save changes ({Mod+S})" hidden class="btn" data-control="edit-btn-save" data-variant="primary" data-size="xs">
-            <span class="icon-[lucide--save] size-3 shrink-0" aria-hidden="true"></span>
-            <span>Save</span>
-          </button>
-          <button id="btn-cancel-edit" title="Exit edit mode" hidden class="btn" data-control="edit-btn-done" data-variant="outline" data-size="xs">
-            <span>Done</span>
-          </button>
-        </div>
+      <div id="view-switches" class="flex items-center gap-1">
         <!-- Threads button -->
-        <button id="btn-top-threads" title="Agent Threads ({Alt+T})" class="btn" data-control="header-action btn-top-threads" data-variant="ghost" data-size="xs">
+        <button id="btn-top-threads" title="Agent Threads ({Alt+T})" class="btn" data-control="header-action btn-top-threads" data-variant="special" data-size="xs">
           <span class="icon-[lucide--message-square] size-3 shrink-0" aria-hidden="true"></span>
           <span>Threads</span>
           <span class="badge" data-variant="secondary" data-control="thr-tab-count" hidden></span>
@@ -200,7 +162,33 @@
     </header>
 
     <!-- File Tabs (Level 2: directly below top menu bar) -->
-    <div id="tabs" class="flex shrink-0 items-center gap-1 overflow-x-auto overflow-y-hidden border-b bg-sidebar p-1 [scrollbar-width:none] empty:hidden"></div>
+    <div id="tab-row" class="flex shrink-0 items-center border-b bg-sidebar has-[#tabs:empty]:hidden">
+      <div id="tabs" class="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto overflow-y-hidden p-1 [scrollbar-width:none]"></div>
+      <!-- Controls for the open file only -->
+      <div id="file-actions" class="flex shrink-0 items-center gap-1 px-1">
+        <!-- Markdown and table files only: rendered view or source -->
+        <div id="md-switch" class="button-group" role="group" aria-label="Preview or source" hidden>
+          <button data-md="preview" title="Rendered view ({Alt+M})" class="btn" data-variant="outline" data-size="xs">Preview</button>
+          <button data-md="source" title="File source ({Alt+M})" class="btn" data-variant="outline" data-size="xs">Source</button>
+        </div>
+        <!-- Files with changes only: the file, or what changed in it -->
+        <div id="diff-switch" class="button-group" role="group" aria-label="File or changes" hidden>
+          <button id="diff-source" title="Show the file ({Mod+D})" class="btn" data-variant="outline" data-size="xs">File</button>
+          <button id="diff-btn" title="Show what changed in this file ({Mod+D})" class="btn" data-variant="outline" data-size="xs">Changes</button>
+        </div>
+        <button id="diff-layout" title="Show changes in one column" aria-label="Show changes in one column" class="btn" data-variant="ghost" data-size="icon-xs" hidden>
+          <span id="diff-layout-split" class="icon-[lucide--rectangle-vertical] size-3.5 shrink-0" aria-hidden="true"></span>
+          <span id="diff-layout-unified" class="icon-[lucide--columns-2] size-3.5 shrink-0" aria-hidden="true" hidden></span>
+        </button>
+        <div id="edit-switch" class="flex items-center gap-1" role="group" aria-label="Edit controls" hidden>
+          <button id="btn-edit-mode" title="Edit this file ({Mod+E})" aria-label="Edit this file" class="btn" data-variant="ghost" data-size="icon-xs">
+            <span class="icon-[lucide--square-pen] size-3.5 shrink-0" aria-hidden="true"></span>
+          </button>
+          <button id="btn-cancel-edit" title="Stop editing" hidden class="btn" data-control="edit-btn-done" data-variant="outline" data-size="xs">Done</button>
+          <button id="btn-save-file" title="Save changes ({Mod+S})" hidden class="btn" data-control="edit-btn-save" data-variant="primary" data-size="xs">Save</button>
+        </div>
+      </div>
+    </div>
 
     <!-- Virtualized Code Editor Viewport -->
     <div id="editor" class="relative min-h-0 flex-1 overflow-hidden bg-background">
@@ -336,7 +324,7 @@
           <button id="btn-review-tab-stages" role="tab" aria-selected="false" title="Your coding harness answers each review question in turn" class="btn" data-control="review-sub-tab" data-variant="ghost" data-size="xs">
             <span class="icon-[lucide--sparkle] size-3.5 shrink-0 text-special" aria-hidden="true"></span>
             <span>Review pipeline</span>
-            <span id="review-stages-count-badge" class="badge" data-variant="secondary">4</span>
+            <span id="review-stages-count-badge" class="badge gap-1 tabular-nums" data-variant="secondary"></span>
           </button>
         </div>
 
@@ -379,28 +367,24 @@
       <!-- Review pipeline: the coding harness answers each stage's question in turn -->
       <div id="review-stages-view" data-ui="review-stages-view" class="flex flex-1 min-h-0 overflow-hidden group-[.layout-horizontal]/review:flex-col" hidden>
         <aside id="review-pipeline" data-ui="review-pipeline" class="flex w-72 max-w-1/2 shrink-0 flex-col overflow-hidden border-r group-[.layout-horizontal]/review:w-full group-[.layout-horizontal]/review:max-w-none group-[.layout-horizontal]/review:max-h-64 group-[.layout-horizontal]/review:border-r-0 group-[.layout-horizontal]/review:border-b">
-          <div data-ui="review-pipeline-head" class="flex items-start gap-2 px-3 pt-3 pb-2">
-            <div data-ui="review-workflow-info" class="flex min-w-0 flex-1 flex-col gap-0.5">
-              <span class="flex min-w-0 items-center gap-1.5">
-                <span class="icon-[lucide--sparkle] size-3.5 shrink-0 text-special" aria-hidden="true"></span>
-                <button type="button" id="review-workflow-name" data-ui="review-workflow-name" class="min-w-0 truncate text-left text-sm font-semibold hover:underline underline-offset-2">Review pipeline</button>
-              </span>
-              <span class="text-xs text-muted-foreground">Your coding harness answers each question in order.</span>
+          <div data-ui="review-pipeline-head" class="flex flex-col gap-0.5 px-3 pt-3 pb-2">
+            <div data-ui="review-workflow-info" class="flex min-w-0 items-center gap-1.5">
+              <span class="icon-[lucide--sparkle] size-3.5 shrink-0 text-special" aria-hidden="true"></span>
+              <button type="button" id="review-workflow-name" data-ui="review-workflow-name" class="min-w-0 flex-1 truncate text-left text-sm font-semibold">Review pipeline</button>
+              <div data-ui="review-pipeline-head-actions" class="-my-1 flex shrink-0 items-center">
+                <button id="btn-toggle-review-layout" title="Stages beside or above the answer" aria-label="Toggle layout" class="btn" data-variant="ghost" data-size="icon-xs">
+                  <span id="icon-layout-vert" class="icon-[lucide--columns-2] size-3.5 shrink-0" aria-hidden="true"></span>
+                  <span id="icon-layout-horiz" class="icon-[lucide--rows-2] size-3.5 shrink-0" aria-hidden="true"></span>
+                </button>
+                <button id="btn-add-review-stage" title="Add a stage" aria-label="Add a stage" class="btn" data-variant="ghost" data-size="icon-xs">
+                  <span class="icon-[lucide--plus] size-3.5 shrink-0" aria-hidden="true"></span>
+                </button>
+              </div>
             </div>
-            <div data-ui="review-pipeline-head-actions" class="flex shrink-0 items-center">
-              <button id="btn-toggle-review-layout" title="Stages beside or above the answer" aria-label="Toggle layout" class="btn" data-variant="ghost" data-size="icon-xs">
-                <span id="icon-layout-vert" class="icon-[lucide--columns-2] size-3.5 shrink-0" aria-hidden="true"></span>
-                <span id="icon-layout-horiz" class="icon-[lucide--rows-2] size-3.5 shrink-0" aria-hidden="true"></span>
-              </button>
-              <button id="btn-add-review-stage" title="Add a stage" aria-label="Add a stage" class="btn" data-variant="ghost" data-size="icon-xs">
-                <span class="icon-[lucide--plus] size-3.5 shrink-0" aria-hidden="true"></span>
-              </button>
-              <button id="btn-review-settings" title="Edit all stages" aria-label="Edit all stages" class="btn" data-variant="ghost" data-size="icon-xs">
-                <span class="icon-[lucide--settings] size-3.5 shrink-0" aria-hidden="true"></span>
-              </button>
-            </div>
+            <span class="truncate text-xs text-muted-foreground">Answered by your coding harness, in order.</span>
           </div>
           <ol id="review-stages-container" data-ui="review-stages-container" class="flex flex-1 flex-col overflow-y-auto px-1.5 pb-2" aria-label="Stages"></ol>
+          <div id="review-stage-menu" role="menu" aria-label="Stage actions" hidden></div>
           <div data-ui="review-pipeline-actions" class="border-t p-3">
             <button id="btn-run-review-flow" title="Run every stage in order" class="btn w-full" data-variant="special" data-size="sm">
               <span class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true"></span>
@@ -479,14 +463,14 @@
     <div id="review-return-pill" data-ui="review-return-pill" class="card fixed bottom-12 right-6 z-50 flex flex-row items-center gap-2 p-3" hidden>
       <span data-ui="review-return-icon" class="inline-flex text-primary-text"><span class="icon-[lucide--corner-up-left] size-3.5 shrink-0" aria-hidden="true"></span></span>
       <span id="review-return-label">Viewing from Review</span>
-      <button id="btn-return-to-review" title="Return to Review Mode ({Mod+Shift+V})" class="btn" data-control="review-return-btn" data-variant="outline" data-size="xs">
-        Back to Review <kbd class="kbd">Mod+Shift+V</kbd>
+      <button id="btn-return-to-review" title="Back to the overview ({Mod+Shift+V})" class="btn" data-control="review-return-btn" data-variant="outline" data-size="xs">
+        Back to overview
       </button>
       <button id="btn-dismiss-review-return" title="Dismiss" class="btn" data-control="review-return-close" data-variant="ghost" data-size="icon-xs" aria-label="Dismiss"><span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true"></span></button>
     </div>
 
-    <!-- PR review bar: shown only when this session is `faah pr ...` (web/src/pr.js) -->
-    <div id="pr-bar" data-ui="pr-bar" class="flex flex-none flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2" hidden>
+    <!-- PR footer: a `faah pr ...` session only (web/src/pr.js), shown with the overview -->
+    <div id="pr-bar" data-ui="pr-bar" class="[body:not(.in-review-mode)_&]:hidden! flex flex-none flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2" hidden>
       <div data-ui="pr-bar-row" class="flex min-w-0 flex-1 basis-80 flex-col gap-0.5">
         <div class="flex min-w-0 items-center gap-2">
         <a id="pr-link" data-ui="pr-link" class="group flex items-center min-w-40 gap-2 rounded-md -mx-1.5 px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" target="_blank" rel="noopener noreferrer" >
@@ -540,7 +524,7 @@
     <!-- PR comments bottom panel: existing GitHub comments (top-level and
          inline) plus your own draft review comments, open by default for the
          life of a PR review session. web/src/pr.js owns everything in it. -->
-    <div id="pr-comments-panel" data-ui="pr-comments-panel" class="group/comments relative flex h-72 max-h-[80vh] shrink-0 flex-col border-t [&.collapsed]:h-auto! collapsed" hidden>
+    <div id="pr-comments-panel" data-ui="pr-comments-panel" class="[body:not(.in-review-mode)_&]:hidden! group/comments relative flex h-72 max-h-[80vh] shrink-0 flex-col border-t [&.collapsed]:h-auto! collapsed" hidden>
       <div id="pr-comments-resizer" data-ui="pr-comments-resizer" class="absolute -top-1 inset-x-0 h-2 cursor-row-resize hover:bg-primary" title="Drag to resize"></div>
       <div data-ui="pr-comments-panel-head" class="flex flex-wrap items-center shrink-0 select-none gap-2 p-3">
         <span data-ui="pr-comments-panel-title" class="label">Comments</span>
@@ -989,29 +973,6 @@
   </div>
 </dialog>
 
-<!-- Modal Dialog for Configuring Review Workflow -->
-<dialog id="review-config-dialog" class="dialog">
-  <div class="overflow-auto" role="dialog" aria-modal="true" aria-labelledby="review-config-title">
-    <header class="flex-row! items-center justify-between shrink-0">
-      <h2 id="review-config-title">Configure Review Workflow</h2>
-        <span class="badge" data-variant="outline" data-control="settings-path-badge">.faah/workflows.json</span>
-      <div class="flex items-center gap-3">
-        <button id="review-config-close" title="Close (Esc)" class="btn" data-control="mini settings-close-btn" data-variant="ghost" data-size="icon-xs" aria-label="Close (Esc)"><span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true"></span></button>
-      </div>
-    </header>
-    <section data-ui="review-config-body" class="flex flex-col overflow-y-auto gap-2 p-3">
-      <div data-ui="review-config-field" class="field flex flex-col gap-2">
-        <label class="label">Workflow Name</label>
-        <input type="text" id="review-config-wf-name" placeholder="e.g. Standard PR Review" class="input h-8!">
-      </div>
-      <div data-ui="review-config-stages-head" class="font-semibold">Stages Pipeline</div>
-      <div id="review-config-stages" data-ui="review-config-stages" class="flex flex-col gap-2"></div>
-    </section>
-    <footer class="">
-      <button id="review-config-save" class="btn" data-control="bar-action pr-btn-merge" data-variant="primary" data-size="xs">Save Workflow</button>
-    </footer>
-  </div>
-</dialog>
 
 <!-- Modal Dialog for Adding a New Review Stage -->
 <dialog id="review-add-stage-modal" class="dialog">

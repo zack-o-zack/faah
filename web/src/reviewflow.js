@@ -1,4 +1,5 @@
-import { setPressed } from './controls.js';
+import { setMenuHidden } from './overlays.js';
+import { on } from './bus.js';
 // web/src/reviewflow.js
 import { $, $$, S, esc, api, apiPostJson, keyLabel } from './state.js';
 import { openFile } from './tabs.js';
@@ -129,16 +130,12 @@ export function setMode(mode) {
   if (mode === currentMode) return;
   currentMode = mode;
 
-  const btnCode = $('#btn-mode-code');
-  const btnReview = $('#btn-mode-review');
   const reviewView = $('#review-view');
   const editor = $('#editor');
   const returnPill = $('#review-return-pill');
 
   if (mode === 'review') {
     document.body.classList.add('in-review-mode');
-    if (btnCode) setPressed(btnCode, false);
-    if (btnReview) setPressed(btnReview, true);
     if (editor) editor.hidden = true;
     if (reviewView) reviewView.hidden = false;
     if (returnPill) returnPill.hidden = true;
@@ -153,8 +150,6 @@ export function setMode(mode) {
     connectWorkflowStream();
   } else {
     document.body.classList.remove('in-review-mode');
-    if (btnReview) setPressed(btnReview, false);
-    if (btnCode) setPressed(btnCode, true);
     if (reviewView) reviewView.hidden = true;
     if (editor) editor.hidden = false;
     disconnectWorkflowStream();
@@ -183,6 +178,13 @@ function releaseStageThread() {
 }
 
 export function initReviewFlow() {
+  document.addEventListener('click', e => { if (!e.target.closest?.('#review-stage-menu, [data-control~=review-stage-menu-btn]')) closeStageMenu(); });
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape' || $('#review-stage-menu')?.hidden !== false) return;
+    const anchor = $('#review-stage-menu')._anchor;
+    closeStageMenu();
+    anchor?.focus();
+  });
   initReviewWalkthrough();
   wireModeControls();
   wireLayoutControls();
@@ -196,10 +198,12 @@ export function initReviewFlow() {
 }
 
 function wireModeControls() {
-  const btnCode = $('#btn-mode-code');
-  const btnReview = $('#btn-mode-review');
-  if (btnCode) btnCode.onclick = () => setMode('code');
-  if (btnReview) btnReview.onclick = () => setMode('review');
+  const open = $('#btn-pr-toggle');
+  if (open) open.onclick = () => setMode('review');
+  const close = $('#btn-pr-close');
+  if (close) close.onclick = () => setMode('code');
+  // Opening a file leaves the overview; closing a tab behind it does not.
+  on('tab:activated', e => { if (e && 'prevDoc' in e) setMode('code'); });
 
   const returnBtn = $('#btn-return-to-review');
   if (returnBtn) {
@@ -214,15 +218,12 @@ function wireModeControls() {
     };
   }
 
-  // Keyboard shortcuts: Mod+Shift+V (Review Mode), Mod+Shift+C (Code Mode)
+  // Mod+Shift+V opens or leaves the overview.
   document.addEventListener('keydown', (e) => {
     const mod = e.metaKey || e.ctrlKey;
     if (mod && e.shiftKey && (e.key === 'V' || e.key === 'v')) {
       e.preventDefault();
       setMode(currentMode === 'review' ? 'code' : 'review');
-    } else if (mod && e.shiftKey && (e.key === 'C' || e.key === 'c')) {
-      e.preventDefault();
-      setMode('code');
     }
   });
 }
@@ -351,16 +352,8 @@ function wireStreams() {
 }
 
 function updateBackgroundStatusDot() {
-  const dot = $('#review-badge-status');
-  if (!dot) return;
   const status = currentRun?.status || currentRun?.Status;
-  const isRunning = status === 'running';
-  dot.hidden = !isRunning;
-  if (isRunning) {
-    dot.classList.add('animate-pulse');
-  } else {
-    dot.classList.remove('animate-pulse');
-  }
+  for (const dot of $$('[data-ui~=review-status-dot]')) dot.hidden = status !== 'running';
 }
 
 function renderPipeline() {
@@ -397,48 +390,37 @@ function renderPipeline() {
 
     // A dot per stage on a thin rail, like steps in a sequence.
     card.innerHTML = `
-      <button type="button" data-control="review-stage-select" aria-pressed="${isActive}" aria-label="Stage ${idx + 1}: ${esc(title)}, ${statusOf(status).label}" class="flex w-full min-w-0 items-start gap-2.5 rounded-md px-2 py-2 pr-14 text-left hover:bg-accent/50 focus-visible:outline focus-visible:outline-ring">
+      <button type="button" data-control="review-stage-select" aria-pressed="${isActive}" aria-label="Stage ${idx + 1}: ${esc(title)}, ${statusOf(status).label}" class="flex w-full min-w-0 items-start gap-2.5 rounded-md px-2 py-2 pr-8 text-left hover:bg-accent/50 focus-visible:outline focus-visible:outline-ring">
         <span class="relative flex w-2 shrink-0 justify-center self-stretch pt-1.5">${dotHtml(status, 'relative z-10')}${last ? '' : '<span class="absolute top-4 -bottom-3 w-px bg-border" aria-hidden="true"></span>'}</span>
         <span data-ui="review-stage-card-body" class="flex min-w-0 flex-1 flex-col gap-0.5">
           <span data-ui="review-stage-card-title" class="text-sm font-medium wrap-anywhere">${esc(title)}</span>
           <span data-ui="review-stage-card-desc" class="line-clamp-2 text-xs text-muted-foreground wrap-anywhere">${esc(question)}</span>
         </span>
       </button>
-      <div data-ui="review-stage-card-actions" class="absolute right-1.5 top-1.5 flex items-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">
-        <button type="button" title="Edit this stage" class="btn" data-control="mini review-stage-card-edit-btn" data-variant="ghost" data-size="icon-xs" aria-label="Edit this stage"><span class="icon-[lucide--square-pen] size-3.5 shrink-0" aria-hidden="true"></span></button>
-        <button type="button" title="Remove this stage" aria-label="Remove stage" class="btn" data-control="mini review-stage-remove-btn" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true"></span></button>
-      </div>
+      <button type="button" title="Stage actions" aria-label="Actions for ${esc(title)}" aria-haspopup="menu" aria-expanded="false" class="btn absolute right-1.5 top-1.5 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 aria-expanded:opacity-100" data-control="review-stage-menu-btn" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--ellipsis] size-3.5 shrink-0" aria-hidden="true"></span></button>
     `;
 
     card.onclick = (e) => {
-      if (e.target.closest('[data-control~=review-stage-remove-btn]') || e.target.closest('[data-control~=review-stage-card-edit-btn]')) return;
+      const menuBtn = e.target.closest('[data-control~=review-stage-menu-btn]');
+      if (menuBtn) {
+        e.stopPropagation();
+        openStageMenu(idx, menuBtn);
+        return;
+      }
       activeStageIdx = idx;
       renderPipeline();
       renderActiveStage();
       container.querySelector(`[data-index="${idx}"] [data-control~=review-stage-select]`)?.focus();
     };
-
-    const editBtn = card.querySelector('[data-control~=review-stage-card-edit-btn]');
-    if (editBtn) {
-      editBtn.onclick = (e) => {
-        e.stopPropagation();
-        activeStageIdx = idx;
-        renderPipeline();
-        renderActiveStage();
-        openInlineStageEditor();
-      };
-    }
-
-    const removeBtn = card.querySelector('[data-control~=review-stage-remove-btn]');
-    if (removeBtn) {
-      removeBtn.onclick = async (e) => {
-        e.stopPropagation();
-        await removeStage(idx);
-      };
-    }
+    card.oncontextmenu = (e) => {
+      e.preventDefault();
+      openStageMenu(idx, card.querySelector('[data-control~=review-stage-menu-btn]'), e);
+    };
 
     container.appendChild(card);
   });
+
+  renderStagesBadge(items);
 
   // Update Run / Stop buttons
   const isRunning = (currentRun?.status || currentRun?.Status) === 'running';
@@ -446,6 +428,90 @@ function renderPipeline() {
   const btnStop = $('#btn-stop-review-flow');
   if (btnRun) btnRun.hidden = isRunning;
   if (btnStop) btnStop.hidden = !isRunning;
+}
+
+// The tab's badge carries the pipeline's progress, so it can be read from
+// the Diff tab without switching: a dot per stage, or done/total when long.
+function renderStagesBadge(items) {
+  const badge = $('#review-stages-count-badge');
+  if (!badge) return;
+  const statuses = items.map(getStatus);
+  const done = statuses.filter(s => s === 'completed').length;
+  badge.innerHTML = items.length <= 8
+    ? statuses.map(s => dotHtml(s, 'size-1.5!')).join('')
+    : dotHtml(statuses.find(s => s === 'running' || s === 'failed') || (done === items.length ? 'completed' : 'pending')) + `${done}/${items.length}`;
+  const working = items.findIndex((st, i) => statuses[i] === 'running');
+  const failed = statuses.includes('failed');
+  badge.title = `${done} of ${items.length} done` +
+    (working >= 0 ? ` · working on ${getTitle(getDef(items[working])) || 'stage ' + (working + 1)}` : '') +
+    (failed ? ' · a stage failed' : '');
+  badge.setAttribute('aria-label', badge.title);
+}
+
+// One menu for every stage, opened from its ⋯ button or a right-click.
+// Reordering and removing wait while the pipeline runs, since the run's
+// stages are matched to the list by position.
+const MENU_ITEM = 'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent focus-visible:bg-accent focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50';
+
+function openStageMenu(idx, anchor, pointer) {
+  const menu = $('#review-stage-menu');
+  if (!menu) return;
+  const stages = getWorkflowStages();
+  const running = (currentRun?.status || currentRun?.Status) === 'running';
+  const item = (act, icon, label, { disabled = false, cls = '' } = {}) =>
+    `<button type="button" data-act="${act}" class="${MENU_ITEM} ${cls}"${disabled ? ' disabled' : ''}><span class="${icon} size-3.5 shrink-0" aria-hidden="true"></span>${label}</button>`;
+  menu.innerHTML =
+    item('run', 'icon-[lucide--sparkle] text-special', 'Run this stage', { disabled: running }) +
+    item('edit', 'icon-[lucide--square-pen]', 'Edit') +
+    item('up', 'icon-[lucide--arrow-up]', 'Move up', { disabled: running || idx === 0 }) +
+    item('down', 'icon-[lucide--arrow-down]', 'Move down', { disabled: running || idx === stages.length - 1 }) +
+    '<hr role="separator" class="my-1 border-border">' +
+    item('remove', 'icon-[lucide--trash-2]', 'Remove', { disabled: running || stages.length <= 1, cls: 'text-destructive' });
+  for (const b of menu.querySelectorAll('button')) b.onclick = () => { closeStageMenu(); stageAction(b.dataset.act, idx); };
+  closeStageMenu();
+  setMenuHidden(menu, false);
+  menu._anchor = anchor;
+  anchor?.setAttribute('aria-expanded', 'true');
+  const r = pointer ? { left: pointer.clientX, right: pointer.clientX, top: pointer.clientY, bottom: pointer.clientY } : anchor.getBoundingClientRect();
+  const w = menu.offsetWidth, h = menu.offsetHeight;
+  menu.style.left = Math.max(8, Math.min(innerWidth - w - 8, pointer ? r.left : r.right - w)) + 'px';
+  menu.style.top = (innerHeight - r.bottom < h + 12 ? Math.max(8, r.top - h - 4) : r.bottom + 4) + 'px';
+  menu.style.right = menu.style.bottom = 'auto';
+  menu.querySelector('button:not(:disabled)')?.focus();
+}
+
+function closeStageMenu() {
+  const menu = $('#review-stage-menu');
+  if (!menu || menu.hidden) return;
+  setMenuHidden(menu, true);
+  menu._anchor?.setAttribute('aria-expanded', 'false');
+  menu._anchor = null;
+}
+
+async function stageAction(act, idx) {
+  if (act === 'run') return runWorkflow(idx);
+  if (act === 'edit') {
+    activeStageIdx = idx;
+    renderPipeline();
+    renderActiveStage();
+    return openInlineStageEditor();
+  }
+  if (act === 'remove') return removeStage(idx);
+  const to = act === 'up' ? idx - 1 : idx + 1;
+  const stages = getWorkflowStages();
+  if (to < 0 || to >= stages.length) return;
+  [stages[idx], stages[to]] = [stages[to], stages[idx]];
+  reviewConfig.stages = stages;
+  if (reviewConfig.workflows?.[0]) reviewConfig.workflows[0].stages = stages;
+  if (activeStageIdx === idx) activeStageIdx = to;
+  else if (activeStageIdx === to) activeStageIdx = idx;
+  try {
+    await saveConfigToServer();
+  } catch (err) {
+    showToast('error', err.message);
+  }
+  renderPipeline();
+  renderActiveStage();
 }
 
 async function removeStage(idx) {
@@ -467,7 +533,7 @@ async function removeStage(idx) {
   }
   try {
     await saveConfigToServer();
-    showToast(`Removed stage: ${removedTitle}`, 'info', 2000);
+    showToast('info', `Removed stage: ${removedTitle}`, 2000);
     renderPipeline();
     renderActiveStage();
   } catch (err) {

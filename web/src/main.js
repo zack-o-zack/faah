@@ -32,7 +32,7 @@ import { initPRScope } from './prscope.js';
 import { initEditView } from './editview.js';
 import { initNewItem } from './newitem.js';
 import { initTips, startTipsAsync } from './tips.js';
-import { initReviewFlow } from './reviewflow.js';
+import { initReviewFlow, setMode } from './reviewflow.js';
 import { initErrorCopy } from './ui.js';
 
 // Initialize all subsystems
@@ -187,6 +187,8 @@ initPRScope();
     collapseAllDirs();
   }
   setAutoRevealSuppressed(false);
+  // A PR session opens on the pull request itself.
+  if (S.meta?.pr) setMode('review');
 
   if (document.fonts && document.fonts.ready) {
     document.fonts.ready.then(() => { measure(); layout(); render(); });

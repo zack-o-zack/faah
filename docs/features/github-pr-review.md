@@ -237,6 +237,7 @@ Implementation details are in [the internals guide](../internals/github-pr-revie
 | `Cmd/Ctrl+Enter` / `Esc` | Merge dialog | Confirm the merge / cancel |
 | **Resolve conflicts** | PR header bar | Rebase onto, or merge, the base branch with the coding harness (asks first) |
 | **Force-push** | Sidebar git panel | After a rebase: replace the PR branch's commits, with a lease (asks first) |
-| **Pull** | Sidebar git panel | Fast-forward the checkout onto the PR's current head; refuses on divergence |
-| **Push** | Sidebar git panel | Push the checkout's `HEAD` to the PR's actual head branch |
+| **git sync** | Sidebar git panel | Pull the PR's new commits, then push yours |
+| **Pull** | Sidebar git panel, git sync menu | Fast-forward the checkout onto the PR's current head; refuses on divergence |
+| **Push** | Sidebar git panel, git sync menu | Push the checkout's `HEAD` to the PR's actual head branch |
 | **✨ Commit** (empty message) | Sidebar git panel | Write and commit a message for the staged diff with your coding harness |

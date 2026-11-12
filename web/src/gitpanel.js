@@ -6,6 +6,7 @@
 import { $, esc, S, api, apiPostJson } from './state.js';
 import { showToast, copyToClipboard, flashActionSuccess } from './ui.js';
 import { reindexWorkspace } from './panels.js';
+import { setMenuHidden } from './overlays.js';
 import { refreshPRMeta, nudgeForgeToken, forgeInfo } from './pr.js';
 import { reloadOpenTabs } from './tabs.js';
 import { openSettings } from './settings.js';
@@ -59,8 +60,17 @@ export function initGitPanel() {
       doCommit();
     }
   });
-  $('#git-push')?.addEventListener('click', () => (rewritten ? confirmForcePush() : doPush()));
-  $('#git-pull')?.addEventListener('click', doPull);
+  $('#git-push')?.addEventListener('click', () => { toggleSyncMenu(false); rewritten ? confirmForcePush() : doPush(); });
+  $('#git-pull')?.addEventListener('click', () => { toggleSyncMenu(false); doPull(); });
+  $('#git-sync')?.addEventListener('click', doSync);
+  $('#git-sync-item')?.addEventListener('click', () => { toggleSyncMenu(false); doSync(); });
+  $('#git-sync-caret')?.addEventListener('click', e => { e.stopPropagation(); toggleSyncMenu(); });
+  document.addEventListener('click', e => { if (!e.target.closest?.('#git-sync-menu')) toggleSyncMenu(false); });
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape' || $('#git-sync-menu')?.hidden !== false) return;
+    toggleSyncMenu(false);
+    $('#git-sync-caret')?.focus();
+  });
   $('#git-generate-msg')?.addEventListener('click', doGenerateMessage);
   $('#git-token-nudge')?.addEventListener('click', nudgeForgeToken);
   $('#git-instructions-link')?.addEventListener('click', () => {
@@ -131,6 +141,8 @@ export function updateGitPanel(payload) {
   // Commit button is enabled when there are changes or staged files
   stagedCount = staged;
   const commitBtn = $('#git-commit');
+  // Commit and the clean note share a row with Sync, so Sync stays reachable.
+  if (commitBtn) commitBtn.hidden = !hasChanges;
   if (commitBtn && !commitBtn.dataset.busy) {
     commitBtn.disabled = !hasChanges;
     syncCommitBtn();
@@ -144,6 +156,7 @@ export function updateGitPanel(payload) {
   }
   if (pushBtn) {
     const ahead = payload?.ahead ?? 0;
+    syncCounts.ahead = ahead;
     pushBtn.disabled = ahead === 0 || !!syncJob;
     setBtnLabel(pushBtn, ahead > 0 ? String(ahead) : '');
     if (ahead > 0 && rewritten) {
@@ -162,6 +175,7 @@ export function updateGitPanel(payload) {
   const pullBtn = $('#git-pull');
   if (pullBtn) {
     const behind = payload?.behind ?? 0;
+    syncCounts.behind = behind;
     setBtnLabel(pullBtn, behind > 0 ? String(behind) : '');
     if (behind > 0) {
       pullBtn.title = `Pull ${behind} incoming commit${behind > 1 ? 's' : ''} from remote`;
@@ -170,6 +184,8 @@ export function updateGitPanel(payload) {
     }
     if (syncJob) pullBtn.disabled = true;
   }
+
+  renderSyncButton();
 
   // Render recent commits if provided in payload
   if (payload?.recentCommits) {
@@ -288,6 +304,7 @@ async function doPull() {
       flashActionSuccess(btn, null);
     }
     await afterHistoryChange();
+    return true;
   } catch (e) {
     if (btn) setBtn(btn, 'arrow-down');
     // A refused fast-forward is a decision, not a dead end: offer to have the
@@ -296,9 +313,74 @@ async function doPull() {
     if (b.code === 'diverged') offerSync(b);
     else if (b.code === 'in-progress') offerUnfinished(b);
     else showGitError('Pull failed', e.message);
+    return false;
   } finally {
     if (btn) btn.disabled = !!syncJob;
   }
+}
+
+// Last ahead/behind counts from the status stream, for Sync.
+const syncCounts = { ahead: 0, behind: 0 };
+
+function renderSyncButton() {
+  const btn = $('#git-sync');
+  if (!btn) return;
+  const { ahead, behind } = syncCounts;
+  const counts = $('#git-sync-counts');
+  const text = [behind ? behind + '↓' : '', ahead ? ahead + '↑' : ''].filter(Boolean).join(' ');
+  if (counts) counts.textContent = text;
+  btn.title = 'git sync: ' + (behind && ahead ? `pull ${plural(behind, 'incoming commit')}, then push ${plural(ahead, 'commit')}`
+    : behind ? `pull ${plural(behind, 'incoming commit')}`
+    : ahead ? `push ${plural(ahead, 'commit')}`
+    : 'pull anything new from remote');
+  const item = $('#git-sync-item');
+  if (item) {
+    setBtnLabel(item, text);
+    item.title = btn.title;
+    item.disabled = !!syncJob;
+  }
+  if (!btn.dataset.busy) btn.disabled = !!syncJob;
+  const caret = $('#git-sync-caret');
+  if (caret) caret.disabled = !!syncJob;
+}
+
+// Pull what is incoming, then push what is yours. A pull that cannot
+// fast-forward stops here: its notice offers rebase or merge instead.
+async function doSync() {
+  const btn = $('#git-sync');
+  if (!btn || btn.dataset.busy) return;
+  btn.dataset.busy = '1';
+  btn.disabled = true;
+  setBtn(btn, 'loader-circle');
+  try {
+    const { ahead, behind } = syncCounts;
+    if (behind > 0 || ahead === 0) {
+      if (!(await doPull()) || ahead === 0) return;
+    }
+    await (rewritten ? confirmForcePush() : doPush());
+  } finally {
+    delete btn.dataset.busy;
+    setBtn(btn, 'refresh-cw');
+    renderSyncButton();
+  }
+}
+
+function toggleSyncMenu(force) {
+  const menu = $('#git-sync-menu');
+  const caret = $('#git-sync-caret');
+  if (!menu || !caret) return;
+  const open = force === undefined ? menu.hidden : force;
+  if (!open && menu.hidden) return;
+  setMenuHidden(menu, !open);
+  caret.setAttribute('aria-expanded', String(open));
+  if (!open) return;
+  // Fixed to the window and right-aligned to the caret, like the other menus.
+  const r = caret.getBoundingClientRect();
+  Object.assign(menu.style, { left: 'auto', right: Math.max(8, innerWidth - r.right) + 'px', padding: '4px' });
+  const up = innerHeight - r.bottom < menu.offsetHeight + 12 && r.top > innerHeight - r.bottom;
+  menu.style.top = up ? 'auto' : r.bottom + 4 + 'px';
+  menu.style.bottom = up ? innerHeight - r.top + 4 + 'px' : 'auto';
+  menu.querySelector('[role^=menuitem]:not(:disabled)')?.focus();
 }
 
 // After anything that moved HEAD (pull, agent rebase/merge, abort): open
@@ -602,6 +684,7 @@ async function abortSync() {
 function setSyncButtons() {
   const pull = $('#git-pull');
   if (pull) pull.disabled = !!syncJob;
+  renderSyncButton();
   const push = $('#git-push');
   if (push && syncJob) push.disabled = true;
   else if (push) triggerRefresh(); // the next status payload re-derives Push's state

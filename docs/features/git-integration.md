@@ -75,18 +75,18 @@ Before committing code from your terminal, open faah to perform a visual walk-th
 Once you've reviewed a change in the diff view, finish the commit right there:
 1. Tick the files you want in this commit from the file tree (or click **Stage All**).
 2. Write a message in the git panel's commit box, or click **✨ Commit** (empty message) to have your configured coding harness write one from the staged diff and commit with it directly.
-3. Click **Push** to send the branch to its remote. If it's the first push on a new branch, faah offers to set the upstream for you.
+3. Click **git sync** to send the branch to its remote (or pick **git push** from the menu beside it). If it's the first push on a new branch, faah offers to set the upstream for you.
 
 ### Reviewing Local Commits Before You Push
 When you've made several commits locally and want to read them over before sending them up:
 1. Switch to the **Git Changes** view. The **Unpushed** section under the tree lists every commit ahead of your tracking branch, newest first.
 2. Hover a commit to see who wrote it, its full message, and how much it changed.
 3. Click it to expand the files it touched, then click a file to read that commit's diff — just that commit's, unaffected by anything you've edited since.
-4. Fix anything that needs fixing, commit again (the list updates itself), and click **Push**. The section empties as the commits land.
+4. Fix anything that needs fixing, commit again (the list updates itself), and click **Sync**. The section empties as the commits land.
 
 ### Catching Up With a Moving Remote
 When a teammate (or CI) has pushed new commits to the branch you're reviewing:
-1. Click **Pull** in the git panel.
+1. Click **git sync** in the git panel (or pick **git pull** from the menu beside it).
 2. If your local branch can fast-forward cleanly onto the new commits, faah updates it and the diff view refreshes automatically.
 3. If your branch has diverged (you have local commits the remote doesn't), the git panel shows a **Can't fast-forward** card with the local and incoming commit counts and a harness picker. Pick one:
    - **✨ Rebase** replays your commits on top of the remote for a straight history.
@@ -118,8 +118,9 @@ A rebase or merge left half-done from a terminal is shown the same way when faah
 | **Stage All** | Git Panel | Stage every changed file |
 | **Commit** / `Cmd/Ctrl+Enter` | Git Panel / Commit Box | Commit staged changes (auto-stages all modifications if none staged) |
 | **✨ Commit** (empty message) | Git Panel | Write a commit message from the staged diff with the selected harness, then commit with it |
-| **Pull** | Git Panel | Fast-forward onto the remote (or, in PR review, the PR's current head); on divergence, offers Rebase/Merge with AI |
-| **Push** | Git Panel | Push the current branch (or, in PR review, to the PR's head branch) |
+| **git sync** | Git Panel | Pull incoming commits, then push yours; shows the counts as `2↓ 3↑`. A pull that can't fast-forward stops before the push |
+| **Pull** | Git Panel, git sync menu | Fast-forward onto the remote (or, in PR review, the PR's current head); on divergence, offers Rebase/Merge with AI |
+| **Push** | Git Panel, git sync menu | Push the current branch (or, in PR review, to the PR's head branch) |
 | Click a commit | Recent Commits | Expand / collapse its changed files |
 | Click a changed file | Recent Commits | Open that file's diff within the commit, in a tab pinned to it |
 | **Show 100 more** | Recent Commits, Unpushed | List the next 100 files of a large commit |

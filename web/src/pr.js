@@ -6,7 +6,7 @@
 // comment. Everything here talks to /api/pr/*; nothing is stored client-side
 // beyond what's needed to repaint -- a page refresh re-fetches the server's
 // in-memory draft list (pr.go's prSession), which is the only source of truth.
-import { $, S, doc_, esc, api, apiPostJson, keyLabel, shortcutHtml, withKeys } from './state.js';
+import { $, $$, S, doc_, esc, api, apiPostJson, keyLabel, shortcutHtml, withKeys } from './state.js';
 import { showToast } from './ui.js';
 import { setReviewHandler, SEL_MENU_ITEMS } from './selbar.js';
 import { diffview, setPRSyncHandler } from './diff.js';
@@ -119,6 +119,7 @@ function renderBar() {
   if (!b || !meta) return;
   b.hidden = false;
   $('#pr-badge').textContent = '#' + meta.number;
+  for (const num of $$('[data-ui~=pr-num]')) num.textContent = '#' + meta.number;
   const forge = forgeInfo();
   const link = $('#pr-link');
   if (link) {

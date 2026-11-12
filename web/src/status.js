@@ -2,7 +2,6 @@ import { setMenuHidden } from './overlays.js';
 import { setPressed } from './controls.js';
 import { $, S, doc_, api, apiPost, esc, withKeys } from './state.js';
 import { previewing, previewKind } from './markdown.js';
-import { layoutPref } from './diff.js';
 import { vp, copyToClipboard, showToast } from './ui.js';
 import { fmtBytes, showMetrics, initMetricsMenu, closeMetricsMenu } from './metricsview.js';
 
@@ -51,30 +50,23 @@ export function updateStatus() {
   const inGit = !!S.meta?.git;
   const hasDiff = !!(d && d.diffAvailable);
   const isDiffOn = !!(d && d.diffMode);
-  const currentLayout = (d && d.diffMode) || layoutPref();
   const dsw = $('#diff-switch');
   if (dsw) {
-    const showSwitch = inGit && isCode;
-    dsw.hidden = !showSwitch;
+    // Only files with changes get the switch; a clean file has nothing to compare.
+    dsw.hidden = !(inGit && isCode && (hasDiff || isDiffOn));
     document.body.classList.toggle('diff-tab', hasDiff);
-    const btn = $('#diff-btn');
-    if (btn) {
-      btn.disabled = !hasDiff;
-      btn.classList.toggle('disabled', !hasDiff);
-      setPressed(btn, hasDiff && isDiffOn);
-      btn.title = hasDiff
-        ? withKeys(`Show changes against HEAD, ${currentLayout === 'unified' ? 'unified' : 'split'} ({Mod+D})`)
-        : 'This file has no changes against HEAD';
-    }
-    const srcBtn = $('#diff-source');
-    if (srcBtn) {
-      setPressed(srcBtn, !hasDiff || !isDiffOn);
-      srcBtn.title = withKeys('Show the file ({Mod+D})');
-    }
-    const menuItems = dsw.querySelectorAll('[data-control~=diff-menu-item]');
-    for (const item of menuItems) {
-      item.setAttribute('aria-checked', String(item.dataset.diffOpt === currentLayout));
-    }
+    setPressed($('#diff-btn'), isDiffOn);
+    setPressed($('#diff-source'), !isDiffOn);
+  }
+  const layoutBtn = $('#diff-layout');
+  if (layoutBtn) {
+    const split = (d && d.diffMode) !== 'unified';
+    layoutBtn.hidden = !isDiffOn;
+    const label = split ? 'Show changes in one column' : 'Show changes side by side';
+    layoutBtn.title = label;
+    layoutBtn.setAttribute('aria-label', label);
+    $('#diff-layout-split').hidden = !split;
+    $('#diff-layout-unified').hidden = split;
   }
 
   const verEl = $('#st-ver');

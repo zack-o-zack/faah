@@ -109,7 +109,7 @@ test('pending stages use icon edit controls, a run button and no empty question 
     assert.match(messages, /data-variant="special"/);
     const cards = elements.get('review-stages-container').children;
     const card = cards[cards.length - 1].innerHTML;
-    assert.match(card, /aria-label="Edit this stage"><span class="icon-\[lucide--square-pen\]/);
+    assert.match(card, /data-control="review-stage-menu-btn"[^>]*><span class="icon-\[lucide--ellipsis\]/);
     assert.doesNotMatch(card, /✏/);
     elements.get('btn-edit-stage-inline').onclick();
     assert.equal(elements.get('review-stage-inline-editor').hidden, false);

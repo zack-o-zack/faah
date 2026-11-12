@@ -523,7 +523,7 @@
     font-weight: 600;
   }
 
-  body.in-review-mode #tabs { display: none !important; }
+  body.in-review-mode #tab-row { display: none !important; }
   body.in-review-mode #main {
     min-height: 0;
     overflow: hidden;
