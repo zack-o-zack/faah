@@ -136,9 +136,11 @@ function renderBar() {
   $('#pr-title').textContent = meta.title;
   $('#pr-title').title = meta.title;
   $('#pr-refs').innerHTML = esc(meta.base) + ' <span class="icon-[lucide--arrow-left] size-3 align-[-2px]" aria-hidden="true"></span> ' + esc(meta.head);
-  $('#pr-draft-count').textContent = comments.length
-    ? (comments.length + (comments.length === 1 ? ' draft comment' : ' draft comments'))
-    : '';
+  const n = comments.length;
+  $('#pr-review-drafts').textContent = n ? String(n) : '';
+  $('#pr-review-drafts-note').textContent = n
+    ? `Your ${n} line comment${n === 1 ? '' : 's'} go${n === 1 ? 'es' : ''} with it.`
+    : 'No line comments yet. Select lines in the diff to add some.';
   const ro = $('#pr-readonly-note');
   if (ro) {
     ro.hidden = !meta.readOnly;
@@ -179,11 +181,12 @@ function renderBar() {
     if (reqBtn) reqBtn.hidden = true;
     if (appBtn) appBtn.hidden = true;
   }
+  const reviewGroup = $('#pr-review-group');
+  if (reviewGroup) reviewGroup.hidden = ended && !comments.length;
+  const mergeShown = !$('#pr-merge-group')?.hidden;
+  $('#pr-review-sep').hidden = !!reviewGroup?.hidden || !mergeShown;
   const reviewRow = $('#pr-review-row');
-  if (reviewRow) {
-    const mergeShown = !$('#pr-merge-group')?.hidden;
-    reviewRow.hidden = ended && !comments.length && !mergeShown;
-  }
+  if (reviewRow) reviewRow.hidden = !!reviewGroup?.hidden && !mergeShown && $('#pr-batch-apply')?.hidden;
   const cmtBtn = $('#pr-submit-comment');
   if (cmtBtn) {
     cmtBtn.disabled = !!gate.all;
@@ -208,6 +211,20 @@ export function nudgeForgeToken(reason = '') {
 
 function wireBarButtons() {
   $('#pr-batch-apply')?.addEventListener('click', batchApplyComments);
+  $('#pr-review-toggle')?.addEventListener('click', e => {
+    e.stopPropagation();
+    setReviewPanel($('#pr-review-panel').hidden);
+  });
+  document.addEventListener('click', e => {
+    if (!$('#pr-review-panel')?.hidden && !e.target.closest?.('#pr-review-group')) setReviewPanel(false);
+  });
+  addEventListener('resize', () => setReviewPanel(false));
+  $('#pr-review-panel')?.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    e.stopPropagation();
+    setReviewPanel(false);
+    $('#pr-review-toggle')?.focus();
+  });
   $('#pr-submit-comment')?.addEventListener('click', () => submitReview('COMMENT'));
   $('#pr-submit-request-changes')?.addEventListener('click', () => submitReview('REQUEST_CHANGES'));
   $('#pr-submit-approve')?.addEventListener('click', () => submitReview('APPROVE'));
@@ -328,6 +345,24 @@ async function pollPRBatch(id, count) {
   setTimeout(poll, 400);
 }
 
+function setReviewPanel(open) {
+  const panel = $('#pr-review-panel');
+  if (!panel) return;
+  const toggle = $('#pr-review-toggle');
+  panel.hidden = !open;
+  toggle?.setAttribute('aria-expanded', String(open));
+  if (!open || !toggle) return;
+  // Fixed to the window: the editor column clips anything that leaves the bar.
+  // It opens downward, or upward when the bar sits too low for it.
+  const r = toggle.getBoundingClientRect();
+  panel.style.right = Math.max(8, innerWidth - r.right) + 'px';
+  const below = innerHeight - r.bottom - 8;
+  const up = below < panel.offsetHeight + 4 && r.top > below;
+  panel.style.top = up ? '' : r.bottom + 4 + 'px';
+  panel.style.bottom = up ? innerHeight - r.top + 4 + 'px' : '';
+  $('#pr-review-body')?.focus();
+}
+
 async function submitReview(event) {
   if (meta?.readOnly) {
     nudgeForgeToken('to submit a review');
@@ -343,6 +378,7 @@ async function submitReview(event) {
     await apiPostJson('/api/pr/submit', { event, body });
     comments = [];
     if (bodyEl) bodyEl.value = '';
+    setReviewPanel(false);
     closeAllComposers();
     renderBar();
     renderCommentsPanel();

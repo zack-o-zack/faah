@@ -498,23 +498,37 @@
         <button id="pr-merge-state" type="button" hidden class="btn" data-control="pr-merge-state" data-variant="outline" data-size="xs"></button>
         <button id="pr-rebase-ai" type="button" hidden title="Have the harness rebase onto the base branch and resolve conflicts" class="btn" data-control="bar-action pr-btn-rebase-ai" data-variant="ghost" data-size="xs">
           <span class="icon-[lucide--sparkles] size-3.5 shrink-0" aria-hidden="true"></span>
-          <span class="bar-action-label text-xs font-medium desktop:hidden">Rebase</span>
+          <span class="bar-action-label text-xs font-medium">Rebase</span>
         </button>
         <span class="flex-1 min-w-0"></span>
         <span id="pr-diff-warning" data-ui="pr-diff-warning" class="flex-none p-3 text-destructive" hidden><span class="icon-[lucide--triangle-alert] size-3.5 shrink-0" aria-hidden="true"></span> diff base unresolved</span>
         <button id="pr-readonly-note" type="button" hidden  class="btn" data-control="pr-readonly-note" data-variant="outline" data-size="xs">No token &mdash; click to connect</button>
-        <span id="pr-draft-count" class="badge empty:hidden" data-variant="secondary" data-control="pr-draft-count"></span>
         <span id="pr-refs" data-ui="pr-refs" class="min-w-0 truncate font-mono text-muted-foreground"></span>
       </div>
-      <div id="pr-review-row" data-ui="pr-bar-row pr-review-row" class="flex items-start min-w-0 gap-2">
-        <textarea id="pr-review-body" aria-label="Review summary" rows="1" spellcheck="false" autocomplete="off" placeholder="Review summary (optional)" class="textarea min-h-8 max-h-40 flex-1 resize-none py-1.5 [field-sizing:content]" data-control="pr-review-body"></textarea>
+      <div id="pr-review-row" data-ui="pr-bar-row pr-review-row" class="flex min-w-0 items-center justify-end gap-2">
         <button id="pr-batch-apply" hidden title="Have the harness apply your draft comments to the code" class="btn" data-control="bar-action pr-btn-batch-apply" data-variant="ghost" data-size="sm">
           <span class="icon-[lucide--sparkles] size-3.5 shrink-0" aria-hidden="true"></span>
           <span class="bar-action-label">Apply drafts</span>
         </button>
-        <button id="pr-submit-comment" title="Submit review with drafts, without approval or change requests" class="btn" data-control="bar-action pr-btn-neutral" data-variant="outline" data-size="sm"><span class="icon-[lucide--send] size-3.5 shrink-0" aria-hidden="true"></span>Submit review</button>
-        <button id="pr-submit-request-changes" hidden title="Request changes on this PR" class="btn" data-control="bar-action pr-btn-request-changes" data-variant="outline" data-size="sm"><span class="icon-[lucide--circle-x] size-3.5 shrink-0 text-destructive" aria-hidden="true"></span>Request changes</button>
-        <button id="pr-submit-approve" hidden title="Approve this PR" class="btn" data-control="bar-action pr-btn-approve" data-variant="primary" data-size="sm"><span class="icon-[lucide--check] size-3.5 shrink-0" aria-hidden="true"></span>Approve</button>
+        <!-- Review: one panel holds the summary and the verdict that sends it (web/src/pr.js) -->
+        <div id="pr-review-group" class="relative flex-none">
+          <button id="pr-review-toggle" type="button" class="btn" data-variant="outline" data-size="sm" aria-haspopup="dialog" aria-expanded="false" aria-controls="pr-review-panel" title="Write a summary and send your review">
+            <span class="icon-[lucide--message-square-text] size-3.5 shrink-0" aria-hidden="true"></span>Review<span id="pr-review-drafts" class="badge tabular-nums empty:hidden" data-variant="secondary"></span><span class="icon-[lucide--chevron-down] size-3.5 shrink-0 text-muted-foreground" aria-hidden="true"></span>
+          </button>
+          <div id="pr-review-panel" role="dialog" aria-label="Send a review" hidden class="fixed z-[70] flex w-[min(28rem,90vw)] flex-col gap-3 rounded-lg border bg-popover p-3 text-popover-foreground shadow-lg">
+            <label class="flex flex-col gap-1.5">
+              <span class="text-xs font-medium">Summary <span class="font-normal text-muted-foreground">(optional)</span></span>
+              <textarea id="pr-review-body" aria-label="Review summary" rows="4" spellcheck="true" autocomplete="off" placeholder="Overall feedback. It shows above your line comments on the pull request." class="textarea min-h-24 max-h-72 resize-y" data-control="pr-review-body"></textarea>
+            </label>
+            <p id="pr-review-drafts-note" class="text-xs text-muted-foreground"></p>
+            <div class="flex flex-col gap-1.5" role="group" aria-label="Send as">
+              <button id="pr-submit-comment" type="button" class="flex w-full items-start gap-2.5 rounded-md border px-3 py-2 text-left hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50"><span class="icon-[lucide--message-square] mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true"></span><span class="flex flex-col"><span class="text-sm font-medium">Comment</span><span class="text-xs text-muted-foreground">Send your feedback without a verdict.</span></span></button>
+              <button id="pr-submit-approve" type="button" hidden class="flex w-full items-start gap-2.5 rounded-md border px-3 py-2 text-left hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50"><span class="icon-[lucide--circle-check] mt-0.5 size-4 shrink-0 text-gi" aria-hidden="true"></span><span class="flex flex-col"><span class="text-sm font-medium">Approve</span><span class="text-xs text-muted-foreground">Good to merge.</span></span></button>
+              <button id="pr-submit-request-changes" type="button" hidden class="flex w-full items-start gap-2.5 rounded-md border px-3 py-2 text-left hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50"><span class="icon-[lucide--circle-x] mt-0.5 size-4 shrink-0 text-destructive" aria-hidden="true"></span><span class="flex flex-col"><span class="text-sm font-medium">Request changes</span><span class="text-xs text-muted-foreground">Must be addressed before merging.</span></span></button>
+            </div>
+          </div>
+        </div>
+        <span id="pr-review-sep" class="h-5 w-px shrink-0 bg-border" aria-hidden="true"></span>
         <!-- Merge: split button -- the last-used method, and a caret to pick another (web/src/prmerge.js) -->
         <div id="pr-merge-group" data-ui="pr-merge-group" class="relative flex flex-none gap-px" hidden>
           <button id="pr-merge" type="button" class="btn" data-control="bar-action pr-btn-merge" data-variant="primary" data-size="sm">Squash and merge</button>
