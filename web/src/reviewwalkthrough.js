@@ -192,6 +192,14 @@ function renderWalkthroughView(data) {
   setupScrollSynchronization();
 }
 
+// The left pane is a file list. Insights stay out of the way until a filter
+// asks for one kind, then show as one line each under their file.
+const INSIGHT_KINDS = [
+  ['fastReturns', 'icon-[lucide--zap]'],
+  ['edgeCases', 'icon-[lucide--triangle-alert]'],
+  ['coreLogic', 'icon-[lucide--target]'],
+];
+
 function renderUnderstandingCards(files) {
   const leftContent = $('#review-understanding-content');
   if (!leftContent) return;
@@ -199,148 +207,49 @@ function renderUnderstandingCards(files) {
 
   files.forEach((file) => {
     const card = document.createElement('article');
-    card.setAttribute('data-ui', 'review-file-card'); card.className = 'card shrink-0 gap-0! py-0! overflow-hidden [&.active-file-card]:ring-2 [&.active-file-card]:ring-ring [&.is-viewed]:opacity-60';
+    card.setAttribute('data-ui', 'review-file-card');
+    card.className = 'shrink-0 rounded-md [&.active-file-card]:bg-accent [&.is-viewed]:opacity-50';
     card.id = `card-file-${sanitizeId(file.path)}`;
     card.dataset.filePath = file.path;
+    if (walkthroughViewedFiles.has(file.path)) card.classList.add('is-viewed');
 
-    const und = file.understanding || { fastReturns: [], edgeCases: [], coreLogic: [], summary: '' };
-    const returns = und.fastReturns || [];
-    const edges = und.edgeCases || [];
-    const core = und.coreLogic || [];
+    const slash = file.path.lastIndexOf('/');
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.setAttribute('data-ui', 'review-card-head');
+    row.className = 'flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1 text-left text-xs hover:bg-accent/50';
+    row.title = file.path;
+    row.innerHTML = `<span class="min-w-0 flex-1 truncate font-mono"><span class="text-muted-foreground">${esc(file.path.slice(0, slash + 1))}</span>${esc(file.path.slice(slash + 1))}</span><span class="shrink-0 font-mono">${lineStats(file.additions, file.deletions)}</span>`;
+    row.onclick = () => scrollToDiffFile(file.path);
+    card.append(row);
 
-    // Header
-    const head = document.createElement('header');
-    head.setAttribute('data-ui', 'review-card-head'); head.className = 'flex items-center justify-between gap-2 px-3 py-2';
-
-    const titleGroup = document.createElement('div');
-    titleGroup.setAttribute('data-ui', 'review-card-title-group'); titleGroup.className = 'flex items-center min-w-0 gap-2';
-
-    const pathEl = document.createElement('h3');
-    pathEl.setAttribute('data-ui', 'review-card-path'); pathEl.className = 'min-w-0 truncate font-mono text-xs font-semibold';
-    pathEl.textContent = file.path;
-    pathEl.title = file.path;
-
-    const badge = document.createElement('span');
-    badge.className = 'shrink-0 font-mono text-xs';
-    badge.innerHTML = lineStats(file.additions, file.deletions);
-
-    titleGroup.append(pathEl, badge);
-
-    const jumpBtn = document.createElement('button');
-    jumpBtn.className = 'btn';
-    jumpBtn.dataset.control = 'icon-action review-card-jump-btn';
-    jumpBtn.dataset.variant = 'ghost';
-    jumpBtn.dataset.size = 'xs';
-    jumpBtn.title = 'Jump to file diff';
-    jumpBtn.setAttribute('aria-label', 'Jump to file diff');
-    jumpBtn.innerHTML = '<span class="icon-[lucide--chevron-right] size-3 shrink-0" aria-hidden="true"></span>';
-    jumpBtn.onclick = () => scrollToDiffFile(file.path);
-
-    head.append(titleGroup, jumpBtn);
-    card.append(head);
-
-    // Summary statement
-    if (und.summary) {
-      const summaryEl = document.createElement('div');
-      summaryEl.setAttribute('data-ui', 'review-card-summary'); summaryEl.className = 'px-3 pb-2 text-xs text-muted-foreground';
-      summaryEl.textContent = und.summary;
-      card.append(summaryEl);
+    const und = file.understanding || {};
+    const list = document.createElement('div');
+    list.setAttribute('data-ui', 'review-insights');
+    list.className = 'flex flex-col pb-1';
+    list.hidden = true;
+    for (const [category, icon] of INSIGHT_KINDS) {
+      for (const item of und[category] || []) list.append(insightRow(file.path, category, icon, item));
     }
-
-    // Body of items
-    const body = document.createElement('div');
-    body.setAttribute('data-ui', 'review-card-body'); body.className = 'flex flex-col';
-
-    // 1. Fast Returns & Bailouts
-    if (returns.length > 0) {
-      const secReturns = createInsightSection(file.path, 'Fast Returns & Guardrails', 'fastReturns', returns, 'badge-returns');
-      body.append(secReturns);
-    }
-
-    // 2. Edge Cases & Errors
-    if (edges.length > 0) {
-      const secEdges = createInsightSection(file.path, 'Edge Cases & Failure Exits', 'edgeCases', edges, 'badge-edge');
-      body.append(secEdges);
-    }
-
-    // 3. Core Logic
-    if (core.length > 0) {
-      const secCore = createInsightSection(file.path, 'Core Logic & Happy Path', 'coreLogic', core, 'badge-core');
-      body.append(secCore);
-    }
-
-    if (returns.length === 0 && edges.length === 0 && core.length === 0) {
-      const emptyNote = document.createElement('div');
-      emptyNote.setAttribute('data-ui', 'review-card-empty-note'); emptyNote.className = 'px-3 pb-2 text-xs text-muted-foreground';
-      emptyNote.textContent = 'Standard modification with clean linear execution flow.';
-      body.append(emptyNote);
-    }
-
-    card.append(body);
+    card.append(list);
     leftContent.append(card);
   });
+  applyWalkthroughFilter();
 }
 
-function createInsightSection(filePath, headingText, filterCategory, items, badgeClass) {
-  const sec = document.createElement('div');
-  sec.setAttribute('data-ui', 'review-insight-sec'); sec.className = 'flex flex-col gap-1.5 border-t px-3 py-2';
-  sec.dataset.category = filterCategory;
-
-  const h = document.createElement('h4');
-  h.setAttribute('data-ui', 'review-insight-heading'); h.className = 'flex items-center justify-between text-xs font-medium text-muted-foreground';
-  const glyph = { fastReturns: 'icon-[lucide--zap]', edgeCases: 'icon-[lucide--triangle-alert]', coreLogic: 'icon-[lucide--target]' }[filterCategory] || '';
-  h.innerHTML = `<span class="flex items-center gap-2"><span class="${glyph} size-3.5" aria-hidden="true"></span>${esc(headingText)}</span> <span class="tabular-nums">${items.length}</span>`;
-  sec.append(h);
-
-  const list = document.createElement('div');
-  list.setAttribute('data-ui', 'review-insight-list'); list.className = 'flex flex-col gap-1';
-
-  items.forEach(item => {
-    const itemEl = document.createElement('div');
-    itemEl.setAttribute('data-ui', 'review-insight-item'); itemEl.className = 'flex min-w-0 cursor-pointer flex-col gap-1 rounded-md px-1.5 py-1 hover:bg-accent/50 [&.active-insight-item]:bg-accent';
-    itemEl.id = `insight-${sanitizeId(filePath)}-${item.line}`;
-    itemEl.dataset.filePath = filePath;
-    itemEl.dataset.line = item.line;
-
-    const row = document.createElement('div');
-    row.setAttribute('data-ui', 'review-insight-top'); row.className = 'flex min-w-0 items-center gap-2 text-xs';
-
-    const pill = document.createElement('button');
-    pill.type = 'button';
-    pill.className = 'shrink-0 font-mono text-muted-foreground tabular-nums hover:text-foreground hover:underline';
-    pill.dataset.control = 'review-line-pill';
-    pill.textContent = item.endLine && item.endLine !== item.line ? `L${item.line}–${item.endLine}` : `L${item.line}`;
-    pill.title = 'Click to scroll diff to this line';
-    pill.onclick = (e) => {
-      e.stopPropagation();
-      scrollToDiffLine(filePath, item.line);
-    };
-
-    const kindBadge = document.createElement('span');
-    kindBadge.className = 'badge shrink-0 text-primary-text';
-    kindBadge.dataset.variant = 'outline';
-    kindBadge.textContent = item.kind || 'guard';
-
-    const expl = document.createElement('span');
-    expl.setAttribute('data-ui', 'review-insight-expl'); expl.className = 'min-w-0 flex-1 truncate';
-    expl.textContent = item.explanation || '';
-
-    row.append(pill, kindBadge, expl);
-
-    const code = document.createElement('pre');
-    code.setAttribute('data-ui', 'review-insight-code'); code.className = 'overflow-x-auto whitespace-pre rounded bg-muted px-2 py-1 font-mono text-xs';
-    code.textContent = item.text || '';
-
-    itemEl.append(row, code);
-
-    // Clicking the item container also scrolls
-    itemEl.onclick = () => scrollToDiffLine(filePath, item.line);
-
-    list.append(itemEl);
-  });
-
-  sec.append(list);
-  return sec;
+function insightRow(filePath, category, icon, item) {
+  const el = document.createElement('button');
+  el.type = 'button';
+  el.setAttribute('data-ui', 'review-insight-item');
+  el.className = 'flex w-full min-w-0 items-center gap-2 rounded-md py-0.5 pl-5 pr-2 text-left text-xs text-muted-foreground hover:text-foreground [&.active-insight-item]:text-foreground';
+  el.id = `insight-${sanitizeId(filePath)}-${item.line}`;
+  el.dataset.category = category;
+  el.dataset.filePath = filePath;
+  el.dataset.line = item.line;
+  el.title = item.text || '';
+  el.innerHTML = `<span class="${icon} size-3 shrink-0" aria-hidden="true"></span><span class="shrink-0 font-mono tabular-nums">L${esc(String(item.line))}</span><span class="min-w-0 flex-1 truncate">${esc(item.explanation || '')}</span>`;
+  el.onclick = () => scrollToDiffLine(filePath, item.line);
+  return el;
 }
 
 function renderDiffBlocks(files) {
@@ -468,14 +377,17 @@ function updateViewedBadge(filePath) {
 }
 
 function applyWalkthroughFilter() {
-  const sections = $$('[data-ui~=review-insight-sec]');
-  sections.forEach(sec => {
-    if (activeFilter === 'all') {
-      sec.hidden = false;
-    } else {
-      sec.hidden = sec.dataset.category !== activeFilter;
+  for (const card of $$('[data-ui~=review-file-card]')) {
+    let shown = 0;
+    for (const it of card.querySelectorAll('[data-ui~=review-insight-item]')) {
+      it.hidden = activeFilter === 'all' || it.dataset.category !== activeFilter;
+      if (!it.hidden) shown++;
     }
-  });
+    const list = card.querySelector('[data-ui~=review-insights]');
+    if (list) list.hidden = shown === 0;
+    // A filter narrows the list to the files that have that kind.
+    card.hidden = activeFilter !== 'all' && shown === 0;
+  }
 }
 
 export function scrollToDiffFile(filePath) {
