@@ -67,7 +67,7 @@ export function orbView(m) {
     : m.phase === 'done' ? ['Explained', notes, walk]
     : ['Explanation failed'];
   const text = parts.filter(Boolean).join(' · ');
-  const label = text + (m.phase === 'failed' && m.error ? ': ' + m.error.split('\n')[0] : '') + (m.id ? '. Open the explanation' : '');
+  const label = text + (m.phase === 'failed' && m.error ? ': ' + m.error.split('\n')[0] : '') + (m.id ? '. Open thread' : '');
   const snippet = m.phase === 'done' ? orbSnippet(m.reply) : '';
   // Beside the answer, the count is all the heading a finished orb needs.
   const shown = snippet ? [notes, walk].filter(Boolean).join(' · ') : text;

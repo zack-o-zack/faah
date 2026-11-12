@@ -56,11 +56,11 @@ The thread panel stays closed while the agent works. A small pill in the top rig
 
 References to files, lines, and named symbols are links. faah checks each one when the answer finishes, and anything it cannot confirm stays plain text.
 
-The agent can also show its explanation on the code: notes on a symbol, a line, or a block, and walkthroughs of a flow across files. They are listed under the answer, and each one links to its lines.
+The agent can also show its explanation on the code: notes on a symbol, a line, or a block, and walkthroughs of a flow across files. Under the answer, the notes show as peeks of the code they explain: each summary sits above its line, with its detail under it, and a block note's lines carry a bracket, as in the editor. Click a line to open it.
 
 Notes also show on the code itself:
 
-- **Symbol and line notes** are a dimmed summary line above the code, indented like it, for example `⟢ Turns an Authorization header into a user`. Hover it to read the detail, and click it to open the explanation. It is not part of the file: the cursor, selection, copy and search skip it.
+- **Symbol and line notes** are a dimmed summary line above the code, indented like it, for example `⟢ Turns an Authorization header into a user`. Hover it to read the detail in a card above it, marked as an AI explanation; its links to code open that code. Click the summary to open its thread. It is not part of the file: the cursor, selection, copy and search skip it.
 - **Block notes** are cards in a column on the right of the editor, with a bracket over the block's lines. When the editor is narrow, the column becomes dots; hover a dot to read its note.
 - **Hovering** a note, or the code it explains, dims every other line.
 - A note whose code changed shows `outdated`, or `may be outdated` when only its callers or references changed, with a **Refresh** button that explains that code again.

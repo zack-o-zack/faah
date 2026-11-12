@@ -4,7 +4,7 @@ import { on, emit } from './bus.js';
 import { onStream } from './stream.js';
 import { layout, render, onPaint, lineTopY, lineHeightAt } from './renderer.js';
 import { vp, sizer, rowsEl, editor, showToast } from './ui.js';
-import { thrMd, explainAgain } from './thread.js';
+import { thrMdRefs, thrOpenLink, explainAgain } from './thread.js';
 import { noteKey, indentCols, splitNotes, stackTops } from './notes-layout.js';
 
 /* Explanation notes on the code. A symbol or line note is a ghost summary: a
@@ -31,6 +31,9 @@ function staleHtml(n) {
     '<button type="button" data-note-act="refresh" class="btn not-italic" data-variant="ghost" data-size="xs">Refresh</button>';
 }
 
+/* Notes are written by the agent; they carry the mark the app uses for AI. */
+const aiHtml = '<span class="icon-[lucide--sparkle] size-3 shrink-0 text-special" aria-hidden="true"></span>';
+
 const dismissHtml = '<button type="button" data-note-act="dismiss" class="btn opacity-0 group-hover/note:opacity-100 focus-visible:opacity-100" data-variant="ghost" data-size="icon-xs" title="Dismiss note" aria-label="Dismiss note"><span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true"></span></button>';
 
 function ghostRow(/** @type {NoteView[]} */ ns) {
@@ -39,9 +42,9 @@ function ghostRow(/** @type {NoteView[]} */ ns) {
   return {
     notes: ns,
     render: (/** @type {string} */ body) =>
-      '<div data-note="' + esc(noteKey(first)) + '" class="group/note flex basis-full min-w-0 h-[var(--lh)] items-center gap-2 pr-10 select-none cursor-pointer italic text-faint hover:text-muted-foreground"' +
-      ' style="padding-left:calc(var(--gw,1)*1ch + 30px + ' + indentCols(body) + 'ch)" title="Open the explanation">' +
-      '<span class="min-w-0 truncate">⟢ ' + esc(summary) + '</span>' + staleHtml(first) + dismissHtml + '</div>',
+      '<div data-note="' + esc(noteKey(first)) + '" class="group/note flex basis-full min-w-0 h-[var(--lh)] items-center gap-2 pr-10 select-none cursor-pointer text-special/70 hover:text-special"' +
+      ' style="padding-left:calc(var(--gw,1)*1ch + 30px + ' + indentCols(body) + 'ch)" title="Open thread">' +
+      '<span class="min-w-0 truncate text-xs italic">⟢ ' + esc(summary) + '</span>' + staleHtml(first) + dismissHtml + '</div>',
   };
 }
 
@@ -83,17 +86,17 @@ function drawMargin(path, blocks) {
   marginEl.dataset.path = path;
   marginEl.innerHTML = blocks.map(n => {
     const key = esc(noteKey(n));
-    const card = '<div class="flex flex-col gap-1 rounded-md border bg-popover/90 p-2 text-xs text-popover-foreground shadow-sm backdrop-blur-sm' +
+    const card = '<div class="flex flex-col gap-1 rounded-md border border-special/30 bg-popover/90 p-2 text-xs text-popover-foreground shadow-sm backdrop-blur-sm' +
       (narrow ? ' absolute right-full top-0 mr-2 w-64 hidden group-hover/note:flex group-focus-within/note:flex' : ' w-full') + '">' +
-      '<div class="flex items-start gap-1"><button type="button" data-note-act="open" class="min-w-0 flex-1 text-left font-medium">' + esc(n.summary) + '</button>' + dismissHtml + '</div>' +
-      (n.detail ? '<div class="text-muted-foreground line-clamp-4 [&_p]:m-0">' + thrMd(n.detail) + '</div>' : '') +
+      '<div class="flex items-start gap-1"><button type="button" data-note-act="open" class="flex min-w-0 flex-1 items-baseline gap-1.5 text-left font-medium">' + aiHtml + '<span class="min-w-0">' + esc(n.summary) + '</span></button>' + dismissHtml + '</div>' +
+      (n.detail ? '<div class="text-muted-foreground line-clamp-4 [&_p]:m-0">' + thrMdRefs(n.detail, n.links) + '</div>' : '') +
       (n.stale ? '<div class="flex items-center gap-1">' + staleHtml(n) + '</div>' : '') +
       '</div>';
     return '<div data-note="' + key + '" data-l1="' + n.l1 + '" data-l2="' + n.l2 + '" class="group/note pointer-events-auto absolute left-0 right-0">' +
-      '<div data-note-part="bracket" class="absolute left-1 w-1.5 rounded-l-sm border-y border-l border-primary/60"></div>' +
-      '<div data-note-part="tie" class="absolute left-[9px] w-px bg-primary/40" hidden></div>' +
+      '<div data-note-part="bracket" class="absolute left-1 w-1.5 rounded-l-sm border-y border-l border-special/60"></div>' +
+      '<div data-note-part="tie" class="absolute left-[9px] w-px bg-special/40" hidden></div>' +
       '<div data-note-part="card" class="absolute ' + (narrow ? 'left-0 right-0' : 'left-4 right-2') + '">' +
-      (narrow ? '<button type="button" data-note-act="open" class="ml-3 mt-1 size-2.5 rounded-full bg-primary" aria-label="' + esc(n.summary) + '"></button>' : '') +
+      (narrow ? '<button type="button" data-note-act="open" class="ml-3 mt-1 size-2.5 rounded-full bg-special" aria-label="' + esc(n.summary) + '"></button>' : '') +
       card + '</div></div>';
   }).join('');
 }
@@ -155,16 +158,20 @@ function noteAtLine(path, line) {
   return null;
 }
 
+let cardNote = null;
 function showDetail(el, n) {
   if (!cardEl) return;
+  cardNote = n;
   if (!n || !n.detail) { cardEl.hidden = true; return; }
-  cardEl.innerHTML = thrMd(n.detail);
+  cardEl.innerHTML = '<div class="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-special">' + aiHtml + 'AI explanation</div>' + thrMdRefs(n.detail, n.links);
   cardEl.hidden = false;
   const r = el.getBoundingClientRect(), base = editor.getBoundingClientRect();
   const span = el.querySelector('span');
   const left = (span ? span.getBoundingClientRect().left : r.left) - base.left;
   cardEl.style.left = Math.max(8, Math.min(left, base.width - cardEl.offsetWidth - 8)) + 'px';
-  cardEl.style.top = (r.bottom - base.top + 4) + 'px';
+  // Above the ghost, so the code it explains stays in view; below only when the top is too close.
+  const above = r.top - base.top - cardEl.offsetHeight - 4;
+  cardEl.style.top = (above >= 8 ? above : r.bottom - base.top + 4) + 'px';
 }
 
 /* ---------- actions ---------- */
@@ -197,6 +204,8 @@ async function dismiss(n) {
 }
 
 function act(e) {
+  const link = /** @type {HTMLElement|null} */ (e.target)?.closest('a.thr-link');
+  if (link) { e.preventDefault(); thrOpenLink(link); return; }
   const el = /** @type {HTMLElement|null} */ (e.target)?.closest('[data-note]');
   if (!el) return;
   const n = find(el.getAttribute('data-note') || '');
@@ -242,6 +251,20 @@ export function initNotes() {
     el.addEventListener('click', act);
   }
 
+  // The card waits while the pointer moves onto it, so its links can be clicked.
+  let cardHide = 0;
+  const keepCard = () => clearTimeout(cardHide);
+  const dropCard = () => { clearTimeout(cardHide); cardHide = setTimeout(() => { if (cardEl) cardEl.hidden = true; }, 200); };
+  cardEl?.addEventListener('mouseenter', () => { keepCard(); focusNote(cardNote); });
+  cardEl?.addEventListener('mouseleave', () => { dropCard(); focusNote(null); });
+  cardEl?.addEventListener('click', e => {
+    const link = /** @type {HTMLElement|null} */ (e.target)?.closest('a.thr-link');
+    if (!link) return;
+    e.preventDefault();
+    if (cardEl) cardEl.hidden = true;
+    thrOpenLink(link);
+  });
+
   // Hovering a note, or the code it explains, dims the rest of the file.
   let codeHover = 0;
   const over = e => {
@@ -251,17 +274,17 @@ export function initNotes() {
     if (noteEl) {
       const n = find(noteEl.getAttribute('data-note') || '');
       focusNote(n);
-      if (noteEl.closest('.row')) showDetail(noteEl, n);
+      if (noteEl.closest('.row')) { keepCard(); showDetail(noteEl, n); }
       return;
     }
-    if (cardEl) cardEl.hidden = true;
+    dropCard();
     const row = t?.closest('.row');
     const d = doc_();
     const n = row && d ? noteAtLine(d.path, +(/** @type {HTMLElement} */ (row)).dataset.l) : null;
     if (!n) { focusNote(null); return; }
     codeHover = setTimeout(() => focusNote(n), 400);
   };
-  const out = () => { clearTimeout(codeHover); focusNote(null); if (cardEl) cardEl.hidden = true; };
+  const out = () => { clearTimeout(codeHover); focusNote(null); dropCard(); };
   for (const el of [rowsEl, marginEl]) {
     el.addEventListener('mouseover', over);
     el.addEventListener('mouseleave', out);

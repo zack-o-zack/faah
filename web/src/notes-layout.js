@@ -42,3 +42,35 @@ export function stackTops(items, gap) {
   }
   return out;
 }
+
+/* The thread shows notes as peeks of the code they explain. Notes close
+   together share a peek, a long block shows its first lines and its last, and
+   0 marks lines left out. */
+/** @param {NoteView[]} list notes on one file @param {number} long @param {number} join */
+export function peekGroups(list, long = 8, join = 2) {
+  /** @type {{notes: NoteView[], shown: Set<number>, last: number}[]} */
+  const groups = [];
+  for (const n of [...list].sort((a, b) => a.l1 - b.l1 || b.l2 - a.l2)) {
+    const shown = [];
+    for (let l = n.l1; l <= n.l2 && (n.l2 - n.l1 < long || l <= n.l1 + long - 3); l++) shown.push(l);
+    shown.push(n.l2);
+    const g = groups[groups.length - 1];
+    if (g && n.l1 <= g.last + join + 1) {
+      g.notes.push(n);
+      for (const l of shown) g.shown.add(l);
+      g.last = Math.max(g.last, n.l2);
+    } else groups.push({ notes: [n], shown: new Set(shown), last: n.l2 });
+  }
+  return groups.map(g => {
+    const sorted = [...g.shown].sort((a, b) => a - b);
+    /** @type {number[]} */
+    const lines = [];
+    for (const l of sorted) {
+      const prev = lines[lines.length - 1];
+      if (prev && l - prev - 1 > join) lines.push(0);
+      else if (prev) for (let k = prev + 1; k < l; k++) lines.push(k);
+      lines.push(l);
+    }
+    return { notes: g.notes, lines };
+  });
+}

@@ -12,6 +12,7 @@ import { hideRightInspector } from './inspector.js';
 import { layout, render } from './renderer.js';
 import { registerAgentPicker, reloadWorkspace } from './agent.js';
 import { onStream, setStreamTopic, watchThread } from './stream.js';
+import { clearPeeks, peeksHtml } from './notes-peek.js';
 import { initOrb, orbBegin, orbAttach, orbFailed, orbThread, orbStep, orbSummary, orbSync } from './orb.js';
 
 const COPY_ICON = '<span class="icon-[lucide--copy] size-3 shrink-0" aria-hidden="true"></span>';
@@ -163,6 +164,20 @@ function thrInline(src) {
   s = s.replace(/%%PXCODE(\d+)%%/g, (_, idx) => codes[+idx]);
 
   return s;
+}
+
+/** Markdown outside the reply, such as a note's detail, linking only the
+    citations that were checked against the code. */
+export function thrMdRefs(src, refs) {
+  thrRefs = refs || {};
+  try { return thrMd(src); } finally { thrRefs = null; }
+}
+
+/** Opens a citation link's file at its lines. @param {HTMLElement} link */
+export function thrOpenLink(link) {
+  const { path, line, end } = link.dataset;
+  if (!path) return;
+  openFile(path, { line: +line || 1 }).then(() => { if (end) highlightRange(path, +line, +end); });
 }
 
 export function thrMd(src) {
@@ -550,8 +565,10 @@ function thrShownHtml(turn) {
   let h = '';
   const notes = turn.notes || [];
   if (notes.length) {
-    h += box(notes.length + (notes.length === 1 ? ' note' : ' notes') + ' on the code',
+    const list = box(notes.length + (notes.length === 1 ? ' note' : ' notes') + ' on the code',
       notes.map(n => link(n.path, n.l1, n.l2, where(n.path, n.l1, n.l2) + ' ' + esc(n.summary), 'block py-px no-underline hover:text-primary-text')).join(''));
+    // Once the turn ends, the list becomes peeks of the code, as the editor shows it.
+    h += turn.running || !thr.cur ? list : peeksHtml(thr.cur.id, turn, list, src => thrMdRefs(src, turn.refs));
   }
   for (const w of turn.walkthroughs || []) {
     h += box('Walkthrough: ' + esc(w.title), '<ol class="list-decimal pl-4">' +
@@ -718,6 +735,7 @@ function thrWireStream() {
 }
 
 export async function openThread(id) {
+  clearPeeks();
   thr.draft = null;
   thr.cur = null;
   thrCloseStream();
@@ -946,8 +964,7 @@ export function initThreads() {
     const link = /** @type {HTMLElement|null} */ (e.target)?.closest('a.thr-link');
     if (link && link.dataset.path) {
       e.preventDefault();
-      const { path, line, end } = link.dataset;
-      openFile(path, { line: +line || 1 }).then(() => { if (end) highlightRange(path, +line, +end); });
+      thrOpenLink(link);
       return;
     }
     if (/** @type {HTMLElement|null} */ (e.target)?.closest('[data-explain-again]') && thr.cur?.explainReq) {
