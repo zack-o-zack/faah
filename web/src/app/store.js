@@ -1,7 +1,8 @@
+import { createDocuments } from '../editor/documents.js';
 import { createMemo } from 'solid-js';
 import { createStore, reconcile } from 'solid-js/store';
 
-/** @typedef {import('../state.js').DocTab} DocTab */
+/** @typedef {import('../editor/documents.js').DocTab} DocTab */
 /** @typedef {import('../state.js').WorkspaceMeta} WorkspaceMeta */
 /**
  * @typedef {Object} EditorPreferences
@@ -52,13 +53,16 @@ function initialState() {
 }
 
 /** A fresh store belongs to one mounted app. Legacy S remains confined to the bridge. */
-export function createAppStore() {
+export function createAppStore(options = {}) {
   const [state, set] = createStore(initialState());
+  const documents = createDocuments(state, set, options);
   const activeDocument = createMemo(() => state.documents.tabs[state.documents.active] || null);
   return {
     state,
     activeDocument,
+    buffers: documents.buffers,
     actions: {
+      ...documents,
       setWorkspace: (meta) => set('workspace', 'meta', reconcile(meta)),
       setEditorPreference: (name, value) => {
         if (!['wrap', 'lineNumbers', 'mdPreview', 'tablePreview'].includes(name))
@@ -67,7 +71,6 @@ export function createAppStore() {
       },
       setSettings: (settings) => set('settings', reconcile(settings)),
       setLsp: (lsp) => set('lsp', reconcile(lsp)),
-      activateDocument: (index) => set('documents', 'active', index),
     },
   };
 }
