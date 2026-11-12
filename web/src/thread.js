@@ -814,6 +814,11 @@ function prepareExplain(info) {
   apiPostJson('/api/explain/prepare', { path, l1, c1, l2, c2, text }).catch(() => { lastPrepared = ''; });
 }
 
+/** Explains code again, even when a saved explanation of it exists. */
+export function explainAgain(body) {
+  thrExplain({ ...body, force: true });
+}
+
 export function explainSelection(info) {
   const d = doc_();
   if (d && d.path === info.path && d.dirty) { showToast('error', 'Save the file to explain the current code'); return; }
