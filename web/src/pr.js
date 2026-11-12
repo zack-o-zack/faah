@@ -106,6 +106,14 @@ async function refreshComments() {
   }
 }
 
+// The forge's own state colours, so a glance reads the same as on GitHub.
+const PR_STATES = {
+  open: { label: 'Open', icon: 'icon-[lucide--git-pull-request]', color: 'text-[#1a7f37] dark:text-[#3fb950]' },
+  draft: { label: 'Draft', icon: 'icon-[lucide--git-pull-request-draft]', color: 'text-muted-foreground' },
+  merged: { label: 'Merged', icon: 'icon-[lucide--git-merge]', color: 'text-[#8250df] dark:text-[#a371f7]' },
+  closed: { label: 'Closed', icon: 'icon-[lucide--git-pull-request-closed]', color: 'text-[#cf222e] dark:text-[#f85149]' },
+};
+
 function renderBar() {
   const b = prBar();
   if (!b || !meta) return;
@@ -117,8 +125,14 @@ function renderBar() {
     link.href = meta.url || '#';
     link.title = 'Open on ' + forge.label;
   }
-  const mb = $('#pr-merged-badge');
-  if (mb) mb.hidden = !meta.merged;
+  const sb = $('#pr-state-badge');
+  if (sb) {
+    const st = PR_STATES[meta.merged ? 'merged' : meta.state === 'closed' ? 'closed' : meta.draft ? 'draft' : 'open'];
+    sb.hidden = false;
+    sb.className = sb.className.replace(/ (dark:)?text-\S+/g, '') + ' ' + st.color;
+    sb.querySelector('[data-ui=icon]').className = st.icon + ' size-3 shrink-0';
+    sb.querySelector('[data-ui=label]').textContent = st.label;
+  }
   $('#pr-title').textContent = meta.title;
   $('#pr-title').title = meta.title;
   $('#pr-refs').innerHTML = esc(meta.base) + ' <span class="icon-[lucide--arrow-left] size-3 align-[-2px]" aria-hidden="true"></span> ' + esc(meta.head);

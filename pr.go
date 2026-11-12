@@ -644,6 +644,7 @@ func (p *prSession) metaMap(files map[string]string) map[string]any {
 		"state":           p.meta.State,
 		"merged":          p.meta.Merged,
 		"mergedAt":        p.meta.MergedAt,
+		"draft":           p.meta.Draft,
 		"writeAccess":     p.writeAccess,
 		"readOnly":        p.token == "",
 		"draftCount":      len(p.comments),
