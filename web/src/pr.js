@@ -790,7 +790,7 @@ function fillCommentBodies(listEl) {
       q.classList.add('thr-alert', 'thr-alert-' + kind);
       const title = document.createElement('p');
       title.className = 'thr-alert-title';
-      title.textContent = kind;
+      title.textContent = kind[0].toUpperCase() + kind.slice(1);
       q.prepend(title);
     }
     el.replaceChildren(frag);
