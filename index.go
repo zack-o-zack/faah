@@ -208,6 +208,44 @@ func (ix *Index) Children(dir string) ([]Node, bool) {
 	return ix.listIgnored(dir)
 }
 
+// CompactChildren is Children with compact folders: a folder whose only
+// entry the view shows is another folder becomes one row named a/b/c, with
+// the deepest folder's path. keep says which entries the view shows.
+func (ix *Index) CompactChildren(dir string, keep func(Node) bool) ([]Node, bool) {
+	kids, ok := ix.Children(dir)
+	if !ok || keep == nil {
+		return kids, ok
+	}
+	for i, k := range kids {
+		if !k.Dir || k.Ignored {
+			continue
+		}
+		name := k.Name
+		for {
+			sub, ok := ix.Children(k.Path)
+			if !ok {
+				break
+			}
+			var only Node
+			n := 0
+			for _, c := range sub {
+				if keep(c) {
+					only = c
+					n++
+				}
+			}
+			if n != 1 || !only.Dir || only.Ignored {
+				break
+			}
+			name += "/" + only.Name
+			k = only
+		}
+		k.Name = name
+		kids[i] = k
+	}
+	return kids, true
+}
+
 // underIgnoredLocked reports whether dir sits inside a directory the walk
 // listed as ignored. The caller holds ix.mu.
 func (ix *Index) underIgnoredLocked(dir string) bool {

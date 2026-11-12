@@ -1229,7 +1229,25 @@ func (s *Server) handleTree(w http.ResponseWriter, r *http.Request) {
 		fail(w, 404, "not indexed: "+dir)
 		return
 	}
+	if keep := treeViewFilter(r.URL.Query().Get("compact")); keep != nil {
+		kids, _ = s.ix.CompactChildren(dir, keep)
+	}
 	writeJSON(w, map[string]any{"dir": dir, "children": kids})
+}
+
+// treeViewFilter says which entries a sidebar view shows, for compacting
+// folder chains the way that view sees them: every entry, changed ones, or
+// in PR review the reviewer's own (not pushed) ones. Empty means no compacting.
+func treeViewFilter(view string) func(Node) bool {
+	switch view {
+	case "all":
+		return func(Node) bool { return true }
+	case "changed":
+		return func(n Node) bool { return n.Dirty || n.Status != "" }
+	case "yours":
+		return func(n Node) bool { return n.YourDirty || n.YourStatus != "" }
+	}
+	return nil
 }
 
 func (s *Server) handleFind(w http.ResponseWriter, r *http.Request) {

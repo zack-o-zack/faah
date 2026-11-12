@@ -18,6 +18,17 @@ export const openDirs = new Set();
 // A newer tree action invalidates responses from older directory requests.
 let expansionVersion = 0;
 let autoRevealSuppressed = false;
+let drawnView = 'all';
+
+/* Which entries the tree shows, so the server compacts folder chains (a/b/c)
+   the way this view sees them. */
+function treeView() {
+  if (!treeEl.classList.contains('changed-only')) return 'all';
+  return treeEl.classList.contains('scope-yours') ? 'yours' : 'changed';
+}
+
+// A folder row's children sit one level in, however many folders it stands for.
+const kidsDepth = kids => Number(kids.dataset.depth) || 0;
 
 export function setAutoRevealSuppressed(suppressed) {
   autoRevealSuppressed = !!suppressed;
@@ -41,7 +52,7 @@ const GIT_STATUS = {
 
 export async function drawTree(dir, container, depth, isCurrent) {
   let j;
-  try { j = await api('/api/tree', { dir }); } catch { return false; }
+  try { j = await api('/api/tree', { dir, compact: treeView() }); } catch { return false; }
   if (isCurrent && !isCurrent()) return false;
   container.innerHTML = j.children.map(c => {
     const pad = 8 + depth * 12;
@@ -55,7 +66,7 @@ export async function drawTree(dir, container, depth, isCurrent) {
       return '<div class="tw block"><div class="tr flex min-h-6 cursor-pointer select-none items-center gap-1.5 pr-2 text-xs whitespace-nowrap hover:bg-sidebar-accent focus-visible:outline focus-visible:outline-ring [&.sel]:bg-sidebar-accent [&.ignored]:opacity-50 [&.git-M]:text-primary-text [&.git-R]:text-primary-text [&.git-A]:text-gi [&.git-untracked]:text-gi [&.git-D]:text-gd [&.git-D_.nm]:line-through [&.your-change]:font-semibold [.scope-pr_&.your-change]:font-normal [&.file-viewed_.nm]:opacity-50 group dir' + ig + dc + ydc + '" data-dir="' + esc(c.path) + '" style="padding-left:' + pad + 'px" title="Folder: ' + esc(c.path) + note + '">' +
         '<span data-ui="ar" class="shrink-0 text-muted-foreground size-2 shrink-0 border-r border-t border-muted-foreground rotate-45 group-[.open]:rotate-[135deg]"></span><button type="button" class="nm min-h-6 min-w-6 text-left focus-visible:outline focus-visible:outline-ring truncate group-[.dir.dirty]:after:ml-1 group-[.dir.dirty]:after:inline-block group-[.dir.dirty]:after:size-1 group-[.dir.dirty]:after:rounded-full group-[.dir.dirty]:after:bg-primary">' + esc(c.name) + '</button>' + menuBtn + '</div>' +
         // --guide is where the folder's chevron sits, for the desktop app's indent guide.
-        '<div class="kids hidden [&.open]:block" data-kids="' + esc(c.path) + '" style="--guide:' + (pad + 6) + 'px"></div></div>';
+        '<div class="kids hidden [&.open]:block" data-kids="' + esc(c.path) + '" data-depth="' + (depth + 1) + '" style="--guide:' + (pad + 6) + 'px"></div></div>';
     }
     const g = GIT_STATUS[c.status];
     const gc = g ? ' dirty ' + g[0] : '';
@@ -139,6 +150,7 @@ export async function refreshTree() {
   const version = ++expansionVersion;
   const isCurrent = () => version === expansionVersion;
   setExpandBusy(false);
+  drawnView = treeView();
   if (!(await drawTree('', treeEl, 0, isCurrent))) return;
   const byDepth = new Map();
   for (const path of openDirs) {
@@ -156,7 +168,7 @@ export async function refreshTree() {
       if (kids && dirRow) {
         dirRow.classList.add('open');
         kids.classList.add('open');
-        const loaded = await drawTree(path, kids, depth, isCurrent);
+        const loaded = await drawTree(path, kids, kidsDepth(kids), isCurrent);
         if (!isCurrent()) return;
         if (loaded) kids.dataset.loaded = '1';
         else {
@@ -214,7 +226,7 @@ export async function expandAllDirs() {
         kids.classList.add('open');
         openDirs.add(path);
         if (!kids.dataset.loaded) {
-          const loaded = await drawTree(path, kids, path.split('/').length, () => version === expansionVersion);
+          const loaded = await drawTree(path, kids, kidsDepth(kids), () => version === expansionVersion);
           if (!loaded) {
             if (version === expansionVersion) {
               row.classList.remove('open');
@@ -249,14 +261,14 @@ export async function revealDir(dir) {
     if (!isCurrent()) return;
     const p = parts.slice(0, i + 1).join('/');
     const row = treeEl.querySelector('[data-dir="' + CSS.escape(p) + '"]');
-    if (!row) break;
+    if (!row) continue; // inside a compacted row (a/b/c), which carries the deepest path
     if (!row.classList.contains('open')) {
       row.classList.add('open');
       const kids = treeEl.querySelector('[data-kids="' + CSS.escape(p) + '"]');
       if (kids) {
         kids.classList.add('open');
         openDirs.add(p);
-        const loaded = await drawTree(p, kids, p.split('/').length, isCurrent);
+        const loaded = await drawTree(p, kids, kidsDepth(kids), isCurrent);
         if (!isCurrent()) return;
         if (loaded) kids.dataset.loaded = '1';
         else {
@@ -303,7 +315,7 @@ export async function expandDirtyDirs(container = treeEl, version = expansionVer
     openDirs.add(path);
 
     if (!kids.dataset.loaded) {
-      const loaded = await drawTree(path, kids, path.split('/').length, isCurrent);
+      const loaded = await drawTree(path, kids, kidsDepth(kids), isCurrent);
       if (!isCurrent()) return;
       if (loaded) {
         kids.dataset.loaded = '1';
@@ -319,11 +331,17 @@ export async function expandDirtyDirs(container = treeEl, version = expansionVer
   }));
 }
 
+let changedSig = null;
+
 export async function patchTreeGitStatus(statuses = {}, dirtyDirs = {}, staged = {}, yourStatuses = {}, yourDirtyDirs = {}, partial = {}) {
   // Check if any changed files belong to an open directory (or root) but don't have a DOM element yet,
   // or if any previously deleted files are now clean (so they should disappear from the tree).
   let needRefresh = false;
-  for (const [p, code] of Object.entries(statuses)) {
+  // In a changes view, folders compact by which of them hold changes.
+  const sig = Object.keys(dirtyDirs).sort().join('\n') + '\0' + Object.keys(yourDirtyDirs).sort().join('\n');
+  if (changedSig !== null && sig !== changedSig && treeView() !== 'all') needRefresh = true;
+  changedSig = sig;
+  if (!needRefresh) for (const [p, code] of Object.entries(statuses)) {
     const fileRow = treeEl.querySelector('[data-file="' + CSS.escape(p) + '"]');
     if (!fileRow) {
       const lastSlash = p.lastIndexOf('/');
@@ -509,6 +527,15 @@ export function updateSidebarToggleState() {
   }
 }
 
+/* Compacted rows depend on the view, so a new view draws the tree again. */
+export async function redrawTreeView() {
+  if (treeView() === drawnView) return false;
+  await refreshTree();
+  if (inGitMode()) await expandDirtyDirs();
+  markTreeCleanState();
+  return true;
+}
+
 export async function setSidebarMode(mode, { expandDirty = true } = {}) {
   const btnChanged = $('#btn-changed');
   const btnFiles = $('#btn-files');
@@ -524,13 +551,14 @@ export async function setSidebarMode(mode, { expandDirty = true } = {}) {
     if (btnExpand) btnExpand.hidden = false;
     expansionVersion++;
     setExpandBusy(false);
-    if (expandDirty) await expandDirtyDirs();
+    if (!(await redrawTreeView()) && expandDirty) await expandDirtyDirs();
   } else {
     treeEl.classList.remove('changed-only');
     setPressed(btnFiles, true);
     setPressed(btnChanged, false);
     if (btnCollapse) btnCollapse.hidden = false;
     if (btnExpand) btnExpand.hidden = false;
+    await redrawTreeView();
   }
   markTreeCleanState();
   // unpushed.js hangs its section off this; tree.js doesn't import it.
@@ -704,7 +732,7 @@ export function initTree() {
       if (open) {
         openDirs.add(path);
         if (!kids.dataset.loaded) {
-          const loaded = await drawTree(path, kids, path.split('/').length);
+          const loaded = await drawTree(path, kids, kidsDepth(kids));
           if (loaded) kids.dataset.loaded = '1';
           else {
             dirRow.classList.remove('open');

@@ -11,7 +11,7 @@ import { setPressed } from './controls.js';
 // CSS on #tree (.scope-yours, .scope-pr); this module only owns the counts and the choice.
 import { $, S, doc_ } from './state.js';
 import { on } from './bus.js';
-import { treeEl, relabelTreeBadges, inGitMode } from './tree.js';
+import { treeEl, relabelTreeBadges, inGitMode, redrawTreeView } from './tree.js';
 import { focusDiffScope, syncDiffView } from './diff.js';
 
 let scope = 'all';           // 'all' | 'yours'
@@ -40,6 +40,7 @@ function apply() {
   const yn = $('#scope-yours-n');
   yn.textContent = String(yourCount);
   yn.classList.toggle('has', yourCount > 0);
+  redrawTreeView(); // folder chains compact by what the scope shows
 }
 
 /* Called with every git-status tick. */
