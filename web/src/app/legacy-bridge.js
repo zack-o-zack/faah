@@ -408,7 +408,7 @@ export const isVimEnabled = () => editorStore.ui.vimEnabled;
 export const setVimModeEnabled = (value, persist = true) =>
   editorStore.actions.setVimEnabled(value, persist);
 export const handleVimKeyDown = (event) => editorStore.actions.handleVimKeyDown(event);
-export const showVimHelp = () => editorStore.setUI('vimHelp', true);
+export const showVimHelp = () => editorStore.actions.showVimHelp();
 
 export const currentTheme = () => themeStore.current();
 export const setTheme = (id, persist) => themeStore.setTheme(id, persist);
@@ -441,8 +441,8 @@ export const getReviewHandler = () => editorStore.handlers.review;
 export const getSelectedRangeInfo = () => editorStore.ui.selection;
 export const hideSelectionBar = () => editorStore.actions.setSelection(null);
 
-export const closeSelMenu = () => editorStore.setUI('menu', null);
-export const openLineMenu = (info, x, y) => editorStore.setUI('menu', { info, x, y });
+export const closeSelMenu = () => editorStore.actions.closeSelectionMenu();
+export const openLineMenu = (info, x, y) => editorStore.actions.openSelectionMenu(info, x, y);
 export const runSelectionAction = (action, trigger, override) =>
   editorStore.actions.runSelectionAction(action, trigger, override);
 

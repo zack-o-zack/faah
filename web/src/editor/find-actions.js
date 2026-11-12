@@ -99,6 +99,10 @@ export function createFindActions(editor) {
     jumpToHit,
     openFind,
     clearFind,
+    toggleFindCase() {
+      setUI('caseSensitive', !ui.caseSensitive);
+      void executeFind();
+    },
     nextMatch: (delta) => editor.actions.jumpToHit(ui.activeHit + delta),
     query(value) {
       sequence++;

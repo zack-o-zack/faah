@@ -211,14 +211,17 @@ Effects retained after the phase 0/A1 audit:
 - `app/legacy-bridge.js`: notifies imperative legacy theme consumers.
 - `editor/EditorShell.jsx`: applies editor mode classes to the static document body,
   using explicit dependencies with `on`.
-- `editor/EditorRow.jsx`: registers each owned row with ResizeObserver and updates
-  CSS Highlight ranges after source or highlight inputs change.
+- `editor/EditorRow.jsx` (observer): registers each owned row with ResizeObserver.
+- `editor/EditorRow.jsx` (highlights): updates CSS Highlight ranges after source or
+  highlight inputs change.
 - `editor/Viewport.jsx`: restores native selection after virtual slots move;
   it does not derive or update selection state in that effect.
 - `editor/EditView.jsx`: updates the native textarea value and scroll when switching
-  editing documents, with explicit dependencies rather than tracking input updates.
-- `editor/HoverCard.jsx`: owns pointer/outside/blur listeners, measures the card's
-  actual dimensions, positions it and handles requested keyboard focus.
+  editing documents, with explicit dependencies rather than tracking input updates;
+  clears the native text copy when editing ends or the tab closes.
+- `editor/HoverCard.jsx` (listeners): owns pointer/outside/blur listeners and their cleanup.
+- `editor/HoverCard.jsx` (position): measures the card's actual dimensions, positions
+  it and handles requested keyboard focus.
 - `editor/TabStrip.jsx`: focuses the native context menu and restores prior focus.
 
 Removed or replaced effects:
@@ -237,3 +240,10 @@ and separated feature actions from pure algorithms. Workbench children expose fo
 operations instead of handing DOM elements to parents. Workbench refresh/open actions
 also reject stale responses. Context injects stores and services, and no migrated
 component receives signal accessors as data props or destructures its props.
+There are twelve production `createEffect` calls in the directories above (two each
+in `EditorRow` and `HoverCard`, one in each other listed module), and one test-only
+effect in `lib/events.test.jsx` that observes batched stream updates. Workbench and
+holding contain none. The selection bar mounts its actions only while selected;
+Vim help mounts only when requested.
+Components invoke named actions for find-case, selection-menu and Vim-help changes;
+the shared UI setter stays in store actions and the temporary bridge.

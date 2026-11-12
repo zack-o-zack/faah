@@ -110,8 +110,19 @@ test('edit mode changes, saves and cancels without mounting a full-file gutter',
   expect(document.querySelectorAll('#editview-gutter > div > div').length).toBeLessThan(100);
   await editor.actions.exitEditMode(true);
   expect(editor.active().isEditing).toBe(false);
+  expect(textarea.value).toBe('');
   expect(document.getElementById('viewport').inert).toBe(false);
   editor.store.actions.disposeDocuments();
+});
+test('closing an edited tab releases the native textarea copy', async () => {
+  render(() => <Harness />);
+  await editor.actions.openFile('file.js');
+  await editor.actions.enterEditMode();
+  const textarea = screen.getByRole('textbox', { name: 'File contents' });
+  expect(textarea.value).toBe(content);
+  editor.actions.closeTabs([0]);
+  expect(textarea.value).toBe('');
+  expect(editor.store.buffers.size).toBe(0);
 });
 test('tab close and close others act on metadata and release buffers', async () => {
   render(() => <Harness />);

@@ -35,6 +35,8 @@ export function createSelectionActions(editor) {
     syncSelection,
     selectRange,
     setSelection,
+    openSelectionMenu: (info, x, y) => setUI('menu', { info, x, y }),
+    closeSelectionMenu: () => setUI('menu', null),
     runSelectionAction: (action, trigger, override) =>
       services.selectionAction?.(action, override || ui.selection, trigger) || false,
   };

@@ -6,7 +6,7 @@ import { VIM_SHORTCUT_SECTIONS } from './vim-help.js';
 export function VimHelp() {
   const editor = useEditor();
   return (
-    <Dialog open={true} title="Vim Keybindings" onClose={() => editor.setUI('vimHelp', false)}>
+    <Dialog open={true} title="Vim Keybindings" onClose={editor.actions.hideVimHelp}>
       <label class="label flex items-center gap-2">
         <input
           type="checkbox"
@@ -38,7 +38,7 @@ export function VimHelp() {
       <button
         class="btn"
         onClick={() => {
-          editor.setUI('vimHelp', false);
+          editor.actions.hideVimHelp();
           editor.services.showHelp?.();
         }}
       >

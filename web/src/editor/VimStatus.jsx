@@ -9,7 +9,7 @@ export function VimStatus() {
         id="st-vim"
         class="btn font-mono"
         hidden={!editor.ui.vimEnabled}
-        onClick={() => editor.setUI('vimHelp', true)}
+        onClick={editor.actions.showVimHelp}
       >
         {editor.ui.vim.mode === 'VISUAL_LINE' ? 'V-LINE' : editor.ui.vim.mode} {editor.ui.vim.count}
         {editor.ui.vim.pending}

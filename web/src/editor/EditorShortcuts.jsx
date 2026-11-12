@@ -186,7 +186,7 @@ export function EditorShortcuts() {
       if (editor.ui.findOpen) editor.actions.clearFind();
       editor.actions.hideHover();
       editor.actions.clearSelection();
-      editor.setUI('menu', null);
+      editor.actions.closeSelectionMenu();
       editor.store.actions.setNavigation({ occurrence: null, link: null });
     },
     () =>

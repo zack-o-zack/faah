@@ -89,6 +89,8 @@ export function createVimActions(editor) {
   }
   return {
     handleVimKeyDown,
+    showVimHelp: () => setUI('vimHelp', true),
+    hideVimHelp: () => setUI('vimHelp', false),
     setVimEnabled(enabled, persist = true) {
       setUI('vimEnabled', !!enabled);
       if (!enabled) {

@@ -46,10 +46,7 @@ export function FindBar() {
         id="find-case"
         class="btn"
         aria-pressed={editor.ui.caseSensitive}
-        onClick={() => {
-          editor.setUI('caseSensitive', !editor.ui.caseSensitive);
-          void editor.actions.executeFind();
-        }}
+        onClick={editor.actions.toggleFindCase}
       >
         Aa
       </button>

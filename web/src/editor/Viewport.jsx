@@ -209,7 +209,7 @@ export function Viewport() {
         const info = editor.ui.selection;
         if (!info) return;
         event.preventDefault();
-        editor.setUI('menu', { x: event.clientX, y: event.clientY, info });
+        editor.actions.openSelectionMenu(info, event.clientX, event.clientY);
       }}
       onDblClick={(event) => {
         const word = dom.wordAtPoint(event.clientX, event.clientY);

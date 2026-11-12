@@ -10,8 +10,8 @@ export function SelectionBar() {
   createMenuEvents({
     open: () => !!editor.ui.menu,
     panel: () => panel,
-    close: () => editor.setUI('menu', null),
-    dismiss: () => editor.setUI('menu', null),
+    close: editor.actions.closeSelectionMenu,
+    dismiss: editor.actions.closeSelectionMenu,
     roving: () => true,
   });
   function items(info) {
@@ -22,7 +22,7 @@ export function SelectionBar() {
   }
   function run(action, event) {
     const info = editor.ui.menu?.info || editor.ui.selection;
-    editor.setUI('menu', null);
+    editor.actions.closeSelectionMenu();
     editor.actions.runSelectionAction(action, event.currentTarget, info);
   }
   return (
@@ -33,15 +33,15 @@ export function SelectionBar() {
         hidden={!editor.ui.selection}
         onMouseDown={(event) => event.preventDefault()}
       >
-        <For each={items(editor.ui.selection)}>
-          {(item) => (
-            <button class="btn" data-sel={item.sel} onClick={(event) => run(item.sel, event)}>
-              {item.label}
-              <Kbd combo={item.keys} />
-            </button>
-          )}
-        </For>
         <Show when={editor.ui.selection}>
+          <For each={items(editor.ui.selection)}>
+            {(item) => (
+              <button class="btn" data-sel={item.sel} onClick={(event) => run(item.sel, event)}>
+                {item.label}
+                <Kbd combo={item.keys} />
+              </button>
+            )}
+          </For>
           <span id="sel-stats">{editor.ui.selection.l2 - editor.ui.selection.l1 + 1} lines</span>
         </Show>
       </div>

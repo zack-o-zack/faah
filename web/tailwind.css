@@ -585,7 +585,8 @@
   }
 }
 
-::highlight(editor-find) { background: var(--mark); color: inherit; }
-::highlight(editor-occ) { background: var(--accent); color: inherit; }
-::highlight(editor-link) { text-decoration: underline; color: var(--primary-text); }
-::highlight(editor-active) { background: var(--mark-active); color: var(--on-mark-active); }
+/* Global highlight rules make every explorer node compute highlight inheritance. */
+#rows ::highlight(editor-find) { background: var(--mark); color: inherit; }
+#rows ::highlight(editor-occ) { background: var(--accent); color: inherit; }
+#rows ::highlight(editor-link) { text-decoration: underline; color: var(--primary-text); }
+#rows ::highlight(editor-active) { background: var(--mark-active); color: var(--on-mark-active); }

@@ -94,16 +94,16 @@ export function EditorRow(props) {
           data-control="line-btn"
           onMouseDown={(event) => event.preventDefault()}
           onClick={(event) =>
-            editor.setUI('menu', {
-              x: event.clientX,
-              y: event.clientY,
-              info: {
+            editor.actions.openSelectionMenu(
+              {
                 path: editor.active().path,
                 l1: line(),
                 l2: line(),
                 text: editor.buffer().text(props.index),
               },
-            })
+              event.clientX,
+              event.clientY,
+            )
           }
         >
           Edit

@@ -35,8 +35,9 @@ export function EditView() {
     on(
       () => [editor.active()?.path, editor.active()?.isEditing, editor.buffer()],
       () => {
+        // Release the native textarea's copy when the editable buffer is discarded or closed.
+        textarea.value = editor.active()?.isEditing ? editor.buffer().editContent || '' : '';
         if (!editor.active()?.isEditing) return;
-        textarea.value = editor.buffer().editContent || '';
         textarea.scrollTop = editor.active().editScrollTop || 0;
       },
     ),
