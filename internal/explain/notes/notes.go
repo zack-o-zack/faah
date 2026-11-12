@@ -57,4 +57,6 @@ type View struct {
 	Index  int    `json:"index"` // in the turn's notes
 	Note
 	Stale string `json:"stale,omitempty"` // "text" when its code changed, "refs" when a symbol's uses did
+	// Links are the citations in Detail that were checked against the code.
+	Links map[string]explain.Ref `json:"links,omitempty"`
 }

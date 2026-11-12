@@ -18,6 +18,7 @@ import { openSettings, isAutoRevealEnabled } from './settings.js';
 import { showVimHelp, isVimEnabled, setVimModeEnabled } from './vim.js';
 import { launchPR } from './pr.js';
 import { newThread, deleteCurrentThread, showThreadsSidebar } from './thread.js';
+import { toggleNotes } from './notes.js';
 import { copyToClipboard, copyRichToClipboard } from './ui.js';
 import { getDocRaw } from './markdown.js';
 import { getSelectedRangeInfo } from './selbar.js';
@@ -107,6 +108,7 @@ export const COMMANDS = [
   { name: 'Threads: Show All', run: () => showThreadsSidebar() },
   { name: withKeys('Threads: Start New Thread ({Alt+T} on a selection)'), run: () => newThread(null) },
   { name: 'Threads: Delete Current Thread', run: deleteCurrentThread },
+  { name: 'Explain: Toggle Notes', run: toggleNotes },
   { name: 'Git: Open Pull Request…', run: () => openPalette('openpr', '') },
   { name: 'Preferences: Toggle Vim Keybindings', run: () => setVimModeEnabled(!isVimEnabled(), true) },
   { name: 'Help: Vim Keybindings Cheat Sheet', run: showVimHelp },

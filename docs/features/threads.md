@@ -52,11 +52,19 @@ Select code and press `Alt+X`, click **Explain** in the selection bar, or right-
 - **One identifier** explains that symbol: what it is, why it exists, and who uses it. A local variable is explained within its function.
 - **Anything else, up to 400 lines,** explains what the code does, its inputs, and its effects.
 
-The thread panel stays closed while the agent works. A small pill in the top right of the editor shows its progress, for example `Explaining · Read auth.go · 2 notes`, then `Explanation failed` or, when it is done, a translucent card with the notes count and the last paragraph of the answer cut to two lines. Click it to open the answer in the thread panel, where you can ask follow-up questions below it. A finished pill stays until you open it or dismiss it with its ×. A line under the answer shows its evidence, for example `gopls · definition · 14 references in 5 files · 3 callers`. `text match` means no language server could resolve the code, so the evidence is weaker.
+The thread panel stays closed while the agent works. A small pill in the top right of the editor shows its progress, for example `Explaining · Read auth.go · 2 notes`, then `Explanation failed` or, when it is done, a translucent card with the notes count and the last paragraph of the answer cut to two lines. Click it to open the answer in the thread panel, where you can ask follow-up questions below it. A finished pill fades after five seconds, or stays while you hover it. A failed one stays until you open it or dismiss it with its ×. A line under the answer shows its evidence, for example `gopls · definition · 14 references in 5 files · 3 callers`. `text match` means no language server could resolve the code, so the evidence is weaker.
 
 References to files, lines, and named symbols are links. faah checks each one when the answer finishes, and anything it cannot confirm stays plain text.
 
-The agent can also show its explanation on the code: notes on a symbol, a line, or a block, and walkthroughs of a flow across files. They are listed under the answer, and each one links to its lines.
+The agent can also show its explanation on the code: notes on a symbol, a line, or a block, and walkthroughs of a flow across files. Under the answer, the notes show as peeks of the code they explain: each summary sits above its line, with its detail under it, and a block note's lines carry a bracket, as in the editor. Click a line to open it.
+
+Notes also show on the code itself:
+
+- **Symbol and line notes** are a dimmed summary line above the code, indented like it, for example `⟢ Turns an Authorization header into a user`. Hover it to read the detail in a card above it, marked as an AI explanation; its links to code open that code. Click the summary to open its thread. It is not part of the file: the cursor, selection, copy and search skip it.
+- **Block notes** are cards in a column on the right of the editor, with a bracket over the block's lines. When the editor is narrow, the column becomes dots; hover a dot to read its note.
+- **Hovering** a note, or the code it explains, dims every other line.
+- A note whose code changed shows `outdated`, or `may be outdated` when only its callers or references changed, with a **Refresh** button that explains that code again.
+- The × on a note dismisses it. **Explain: Toggle Notes** in the command palette hides or shows all notes.
 
 Explaining the same code again reopens the earlier conversation, even if the code moved in the file. When the code changes, faah writes a new explanation. When only its callers or references change, or you changed `explain.reader` since it was written, the old one opens with a **Refresh** action. **Re-explain** always writes a new one.
 

@@ -18,6 +18,26 @@ export function measure() {
   S.lh = cssLH || Math.round(r.height) || LH;
 }
 
+/* Explanation notes add rows that are not part of the file: a ghost summary
+   above a line (notes.js). Such a file is laid out with the measured height map
+   even without word wrap, so every line position counts them. */
+function ghostsOf(d) {
+  return (d && S.noteGhosts?.get(d.path)) || null;
+}
+
+function usesMap(d) {
+  return S.wrap || !!ghostsOf(d)?.size;
+}
+
+/* Space the notes column takes on the right of wrapped code. */
+function marginOf(d) {
+  return (S.wrap && d && S.noteMargin?.get(d.path)) || 0;
+}
+
+const paintHooks = [];
+/** Runs after every paint, for overlays placed against painted rows. */
+export function onPaint(fn) { paintHooks.push(fn); }
+
 function bottomPad() {
   return Math.max(120, (vp.clientHeight || 0) * 0.5);
 }
@@ -88,20 +108,24 @@ export function ensureWrapMap(d) {
   const digits = String(total || 1).length;
   const gutter = S.lineNumbers ? (digits * chW + 30) : 0;
   const vpW = vp.clientWidth || (d._wrap && d._wrap.vpW) || 800;
-  const codeW = Math.max(40, vpW - gutter - 40);
-  const colsPerLine = Math.max(1, Math.floor(codeW / chW));
+  const codeW = Math.max(40, vpW - gutter - 40 - marginOf(d));
+  const colsPerLine = S.wrap ? Math.max(1, Math.floor(codeW / chW)) : Infinity;
+  const ghosts = ghostsOf(d);
+  const ghostKey = (ghosts ? S.notesGen : -1) + (S.wrap ? 'w' : '');
 
   ensureLineCols(d);
 
   let w = d._wrap;
   const widthChanged = !w || (vp.clientWidth > 0 && Math.abs(w.codeW - codeW) > 1);
-  if (!w || w.heights.length !== total || widthChanged || w.lh !== lh || Math.abs(w.chW - chW) > 0.05) {
+  if (!w || w.heights.length !== total || widthChanged || w.lh !== lh || Math.abs(w.chW - chW) > 0.05 || w.ghostKey !== ghostKey) {
     const avgCols = (total > 0 && d.size > 0) ? Math.round(d.size / total) : 0;
     const defaultRows = avgCols > colsPerLine ? Math.max(1, Math.ceil(avgCols / colsPerLine)) : 1;
     const defaultH = defaultRows * lh;
     const heights = new Float64Array(total);
     heights.fill(defaultH);
+    if (ghosts) for (const n of ghosts.keys()) if (n >= 1 && n <= total) heights[n - 1] += lh;
     w = {
+      ghostKey,
       vpW,
       codeW,
       lh,
@@ -127,7 +151,7 @@ export function ensureWrapMap(d) {
         if (cols < 0) continue;
         if (!w.measured[i]) {
           const rows = cols > colsPerLine ? Math.ceil(cols / colsPerLine) : 1;
-          const estH = rows * lh;
+          const estH = rows * lh + (ghosts && ghosts.has(i + 1) ? lh : 0);
           if (w.heights[i] !== estH) {
             w.heights[i] = estH;
             w.dirtyOffsets = true;
@@ -161,14 +185,14 @@ export function lineTopY(line, d = doc_()) {
   const lh = getLH();
   if (!d || !d.total) return Math.max(0, ((line || 1) - 1) * lh);
   const idx = Math.max(0, Math.min(d.total - 1, (line || 1) - 1));
-  if (!S.wrap) return idx * lh;
+  if (!usesMap(d)) return idx * lh;
   const w = ensureWrapMap(d);
   return w ? w.offsets[idx] : idx * lh;
 }
 
 export function lineHeightAt(line, d = doc_()) {
   const lh = getLH();
-  if (!d || !d.total || !S.wrap) return lh;
+  if (!d || !d.total || !usesMap(d)) return lh;
   const idx = Math.max(0, Math.min(d.total - 1, (line || 1) - 1));
   const w = ensureWrapMap(d);
   return w ? w.heights[idx] : lh;
@@ -177,7 +201,7 @@ export function lineHeightAt(line, d = doc_()) {
 export function lineAtScrollY(y, d = doc_()) {
   const lh = getLH();
   if (!d || !d.total) return Math.max(1, Math.floor(Math.max(0, y) / lh) + 1);
-  if (!S.wrap) return Math.max(1, Math.min(d.total, Math.floor(Math.max(0, y) / lh) + 1));
+  if (!usesMap(d)) return Math.max(1, Math.min(d.total, Math.floor(Math.max(0, y) / lh) + 1));
   const w = ensureWrapMap(d);
   return w ? lineIndexAtY(w, d.total, y) + 1 : 1;
 }
@@ -190,21 +214,21 @@ export function layout() {
   editor.style.setProperty('--gw', digits);
   const gutter = digits * S.chW + 30;
   if (S.wrap) {
+    const margin = marginOf(d);
     sizer.style.width = '100%';
-    rowsEl.style.width = '100%';
+    rowsEl.style.width = margin ? 'calc(100% - ' + margin + 'px)' : '100%';
     if (!sizer.offsetHeight && d.total > 0) {
       sizer.style.height = (d.total * lh + bottomPad()) + 'px';
     }
-    const w = ensureWrapMap(d);
-    sizer.style.height = ((w ? w.offsets[d.total] : d.total * lh) + bottomPad()) + 'px';
   } else {
     ensureLineCols(d);
     const maxCols = Math.max(d.maxCols || 0, d._maxLineCols || 0);
     const w = Math.max(vp.clientWidth, gutter + (maxCols + 4) * S.chW);
-    sizer.style.height = (d.total * lh + bottomPad()) + 'px';
     sizer.style.width = w + 'px';
     rowsEl.style.width = w + 'px';
   }
+  const map = usesMap(d) ? ensureWrapMap(d) : null;
+  sizer.style.height = ((map ? map.offsets[d.total] : d.total * lh) + bottomPad()) + 'px';
 }
 
 export function toggleWordWrap(forced) {
@@ -293,7 +317,7 @@ export function paint() {
   const lh = getLH();
   const top = vp.scrollTop;
   let first, last, anchorLine = 0, w = null;
-  if (S.wrap && d.total > 0) {
+  if (usesMap(d) && d.total > 0) {
     w = ensureWrapMap(d);
     anchorLine = lineIndexAtY(w, d.total, top);
     const overscanPx = OVERSCAN * lh;
@@ -322,13 +346,15 @@ export function paint() {
   const diagKey = diagList.length ? diagList.length + ':' + diagList[0].line + ':' + diagList[0].message : '';
   const paintKey = [
     d.path, d.gen || 0, first, last, d.cur, S.occ || '',
-    findKey, linkKey, gutKey, diagKey, agentKey, refKey, S.selAll === d ? 1 : 0, S.wrap ? 1 : 0
+    findKey, linkKey, gutKey, diagKey, agentKey, refKey, S.selAll === d ? 1 : 0, S.wrap ? 1 : 0, S.notesGen || 0
   ].join('|');
+  const ghosts = ghostsOf(d);
 
   if (paintKey === lastPaintKey && rowsEl.children.length === Math.max(0, last - first)) {
     const y0 = w ? w.offsets[first] : first * lh;
     rowsEl.style.transform = 'translateY(' + y0 + 'px)';
     placeCaret();
+    for (const fn of paintHooks) fn(d, false);
     return;
   }
   lastPaintKey = paintKey;
@@ -345,7 +371,8 @@ export function paint() {
   for (let i = first; i < last; i++) {
     const n = i + 1;
     const body = d.lines[i];
-    let rc = 'row flex h-[var(--lh)] [body.word-wrap_&]:h-auto [body.word-wrap_&]:min-h-[var(--lh)] font-mono text-[length:var(--fs)] leading-[var(--lh)] [font-feature-settings:normal]', gc = 'g sticky left-0 z-[2] shrink-0 w-[calc(var(--gw,1)*1ch+30px)] pl-4 pr-3.5 text-right text-faint bg-background group-[.cur]/line:bg-cur group-[.cur]/line:text-foreground group-[.ref-range]/line:bg-sel group-[.agent-sel]/line:text-primary group-[.agent-sel]/line:font-semibold group-[.agent-anchor]/line:relative select-none cursor-pointer tabular-nums';
+    const ghost = ghosts && ghosts.get(n);
+    let rc = (ghost ? 'row flex flex-wrap h-auto' : 'row flex h-[var(--lh)]') + ' [.note-dim>&:not(.note-hl)]:opacity-40 [body.word-wrap_&]:h-auto [body.word-wrap_&]:min-h-[var(--lh)] font-mono text-[length:var(--fs)] leading-[var(--lh)] [font-feature-settings:normal]', gc = 'g sticky left-0 z-[2] shrink-0 w-[calc(var(--gw,1)*1ch+30px)] pl-4 pr-3.5 text-right text-faint bg-background group-[.cur]/line:bg-cur group-[.cur]/line:text-foreground group-[.ref-range]/line:bg-sel group-[.agent-sel]/line:text-primary group-[.agent-sel]/line:font-semibold group-[.agent-anchor]/line:relative select-none cursor-pointer tabular-nums';
     if (n === d.cur) rc += ' cur';
     if (agentRanges.some(r => n >= r.l1 && n <= r.l2)) rc += ' agent-sel';
     if (agentRanges.some(r => n === r.l1)) rc += ' agent-anchor';
@@ -364,7 +391,7 @@ export function paint() {
       // The full message and its source live in the hover card; the line shows its first line.
       cAttr = ' data-diag="' + esc((dg.message || '').split('\n')[0]) + '"';
     }
-    html += '<div class="' + rc + ' group/line" data-l="' + n + '">' +
+    html += '<div class="' + rc + ' group/line" data-l="' + n + '">' + (ghost ? ghost.render(body) : '') +
       '<div class="' + gc + '"><span role="button" data-l="' + n + '" title="Thread and line actions" class="btn absolute left-0 top-1/2 -translate-y-1/2 max-w-full truncate h-4! px-1! text-9! opacity-0 pointer-events-none group-hover/line:opacity-100 group-hover/line:pointer-events-auto group-[.agent-anchor]/line:opacity-100 group-[.agent-anchor]/line:pointer-events-auto" data-control="line-btn" data-variant="ghost" data-size="xs">Edit</span>' + n + '</div><div class="c flex-1 min-w-0 whitespace-pre pr-10 [body.word-wrap_&]:whitespace-pre-wrap [body.word-wrap_&]:break-words [body.word-wrap_&]:[overflow-wrap:anywhere]"' + cAttr + '>' + (body === undefined ? '' : body) + '</div></div>';
   }
   const sel = saveSelection();
@@ -401,13 +428,15 @@ export function paint() {
         vp.scrollTop = Math.max(0, top + deltaAbove);
       }
     }
-  } else if (!S.wrap && vp.clientWidth > 0 && rowsEl.scrollWidth > sizer.offsetWidth) {
+  }
+  if (!S.wrap && vp.clientWidth > 0 && rowsEl.scrollWidth > sizer.offsetWidth) {
     const sw = rowsEl.scrollWidth;
     sizer.style.width = sw + 'px';
     rowsEl.style.width = sw + 'px';
   }
   if (sel) restoreSelection(sel);
   placeCaret();
+  for (const fn of paintHooks) fn(d, true);
 }
 
 let caretKey = '';
@@ -436,7 +465,7 @@ export function placeCaret() {
     x = rect.left;
     const lh = getLH();
     // Wrapped rows are taller than one line; otherwise pin to the row's top.
-    y = S.wrap ? rect.top - (lh - rect.height) / 2 : row.getBoundingClientRect().top;
+    y = S.wrap ? rect.top - (lh - rect.height) / 2 : code.getBoundingClientRect().top;
   } else {
     const cr = code.getBoundingClientRect();
     x = cr.left + parseFloat(getComputedStyle(code).paddingLeft || '0');

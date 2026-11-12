@@ -147,7 +147,7 @@ A pill at the top right of the editor, below the find bar when that is open. Whi
 
 - Clicking it opens the explanation's thread in the sidebar. It is hidden while the sidebar shows that thread, and comes back if the sidebar closes while the turn runs.
 - One explanation at a time: a new one replaces it. It stays across tab switches.
-- A finished pill stays until it is opened or dismissed. Once notes show on the code (phase 4), it fades out after a few seconds instead.
+- A finished pill fades out after five seconds, since its notes are on the code. Hovering or focusing it holds it. A failed pill stays until it is opened or dismissed.
 - It is a button; a polite live region announces start, done and failed, and the spinner stops under reduced motion.
 
 ## Phases
@@ -158,7 +158,7 @@ Each phase is a pull request, based on the one before it.
 1. **Tools and the MCP endpoint** (done). Endpoint credentials, validation, saving, staleness, prompt, and API. Notes show as a list in the thread.
 2. **Native sessions and MCP for every agent** (done). Antigravity over ACP, the stdio bridge, shared native servers, and the Cursor SDK helper.
 3. **Orb,** and Explain no longer opening the sidebar (done).
-4. **Notes in the editor.** Virtual rows, ghost summaries, margin notes, hover dimming, Refresh, dismiss, and Toggle Notes.
+4. **Notes in the editor** (done). Virtual rows, ghost summaries, margin notes, hover dimming, Refresh, dismiss, and Toggle Notes.
 5. **Walkthrough.** Spotlight, navigation, gutter badges, and the summary view.
 6. **Ways to start.** The hover card action and the ask box.
 

@@ -11,7 +11,7 @@ test('orb shows the latest step and notes while an explanation runs', () => {
   expect(orbView(m).text).toBe('Explaining · Read main.go · 2 notes');
   m = orbFromStep(m, 'Search add');
   expect(orbView(m).text).toBe('Explaining · Search add · 2 notes');
-  expect(orbView(m).label).toBe('Explaining · Search add · 2 notes. Open the explanation');
+  expect(orbView(m).label).toBe('Explaining · Search add · 2 notes. Open thread');
 });
 
 test('orb reports the outcome from the final snapshot', () => {
@@ -19,7 +19,7 @@ test('orb reports the outcome from the final snapshot', () => {
   expect(orbView(done)).toMatchObject({ text: 'Explained · 1 note · walkthrough', busy: false });
   const failed = orbFromThread(orbStart(), thread({ running: false, error: 'agent exited' }));
   expect(orbView(failed).text).toBe('Explanation failed');
-  expect(orbView(failed).label).toBe('Explanation failed: agent exited. Open the explanation');
+  expect(orbView(failed).label).toBe('Explanation failed: agent exited. Open thread');
 });
 
 test('steps after the end are ignored', () => {
@@ -45,7 +45,7 @@ test('a finished orb shows the last paragraph of the answer as plain text', () =
   const done = orbFromThread(orbStart(), thread({ running: false, reply: 'Intro.\n\nIt sums two numbers.' }));
   expect(orbView(done)).toMatchObject({ snippet: 'It sums two numbers.', shown: '' });
   const noted = orbFromThread(orbStart(), thread({ running: false, reply: 'It sums.', notes: [{}, {}] }));
-  expect(orbView(noted)).toMatchObject({ shown: '2 notes', label: 'Explained · 2 notes. Open the explanation' });
+  expect(orbView(noted)).toMatchObject({ shown: '2 notes', label: 'Explained · 2 notes. Open thread' });
   const running = orbFromThread(orbStart(), thread({ running: true, reply: 'Partial' }));
   expect(orbView(running).snippet).toBe('');
 });

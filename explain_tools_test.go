@@ -145,6 +145,30 @@ func TestExplainNotesFollowTheCode(t *testing.T) {
 	}
 }
 
+func TestExplainNotesDismiss(t *testing.T) {
+	root := t.TempDir()
+	writeExplainSource(t, root, explainGoSource)
+	s := fakeAgentServer(t, root, fakeReply("ok\n"))
+	_, m := agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "text": "helper"})
+	id := m["thread"].(map[string]any)["id"].(string)
+	waitThreadIdle(t, s, id)
+	saveNotes(s, toolScope{tid: id, turn: 1}, []notes.Note{
+		{Kind: "line", Path: "main.go", L1: 4, L2: 4, Summary: "Calls helper.", Text: "\thelper()"},
+		{Kind: "line", Path: "main.go", L1: 4, L2: 4, Summary: "Calls helper, newer.", Text: "\thelper()"},
+		{Kind: "block", Path: "main.go", L1: 7, L2: 7, Summary: "Empty.", Text: "func helper() {}"},
+	})
+	if code, _ := agentPostJSON(t, s, "/api/explain/notes/dismiss", map[string]any{"thread": id, "turn": 1, "index": 1}); code != 200 {
+		t.Fatalf("dismiss = %d", code)
+	}
+	// The dismissed note does not bring back the older one on the same line.
+	if v := fileNotes(t, s, "main.go"); len(v) != 1 || v[0].Kind != "block" {
+		t.Fatalf("after dismiss = %+v", v)
+	}
+	if code, _ := agentPostJSON(t, s, "/api/explain/notes/dismiss", map[string]any{"thread": id, "turn": 1, "index": 9}); code != http.StatusNotFound {
+		t.Fatalf("unknown note = %d", code)
+	}
+}
+
 func waitFor(t *testing.T, ok func() bool) {
 	t.Helper()
 	deadline := time.Now().Add(10 * time.Second)
@@ -214,5 +238,16 @@ func TestExplainReplayCarriesWhatWasShown(t *testing.T) {
 		if !strings.Contains(p, want) {
 			t.Fatalf("replay lacks %q:\n%s", want, p)
 		}
+	}
+}
+
+func TestDetailLinks(t *testing.T) {
+	refs := map[string]explain.Ref{"agent.go:868": {Line: 868}, "req.Edits": {Line: 964}, "main.go:1": {Line: 1}}
+	got := detailLinks("Built at agent.go:868 from `req.Edits`.", refs)
+	if len(got) != 2 || got["agent.go:868"].Line != 868 || got["req.Edits"].Line != 964 {
+		t.Fatalf("links = %v", got)
+	}
+	if detailLinks("", refs) != nil {
+		t.Fatal("an empty detail has no links")
 	}
 }

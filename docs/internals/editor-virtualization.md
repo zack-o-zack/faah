@@ -58,6 +58,7 @@ flowchart TD
   - Its width expands based on word-wrap settings or:
     $$\text{width} = (\text{maxCols} + 4) \times \text{chW} + \text{gutterWidth}$$
   - Configures the browser's native scrollbar geometry with mathematical precision without mounting offscreen rows.
+  - Under word wrap, or when the file has explain notes drawn as ghost rows, heights come from the measured row-height map instead of `totalLines × LH`. A ghost row adds one `LH` above its line. See [Threads](threads.md).
 - `#rows`:
   - CSS: `position: absolute; top: 0; left: 0; will-change: transform;`
   - Mounts only the visible lines.

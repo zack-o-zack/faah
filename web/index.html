@@ -263,6 +263,8 @@
       <!-- Hovercard: Type signature, documentation, and quick AI/Usages actions -->
       <div id="hovercard" role="region" aria-label="Symbol documentation" tabindex="-1" class="card absolute z-[60] w-[calc(100%_-_24px)] max-w-[560px] max-h-[min(70vh,calc(100%_-_16px))] overflow-auto gap-0 py-0" hidden></div>
 
+      <div id="note-card" data-ui="note-card" class="absolute z-40 max-w-md rounded-md border border-special/30 bg-popover p-3 text-sm text-popover-foreground shadow-md [&_p]:m-0" hidden></div>
+
       <!-- Top-right corner of the editor: find bar, then the explanation orb -->
       <div data-ui="editor-corner" class="pointer-events-none absolute top-2 right-2 z-20 flex max-w-[calc(100%_-_16px)] flex-col items-end gap-2 *:pointer-events-auto">
         <div id="findbar" class="card w-96 max-w-full flex-row flex-wrap items-center gap-2" hidden>
@@ -276,7 +278,7 @@
           </div>
         </div>
 
-        <div id="explain-orb" data-ui="explain-orb" class="group flex max-w-full items-center overflow-hidden rounded-full border bg-popover text-popover-foreground shadow-md data-[phase=done]:items-start data-[phase=done]:rounded-xl data-[phase=done]:bg-popover/70 data-[phase=done]:backdrop-blur-sm" hidden>
+        <div id="explain-orb" data-ui="explain-orb" class="group flex transition-opacity duration-200 motion-reduce:transition-none max-w-full items-center overflow-hidden rounded-full border bg-popover text-popover-foreground shadow-md data-[phase=done]:items-start data-[phase=done]:rounded-xl data-[phase=done]:bg-popover/70 data-[phase=done]:backdrop-blur-sm" hidden>
           <button id="explain-orb-open" type="button" class="btn min-w-0 shrink group-data-[phase=done]:h-auto group-data-[phase=done]:items-start group-data-[phase=done]:py-2 group-data-[phase=done]:text-left" data-variant="ghost" data-size="sm">
             <span data-orb="spin" class="size-3 shrink-0 rounded-full border-2 border-border border-t-primary animate-spin motion-reduce:animate-none" aria-hidden="true"></span>
             <span data-orb="done" class="icon-[lucide--check] size-3.5 shrink-0 text-primary" aria-hidden="true" hidden></span>
