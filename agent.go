@@ -1070,6 +1070,8 @@ type threadTurn struct {
 	// What an explanation showed on the code through the explain tools.
 	Notes        []notes.Note        `json:"notes,omitempty"`
 	Walkthroughs []notes.Walkthrough `json:"walkthroughs,omitempty"`
+	// Dismissed lists the indexes in Notes the reader closed in the editor.
+	Dismissed []int `json:"dismissed,omitempty"`
 }
 
 // thread is the persisted conversation. Path and lines are where it was
@@ -1305,6 +1307,7 @@ func cloneThread(t *thread) *thread {
 		tc.Changed = append([]string(nil), tr.Changed...)
 		tc.Notes = append([]notes.Note(nil), tr.Notes...)
 		tc.Walkthroughs = append([]notes.Walkthrough(nil), tr.Walkthroughs...)
+		tc.Dismissed = append([]int(nil), tr.Dismissed...)
 		c.Turns[i] = &tc
 	}
 	return &c

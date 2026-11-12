@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"regexp"
+	"slices"
 	"sort"
 	"sync"
 	"sync/atomic"
@@ -136,8 +137,9 @@ func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
 // notes cover the same code, the newest wins.
 func (tm *threadManager) FileNotes(rel string, lines []string) []notes.View {
 	type saved struct {
-		v    notes.View
-		when int64
+		v         notes.View
+		when      int64
+		dismissed bool
 	}
 	var all []saved
 	tm.mu.Lock()
@@ -148,7 +150,7 @@ func (tm *threadManager) FileNotes(rel string, lines []string) []notes.View {
 		for _, tr := range t.Turns {
 			for i, n := range tr.Notes {
 				if n.Path == rel {
-					all = append(all, saved{notes.View{Thread: t.ID, Turn: tr.ID, Index: i, Note: n}, tr.Started})
+					all = append(all, saved{notes.View{Thread: t.ID, Turn: tr.ID, Index: i, Note: n}, tr.Started, slices.Contains(tr.Dismissed, i)})
 				}
 			}
 		}
@@ -176,7 +178,11 @@ func (tm *threadManager) FileNotes(rel string, lines []string) []notes.View {
 		if seen[key] {
 			continue
 		}
+		// A dismissed note also hides the older ones it replaced.
 		seen[key] = true
+		if sv.dismissed {
+			continue
+		}
 		if v.Kind == "symbol" && v.Stale == "" && v.Refs != "" {
 			if cur := tm.tools.refs.get(v, tm.symbolHash); cur != "" && explain.StaleReason(v.Refs, cur) != "" {
 				v.Stale = "refs"
@@ -186,6 +192,27 @@ func (tm *threadManager) FileNotes(rel string, lines []string) []notes.View {
 	}
 	sort.SliceStable(out, func(a, b int) bool { return out[a].L1 < out[b].L1 })
 	return out
+}
+
+// DismissNote hides one saved note from the editor for good. It stays in its
+// thread's list.
+func (tm *threadManager) DismissNote(tid string, turn, index int) bool {
+	tm.mu.Lock()
+	defer tm.mu.Unlock()
+	t := tm.threads[tid]
+	if t == nil {
+		return false
+	}
+	for _, tr := range t.Turns {
+		if tr.ID == turn && index >= 0 && index < len(tr.Notes) {
+			if !slices.Contains(tr.Dismissed, index) {
+				tr.Dismissed = append(tr.Dismissed, index)
+				tm.saveLocked()
+			}
+			return true
+		}
+	}
+	return false
 }
 
 // hashNotes saves, in the background, the callers and references of each
@@ -305,4 +332,24 @@ func (s *Server) handleExplainNotes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, map[string]any{"notes": s.threads.FileNotes(rel, lines)})
+}
+
+func (s *Server) handleExplainNotesDismiss(w http.ResponseWriter, r *http.Request) {
+	if !localPost(w, r) || !s.threadsOrFail(w) {
+		return
+	}
+	var req struct {
+		Thread string `json:"thread"`
+		Turn   int    `json:"turn"`
+		Index  int    `json:"index"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		fail(w, http.StatusBadRequest, "bad request")
+		return
+	}
+	if !s.threads.DismissNote(req.Thread, req.Turn, req.Index) {
+		fail(w, http.StatusNotFound, "no such note")
+		return
+	}
+	writeJSON(w, map[string]any{"ok": true})
 }
