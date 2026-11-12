@@ -101,7 +101,7 @@ export const DEFAULT_TIPS = [
     title: "Commit Without Writing a Message",
     category: "AI",
     tag: "Git",
-    content: "In the Git panel, leave the message empty and click **Commit**: your coding harness reads the staged changes (all of them when nothing is staged) and writes the message. The sparkles button fills the message without committing, so you can edit it first."
+    content: "In the Git panel, leave the message empty and click **Commit**: your coding harness reads the staged changes (all of them when nothing is staged) and writes the message. The sparkle button fills the message without committing, so you can edit it first."
   },
   {
     id: "quick-file-edit",

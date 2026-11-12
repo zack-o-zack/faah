@@ -75,10 +75,10 @@
             <footer data-align="block-end" class="gap-1">
               <div id="git-agent" class="inline-flex min-w-0 flex-1" data-control="agent-picker" data-placeholder="No harness"><button type="button" data-variant="ghost" data-size="sm" class="btn max-w-full h-7! text-muted-foreground! border-transparent! bg-transparent! px-2! text-xs! shadow-none! hover:bg-accent! hover:text-foreground!" aria-haspopup="dialog" aria-expanded="false" aria-label="Coding harness and model" title="Coding harness and model"><span class="truncate"></span><i class="icon-[lucide--chevrons-up-down] size-3.5 shrink-0" aria-hidden="true"></i></button></div>
               <button id="git-instructions-link" type="button" title="Message instructions" aria-label="Message instructions" class="btn" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--sliders-horizontal] size-3.5 shrink-0" aria-hidden="true"></span></button>
-              <button id="git-generate-msg" type="button" title="Write a message for these changes" aria-label="Write a message for these changes" class="btn" data-variant="ghost" data-size="icon-xs"><span data-ui="icon" class="icon-[lucide--sparkles] size-3.5 shrink-0" aria-hidden="true"></span></button>
+              <button id="git-generate-msg" type="button" title="Write a message for these changes" aria-label="Write a message for these changes" class="btn" data-variant="ghost" data-size="icon-xs"><span data-ui="icon" class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true"></span></button>
             </footer>
           </div>
-          <button id="git-commit" type="button" disabled class="btn w-full" data-variant="primary" data-size="sm"><span data-ui="icon" class="icon-[lucide--sparkles] size-3.5 shrink-0" aria-hidden="true"></span><span data-ui="label">Commit</span></button>
+          <button id="git-commit" type="button" disabled class="btn w-full" data-variant="primary" data-size="sm"><span data-ui="icon" class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true"></span><span data-ui="label">Commit</span></button>
         </div>
         <div id="git-clean-state" class="git-clean-state flex items-center justify-center gap-2 rounded border border-dashed p-3 text-xs text-muted-foreground [&_svg]:shrink-0 [&_svg]:text-primary" hidden>
           <span class="icon-[lucide--check] size-3.5 shrink-0" aria-hidden="true"></span>
@@ -487,22 +487,26 @@
 
     <!-- PR review bar: shown only when this session is `faah pr ...` (web/src/pr.js) -->
     <div id="pr-bar" data-ui="pr-bar" class="flex flex-none flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2" hidden>
-      <div data-ui="pr-bar-row" class="flex min-w-0 flex-1 basis-[34rem] items-center gap-2">
+      <div data-ui="pr-bar-row" class="flex min-w-0 flex-1 basis-80 flex-col gap-0.5">
+        <div class="flex min-w-0 items-center gap-2">
         <a id="pr-link" data-ui="pr-link" class="group flex items-center min-w-40 gap-2 rounded-md -mx-1.5 px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" target="_blank" rel="noopener noreferrer" >
           <span id="pr-badge" class="badge shrink-0 tabular-nums" data-variant="secondary" data-control="pr-badge"></span>
           <span id="pr-title" data-ui="pr-title" class="min-w-0 truncate text-sm font-medium underline-offset-4 group-hover:underline group-focus-visible:underline"></span>
           <span class="icon-[lucide--external-link] size-3.5 shrink-0 text-muted-foreground group-hover:text-foreground group-focus-visible:text-foreground" aria-hidden="true"></span>
         </a>
-        <span id="pr-state-badge" class="badge gap-1 border-current/30 bg-current/10" data-variant="outline" hidden><span data-ui="icon" class="size-3 shrink-0" aria-hidden="true"></span><span data-ui="label" class="text-foreground"></span></span>
-        <button id="pr-merge-state" type="button" hidden class="btn shrink-0 gap-1.5 data-[tone=err]:border-destructive/40 data-[tone=err]:bg-destructive/10 data-[tone=warn]:border-warn/40 data-[tone=warn]:bg-warn/10 data-[tone=ok]:border-gi/40" data-variant="outline" data-size="xs"></button>
-        <span class="flex-1 min-w-0"></span>
-        <span id="pr-diff-warning" data-ui="pr-diff-warning" class="flex-none p-3 text-destructive" hidden><span class="icon-[lucide--triangle-alert] size-3.5 shrink-0" aria-hidden="true"></span> diff base unresolved</span>
-        <button id="pr-readonly-note" type="button" hidden  class="btn" data-control="pr-readonly-note" data-variant="outline" data-size="xs">No token &mdash; click to connect</button>
-        <span id="pr-refs" data-ui="pr-refs" class="min-w-0 shrink-[4] truncate font-mono text-muted-foreground"></span>
+          <span id="pr-state-badge" class="badge gap-1 border-current/30 bg-current/10" data-variant="outline" hidden><span data-ui="icon" class="size-3 shrink-0" aria-hidden="true"></span><span data-ui="label" class="text-foreground"></span></span>
+        </div>
+        <div class="flex min-w-0 items-center gap-3 pl-px text-xs text-muted-foreground">
+          <span id="pr-refs" data-ui="pr-refs" class="min-w-0 shrink-[4] truncate font-mono"></span>
+          <button id="pr-merge-state" type="button" hidden class="inline-flex shrink-0 items-center gap-1 hover:underline underline-offset-2 data-[tone=err]:text-destructive data-[tone=warn]:text-warn data-[tone=ok]:text-gi"></button>
+          <span id="pr-diff-warning" data-ui="pr-diff-warning" class="inline-flex shrink-0 items-center gap-1 text-destructive" hidden><span class="icon-[lucide--triangle-alert] size-3.5 shrink-0" aria-hidden="true"></span> diff base unresolved</span>
+          <button id="pr-readonly-note" type="button" hidden  class="btn" data-control="pr-readonly-note" data-variant="outline" data-size="xs">No token &mdash; click to connect</button>
+        </div>
       </div>
       <div id="pr-review-row" data-ui="pr-bar-row pr-review-row" class="ml-auto flex shrink-0 items-center gap-2">
+        <button id="pr-merge-fix" type="button" hidden class="btn" data-variant="outline" data-size="sm"></button>
         <button id="pr-batch-apply" hidden title="Have the harness apply your draft comments to the code" class="btn" data-control="bar-action pr-btn-batch-apply" data-variant="ghost" data-size="sm">
-          <span class="icon-[lucide--sparkles] size-3.5 shrink-0" aria-hidden="true"></span>
+          <span class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true"></span>
           <span class="bar-action-label">Apply drafts</span>
         </button>
         <!-- Review: one panel holds the summary and the verdict that sends it (web/src/pr.js) -->

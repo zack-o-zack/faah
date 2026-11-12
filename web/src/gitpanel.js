@@ -199,14 +199,14 @@ export async function unstagePath(path) {
 }
 
 // One Commit button: with a message it commits as written; left empty, the
-// selected harness writes the message first (the sparkles mark that path).
+// selected harness writes the message first (the sparkle marks that path).
 // Nothing staged means everything is committed, as the server stages it all.
 function syncCommitBtn() {
   const btn = $('#git-commit');
   if (!btn || btn.dataset.busy) return;
   const typed = !!$('#git-commit-msg')?.value.trim();
   const what = stagedCount ? `${stagedCount} staged file${stagedCount > 1 ? 's' : ''}` : 'all changes';
-  setBtn(btn, typed ? 'git-commit-horizontal' : 'sparkles', 'Commit');
+  setBtn(btn, typed ? 'git-commit-horizontal' : 'sparkle', 'Commit');
   btn.title = typed ? `Commit ${what}` : `Write a message for ${what} and commit`;
 }
 
@@ -404,7 +404,7 @@ function notice({ tone = 'err', title, html = '', picker = false, actions = [], 
     const b = document.createElement('button');
     b.type = 'button';
     b.textContent = a.label;
-    if (a.ai) b.insertAdjacentHTML('afterbegin', '<span class="icon-[lucide--sparkles] size-3.5 shrink-0" aria-hidden="true"></span>');
+    if (a.ai) b.insertAdjacentHTML('afterbegin', '<span class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true"></span>');
     b.className = 'btn';
     b.dataset.size = 'xs';
     b.dataset.variant = a.primary ? 'primary' : 'outline';
@@ -684,7 +684,7 @@ async function doGenerateMessage() {
   const btn = $('#git-generate-msg');
   if (!btn || btn.dataset.busy) return;
   setBusy(btn);
-  const reset = () => { clearBusy(btn); setBtn(btn, 'sparkles'); };
+  const reset = () => { clearBusy(btn); setBtn(btn, 'sparkle'); };
   let job;
   try {
     job = await apiPostJson('/api/git/commit-message', {});

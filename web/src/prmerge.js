@@ -53,7 +53,8 @@ export function initPRMerge(c) {
     renderPRMerge();
     ctx.onChange();
   });
-  $('#pr-merge-state')?.addEventListener('click', onPillClick);
+  $('#pr-merge-state')?.addEventListener('click', () => refreshMergeStatus());
+  $('#pr-merge-fix')?.addEventListener('click', onFixClick);
   $('#pr-merge')?.addEventListener('click', onMergeClick);
   $('#pr-merge-caret')?.addEventListener('click', e => { e.stopPropagation(); toggleMenu(); });
   document.addEventListener('click', e => { if (!e.target.closest?.('#pr-merge-group')) toggleMenu(false); });
@@ -123,7 +124,7 @@ export function reviewGate() {
 // what the forge will see next.
 function pill() {
   if (sync.running) return { tone: 'busy', text: 'Rebasing...', title: 'The harness is bringing the branch up to date' };
-  if (sync.inProgress) return { tone: 'warn', text: `${cap(sync.inProgress)} unfinished`, title: 'Open the git panel to finish or abort it', act: 'resolve' };
+  if (sync.inProgress) return { tone: 'warn', text: `${cap(sync.inProgress)} unfinished`, title: 'Open the git panel to finish or abort it', act: 'resolve', fix: 'Finish' };
   if (sync.rewritten) return { tone: 'warn', text: 'Rebased, not pushed', title: 'Force-push to update the PR', act: 'push' };
   const st = info?.status;
   if (!st) return null;
@@ -131,8 +132,8 @@ function pill() {
   switch (st.state) {
     case 'clean': return { tone: 'ok', text: 'Ready to merge', title: 'No conflicts with ' + baseBranch() };
     case 'unstable': return { tone: 'warn', text: 'Checks failing', title: reason || 'Mergeable, but some checks are failing' };
-    case 'conflicts': return { tone: 'err', text: 'Conflicts with ' + baseBranch(), title: 'Resolve them with your coding harness', act: 'resolve' };
-    case 'behind': return { tone: 'warn', text: 'Behind ' + baseBranch(), title: 'Bring the branch up to date with your coding harness', act: 'resolve' };
+    case 'conflicts': return { tone: 'err', text: 'Conflicts with ' + baseBranch(), title: 'Resolve them with your coding harness', act: 'resolve', fix: 'Resolve conflicts' };
+    case 'behind': return { tone: 'warn', text: 'Behind ' + baseBranch(), title: 'Bring the branch up to date with your coding harness', act: 'resolve', fix: 'Update branch' };
     case 'blocked': return { tone: 'muted', text: 'Merge blocked', title: reason || 'Branch protection refuses the merge' };
     case 'unknown': return { tone: 'busy', text: 'Checking…', title: 'The forge is still computing whether this PR can merge' };
   }
@@ -142,22 +143,21 @@ function pill() {
 const cap = s => s ? s[0].toUpperCase() + s.slice(1) : s;
 
 const PILL_ICONS = {
-  err: ['icon-[lucide--triangle-alert]', 'text-destructive'],
-  warn: ['icon-[lucide--circle-alert]', 'text-warn'],
-  busy: ['icon-[lucide--loader-circle] animate-spin', 'text-muted-foreground'],
-  ok: ['icon-[lucide--circle-check]', 'text-gi'],
-  muted: ['icon-[lucide--circle-dashed]', 'text-muted-foreground'],
+  err: 'icon-[lucide--triangle-alert]',
+  warn: 'icon-[lucide--circle-alert]',
+  busy: 'icon-[lucide--loader-circle] animate-spin',
+  ok: 'icon-[lucide--circle-check]',
+  muted: 'icon-[lucide--circle-dashed]',
 };
 const PILL_FIXES = {
-  resolve: '<span class="icon-[lucide--sparkles] size-3.5 shrink-0" aria-hidden="true"></span><span class="font-medium">Resolve</span>',
-  push: '<span class="icon-[lucide--arrow-up] size-3.5 shrink-0" aria-hidden="true"></span><span class="font-medium">Force-push</span>',
+  resolve: '<span class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true"></span>',
+  push: '<span class="icon-[lucide--arrow-up] size-3.5 shrink-0" aria-hidden="true"></span>',
 };
 
-function onPillClick() {
+function onFixClick() {
   const p = pill();
   if (p?.act === 'resolve') emit('pr:resolve');
   else if (p?.act === 'push') emit('pr:force-push');
-  else refreshMergeStatus();
 }
 
 // The split button's main half: always opens the merge dialog to review and merge.
@@ -173,14 +173,20 @@ function renderPRMerge() {
   if (pillEl) {
     pillEl.hidden = !p;
     if (p) {
-      // One chip says what is wrong and, when there is a fix, offers it.
       pillEl.dataset.tone = p.tone;
-      const [icon, tint] = PILL_ICONS[p.tone] || PILL_ICONS.muted;
-      const fix = p.act && !sync.running ? PILL_FIXES[p.act] : '';
-      pillEl.innerHTML = `<span class="${icon} size-3.5 shrink-0 ${tint}" aria-hidden="true"></span><span>${esc(p.text)}</span>` +
-        (fix ? `<span class="h-3.5 w-px bg-border" aria-hidden="true"></span>${fix}` : '');
-      pillEl.disabled = !!(p.act && sync.running);
-      pillEl.title = p.title + (p.act ? '' : ' (click to refresh)');
+      const icon = PILL_ICONS[p.tone] || PILL_ICONS.muted;
+      pillEl.innerHTML = `<span class="${icon} size-3.5 shrink-0" aria-hidden="true"></span><span>${esc(p.text)}</span>`;
+      pillEl.title = 'Click to check again';
+    }
+  }
+  // The fix is a button of its own beside Review, so it reads as something to press.
+  const fixBtn = $('#pr-merge-fix');
+  if (fixBtn) {
+    fixBtn.hidden = !p?.act;
+    if (p?.act) {
+      fixBtn.innerHTML = PILL_FIXES[p.act] + esc(p.fix || (p.act === 'push' ? 'Force-push' : 'Resolve'));
+      fixBtn.title = p.title;
+      fixBtn.disabled = !!sync.running;
     }
   }
   const group = $('#pr-merge-group');
