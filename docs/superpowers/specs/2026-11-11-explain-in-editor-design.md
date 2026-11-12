@@ -136,14 +136,19 @@ Hovering a note, or the code it explains, dims every other line and highlights t
 
 ## Starting an explanation
 
-- **Alt+X**, the selection bar, and the context menu work as today.
+- **Alt+X**, the selection bar, and the context menu start an explanation.
 - **Hover card:** the language server's hover card gets an **Explain** action for the symbol under the pointer.
 - **Ask box:** a small input next to the selection. The reader types a question, and submitting starts the explanation with that question and opens the sidebar conversation.
-- Explain no longer opens the sidebar on its own. The orb shows progress, and the results appear on the code.
+- Explain does not open the sidebar. The orb shows progress, and the results appear on the code.
 
 ## Orb
 
-A small indicator at the top right of the editor while an explanation runs. It shows the state and the latest step, for example `Explaining · Read auth.go · 2 notes`. It turns into a short done or failed state when the turn ends, then fades out. Clicking it opens the thread in the sidebar.
+A pill at the top right of the editor, below the find bar when that is open. While an explanation runs it shows the latest step and the notes so far, for example `Explaining · Read auth.go · 2 notes`. Calls to annotate and walkthrough read `Show notes` and `Show a walkthrough`. When the turn ends it shows `Explanation failed`, with the error in its accessible name, or turns into a translucent card: the notes count (`3 notes`) above the answer's last paragraph as plain text, cut to two lines. Its accessible name is `Explained · 3 notes`.
+
+- Clicking it opens the explanation's thread in the sidebar. It is hidden while the sidebar shows that thread, and comes back if the sidebar closes while the turn runs.
+- One explanation at a time: a new one replaces it. It stays across tab switches.
+- A finished pill stays until it is opened or dismissed. Once notes show on the code (phase 4), it fades out after a few seconds instead.
+- It is a button; a polite live region announces start, done and failed, and the spinner stops under reduced motion.
 
 ## Phases
 
@@ -152,7 +157,7 @@ Each phase is a pull request, based on the one before it.
 0. **Packages** (done). Agent adapters, evidence gathering, shared code-intelligence types, and protocol fakes.
 1. **Tools and the MCP endpoint** (done). Endpoint credentials, validation, saving, staleness, prompt, and API. Notes show as a list in the thread.
 2. **Native sessions and MCP for every agent** (done). Antigravity over ACP, the stdio bridge, shared native servers, and the Cursor SDK helper.
-3. **Orb,** and Explain no longer opening the sidebar.
+3. **Orb,** and Explain no longer opening the sidebar (done).
 4. **Notes in the editor.** Virtual rows, ghost summaries, margin notes, hover dimming, Refresh, dismiss, and Toggle Notes.
 5. **Walkthrough.** Spotlight, navigation, gutter badges, and the summary view.
 6. **Ways to start.** The hover card action and the ask box.
