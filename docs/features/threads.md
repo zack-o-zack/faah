@@ -1,6 +1,6 @@
 # Threads
 
-A thread is a long-running conversation with your coding harness about your code. Where an inline edit ([Agent Editing](agent-editing.md)) is a single instruction that runs once and is forgotten, a thread keeps its transcript and continues the same conversation with every message. Use it to ask what code does, follow up on the answer, ask whether a change affects other places, and make edits across as many files as the conversation needs.
+A thread is a long-running conversation with your coding harness about your code. It keeps a transcript and continues the same native agent session with every message. Inline edits also become saved threads ([Agent Editing](agent-editing.md)). Use it to ask what code does, follow up on the answer, ask whether a change affects other places, and make edits across as many files as the conversation needs.
 
 Threads live in the right sidebar, on the **Threads** tab, next to References, Symbols, Calls and Search.
 
@@ -56,13 +56,15 @@ The answer appears in the thread panel, and you can ask follow-up questions belo
 
 References to files, lines, and named symbols are links. faah checks each one when the answer finishes, and anything it cannot confirm stays plain text.
 
+The agent can also show its explanation on the code: notes on a symbol, a line, or a block, and walkthroughs of a flow across files. They are listed under the answer, and each one links to its lines.
+
 Explaining the same code again reopens the earlier conversation, even if the code moved in the file. When the code changes, faah writes a new explanation. When only its callers or references change, or you changed `explain.reader` since it was written, the old one opens with a **Refresh** action. **Re-explain** always writes a new one.
 
 `explain.reader` is added to the explain agent's prompt to describe the reader, for example `I'm new to Go`.
 
-Explanations can run on their own harness and model: claude, agy, codex or opencode. Set `explain.agent` and `explain.model` in settings, for example `claude` and `haiku`; left empty, Explain uses the harness selected for editing. When you select code, faah prepares the evidence in the background so Explain starts sooner. Turn that off with `explain.prefetch`. With claude or agy, faah also keeps one agent process started and waiting, which skips most of its start-up time: about 1 second for claude and 10 for agy. The process is stopped after 10 minutes unused. Turn that off with `explain.warmup`.
+Explanations can run on their own harness and model: claude, codex, agy, opencode or cursor-agent. Set `explain.agent` and `explain.model` in settings, for example `claude` and `haiku`; left empty, Explain uses the harness selected for editing. When you select code, faah prepares the evidence in the background so Explain starts sooner. Turn that off with `explain.prefetch`.
 
-Explanations never change your files. They need a harness with a read-only mode, and they read the saved file, so save your edits first.
+Explanations run in Ask mode on every supported agent and read the saved file, so save your edits first. Notes and walkthroughs arrive through faah’s MCP tools.
 
 ## The Thread List
 
@@ -72,4 +74,6 @@ Threads are stored on disk and survive restarts. A reply that was still running 
 
 ## Requirements
 
-Threads use the coding harness you have selected, the same as inline edits, and are unavailable with `-no-agent`. Harnesses that can resume a session (Claude Code, Cursor Agent, agy and Gemini CLI) keep their own memory of the conversation. With any other harness, faah sends the earlier transcript along with each message, which works but uses more tokens on long threads.
+Threads use the agent you select for editing: `claude`, `codex`, `agy`, `opencode`, or `cursor-agent`. `-agent` pins that name for the run, and `-no-agent` disables threads and agent edits. Each agent must be installed and authenticated. Cursor additionally needs Node.js 22.13 or later and npm 7 or later; faah installs its SDK helper in the user cache.
+
+All agents keep a native session between messages. After a restart or idle close, faah resumes the saved session. If that session cannot be reopened, it starts a new one with the earlier conversation as context.

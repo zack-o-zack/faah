@@ -5,9 +5,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,18 +17,10 @@ import (
 	"time"
 
 	"github.com/px0-ai/harness"
-)
 
-// writeHarness creates an executable stand-in for a coding harness, outside the
-// workspace so that it does not show up as a change the run made.
-func writeHarness(t *testing.T, body string) string {
-	t.Helper()
-	p := filepath.Join(t.TempDir(), "harness.sh")
-	if err := os.WriteFile(p, []byte("#!/bin/sh\n"+body), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	return p
-}
+	"faah/internal/agents"
+	"faah/internal/agents/all"
+)
 
 // isolateSettings points the settings file at a temp dir, so a test never reads
 // or overwrites the choice the developer running it has made.
@@ -65,10 +59,10 @@ func agentPostJSON(t *testing.T, s *Server, url string, body any) (int, map[stri
 	return rec.Code, m
 }
 
-func agentServer(t *testing.T, root, harness string) *Server {
+func agentServer(t *testing.T, root, name string) *Server {
 	t.Helper()
 	isolateSettings(t)
-	m, err := newAgentManager(root, harness+" {prompt}", nil)
+	m, err := newAgentManager(root, name, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,6 +71,7 @@ func agentServer(t *testing.T, root, harness string) *Server {
 	s := NewServer(ix, nil)
 	s.SetAgent(m)
 	t.Cleanup(func() {
+		s.threads.Close()
 		if s.gitWatcher != nil {
 			s.gitWatcher.Stop()
 		}
@@ -108,25 +103,21 @@ func TestAgentSpecResolution(t *testing.T) {
 	isolateSettings(t)
 	root := t.TempDir()
 
-	if _, err := newAgentManager(root, "echo hello", nil); err == nil {
-		t.Fatal("a template without {prompt} should be refused")
+	fakeCLI(t, "claude")
+	for _, name := range []string{"echo hello", "echo {prompt}", "unknown", "gemini"} {
+		if _, err := newAgentManager(root, name, nil); err == nil || !strings.Contains(err.Error(), "unknown agent "+name+"; choose one of:") {
+			t.Fatalf("unknown name %q: %v", name, err)
+		}
 	}
-	if _, err := newAgentManager(root, "px0-not-a-real-binary {prompt}", nil); err == nil {
-		t.Fatal("a missing binary should be refused at startup, not on first use")
-	}
-
-	m, err := newAgentManager(root, "echo {prompt}", nil)
+	m, err := newAgentManager(root, "claude", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if m.Name() != "echo" {
-		t.Fatalf("name = %q, want echo", m.Name())
+	if m.Name() != "claude" || !m.Pinned() {
+		t.Fatalf("name=%q pinned=%v", m.Name(), m.Pinned())
 	}
-	if !m.Pinned() {
-		t.Fatal("-agent should pin the harness")
-	}
-	if err := m.Select("echo {prompt}"); err == nil {
-		t.Fatal("a pinned harness must not be changeable from the UI")
+	if err := m.Select("codex"); err == nil {
+		t.Fatal("a pinned agent must not be changeable from the UI")
 	}
 
 	// No flag and no saved choice: editing is available, nothing is selected.
@@ -146,16 +137,16 @@ func TestAgentDetectListsKnownHarnesses(t *testing.T) {
 		t.Fatal(err)
 	}
 	got := m.Detect()
-	presets := harness.Presets()
+	presets := all.List()
 	if len(got) != len(presets) {
 		t.Fatalf("detected %d rows, want one per preset (%d)", len(got), len(presets))
 	}
-	for i, h := range got {
-		if h.Name != presets[i].Name {
-			t.Fatalf("row %d = %q, want %q", i, h.Name, presets[i].Name)
+	for _, h := range got {
+		if all.For(h.Name) == nil {
+			t.Fatalf("unknown picker name %q", h.Name)
 		}
-		if !strings.Contains(h.Cmd, "{prompt}") {
-			t.Fatalf("%s cmd should show the template, got %q", h.Name, h.Cmd)
+		if h.Cmd != h.Name {
+			t.Fatalf("picker command = %q, want %q", h.Cmd, h.Name)
 		}
 		if h.Installed && h.Path == "" {
 			t.Fatalf("%s reported installed with no path", h.Name)
@@ -189,12 +180,12 @@ func TestAgentSelectPersistsOutsideWorkspace(t *testing.T) {
 		t.Fatal("selecting something that is not installed should fail")
 	}
 
-	// echo stands in for a harness binary that exists on every machine.
-	if err := m.Select("echo {prompt}"); err != nil {
+	fakeCLI(t, "claude")
+	if err := m.Select("claude"); err != nil {
 		t.Fatal(err)
 	}
-	if m.Name() != "echo" {
-		t.Fatalf("selected = %q, want echo", m.Name())
+	if m.Name() != "claude" {
+		t.Fatalf("selected = %q, want claude", m.Name())
 	}
 
 	if _, err := os.Stat(filepath.Join(cfg, "faah", "settings.json")); err != nil {
@@ -204,13 +195,13 @@ func TestAgentSelectPersistsOutsideWorkspace(t *testing.T) {
 		t.Fatal("settings must never be written into the workspace")
 	}
 
-	// A later run restores the choice, template and all.
+	// A later run restores the agent choice.
 	restored, err := newAgentManager(root, "", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if restored.Name() != "echo" {
-		t.Fatalf("restored = %q, want echo", restored.Name())
+	if restored.Name() != "claude" {
+		t.Fatalf("restored = %q, want claude", restored.Name())
 	}
 
 	if err := restored.Select(""); err != nil {
@@ -270,7 +261,9 @@ func TestAgentEditRefusedUntilHarnessChosen(t *testing.T) {
 	}
 
 	// Picking one over HTTP is enough to make editing work.
-	if code, _ = agentPost(t, s, "/api/agent/select?name="+"echo+%7Bprompt%7D"); code != 200 {
+	fakeCLI(t, "claude")
+	m.openAgent = func(string) agents.Agent { return &fakeAgent{} }
+	if code, _ = agentPost(t, s, "/api/agent/select?name="+"claude"); code != 200 {
 		t.Fatalf("select = %d, want 200", code)
 	}
 	if code, _ = agentPost(t, s, "/api/agent/edit?path=a.go&l1=1&l2=1&instruction=hi"); code != 200 {
@@ -286,8 +279,12 @@ func TestAgentEditRunsHarnessAndReportsChange(t *testing.T) {
 	root := gitRepo(t)
 	out := t.TempDir()
 	// keep.go is committed and clean, so no force is needed.
-	s := agentServer(t, root, writeHarness(t,
-		"printf 'touched\\n' >> keep.go\nprintf '%s' \"$1\" > "+filepath.Join(out, "prompt.txt")+"\n"))
+	s := fakeAgentServer(t, root, func(ctx context.Context, o agents.Open, prompt string, sink agents.Sink) error {
+		if err := fakeAppend("keep.go")(ctx, o, prompt, sink); err != nil {
+			return err
+		}
+		return os.WriteFile(filepath.Join(out, "prompt.txt"), []byte(prompt), 0600)
+	})
 
 	code, _ := agentPost(t, s, "/api/agent/edit?path=keep.go&l1=1&l2=1&instruction=add+a+line")
 	if code != 200 {
@@ -330,7 +327,7 @@ func TestAgentOutsideGitReportsUnknownChanges(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "a.go"), []byte("package a\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	s := agentServer(t, root, writeHarness(t, "printf 'touched\\n' >> a.go\n"))
+	s := fakeAgentServer(t, root, fakeAppend("a.go"))
 
 	// With no git there is also no uncommitted-work guard to satisfy.
 	if code, _ := agentPost(t, s, "/api/agent/edit?path=a.go&l1=1&l2=1&instruction=hi"); code != 200 {
@@ -357,7 +354,7 @@ func TestAgentRefusesSecondEditWhileRunning(t *testing.T) {
 		t.Skip("git not installed")
 	}
 	root := gitRepo(t)
-	s := agentServer(t, root, writeHarness(t, "sleep 2\n"))
+	s := fakeAgentServer(t, root, fakeDelay(2*time.Second, nil))
 
 	if code, _ := agentPost(t, s, "/api/agent/edit?path=keep.go&l1=1&l2=1&instruction=one"); code != 200 {
 		t.Fatalf("first edit = %d, want 200", code)
@@ -380,7 +377,7 @@ func TestAgentAllowsEditOverUncommittedFileWithoutForce(t *testing.T) {
 	}
 	root := gitRepo(t)
 	// sub/mod.go is modified but not committed by gitRepo.
-	s := agentServer(t, root, writeHarness(t, "printf 'touched\\n' >> keep.go\n"))
+	s := fakeAgentServer(t, root, fakeAppend("keep.go"))
 
 	code, _ := agentPost(t, s, "/api/agent/edit?path=sub/mod.go&l1=1&l2=1&instruction=hi")
 	if code != http.StatusOK {
@@ -410,28 +407,6 @@ func TestAgentModelSelectionAndDefaults(t *testing.T) {
 		}
 		if m.Model() != "custom-model" {
 			t.Fatalf("model = %q, want custom-model", m.Model())
-		}
-	}
-}
-
-func TestPresetArgvOrder(t *testing.T) {
-	for _, p := range harness.Presets() {
-		n := len(p.Args)
-		if n < 2 {
-			t.Fatalf("preset %s args too short: %v", p.Name, p.Args)
-		}
-		if p.Args[n-1] != "{prompt}" {
-			t.Fatalf("preset %s args %v: want {prompt} at the very end", p.Name, p.Args)
-		}
-
-		// When resolved, {prompt} must remain at the very end
-		_, resolved, _, err := resolveAgentSpec(p.Name, "")
-		if err != nil {
-			continue // tool may not be installed in test env
-		}
-		rn := len(resolved)
-		if rn < 2 || resolved[rn-1] != "{prompt}" {
-			t.Fatalf("resolved %s args %v: want {prompt} at the very end", p.Name, resolved)
 		}
 	}
 }
@@ -472,7 +447,7 @@ func TestAgentReportsEditToAlreadyModifiedFile(t *testing.T) {
 		t.Skip("git not installed")
 	}
 	root := gitRepo(t)
-	s := agentServer(t, root, writeHarness(t, "printf 'touched\\n' >> sub/mod.go\n"))
+	s := fakeAgentServer(t, root, fakeAppend("sub/mod.go"))
 
 	if code, _ := agentPost(t, s, "/api/agent/edit?path=sub/mod.go&l1=1&l2=1&instruction=hi&force=1"); code != 200 {
 		t.Fatalf("edit = %d, want 200", code)
@@ -493,7 +468,7 @@ func TestAgentAllowsNonOverlappingEditsInParallel(t *testing.T) {
 		t.Skip("git not installed")
 	}
 	root := gitRepo(t)
-	s := agentServer(t, root, writeHarness(t, "sleep 0.15\n"))
+	s := fakeAgentServer(t, root, fakeDelay(150*time.Millisecond, nil))
 
 	code, first := agentPost(t, s, "/api/agent/edit?path=keep.go&l1=1&l2=1&instruction=one")
 	if code != 200 {
@@ -519,7 +494,7 @@ func TestAgentMutationsRejectCrossOriginPost(t *testing.T) {
 		t.Skip("git not installed")
 	}
 	root := gitRepo(t)
-	s := agentServer(t, root, writeHarness(t, "printf 'touched\\n' >> keep.go\n"))
+	s := fakeAgentServer(t, root, fakeAppend("keep.go"))
 
 	for _, path := range []string{
 		"/api/agent/edit?path=keep.go&l1=1&l2=1&instruction=hi",
@@ -547,7 +522,7 @@ func TestAgentCancelJob(t *testing.T) {
 	}
 	root := gitRepo(t)
 	// Harness that sleeps to simulate a long-running edit
-	s := agentServer(t, root, writeHarness(t, "sleep 5\n"))
+	s := fakeAgentServer(t, root, fakeDelay(5*time.Second, nil))
 
 	code, first := agentPost(t, s, "/api/agent/edit?path=keep.go&l1=1&l2=1&instruction=first")
 	if code != http.StatusOK {
@@ -642,55 +617,20 @@ func TestLineRef(t *testing.T) {
 	}
 }
 
-func TestAllPresetArgvFormatting(t *testing.T) {
-	dir := t.TempDir()
-	t.Setenv("PATH", dir+":"+os.Getenv("PATH"))
-	for _, p := range harness.Presets() {
-		binPath := filepath.Join(dir, p.Args[0])
-		if err := os.WriteFile(binPath, []byte("#!/bin/sh\nexit 0\n"), 0755); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	for _, p := range harness.Presets() {
-		name, resolved, model, err := resolveAgentSpec(p.Name, "test-model")
-		if err != nil {
-			t.Fatalf("resolveAgentSpec(%q) error: %v", p.Name, err)
-		}
-		if name != p.Name {
-			t.Errorf("name = %q, want %q", name, p.Name)
-		}
-		if model != "test-model" {
-			t.Errorf("model = %q, want %q", model, "test-model")
-		}
-		if resolved[len(resolved)-1] != "{prompt}" {
-			t.Errorf("%s final arg = %q, want {prompt}", p.Name, resolved[len(resolved)-1])
-		}
-		// Ensure model flag was inserted properly
-		hasModel := false
-		for i, a := range resolved {
-			if a == p.ModelFlag && i+1 < len(resolved) && resolved[i+1] == "test-model" {
-				hasModel = true
-				break
-			}
-		}
-		if !hasModel {
-			t.Errorf("%s resolved args %v missing model flag %q %q", p.Name, resolved, p.ModelFlag, "test-model")
-		}
-	}
-}
-
 func TestAgentBatchEditRejectsIntraBatchOverlap(t *testing.T) {
 	isolateSettings(t)
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "a.go"), []byte("package a\nvar X = 1\nvar Y = 2\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	m, err := newAgentManager(root, "echo {prompt}", nil)
+	fakeCLI(t, "claude")
+	m, err := newAgentManager(root, "claude", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
+	m.openAgent = func(string) agents.Agent { return &fakeAgent{} }
 	tm := newThreadManager(m, root)
+	t.Cleanup(tm.Close)
 
 	// Overlapping ranges on the same file: lines 1-2 and lines 2-3
 	items := []agentBatchItem{
@@ -728,10 +668,7 @@ func TestAgentBatchEditRunsHarness(t *testing.T) {
 	}
 	root := gitRepo(t)
 
-	s := agentServer(t, root, writeHarness(t,
-		`echo "// edited 1" >> keep.go
-echo "// edited 2" >> sub/mod.go
-`))
+	s := fakeAgentServer(t, root, fakeAppend("keep.go", "sub/mod.go"))
 
 	payload := map[string]any{
 		"edits": []map[string]any{
@@ -759,10 +696,7 @@ func TestAgentAllowsIndividualAndBatchEditsConcurrently(t *testing.T) {
 	}
 	root := gitRepo(t)
 
-	s := agentServer(t, root, writeHarness(t,
-		`sleep 0.2
-echo "// edited" >> keep.go
-`))
+	s := fakeAgentServer(t, root, fakeDelay(200*time.Millisecond, nil))
 
 	// Start individual edit on keep.go line 1
 	code1, body1 := agentPost(t, s, "/api/agent/edit?path=keep.go&l1=1&l2=1&instruction=one")
@@ -810,7 +744,7 @@ func TestAgentBatchEditPayloadVariations(t *testing.T) {
 		t.Skip("git not installed")
 	}
 	root := gitRepo(t)
-	s := agentServer(t, root, writeHarness(t, "exit 0\n"))
+	s := fakeAgentServer(t, root, nil)
 
 	// 1. Direct array JSON body
 	directArray := []map[string]any{
@@ -892,8 +826,6 @@ func TestCommitMessagePrompt(t *testing.T) {
 	}
 }
 
-
-
 func TestThreadPrompt(t *testing.T) {
 	th := &thread{Path: "main.go", L1: 3, L2: 4, Snippet: "func main() {}"}
 	first := threadPrompt(th, nil, "why?", false, "", false)
@@ -925,12 +857,14 @@ func waitThreadIdle(t *testing.T, s *Server, id string) *thread {
 	return nil
 }
 
-func TestThreadConversationWithPlainHarness(t *testing.T) {
+func TestThreadConversationReusesNativeSession(t *testing.T) {
 	root := t.TempDir()
 	os.WriteFile(filepath.Join(root, "main.go"), []byte("package main\n\nfunc main() {}\n"), 0o644)
-	// Echoes the prompt it was given, so the test can see what a replay carries.
-	h := writeHarness(t, `printf 'saw: %s\n' "$1"`)
-	s := agentServer(t, root, h)
+	// Echo the prompt to check that only the first turn carries the anchor.
+	s := fakeAgentServer(t, root, func(_ context.Context, _ agents.Open, prompt string, sink agents.Sink) error {
+		sink.Text("saw: "+prompt, false)
+		return nil
+	})
 
 	code, m := agentPostJSON(t, s, "/api/threads/create", map[string]any{"path": "main.go", "l1": 3, "l2": 3, "message": "what does main do?"})
 	if code != 200 {
@@ -953,8 +887,8 @@ func TestThreadConversationWithPlainHarness(t *testing.T) {
 		t.Fatalf("turns = %d, want 2", len(th.Turns))
 	}
 	second := th.Turns[1].Reply
-	if !strings.Contains(second, "what does main do?") || !strings.Contains(second, "and its tests?") {
-		t.Fatalf("a harness without sessions must be replayed the transcript, got %q", second)
+	if second != "saw: and its tests?" {
+		t.Fatalf("native follow-up prompt = %q", second)
 	}
 
 	// Threads survive a restart, with the same transcript.
@@ -978,19 +912,9 @@ func (t *thread) Error() string {
 
 func TestThreadClaudeSessionResume(t *testing.T) {
 	root := t.TempDir()
-	dir := t.TempDir()
-	log := filepath.Join(dir, "argv.log")
-	// A stand-in named claude: records its argv and emits stream-json.
-	script := "#!/bin/sh\nprintf '%s\\n' \"$*\" >> " + log + "\n" +
-		`printf '{"type":"system","subtype":"init","session_id":"x"}\n'` + "\n" +
-		`printf '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"a.go"}}]}}\n'` + "\n" +
-		`printf '{"type":"assistant","message":{"content":[{"type":"text","text":"All good."}]}}\n'` + "\n" +
-		`printf '{"type":"result","is_error":false,"result":"All good."}\n'` + "\n"
-	bin := filepath.Join(dir, "claude")
-	if err := os.WriteFile(bin, []byte(script), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	s := agentServer(t, root, bin)
+	fakeCLI(t, "claude")
+	s := agentServer(t, root, "claude")
+	log := filepath.Join(root, "claude-runs.txt")
 
 	_, m := agentPostJSON(t, s, "/api/threads/create", map[string]any{"message": "look around"})
 	id := m["id"].(string)
@@ -1007,26 +931,33 @@ func TestThreadClaudeSessionResume(t *testing.T) {
 	data, _ := os.ReadFile(log)
 	var lines []string
 	for _, l := range strings.Split(string(data), "\n") {
-		if strings.HasPrefix(l, "--output-format") { // the first prompt spans several lines
+		if strings.Contains(l, "--output-format") { // the first prompt spans several lines
 			lines = append(lines, l)
 		}
 	}
-	if len(lines) != 2 {
-		t.Fatalf("harness ran %d times, want 2:\n%s", len(lines), data)
+	if len(lines) != 1 {
+		t.Fatalf("harness ran %d times, want 1:\n%s", len(lines), data)
 	}
 	sid := th.SessionID
 	if sid == "" || !strings.Contains(lines[0], "--session-id "+sid) {
 		t.Fatalf("first run should start session %q: %s", sid, lines[0])
 	}
-	if !strings.Contains(lines[1], "--resume "+sid) || strings.Contains(lines[1], "Earlier in this conversation") {
-		t.Fatalf("second run should resume without replay: %s", lines[1])
+	// Recreate the manager against the same persisted thread store.
+	s.threads.Close()
+	s.threads = newThreadManager(s.agent, root)
+	agentPostJSON(t, s, "/api/threads/send", map[string]any{"id": id, "message": "after restart"})
+	th = waitThreadIdle(t, s, id)
+	data, _ = os.ReadFile(log)
+	lines = strings.Split(strings.TrimSpace(string(data)), "\n")
+	if len(lines) != 2 || !strings.Contains(lines[1], "--resume "+sid) || th.Error() != "" {
+		t.Fatalf("resume: %s, %s", data, th.Error())
 	}
+
 }
 
 func TestThreadBusyAndCancel(t *testing.T) {
 	root := t.TempDir()
-	h := writeHarness(t, "sleep 30")
-	s := agentServer(t, root, h)
+	s := fakeAgentServer(t, root, fakeDelay(30*time.Second, nil))
 	_, m := agentPostJSON(t, s, "/api/threads/create", map[string]any{"message": "slow one"})
 	id := m["id"].(string)
 	if code, _ := agentPostJSON(t, s, "/api/threads/send", map[string]any{"id": id, "message": "impatient"}); code != 409 {
@@ -1036,7 +967,7 @@ func TestThreadBusyAndCancel(t *testing.T) {
 		t.Fatalf("cancel = %d", code)
 	}
 	th := waitThreadIdle(t, s, id)
-	if th.Turns[0].Error != "cancelled" {
+	if th.Turns[0].Error != context.Canceled.Error() {
 		t.Fatalf("cancelled turn error = %q", th.Turns[0].Error)
 	}
 }
@@ -1061,8 +992,7 @@ func TestInlineEditRunsAsThread(t *testing.T) {
 	root := t.TempDir()
 	os.WriteFile(filepath.Join(root, "a.go"), []byte("package a\n\nfunc A() {}\n"), 0o644)
 	os.WriteFile(filepath.Join(root, "b.go"), []byte("package b\n\nfunc B() {}\n"), 0o644)
-	h := writeHarness(t, `printf 'did it\n'`)
-	s := agentServer(t, root, h)
+	s := fakeAgentServer(t, root, fakeReply("did it\n"))
 
 	code, m := agentPostJSON(t, s, "/api/agent/batch", map[string]any{"edits": []map[string]any{
 		{"path": "a.go", "l1": 3, "l2": 3, "instruction": "rename A"},
@@ -1095,7 +1025,7 @@ func TestInlineEditRunsAsThread(t *testing.T) {
 func TestInlineEditOverlapStillRefused(t *testing.T) {
 	root := t.TempDir()
 	os.WriteFile(filepath.Join(root, "a.go"), []byte("package a\n\nfunc A() {}\n"), 0o644)
-	s := agentServer(t, root, writeHarness(t, "sleep 30"))
+	s := fakeAgentServer(t, root, fakeDelay(30*time.Second, nil))
 	q := "/api/agent/edit?path=a.go&l1=3&l2=3&instruction=one"
 	if code, _ := agentPost(t, s, q); code != 200 {
 		t.Fatalf("first edit = %d", code)
@@ -1170,8 +1100,7 @@ func TestThreadPromptCarriesPRScope(t *testing.T) {
 func TestThreadDeleteAPI(t *testing.T) {
 	root := t.TempDir()
 	os.WriteFile(filepath.Join(root, "main.go"), []byte("package main\n\nfunc main() {}\n"), 0o644)
-	h := writeHarness(t, `printf 'ok\n'`)
-	s := agentServer(t, root, h)
+	s := fakeAgentServer(t, root, fakeReply("ok\n"))
 
 	// Create thread 1 and delete via query parameter
 	code, m1 := agentPostJSON(t, s, "/api/threads/create", map[string]any{"path": "main.go", "l1": 1, "l2": 1, "message": "thread 1"})
@@ -1224,7 +1153,7 @@ func TestThreadDeleteAPI(t *testing.T) {
 func TestEventStreamMultiplexesFeeds(t *testing.T) {
 	root := t.TempDir()
 	os.WriteFile(filepath.Join(root, "main.go"), []byte("package main\n"), 0o644)
-	s := agentServer(t, root, writeHarness(t, `printf 'ok\n'`))
+	s := fakeAgentServer(t, root, nil)
 
 	code, m := agentPostJSON(t, s, "/api/threads/create", map[string]any{"message": "hi"})
 	if code != 200 {
@@ -1285,5 +1214,47 @@ func TestEventStreamMultiplexesFeeds(t *testing.T) {
 	}
 	if !strings.Contains(data["threads:list"], id) {
 		t.Fatalf("thread list should carry %s, got %s", id, data["threads:list"])
+	}
+}
+
+func TestAgentSelectRejectsUnknownNames(t *testing.T) {
+	s := fakeAgentServer(t, t.TempDir(), nil)
+	s.agent.pinned = false
+	for _, name := range []string{"unknown", "echo {prompt}", "gemini"} {
+		code, body := agentPost(t, s, "/api/agent/select?name="+url.QueryEscape(name))
+		if code != 400 || !strings.Contains(fmt.Sprint(body["error"]), "unknown agent "+name+"; choose one of:") {
+			t.Fatalf("select %q = %d %v", name, code, body)
+		}
+	}
+}
+
+func TestThreadReplaysWhenNativeResumeFails(t *testing.T) {
+	root := t.TempDir()
+	echo := func(_ context.Context, _ agents.Open, prompt string, sink agents.Sink) error {
+		sink.Text(prompt, false)
+		return nil
+	}
+	s := fakeAgentServer(t, root, echo)
+	a := &fakeAgent{prompt: echo, resumeError: errors.New("session not found")}
+	s.agent.openAgent = func(string) agents.Agent { return a }
+	_, body := agentPostJSON(t, s, "/api/threads/create", map[string]any{"message": "first question"})
+	id := body["id"].(string)
+	first := waitThreadIdle(t, s, id)
+	if first.SessionID == "" {
+		t.Fatal("missing native session")
+	}
+	s.threads.Close()
+	s.threads = newThreadManager(s.agent, root)
+	if _, err := s.threads.Send(id, "follow-up question"); err != nil {
+		t.Fatal(err)
+	}
+	th := waitThreadIdle(t, s, id)
+	if th.Error() != "" || th.SessionID == first.SessionID {
+		t.Fatalf("resume fallback = %+v", th)
+	}
+	for _, want := range []string{"first question", "follow-up question", "### Earlier in this conversation"} {
+		if !strings.Contains(th.Turns[1].Reply, want) {
+			t.Fatalf("replay missing %q: %s", want, th.Turns[1].Reply)
+		}
 	}
 }

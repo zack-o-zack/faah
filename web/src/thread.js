@@ -537,13 +537,34 @@ function thrStepsHtml(turn, open = false) {
     '<ol data-ui="thr-step-list" class="mt-1.5 ml-1.5 flex flex-col gap-1 border-l pl-3">' + tools.map(x => '<li class="whitespace-pre-wrap wrap-anywhere">' + esc(x) + '</li>').join('') + '</ol></details>';
 }
 
+/* What an explanation showed on the code through its tools, listed with links
+   to the lines. */
+function thrShownHtml(turn) {
+  const where = (p, l1, l2) => '<span class="font-mono text-muted-foreground">' + esc(p) + ':' + l1 + (l2 > l1 ? '-' + l2 : '') + '</span>';
+  const link = (p, l1, l2, inner, cls) => '<a href="#" class="thr-link ' + cls + '" data-path="' + esc(p) + '" data-line="' + l1 + '"' +
+    (l2 > l1 ? ' data-end="' + l2 + '"' : '') + '>' + inner + '</a>';
+  const box = (head, body) => '<div data-ui="thr-shown" class="rounded-md border px-2 py-1.5 text-xs"><div class="mb-1 font-mono text-muted-foreground">' + head + '</div>' + body + '</div>';
+  let h = '';
+  const notes = turn.notes || [];
+  if (notes.length) {
+    h += box(notes.length + (notes.length === 1 ? ' note' : ' notes') + ' on the code',
+      notes.map(n => link(n.path, n.l1, n.l2, where(n.path, n.l1, n.l2) + ' ' + esc(n.summary), 'block py-px no-underline hover:text-primary-text')).join(''));
+  }
+  for (const w of turn.walkthroughs || []) {
+    h += box('Walkthrough: ' + esc(w.title), '<ol class="list-decimal pl-4">' +
+      w.steps.map(s => '<li>' + link(s.path, s.l1, s.l2, esc(s.title), 'text-primary-text') + ' <span class="text-foreground">' + esc(s.body) + '</span></li>').join('') + '</ol>');
+  }
+  return h;
+}
+
 function thrTurnHtml(turn) {
   let h = '<div data-ui="thr-msg" class="thr-user ml-8 self-end min-w-0 rounded-lg bg-muted px-3 py-2 text-sm"><div class="thr-body">' + thrMd(turn.prompt) + '</div></div>';
   h += '<div data-ui="thr-msg" class="thr-agent flex min-w-0 flex-col gap-2 text-sm" data-turn="' + turn.id + '"><div data-ui="thr-who" class="text-xs text-muted-foreground">' + esc(turn.harness || 'agent') +
     (turn.model ? ' · ' + esc(turn.model) : '') +
-    (!turn.running && turn.ms ? ' · <span' + (turn.firstMs ? ' title="First words after ' + thrDur(turn.firstMs) + (turn.warm ? ', agent started ahead' : '') + '"' : '') + '>' + thrDur(turn.ms) + '</span>' : '') + '</div>';
+    (!turn.running && turn.ms ? ' · <span' + (turn.firstMs ? ' title="First words after ' + thrDur(turn.firstMs) + '"' : '') + '>' + thrDur(turn.ms) + '</span>' : '') + '</div>';
   h += thrStepsHtml(turn);
   h += '<div class="thr-body thr-reply">' + thrReplyHtml(turn) + '</div>';
+  h += thrShownHtml(turn);
   if (turn.error) h += errorAlertHtml(turn.error, { title: 'The run failed' });
   if (thr.cur?.kind === 'explain' && turn.id === 1 && !turn.running) h += thrExplainFoot();
   if (!turn.running) {

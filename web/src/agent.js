@@ -13,7 +13,7 @@ import { emit } from './bus.js';
 
 /* faah does not author edits. Each box composes an instruction and the range it
    is anchored to, hands both to a coding harness on this machine, and reloads
-   whatever moved once that harness exits. Because faah dispatched the run it
+   whatever moved once the turn ends. Because faah dispatched the run it
    knows when the work ended, so nothing here watches the filesystem.
 
    Several edits can run at once, one box per range: two harnesses rewriting
@@ -475,7 +475,7 @@ async function showPicker(session) {
   if (!ready.length) {
     showToast('error', 'Could not find any coding harness like Claude Code, OpenCode, Codex, Antigravity, Aider, etc. Install one and restart faah.', 6000);
     session.pickEl.innerHTML = '<div data-ui="hint" class="empty text-muted-foreground" style="line-height: 1.5; padding: 4px 2px;">' +
-      'Could not find any coding harness like <b>Claude Code</b>, <b>OpenCode</b>, <b>Codex</b>, <b>Antigravity</b> (<code>agy</code>), <b>Aider</b>, <b>Goose</b>, <b>Gemini CLI</b>, or <b>Cursor Agent</b>.<br><br>' +
+      'Could not find any coding harness like <b>Claude Code</b>, <b>OpenCode</b>, <b>Codex</b>, <b>Antigravity</b> (<code>agy</code>), <b>Aider</b>, <b>Goose</b>, or <b>Cursor Agent</b>.<br><br>' +
       'Please install a coding harness, make sure it is on your <code>PATH</code>, and restart faah after that.</div>';
     return;
   }

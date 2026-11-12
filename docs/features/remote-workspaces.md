@@ -80,7 +80,7 @@ faah -base-path /rev-123/ -host 0.0.0.0 -port 7777 ~/workspace
 | `-no-open` | `false` | Suppress automatic browser launch (ideal for servers) |
 | `-no-lsp` | `false` | Disable Language Server discovery |
 | `-no-git` | `false` | Disable Git status checks and diff viewing |
-| `-agent H` | none | Pin active coding agent harness for session |
+| `-agent H` | none | Pin `claude`, `codex`, `agy`, `opencode`, or `cursor-agent` for the run |
 | `-no-agent` | `false` | Disable coding agent editing features entirely |
 | `-verbose` | `false` | Log every HTTP request, searches, symbols, and agent prompts to terminal |
 | `-quiet` | `false` | Suppress CLI narration on stdout |

@@ -22,6 +22,7 @@ import (
 	"syscall"
 	"time"
 
+	"faah/internal/mcp"
 	"faah/internal/settings"
 	"faah/internal/telemetry"
 	"faah/internal/ui"
@@ -38,7 +39,25 @@ var posthogKey string
 
 const desktopReadyPrefix = "faah-desktop-ready "
 
+func runACPBridge() int {
+	endpoint, auth := os.Getenv("FAAH_ACP_MCP_ENDPOINT"), os.Getenv("FAAH_ACP_MCP_AUTHORIZATION")
+	if endpoint == "" || auth == "" {
+		fmt.Fprintln(os.Stderr, "acp-mcp-bridge requires FAAH_ACP_MCP_ENDPOINT and FAAH_ACP_MCP_AUTHORIZATION")
+		return 2
+	}
+	if err := mcp.Bridge(context.Background(), os.Stdin, os.Stdout, endpoint, auth); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 1
+	}
+	return 0
+}
+
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "acp-mcp-bridge" {
+		os.Exit(runACPBridge())
+		return
+	}
+
 	var (
 		port         = flag.Int("port", 7777, "port to listen on (0 picks a free one)")
 		host         = flag.String("host", "127.0.0.1", "address to bind")
@@ -53,7 +72,7 @@ func main() {
 		quiet        = flag.Bool("quiet", false, "suppress narration")
 		verbose      = flag.Bool("verbose", false, "log startup steps, requests, searches, symbols, and agent prompts to terminal")
 		noTelemetry  = flag.Bool("no-telemetry", false, "disable anonymous usage telemetry")
-		agentCmd     = flag.String("agent", "", "pin the coding harness used for edits (claude, gemini, cursor-agent, agy, opencode, codex, aider, goose, or a command template containing {prompt}); detected and chosen in the UI when omitted")
+		agentCmd     = flag.String("agent", "", "pin the agent used for edits (claude, codex, agy, opencode or cursor-agent); detected and chosen in the UI when omitted")
 		noAgent      = flag.Bool("no-agent", false, "do not offer editing through a coding harness")
 		_            = flag.Bool("y", false, "answer yes to prompts (deprecated; PRs are always opened without prompt)")
 		_            = flag.Bool("yes", false, "answer yes to prompts (alias for -y)")
@@ -223,6 +242,7 @@ func main() {
 			fatal(fmt.Errorf("-agent: %w", err))
 		}
 		pxSrv.SetAgent(agent)
+		pxSrv.SetToolsAddr(addr)
 	}
 	initDur := time.Since(tInit)
 
@@ -325,9 +345,6 @@ func main() {
 	// faah never makes a network call before serving the first request.
 	if !*noUpdate {
 		go update.AutoUpdate(version)
-	}
-	if pxSrv.threads != nil {
-		time.AfterFunc(explainStandbyDelay, pxSrv.threads.warmExplain)
 	}
 
 	// Language servers are children that can hold gigabytes. Shut them down on

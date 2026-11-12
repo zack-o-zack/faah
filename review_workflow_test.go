@@ -167,7 +167,8 @@ func TestReviewWorkflowRunAndOrchestration(t *testing.T) {
 	tmp := t.TempDir()
 	ix := NewIndex(tmp)
 	s := NewServer(ix, nil)
-	a, err := newAgentManager(tmp, "echo {prompt}", nil)
+	fakeCLI(t, "claude")
+	a, err := newAgentManager(tmp, "claude", nil)
 	if err != nil {
 		t.Fatalf("failed to create agent manager: %v", err)
 	}
@@ -305,7 +306,8 @@ func TestReviewWorkflowStopActiveRun(t *testing.T) {
 	tmp := t.TempDir()
 	ix := NewIndex(tmp)
 	s := NewServer(ix, nil)
-	a, err := newAgentManager(tmp, "echo {prompt}", nil)
+	fakeCLI(t, "claude")
+	a, err := newAgentManager(tmp, "claude", nil)
 	if err != nil {
 		t.Fatalf("failed to create agent manager: %v", err)
 	}

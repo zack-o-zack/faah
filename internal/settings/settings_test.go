@@ -212,7 +212,7 @@ func TestSettingsRawJSON(t *testing.T) {
 	}
 
 	// Save valid JSON
-	raw := []byte(`{"editor.fontSize": 15.0, "agent": "claude-code"}`)
+	raw := []byte(`{"editor.fontSize": 15.0, "agent": "claude"}`)
 	if err := SaveRawJSON(raw); err != nil {
 		t.Fatalf("SaveRawJSON failed: %v", err)
 	}
@@ -251,3 +251,25 @@ func isolateSettingsBenchmark(b *testing.B) {
 	b.Setenv("XDG_CONFIG_HOME", dir)
 }
 
+func TestAgentNamesOnly(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	for _, key := range []string{"agent", "agent.harness", "explain.agent"} {
+		for _, value := range []any{"echo {prompt}", "gemini", "unknown", 42} {
+			if err := UpdateMap(map[string]any{key: value}); err == nil {
+				t.Fatalf("UpdateMap accepted %s=%v", key, value)
+			}
+			data, _ := json.Marshal(map[string]any{key: value})
+			if err := SaveRawJSON(data); err == nil {
+				t.Fatalf("SaveRawJSON accepted %s", data)
+			}
+		}
+		for _, name := range []string{"", "claude", "codex", "agy", "opencode", "cursor-agent"} {
+			if err := UpdateMap(map[string]any{key: name}); err != nil {
+				t.Fatalf("%s=%s: %v", key, name, err)
+			}
+		}
+	}
+	if err := Write(Settings{Agent: "echo {prompt}"}); err == nil {
+		t.Fatal("Write accepted a command")
+	}
+}

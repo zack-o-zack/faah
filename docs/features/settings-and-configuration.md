@@ -53,8 +53,7 @@ faah stores all configuration in a single per-user global file (`~/.faah/setting
 | `search.maxResults` | Search | `1000` | `50` – `10,000` | Maximum search results returned |
 | `lsp.enabled` | LSP | `true` | `true`, `false` | Master toggle for Language Servers |
 | `lsp.hover.enabled` | LSP | `true` | `true`, `false` | Hover documentation cards |
-| `agent.harness` | Coding Agent | `""` | `claude`, `gemini`, `agy`, etc. | Preferred CLI coding harness |
-| `agent.timeoutSeconds` | Coding Agent | `120` | `10` – `600` (seconds) | Max runtime for agent edits |
+| `agent.harness` | Coding Agent | `""` | `claude`, `codex`, `agy`, `opencode`, `cursor-agent` | Preferred CLI coding harness |
 | `github.token` | GitHub | `""` | any string | Personal access token for GitHub pull request review; takes precedence over `GITHUB_TOKEN` and `gh auth token`. Masked in the Settings UI. |
 | `gitlab.token` | GitLab | `""` | any string | Personal access token (`api` scope) for GitLab merge request review. Sent only to `gitlab.host`; takes precedence over `GITLAB_TOKEN`. Masked in the Settings UI. |
 | `gitlab.host` | GitLab | `""` | host name | The instance `gitlab.token` belongs to. Falls back to `GITLAB_HOST`, then `gitlab.com`. Set automatically when you connect through the Connect dialog. |

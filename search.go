@@ -508,7 +508,6 @@ func SearchContext(ctx context.Context, ix *Index, o SearchOpts) ([]FileMatches,
 	for i := range files {
 		select {
 		case <-ctx.Done():
-			break
 		case jobs <- i:
 		}
 		if ctx.Err() != nil {

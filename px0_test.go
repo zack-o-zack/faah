@@ -1318,7 +1318,7 @@ func TestMarkdownPreview(t *testing.T) {
 func TestSettingsAPIEndpoints(t *testing.T) {
 	isolateSettings(t)
 	root := t.TempDir()
-	srv := agentServer(t, root, "echo")
+	srv := fakeAgentServer(t, root, nil)
 
 	// 1. GET /api/settings
 	req := httptest.NewRequest(http.MethodGet, "/api/settings", nil)

@@ -6,7 +6,7 @@ It works the same on **GitHub**, **GitLab** (gitlab.com and self-hosted), **Gite
 
 **What you need**
 - `git` installed.
-- For conflict resolution, AI commit messages and batch-applying comments: a coding harness faah supports (Claude Code, Gemini CLI, Cursor Agent, Codex, and others; see [Editing with Coding Agents](agent-editing.md)). Everything else works without one.
+- For conflict resolution, AI commit messages and batch-applying comments: a coding harness faah supports (Claude Code, Codex, Antigravity, OpenCode, or Cursor Agent; see [Editing with Coding Agents](agent-editing.md)). Everything else works without one.
 
 ---
 

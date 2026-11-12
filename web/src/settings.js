@@ -260,7 +260,7 @@ const BUILTIN_SCHEMA = [
   {
     key: "agent.harness",
     title: "Coding Harness",
-    description: "Coding agent harness invoked for code edits (e.g. claude, gemini, cursor-agent, agy, opencode, codex, aider, goose).",
+    description: "Coding agent harness invoked for code edits (e.g. claude, codex, agy, opencode, cursor-agent).",
     category: "Agent / AI",
     type: "string",
     default: ""
@@ -698,6 +698,9 @@ function renderSettingsList() {
       if (numberPresets.length) {
         belowHtml = `<div class="button-group mt-2" role="group" aria-label="${esc(title)} presets">${numberPresets.map(n => segment(n, n, Number(val) === n)).join('')}</div>`;
       }
+    } else if (['agent.harness', 'explain.agent'].includes(key)) {
+      const names = ['', 'claude', 'codex', 'agy', 'opencode', 'cursor-agent'];
+      controlHtml = `<select id="setting-${esc(key)}" data-key="${esc(key)}" class="select w-48" data-control="settings-select">${names.map(name => `<option value="${name}"${String(val || '') === name ? ' selected' : ''}>${name || (key === 'explain.agent' ? 'Use editing agent' : 'No agent')}</option>`).join('')}</select>`;
     } else if (type === 'textarea') {
       const placeholder = key === 'git.commitMessageInstruction'
         ? 'e.g. Follow Conventional Commits and reference the issue key from the branch name'
@@ -706,10 +709,6 @@ function renderSettingsList() {
     } else {
       const isSecret = item.secret || item.Secret;
       controlHtml = `<input type="${isSecret ? 'password' : 'text'}" id="setting-${esc(key)}" data-key="${esc(key)}" value="${esc(String(val || ''))}"${isSecret ? ' autocomplete="off"' : ''} class="input w-64" data-control="settings-input">`;
-      if (key === 'agent.harness') {
-        const stringPresets = ['claude', 'gemini', 'cursor-agent', 'agy', 'aider'];
-        belowHtml = `<div class="button-group mt-2" role="group" aria-label="${esc(title)} suggestions">${stringPresets.map(p => segment(p, p, String(val) === p)).join('')}</div>`;
-      }
     }
 
     const shownDefault = def === '' || def === undefined || def === null ? 'empty' : String(def);

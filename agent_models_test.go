@@ -15,7 +15,7 @@ func TestAgentModelsBrowsesWithoutSelecting(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Setenv("PATH", dir+":"+os.Getenv("PATH"))
-	s := agentServer(t, t.TempDir(), "/bin/echo")
+	s := agentServer(t, t.TempDir(), "codex")
 	beforeName, beforeModel := s.agent.Name(), s.agent.Model()
 	w := httptest.NewRecorder()
 	s.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/api/agent/models?name=claude", nil))
