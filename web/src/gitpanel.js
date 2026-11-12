@@ -254,7 +254,7 @@ async function doPush(force = false) {
     clearGitNotice();
     showToast('success', S.meta?.pr ? `${force ? 'Force-pushed' : 'Pushed'} to PR #${S.meta.pr.number}` : 'Pushed');
     if (btn) {
-      setBtn(btn, 'arrow-up', '');
+      setBtn(btn, 'upload', '');
       flashActionSuccess(btn, null);
       btn.title = 'No unpushed commits to push';
       btn.disabled = true;
@@ -267,7 +267,7 @@ async function doPush(force = false) {
       await reloadOpenTabs();
     }
   } catch (e) {
-    if (btn) setBtn(btn, 'arrow-up');
+    if (btn) setBtn(btn, 'upload');
     showGitError('Push failed', e.message);
     if (btn) btn.disabled = false;
   }
@@ -284,12 +284,12 @@ async function doPull() {
     clearGitNotice();
     showToast('success', j.message || 'Pulled');
     if (btn) {
-      setBtn(btn, 'arrow-down', '');
+      setBtn(btn, 'download', '');
       flashActionSuccess(btn, null);
     }
     await afterHistoryChange();
   } catch (e) {
-    if (btn) setBtn(btn, 'arrow-down');
+    if (btn) setBtn(btn, 'download');
     // A refused fast-forward is a decision, not a dead end: offer to have the
     // harness rebase or merge. Nothing runs unless one of those is clicked.
     const b = e.body || {};
