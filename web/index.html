@@ -487,25 +487,21 @@
     </div>
 
     <!-- PR review bar: shown only when this session is `faah pr ...` (web/src/pr.js) -->
-    <div id="pr-bar" data-ui="pr-bar" class="flex flex-col flex-none gap-2 p-3" hidden>
-      <div data-ui="pr-bar-row" class="flex items-center min-w-0 gap-2">
-        <a id="pr-link" data-ui="pr-link" class="group flex items-center min-w-0 gap-2 rounded-md -mx-1.5 px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" target="_blank" rel="noopener noreferrer" >
+    <div id="pr-bar" data-ui="pr-bar" class="flex flex-none flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2" hidden>
+      <div data-ui="pr-bar-row" class="flex min-w-0 flex-1 basis-[34rem] items-center gap-2">
+        <a id="pr-link" data-ui="pr-link" class="group flex items-center min-w-40 gap-2 rounded-md -mx-1.5 px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" target="_blank" rel="noopener noreferrer" >
           <span id="pr-badge" class="badge shrink-0 tabular-nums" data-variant="secondary" data-control="pr-badge"></span>
           <span id="pr-title" data-ui="pr-title" class="min-w-0 truncate text-sm font-medium underline-offset-4 group-hover:underline group-focus-visible:underline"></span>
           <span class="icon-[lucide--external-link] size-3.5 shrink-0 text-muted-foreground group-hover:text-foreground group-focus-visible:text-foreground" aria-hidden="true"></span>
         </a>
         <span id="pr-state-badge" class="badge gap-1 border-current/30 bg-current/10" data-variant="outline" hidden><span data-ui="icon" class="size-3 shrink-0" aria-hidden="true"></span><span data-ui="label" class="text-foreground"></span></span>
-        <button id="pr-merge-state" type="button" hidden class="btn" data-control="pr-merge-state" data-variant="outline" data-size="xs"></button>
-        <button id="pr-rebase-ai" type="button" hidden title="Have the harness rebase onto the base branch and resolve conflicts" class="btn" data-control="bar-action pr-btn-rebase-ai" data-variant="ghost" data-size="xs">
-          <span class="icon-[lucide--sparkles] size-3.5 shrink-0" aria-hidden="true"></span>
-          <span class="bar-action-label text-xs font-medium">Rebase</span>
-        </button>
+        <button id="pr-merge-state" type="button" hidden class="btn shrink-0 gap-1.5 data-[tone=err]:border-destructive/40 data-[tone=err]:bg-destructive/10 data-[tone=warn]:border-warn/40 data-[tone=warn]:bg-warn/10 data-[tone=ok]:border-gi/40" data-variant="outline" data-size="xs"></button>
         <span class="flex-1 min-w-0"></span>
         <span id="pr-diff-warning" data-ui="pr-diff-warning" class="flex-none p-3 text-destructive" hidden><span class="icon-[lucide--triangle-alert] size-3.5 shrink-0" aria-hidden="true"></span> diff base unresolved</span>
         <button id="pr-readonly-note" type="button" hidden  class="btn" data-control="pr-readonly-note" data-variant="outline" data-size="xs">No token &mdash; click to connect</button>
-        <span id="pr-refs" data-ui="pr-refs" class="min-w-0 truncate font-mono text-muted-foreground"></span>
+        <span id="pr-refs" data-ui="pr-refs" class="min-w-0 shrink-[4] truncate font-mono text-muted-foreground"></span>
       </div>
-      <div id="pr-review-row" data-ui="pr-bar-row pr-review-row" class="flex min-w-0 items-center justify-end gap-2">
+      <div id="pr-review-row" data-ui="pr-bar-row pr-review-row" class="ml-auto flex shrink-0 items-center gap-2">
         <button id="pr-batch-apply" hidden title="Have the harness apply your draft comments to the code" class="btn" data-control="bar-action pr-btn-batch-apply" data-variant="ghost" data-size="sm">
           <span class="icon-[lucide--sparkles] size-3.5 shrink-0" aria-hidden="true"></span>
           <span class="bar-action-label">Apply drafts</span>

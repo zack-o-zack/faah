@@ -143,11 +143,11 @@ The PR review bar at the bottom of the screen (right above the comments panel) h
 - The verdict follows the branch. While a rebase is running or stopped halfway in the checkout, every verdict button is disabled. Once the checkout is rebased but not yet force-pushed, **Approve** stays disabled: the forge still holds the old commits, and approving now would approve those. When the forge reports conflicts, **Approve** still works but shows a dashed border and a tooltip saying the PR can't merge until the conflicts are resolved.
 
 ### 6. Merge Status, Resolving Conflicts, and Merging
-The first row of the PR bar shows a **status pill** with the forge's answer to "can this merge?": *Ready to merge*, *Checks failing*, *Conflicts with main*, *Behind main*, *Merge blocked*, *Draft*, or *Checking mergeability...* (faah asks again a few times while the forge computes it). The checkout's own state takes priority over the forge's: *Rebasing...*, *Rebase unfinished*, or *Rebased, not pushed*. Clicking the pill or the **Rebase with AI** button next to it takes the next step (resolve or force-push). When there is no next step, clicking the pill refreshes the status.
+The PR bar shows a **status chip** with the forge's answer to "can this merge?": *Ready to merge*, *Checks failing*, *Conflicts with main*, *Behind main*, *Merge blocked*, or *Checking…* (faah asks again a few times while the forge computes it). Draft, merged and closed show in the state badge beside the title instead. The checkout's own state takes priority over the forge's: *Rebasing...*, *Rebase unfinished*, or *Rebased, not pushed*. When there is a next step, the chip carries it after a divider (*✨ Resolve* has your coding harness rebase and resolve, *Force-push* updates the PR), and clicking the chip takes it. When there is none, clicking the chip refreshes the status.
 
-**Resolving conflicts / updating the branch.** When the PR conflicts with its base, or is behind it, click **Rebase with AI** (or click the status pill). This opens the git panel's [agent rebase flow](git-integration.md#catching-up-with-a-moving-remote), aimed at the PR's base:
+**Resolving conflicts / updating the branch.** When the PR conflicts with its base, or is behind it, click **✨ Resolve** on the status chip. This opens the git panel's [agent rebase flow](git-integration.md#catching-up-with-a-moving-remote), aimed at the PR's base:
 1. faah fetches the base branch itself, with your forge token, so the harness never needs credentials and never fetches.
-2. The git panel's notice card asks for permission: **Rebase with AI** (replays the PR's commits on top of the base) or **Merge with AI** (brings the base in with a merge commit). Pick the harness and model right there. Nothing runs until you click.
+2. The git panel's notice card asks for permission: **✨ Rebase** (replays the PR's commits on top of the base) or **✨ Merge** (brings the base in with a merge commit). Pick the harness and model right there. Nothing runs until you click.
 3. The harness resolves conflicts and finishes the operation. It never pushes. **Cancel** stops it, and a rebase stopped halfway can be finished by the harness or aborted.
 4. After a merge, **Push to PR** is an ordinary push. After a rebase, the PR's commits have been rewritten, so the only way to update the PR is **Force-push**, and faah asks for confirmation first. The push uses `--force-with-lease` against the head the checkout last saw. If anyone else pushed to the branch in the meantime, the push is refused and their commits survive.
 
@@ -161,7 +161,7 @@ The first row of the PR bar shows a **status pill** with the forge's answer to "
 
 ### 7. Editing, Committing, and Pushing Back
 A PR checkout is a real git worktree, and the git panel works inside it exactly as it does in a plain workspace:
-- **Edit and commit**: Make a change (by hand, or by dispatching a coding agent on the checkout), stage it, and either write a commit message yourself or click **Commit with AI**.
+- **Edit and commit**: Make a change (by hand, or by dispatching a coding agent on the checkout), stage it, and either write a commit message yourself or click **✨ Commit** (empty message).
 - **Push**: Sends the checkout's `HEAD` to the pull request's *actual* head branch on its actual repository — a fork included — not wherever the checkout happens to live locally.
 - **Pull**: Re-fetches the PR's current head. If new commits landed on it since you opened the review and your checkout can fast-forward onto them cleanly, faah updates the worktree and refreshes the diff, the PR bar, and the comments panel automatically. If your checkout has diverged — you made local commits that aren't on the PR head yet, or the head was force-pushed — faah refuses with a clear message rather than merging; commit and push first, or resolve it in a terminal. (Bringing the PR up to date with its *base* branch is the separate **Resolve conflicts** flow above.)
 
@@ -239,4 +239,4 @@ Implementation details are in [the internals guide](../internals/github-pr-revie
 | **Force-push** | Sidebar git panel | After a rebase: replace the PR branch's commits, with a lease (asks first) |
 | **Pull** | Sidebar git panel | Fast-forward the checkout onto the PR's current head; refuses on divergence |
 | **Push** | Sidebar git panel | Push the checkout's `HEAD` to the PR's actual head branch |
-| **Commit with AI** | Sidebar git panel | Write and commit a message for the staged diff with your coding harness |
+| **✨ Commit** (empty message) | Sidebar git panel | Write and commit a message for the staged diff with your coding harness |

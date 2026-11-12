@@ -54,9 +54,6 @@ export function initPRMerge(c) {
     ctx.onChange();
   });
   $('#pr-merge-state')?.addEventListener('click', onPillClick);
-  $('#pr-rebase-ai')?.addEventListener('click', () => {
-    emit('pr:resolve');
-  });
   $('#pr-merge')?.addEventListener('click', onMergeClick);
   $('#pr-merge-caret')?.addEventListener('click', e => { e.stopPropagation(); toggleMenu(); });
   document.addEventListener('click', e => { if (!e.target.closest?.('#pr-merge-group')) toggleMenu(false); });
@@ -137,14 +134,24 @@ function pill() {
     case 'conflicts': return { tone: 'err', text: 'Conflicts with ' + baseBranch(), title: 'Resolve them with your coding harness', act: 'resolve' };
     case 'behind': return { tone: 'warn', text: 'Behind ' + baseBranch(), title: 'Bring the branch up to date with your coding harness', act: 'resolve' };
     case 'blocked': return { tone: 'muted', text: 'Merge blocked', title: reason || 'Branch protection refuses the merge' };
-    case 'draft': return { tone: 'muted', text: 'Draft', title: reason || 'This PR is still a draft' };
-    case 'unknown': return { tone: 'busy', text: 'Checking mergeability...', title: 'The forge is still computing whether this PR can merge' };
-    case 'closed': return { tone: 'muted', text: 'Closed', title: 'This PR is closed' };
+    case 'unknown': return { tone: 'busy', text: 'Checking…', title: 'The forge is still computing whether this PR can merge' };
   }
-  return null; // merged: the bar's own Merged badge says it
+  return null; // draft, merged, closed: the bar's state badge says it
 }
 
 const cap = s => s ? s[0].toUpperCase() + s.slice(1) : s;
+
+const PILL_ICONS = {
+  err: ['icon-[lucide--triangle-alert]', 'text-destructive'],
+  warn: ['icon-[lucide--circle-alert]', 'text-warn'],
+  busy: ['icon-[lucide--loader-circle] animate-spin', 'text-muted-foreground'],
+  ok: ['icon-[lucide--circle-check]', 'text-gi'],
+  muted: ['icon-[lucide--circle-dashed]', 'text-muted-foreground'],
+};
+const PILL_FIXES = {
+  resolve: '<span class="icon-[lucide--sparkles] size-3.5 shrink-0" aria-hidden="true"></span><span class="font-medium">Resolve</span>',
+  push: '<span class="icon-[lucide--arrow-up] size-3.5 shrink-0" aria-hidden="true"></span><span class="font-medium">Force-push</span>',
+};
 
 function onPillClick() {
   const p = pill();
@@ -166,16 +173,15 @@ function renderPRMerge() {
   if (pillEl) {
     pillEl.hidden = !p;
     if (p) {
+      // One chip says what is wrong and, when there is a fix, offers it.
       pillEl.dataset.tone = p.tone;
-      pillEl.textContent = p.text;
+      const [icon, tint] = PILL_ICONS[p.tone] || PILL_ICONS.muted;
+      const fix = p.act && !sync.running ? PILL_FIXES[p.act] : '';
+      pillEl.innerHTML = `<span class="${icon} size-3.5 shrink-0 ${tint}" aria-hidden="true"></span><span>${esc(p.text)}</span>` +
+        (fix ? `<span class="h-3.5 w-px bg-border" aria-hidden="true"></span>${fix}` : '');
+      pillEl.disabled = !!(p.act && sync.running);
       pillEl.title = p.title + (p.act ? '' : ' (click to refresh)');
     }
-  }
-  const rebaseBtn = $('#pr-rebase-ai');
-  if (rebaseBtn) {
-    const showRebase = p?.act === 'resolve' && !sync.running;
-    rebaseBtn.hidden = !showRebase;
-    rebaseBtn.disabled = !!sync.running;
   }
   const group = $('#pr-merge-group');
   if (!group) return;
