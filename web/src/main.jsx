@@ -11,4 +11,13 @@ function App() {
   onMount(initLegacy);
   return <Toaster />;
 }
-render(() => <AppProvider><ThemeProvider><App /></ThemeProvider></AppProvider>, document.getElementById('solid-root'));
+render(
+  () => (
+    <AppProvider>
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
+    </AppProvider>
+  ),
+  document.getElementById('solid-root'),
+);

@@ -1,8 +1,9 @@
-import { createContext, useContext } from 'solid-js';
+import { createContext, untrack, useContext } from 'solid-js';
 import { createThemeStore } from './theme.js';
 const ThemeContext = createContext();
 export function ThemeProvider(props) {
-  const store = props.store || createThemeStore();
+  // Store injection is fixed for the lifetime of this provider.
+  const store = untrack(() => props.store) || createThemeStore();
   return <ThemeContext.Provider value={store}>{props.children}</ThemeContext.Provider>;
 }
 export const useTheme = () => {

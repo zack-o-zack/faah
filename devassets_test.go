@@ -54,3 +54,45 @@ func TestDevRootServesBuiltStylesheetFromDisk(t *testing.T) {
 		}
 	}
 }
+
+func TestStaticPrefersAnyDistAssetAndFallsThrough(t *testing.T) {
+	root := t.TempDir()
+	for name, body := range map[string]string{
+		"dist/chunks/editor.js":   "built chunk",
+		"chunks/editor.js":        "source chunk",
+		"fonts/custom.woff2":      "font asset",
+		"dist/styles/new.css":     "built stylesheet",
+		"dist/directory/child.js": "nested asset",
+		"directory/index.html":    "static directory",
+	} {
+		file := filepath.Join(root, filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(file), 0755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(file, []byte(body), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	handler := (&Server{}).handleStatic(os.DirFS(root), "/review/static/")
+	for _, tc := range []struct {
+		path, want string
+		status     int
+	}{
+		{"chunks/editor.js", "built chunk", http.StatusOK},
+		{"styles/new.css", "built stylesheet", http.StatusOK},
+		{"fonts/custom.woff2", "font asset", http.StatusOK},
+		{"directory/", "static directory", http.StatusOK},
+		{"missing.js", "", http.StatusNotFound},
+	} {
+		t.Run(tc.path, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/review/static/"+tc.path, nil))
+			if rec.Code != tc.status {
+				t.Fatalf("status = %d, want %d", rec.Code, tc.status)
+			}
+			if tc.want != "" && rec.Body.String() != tc.want {
+				t.Fatalf("body = %q, want %q", rec.Body.String(), tc.want)
+			}
+		})
+	}
+}

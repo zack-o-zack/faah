@@ -40,9 +40,8 @@ import (
 	"faah/internal/ui"
 )
 
-//go:embed web/index.html web/dist/app.css web/themes web/vendor web/fonts
-//go:embed web/workbench.html web/dist/workbench.js web/dist/holding.js
-//go:embed web/dist/app.js web/logo-dark.svg web/logo-light.svg web/favicon.svg
+//go:embed web/index.html web/workbench.html web/dist web/themes web/vendor web/fonts
+//go:embed web/logo-dark.svg web/logo-light.svg web/favicon.svg
 var embedded embed.FS
 
 // devRoot is a source checkout whose web/ replaces the embedded assets, so
@@ -904,7 +903,7 @@ func (s *Server) handleStatic(sub fs.FS, prefix string) http.Handler {
 			return
 		}
 
-		if rel == "app.js" || rel == "workbench.js" || rel == "holding.js" || rel == "app.css" {
+		if info, err := fs.Stat(sub, "dist/"+rel); err == nil && !info.IsDir() {
 			r2 := r.Clone(r.Context())
 			r2.URL.Path = prefix + "dist/" + rel
 			fileServer.ServeHTTP(w, r2)

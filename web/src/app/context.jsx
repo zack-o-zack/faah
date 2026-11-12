@@ -1,8 +1,9 @@
-import { createContext, useContext } from 'solid-js';
+import { createContext, untrack, useContext } from 'solid-js';
 import { createAppStore } from './store.js';
 const AppContext = createContext();
 export function AppProvider(props) {
-  const store = props.store || createAppStore();
+  // Store injection is fixed for the lifetime of this provider.
+  const store = untrack(() => props.store) || createAppStore();
   return <AppContext.Provider value={store}>{props.children}</AppContext.Provider>;
 }
 export function useApp() {

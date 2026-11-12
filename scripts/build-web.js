@@ -8,10 +8,22 @@ process.chdir(root);
 fs.mkdirSync('web/dist', { recursive: true });
 for (const entry of ['app', 'workbench', 'holding']) {
   execFileSync(process.execPath, ['node_modules/vite/bin/vite.js', 'build'], {
-    stdio: 'inherit', env: { ...process.env, WEB_ENTRY: entry },
+    stdio: 'inherit',
+    env: { ...process.env, WEB_ENTRY: entry },
   });
 }
-execFileSync(process.execPath, ['node_modules/@tailwindcss/cli/dist/index.mjs', '-i', 'web/tailwind.css', '-o', 'web/dist/app.css', '--minify'], { stdio: 'inherit' });
+execFileSync(
+  process.execPath,
+  [
+    'node_modules/@tailwindcss/cli/dist/index.mjs',
+    '-i',
+    'web/tailwind.css',
+    '-o',
+    'web/dist/app.css',
+    '--minify',
+  ],
+  { stdio: 'inherit' },
+);
 for (const name of fs.readdirSync('web/vendor')) {
   if (!name.endsWith('.min.js')) continue;
   const path = `web/vendor/${name}`;

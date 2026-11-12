@@ -4,8 +4,11 @@ The frontend uses Solid 1.9, Vite and Vitest. Go embeds `web/dist` and serves
 `static/app.js`, `static/workbench.js`, `static/holding.js`, and `static/app.css`.
 Each script is a self-contained, minified IIFE targeting ES2022: no vendor chunks
 or runtime package dependencies. Install with `npm ci`; run `npm run build`
-before compiling Go. `npm test` runs Vitest in jsdom; `npm run check` runs tests
-and builds all three entries and Tailwind CSS. Use Node 22.22.2+, 24.15.0+, or
+before compiling Go. `npm test` runs Vitest in jsdom. `npm run lint` checks
+JavaScript and Solid reactivity rules. `npm run format`
+formats the migrated frontend and its build/config files with Prettier.
+`npm run check` checks formatting, runs ESLint and Vitest, then builds all three
+entries and Tailwind CSS. Use Node 22.22.2+, 24.15.0+, or
 26+ as required by jsdom. npm owns package-lock.json; refresh the tracked pnpm
 lock with `pnpm install --lockfile-only --ignore-scripts` too.
 
@@ -62,6 +65,44 @@ Delete migrated implementations outright: no fallbacks, compatibility shims,
 alternate bundlers or speculative backups. Preserve all features and shortcuts.
 Match existing names and use short comments explaining why. Comments must not
 name tools or products used as inspiration.
+
+## Readability and automated checks
+
+Use one statement per line. Do not chain several statements on one line or nest
+ternaries more than one level; use a small named function or `<Switch>/<Match>`.
+Keep components small and give each one responsibility. When a component grows
+past about 30 lines, give it its own file and extract distinct views or handlers
+as named components/functions. A page component should show its structure, not
+contain a complete metrics menu or form inline. Store factories use a named,
+JSDoc-typed `initialState()` function and named actions, with one action per line.
+Short comments explain non-obvious constraints, not routine operations.
+
+ESLint uses `@eslint/js` recommended and the enabled `eslint-plugin-solid`
+recommended rules as errors, plus `no-nested-ternary` and
+`max-statements-per-line`. Browser globals apply to frontend files, Node globals
+to tooling and Vitest globals to tests. eslint-plugin-solid errors are never
+disabled inline without a one-line reason. Prefer fixing reactivity in tracked
+scopes; `untrack` is reserved for deliberate mount-time injection, such as the
+store instance passed to a provider.
+
+Prettier uses a 100-character print width, single quotes, two-space indentation
+and semicolons. `eslint.config.js` and `.prettierignore` each contain one explicit
+legacy-file list. Legacy modules leave these lists as they are migrated. New
+files under the feature and library directories are checked automatically;
+legacy modules are neither linted nor reformatted. The shared check command
+also covers `main.jsx`, `test-setup.js`, Vite/ESLint config and web build/check
+scripts.
+
+Shared UI components each live in their own file: `Select.jsx`,
+`DropdownMenu.jsx`, `ContextMenu.jsx`, `Popover.jsx`, `Dialog.jsx`, `Tooltip.jsx`
+and `SplitHandle.jsx`. `menu-events.js` owns the shared roving-focus,
+outside-click and Escape listeners. `ToastItem.jsx` holds the notification view;
+`toast.jsx` holds the notification service and toaster.
+
+Workbench is composed from `WorkbenchHeader`, `OpenWorkspaceForm`,
+`WorkbenchTabs`, `Recent`, `RecentRow`, `Browse`, `BrowseToolbar`, `DirectoryList`,
+`NewFolderForm`, `Clone`, `WorkbenchFooter`, `MetricsMenu` and `ThemeMenu`, with
+one component per file. Path completion uses `PathInput` and `PathSuggestions`.
 
 ## Temporary main-app bridge
 

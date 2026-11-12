@@ -16,5 +16,11 @@ test('matches exact modifiers', () => {
 });
 
 test('hidden-folder shortcut accepts the shifted period key', () => {
-  expect(matchesShortcut({ key: '>', code: 'Period', ctrlKey: true, metaKey: false, shiftKey: true, altKey: false }, 'Mod+Shift+.', false)).toBe(true);
+  expect(
+    matchesShortcut(
+      { key: '>', code: 'Period', ctrlKey: true, metaKey: false, shiftKey: true, altKey: false },
+      'Mod+Shift+.',
+      false,
+    ),
+  ).toBe(true);
 });

@@ -1,13 +1,23 @@
-import { onCleanup } from 'solid-js';
+import { batch, onCleanup } from 'solid-js';
 
 // EventSource retries interrupted connections; closing the owner stops retries too.
 export function createEventStream(url, handlers, options = {}) {
   const stream = new EventSource(new URL(url.replace(/^\//, ''), document.baseURI));
   for (const [name, handler] of Object.entries(handlers)) {
-    stream.addEventListener(name, event => {
+    stream.addEventListener(name, (event) => {
       let data;
-      try { data = JSON.parse(event.data); } catch { return; }
-      Promise.resolve().then(() => handler(data)).catch(options.onError || console.error);
+      try {
+        data = JSON.parse(event.data);
+      } catch {
+        return;
+      }
+      const report = options.onError || console.error;
+      try {
+        const result = batch(() => handler(data));
+        result?.catch?.(report);
+      } catch (error) {
+        report(error);
+      }
     });
   }
   onCleanup(() => stream.close());
@@ -18,9 +28,15 @@ export function createPolling(action, delay, visible = true) {
   let timer;
   async function tick() {
     if (disposed) return;
-    try { if (!visible || !document.hidden) await action(); }
-    finally { if (!disposed) timer = setTimeout(tick, delay); }
+    try {
+      if (!visible || !document.hidden) await action();
+    } finally {
+      if (!disposed) timer = setTimeout(tick, delay);
+    }
   }
   void tick();
-  onCleanup(() => { disposed = true; clearTimeout(timer); });
+  onCleanup(() => {
+    disposed = true;
+    clearTimeout(timer);
+  });
 }

@@ -1,8 +1,13 @@
-const icons = { success: 'icon-[lucide--circle-check]', error: 'icon-[lucide--circle-alert]', info: 'icon-[lucide--info]' };
+const icons = {
+  success: 'icon-[lucide--circle-check]',
+  error: 'icon-[lucide--circle-alert]',
+  info: 'icon-[lucide--info]',
+};
 export function toastConfig(kind, text, duration) {
-  const config = icons[kind]
-    ? { category: kind, icon: icons[kind], title: text }
-    : kind ? { category: '', title: kind, description: text } : { category: '', title: text };
+  let config;
+  if (icons[kind]) config = { category: kind, icon: icons[kind], title: text };
+  else if (kind) config = { category: '', title: kind, description: text };
+  else config = { category: '', title: text };
   if (duration !== undefined) config.duration = duration;
   return config;
 }

@@ -2,53 +2,138 @@ import { createStore, reconcile } from 'solid-js/store';
 import { api, apiPostJson } from '../lib/api.js';
 import { createMemo } from 'solid-js';
 import { recentGroups } from './logic.js';
-export function createWorkbenchStore(request = api, post = apiPostJson, navigate = href => { location.href = new URL(href, document.baseURI).href; }) {
-  const [state, set] = createStore({ items: [], cwd: '', home: '', sep: '/', version: '', tab: 'recent', error: '', showAll: false, hidden: false, directory: { path: '', parent: '', entries: [] }, selected: -1, clone: null, busy: false });
+/**
+ * @typedef {{name: string, path: string, git?: boolean}} DirectoryEntry
+ * @typedef {{path: string, parent: string, entries: DirectoryEntry[]}} Directory
+ * @typedef {{id: string, href: string, state: string, pinned?: boolean}} RecentItem
+ * @typedef {{target: string, repo: string, managed: string, previousTab: string}} CloneRequest
+ * @typedef {Object} WorkbenchState
+ * @property {RecentItem[]} items
+ * @property {string} cwd
+ * @property {string} home
+ * @property {string} sep
+ * @property {string} version
+ * @property {string} tab
+ * @property {string} error
+ * @property {boolean} showAll
+ * @property {boolean} hidden
+ * @property {Directory} directory
+ * @property {number} selected
+ * @property {CloneRequest|null} clone
+ * @property {boolean} busy
+ */
+/** @returns {WorkbenchState} */
+function initialState() {
+  return {
+    items: [],
+    cwd: '',
+    home: '',
+    sep: '/',
+    version: '',
+    tab: 'recent',
+    error: '',
+    showAll: false,
+    hidden: false,
+    directory: { path: '', parent: '', entries: [] },
+    selected: -1,
+    clone: null,
+    busy: false,
+  };
+}
+
+export function createWorkbenchStore(
+  request = api,
+  post = apiPostJson,
+  navigate = (href) => {
+    location.href = new URL(href, document.baseURI).href;
+  },
+) {
+  const [state, set] = createStore(initialState());
+  // Ignore stale responses when a newer browse request has already started.
   let browseSequence = 0;
   const groups = createMemo(() => recentGroups(state.items, state.showAll));
   const actions = {
-    selectTab: tab => set('tab', tab), selectDirectory: index => set('selected', index), showAll: () => set('showAll', true),
+    selectTab: (tab) => set('tab', tab),
+    selectDirectory: (index) => set('selected', index),
+    showAll: () => set('showAll', true),
     clearError: () => set('error', ''),
     async refresh() {
       try {
         const result = await request('api/wb/state');
-        for (const name of ['items', 'cwd', 'home', 'sep', 'version']) if (result[name] !== undefined) set(name, reconcile(result[name]));
+        for (const name of ['items', 'cwd', 'home', 'sep', 'version'])
+          if (result[name] !== undefined) set(name, reconcile(result[name]));
         if (!state.directory.path) await actions.browse(result.cwd);
-      } catch (err) { set('error', err.message); }
+      } catch (err) {
+        set('error', err.message);
+      }
     },
     async browse(path, select = '') {
       const seq = ++browseSequence;
       set('busy', true);
       try {
-        const result = await request('api/wb/browse', { path, hidden: state.hidden ? '1' : undefined });
+        const result = await request('api/wb/browse', {
+          path,
+          hidden: state.hidden ? '1' : undefined,
+        });
         if (seq !== browseSequence) return;
         set('directory', reconcile(result));
-        set('selected', select ? result.entries.findIndex(e => e.path === select) : -1);
-      } catch (err) { if (seq === browseSequence) set('error', err.message); }
-      finally { if (seq === browseSequence) set('busy', false); }
+        set('selected', select ? result.entries.findIndex((e) => e.path === select) : -1);
+      } catch (err) {
+        if (seq === browseSequence) set('error', err.message);
+      } finally {
+        if (seq === browseSequence) set('busy', false);
+      }
     },
     async open(target, clone) {
       set('error', '');
       try {
         const result = await post('api/wb/open', clone ? { target, clone } : { target });
-        if (result.needClone) { set('clone', { target, repo: result.repo, managed: result.managed, previousTab: state.tab }); set('tab', 'browse'); }
-        else navigate(result.href);
-      } catch (err) { set('error', err.message); }
+        if (result.needClone) {
+          set('clone', {
+            target,
+            repo: result.repo,
+            managed: result.managed,
+            previousTab: state.tab,
+          });
+          set('tab', 'browse');
+        } else navigate(result.href);
+      } catch (err) {
+        set('error', err.message);
+      }
     },
-    useFolder: path => state.clone ? actions.open(state.clone.target, path) : actions.open(path),
-    cancelClone() { const tab = state.clone?.previousTab; set('clone', null); if (tab) set('tab', tab); },
+    useFolder: (path) =>
+      state.clone ? actions.open(state.clone.target, path) : actions.open(path),
+    cancelClone() {
+      const tab = state.clone?.previousTab;
+      set('clone', null);
+      if (tab) set('tab', tab);
+    },
     async itemAction(action, item) {
-      try { await post(`api/wb/${action}`, action === 'pin' ? { id: item.id, pinned: !item.pinned } : { id: item.id }); await actions.refresh(); }
-      catch (err) { set('error', err.message); }
+      try {
+        await post(
+          `api/wb/${action}`,
+          action === 'pin' ? { id: item.id, pinned: !item.pinned } : { id: item.id },
+        );
+        await actions.refresh();
+      } catch (err) {
+        set('error', err.message);
+      }
     },
-    toggleHidden() { set('hidden', !state.hidden); return actions.browse(state.directory.path, state.directory.entries[state.selected]?.path); },
+    toggleHidden() {
+      set('hidden', !state.hidden);
+      return actions.browse(state.directory.path, state.directory.entries[state.selected]?.path);
+    },
     async mkdir(path) {
       try {
         const result = await post('api/wb/mkdir', { path, base: state.directory.path });
         const at = result.path.lastIndexOf(state.sep);
         await actions.browse(at > 0 ? result.path.slice(0, at) : state.sep, result.path);
-        set('error', ''); return true;
-      } catch (err) { set('error', err.message); return false; }
+        set('error', '');
+        return true;
+      } catch (err) {
+        set('error', err.message);
+        return false;
+      }
     },
   };
   return { state, groups, actions };
