@@ -53,7 +53,6 @@ export function initPRMerge(c) {
     renderPRMerge();
     ctx.onChange();
   });
-  $('#pr-merge-state')?.addEventListener('click', () => refreshMergeStatus());
   $('#pr-merge-fix')?.addEventListener('click', onFixClick);
   $('#pr-merge')?.addEventListener('click', onMergeClick);
   $('#pr-merge-caret')?.addEventListener('click', e => { e.stopPropagation(); toggleMenu(); });
@@ -176,7 +175,7 @@ function renderPRMerge() {
       pillEl.dataset.tone = p.tone;
       const icon = PILL_ICONS[p.tone] || PILL_ICONS.muted;
       pillEl.innerHTML = `<span class="${icon} size-3.5 shrink-0" aria-hidden="true"></span><span>${esc(p.text)}</span>`;
-      pillEl.title = 'Click to check again';
+      pillEl.title = p.title;
     }
   }
   // The fix is a button of its own beside Review, so it reads as something to press.
