@@ -495,6 +495,7 @@
         <a id="pr-link" data-ui="pr-link" class="flex items-center min-w-0 gap-2" target="_blank" rel="noopener noreferrer" >
           <span id="pr-badge" class="badge shrink-0 tabular-nums" data-variant="secondary" data-control="pr-badge"></span>
           <span id="pr-title" data-ui="pr-title" class="min-w-0 truncate text-sm font-medium"></span>
+          <span class="icon-[lucide--external-link] size-3.5 shrink-0 text-muted-foreground" aria-hidden="true"></span>
         </a>
         <span id="pr-merged-badge" class="badge" data-variant="secondary" data-control="pr-merged-badge" hidden>Merged</span>
         <span id="pr-refs" data-ui="pr-refs" class="flex-none font-mono text-muted-foreground"></span>
@@ -508,13 +509,13 @@
         <button id="pr-readonly-note" type="button" hidden  class="btn" data-control="pr-readonly-note" data-variant="outline" data-size="xs">No token &mdash; click to connect</button>
         <span id="pr-draft-count" class="badge empty:hidden" data-variant="secondary" data-control="pr-draft-count"></span>
       </div>
-      <div data-ui="pr-bar-row pr-review-row" class="flex items-start min-w-0 gap-2">
+      <div id="pr-review-row" data-ui="pr-bar-row pr-review-row" class="flex items-start min-w-0 gap-2">
         <textarea id="pr-review-body" aria-label="Review summary" rows="1" spellcheck="false" autocomplete="off" placeholder="Review summary (optional)" class="textarea min-h-8 max-h-40 flex-1 resize-none py-1.5 [field-sizing:content]" data-control="pr-review-body"></textarea>
         <button id="pr-batch-apply" hidden title="Have the harness apply your draft comments to the code" class="btn" data-control="bar-action pr-btn-batch-apply" data-variant="ghost" data-size="sm">
           <span class="icon-[lucide--sparkles] size-3.5 shrink-0" aria-hidden="true"></span>
           <span class="bar-action-label">Apply drafts</span>
         </button>
-        <button id="pr-submit-comment" title="Submit review with drafts, without approval or change requests" class="btn" data-control="bar-action pr-btn-neutral" data-variant="outline" data-size="sm"><span class="icon-[lucide--message-square] size-3.5 shrink-0" aria-hidden="true"></span>Comment</button>
+        <button id="pr-submit-comment" title="Submit review with drafts, without approval or change requests" class="btn" data-control="bar-action pr-btn-neutral" data-variant="outline" data-size="sm"><span class="icon-[lucide--send] size-3.5 shrink-0" aria-hidden="true"></span>Submit review</button>
         <button id="pr-submit-request-changes" hidden title="Request changes on this PR" class="btn" data-control="bar-action pr-btn-request-changes" data-variant="outline" data-size="sm"><span class="icon-[lucide--circle-x] size-3.5 shrink-0 text-destructive" aria-hidden="true"></span>Request changes</button>
         <button id="pr-submit-approve" hidden title="Approve this PR" class="btn" data-control="bar-action pr-btn-approve" data-variant="primary" data-size="sm"><span class="icon-[lucide--check] size-3.5 shrink-0" aria-hidden="true"></span>Approve</button>
         <!-- Merge: split button -- the last-used method, and a caret to pick another (web/src/prmerge.js) -->

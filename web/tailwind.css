@@ -443,6 +443,12 @@
   .thr-body blockquote.thr-alert-warning { border-left-color: var(--mark-active); }
   .thr-body blockquote.thr-alert-important { border-left-color: var(--nc); }
   .thr-body blockquote.thr-alert-caution { border-left-color: var(--destructive); }
+  /* Text links that leave the app say so. */
+  a[target="_blank"]:not(.btn, #pr-link, [data-ui~=cc-who], :has(img))::after {
+    content: ""; display: inline-block; width: .8em; height: .8em; margin-left: .2em; vertical-align: -.05em;
+    background: currentColor; opacity: .7;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E") center / contain no-repeat;
+  }
   /* PR comments come as forge HTML: blocks need their own rhythm. */
   .pr-md > * + *, .pr-md :is(blockquote, details, li) > * + * { margin-top: 8px; }
   .pr-md details { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px 10px; }

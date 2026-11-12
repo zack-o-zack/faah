@@ -158,6 +158,18 @@ function renderBar() {
     appBtn.title = gate.all || gate.approve || gate.approveNote || 'Approve this PR';
     appBtn.classList.toggle('pr-btn-caution', !!gate.approveNote);
   }
+  // A merged or closed PR takes no verdict; drafts can still go out as a
+  // plain review, so the row stays only while there are some.
+  const ended = meta.merged || meta.state === 'closed';
+  if (ended) {
+    if (reqBtn) reqBtn.hidden = true;
+    if (appBtn) appBtn.hidden = true;
+  }
+  const reviewRow = $('#pr-review-row');
+  if (reviewRow) {
+    const mergeShown = !$('#pr-merge-group')?.hidden;
+    reviewRow.hidden = ended && !comments.length && !mergeShown;
+  }
   const cmtBtn = $('#pr-submit-comment');
   if (cmtBtn) {
     cmtBtn.disabled = !!gate.all;
