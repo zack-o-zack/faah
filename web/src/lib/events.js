@@ -3,8 +3,11 @@ import { batch, onCleanup } from 'solid-js';
 // EventSource retries interrupted connections; closing the owner stops retries too.
 export function createEventStream(url, handlers, options = {}) {
   const stream = new EventSource(new URL(url.replace(/^\//, ''), document.baseURI));
+  if (options.onOpen) stream.addEventListener('open', options.onOpen);
+  if (options.onDisconnect) stream.addEventListener('error', options.onDisconnect);
   for (const [name, handler] of Object.entries(handlers)) {
     stream.addEventListener(name, (event) => {
+      options.onTraffic?.();
       let data;
       try {
         data = JSON.parse(event.data);

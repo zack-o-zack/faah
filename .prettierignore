@@ -17,7 +17,6 @@ web/src/errors.js
 web/src/errors.test.js
 web/src/forgeconnect.js
 web/src/gitpanel.js
-web/src/gitstream.js
 web/src/inspector.js
 web/src/linecomment.js
 web/src/lsp.js
@@ -41,7 +40,6 @@ web/src/settings.js
 web/src/shortcuts.js
 web/src/state.js
 web/src/status.js
-web/src/stream.js
 web/src/theme.test.js
 web/src/thread.js
 web/src/threadrefs.js

@@ -1,4 +1,5 @@
-import { reloadOpenTabs, layout, render, openFile, api, apiPostJson, showToast } from './app/legacy-bridge.js';
+import { reloadOpenTabs, layout, render, openFile, api, apiPostJson, showToast, handleGitStatus, triggerRefresh } from './app/legacy-bridge.js';
+
 // web/src/gitpanel.js
 // Sidebar git panel: stage/commit/push/pull, shown whenever the workspace is
 // a git repo (same gate as the diff-view toggle in status.js). In a PR
@@ -16,7 +17,7 @@ import { refreshUnpushed } from './unpushed.js';
 
 import { on, emit } from './bus.js';
 import { commitFileRows, COMMIT_FILES_PAGE, loadCommitFiles, cachedCommitFiles } from './commitfiles.js';
-import { handleGitStatus, triggerRefresh } from './gitstream.js';
+
 import { registerAgentPicker } from './agent.js';
 
 const panel = () => $('#git-panel');

@@ -1,11 +1,12 @@
-import { openFile, layout, api, apiPostJson, keyLabel, showToast } from './app/legacy-bridge.js';
+import { openFile, layout, api, apiPostJson, keyLabel, showToast, onStream, setStreamTopic, watchThread } from './app/legacy-bridge.js';
+
 import { setMenuHidden } from './overlays.js';
 import { on } from './bus.js';
 // web/src/reviewflow.js
 import { $, $$, S, esc } from './state.js';
 
 import { thrMd } from './thread.js';
-import { onStream, setStreamTopic, watchThread } from './stream.js';
+
 import { initReviewWalkthrough, loadReviewWalkthrough, getWalkthroughSubTab, setWalkthroughSubTab } from './reviewwalkthrough.js';
 
 let currentMode = 'code'; // 'code' | 'review'

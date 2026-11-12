@@ -1,16 +1,17 @@
-import { openFile, closeSelMenu, api, apiPost, apiPostJson, showToast } from './app/legacy-bridge.js';
+import { openFile, closeSelMenu, api, apiPost, apiPostJson, showToast, syncDiffView, focusDiffScope, isFileViewed, handleGitStatus, triggerRefresh } from './app/legacy-bridge.js';
+
 import { setMenuHidden } from './overlays.js';
 import { setPressed } from './controls.js';
 // web/src/tree.js
 import { $, $$, esc, S } from './state.js';
 
-import { syncDiffView, focusDiffScope, isFileViewed } from './app/legacy-bridge.js';
+
 import { copyToClipboard } from './ui.js';
 
 import { emit, on } from './bus.js';
 import { isAutoRevealEnabled } from './settings.js';
 import { promptNewItem } from './newitem.js';
-import { handleGitStatus, triggerRefresh } from './gitstream.js';
+
 
 export const treeEl = $('#tree');
 const treeMenu = $('#tree-menu');

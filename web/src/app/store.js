@@ -1,6 +1,7 @@
+import { createWorkspaceActions } from '../workspace/actions.js';
 import { createViewerActions } from '../viewers/actions.js';
 import { createDocuments } from '../editor/documents.js';
-import { createMemo } from 'solid-js';
+import { batch, createMemo } from 'solid-js';
 import { createStore, reconcile } from 'solid-js/store';
 
 /** @typedef {import('../editor/documents.js').DocTab} DocTab */
@@ -15,21 +16,28 @@ import { createStore, reconcile } from 'solid-js/store';
  */
 /**
  * @typedef {Object} AppState
- * @property {{meta: WorkspaceMeta|null, generation: number}} workspace
+ * @property {{meta: WorkspaceMeta|null, generation: number, metrics: object|null, connected: boolean, pending: boolean, error: string}} workspace
  * @property {{tabs: DocTab[], active: number, history: object[], historyIndex: number}} documents
  * @property {EditorPreferences} editor
  * @property {Object} navigation
  * @property {import('../state.js').LSPState} lsp
  * @property {Object<string, unknown>} settings
  * @property {{targets: object[]}} agents
- * @property {{unpushedCount: number}} git
+ * @property {{unpushedCount: number, snapshot: object|null, revision: number}} git
  * @property {{viewed: Object<string, boolean>}} viewers
  * @property {{model: import('../viewers/orb-model.js').OrbModel|null, shown: boolean}} explanation
  */
 /** @returns {AppState} */
 function initialState() {
   return {
-    workspace: { meta: /** @type {WorkspaceMeta|null} */ (null), generation: 0 },
+    workspace: {
+      meta: /** @type {WorkspaceMeta|null} */ (null),
+      generation: 0,
+      metrics: null,
+      connected: false,
+      pending: false,
+      error: '',
+    },
     documents: { tabs: /** @type {DocTab[]} */ ([]), active: -1, history: [], historyIndex: -1 },
     editor: /** @type {EditorPreferences} */ ({
       wrap: true,
@@ -51,7 +59,7 @@ function initialState() {
     lsp: { servers: [], state: 'off', server: '' },
     settings: {},
     agents: { targets: [] },
-    git: { unpushedCount: 0 },
+    git: { unpushedCount: 0, snapshot: null, revision: 0 },
     viewers: { viewed: {} },
     explanation: { model: null, shown: false },
   };
@@ -75,7 +83,11 @@ export function createAppStore(options = {}) {
       setAgentTargets: (targets) => set('agents', 'targets', targets),
       setNavigation: (patch) => set('navigation', patch),
       setGeometry: (patch) => set('editor', patch),
-      setWorkspace: (meta) => set('workspace', 'meta', reconcile(meta)),
+      setWorkspace: (meta) =>
+        batch(() => {
+          set('workspace', 'meta', reconcile(meta));
+          if (meta?.metrics) set('workspace', 'metrics', reconcile(meta.metrics));
+        }),
       patchWorkspace: (name, value) => set('workspace', 'meta', name, value),
       setEditorPreference: (name, value) => {
         if (!['wrap', 'lineNumbers', 'mdPreview', 'tablePreview'].includes(name))
@@ -87,6 +99,10 @@ export function createAppStore(options = {}) {
       patchLsp: (name, value) => set('lsp', name, value),
     },
   };
-  Object.assign(store.actions, createViewerActions(store));
+  Object.assign(
+    store.actions,
+    createViewerActions(store),
+    createWorkspaceActions(store, set, options),
+  );
   return store;
 }

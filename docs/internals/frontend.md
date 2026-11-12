@@ -334,3 +334,30 @@ retain their identity; ancestor lookup uses cached directory paths. Tests includ
 20,000 files. It has no DOM or Solid dependencies and is not connected to the
 application yet. Sidebar, Git, search, palette, inspectors, streams, status and
 panel layout still use their legacy implementations pending phase B.
+
+## Workspace snapshots and stream (phase B checkpoint 1)
+
+`workspace/actions.js` ingests Git snapshots with `reconcile`, updates workspace
+metadata, and owns explicit refresh pending/error state and cancellation. Metrics
+live in `state.workspace.metrics`; the full Git snapshot and publication revision
+live in `state.git`. Document and viewer state remain separate from server snapshots.
+
+`workspace/stream.js` owns the tab's one multiplexed stream through
+`createEventStream`. Topic changes are coalesced, thread subscriptions are reference
+counted, and replacing a connection closes its previous root first. Native
+EventSource reconnect remains enabled. Focus, visibility and sleep/stale-traffic
+recovery share one owned watchdog; disposal releases listeners, requests and timers.
+The transport starts only when the application boot action requests it.
+
+Until their checkpoints replace the imperative views, two effects in the temporary
+bridge notify their Git and metrics DOM adapters. These are outside-world effects,
+not state derivations. Phase-C thread/review event subscriptions also enter through
+that bridge; new consumers read the store instead of subscribing to events.
+`gitstream.js` and `stream.js` are deleted.
+
+A component may register a narrow imperative handle for an operation that belongs
+to its owned DOM: focus, scroll, native selection or measurement. Registration must
+release that handle on cleanup and must never expose an element. Durable state,
+loading/errors and navigation intent belong in stores with named actions; they
+must not depend on whether a component registered a handle. Delete handles used
+only by a legacy consumer when its checkpoint replaces that consumer.

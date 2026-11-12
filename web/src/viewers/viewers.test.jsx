@@ -25,7 +25,7 @@ vi.mock('./mermaid-runtime.js', () => ({
     async () => '<svg xmlns="http://www.w3.org/2000/svg"><text>Diagram</text></svg>',
   ),
 }));
-vi.mock('../lib/api.js', () => ({ api: vi.fn(), apiPostJson: vi.fn() }));
+vi.mock('../lib/api.js', () => ({ api: vi.fn(), apiPost: vi.fn(), apiPostJson: vi.fn() }));
 const disposers = [];
 afterEach(() => {
   disposers.splice(0).forEach((dispose) => dispose());

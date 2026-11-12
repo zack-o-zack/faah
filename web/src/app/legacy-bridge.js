@@ -224,6 +224,28 @@ function legacyDocument(path) {
 }
 export function configureLegacyServices(value) {
   Object.assign(services, value);
+  let disposed = false;
+  onCleanup(() => {
+    disposed = true;
+  });
+  // Until the following checkpoints replace these views, snapshots notify their DOM adapters.
+  createEffect(
+    on(
+      () => editorStore.store.state.git.revision,
+      () => {
+        const snapshot = editorStore.store.state.git.snapshot;
+        if (snapshot && !disposed) void paintLegacyGitSnapshot(snapshot).catch(console.error);
+      },
+    ),
+  );
+  createEffect(
+    on(
+      () => editorStore.store.state.workspace.metrics,
+      (metrics) => {
+        if (metrics) value.updateMetricsDisplay(metrics);
+      },
+    ),
+  );
   editorStore.actions.openLink = async (path, options) => {
     try {
       const clean = path.replace(/\/+$/, '');
@@ -687,3 +709,130 @@ export const orbSummary = (summary) => {
   viewerActions().orbSummary(summary);
   orbSync();
 };
+
+let legacyGitSignature = '';
+export const handleGitStatus = (snapshot) => editorStore.actions.acceptGitSnapshot(snapshot);
+export const triggerRefresh = () => editorStore.actions.refreshWorkspace();
+export const initGitStream = () => editorStore.actions.startWorkspaceStream();
+export const onStream = (name, handler) =>
+  editorStore.actions.subscribeWorkspaceEvent(name, handler);
+export const setStreamTopic = (name, enabled) =>
+  editorStore.actions.setWorkspaceTopic(name, enabled);
+export const watchThread = (id) => editorStore.actions.watchWorkspaceThread(id);
+async function paintLegacyGitSnapshot(data) {
+  if (!data) return;
+
+  // Identical snapshot to the last one applied (refocus, SSE reconnect): the
+  // tree, panel and gutters are already right. Open modified tabs are still
+  // re-checked, since a file can change on disk while its status stays "M",
+  // but they only repaint if something actually differs.
+  const sig = JSON.stringify(data);
+  if (sig === legacyGitSignature) {
+    await reloadOpenTabs({ onlyIfChanged: true });
+    return;
+  }
+  legacyGitSignature = sig;
+
+  // Before the Git-view check below: committing empties the tree but fills the
+  // Unpushed section, and pushing empties that in turn, so whether Git view
+  // still has anything to show depends on a fresh unpushed count.
+  // Cheap: only re-reads git log when the ahead count or head commit moved.
+  await services.refreshUnpushed(data);
+
+  services.updateSidebarToggleState();
+  if ($('#tree')?.classList.contains('changed-only') && !services.hasGitView()) {
+    await services.setSidebarMode('files');
+  }
+
+  const statuses = data.statuses || {};
+  const dirtyDirs = data.dirtyDirs || {};
+  const staged = data.staged || {};
+  const partial = data.partial || {};
+  const yourStatuses = data.yourStatuses || {};
+  const yourDirtyDirs = data.yourDirtyDirs || {};
+
+  // Patch rendered tree items in place without full DOM reload
+  try {
+    await services.patchTreeGitStatus(
+      statuses,
+      dirtyDirs,
+      staged,
+      yourStatuses,
+      yourDirtyDirs,
+      partial,
+    );
+  } catch (err) {
+    console.error('Failed to patch tree git status', err);
+  }
+  try {
+    services.updateScopeCounts(statuses, yourStatuses);
+  } catch (err) {
+    console.error('Failed to update scope counts', err);
+  }
+  try {
+    services.updateGitPanel(data);
+  } catch (err) {
+    console.error('Failed to update git panel', err);
+  }
+
+  // Close tabs that were opened in git diff view or currently in diff view if their changes are gone.
+  // In PR review mode, tabs should remain open even if clean relative to HEAD.
+  if (!S.meta?.pr) {
+    for (let i = S.tabs.length - 1; i >= 0; i--) {
+      const t = S.tabs[i];
+      // A tab pinned to a commit shows a frozen diff; the working tree going
+      // clean is exactly when you want to still be reading it.
+      if (t.diffRef) continue;
+      const code = statuses[t.path];
+      const isDiff = !!code && code !== 'U';
+      const wasDiff = !!(t.diffMode || t.openedInDiffView);
+      if (wasDiff && (t.diffAvailable || t.diffMode) && !isDiff) {
+        closeTab(i);
+      }
+    }
+  }
+
+  // Check if any open tabs are affected by modifications
+  const anyTabModified = S.tabs.some((t) => {
+    if (t.diffRef) return false; // frozen at a commit; the working tree can't move it
+    const code = statuses[t.path];
+    return code && code !== 'U';
+  });
+
+  if (anyTabModified) {
+    // In-place reload of open tabs updates file lines, syntax highlighting, and diff view live
+    await reloadOpenTabs({ onlyIfChanged: true });
+  } else {
+    // Synchronize open tabs' diff badges
+    let tabsChanged = false;
+    for (const t of S.tabs) {
+      if (t.diffRef) continue;
+      const code = statuses[t.path];
+      const isDiff = !!code && code !== 'U';
+      if (t.diffAvailable !== isDiff) {
+        t.diffAvailable = isDiff;
+        tabsChanged = true;
+      }
+    }
+    if (tabsChanged) {
+      drawTabs();
+    }
+
+    // Update active editor gutter and diff view if active document is affected
+    const curDoc = doc_();
+    if (curDoc && !curDoc.diffRef) {
+      const curCode = statuses[curDoc.path];
+      const hasDiff = !!curCode && curCode !== 'U';
+
+      if (curDoc.diffAvailable !== hasDiff || curCode) {
+        curDoc.diffAvailable = hasDiff;
+        await loadGutter(curDoc);
+        render();
+        if (curDoc.diffMode) {
+          syncDiffView(true);
+        }
+        services.updateStatus();
+      }
+    }
+  }
+}

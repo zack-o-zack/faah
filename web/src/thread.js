@@ -1,4 +1,5 @@
-import { openFile, setThreadHandler, setExplainHandler, setExplainPrepareHandler, hideSelectionBar, highlightRange, layout, render, doc_, api, apiPost, apiPostJson, applyKeyLabels, showToast } from './app/legacy-bridge.js';
+import { openFile, setThreadHandler, setExplainHandler, setExplainPrepareHandler, hideSelectionBar, highlightRange, layout, render, doc_, api, apiPost, apiPostJson, applyKeyLabels, showToast, onStream, setStreamTopic, watchThread, initOrb, orbBegin, orbAttach, orbFailed, orbThread, orbStep, orbSummary, orbSync } from './app/legacy-bridge.js';
+
 import { setPressed } from './controls.js';
 // web/src/thread.js
 import { $, $$, S, esc } from './state.js';
@@ -10,8 +11,8 @@ import { linkTarget, explainEvidenceLine, explainStaleLabel } from './threadrefs
 import { hideRightInspector } from './inspector.js';
 
 import { registerAgentPicker, reloadWorkspace } from './agent.js';
-import { onStream, setStreamTopic, watchThread } from './stream.js';
-import { initOrb, orbBegin, orbAttach, orbFailed, orbThread, orbStep, orbSummary, orbSync } from './app/legacy-bridge.js';
+
+
 
 const COPY_ICON = '<span class="icon-[lucide--copy] size-3 shrink-0" aria-hidden="true"></span>';
 const COPIED_ICON = '<span class="icon-[lucide--check] size-3 shrink-0" aria-hidden="true"></span>';

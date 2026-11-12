@@ -1,8 +1,9 @@
-import { openFile, enterEditMode, apiPostJson, showToast } from './app/legacy-bridge.js';
+import { openFile, enterEditMode, apiPostJson, showToast, triggerRefresh } from './app/legacy-bridge.js';
+
 // web/src/newitem.js
 import { $ } from './state.js';
 
-import { triggerRefresh } from './gitstream.js';
+
 import { drawTree, revealDir, treeEl } from './tree.js';
 
 export function promptNewItem(type, targetDir = '') {

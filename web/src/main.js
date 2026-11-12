@@ -1,3 +1,4 @@
+import { measure, layout, render, updateEditorOptionControls, openFile, switchTab, configureLegacyServices, api, applyKeyLabels, initGitStream, triggerRefresh } from './app/legacy-bridge.js';
 import { initOutline, drawOutline } from './outline-pane.js';
 import { emit } from './bus.js';
 import { warmLSP, gotoDefinition, findReferences } from './lsp.js';
@@ -6,21 +7,21 @@ import { copyToClipboard, copyRichToClipboard, initErrorCopy } from './ui.js';
 import { setLspState, initMetrics, initLspMenu, refreshLspMenu, initStatusFit, updateMetricsDisplay, updateStatus } from './status.js';
 import { openPalette, initPalette } from './palette.js';
 import { showHelp, initShortcuts } from './shortcuts.js';
-import { measure, layout, render, updateEditorOptionControls, openFile, switchTab, configureLegacyServices, api, applyKeyLabels } from './app/legacy-bridge.js';
+
 import { $, S } from './state.js';
-import { drawTree, treeEl, initTree, revealDir, revealFile, refreshTree, collapseAllDirs, expandDirtyDirs, inGitMode, setAutoRevealSuppressed, setSidebarMode, updateSidebarToggleState, hasGitView } from './tree.js';
+import { drawTree, treeEl, initTree, revealDir, revealFile, refreshTree, collapseAllDirs, expandDirtyDirs, inGitMode, setAutoRevealSuppressed, setSidebarMode, updateSidebarToggleState, patchTreeGitStatus, hasGitView } from './tree.js';
 import { initSearch } from './search.js';
 import { initPanels, showPanel } from './panels.js';
 import { initInspector } from './inspector.js';
 import { initAgent, applyAgentMeta, loadAgentAsync } from './agent.js';
 import { initThreads } from './thread.js';
 import { initSettings } from './settings.js';
-import { initGitStream, triggerRefresh } from './gitstream.js';
-import { initGitPanel, syncGitPanelMeta } from './gitpanel.js';
+
+import { initGitPanel, updateGitPanel, syncGitPanelMeta } from './gitpanel.js';
 import { initPR } from './pr.js';
 import { initLineComment } from './linecomment.js';
 import { initUnpushed, refreshUnpushed } from './unpushed.js';
-import { initPRScope } from './prscope.js';
+import { initPRScope, updateScopeCounts } from './prscope.js';
 import { initNewItem } from './newitem.js';
 import { initTips, startTipsAsync } from './tips.js';
 import { initReviewFlow, setMode } from './reviewflow.js';
@@ -29,7 +30,7 @@ import { initReviewFlow, setMode } from './reviewflow.js';
 
 export function initLegacy() {
 configureLegacyServices({
- emit, showPanel, revealDir, warmLSP, updateStatus, setLspState, gotoDefinition, findReferences, showCalls,
+ emit, setSidebarMode, updateSidebarToggleState, patchTreeGitStatus, hasGitView, updateGitPanel, refreshUnpushed, updateScopeCounts, updateMetricsDisplay, showPanel, revealDir, warmLSP, updateStatus, setLspState, gotoDefinition, findReferences, showCalls,
  copyToClipboard, copyRichToClipboard, openPalette, showHelp, triggerRefresh, drawOutline,
 });
 initOutline();

@@ -1,5 +1,11 @@
 // web/src/reviewflow.test.js
-import { test } from 'vitest';
+import { test, vi } from 'vitest';
+vi.mock('./app/legacy-bridge.js', async (original) => ({
+  ...await original(),
+  onStream: () => () => {},
+  setStreamTopic: vi.fn(),
+  watchThread: () => () => {},
+}));
 import assert from 'node:assert/strict';
 
 // Set up minimal browser globals for headless unit tests
