@@ -1,9 +1,9 @@
 import { setPressed } from './controls.js';
 // web/src/prscope.js
-// PR review sidebar scope: "All PR changes" vs "Yours".
+// PR review sidebar scope: "All PR changes" vs "Not pushed".
 //
 // A PR checkout already tells the two apart -- rows you touched carry a YOU
-// tag, and a file's diff splits into "PR changes" and "Your changes" -- but
+// tag, and a file's diff splits into "PR changes" and "Not pushed" -- but
 // with dozens of PR files in the tree there was no way to see just your own.
 // This bar sits above the changed-files tree in Git view and switches it
 // between the whole PR and only what you have edited or committed since
@@ -23,9 +23,10 @@ function apply() {
   const b = scopeBar();
   if (!b) return;
   const show = !!S.meta?.pr && inGitMode();
-  b.hidden = !show;
-  // Nothing of yours to filter to: fall back rather than show an empty tree.
-  const yours = scope === 'yours' && show;
+  // A toggle with one side empty is noise: it appears with the first edit
+  // that is not pushed, and the tree falls back to the PR's files.
+  b.hidden = !show || yourCount === 0;
+  const yours = scope === 'yours' && show && yourCount > 0;
   treeEl.classList.toggle('scope-yours', yours);
   treeEl.classList.toggle('scope-pr', show && !yours);
   treeEl.classList.toggle('no-yours', yours && yourCount === 0);

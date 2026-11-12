@@ -574,7 +574,7 @@ function thrRenderMsgs() {
 }
 
 /* PR review: what the thread is about. The default comes from where you are --
-   the editor section a selection was made in, then the sidebar's Yours / PR
+   the editor section a selection was made in, then the sidebar's Not pushed / PR
    changes switch, else the whole PR -- and the chips override it. */
 function thrDefaultScope(info) {
   const sel = getSelection();

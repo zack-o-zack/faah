@@ -262,7 +262,7 @@ async function doPush(force = false) {
     await refreshUnpushed(); // the section empties out with the push
     if (S.meta?.pr) {
       // Your commits are the PR's now: re-read the PR state (its file set and
-      // head) and repaint open diffs so "Your changes" empties out.
+      // head) and repaint open diffs so "Not pushed" empties out.
       await refreshPRMeta();
       await reloadOpenTabs();
     }

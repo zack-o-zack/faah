@@ -195,7 +195,7 @@ function renderDiff(d) {
   if (S.meta?.pr && d.prDiffHunks !== undefined) {
     const prHunks = d.prDiffHunks || [];
     const yourHunks = d.yourDiffHunks || [];
-    // Opened from the sidebar's "Yours" or "PR changes" scope: open the
+    // Opened from the sidebar's "Not pushed" or "PR changes" scope: open the
     // matching section and fold the other. Decided once per tab; after that
     // the section's own header toggle wins.
     const tree = $('#tree');
@@ -218,7 +218,7 @@ function renderDiff(d) {
     }));
 
     const since = S.meta.pr.headSHA ? 'since ' + S.meta.pr.headSHA.slice(0, 7) : 'since checkout';
-    frag.append(createDiffSection(d, 'you', 'Your changes', since, (body) => {
+    frag.append(createDiffSection(d, 'you', 'Not pushed', since, (body) => {
       if (!yourHunks.length) body.append(sectionNote('Nothing edited or committed yet — changes you make will show up here.'));
       else appendHunks(body, yourHunks, d.diffMode, false, true);
     }));
@@ -793,7 +793,7 @@ function splitSide(row, side, reviewable = true, diagMap = null) {
    reviewable marks whether this row's line number is meaningful as a GitHub
    review-comment target -- true for the PR's own diff (numbered against the
    checked-out head commit, which is what a submitted review is posted
-   against), false for the reviewer's local "Your changes" section, whose
+   against), false for the reviewer's local "Not pushed" section, whose
    lines don't correspond to anything pushed yet. linecomment.js reads this
    to fall back to a plain inline AI edit instead of opening the composer. */
 function anchor(el, row, reviewable = true) {

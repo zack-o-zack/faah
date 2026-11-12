@@ -21,8 +21,8 @@
     <!-- PR review only (web/src/prscope.js): whole PR vs just your own changes -->
     <div id="scope-bar" class="scope-bar shrink-0 border-b p-2" hidden>
       <div class="button-group w-full" role="group" aria-label="Changes to show">
-        <button type="button" data-scope="all" aria-pressed="true" title="Every file this PR changes, plus your edits" class="btn flex-1" data-variant="secondary" data-size="xs">PR changes <span id="scope-all-n" class="tabular-nums opacity-70" data-control="scope-n">0</span></button>
-        <button type="button" data-scope="yours" aria-pressed="false" title="Only files you have edited or committed since checkout" class="btn flex-1" data-variant="outline" data-size="xs">Yours <span id="scope-yours-n" class="tabular-nums opacity-70" data-control="scope-n">0</span></button>
+        <button type="button" data-scope="all" aria-pressed="true" title="Every file this PR changes, plus your edits not pushed yet" class="btn flex-1" data-variant="secondary" data-size="xs">PR changes <span id="scope-all-n" class="tabular-nums opacity-70" data-control="scope-n">0</span></button>
+        <button type="button" data-scope="yours" aria-pressed="false" title="Only files you edited or committed here that are not in the PR yet" class="btn flex-1" data-variant="outline" data-size="xs">Not pushed <span id="scope-yours-n" class="tabular-nums opacity-70" data-control="scope-n">0</span></button>
       </div>
     </div>
     <div class="panel-body min-h-0 flex-1 overflow-auto pb-4 [&.changed-only_.file:not(.dirty)]:hidden [&.changed-only_.tw:not(:has(.dirty))]:hidden [&.changed-only.scope-yours_.file:not(.your-change)]:hidden [&.changed-only.scope-yours_.tw:not(:has(.your-change))]:hidden [&.changed-only.scope-pr_.file:not(.pr-file)]:hidden [&.changed-only.scope-pr_.tw:not(:has(.pr-file))]:hidden [&.no-changes]:after:content-['Working_tree_clean'] [&.no-yours]:after:content-['No_changes_of_yours_yet'] after:block after:p-3 after:text-xs after:text-muted-foreground" id="tree"></div>

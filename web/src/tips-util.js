@@ -70,10 +70,10 @@ export const DEFAULT_TIPS = [
   },
   {
     id: "pr-scope-toggle",
-    title: "Scoped Review: PR Changes vs Yours",
+    title: "Scoped Review: PR Changes vs Not Pushed",
     category: "Git",
     tag: "PR Review",
-    content: "When reviewing pull requests, use the scope toggle above the file tree to switch between **PR changes** (all files in the PR) and **Yours** (files you edited since checkout)."
+    content: "When reviewing pull requests, use the scope toggle above the file tree to switch between **PR changes** (all files in the PR) and **Not pushed** (files you edited or committed here that are not in the PR yet). The toggle appears once you have some."
   },
   {
     id: "inline-pr-comments",

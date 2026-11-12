@@ -85,11 +85,11 @@ function stageTickTitle(staged, partial) {
 
 /* The paths the PR itself changes (server: diffBase..PR head), as a Set. Rows in
    the sidebar's "PR changes" scope are limited to these; a file only you have
-   touched belongs to "Yours". Null outside PR review. */
+   touched belongs to "Not pushed". Null outside PR review. */
 const prFileMap = () => S.meta?.pr?.files || null;
 
 /* The badge letter follows the sidebar scope. "PR changes" keeps the letter the
-   PR itself gave the file (A, M, D...) however you have edited it since; "Yours"
+   PR itself gave the file (A, M, D...) however you have edited it since; "Not pushed"
    shows your change measured from the PR head; otherwise git's combined status.
    Rows remember both letters (data-st / data-yst) so a scope switch can relabel
    them without another fetch. */
@@ -719,7 +719,7 @@ export function initTree() {
     if (f) {
       $$('.tr.sel', treeEl).forEach(x => x.classList.remove('sel'));
       f.classList.add('sel');
-      // The scope picks the section: "Yours" opens Your changes with the PR's
+      // The scope picks the section: "Not pushed" opens Not pushed with the PR's
       // folded, "PR changes" the reverse -- also for a tab that is already open
       // and has been toggled the other way.
       const t = S.tabs.find(x => x.path === f.dataset.file);
