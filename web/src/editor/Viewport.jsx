@@ -9,6 +9,7 @@ import {
   onMount,
 } from 'solid-js';
 import { useEditor } from './context.jsx';
+import { viewMode } from '../viewers/view.js';
 import { visibleRange } from './layout.js';
 import { createHighlights } from './highlights.js';
 import { EditorRow } from './EditorRow.jsx';
@@ -24,13 +25,7 @@ export function Viewport() {
   let hoverTimer;
   const covered = () => {
     const document = editor.active();
-    return !!(
-      document &&
-      (document.isEditing ||
-        document.isImage ||
-        document.diffMode ||
-        editor.services.previewing?.())
-    );
+    return !!document && (document.isEditing || viewMode(document) !== 'source');
   };
   const highlights = createHighlights();
   const rowObserver = new ResizeObserver((entries) => {
@@ -43,7 +38,9 @@ export function Viewport() {
   onCleanup(() => rowObserver.disconnect());
   const offsets = createMemo(editor.offsets);
   const range = createMemo(() =>
-    visibleRange(offsets(), editor.geometry.top, editor.geometry.height),
+    covered()
+      ? { first: 0, last: 0 }
+      : visibleRange(offsets(), editor.geometry.top, editor.geometry.height),
   );
   const contentWidth = () =>
     Math.max(
@@ -115,10 +112,10 @@ export function Viewport() {
     const { clientX: x, clientY: y } = event;
     if (event.metaKey || event.ctrlKey) {
       editor.actions.hideHover();
-      editor.store.actions.setNavigation({ link: dom.wordAtPoint(x, y) });
+      editor.actions.setNavigation({ link: dom.wordAtPoint(x, y) });
       return;
     }
-    editor.store.actions.setNavigation({ link: null });
+    editor.actions.setNavigation({ link: null });
     if (editor.ui.hover || editor.services.hoverAllowed?.() === false) return;
     hoverTimer = setTimeout(() => editor.actions.showHover(dom.wordAtPoint(x, y), x, y), 380);
   }
@@ -199,7 +196,7 @@ export function Viewport() {
             : null,
         });
         const word = dom.wordAtPoint(event.clientX, event.clientY);
-        editor.store.actions.setNavigation({ at: word, lastWord: word?.word || '' });
+        editor.actions.setNavigation({ at: word, lastWord: word?.word || '' });
         if ((event.metaKey || event.ctrlKey) && word) {
           event.preventDefault();
           editor.services.definition?.(word, { view: event.altKey ? 'diff' : undefined });
@@ -214,7 +211,7 @@ export function Viewport() {
       }}
       onDblClick={(event) => {
         const word = dom.wordAtPoint(event.clientX, event.clientY);
-        editor.store.actions.setNavigation({ occurrence: word?.word || null });
+        editor.actions.setNavigation({ occurrence: word?.word || null });
       }}
       onMouseMove={movePointer}
     >

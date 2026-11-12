@@ -29,7 +29,7 @@ export function DiffStrip(props) {
     if (next) editor.services.stepDiffFile?.(props.document, next);
   }
   function viewed() {
-    editor.store.viewerActions.toggleViewed(props.document.path);
+    editor.actions.toggleViewed(props.document.path);
     editor.services.viewedChanged?.(props.document.path);
     if (!editor.store.state.viewers.viewed[props.document.path]) return;
     const after = [...files().slice(index() + 1), ...files().slice(0, Math.max(0, index()))];

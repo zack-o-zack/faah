@@ -5,7 +5,7 @@ import { ImageHUD } from './ImageHUD.jsx';
 
 export function ImageViewer(props) {
   const editor = useEditor();
-  const actions = editor.store.viewerActions;
+  const actions = editor.actions;
   let viewport;
   let drag;
   const [size, setSize] = createSignal({ width: 0, height: 0 });

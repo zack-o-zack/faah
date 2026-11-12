@@ -305,3 +305,22 @@ No migrated component obtains another component's elements through context. A2 r
 viewer cache fields, Markdown selection/marking adapters, row/point geometry exports and
 the imperative agent-diff highlight callback from the bridge. The remaining metadata and
 orb sidebar observer are temporary legacy adapters confined to that file.
+
+## Action surface
+
+Editor and viewer components invoke the single flat `editor.actions` object. It composes
+app document/history/preferences actions, viewer transitions and editor interaction
+actions. Components read app state through `editor.store.state`; they do not select
+between different action registries. Feature action factories still own their logic;
+composition does not move their implementations into a controller. Names must be unique.
+
+`openLink` opens a document in isolated editor mounts. The temporary bridge adapts this
+action to reveal directory links through the legacy tree; there is no optional directory
+hook in editor services. Owned view operations remain narrow injected services.
+
+The A2 wrap-up memoizes sanitized content and adds no effects.
+
+Covered source viewports derive an empty slot window while editing or displaying a
+viewer. Switching back mounts source rows from the same buffer. Keeping hidden rows
+mounted spends layout and reactive work on an invisible duplicate view. No effect
+synchronizes this visibility; it derives from the document view mode.

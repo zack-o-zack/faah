@@ -15,6 +15,11 @@ import { renderDiagram } from './mermaid-runtime.js';
 import { DiffRows } from './DiffRows.jsx';
 import { diffSelection } from './diff-selection.js';
 import { api } from '../lib/api.js';
+import { sanitizeHTML } from './markdown-dom.js';
+vi.mock('./markdown-dom.js', async (original) => {
+  const actual = await original();
+  return { ...actual, sanitizeHTML: vi.fn(actual.sanitizeHTML) };
+});
 vi.mock('./mermaid-runtime.js', () => ({
   renderDiagram: vi.fn(
     async () => '<svg xmlns="http://www.w3.org/2000/svg"><text>Diagram</text></svg>',
@@ -47,7 +52,7 @@ test('view capability derives from path and each tab remembers its chosen view',
   await app.actions.openDocument('one.md');
   const first = app.activeDocument();
   expect(viewMode(first)).toBe('markdown');
-  app.viewerActions.togglePreview(first, 7);
+  app.actions.togglePreview(first, 7);
   expect(viewMode(first)).toBe('source');
   await app.actions.openDocument('two.csv');
   expect(viewMode(app.activeDocument())).toBe('table');
@@ -56,16 +61,16 @@ test('view capability derives from path and each tab remembers its chosen view',
   expect(previewKind({ path: 'docs/note.MD' })).toBe('markdown');
   expect(blockIndex([1, 10, 30], 20)).toBe(1);
   app.actions.closeDocument(0);
-  app.viewerActions.setView(first, 'markdown');
+  app.actions.setView(first, 'markdown');
   expect(app.state.documents.tabs[0].path).toBe('two.csv');
 });
 test('image state persists through switches and detached documents cannot update it', async () => {
   const app = store();
   await app.actions.openDocument('icon.png');
   const doc = app.activeDocument();
-  app.viewerActions.imageLoaded(doc, 32, 32);
-  app.viewerActions.zoomImage(doc, 1, 0.5);
-  app.viewerActions.updateImage(doc, { panX: 23, bg: 'light' });
+  app.actions.imageLoaded(doc, 32, 32);
+  app.actions.zoomImage(doc, 1, 0.5);
+  app.actions.updateImage(doc, { panX: 23, bg: 'light' });
   await app.actions.openDocument('other.md');
   app.actions.activateDocument(0);
   expect(app.activeDocument().image).toMatchObject({
@@ -77,7 +82,7 @@ test('image state persists through switches and detached documents cannot update
   });
   app.actions.closeDocument(0);
   await app.actions.openDocument('icon.png');
-  app.viewerActions.updateImage(doc, { panX: 1000 });
+  app.actions.updateImage(doc, { panX: 1000 });
   expect(app.activeDocument().image.panX).toBe(0);
 });
 test('resource drops stale path/ref responses and aborts requests on replacement and disposal', async () => {
@@ -145,7 +150,7 @@ test('markdown postprocessing owns find, copy, selection and cleanup', async () 
     services: {},
     active: app.activeDocument,
     ui: {},
-    actions: { setSelection: vi.fn() },
+    actions: { ...app.actions, setSelection: vi.fn() },
   };
   const mounted = render(() => (
     <EditorProvider value={editor}>
@@ -175,7 +180,7 @@ test('markdown postprocessing owns find, copy, selection and cleanup', async () 
 test('image controls update state and release pointer and wheel listeners', async () => {
   const app = store();
   await app.actions.openDocument('icon.png');
-  const editor = { store: app, services: {} };
+  const editor = { store: app, actions: app.actions, services: {} };
   const mounted = render(() => (
     <EditorProvider value={editor}>
       <ImageViewer document={app.activeDocument()} />
@@ -194,15 +199,17 @@ test('explain orb renders progress, completion, sidebar suppression and dismissa
   const app = store();
   const open = vi.fn();
   render(() => (
-    <EditorProvider value={{ store: app, services: { openExplanation: open } }}>
+    <EditorProvider
+      value={{ store: app, actions: app.actions, services: { openExplanation: open } }}
+    >
       <ExplainOrb />
     </EditorProvider>
   ));
   expect(document.querySelector('#explain-orb')).toBeNull();
-  app.viewerActions.orbBegin();
+  app.actions.orbBegin();
   expect(screen.getByRole('button', { name: 'Explaining' })).toBeTruthy();
-  app.viewerActions.orbAttach({ id: 'thread', turns: [{ running: true, tools: ['Read source'] }] });
-  app.viewerActions.orbThread({
+  app.actions.orbAttach({ id: 'thread', turns: [{ running: true, tools: ['Read source'] }] });
+  app.actions.orbThread({
     id: 'thread',
     turns: [{ running: false, reply: 'A clear answer.', notes: [{}] }],
   });
@@ -219,7 +226,7 @@ test('long diff mounts only visible slots and releases recycled line numbers', a
     const [top, setTop] = createSignal(0);
     scroll = setTop;
     return (
-      <EditorProvider value={{ store: app }}>
+      <EditorProvider value={{ store: app, actions: app.actions }}>
         <DiffRows
           hunk={{
             rows: Array.from({ length: 20000 }, (_, i) => ({
@@ -346,4 +353,25 @@ test('Mermaid failures show the source and error without reading a failed resour
   await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('Invalid diagram'));
   expect(screen.getByText('invalid diagram source')).toBeTruthy();
   expect(document.querySelector('.md-mermaid svg')).toBeNull();
+});
+
+test('sanitization depends on content and path, not theme or scroll targets', async () => {
+  const app = store();
+  await app.actions.openDocument('readme.md');
+  const [data, setData] = createSignal({ html: '<p>Memoized content</p>' });
+  const [current, setCurrent] = createSignal('light');
+  sanitizeHTML.mockClear();
+  render(() => (
+    <EditorProvider value={{ store: app, actions: app.actions, services: {}, ui: {} }}>
+      <ThemeProvider store={{ current }}>
+        <PreviewContent document={app.activeDocument()} kind="markdown" data={data()} />
+      </ThemeProvider>
+    </EditorProvider>
+  ));
+  expect(sanitizeHTML).toHaveBeenCalledTimes(1);
+  setCurrent('dark');
+  app.actions.requestAnchor(app.activeDocument(), 'missing');
+  expect(sanitizeHTML).toHaveBeenCalledTimes(1);
+  setData({ html: '<p>Changed content</p>' });
+  expect(sanitizeHTML).toHaveBeenCalledTimes(2);
 });

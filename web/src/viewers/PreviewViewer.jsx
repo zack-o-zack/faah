@@ -23,7 +23,7 @@ export function PreviewViewer(props) {
         fallback={
           <div id="mdview" class="absolute inset-0 bg-background p-4" role="alert">
             Unable to load preview: {data.error?.message} <button onClick={refetch}>Retry</button>
-            <button onClick={() => editor.store.viewerActions.setView(props.document, 'source')}>
+            <button onClick={() => editor.actions.setView(props.document, 'source')}>
               Open Source
             </button>
           </div>

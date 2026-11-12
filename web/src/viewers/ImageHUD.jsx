@@ -1,7 +1,7 @@
 import { useEditor } from '../editor/context.jsx';
 
 export function ImageHUD(props) {
-  const actions = useEditor().store.viewerActions;
+  const actions = useEditor().actions;
   const view = () => props.document.image;
   return (
     <div

@@ -202,6 +202,8 @@ export function createEditorStore(store) {
     offsets,
   };
   const actions = {
+    ...store.actions,
+    openLink: openFile,
     refresh,
     patch,
     openFile,

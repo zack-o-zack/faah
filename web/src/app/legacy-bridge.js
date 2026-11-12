@@ -224,6 +224,21 @@ function legacyDocument(path) {
 }
 export function configureLegacyServices(value) {
   Object.assign(services, value);
+  editorStore.actions.openLink = async (path, options) => {
+    try {
+      const clean = path.replace(/\/+$/, '');
+      const parent = clean.slice(0, Math.max(0, clean.lastIndexOf('/')));
+      const result = await api('api/tree', { dir: parent });
+      if (!clean || result.children.some((entry) => entry.path === clean && entry.dir)) {
+        await value.showPanel('files');
+        await value.revealDir(clean);
+        return;
+      }
+    } catch {
+      // The document action reports missing paths or a closing workspace.
+    }
+    return editorStore.actions.openFile(path, options);
+  };
   editorStore.services.stepDiffFile = async (from, file) => {
     const { diffRef: ref, diffBase: base, turnFiles, turnLabel } = from;
     await openFile(file.path, { ref, base, turnFiles, turnLabel, view: 'diff' });
@@ -558,7 +573,7 @@ export const drawOutline = () => services.drawOutline?.();
 
 // Phase B/C consumers keep their imperative calls at this boundary.
 const activeDocument = () => editorStore?.active();
-const viewerActions = () => editorStore.store.viewerActions;
+const viewerActions = () => editorStore.actions;
 export const previewKind = (document = activeDocument()) => documentPreviewKind(document);
 export const previewing = (document = activeDocument()) =>
   ['markdown', 'table'].includes(viewMode(document));

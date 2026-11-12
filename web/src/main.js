@@ -8,9 +8,9 @@ import { openPalette, initPalette } from './palette.js';
 import { showHelp, initShortcuts } from './shortcuts.js';
 import { measure, layout, render, updateEditorOptionControls, openFile, switchTab, configureLegacyServices, api, applyKeyLabels } from './app/legacy-bridge.js';
 import { $, S } from './state.js';
-import { drawTree, treeEl, initTree, revealFile, refreshTree, collapseAllDirs, expandDirtyDirs, inGitMode, setAutoRevealSuppressed, setSidebarMode, updateSidebarToggleState, hasGitView } from './tree.js';
+import { drawTree, treeEl, initTree, revealDir, revealFile, refreshTree, collapseAllDirs, expandDirtyDirs, inGitMode, setAutoRevealSuppressed, setSidebarMode, updateSidebarToggleState, hasGitView } from './tree.js';
 import { initSearch } from './search.js';
-import { initPanels } from './panels.js';
+import { initPanels, showPanel } from './panels.js';
 import { initInspector } from './inspector.js';
 import { initAgent, applyAgentMeta, loadAgentAsync } from './agent.js';
 import { initThreads } from './thread.js';
@@ -29,7 +29,7 @@ import { initReviewFlow, setMode } from './reviewflow.js';
 
 export function initLegacy() {
 configureLegacyServices({
- emit, warmLSP, updateStatus, setLspState, gotoDefinition, findReferences, showCalls,
+ emit, showPanel, revealDir, warmLSP, updateStatus, setLspState, gotoDefinition, findReferences, showCalls,
  copyToClipboard, copyRichToClipboard, openPalette, showHelp, triggerRefresh, drawOutline,
 });
 initOutline();

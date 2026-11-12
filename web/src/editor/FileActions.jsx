@@ -6,7 +6,7 @@ import { withKeys } from '../lib/keyboard.js';
 
 export function FileActions() {
   const editor = useEditor();
-  const actions = editor.store.viewerActions;
+  const actions = editor.actions;
   const document = editor.active;
   const kind = () => previewKind(document());
   const preview = () => ['markdown', 'table'].includes(viewMode(document()));

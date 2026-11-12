@@ -4,7 +4,7 @@ import { orbView } from './orb-model.js';
 export function ExplainOrb() {
   const editor = useEditor();
   const state = editor.store.state.explanation;
-  const actions = editor.store.viewerActions;
+  const actions = editor.actions;
   const view = createMemo(() => (state.model ? orbView(state.model) : null));
   return (
     <>

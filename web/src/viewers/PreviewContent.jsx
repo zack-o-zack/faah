@@ -1,4 +1,13 @@
-import { createEffect, createSignal, For, on, onCleanup, onMount, Show } from 'solid-js';
+import {
+  createEffect,
+  createMemo,
+  createSignal,
+  For,
+  on,
+  onCleanup,
+  onMount,
+  Show,
+} from 'solid-js';
 import { Portal } from 'solid-js/web';
 import { useEditor } from '../editor/context.jsx';
 import { useTheme } from '../lib/theme-context.jsx';
@@ -11,16 +20,16 @@ import { Lightbox } from './Lightbox.jsx';
 export function PreviewContent(props) {
   const editor = useEditor();
   const theme = useTheme();
-  const actions = editor.store.viewerActions;
+  const actions = editor.actions;
   let article;
   let viewport;
   let dom;
   const [diagrams, setDiagrams] = createSignal([]);
   const [image, setImage] = createSignal(null);
-  const html = () => {
+  const html = createMemo(() => {
     if (props.kind !== 'markdown') return '';
     return sanitizeHTML(props.data.html, props.document.path);
-  };
+  });
   function jump(line) {
     actions.setView(props.document, 'source');
     editor.actions.patch({ cur: line });
@@ -49,14 +58,13 @@ export function PreviewContent(props) {
     const path = link.dataset.path;
     const anchor = link.dataset.anchor || '';
     if (!path || path === props.document.path) {
-      editor.store.actions.pushHistory(props.document.path, dom.topLine());
+      editor.actions.pushHistory(props.document.path, dom.topLine());
       dom.anchor(anchor);
       return;
     }
-    editor.store.actions.pushHistory(props.document.path, dom.topLine());
+    editor.actions.pushHistory(props.document.path, dom.topLine());
     const line = /^L(\d+)/.exec(anchor);
-    if (await editor.services.followDirectory?.(path)) return;
-    await editor.actions.openFile(path, line ? { line: +line[1] } : {});
+    await actions.openLink(path, line ? { line: +line[1] } : {});
     if (editor.active()?.path === path && anchor && !line)
       actions.requestAnchor(editor.active(), anchor);
   }

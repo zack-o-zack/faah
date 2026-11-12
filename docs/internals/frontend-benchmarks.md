@@ -229,3 +229,84 @@ paired trace and heap summaries: [a1-profile-evidence.json](../../scripts/bench-
   caps; attached DOM growth stays zero. This is code warm-up plus the editor's
   reactive graph, with no accumulating closed-tab closures in these snapshots.
 - CSV still renders the existing 1,000-row cap. The remote tips URL still returns 404.
+
+
+## A2 wrap-up — 13 November 2026
+
+Five runs, 45 successful scenarios and zero failures, using the same Chrome
+157.0.8103.51, React revision and synthetic fixture hashes as A1/vanilla.
+Tests/build use Node 24.15.0; the benchmark harness uses Node 24.12.0.
+Raw samples and diagnostics remain in ignored `bench-out/a2.json` and
+`bench-out/profile.*`; raw A2 heap/profile evidence was moved out of `scripts/bench-web`.
+Values below are median / p95 under the existing pooled-sample contract.
+
+| Metric | Unit | Vanilla | A1 | A2 |
+|---|---|---:|---:|---:|
+| cold.real.tree | ms | 526.80 / 725.90 | 495.90 / 718.00 | 573.10 / 625.00 |
+| cold.real.idle | ms | 1047.70 / 1254.20 | 1013.00 / 1237.20 | 1087.80 / 1137.40 |
+| cold.real.js_transfer | bytes | 160765.00 / 160765.00 | 166781.00 / 166781.00 | 169373.00 / 169373.00 |
+| cold.real.heap | bytes | 3126872.00 / 3165368.00 | 3601100.00 / 3610660.00 | 3499356.00 / 3514668.00 |
+| cold.real.dom_nodes | nodes | 4064.00 / 4064.00 | 4133.00 / 4133.00 | 4000.00 / 4000.00 |
+| cold.synthetic.tree | ms | 509.30 / 1089.70 | 506.90 / 524.40 | 534.20 / 558.10 |
+| cold.synthetic.idle | ms | 1033.90 / 1618.30 | 1019.40 / 1039.00 | 1050.10 / 1070.50 |
+| cold.synthetic.js_transfer | bytes | 160765.00 / 160765.00 | 166781.00 / 166781.00 | 169373.00 / 169373.00 |
+| cold.synthetic.heap | bytes | 3107440.00 / 3112712.00 | 3563904.00 / 3574940.00 | 3489852.00 / 3490152.00 |
+| cold.synthetic.dom_nodes | nodes | 4060.00 / 4060.00 | 4059.00 / 4059.00 | 3926.00 / 3926.00 |
+| finder.keystroke | ms | 64.20 / 78.50 | 77.30 / 79.20 | 76.80 / 79.20 |
+| file.open_50k | ms | 43.90 / 74.50 | 45.90 / 70.60 | 45.60 / 71.30 |
+| scroll.frame | ms | 16.70 / 16.80 | 16.70 / 16.80 | 16.70 / 16.70 |
+| scroll.frames_over_16_7 | frames | 17.00 / 19.00 | 13.00 / 16.00 | 11.00 / 15.00 |
+| scroll.long_tasks | tasks | 0.00 / 0.00 | 0.00 / 0.00 | 0.00 / 0.00 |
+| scroll.long_task_total | ms | 0.00 / 0.00 | 0.00 / 0.00 | 0.00 / 0.00 |
+| scroll.geometry_misses | checkpoints | 0.00 / 0.00 | 0.00 / 0.00 | 0.00 / 0.00 |
+| scroll.content_misses | checkpoints | 0.00 / 0.00 | 0.00 / 0.00 | 0.00 / 0.00 |
+| cursor.interaction | ms | 24.00 / 40.00 | 24.00 / 40.00 | 24.00 / 40.00 |
+| cursor.interactions_ge_16 | interactions | 300.00 / 300.00 | 300.00 / 300.00 | 300.00 / 300.00 |
+| edit.enter_50k | ms | 1647.20 / 1674.60 | 529.30 / 551.30 | 536.00 / 539.20 |
+| edit.keystroke | ms | 103.90 / 126.60 | 36.50 / 40.20 | 36.50 / 40.20 |
+| edit.interaction | ms | 88.00 / 112.00 | 40.00 / 40.00 | 40.00 / 40.00 |
+| edit.interactions_ge_16 | interactions | 200.00 / 200.00 | 200.00 / 200.00 | 200.00 / 200.00 |
+| tabs.switch | ms | 31.45 / 36.00 | 30.65 / 35.00 | 30.60 / 34.80 |
+| tree.expand_20k | ms | 1224.50 / 1452.70 | 1128.10 / 1164.60 | 1143.70 / 1155.80 |
+| tree.reveal_deep | ms | 140.80 / 233.20 | 114.40 / 186.20 | 182.10 / 188.20 |
+| search.results | ms | 895.60 / 972.30 | 874.50 / 887.10 | 906.60 / 953.60 |
+| preview.markdown_5k | ms | 194.20 / 391.70 | 119.60 / 185.10 | 111.60 / 183.00 |
+| preview.csv_20k | ms | 118.70 / 133.60 | 103.90 / 106.00 | 98.50 / 104.20 |
+| memory.heap_delta | bytes | 409988.00 / 411328.00 | 602756.00 / 603528.00 | 602836.00 / 681848.00 |
+| memory.dom_delta | nodes | 20.00 / 20.00 | 20.00 / 20.00 | 20.00 / 1013.00 |
+| memory.attached_delta | elements | 0.00 / 0.00 | 0.00 / 0.00 | 0.00 / 348.00 |
+
+- Markdown and CSV beat A1: 111.6 / 98.5ms versus 119.6 / 103.9ms.
+  The source viewport previously kept painting hidden rows behind previews.
+  Its slot window now derives an empty range while covered, retaining the buffer
+  for source navigation. Diagnostic preview passes fell from about 112ms to 99ms
+  for CSV. Fixed column sizing and native row content visibility did not help
+  in paired diagnostic passes and were not retained. Sanitized Markdown is memoized
+  by content/path, with a test for unrelated theme and scroll-target changes.
+- Source-tab retained heap is effectively unchanged from A1: 602,836 versus
+  602,756 bytes; vanilla is 409,988. Four of five A2 samples lie between 602,196
+  and 602,976 bytes; one reaches 681,848. Attached element growth remains zero
+  and total DOM growth remains 20 nodes. Existing A2 heap diagnostics under
+  `bench-out/a2-profile-evidence.json` separate compiled-code warm-up from
+  retained viewer data; these are local evidence, not committed raw artifacts.
+- Two medians exceed the older A1 table by more than 10%: cold real-tree loading
+  and deep reveal. Fresh alternating runs used the exact A1 baseline binary
+  (SHA-256 `8765d65dcdcb95120f8df0c4d73613f2e4d38852c5a38c49ed2f9eaa2e086673`).
+  Three cold traces measured 524.3 / 498.8ms (A1/A2); script evaluation was
+  62.8 / 32.2ms, style recalculation 24.1 / 39.1ms, and layout 12.0 / 18.7ms.
+  External font CSS alone took roughly 290–313ms in the middle paired runs.
+  Three alternating tree runs measured expansion 1152.5 / 1150.0ms and reveal
+  187.8 / 186.9ms. This reproduces the slower reveal boundary in A1 too; it
+  does not establish an A2 regression of the size suggested by the older table.
+  Raw paired traces remain in `bench-out/a2-cold-*.trace.json` and
+  `bench-out/a2-wrap-paired-*-tree.trace.json`. Phase B still needs to improve
+  the legacy tree and its costly full-DOM layout.
+- The action surface is one flat `editor.actions` object. The bridge adapts
+  `openLink` for directory revelation; components no longer probe an optional
+  `followDirectory` service. The wrap-up adds no effects.
+
+Validation: frontend checks, Go build and short Go tests pass. The headless viewer
+smoke covers 29 cases with zero console errors; the explain request is mocked and
+the known failing remote tips feed is disabled. The editor smoke passes 38 additional cases with no console errors; its
+results are recorded separately in the local diagnostic output. Phase B benchmarks and migration are
+not included in these A2 results.

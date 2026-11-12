@@ -87,6 +87,6 @@ export function createAppStore(options = {}) {
       patchLsp: (name, value) => set('lsp', name, value),
     },
   };
-  store.viewerActions = createViewerActions(store);
+  Object.assign(store.actions, createViewerActions(store));
   return store;
 }

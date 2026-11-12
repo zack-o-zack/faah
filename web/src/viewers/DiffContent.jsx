@@ -25,14 +25,14 @@ export function DiffContent(props) {
       });
       editor.services.diffRendered?.();
     },
-    () => editor.store.viewerActions.invalidate(props.document),
+    () => editor.actions.invalidate(props.document),
   );
   const isPR = () =>
     !props.document.diffRef &&
     (props.data.prHunks !== undefined || props.data.prDiff !== undefined);
   function jump(line) {
-    editor.store.viewerActions.setDiffMode(props.document, 'source');
-    editor.store.viewerActions.setView(props.document, 'source');
+    editor.actions.setDiffMode(props.document, 'source');
+    editor.actions.setView(props.document, 'source');
     editor.actions.patch({ cur: line });
     editor.actions.centerLine(line);
   }

@@ -132,7 +132,7 @@ export function DiffViewer() {
       class="absolute inset-0 overflow-auto bg-background"
       hidden={!visible()}
       onScroll={() => {
-        editor.store.viewerActions.rememberDiff(editor.active(), viewport.scrollTop);
+        editor.actions.rememberDiff(editor.active(), viewport.scrollTop);
         cancelAnimationFrame(frame);
         frame = requestAnimationFrame(() => {
           setTop(viewport.scrollTop);

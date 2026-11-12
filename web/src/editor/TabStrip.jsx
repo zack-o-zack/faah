@@ -61,8 +61,7 @@ export function TabStrip(props) {
               onDragOver={(event) => event.preventDefault()}
               onDrop={(event) => {
                 event.preventDefault();
-                if (Number.isInteger(dragging))
-                  editor.store.actions.moveDocument(dragging, index());
+                if (Number.isInteger(dragging)) editor.actions.moveDocument(dragging, index());
               }}
               onContextMenu={(event) => {
                 event.preventDefault();

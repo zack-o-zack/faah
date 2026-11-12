@@ -78,7 +78,7 @@ test('source slots are reused across scroll windows and cursor changes', async (
   await waitFor(() => expect(+row.dataset.l).toBeGreaterThan(1));
   expect(document.querySelector('#rows .row')).toBe(row);
   view.unmount();
-  editor.store.actions.disposeDocuments();
+  editor.actions.disposeDocuments();
 });
 test('find query, next, previous and case actions update the view', async () => {
   render(() => <Harness />);
@@ -93,7 +93,7 @@ test('find query, next, previous and case actions update the view', async () => 
   expect(editor.ui.caseSensitive).toBe(true);
   fireEvent.click(screen.getByRole('button', { name: 'Close find' }));
   expect(editor.ui.findOpen).toBe(false);
-  editor.store.actions.disposeDocuments();
+  editor.actions.disposeDocuments();
 });
 test('edit mode changes, saves and cancels without mounting a full-file gutter', async () => {
   render(() => <Harness />);
@@ -112,7 +112,7 @@ test('edit mode changes, saves and cancels without mounting a full-file gutter',
   expect(editor.active().isEditing).toBe(false);
   expect(textarea.value).toBe('');
   expect(document.getElementById('viewport').inert).toBe(false);
-  editor.store.actions.disposeDocuments();
+  editor.actions.disposeDocuments();
 });
 test('closing an edited tab releases the native textarea copy', async () => {
   render(() => <Harness />);
@@ -128,11 +128,11 @@ test('tab close and close others act on metadata and release buffers', async () 
   render(() => <Harness />);
   await editor.actions.openFile('one.js');
   await editor.actions.openFile('two.js');
-  editor.store.actions.moveDocument(0, 1);
+  editor.actions.moveDocument(0, 1);
   expect(editor.store.state.documents.tabs.map((tab) => tab.path)).toEqual(['two.js', 'one.js']);
   editor.actions.closeTabs([0]);
   expect(screen.queryByRole('button', { name: 'two.js' })).toBeNull();
-  editor.store.actions.disposeDocuments();
+  editor.actions.disposeDocuments();
 });
 
 test('keyboard selection, Escape, Vim counts and listener disposal work together', async () => {
@@ -160,7 +160,7 @@ test('keyboard selection, Escape, Vim counts and listener disposal work together
   view.unmount();
   fireEvent.keyDown(window, { key: 'ArrowDown' });
   expect(editor.active().cur).toBe(line);
-  editor.store.actions.disposeDocuments();
+  editor.actions.disposeDocuments();
 });
 
 test('saving an inactive document cannot clear another document or newer edits', async () => {
@@ -189,7 +189,7 @@ test('saving an inactive document cannot clear another document or newer edits',
   expect(editor.store.state.documents.tabs[0].dirty).toBe(true);
   editor.actions.switchTab(0);
   expect(document.getElementById('editview-textarea').value).toBe('newer edit');
-  editor.store.actions.disposeDocuments();
+  editor.actions.disposeDocuments();
 });
 
 test('a query cancelled by closing find cannot repopulate hits', async () => {
@@ -209,7 +209,7 @@ test('a query cancelled by closing find cannot repopulate hits', async () => {
   await find;
   expect(editor.ui.hits).toEqual([]);
   expect(editor.ui.findOpen).toBe(false);
-  editor.store.actions.disposeDocuments();
+  editor.actions.disposeDocuments();
 });
 
 test('backward Vim search starts at the last asynchronously loaded match', async () => {
@@ -220,5 +220,18 @@ test('backward Vim search starts at the last asynchronously loaded match', async
   fireEvent.keyDown(document.getElementById('viewport'), { key: '?' });
   await waitFor(() => expect(editor.ui.activeHit).toBe(1));
   expect(editor.ui.findOpen).toBe(true);
-  editor.store.actions.disposeDocuments();
+  editor.actions.disposeDocuments();
+});
+
+test('covered source rows release their DOM and remount from the existing buffer', async () => {
+  render(() => <Harness />);
+  await editor.actions.openFile('readme.md');
+  const buffer = editor.buffer();
+  expect(document.querySelectorAll('#rows .row')).toHaveLength(0);
+  editor.actions.setView(editor.active(), 'source');
+  await waitFor(() => expect(document.querySelector('#rows .c')).toBeTruthy());
+  expect(editor.buffer()).toBe(buffer);
+  editor.actions.setView(editor.active(), 'markdown');
+  expect(document.querySelectorAll('#rows .row')).toHaveLength(0);
+  editor.actions.disposeDocuments();
 });

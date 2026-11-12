@@ -61,16 +61,10 @@ export function EditorShortcuts() {
   register('Alt+Shift+H', () => editor.services.calls?.());
   register(
     'Alt+Shift+T',
-    () => void editor.store.actions.reopenDocument()?.then(editor.actions.activateView),
+    () => void editor.actions.reopenDocument()?.then(editor.actions.activateView),
   );
-  register(
-    'Alt+Left',
-    () => void editor.store.actions.historyGo(-1).then(editor.actions.activateView),
-  );
-  register(
-    'Alt+Right',
-    () => void editor.store.actions.historyGo(1).then(editor.actions.activateView),
-  );
+  register('Alt+Left', () => void editor.actions.historyGo(-1).then(editor.actions.activateView));
+  register('Alt+Right', () => void editor.actions.historyGo(1).then(editor.actions.activateView));
   register('Ctrl+Tab', () =>
     editor.actions.switchTab(
       (editor.store.state.documents.active + 1) % editor.store.state.documents.tabs.length,
@@ -175,7 +169,7 @@ export function EditorShortcuts() {
   }
   const clearModifier = (event) => {
     if (event.key === 'Meta' || event.key === 'Control')
-      editor.store.actions.setNavigation({ link: null });
+      editor.actions.setNavigation({ link: null });
   };
   document.addEventListener('keyup', clearModifier);
   onCleanup(() => document.removeEventListener('keyup', clearModifier));
@@ -187,7 +181,7 @@ export function EditorShortcuts() {
       editor.actions.hideHover();
       editor.actions.clearSelection();
       editor.actions.closeSelectionMenu();
-      editor.store.actions.setNavigation({ occurrence: null, link: null });
+      editor.actions.setNavigation({ occurrence: null, link: null });
     },
     () =>
       present() &&

@@ -14,9 +14,7 @@ export function DiffSection(props) {
       <div
         data-ui="diff-section-head"
         class="flex flex-wrap items-center gap-2 p-3 bg-muted cursor-pointer"
-        onClick={() =>
-          editor.store.viewerActions.toggleSection(props.document, props.kind, collapsed())
-        }
+        onClick={() => editor.actions.toggleSection(props.document, props.kind, collapsed())}
       >
         <span data-ui="diff-section-title" class="label">
           {props.title}
