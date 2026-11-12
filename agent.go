@@ -1632,7 +1632,14 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 	tm.agent.settle(changed)
 	var refs map[string]explain.Ref
 	if explaining {
-		refs = explain.ValidateRefs(tm.root, sink.reply())
+		// Note details cite code as the reply does, and link the same way.
+		cited := sink.reply()
+		tm.mu.Lock()
+		for _, n := range r.turn.Notes {
+			cited += "\n\n" + n.Detail
+		}
+		tm.mu.Unlock()
+		refs = explain.ValidateRefs(tm.root, cited)
 	}
 
 	tm.mu.Lock()

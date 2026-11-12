@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"slices"
 	"sort"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -150,7 +151,7 @@ func (tm *threadManager) FileNotes(rel string, lines []string) []notes.View {
 		for _, tr := range t.Turns {
 			for i, n := range tr.Notes {
 				if n.Path == rel {
-					all = append(all, saved{notes.View{Thread: t.ID, Turn: tr.ID, Index: i, Note: n}, tr.Started, slices.Contains(tr.Dismissed, i)})
+					all = append(all, saved{notes.View{Thread: t.ID, Turn: tr.ID, Index: i, Note: n, Links: detailLinks(n.Detail, tr.Refs)}, tr.Started, slices.Contains(tr.Dismissed, i)})
 				}
 			}
 		}
@@ -191,6 +192,20 @@ func (tm *threadManager) FileNotes(rel string, lines []string) []notes.View {
 		out = append(out, v)
 	}
 	sort.SliceStable(out, func(a, b int) bool { return out[a].L1 < out[b].L1 })
+	return out
+}
+
+// detailLinks picks the turn's checked citations that a note's detail uses.
+func detailLinks(detail string, refs map[string]explain.Ref) map[string]explain.Ref {
+	var out map[string]explain.Ref
+	for target, ref := range refs {
+		if detail != "" && strings.Contains(detail, target) {
+			if out == nil {
+				out = map[string]explain.Ref{}
+			}
+			out[target] = ref
+		}
+	}
 	return out
 }
 

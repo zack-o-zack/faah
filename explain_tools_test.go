@@ -240,3 +240,14 @@ func TestExplainReplayCarriesWhatWasShown(t *testing.T) {
 		}
 	}
 }
+
+func TestDetailLinks(t *testing.T) {
+	refs := map[string]explain.Ref{"agent.go:868": {Line: 868}, "req.Edits": {Line: 964}, "main.go:1": {Line: 1}}
+	got := detailLinks("Built at agent.go:868 from `req.Edits`.", refs)
+	if len(got) != 2 || got["agent.go:868"].Line != 868 || got["req.Edits"].Line != 964 {
+		t.Fatalf("links = %v", got)
+	}
+	if detailLinks("", refs) != nil {
+		t.Fatal("an empty detail has no links")
+	}
+}
