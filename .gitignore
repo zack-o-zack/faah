@@ -31,3 +31,5 @@ web/vendor/*.min.js.gz
 # Logs
 *.log
 faah
+
+/web/dist/

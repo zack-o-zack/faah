@@ -1,5 +1,5 @@
-import { test, expect } from 'bun:test';
-import { toastConfig } from './toast.js';
+import { test, expect } from 'vitest';
+import { toastConfig } from './lib/toast-model.js';
 
 test('toast kinds pick an icon and show the text as the title', () => {
   const config = toastConfig('success', 'Saved');

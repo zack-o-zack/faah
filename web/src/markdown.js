@@ -1,3 +1,4 @@
+import { onThemeChanged } from './app/theme-bridge.js';
 import { pictureSource } from './markdown-picture.js';
 // web/src/markdown.js
 import { $, $$, S, doc_, esc, api, isMac, MOD, LH } from './state.js';
@@ -580,7 +581,7 @@ export function initMarkdown() {
   }
   on('tab:activated', () => syncPreview());
   on('tabs:cleared', () => syncPreview());
-  on('theme:changed', () => { syncMarkdownPictures(); scheduleMermaidThemeRender(); });
+  onThemeChanged(() => { syncMarkdownPictures(); scheduleMermaidThemeRender(); });
 }
 
 export function getDocRaw(d) {

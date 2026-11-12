@@ -3,8 +3,8 @@ import { setPressed } from './controls.js';
 import { $, $$, esc, S, api, apiPost, apiPostJson } from './state.js';
 import { showToast } from './ui.js';
 import { applyEditorTypography, toggleWordWrap, toggleLineNumbers } from './renderer.js';
-import { setTheme, listThemes } from './theme.js';
-import { chooseThemePreference, DEFAULT_THEME } from './theme-preference.js';
+import { setTheme, listThemes } from './app/theme-bridge.js';
+import { chooseThemePreference, DEFAULT_THEME } from './lib/theme-preference.js';
 import { setLayoutPref } from './diff.js';
 import { setVimModeEnabled, showVimHelp } from './vim.js';
 

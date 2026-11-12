@@ -23,14 +23,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
-      # web/app.js is not committed — regenerate it so go:embed has a fresh
+      # web/dist/app.js is not committed — regenerate it so go:embed has a fresh
       # bundle, and prove the source modules bundle cleanly.
       - run: npm ci
 
-      - name: Bundle web assets
-        run: node ./scripts/build-web.js
+      - name: Check and bundle web assets
+        run: npm run check
 
       - name: Build faah
         run: go build -trimpath -o faah .

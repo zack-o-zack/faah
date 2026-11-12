@@ -9,7 +9,7 @@ const SWAP_STYLES = `for (const link of document.querySelectorAll('link[rel="sty
   if (url.origin === location.origin) { url.searchParams.set('dev', Date.now()); link.href = url; }
 }`;
 
-// web/src is only an input to web/app.js, which reports its own change.
+// web/src is only an input to web/dist/app.js, which reports its own change.
 function reloadKind(file) {
   const [top] = file.split(path.sep);
   if (top === 'src' || top === 'vendor') return null;

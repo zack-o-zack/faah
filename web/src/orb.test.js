@@ -1,4 +1,4 @@
-import { test, expect } from 'bun:test';
+import { test, expect } from 'vitest';
 import { orbStart, orbFromThread, orbFromStep, orbFromSummary, orbView, orbSnippet } from './orb.js';
 
 const thread = (turn) => ({ id: 't1', turns: [{ id: 1, ...turn }] });

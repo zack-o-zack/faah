@@ -13,77 +13,20 @@ export const $ = (s, r = document) => r.querySelector(s);
 export const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 export const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-const request = async (method, path, params, opts = {}) => {
-  const relPath = path.startsWith('/') ? path.slice(1) : path;
-  const base = document.baseURI || (typeof location !== 'undefined' && (location.origin ? location.origin + '/' : location.href)) || 'http://localhost:7777/';
-  const u = new URL(relPath, base);
-  /** @type {RequestInit} */
-  const fetchOpts = { method, ...opts };
-  const isPost = method === 'POST' || method === 'PUT' || method === 'PATCH';
-
-  if (params) {
-    const hasComplex = typeof params === 'object' && params !== null && (
-      Array.isArray(params) || Object.values(params).some(v => typeof v === 'object' && v !== null)
-    );
-    if (isPost && (opts.json || hasComplex)) {
-      fetchOpts.headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
-      fetchOpts.body = JSON.stringify(params);
-    } else {
-      for (const [k, v] of Object.entries(params)) {
-        if (v !== undefined && v !== '') u.searchParams.set(k, v);
-      }
-    }
-  }
-
-  if (!fetchOpts.signal && typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
-    fetchOpts.signal = AbortSignal.timeout(opts.timeout || 30000);
-  }
-
-  const r = await fetch(u, fetchOpts);
-  const j = await r.json();
-  // The body rides along: some replies, like a failed agent job, carry detail beyond the message.
-  if (j.error) throw Object.assign(new Error(j.error), { body: j });
-  return j;
-};
-export const api = (path, params, opts) => request('GET', path, params, opts);
-// For requests that change the machine; the server only accepts these as POST from this page.
-export const apiPost = (path, params, opts) => request('POST', path, params, opts);
-export const apiPostJson = (path, params, opts) => request('POST', path, params, { json: true, ...opts });
+export { api, apiPost, apiPostJson } from './lib/api.js';
 
 export const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
-// navigator.platform is deprecated but is still the only signal some browsers give.
-export const isMac = /mac|iphone|ipad/i.test(/** @type {any} */ (navigator).userAgentData?.platform || navigator.platform || '');
+import { isMac, keyLabel, keyParts, withKeys } from './lib/keyboard.js';
+export { isMac, keyLabel, withKeys };
 export const MOD = isMac ? 'metaKey' : 'ctrlKey';
 
-/* Shortcuts are written once, as "Mod+Shift+F", and shown the way the reader's
-   keyboard labels them: ⌘⇧F on a Mac, Ctrl+Shift+F elsewhere. Mod is the key MOD
-   tests: Cmd on a Mac, Ctrl elsewhere. "A|B" shows A off the Mac and B on it,
-   for shortcuts that differ; an empty side means none on that system. */
-const MAC_KEYS = { Mod: '⌘', Ctrl: '⌃', Alt: '⌥', Shift: '⇧', Enter: '↩', Left: '←', Right: '→', Up: '↑', Down: '↓' };
-const PC_KEYS = { Mod: 'Ctrl', Left: '←', Right: '→', Up: '↑', Down: '↓' };
-
-const keyParts = combo => {
-  const c = combo.includes('|') ? combo.split('|')[isMac ? 1 : 0] : combo;
-  return c ? c.split('+').map(k => (isMac ? MAC_KEYS : PC_KEYS)[k] || k) : [];
-};
-
-export const keyLabel = combo => {
-  const parts = keyParts(combo);
-  if (!isMac) return parts.join('+');
-  const key = parts.pop() || '';
-  // Mac symbols run together (⌘⇧F); a spelled-out key gets a space (⌘ Click).
-  return parts.join('') + (parts.length && /^[a-z]{2,}$/i.test(key) ? ' ' : '') + key;
-};
-
+// Removed when the last legacy module is migrated.
 export const keyCaps = combo => keyParts(combo).map(k => '<kbd class="kbd">' + esc(k) + '</kbd>').join('');
 
 // The contents of a shortcut's <kbd class="kbd">: one cap per key in the desktop app, which
 // styles nested caps, and the single label everywhere else.
 export const shortcutHtml = combo =>
   document.documentElement.hasAttribute('data-shell') ? keyCaps(combo) : esc(keyLabel(combo));
-
-// "Go to File ({Mod+P})" -> "Go to File (⌘P)"
-export const withKeys = text => text.replace(/\{([^}]+)\}/g, (_, combo) => keyLabel(combo));
 
 /* Static markup names shortcuts the same way: data-keys fills a label (a <kbd class="kbd">
    gets shortcutHtml), data-caps fills key caps, and {combo} in a title is replaced. */

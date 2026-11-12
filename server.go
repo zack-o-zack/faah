@@ -40,9 +40,9 @@ import (
 	"faah/internal/ui"
 )
 
-//go:embed web/index.html web/app.css web/themes web/vendor web/fonts
-//go:embed web/workbench.html web/workbench.js web/holding.js
-//go:embed web/app.js web/logo-dark.svg web/logo-light.svg web/favicon.svg
+//go:embed web/index.html web/dist/app.css web/themes web/vendor web/fonts
+//go:embed web/workbench.html web/dist/workbench.js web/dist/holding.js
+//go:embed web/dist/app.js web/logo-dark.svg web/logo-light.svg web/favicon.svg
 var embedded embed.FS
 
 // devRoot is a source checkout whose web/ replaces the embedded assets, so
@@ -293,7 +293,7 @@ func (s *Server) scavenge() {
 	}
 }
 
-const contentSecurityPolicy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: http:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'none';"
+const contentSecurityPolicy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: http:; connect-src 'self' https://raw.githubusercontent.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'none';"
 
 // ServeHTTP delegates incoming HTTP requests to the configured ServeMux,
 // recording request timing and updating access timestamps.
@@ -901,6 +901,13 @@ func (s *Server) handleStatic(sub fs.FS, prefix string) http.Handler {
 		rel = path.Clean(strings.TrimPrefix(rel, "/"))
 		if rel == "." || strings.HasPrefix(rel, "..") {
 			http.NotFound(w, r)
+			return
+		}
+
+		if rel == "app.js" || rel == "workbench.js" || rel == "holding.js" || rel == "app.css" {
+			r2 := r.Clone(r.Context())
+			r2.URL.Path = prefix + "dist/" + rel
+			fileServer.ServeHTTP(w, r2)
 			return
 		}
 

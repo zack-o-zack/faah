@@ -1,5 +1,5 @@
 // web/src/reviewflow.test.js
-import test from 'node:test';
+import { test } from 'vitest';
 import assert from 'node:assert/strict';
 
 // Set up minimal browser globals for headless unit tests

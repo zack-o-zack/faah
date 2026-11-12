@@ -1,4 +1,5 @@
-import { test, expect } from 'bun:test';
+import { URL } from 'node:url';
+import { test, expect } from 'vitest';
 
 const elements = new Map();
 const element = id => {

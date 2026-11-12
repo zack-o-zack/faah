@@ -1,4 +1,4 @@
-import { test, expect } from 'bun:test';
+import { test, expect } from 'vitest';
 import { pictureSource } from './markdown-picture.js';
 
 test('picture sources accept safe single image references and explicit color schemes', () => {

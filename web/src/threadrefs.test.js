@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'vitest';
 import { linkTarget, explainEvidenceLine, explainStaleLabel } from './threadrefs.js';
 
 describe('linkTarget', () => {

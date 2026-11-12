@@ -1,8 +1,9 @@
-import test from 'node:test';
+import { URL } from 'node:url';
+import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const root = new URL('../../', import.meta.url);
+const root = new URL(`file://${process.cwd()}/`);
 const read = path => fs.readFileSync(new URL(path, root), 'utf8');
 const tokens = text => new Set(text.match(/--t-[\d-]+/g) || []);
 const declarations = text => new Set([...text.matchAll(/(--t-[\d-]+):\s*[\d.]+px\s*;/g)].map(match => match[1]));

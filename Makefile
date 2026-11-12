@@ -121,6 +121,7 @@ publish:
 	@echo "  git push origin main --tags"
 
 clean:
-	rm -f faah web/app.js web/workbench.js
-	touch web/app.js web/workbench.js
+	rm -f faah
+	rm -rf web/dist
+	node scripts/build-web.js
 	rm -rf dist/

@@ -1,4 +1,4 @@
-import { test, expect } from 'bun:test';
+import { test, expect } from 'vitest';
 import { wordAtColumn } from './hover-position.js';
 
 test('documentation requests identify the whole symbol at the caret', () => {

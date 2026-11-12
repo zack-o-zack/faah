@@ -33,7 +33,7 @@ func TestDevRootServesThemesFromDiskOnEveryRequest(t *testing.T) {
 
 func TestDevRootServesBuiltStylesheetFromDisk(t *testing.T) {
 	root := t.TempDir()
-	if err := os.MkdirAll(filepath.Join(root, "web"), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Join(root, "web", "dist"), 0755); err != nil {
 		t.Fatal(err)
 	}
 	oldAssets, oldRoot := assets, devRoot
@@ -41,7 +41,7 @@ func TestDevRootServesBuiltStylesheetFromDisk(t *testing.T) {
 	assets, devRoot = os.DirFS(root), root
 	s, _ := newTestServer(t)
 	for _, want := range []string{"body{color:var(--foreground)}", "body{background:var(--background)}"} {
-		if err := os.WriteFile(filepath.Join(root, "web", "app.css"), []byte(want), 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(root, "web", "dist", "app.css"), []byte(want), 0644); err != nil {
 			t.Fatal(err)
 		}
 		rec := httptest.NewRecorder()

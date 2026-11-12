@@ -1,4 +1,4 @@
-import { test, expect } from 'bun:test';
+import { test, expect } from 'vitest';
 import { makeCardKeeper } from './cardkeep.js';
 
 test('pointer departure keeps a documentation card open while keyboard focus is inside', async () => {

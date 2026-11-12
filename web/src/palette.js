@@ -12,7 +12,7 @@ import { revealFile } from './tree.js';
 import { showRightInspector, hideRightInspector } from './inspector.js';
 import { showCalls } from './calls.js';
 import { showHelp } from './shortcuts.js';
-import { listThemes, currentTheme, setTheme, cycleTheme } from './theme.js';
+import { listThemes, currentTheme, setTheme, cycleTheme } from './app/theme-bridge.js';
 import { togglePreview } from './markdown.js';
 import { openSettings, isAutoRevealEnabled } from './settings.js';
 import { showVimHelp, isVimEnabled, setVimModeEnabled } from './vim.js';

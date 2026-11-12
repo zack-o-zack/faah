@@ -1,5 +1,8 @@
 # Styling and themes
 
+Frontend migration conventions and build commands: [Frontend implementation](frontend.md).
+
+
 faah uses Tailwind CSS 4.3.5 and Basecoat 1.1.0 (Vega). Basecoat supplies the
 components; vanilla JavaScript owns their behaviour. Basecoat JavaScript is not
 loaded. There are no separate browser, workbench or desktop component sheets.

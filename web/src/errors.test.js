@@ -1,4 +1,4 @@
-import { test, expect } from 'bun:test';
+import { test, expect } from 'vitest';
 import { errorSummary, errorAlertHtml } from './errors.js';
 
 test('the summary keeps the error lines, once each, without their prefix', () => {

@@ -116,7 +116,7 @@ if (!await buildWeb() || !await buildBackend()) process.exit(1);
 installBackend();
 
 watch('web', false, file => file === 'tailwind.css' ? 'web' : null);
-watch('web/src', true, file => (file.endsWith('.js') && !file.endsWith('.test.js') ? 'web' : null));
+watch('web/src', true, file => (/\.(js|jsx)$/.test(file) && !/\.test\.(js|jsx)$/.test(file) ? 'web' : null));
 watch('.', false, goKind);
 watch('internal', true, goKind);
 watch('desktop', false, file => (file.endsWith('.cjs') && !file.endsWith('.test.cjs') ? 'main' : null));

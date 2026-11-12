@@ -1,4 +1,4 @@
-import { test, expect } from 'bun:test';
+import { test, expect } from 'vitest';
 import { ownsNavigationKey } from './controls.js';
 
 test('focused controls retain navigation and activation without taking editor shortcuts', () => {

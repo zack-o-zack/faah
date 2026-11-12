@@ -17,7 +17,7 @@ import { moveCursor, moveCol, moveWord, caretToEdge } from './cursor.js';
 import { showCalls } from './calls.js';
 import { SEL_KEYS, runSelectionAction, selectAll, clearSelectAll, copySelectAll, getSelectedRangeInfo } from './selbar.js';
 
-import { cycleTheme } from './theme.js';
+import { cycleTheme } from './app/theme-bridge.js';
 import { previewing, togglePreview, previewKey, selectPreview } from './markdown.js';
 import { exitMermaidFullscreen } from './mermaid.js';
 import { toggleDiff, stepDiffHunk, stepChangedFile } from './diff.js';

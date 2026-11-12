@@ -1302,7 +1302,9 @@ type holdingPage struct {
 	Starting                                         bool
 }
 
-var holdingTmpl = template.Must(template.New("holding").Parse(`<!doctype html>
+var holdingTmpl = template.Must(template.New("holding").Funcs(template.FuncMap{
+	"pageData": func(p holdingPage) (string, error) { b, err := json.Marshal(p); return string(b), err },
+}).Parse(`<!doctype html>
 <html lang="en" data-theme="{{.Theme}}">
 <head>
 <meta charset="utf-8">
@@ -1316,33 +1318,7 @@ var holdingTmpl = template.Must(template.New("holding").Parse(`<!doctype html>
 <link rel="stylesheet" href="static/app.css">
 <link rel="stylesheet" href="static/themes.css">
 </head>
-<body class="before:desktop:fixed before:desktop:inset-x-0 before:desktop:top-0 before:desktop:h-[var(--titlebar-h,38px)] before:desktop:[-webkit-app-region:drag] before:desktop:content-['']">
-<button data-desktop-menu title="Menu" aria-label="Application menu" class="btn desktop-menu-btn hidden! win-linux:inline-flex! fixed top-2 left-2 z-1 [-webkit-app-region:no-drag]" data-variant="ghost" data-size="icon-xs">
-  <span class="icon-[lucide--menu] size-3.5" aria-hidden="true"></span>
-</button>
-<main class="mx-auto flex min-h-dvh w-full max-w-[560px] flex-col justify-center gap-6 px-4 pb-[12vh]">
-  <header class="flex">
-    <img class="hidden h-5 w-auto dark:block" src="static/logo-dark.svg" alt="faah" width="35" height="13">
-    <img class="block h-5 w-auto dark:hidden" src="static/logo-light.svg" alt="faah" width="35" height="13">
-  </header>
-  <section class="flex items-center gap-3">
-    <figure class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted">{{if .PR}}<span class="icon-[lucide--git-pull-request] size-5 text-gi" aria-hidden="true"></span>{{else}}<span class="icon-[lucide--folder] size-5 text-muted-foreground" aria-hidden="true"></span>{{end}}</figure>
-    <div class="flex min-w-0 flex-col">
-      <h1 class="truncate font-medium">{{.Title}}</h1>
-      {{if .Sub}}<p class="truncate font-mono text-xs text-muted-foreground">{{.Sub}}</p>{{end}}
-    </div>
-  </section>
-  {{if .Starting}}
-  <p class="flex items-start gap-2 text-sm text-muted-foreground" role="status"><span class="icon-[lucide--loader-circle] mt-0.5 size-4 shrink-0 animate-spin text-primary motion-reduce:animate-none" aria-hidden="true"></span><span id="wb-holding-progress">{{if .Progress}}{{.Progress}}…{{else}}Opening… Pull requests are checked out first, so large repositories take a while.{{end}}</span></p>
-  {{else}}
-  <div class="alert grid-cols-[auto_1fr] gap-x-2.5" data-variant="destructive" role="alert">
-    <span class="icon-[lucide--circle-alert] row-span-2 size-4 translate-y-0.5" aria-hidden="true"></span>
-    <h2 class="col-start-2">Could not open it</h2>
-    <section class="col-start-2 min-w-0"><p class="whitespace-pre-wrap wrap-anywhere font-mono text-xs">{{.Error}}</p></section>
-  </div>
-  {{end}}
-  <footer class="flex flex-wrap gap-2">{{if .Retry}}<a class="btn" data-variant="primary" data-size="sm" href="{{.Retry}}">Retry</a>{{end}}{{if .Choose}}<a class="btn" data-variant="primary" data-size="sm" href="{{.Choose}}">Choose a clone</a>{{end}}<a class="btn first:-ms-2.5" data-variant="ghost" data-size="sm" href="{{.Base}}"><span class="icon-[lucide--arrow-left] size-4" aria-hidden="true"></span>Back to workbench</a></footer>
-</main>
+<body><div id="root" data-page="{{pageData .}}"></div>
 </body>
 </html>
 `))

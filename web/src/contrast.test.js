@@ -1,4 +1,5 @@
-import { test, expect } from 'bun:test';
+import { resolve } from 'node:path';
+import { test, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 
 function luminance(hex) {
@@ -15,7 +16,7 @@ function contrast(a,b) {
 
 for (const theme of ['catppuccin-mocha','light','dracula','solarized-light','github-dark']) {
   test(`${theme} keeps UI text, syntax and control edges legible on audited surfaces`, () => {
-    const css=readFileSync(new URL(`../themes/${theme}.css`,import.meta.url),'utf8');
+    const css=readFileSync(resolve('web/themes', `${theme}.css`),'utf8');
     const tokens=Object.fromEntries([...css.matchAll(/--([\w-]+):\s*(#[\da-f]+);/gi)].map(m=>[m[1],m[2]]));
     for (const surface of ['background','sidebar','popover','accent']) {
       for (const text of ['foreground','muted-foreground','faint','primary-text','warn','destructive','gi','gd','k','kt','nf','nc','nb','nv','no','na','nt','nd','np','s','m','o','p','c','cp']) {
@@ -31,8 +32,8 @@ for (const theme of ['catppuccin-mocha','light','dracula','solarized-light','git
 // the theme selected by an unseeded workbench detector session.
 import { readdirSync } from 'node:fs';
 test('every bundled theme supplies accessible filled primary actions', () => {
-  for (const file of readdirSync(new URL('../themes/',import.meta.url)).filter(f=>f.endsWith('.css'))) {
-    const css=readFileSync(new URL(`../themes/${file}`,import.meta.url),'utf8');
+  for (const file of readdirSync(resolve('web/themes')).filter(f=>f.endsWith('.css'))) {
+    const css=readFileSync(resolve('web/themes', file),'utf8');
     const tokens=Object.fromEntries([...css.matchAll(/--([\w-]+):\s*(#[\da-f]+);/gi)].map(m=>[m[1],m[2]]));
     expect(contrast(tokens.primary,tokens['primary-foreground']),file).toBeGreaterThanOrEqual(4.5);
   }

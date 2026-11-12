@@ -1,4 +1,4 @@
-import { toastConfig } from './toast.js';
+import { toast } from './lib/toast.jsx';
 // web/src/ui.js
 import { $, esc } from './state.js';
 
@@ -9,10 +9,7 @@ export const editor = $('#editor');
 export const toastEl = $('#toaster');
 
 export function showToast(kind, text, duration) {
-  if (!toastEl) return;
-  // Basecoat sets the toaster up on DOMContentLoaded; a toast raised during startup comes first.
-  if (!toastEl.toast) window.basecoat?.init('toaster');
-  toastEl.toast?.(toastConfig(kind, text, duration));
+  return toast(kind, text, duration);
 }
 
 /** Every error alert's copy button (errors.js) puts the whole output on the clipboard and in the console. */

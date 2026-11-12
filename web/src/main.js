@@ -14,7 +14,6 @@ import { initCalls } from './calls.js';
 import { initFind } from './find.js';
 import { initPalette } from './palette.js';
 import { initShortcuts } from './shortcuts.js';
-import { initTheme } from './theme.js';
 import { initMarkdown } from './markdown.js';
 import { initDiff } from './diff.js';
 import { initAgent, applyAgentMeta, loadAgentAsync } from './agent.js';
@@ -35,6 +34,7 @@ import { initTips, startTipsAsync } from './tips.js';
 import { initReviewFlow, setMode } from './reviewflow.js';
 import { initErrorCopy } from './ui.js';
 
+export function initLegacy() {
 // Initialize all subsystems
 initRenderer();
 initTabs();
@@ -73,7 +73,6 @@ initPRScope();
 // Bootstrap application lifecycle
 (async function boot() {
   try {
-    initTheme();
 
     // Restore word wrap (default ON)
     const wrapPref = localStorage.getItem('faah.wrap');
@@ -234,3 +233,5 @@ initPRScope();
   // Load and asynchronously display tips
   startTipsAsync();
 })();
+
+}

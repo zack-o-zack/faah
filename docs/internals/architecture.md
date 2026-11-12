@@ -1,5 +1,8 @@
 # System Architecture & Runtime Lifecycle
 
+Frontend migration conventions and build commands: [Frontend implementation](frontend.md).
+
+
 This document describes the high-level architecture, startup pipeline, HTTP server, memory scavenging, and security model of `faah`.
 
 ## 1. High-Level Design Principles

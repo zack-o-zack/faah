@@ -1,4 +1,4 @@
-import { test, expect } from 'bun:test';
+import { test, expect } from 'vitest';
 import { prepareMenu, setMenuHidden } from './overlays.js';
 
 test('menu visibility sets Basecoat state and arrow keys focus enabled items', () => {
