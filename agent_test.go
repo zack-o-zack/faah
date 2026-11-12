@@ -1258,3 +1258,13 @@ func TestThreadReplaysWhenNativeResumeFails(t *testing.T) {
 		}
 	}
 }
+
+func TestThreadSinkStepLabels(t *testing.T) {
+	root := t.TempDir()
+	s := &threadSink{tm: &threadManager{root: root}, tid: "t1", turn: &threadTurn{ID: 1}}
+	s.Step("Read " + filepath.Join(root, "a", "b.go"))
+	s.Step("mcp__faah__annotate")
+	if want := []string{"Read " + filepath.Join("a", "b.go"), "Show notes"}; strings.Join(s.turn.Tools, "|") != strings.Join(want, "|") {
+		t.Fatalf("tools %q, want %q", s.turn.Tools, want)
+	}
+}

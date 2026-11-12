@@ -54,3 +54,20 @@ func TestToolsServeBoth(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestStepLabel(t *testing.T) {
+	for in, want := range map[string]string{
+		"mcp__faah__annotate":     "Show notes",
+		"annotate":                "Show notes",
+		"faah-t1a2_walkthrough":   "Show a walkthrough",
+		"Run mcp_faah_annotate":   "Show notes",
+		"Read main.go":            "Read main.go",
+		"mcp__other__annotate":    "mcp__other__annotate",
+		"Bash grep -n annotate .": "Bash grep -n annotate .",
+		"":                        "",
+	} {
+		if got := StepLabel(in); got != want {
+			t.Errorf("StepLabel(%q) = %q, want %q", in, got, want)
+		}
+	}
+}

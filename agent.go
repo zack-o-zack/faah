@@ -1781,7 +1781,11 @@ type threadSink struct {
 }
 
 func (s *threadSink) Text(text string, block bool) { s.text(text, block) }
-func (s *threadSink) Step(label string)            { s.tool(label) }
+func (s *threadSink) Step(label string) {
+	// Agents name files by absolute path; the workspace prefix is noise.
+	label = strings.ReplaceAll(label, s.tm.root+string(filepath.Separator), "")
+	s.tool(notes.StepLabel(label))
+}
 
 // Result is the final answer, kept only when nothing was streamed.
 func (s *threadSink) Result(text string) {

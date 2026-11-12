@@ -52,7 +52,7 @@ Select code and press `Alt+X`, click **Explain** in the selection bar, or right-
 - **One identifier** explains that symbol: what it is, why it exists, and who uses it. A local variable is explained within its function.
 - **Anything else, up to 400 lines,** explains what the code does, its inputs, and its effects.
 
-The answer appears in the thread panel, and you can ask follow-up questions below it. A line under the answer shows its evidence, for example `gopls · definition · 14 references in 5 files · 3 callers`. `text match` means no language server could resolve the code, so the evidence is weaker.
+The thread panel stays closed while the agent works. A small pill in the top right of the editor shows its progress, for example `Explaining · Read auth.go · 2 notes`, then `Explanation failed` or, when it is done, a translucent card with the notes count and the last paragraph of the answer cut to two lines. Click it to open the answer in the thread panel, where you can ask follow-up questions below it. A finished pill stays until you open it or dismiss it with its ×. A line under the answer shows its evidence, for example `gopls · definition · 14 references in 5 files · 3 callers`. `text match` means no language server could resolve the code, so the evidence is weaker.
 
 References to files, lines, and named symbols are links. faah checks each one when the answer finishes, and anything it cannot confirm stays plain text.
 

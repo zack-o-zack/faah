@@ -12,6 +12,7 @@ import { hideRightInspector } from './inspector.js';
 import { layout, render } from './renderer.js';
 import { registerAgentPicker, reloadWorkspace } from './agent.js';
 import { onStream, setStreamTopic, watchThread } from './stream.js';
+import { initOrb, orbBegin, orbAttach, orbFailed, orbThread, orbStep, orbSummary, orbSync } from './orb.js';
 
 const COPY_ICON = '<span class="icon-[lucide--copy] size-3 shrink-0" aria-hidden="true"></span>';
 const COPIED_ICON = '<span class="icon-[lucide--check] size-3 shrink-0" aria-hidden="true"></span>';
@@ -420,6 +421,7 @@ const thrEl = {};
 function thrShow(view) {
   thrEl.listView.hidden = view !== 'list';
   thrEl.threadView.hidden = view !== 'thread';
+  orbSync();
 }
 
 function thrVisible() {
@@ -469,6 +471,7 @@ function thrConnectList() {
     next.push(sm);
     next.sort((a, b) => b.updated - a.updated);
     thrApplyList(next);
+    orbSummary(sm);
   });
   onStream('threads:deleted', ({ id }) => {
     thrApplyList(thr.list.filter(t => t.id !== id));
@@ -665,6 +668,7 @@ function thrOpenStream(id) {
 function thrWireStream() {
   const mine = d => thr.threadId === d.id;
   onStream('thread:thread', d => {
+    orbThread(d.data);
     if (!mine(d)) return;
     thr.cur = d.data;
     thrRenderState();
@@ -694,6 +698,7 @@ function thrWireStream() {
     });
   });
   onStream('thread:tool', ({ id, data: d }) => {
+    orbStep(id, d.text);
     if (thr.threadId !== id || !thr.cur) return;
     const turn = thr.cur.turns.find(x => x.id === d.turn);
     if (!turn) return;
@@ -762,7 +767,9 @@ export function newThread(info) {
 }
 
 /* Asks the server for an explanation of this selection. It answers with a saved
-   thread when the code has not changed, or a new one already running. */
+   thread when the code has not changed, or a new one already running. The
+   thread view is prepared behind the closed sidebar while the orb shows
+   progress; opening the sidebar shows it. */
 async function thrExplain(body) {
   const token = 'explain:' + Date.now();
   thr.opening = token;
@@ -770,7 +777,7 @@ async function thrExplain(body) {
   thr.cur = null;
   thr.stale = null;
   thrCloseStream();
-  showThreadsSidebar();
+  orbBegin();
   thrShow('thread');
   thrEl.title.textContent = 'Explain';
   thrEl.del.hidden = true;
@@ -783,10 +790,12 @@ async function thrExplain(body) {
     thr.cur = j.thread;
     if (j.stale) thr.stale = { id: j.thread.id, reason: j.staleReason };
     thrRenderState();
+    orbAttach(j.thread);
     if (thrRunning() || !j.thread.turns.length) thrOpenStream(j.thread.id);
   } catch (e) {
     if (thr.opening !== token) return;
     thr.opening = null;
+    orbFailed(e.message);
     thrEl.msgs.innerHTML = '<div data-ui="hint" class="empty text-muted-foreground">' + esc(e.message) + '</div>';
   }
 }
@@ -1020,6 +1029,15 @@ export function initThreads() {
     thr.avail = true;
     setExplainHandler(explainSelection);
     setExplainPrepareHandler(prepareExplain);
+    initOrb({
+      open: id => {
+        if (thr.cur?.id !== id) { openThread(id); return; }
+        showThreadsSidebar();
+        thrShow('thread');
+      },
+      showing: id => !document.body.classList.contains('threads-hidden') && !thrEl.threadView.hidden &&
+        (id ? thr.cur?.id === id : String(thr.opening).startsWith('explain:')),
+    });
     $('#btn-top-threads')?.removeAttribute('hidden');
     thr.list = j.threads || [];
     thrDrawList();
