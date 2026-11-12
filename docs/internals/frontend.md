@@ -324,3 +324,13 @@ Covered source viewports derive an empty slot window while editing or displaying
 viewer. Switching back mounts source rows from the same buffer. Keeping hidden rows
 mounted spends layout and reactive work on an invisible duplicate view. No effect
 synchronizes this visibility; it derives from the document view mode.
+
+## Phase B foundation (not mounted)
+
+`workspace/tree-model.js` is the pure tree-cache model for the sidebar migration.
+It holds lazy children and expanded paths, flattens visible rows in server order,
+filters Git scopes and calculates bounded row windows. Compacted directory paths
+retain their identity; ancestor lookup uses cached directory paths. Tests include
+20,000 files. It has no DOM or Solid dependencies and is not connected to the
+application yet. Sidebar, Git, search, palette, inspectors, streams, status and
+panel layout still use their legacy implementations pending phase B.
