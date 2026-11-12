@@ -23,7 +23,6 @@ web/src/lsp.js
 web/src/lspsetup.js
 web/src/main.js
 web/src/metricsview.js
-web/src/newitem.js
 web/src/overlays.js
 web/src/overlays.test.js
 web/src/palette.js
@@ -31,7 +30,6 @@ web/src/palette.test.js
 web/src/panels.js
 web/src/pr.js
 web/src/prmerge.js
-web/src/prscope.js
 web/src/reviewflow.js
 web/src/reviewflow.test.js
 web/src/reviewwalkthrough.js
@@ -48,7 +46,6 @@ web/src/tips-util.js
 web/src/tips.js
 web/src/tips.test.js
 web/src/toast.test.js
-web/src/tree.js
 web/src/typescale.test.js
 web/src/ui.js
 web/src/unpushed.js

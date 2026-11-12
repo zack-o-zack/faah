@@ -4,7 +4,7 @@ import { $, $$, S } from './state.js';
 
 import { updateStatus } from './status.js';
 
-import { treeEl, refreshTree, setSidebarMode, hasGitView } from './tree.js';
+import { refreshTree, setSidebarMode, hasGitView } from './app/legacy-bridge.js';
 
 import { refreshUnpushed } from './unpushed.js';
 

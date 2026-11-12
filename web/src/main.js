@@ -9,7 +9,7 @@ import { openPalette, initPalette } from './palette.js';
 import { showHelp, initShortcuts } from './shortcuts.js';
 
 import { $, S } from './state.js';
-import { drawTree, treeEl, initTree, revealDir, revealFile, refreshTree, collapseAllDirs, expandDirtyDirs, inGitMode, setAutoRevealSuppressed, setSidebarMode, updateSidebarToggleState, patchTreeGitStatus, hasGitView } from './tree.js';
+import { revealDir, revealFile, refreshTree, collapseAllDirs, expandDirtyDirs, inGitMode, setAutoRevealSuppressed, setSidebarMode, hasGitView } from './app/legacy-bridge.js';
 import { initSearch } from './search.js';
 import { initPanels, showPanel } from './panels.js';
 import { initInspector } from './inspector.js';
@@ -21,8 +21,6 @@ import { initGitPanel, updateGitPanel, syncGitPanelMeta } from './gitpanel.js';
 import { initPR } from './pr.js';
 import { initLineComment } from './linecomment.js';
 import { initUnpushed, refreshUnpushed } from './unpushed.js';
-import { initPRScope, updateScopeCounts } from './prscope.js';
-import { initNewItem } from './newitem.js';
 import { initTips, startTipsAsync } from './tips.js';
 import { initReviewFlow, setMode } from './reviewflow.js';
 
@@ -30,15 +28,15 @@ import { initReviewFlow, setMode } from './reviewflow.js';
 
 export function initLegacy() {
 configureLegacyServices({
- emit, setSidebarMode, updateSidebarToggleState, patchTreeGitStatus, hasGitView, updateGitPanel, refreshUnpushed, updateScopeCounts, updateMetricsDisplay, showPanel, revealDir, warmLSP, updateStatus, setLspState, gotoDefinition, findReferences, showCalls,
+ emit, setSidebarMode, hasGitView, updateGitPanel, refreshUnpushed, updateMetricsDisplay, showPanel, revealDir, warmLSP, updateStatus, setLspState, gotoDefinition, findReferences, showCalls,
  copyToClipboard, copyRichToClipboard, openPalette, showHelp, triggerRefresh, drawOutline,
 });
 initOutline();
 // Initialize all subsystems
-initNewItem();
+
 initTips();
 initReviewFlow();
-initTree();
+
 initGitPanel();
 initSearch();
 initPanels();
@@ -55,7 +53,7 @@ initSettings();
 initLineComment();
 initErrorCopy();
 initUnpushed();
-initPRScope();
+
 
 // Bootstrap application lifecycle
 (async function boot() {
@@ -85,7 +83,7 @@ initPRScope();
   S.meta = await api('/api/meta');
   if (S.meta.metrics) updateMetricsDisplay(S.meta.metrics);
   refreshLspMenu();
-  updateSidebarToggleState();
+
   syncGitPanelMeta();
   applyAgentMeta();
   initPR();
@@ -108,11 +106,6 @@ initPRScope();
   if (S.meta.version) {
     const emptyVerEl = $('#empty-ver');
     if (emptyVerEl) emptyVerEl.textContent = 'v' + S.meta.version;
-    const stVerEl = $('#st-ver');
-    if (stVerEl) {
-      stVerEl.textContent = 'v' + S.meta.version;
-      stVerEl.title = `faah v${S.meta.version} (Click for shortcuts & help)`;
-    }
   }
   // The desktop app keeps its footer for the workspace; Settings joins the status bar.
   if (document.documentElement.hasAttribute('data-shell')) {
@@ -189,7 +182,7 @@ initPRScope();
         if (m.ready) {
           clearInterval(timer);
           S.meta = m;
-          updateSidebarToggleState();
+        
           syncGitPanelMeta();
           updateStatus();
           setAutoRevealSuppressed(true);

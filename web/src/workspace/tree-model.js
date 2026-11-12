@@ -4,13 +4,21 @@ export function createTreeModel() {
   const expanded = new Set();
   const rows = new Map();
   const directories = new Set();
+  const entriesByPath = new Map();
   function apply(dir, entries) {
-    for (const entry of children.get(dir) || []) directories.delete(entry.path);
+    for (const entry of children.get(dir) || []) {
+      directories.delete(entry.path);
+      entriesByPath.delete(entry.path);
+      rows.delete(entry.path);
+    }
     children.set(dir, entries);
-    for (const entry of entries) if (entry.dir) directories.add(entry.path);
+    for (const entry of entries) {
+      entriesByPath.set(entry.path, entry);
+      if (entry.dir) directories.add(entry.path);
+    }
     for (const entry of entries) rows.delete(entry.path);
   }
-  function flatten(scope = 'all') {
+  function flatten(scope = 'all', snapshot) {
     const result = [];
     const stack = [{ entries: children.get('') || [], index: 0, depth: 0 }];
     while (stack.length) {
@@ -20,7 +28,7 @@ export function createTreeModel() {
         continue;
       }
       const entry = frame.entries[frame.index++];
-      if (!inScope(entry, scope)) continue;
+      if (!inScope(entry, scope, snapshot)) continue;
       let row = rows.get(entry.path);
       if (!row || row.depth !== frame.depth) {
         row = { ...entry, depth: frame.depth };
@@ -36,6 +44,7 @@ export function createTreeModel() {
   return {
     children,
     expanded,
+    entry: (path) => entriesByPath.get(path),
     apply,
     flatten,
     expand(path) {
@@ -52,6 +61,7 @@ export function createTreeModel() {
       expanded.clear();
       rows.clear();
       directories.clear();
+      entriesByPath.clear();
     },
     ancestors(path) {
       const parts = path.split('/');
@@ -62,16 +72,24 @@ export function createTreeModel() {
       }
       return found;
     },
-    expandable(scope = 'all') {
-      return flatten(scope).filter(
+    expandable(scope = 'all', snapshot) {
+      return flatten(scope, snapshot).filter(
         (entry) => entry.dir && !entry.ignored && !expanded.has(entry.path),
       );
     },
   };
 }
-export function inScope(entry, scope) {
+export function inScope(entry, scope, snapshot) {
   if (scope === 'all') return true;
-  if (scope === 'yours') return entry.dir ? !!entry.yourDirty : !!entry.yourStatus;
+  if (scope === 'yours') {
+    if (snapshot)
+      return entry.dir
+        ? !!snapshot.yourDirtyDirs?.[entry.path]
+        : !!snapshot.yourStatuses?.[entry.path];
+    return entry.dir ? !!entry.yourDirty : !!entry.yourStatus;
+  }
+  if (snapshot)
+    return entry.dir ? !!snapshot.dirtyDirs?.[entry.path] : !!snapshot.statuses?.[entry.path];
   return entry.dir ? !!entry.dirty : !!entry.status;
 }
 export function rowWindow(count, top, height, rowHeight = 24, overscan = 12) {

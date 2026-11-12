@@ -8,7 +8,7 @@ import { updateStatus, openLspMenu, startAllLsp, stopAllLsp } from './status.js'
 import { showPanel, reindexWorkspace } from './panels.js';
 
 import { gotoDefinition, findReferences } from './lsp.js';
-import { revealFile } from './tree.js';
+import { revealFile } from './app/legacy-bridge.js';
 import { showRightInspector, hideRightInspector } from './inspector.js';
 import { showCalls } from './calls.js';
 import { showHelp } from './shortcuts.js';
@@ -21,7 +21,7 @@ import { newThread, deleteCurrentThread, showThreadsSidebar } from './thread.js'
 import { copyToClipboard, copyRichToClipboard } from './ui.js';
 import { getDocRaw } from './app/legacy-bridge.js';
 
-import { promptNewItem } from './newitem.js';
+import { promptNewItem } from './app/legacy-bridge.js';
 import { navigateToTips, showTipWidget } from './tips.js';
 
 export const overlay = $('#overlay');

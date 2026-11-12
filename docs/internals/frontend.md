@@ -361,3 +361,17 @@ release that handle on cleanup and must never expose an element. Durable state,
 loading/errors and navigation intent belong in stores with named actions; they
 must not depend on whether a component registered a handle. Delete handles used
 only by a legacy consumer when its checkpoint replaces that consumer.
+
+## Tree and new items (phase B checkpoint 2)
+
+`workspace/tree-store.js` owns lazy requests, cancellation, expansion, reveal intent,
+scope, staging and new-item actions. The plain tree model keeps large caches outside
+store proxies. `Tree` renders a bounded flattened window, owns scroll/resize measurement,
+and uses one effect to apply a requested native scroll. `TreeRow` derives decorations
+from Git snapshots and viewed state; `TreeToolbar`, `TreeScope` and `NewItemDialog`
+own their controls. Context menus use the shared primitive, including keyboard dismissal.
+
+The bridge adapts remaining legacy refresh/reveal/mode/new-item calls and settings
+writes. Its temporary sidebar-mode notification exists only for the legacy unpushed
+view. The viewer's manual tree-badge callback is deleted; viewed flags are reactive.
+`tree.js`, `newitem.js` and the obsolete `prscope.js` are deleted.

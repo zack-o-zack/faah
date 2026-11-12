@@ -86,7 +86,6 @@ export function initShortcuts() {
   $('#btn-theme')?.addEventListener('click', cycleTheme);
   $('#btn-settings')?.addEventListener('click', () => openSettings('ui'));
   $('#btn-help')?.addEventListener('click', () => navigateToTips());
-  $('#st-ver')?.addEventListener('click', showHelp);
   $('#helpsheet').addEventListener('click', () => { $('#helpsheet').close(); });
 
   // Footer quick action buttons

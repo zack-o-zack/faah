@@ -17,15 +17,9 @@
 <div id="app" class="flex h-dvh overflow-hidden">
   <!-- SECTION: Sidebar (File explorer tree) -->
   <aside id="side" class="flex w-[340px] shrink-0 flex-col overflow-hidden border-r bg-sidebar text-sidebar-foreground [body.side-hidden_&]:hidden">
-    <header class="panel-head desktop:min-h-[var(--titlebar-h,2.5rem)] desktop:[-webkit-app-region:drag] desktop:[&_button]:[-webkit-app-region:no-drag] desktop:[&_a]:[-webkit-app-region:no-drag] desktop:[&_[role=group]]:[-webkit-app-region:no-drag] desktop:[&_[role=tab]]:[-webkit-app-region:no-drag] desktop:pl-[calc(0.75rem+var(--titlebar-left,0px))] desktop:flex-wrap desktop:pt-0 [&_.panel-actions]:desktop:w-[calc(100%+var(--titlebar-left,0px))] [&_.panel-actions]:desktop:-ml-[var(--titlebar-left,0px)] flex shrink-0 items-center gap-2 border-b px-3 py-2 text-xs font-medium"><span class="side-logo flex min-w-0 flex-1 items-center gap-2 overflow-hidden [&_img]:shrink-0 desktop:h-[var(--titlebar-h,38px)] [&_img]:h-4 [&_img]:w-auto" title="faah"><img class="hidden dark:block" src="static/logo-dark.svg" alt="faah" width="35" height="13"><img class="block dark:hidden" src="static/logo-light.svg" alt="faah" width="35" height="13"><span id="st-ver" class="status-ver min-w-0 truncate cursor-pointer rounded px-1 font-mono text-xs text-muted-foreground hover:bg-accent hover:text-foreground" title="faah Version"></span></span><span class="panel-actions ml-auto flex shrink-0 items-center gap-1"><div class="button-group mr-1" role="group" aria-label="Explorer view mode"><button id="btn-files" title="All files" class="btn" data-control="view-choice" data-variant="secondary" data-size="xs" aria-pressed="true"><span class="icon-[lucide--folder] size-3 shrink-0" aria-hidden="true"></span><span>Files</span></button><button id="btn-changed" title="Changed files only" class="btn" data-control="view-choice" data-variant="ghost" data-size="xs"><span class="icon-[lucide--git-branch] size-3 shrink-0" aria-hidden="true"></span><span>Diff</span></button></div><button id="btn-new-file" title="New File" aria-label="New File" class="btn ml-auto" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--file-plus] size-3.5 shrink-0" aria-hidden="true"></span></button><button id="btn-new-folder" title="New Folder" aria-label="New Folder" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--folder-plus] size-3.5 shrink-0" aria-hidden="true"></span></button><button id="btn-collapse-tree" title="Collapse all folders" aria-label="Collapse all folders" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--chevrons-up] size-3.5 shrink-0" aria-hidden="true"></span></button><button id="btn-expand-tree" title="Expand all project folders (ignored folders stay closed)" aria-label="Expand all project folders" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--chevrons-down] size-3.5 shrink-0" aria-hidden="true"></span></button><button id="btn-reindex" title="Re-index" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Re-index"><span class="icon-[lucide--rotate-cw] size-3.5 shrink-0" aria-hidden="true"></span></button></span></header>
-    <!-- PR review only (web/src/prscope.js): whole PR vs just your own changes -->
-    <div id="scope-bar" class="scope-bar shrink-0 border-b p-2" hidden>
-      <div class="button-group w-full" role="group" aria-label="Changes to show">
-        <button type="button" data-scope="all" aria-pressed="true" title="Every file this PR changes, plus your edits not pushed yet" class="btn flex-1" data-variant="secondary" data-size="xs">PR changes <span id="scope-all-n" class="tabular-nums opacity-70" data-control="scope-n">0</span></button>
-        <button type="button" data-scope="yours" aria-pressed="false" title="Only files you edited or committed here that are not in the PR yet" class="btn flex-1" data-variant="outline" data-size="xs">Not pushed <span id="scope-yours-n" class="tabular-nums opacity-70" data-control="scope-n">0</span></button>
-      </div>
-    </div>
-    <div class="panel-body min-h-0 flex-1 overflow-auto pb-4 [&.changed-only_.file:not(.dirty)]:hidden [&.changed-only_.tw:not(:has(.dirty))]:hidden [&.changed-only.scope-yours_.file:not(.your-change)]:hidden [&.changed-only.scope-yours_.tw:not(:has(.your-change))]:hidden [&.changed-only.scope-pr_.file:not(.pr-file)]:hidden [&.changed-only.scope-pr_.tw:not(:has(.pr-file))]:hidden [&.no-changes]:after:content-['Working_tree_clean'] [&.no-yours]:after:content-['No_changes_of_yours_yet'] after:block after:p-3 after:text-xs after:text-muted-foreground" id="tree"></div>
+    <div id="tree-toolbar-root" class="contents"></div>
+    <div id="tree-scope-root" class="contents"></div>
+    <div id="tree-root" class="contents"></div>
     <!-- Unpushed commits: the local commits ahead of the tracking branch,
          listed beside the tree while the "changed files only" filter is on.
          web/src/unpushed.js owns it. -->
@@ -486,8 +480,7 @@
     <!-- Selection context menu: the footer's selection actions, at the pointer -->
 
 
-    <!-- Tree context menu: file & folder actions on the left sidebar -->
-    <div id="tree-menu" role="menu" hidden></div>
+
 
     <!-- Commit card: author, message and diffstat for a hovered unpushed commit -->
     <div id="commitcard" class="card fixed z-[60] max-w-[480px] max-h-[70vh] overflow-auto" hidden></div>
@@ -907,23 +900,7 @@
   </div>
 </dialog>
 
-<!-- Modal Prompt Dialog for New File / New Folder -->
-<dialog id="input-modal" class="dialog">
-  <div class="">
-    <header class="flex-row! items-center justify-between">
-      <h2 id="modal-title" class="text-14 font-semibold">New File</h2>
-      <button type="button" id="modal-btn-close" title="Close (Esc)" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Close (Esc)"><span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true"></span></button>
-    </header>
-    <section class="flex flex-col gap-2">
-      <div id="modal-desc" data-ui="fs-modal-desc" class="text-muted-foreground">Enter relative path from project root:</div>
-      <input id="modal-input" aria-label="New item path" type="text" spellcheck="false" autocomplete="off" class="input h-8!" data-control="fs-modal-input">
-    </section>
-    <footer class="flex-row! justify-end gap-2">
-      <button id="modal-btn-cancel" type="button" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs">Cancel</button>
-      <button id="modal-btn-ok" type="button" class="btn" data-control="bar-action" data-variant="primary" data-size="xs">Create</button>
-    </footer>
-  </div>
-</dialog>
+
 
 <!-- Invisible text node to measure font metrics in DOM -->
 <span id="measure">0</span>

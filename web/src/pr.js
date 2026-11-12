@@ -12,7 +12,7 @@ import { $, $$, S, esc } from './state.js';
 import { diffview, setPRSyncHandler } from './app/legacy-bridge.js';
 import { reloadWorkspace } from './agent.js';
 
-import { refreshTree } from './tree.js';
+import { refreshTree } from './app/legacy-bridge.js';
 
 import { initPRMerge, refreshMergeStatus, reviewGate } from './prmerge.js';
 import { openForgeConnect } from './forgeconnect.js';

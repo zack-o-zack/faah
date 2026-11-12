@@ -84,6 +84,32 @@ export function bindLegacyEditor(value, theme) {
       value.store.actions.setWorkspace(next);
     },
   });
+  const settings = new Proxy(
+    {},
+    {
+      get: (_, key) => value.store.state.settings[key],
+      set: (_, key, next) => {
+        value.store.actions.setSetting(key, next);
+        return true;
+      },
+      ownKeys: () => Object.keys(value.store.state.settings),
+      getOwnPropertyDescriptor: () => ({ enumerable: true, configurable: true }),
+    },
+  );
+  Object.defineProperty(S, 'settings', {
+    configurable: true,
+    get: () => settings,
+    set: (next) => {
+      value.store.actions.setSettings(next);
+    },
+  });
+  Object.defineProperty(S, 'unpushedCount', {
+    configurable: true,
+    get: () => value.store.state.git.unpushedCount,
+    set: (next) => {
+      value.store.actions.setUnpushedCount(next);
+    },
+  });
   const mappings = {
     active: ['documents', 'active'],
     hist: ['documents', 'history'],
@@ -246,6 +272,12 @@ export function configureLegacyServices(value) {
       },
     ),
   );
+  createEffect(
+    on(
+      () => editorStore.tree.mode(),
+      (mode) => value.emit('sidebar:mode', { mode }),
+    ),
+  );
   editorStore.actions.openLink = async (path, options) => {
     try {
       const clean = path.replace(/\/+$/, '');
@@ -284,6 +316,12 @@ export function configureLegacyServices(value) {
       if (!document.gutterLoaded) void loadGutter(document);
       value.updateStatus();
       value.emit('tab:activated', { doc: document });
+      if (
+        editorStore.tree.autoReveal() &&
+        !globalThis.document.body.classList.contains('side-hidden')
+      ) {
+        void editorStore.actions.revealFile(document.path);
+      }
     },
     closed(document) {
       symbols.cancel(document.path);
@@ -669,17 +707,12 @@ export const isFileViewed = (path) => !!editorStore.store.state.viewers.viewed[p
 export function focusDiffScope(document) {
   const actual = editorStore.store.state.documents.tabs.find((tab) => tab.path === document?.path);
   if (!actual || !editorStore.store.state.workspace.meta?.pr) return;
-  const tree = $('#tree');
-  viewerActions().focusScope(actual, tree?.classList.contains('scope-yours') ? 'yours' : 'pr');
+  editorStore.actions.focusTreeScope(actual);
 }
 let orbHooks;
 export function initOrb(hooks) {
   orbHooks = hooks;
   editorStore.services.openExplanation = hooks.open;
-  editorStore.services.viewedChanged = (path) => {
-    for (const row of $$('#tree .tr.file[data-file="' + CSS.escape(path) + '"]'))
-      row.classList.toggle('file-viewed', isFileViewed(path));
-  };
   const observer = new MutationObserver(orbSync);
   observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
   onCleanup(() => observer.disconnect());
@@ -739,36 +772,8 @@ async function paintLegacyGitSnapshot(data) {
   // Cheap: only re-reads git log when the ahead count or head commit moved.
   await services.refreshUnpushed(data);
 
-  services.updateSidebarToggleState();
-  if ($('#tree')?.classList.contains('changed-only') && !services.hasGitView()) {
-    await services.setSidebarMode('files');
-  }
-
+  await editorStore.actions.reconcileTreeSnapshot();
   const statuses = data.statuses || {};
-  const dirtyDirs = data.dirtyDirs || {};
-  const staged = data.staged || {};
-  const partial = data.partial || {};
-  const yourStatuses = data.yourStatuses || {};
-  const yourDirtyDirs = data.yourDirtyDirs || {};
-
-  // Patch rendered tree items in place without full DOM reload
-  try {
-    await services.patchTreeGitStatus(
-      statuses,
-      dirtyDirs,
-      staged,
-      yourStatuses,
-      yourDirtyDirs,
-      partial,
-    );
-  } catch (err) {
-    console.error('Failed to patch tree git status', err);
-  }
-  try {
-    services.updateScopeCounts(statuses, yourStatuses);
-  } catch (err) {
-    console.error('Failed to update scope counts', err);
-  }
   try {
     services.updateGitPanel(data);
   } catch (err) {
@@ -836,3 +841,15 @@ async function paintLegacyGitSnapshot(data) {
     }
   }
 }
+
+export const refreshTree = () => editorStore.actions.refreshTree();
+export const revealDir = (path) => editorStore.actions.revealDirectory(path);
+export const revealFile = (path) => editorStore.actions.revealFile(path);
+export const collapseAllDirs = () => editorStore.actions.collapseTree();
+export const expandDirtyDirs = () => editorStore.actions.expandTree(true);
+export const setSidebarMode = (...args) => editorStore.actions.setTreeMode(...args);
+export const hasGitView = () => editorStore.tree.hasGitView();
+export const inGitMode = () => editorStore.tree.mode() === 'git';
+export const setAutoRevealSuppressed = (value) =>
+  editorStore.actions.setAutoRevealSuppressed(value);
+export const promptNewItem = (...args) => editorStore.actions.openNewItem(...args);

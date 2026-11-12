@@ -10,6 +10,13 @@ export function ContextMenu(props) {
     props.onClose?.();
     previous?.focus();
   };
+  const open = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    previous = document.activeElement;
+    const rect = event.currentTarget.getBoundingClientRect();
+    setPoint({ x: rect.right, y: rect.top });
+  };
   createMenuEvents({
     open: () => !!point(),
     panel: () => panel,
@@ -33,7 +40,7 @@ export function ContextMenu(props) {
         }
       }}
     >
-      {props.children}
+      {typeof props.children === 'function' ? props.children({ open }) : props.children}
       <Show when={point()}>
         <Portal>
           <div

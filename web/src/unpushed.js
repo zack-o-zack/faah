@@ -18,7 +18,7 @@ import { $, S, esc } from './state.js';
 import { on } from './bus.js';
 
 import { copyToClipboard } from './ui.js';
-import { treeEl, updateSidebarToggleState, inGitMode } from './tree.js';
+import { inGitMode } from './app/legacy-bridge.js';
 import { makeCardKeeper, pointerPos } from './cardkeep.js';
 import { commitFileRows, COMMIT_FILES_PAGE } from './commitfiles.js';
 
@@ -78,7 +78,6 @@ export async function refreshUnpushed(payload) {
 
   upList = next;
   S.unpushedCount = upList.length;
-  updateSidebarToggleState();
   drawUnpushed();
   syncUnpushedVisibility();
 }

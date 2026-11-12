@@ -6,7 +6,7 @@ import { $, esc, S } from './state.js';
 import { showError } from './errors.js';
 import { setStatusNote } from './status.js';
 
-import { refreshTree, treeEl } from './tree.js';
+import { refreshTree } from './app/legacy-bridge.js';
 
 import { emit } from './bus.js';
 

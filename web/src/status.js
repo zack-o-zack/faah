@@ -30,11 +30,6 @@ export function updateStatus() {
     const l = $('.bar-action-label', mdBtn);
     if (l && isMd) l.textContent = label;
   }
-  const verEl = $('#st-ver');
-  if (verEl && S.meta?.version) {
-    verEl.textContent = 'v' + S.meta.version;
-    verEl.title = `faah v${S.meta.version} (Click for shortcuts & help)`;
-  }
   drawLspStatus();
 }
 

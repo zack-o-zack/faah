@@ -1,3 +1,4 @@
+import { createTreeStore } from '../workspace/tree-store.js';
 import { createSelectionActions } from './selection-actions.js';
 import { createFindActions } from './find-actions.js';
 import { createEditActions } from './edit-actions.js';
@@ -229,5 +230,10 @@ export function createEditorStore(store) {
     createHoverActions(editor),
     createVimActions(editor),
   );
+  editor.tree = createTreeStore(store, {
+    openFile,
+    enterEditMode: () => editor.actions.enterEditMode(),
+  });
+  Object.assign(actions, editor.tree.actions);
   return editor;
 }

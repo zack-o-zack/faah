@@ -94,6 +94,8 @@ export function createAppStore(options = {}) {
           throw new Error('Unknown editor preference');
         set('editor', name, value);
       },
+      setSetting: (name, value) => set('settings', name, value),
+      setUnpushedCount: (count) => set('git', 'unpushedCount', count),
       setSettings: (settings) => set('settings', reconcile(settings)),
       setLsp: (lsp) => set('lsp', reconcile(lsp)),
       patchLsp: (name, value) => set('lsp', name, value),
