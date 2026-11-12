@@ -1,14 +1,16 @@
 /* Monokai: based on the classic Monokai palette. Token reference: docs/internals/styling-and-themes.md. */
 :root[data-theme="monokai"] {
+  --image-dark: #121214;
+  --image-light: #ffffff;
   --theme-name: "Monokai";
   color-scheme: dark;
 
   /* surfaces, from the editor out to raised hover states */
-  --bg: #272822; --bg2: #1e1f1c; --bg3: #3e3d32; --bg4: #49483e;
+  --background: #272822; --sidebar: #1e1f1c; --card: #1e1f1c; --popover: #3e3d32; --secondary: #49483e; --muted: #3e3d32; --sidebar-accent: #3e3d32; --accent: #49483e;
   /* text: primary, secondary, tertiary */
-  --fg: #f8f8f2; --dim: #cfcfc2; --faint: #75715e;
+  --foreground: #f8f8f2; --card-foreground: #f8f8f2; --popover-foreground: #f8f8f2; --secondary-foreground: #f8f8f2; --accent-foreground: #f8f8f2; --sidebar-foreground: #f8f8f2; --sidebar-accent-foreground: #f8f8f2; --muted-foreground: #cfcfc2; --faint: #75715e;
   /* borders and accent */
-  --line: #414339; --accent: #a6e22e; --accent-fg: #e6db74; --on-accent: #272822;
+  --border: #414339; --input: #49483e; --sidebar-border: #414339; --primary: #a6e22e; --ring: #a6e22e; --sidebar-primary: #a6e22e; --sidebar-ring: #a6e22e; --primary-text: #e6db74; --primary-foreground: #272822; --sidebar-primary-foreground: #272822;
   /* selection, search matches, current line */
   --sel: #49483e; --mark: rgba(230, 219, 116, 0.25); --mark-active: #fd971f; --cur: #3e3d32;
   /* elevation */
@@ -18,7 +20,7 @@
   --k: #f92672; --kt: #66d9ef; --nf: #a6e22e; --nc: #a6e22e; --nb: #66d9ef;
   --nv: #f8f8f2; --no: #ae81ff; --na: #a6e22e; --nt: #f92672; --nd: #a6e22e;
   --np: #f8f8f2; --s: #e6db74; --m: #ae81ff; --o: #f92672; --p: #f8f8f2;
-  --c: #75715e; --cp: #f92672; --err: #f44747;
+  --c: #75715e; --cp: #f92672; --destructive: #f44747; --err: #f44747;
 
   /* diffs and status */
   --gi: #a6e22e; --gd: #f92672;

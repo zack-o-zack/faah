@@ -14,5 +14,12 @@
     "desktop:package": "node ./scripts/build-desktop.js --package",
     "desktop:dist": "node ./scripts/build-desktop.js --dist",
     "test": "bun test web/src/"
+  },
+  "devDependencies": {
+    "@iconify-json/lucide": "1.2.153",
+    "@iconify/tailwind4": "1.2.3",
+    "@tailwindcss/cli": "4.3.5",
+    "basecoat-css": "1.1.0",
+    "tailwindcss": "4.3.5"
   }
 }

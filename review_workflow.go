@@ -71,7 +71,7 @@ func defaultWorkflows() []ReviewWorkflowDef {
 	return []ReviewWorkflowDef{
 		{
 			ID:          "standard",
-			Name:        "PR Review Workflow",
+			Name:        "Review pipeline",
 			Description: "Sequential review workflow answering key PR questions: intent, performance, quality, and testing.",
 			Stages: []ReviewStageDef{
 				{
@@ -109,12 +109,12 @@ func defaultWorkflows() []ReviewWorkflowDef {
 
 // ReviewWorkflowManager coordinates workflow definitions and sequential multi-stage execution.
 type ReviewWorkflowManager struct {
-	server    *Server
-	mu        sync.Mutex
-	config    ReviewWorkflowConfig
-	run       *ReviewWorkflowRun
-	cancelFn  context.CancelFunc
-	subs      map[chan reviewWorkflowEvent]struct{}
+	server   *Server
+	mu       sync.Mutex
+	config   ReviewWorkflowConfig
+	run      *ReviewWorkflowRun
+	cancelFn context.CancelFunc
+	subs     map[chan reviewWorkflowEvent]struct{}
 }
 
 type reviewWorkflowEvent struct {
@@ -171,6 +171,15 @@ func (m *ReviewWorkflowManager) loadConfig() ReviewWorkflowConfig {
 			}
 		}
 	}
+	// The old default name was renamed; a saved config still holding it shows the new one.
+	if cfg.Name == "PR Review Workflow" {
+		cfg.Name = defaults[0].Name
+		for i := range cfg.Workflows {
+			if cfg.Workflows[i].Name == "PR Review Workflow" {
+				cfg.Workflows[i].Name = cfg.Name
+			}
+		}
+	}
 	m.config = cfg
 	return cfg
 }
@@ -181,7 +190,7 @@ func (m *ReviewWorkflowManager) saveConfig(cfg ReviewWorkflowConfig) error {
 
 	if len(cfg.Stages) > 0 {
 		if cfg.Name == "" {
-			cfg.Name = "PR Review Workflow"
+			cfg.Name = "Review pipeline"
 		}
 		cfg.Workflows = []ReviewWorkflowDef{
 			{
@@ -757,6 +766,15 @@ func pluralS(n int) string {
 	return "s"
 }
 
+// insightExts are the languages whose returns, errors and functions the
+// patterns below recognise.
+var insightExts = map[string]bool{
+	".go": true, ".js": true, ".mjs": true, ".cjs": true, ".jsx": true, ".ts": true, ".tsx": true,
+	".py": true, ".rb": true, ".rs": true, ".java": true, ".kt": true, ".swift": true, ".c": true,
+	".h": true, ".cc": true, ".cpp": true, ".hpp": true, ".cs": true, ".php": true, ".scala": true,
+	".dart": true, ".lua": true, ".sh": true,
+}
+
 // extractCodeUnderstanding parses diff hunks to surface guard bailouts, edge cases, and core logic.
 func extractCodeUnderstanding(rel string, hunks []render.DiffHunk) *ReviewUnderstanding {
 	und := &ReviewUnderstanding{
@@ -766,6 +784,10 @@ func extractCodeUnderstanding(rel string, hunks []render.DiffHunk) *ReviewUnders
 	}
 	if len(hunks) == 0 {
 		und.Summary = "No modifications in this file."
+		return und
+	}
+	// The patterns read code: in YAML, JSON or prose every line would be noise.
+	if !insightExts[strings.ToLower(filepath.Ext(rel))] {
 		return und
 	}
 
@@ -890,20 +912,6 @@ func extractCodeUnderstanding(rel string, hunks []render.DiffHunk) *ReviewUnders
 				Explanation: "Introduces or updates functional declaration",
 			})
 		}
-	}
-
-	// If no function definition was caught, capture main contiguous block
-	if len(und.CoreLogic) == 0 && len(addedRows) > 0 {
-		firstLine := addedRows[0].row.NewLine
-		lastLine := addedRows[len(addedRows)-1].row.NewLine
-		snippet := truncateInsightText(strings.TrimSpace(addedRows[0].row.Text), 90)
-		und.CoreLogic = append(und.CoreLogic, CodeInsightItem{
-			Line:        firstLine,
-			EndLine:     lastLine,
-			Kind:        "core",
-			Text:        snippet,
-			Explanation: fmt.Sprintf("Primary modification block (Lines %d–%d)", firstLine, lastLine),
-		})
 	}
 
 	parts := []string{}

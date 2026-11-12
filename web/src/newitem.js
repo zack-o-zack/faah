@@ -23,7 +23,7 @@ export function promptNewItem(type, targetDir = '') {
     ? `Create inside ${prefix} (or specify path):`
     : 'Enter relative path from project root:';
   modalInput.value = prefix;
-  modal.hidden = false;
+  modal.showModal();
   modalInput.focus();
   modalInput.setSelectionRange(modalInput.value.length, modalInput.value.length);
 }
@@ -31,7 +31,7 @@ export function promptNewItem(type, targetDir = '') {
 export function closeNewItemModal() {
   const modal = $('#input-modal');
   const modalInput = $('#modal-input');
-  if (modal) modal.hidden = true;
+  if (modal) modal.close();
   if (modalInput) modalInput.value = '';
 }
 
@@ -44,7 +44,7 @@ async function submitNewItem() {
   const currentType = modal.dataset.type || 'file';
   const val = modalInput.value.trim().replace(/^\/+|\/+$/g, '');
   if (!val) {
-    showToast('!', 'Path cannot be empty');
+    showToast('error', 'Path cannot be empty');
     return;
   }
 
@@ -52,7 +52,7 @@ async function submitNewItem() {
   try {
     const res = await apiPostJson('/api/fs/new', { path: val, type: currentType });
     closeNewItemModal();
-    showToast('✓', (currentType === 'dir' ? 'Created folder ' : 'Created ') + res.path);
+    showToast('success', (currentType === 'dir' ? 'Created folder ' : 'Created ') + res.path);
 
     const parentDir = val.includes('/') ? val.substring(0, val.lastIndexOf('/')) : '';
     await drawTree('', treeEl, 0);
@@ -67,7 +67,7 @@ async function submitNewItem() {
       await enterEditMode();
     }
   } catch (err) {
-    showToast('!', 'Failed to create: ' + (err.message || 'unknown error'));
+    showToast('error', 'Failed to create: ' + (err.message || 'unknown error'));
   } finally {
     if (btnOk) btnOk.disabled = false;
   }
@@ -80,10 +80,12 @@ export function initNewItem() {
   $('#btn-new-file')?.addEventListener('click', () => promptNewItem('file'));
   $('#btn-new-folder')?.addEventListener('click', () => promptNewItem('dir'));
 
+  $('#modal-btn-close')?.addEventListener('click', closeNewItemModal);
   $('#modal-btn-cancel')?.addEventListener('click', closeNewItemModal);
   $('#modal-btn-ok')?.addEventListener('click', submitNewItem);
 
   const modalInput = $('#modal-input');
+  modal.addEventListener('cancel', e => { e.preventDefault(); closeNewItemModal(); });
   modalInput?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();

@@ -2,18 +2,21 @@
    Yellow, peach, sky, green, pink and lavender are darkened from the palette so
    code stays readable (3:1 or better) on the light base. */
 :root[data-theme="catppuccin-latte"] {
+  --image-dark: #121214;
+  --image-light: #ffffff;
   --theme-name: "Catppuccin Latte";
   color-scheme: light;
 
   /* surfaces, from the editor out to raised hover states */
-  --bg: #eff1f5; --bg2: #e6e9ef; --bg3: #dce0e8; --bg4: #ccd0da;
+  --background: #eff1f5; --sidebar: #e6e9ef; --card: #e6e9ef; --popover: #dce0e8; --secondary: #ccd0da; --muted: #dce0e8; --sidebar-accent: #dce0e8; --accent: #ccd0da;
   /* text: primary, secondary, tertiary */
-  --fg: #4c4f69; --dim: #5c5f77; --faint: #8c8fa1;
+  --foreground: #4c4f69; --card-foreground: #4c4f69; --popover-foreground: #4c4f69; --secondary-foreground: #4c4f69; --accent-foreground: #4c4f69; --sidebar-foreground: #4c4f69; --sidebar-accent-foreground: #4c4f69; --muted-foreground: #5c5f77; --faint: #8c8fa1;
   /* borders and accent */
-  --line: #ccd0da; --accent: #8839ef; --accent-fg: #1e66f5;
+  --border: #ccd0da; --input: #ccd0da; --sidebar-border: #ccd0da; --primary: #8839ef; --ring: #8839ef; --sidebar-primary: #8839ef; --sidebar-ring: #8839ef; --primary-text: #1e66f5;
+  --primary-foreground: #fff; --sidebar-primary-foreground: #fff;
   /* selection, search matches, current line */
   --sel: rgba(124, 127, 147, 0.25); --mark: rgba(223, 142, 29, 0.22); --mark-active: #df8e1d; --cur: #e6e9ef;
-  --on-mark-active: var(--fg);
+  --on-mark-active: var(--foreground);
   /* elevation */
   --shadow: 0 4px 16px rgba(76, 79, 105, 0.18);
 
@@ -21,7 +24,7 @@
   --k: #8839ef; --kt: #b86e0a; --nf: #1e66f5; --nc: #b86e0a; --nb: #d20f39;
   --nv: #4c4f69; --no: #d9540a; --na: #b86e0a; --nt: #1e66f5; --nd: #d9540a;
   --np: #5f73e8; --s: #3a9127; --m: #d9540a; --o: #0287bd; --p: #6c6f85;
-  --c: #7c7f93; --cp: #c450a6; --err: #d20f39;
+  --c: #7c7f93; --cp: #c450a6; --destructive: #d20f39; --err: #d20f39;
 
   /* diffs and status */
   --gi: #3a9127; --gd: #d20f39;

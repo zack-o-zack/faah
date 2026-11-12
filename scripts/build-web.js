@@ -4,7 +4,7 @@
  *
  * Bundles modular frontend sources from `web/src/*.js` into `web/app.js`.
  * Supports execution under Bun (`bun scripts/build-web.js`) or Node (`node scripts/build-web.js`).
- * Zero external dependencies.
+ * Builds the stylesheet with Tailwind and Basecoat before bundling JavaScript.
  */
 
 import fs from 'node:fs';
@@ -19,8 +19,12 @@ const rootDir = path.resolve(__dirname, '..');
 const srcDir = path.join(rootDir, 'web', 'src');
 // Keep the app, launcher, and loading page separate so opening a workspace
 // does not load the editor before it is ready.
+// Basecoat's own scripts drive the select and toast components. They are plain
+// scripts that register on window.basecoat, so they go ahead of the app bundle.
+const basecoatScripts = ['basecoat', 'select', 'toast']
+  .map(name => path.join(rootDir, 'node_modules', 'basecoat-css', 'dist', 'js', name + '.min.js'));
 const bundles = [
-  { entry: path.join(srcDir, 'main.js'), out: path.join(rootDir, 'web', 'app.js') },
+  { entry: path.join(srcDir, 'main.js'), out: path.join(rootDir, 'web', 'app.js'), prelude: basecoatScripts },
   { entry: path.join(srcDir, 'workbench.js'), out: path.join(rootDir, 'web', 'workbench.js') },
   { entry: path.join(srcDir, 'holding.js'), out: path.join(rootDir, 'web', 'holding.js') },
 ];
@@ -159,10 +163,22 @@ function compressVendorAssets() {
 
 function run() {
   const start = Date.now();
+  const cli = path.join(rootDir, 'node_modules', '@tailwindcss', 'cli', 'dist', 'index.mjs');
+  if (!fs.existsSync(cli)) {
+    console.error('[build-web] Run npm ci at the repo root first.');
+    process.exit(1);
+  }
+  execFileSync(process.execPath, [cli, '-i', 'web/tailwind.css', '-o', 'web/app.css', '--minify'], {
+    cwd: rootDir, stdio: 'inherit',
+  });
   const bun = hasBun();
-  for (const { entry, out } of bundles) {
+  for (const { entry, out, prelude } of bundles) {
     if (bun) buildWithBun(entry, out);
     else buildWithNode(entry, out);
+    if (prelude) {
+      const head = prelude.map(file => fs.readFileSync(file, 'utf8')).join(';\n');
+      fs.writeFileSync(out, head + ';\n' + fs.readFileSync(out, 'utf8'));
+    }
   }
   compressVendorAssets();
 

@@ -1,3 +1,5 @@
+import { setMenuHidden } from './overlays.js';
+import { on } from './bus.js';
 // web/src/reviewflow.js
 import { $, $$, S, esc, api, apiPostJson, keyLabel } from './state.js';
 import { openFile } from './tabs.js';
@@ -10,7 +12,7 @@ import { initReviewWalkthrough, loadReviewWalkthrough, getWalkthroughSubTab, set
 let currentMode = 'code'; // 'code' | 'review'
 let currentLayout = (typeof localStorage !== 'undefined' && localStorage.getItem('faah-review-layout')) || 'vertical';
 let reviewConfig = {
-  name: 'PR Review Workflow',
+  name: 'Review pipeline',
   stages: [
     {
       id: 'summary',
@@ -47,13 +49,16 @@ let activeStageIdx = 0;
 let stageThread = null; // { id, t, release }: the stage thread shown, and its live feed
 let lastJumpContext = null; // { path, line, stageTitle }
 
-const statusIcons = {
-  pending: '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
-  running: '<svg class="spin" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg>',
-  completed: '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>',
-  failed: '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
-  stopped: '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><rect x="9" y="9" width="6" height="6"/></svg>'
+// Status as a dot: green done, yellow working, grey not started yet.
+const STATUS = {
+  pending: { dot: 'bg-muted-foreground/40', label: 'Not started' },
+  running: { dot: 'bg-warn animate-pulse', label: 'Working' },
+  completed: { dot: 'bg-gi', label: 'Done' },
+  failed: { dot: 'bg-destructive', label: 'Failed' },
+  stopped: { dot: 'bg-muted-foreground/40 ring-1 ring-muted-foreground', label: 'Stopped' },
 };
+const statusOf = s => STATUS[s] || STATUS.pending;
+const dotHtml = (s, extra = '') => `<span class="size-2 shrink-0 rounded-full ${statusOf(s).dot} ${extra}" aria-hidden="true"></span>`;
 
 // Safe property getters supporting both lower and upper case keys from Go JSON
 function getDef(st) {
@@ -90,7 +95,7 @@ function getWorkflowStages() {
 }
 
 function getWorkflowName() {
-  return reviewConfig.name || reviewConfig.workflows?.[0]?.name || reviewConfig.Workflows?.[0]?.Name || 'PR Review Workflow';
+  return reviewConfig.name || reviewConfig.workflows?.[0]?.name || reviewConfig.Workflows?.[0]?.Name || 'Review pipeline';
 }
 
 export function getMode() {
@@ -125,16 +130,12 @@ export function setMode(mode) {
   if (mode === currentMode) return;
   currentMode = mode;
 
-  const btnCode = $('#btn-mode-code');
-  const btnReview = $('#btn-mode-review');
   const reviewView = $('#review-view');
   const editor = $('#editor');
   const returnPill = $('#review-return-pill');
 
   if (mode === 'review') {
     document.body.classList.add('in-review-mode');
-    if (btnCode) btnCode.classList.remove('active');
-    if (btnReview) btnReview.classList.add('active');
     if (editor) editor.hidden = true;
     if (reviewView) reviewView.hidden = false;
     if (returnPill) returnPill.hidden = true;
@@ -149,8 +150,6 @@ export function setMode(mode) {
     connectWorkflowStream();
   } else {
     document.body.classList.remove('in-review-mode');
-    if (btnReview) btnReview.classList.remove('active');
-    if (btnCode) btnCode.classList.add('active');
     if (reviewView) reviewView.hidden = true;
     if (editor) editor.hidden = false;
     disconnectWorkflowStream();
@@ -179,6 +178,13 @@ function releaseStageThread() {
 }
 
 export function initReviewFlow() {
+  document.addEventListener('click', e => { if (!e.target.closest?.('#review-stage-menu, [data-control~=review-stage-menu-btn]')) closeStageMenu(); });
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape' || $('#review-stage-menu')?.hidden !== false) return;
+    const anchor = $('#review-stage-menu')._anchor;
+    closeStageMenu();
+    anchor?.focus();
+  });
   initReviewWalkthrough();
   wireModeControls();
   wireLayoutControls();
@@ -192,10 +198,12 @@ export function initReviewFlow() {
 }
 
 function wireModeControls() {
-  const btnCode = $('#btn-mode-code');
-  const btnReview = $('#btn-mode-review');
-  if (btnCode) btnCode.onclick = () => setMode('code');
-  if (btnReview) btnReview.onclick = () => setMode('review');
+  const open = $('#btn-pr-toggle');
+  if (open) open.onclick = () => setMode('review');
+  const close = $('#btn-pr-close');
+  if (close) close.onclick = () => setMode('code');
+  // Opening a file leaves the overview; closing a tab behind it does not.
+  on('tab:activated', e => { if (e && 'prevDoc' in e) setMode('code'); });
 
   const returnBtn = $('#btn-return-to-review');
   if (returnBtn) {
@@ -210,15 +218,12 @@ function wireModeControls() {
     };
   }
 
-  // Keyboard shortcuts: Mod+Shift+V (Review Mode), Mod+Shift+C (Code Mode)
+  // Mod+Shift+V opens or leaves the overview.
   document.addEventListener('keydown', (e) => {
     const mod = e.metaKey || e.ctrlKey;
     if (mod && e.shiftKey && (e.key === 'V' || e.key === 'v')) {
       e.preventDefault();
       setMode(currentMode === 'review' ? 'code' : 'review');
-    } else if (mod && e.shiftKey && (e.key === 'C' || e.key === 'c')) {
-      e.preventDefault();
-      setMode('code');
     }
   });
 }
@@ -347,16 +352,8 @@ function wireStreams() {
 }
 
 function updateBackgroundStatusDot() {
-  const dot = $('#review-badge-status');
-  if (!dot) return;
   const status = currentRun?.status || currentRun?.Status;
-  const isRunning = status === 'running';
-  dot.hidden = !isRunning;
-  if (isRunning) {
-    dot.classList.add('pulse');
-  } else {
-    dot.classList.remove('pulse');
-  }
+  for (const dot of $$('[data-ui~=review-status-dot]')) dot.hidden = status !== 'running';
 }
 
 function renderPipeline() {
@@ -365,7 +362,7 @@ function renderPipeline() {
 
   const stagesList = getWorkflowStages();
   if (stagesList.length === 0) {
-    container.innerHTML = '<div class="review-empty">No stages in review workflow</div>';
+    container.innerHTML = '<li class="px-2 py-3 text-xs text-muted-foreground">No stages yet. Add one with +.</li>';
     return;
   }
 
@@ -385,54 +382,45 @@ function renderPipeline() {
     const status = getStatus(st);
     const isActive = idx === activeStageIdx;
 
-    const card = document.createElement('div');
-    card.className = `review-stage-card ${status} ${isActive ? 'active' : ''}`;
+    const last = idx === items.length - 1;
+    const card = document.createElement('li');
+    card.setAttribute('data-ui', 'review-stage-card');
+    card.className = `group relative flex rounded-md [&.active]:bg-accent ${status} ${isActive ? 'active' : ''}`;
     card.dataset.index = String(idx);
 
-    const iconHtml = statusIcons[status] || statusIcons.pending;
-
+    // A dot per stage on a thin rail, like steps in a sequence.
     card.innerHTML = `
-      <div class="review-stage-card-icon">${iconHtml}</div>
-      <div class="review-stage-card-body">
-        <div class="review-stage-card-num">Stage ${idx + 1}</div>
-        <div class="review-stage-card-title">${esc(title)}</div>
-        <div class="review-stage-card-desc" title="${esc(question)}">${esc(question)}</div>
-      </div>
-      <div class="review-stage-card-actions">
-        <span class="review-stage-card-tag">${status}</span>
-        <button type="button" class="mini review-stage-card-edit-btn" title="Edit this stage">✏️</button>
-        <button type="button" class="mini review-stage-remove-btn" title="Remove stage from workflow" aria-label="Remove stage">&times;</button>
-      </div>
+      <button type="button" data-control="review-stage-select" aria-pressed="${isActive}" aria-label="Stage ${idx + 1}: ${esc(title)}, ${statusOf(status).label}" class="flex w-full min-w-0 items-start gap-2.5 rounded-md px-2 py-2 pr-8 text-left hover:bg-accent/50 focus-visible:outline focus-visible:outline-ring">
+        <span class="relative flex w-2 shrink-0 justify-center self-stretch pt-1.5">${dotHtml(status, 'relative z-10')}${last ? '' : '<span class="absolute top-4 -bottom-3 w-px bg-border" aria-hidden="true"></span>'}</span>
+        <span data-ui="review-stage-card-body" class="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span data-ui="review-stage-card-title" class="text-sm font-medium wrap-anywhere">${esc(title)}</span>
+          <span data-ui="review-stage-card-desc" class="line-clamp-2 text-xs text-muted-foreground wrap-anywhere">${esc(question)}</span>
+        </span>
+      </button>
+      <button type="button" title="Stage actions" aria-label="Actions for ${esc(title)}" aria-haspopup="menu" aria-expanded="false" class="btn absolute right-1.5 top-1.5 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 aria-expanded:opacity-100" data-control="review-stage-menu-btn" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--ellipsis] size-3.5 shrink-0" aria-hidden="true"></span></button>
     `;
 
     card.onclick = (e) => {
-      if (e.target.closest('.review-stage-remove-btn') || e.target.closest('.review-stage-card-edit-btn')) return;
+      const menuBtn = e.target.closest('[data-control~=review-stage-menu-btn]');
+      if (menuBtn) {
+        e.stopPropagation();
+        openStageMenu(idx, menuBtn);
+        return;
+      }
       activeStageIdx = idx;
       renderPipeline();
       renderActiveStage();
+      container.querySelector(`[data-index="${idx}"] [data-control~=review-stage-select]`)?.focus();
     };
-
-    const editBtn = card.querySelector('.review-stage-card-edit-btn');
-    if (editBtn) {
-      editBtn.onclick = (e) => {
-        e.stopPropagation();
-        activeStageIdx = idx;
-        renderPipeline();
-        renderActiveStage();
-        openInlineStageEditor();
-      };
-    }
-
-    const removeBtn = card.querySelector('.review-stage-remove-btn');
-    if (removeBtn) {
-      removeBtn.onclick = async (e) => {
-        e.stopPropagation();
-        await removeStage(idx);
-      };
-    }
+    card.oncontextmenu = (e) => {
+      e.preventDefault();
+      openStageMenu(idx, card.querySelector('[data-control~=review-stage-menu-btn]'), e);
+    };
 
     container.appendChild(card);
   });
+
+  renderStagesBadge(items);
 
   // Update Run / Stop buttons
   const isRunning = (currentRun?.status || currentRun?.Status) === 'running';
@@ -442,10 +430,94 @@ function renderPipeline() {
   if (btnStop) btnStop.hidden = !isRunning;
 }
 
+// The tab's badge carries the pipeline's progress, so it can be read from
+// the Diff tab without switching: a dot per stage, or done/total when long.
+function renderStagesBadge(items) {
+  const badge = $('#review-stages-count-badge');
+  if (!badge) return;
+  const statuses = items.map(getStatus);
+  const done = statuses.filter(s => s === 'completed').length;
+  badge.innerHTML = items.length <= 8
+    ? statuses.map(s => dotHtml(s, 'size-1.5!')).join('')
+    : dotHtml(statuses.find(s => s === 'running' || s === 'failed') || (done === items.length ? 'completed' : 'pending')) + `${done}/${items.length}`;
+  const working = items.findIndex((st, i) => statuses[i] === 'running');
+  const failed = statuses.includes('failed');
+  badge.title = `${done} of ${items.length} done` +
+    (working >= 0 ? ` · working on ${getTitle(getDef(items[working])) || 'stage ' + (working + 1)}` : '') +
+    (failed ? ' · a stage failed' : '');
+  badge.setAttribute('aria-label', badge.title);
+}
+
+// One menu for every stage, opened from its ⋯ button or a right-click.
+// Reordering and removing wait while the pipeline runs, since the run's
+// stages are matched to the list by position.
+const MENU_ITEM = 'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent focus-visible:bg-accent focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50';
+
+function openStageMenu(idx, anchor, pointer) {
+  const menu = $('#review-stage-menu');
+  if (!menu) return;
+  const stages = getWorkflowStages();
+  const running = (currentRun?.status || currentRun?.Status) === 'running';
+  const item = (act, icon, label, { disabled = false, cls = '' } = {}) =>
+    `<button type="button" data-act="${act}" class="${MENU_ITEM} ${cls}"${disabled ? ' disabled' : ''}><span class="${icon} size-3.5 shrink-0" aria-hidden="true"></span>${label}</button>`;
+  menu.innerHTML =
+    item('run', 'icon-[lucide--sparkle] text-special', 'Run this stage', { disabled: running }) +
+    item('edit', 'icon-[lucide--square-pen]', 'Edit') +
+    item('up', 'icon-[lucide--arrow-up]', 'Move up', { disabled: running || idx === 0 }) +
+    item('down', 'icon-[lucide--arrow-down]', 'Move down', { disabled: running || idx === stages.length - 1 }) +
+    '<hr role="separator" class="my-1 border-border">' +
+    item('remove', 'icon-[lucide--trash-2]', 'Remove', { disabled: running || stages.length <= 1, cls: 'text-destructive' });
+  for (const b of menu.querySelectorAll('button')) b.onclick = () => { closeStageMenu(); stageAction(b.dataset.act, idx); };
+  closeStageMenu();
+  setMenuHidden(menu, false);
+  menu._anchor = anchor;
+  anchor?.setAttribute('aria-expanded', 'true');
+  const r = pointer ? { left: pointer.clientX, right: pointer.clientX, top: pointer.clientY, bottom: pointer.clientY } : anchor.getBoundingClientRect();
+  const w = menu.offsetWidth, h = menu.offsetHeight;
+  menu.style.left = Math.max(8, Math.min(innerWidth - w - 8, pointer ? r.left : r.right - w)) + 'px';
+  menu.style.top = (innerHeight - r.bottom < h + 12 ? Math.max(8, r.top - h - 4) : r.bottom + 4) + 'px';
+  menu.style.right = menu.style.bottom = 'auto';
+  menu.querySelector('button:not(:disabled)')?.focus();
+}
+
+function closeStageMenu() {
+  const menu = $('#review-stage-menu');
+  if (!menu || menu.hidden) return;
+  setMenuHidden(menu, true);
+  menu._anchor?.setAttribute('aria-expanded', 'false');
+  menu._anchor = null;
+}
+
+async function stageAction(act, idx) {
+  if (act === 'run') return runWorkflow(idx);
+  if (act === 'edit') {
+    activeStageIdx = idx;
+    renderPipeline();
+    renderActiveStage();
+    return openInlineStageEditor();
+  }
+  if (act === 'remove') return removeStage(idx);
+  const to = act === 'up' ? idx - 1 : idx + 1;
+  const stages = getWorkflowStages();
+  if (to < 0 || to >= stages.length) return;
+  [stages[idx], stages[to]] = [stages[to], stages[idx]];
+  reviewConfig.stages = stages;
+  if (reviewConfig.workflows?.[0]) reviewConfig.workflows[0].stages = stages;
+  if (activeStageIdx === idx) activeStageIdx = to;
+  else if (activeStageIdx === to) activeStageIdx = idx;
+  try {
+    await saveConfigToServer();
+  } catch (err) {
+    showToast('error', err.message);
+  }
+  renderPipeline();
+  renderActiveStage();
+}
+
 async function removeStage(idx) {
   const stages = getWorkflowStages();
   if (stages.length <= 1) {
-    showToast('Workflow must have at least one stage');
+    showToast('error', 'Workflow must have at least one stage');
     return;
   }
   const def = stages[idx];
@@ -461,11 +533,11 @@ async function removeStage(idx) {
   }
   try {
     await saveConfigToServer();
-    showToast(`Removed stage: ${removedTitle}`, 'info', 2000);
+    showToast('info', `Removed stage: ${removedTitle}`, 2000);
     renderPipeline();
     renderActiveStage();
   } catch (err) {
-    showToast('!', err.message);
+    showToast('error', err.message);
   }
 }
 
@@ -496,7 +568,7 @@ function renderActiveStage() {
 
   const runStages = currentRun ? getStages(currentRun) : null;
   const currentStageState = runStages ? runStages[activeStageIdx] : null;
-  const def = getDef(currentStageState) || stages[activeStageIdx] || {};
+  const def = currentStageState ? getDef(currentStageState) : stages[activeStageIdx] || {};
 
   const badge = $('#review-stage-badge');
   const title = $('#review-stage-title');
@@ -511,16 +583,13 @@ function renderActiveStage() {
   if (question) question.textContent = questionText;
 
   const status = currentStageState ? getStatus(currentStageState) : 'pending';
-  if (tag) {
-    tag.textContent = status;
-    tag.className = `review-status-tag ${status}`;
-  }
+  if (tag) tag.innerHTML = dotHtml(status) + esc(statusOf(status).label);
 
   // Hide inline editor when changing stages
   const inlineEditor = $('#review-stage-inline-editor');
   const questionBanner = $('#review-question-banner');
   if (inlineEditor) inlineEditor.hidden = true;
-  if (questionBanner) questionBanner.hidden = false;
+  if (questionBanner) questionBanner.hidden = !questionText.trim();
 
   const threadId = currentStageState ? getThreadId(currentStageState) : '';
   const msgsEl = $('#review-thread-msgs');
@@ -528,9 +597,9 @@ function renderActiveStage() {
 
   if (!threadId) {
     msgsEl.innerHTML = `
-      <div class="review-thread-placeholder">
-        <p>This stage has not been executed yet.</p>
-        <button id="btn-start-single-stage" class="footer-btn">Run Stage ${activeStageIdx + 1} Now</button>
+      <div data-ui="review-thread-placeholder" class="empty flex h-full flex-col items-center justify-center gap-3 text-center text-sm text-muted-foreground">
+        <p>Your coding harness hasn't answered this one yet.</p>
+        <button id="btn-start-single-stage" class="btn" data-control="bar-action" data-variant="special" data-size="sm"><span class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true"></span>Run this stage</button>
       </div>
     `;
     const startSingle = $('#btn-start-single-stage');
@@ -578,7 +647,7 @@ function wireInlineStageEditor() {
       const inlineEditor = $('#review-stage-inline-editor');
       const questionBanner = $('#review-question-banner');
       if (inlineEditor) inlineEditor.hidden = true;
-      if (questionBanner) questionBanner.hidden = false;
+      if (questionBanner) questionBanner.hidden = !$('#review-question-text')?.textContent?.trim();
     };
   }
 
@@ -605,15 +674,15 @@ function wireInlineStageEditor() {
 
       try {
         await saveConfigToServer();
-        showToast('Stage updated successfully', 'success', 2000);
+        showToast('success', 'Stage updated', 2000);
         const inlineEditor = $('#review-stage-inline-editor');
         const questionBanner = $('#review-question-banner');
         if (inlineEditor) inlineEditor.hidden = true;
-        if (questionBanner) questionBanner.hidden = false;
+        if (questionBanner) questionBanner.hidden = !$('#review-question-text')?.textContent?.trim();
         renderPipeline();
         renderActiveStage();
       } catch (err) {
-        showToast('!', err.message);
+        showToast('error', err.message);
       }
     };
   }
@@ -661,35 +730,28 @@ function renderThreadTranscript(t) {
     const error = turn.error || turn.Error;
     const tools = turn.tools || turn.Tools || [];
 
-    html += `
-      <div class="thr-msg user">
-        <div class="thr-role">${i === 0 ? 'Review Question' : 'Follow-up'}</div>
-        <div class="thr-body">${thrMd(prompt)}</div>
-      </div>
-    `;
-
-    if (tools.length > 0) {
-      html += `
-        <div class="thr-tools">
-          <div class="thr-tools-title">Analysis Steps (${tools.length})</div>
-          <div class="thr-tools-list">
-            ${tools.map(tl => `<div class="thr-tool-item">• ${esc(tl)}</div>`).join('')}
-          </div>
-        </div>
-      `;
-    }
+    // The first turn is the stage's own instructions: there for reference,
+    // folded away. Follow-ups are the reviewer's words, shown like a chat.
+    html += i === 0
+      ? `<details data-ui="thr-msg" class="user group/instr rounded-md border px-3 py-2 text-xs text-muted-foreground [&::details-content]:overflow-hidden">
+          <summary class="flex cursor-pointer list-none items-center gap-1.5"><span class="icon-[lucide--chevron-right] size-3 shrink-0 group-open/instr:rotate-90" aria-hidden="true"></span>Instructions sent to the harness</summary>
+          <div class="thr-body mt-2">${thrMd(prompt)}</div>
+        </details>`
+      : `<div data-ui="thr-msg" class="user thr-user ml-8 self-end min-w-0 rounded-lg bg-muted px-3 py-2 text-sm"><div class="thr-body">${thrMd(prompt)}</div></div>`;
 
     if (reply || running) {
+      const steps = tools.length ? `<details class="group/steps text-xs text-muted-foreground [&::details-content]:overflow-hidden"><summary class="flex cursor-pointer list-none items-center gap-1.5"><span class="icon-[lucide--chevron-right] size-3 shrink-0 group-open/steps:rotate-90" aria-hidden="true"></span>${tools.length} step${tools.length === 1 ? '' : 's'}</summary><ul class="mt-1 flex flex-col gap-0.5 pl-4">${tools.map(tl => `<li class="truncate">${esc(tl)}</li>`).join('')}</ul></details>` : '';
       html += `
-        <div class="thr-msg assistant ${running ? 'running' : ''}">
-          <div class="thr-role">Review Analysis ${model ? `(${esc(model)})` : ''}</div>
-          <div class="thr-body">${reply ? thrMd(reply) : '<span class="thr-loading">Analyzing changes...</span>'}</div>
+        <div data-ui="thr-msg" class="assistant flex min-w-0 flex-col gap-2 ${running ? 'running' : ''}">
+          <span class="flex items-center gap-1.5 text-xs font-medium text-special"><span class="icon-[lucide--sparkle] size-3 shrink-0" aria-hidden="true"></span>${esc(model || 'Coding harness')}</span>
+          ${steps}
+          <div class="thr-body text-sm">${reply ? thrMd(reply) : '<span class="inline-flex items-center gap-2 text-muted-foreground"><span class="icon-[lucide--loader-circle] size-3.5 animate-spin" aria-hidden="true"></span>Reading the changes…</span>'}</div>
         </div>
       `;
     }
 
     if (error) {
-      html += `<div class="thr-err">Error: ${esc(error)}</div>`;
+      html += `<div data-ui="thr-err" class="alert whitespace-pre-wrap wrap-anywhere p-3 font-mono text-destructive">Error: ${esc(error)}</div>`;
     }
   });
 
@@ -721,7 +783,7 @@ function wireComposeActions() {
     const currentStageState = runStages ? runStages[activeStageIdx] : null;
     const threadId = currentStageState ? getThreadId(currentStageState) : '';
     if (!threadId) {
-      showToast('Run the stage first before asking follow-up questions.');
+      showToast('info', 'Run the stage first before asking follow-up questions.');
       return;
     }
 
@@ -730,13 +792,15 @@ function wireComposeActions() {
     try {
       await apiPostJson('/api/threads/send', { id: threadId, message: msg });
     } catch (err) {
-      showToast('!', err.message);
+      showToast('error', err.message);
     } finally {
-      sendBtn.disabled = false;
+      sync();
     }
   };
 
   if (sendBtn) sendBtn.onclick = send;
+  const sync = () => { if (sendBtn) sendBtn.disabled = !input?.value.trim(); };
+  if (input) input.oninput = sync;
   if (input) {
     input.onkeydown = (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
@@ -764,7 +828,7 @@ async function runWorkflow(stageIndex = 0) {
       updateBackgroundStatusDot();
     }
   } catch (err) {
-    showToast('!', 'Failed to start review workflow: ' + err.message);
+    showToast('error', 'Failed to start review workflow: ' + err.message);
   }
 }
 
@@ -778,13 +842,13 @@ async function stopWorkflow() {
       updateBackgroundStatusDot();
     }
   } catch (err) {
-    showToast('!', err.message);
+    showToast('error', err.message);
   }
 }
 
 function wireHyperlinks() {
   document.addEventListener('click', (e) => {
-    const link = e.target.closest('a.thr-link, .review-code-ref');
+    const link = e.target.closest('a.thr-link');
     if (!link || !link.dataset.path) return;
 
     e.preventDefault();
@@ -824,12 +888,12 @@ function wireAddStageModal() {
     if (titleIn) titleIn.value = '';
     if (qIn) qIn.value = '';
     if (promptIn) promptIn.value = '';
-    modal.hidden = false;
+    modal.showModal();
     if (titleIn) titleIn.focus();
   };
 
   const closeAddModal = () => {
-    if (modal) modal.hidden = true;
+    if (modal) modal.close();
   };
 
   if (addBtn) addBtn.onclick = openAddModal;
@@ -843,7 +907,7 @@ function wireAddStageModal() {
       const prompt = (promptIn?.value || '').trim();
 
       if (!title) {
-        showToast('Please provide a stage title');
+        showToast('error', 'Give the stage a title');
         return;
       }
 
@@ -870,7 +934,7 @@ function wireAddStageModal() {
         renderPipeline();
         renderActiveStage();
       } catch (err) {
-        showToast('!', err.message);
+        showToast('error', err.message);
       }
     };
   }

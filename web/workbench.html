@@ -9,125 +9,122 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="static/style.css">
+<link rel="stylesheet" href="static/app.css">
 <link rel="stylesheet" href="static/themes.css">
-<link rel="stylesheet" href="static/workbench.css">
-<link rel="stylesheet" href="static/desktop.css">
 </head>
 <!-- The workbench: what a bare `faah` opens. web/src/workbench.js drives it
      (bundled to static/workbench.js); the server side is workbench.go. -->
-<body class="wb">
-<button class="desktop-menu-btn" data-desktop-menu title="Menu" aria-label="Application menu">
-  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+<body class="before:desktop:fixed before:desktop:inset-x-0 before:desktop:top-0 before:desktop:h-[var(--titlebar-h,38px)] before:desktop:[-webkit-app-region:drag] before:desktop:content-['']">
+<button data-desktop-menu title="Menu" aria-label="Application menu" class="btn desktop-menu-btn hidden! win-linux:inline-flex! fixed top-[7px] left-2 z-1 [-webkit-app-region:no-drag]" data-variant="ghost" data-size="icon-xs">
+  <span class="icon-[lucide--menu] size-3.5 shrink-0" aria-hidden="true"></span>
 </button>
-<div id="wb-app">
-  <div class="wb-scroll">
-    <main class="wb-main">
-      <header class="wb-hero">
-        <div class="empty-logo">
-          <img class="logo-dark" src="static/logo-dark.svg" alt="faah" width="160" height="60">
-          <img class="logo-light" src="static/logo-light.svg" alt="faah" width="160" height="60">
-        </div>
-        <p class="wb-tagline">Open a folder or a pull request to review.</p>
+<div id="wb-app" class="flex h-dvh flex-col">
+  <div class="flex min-h-0 flex-1 flex-col">
+    <main class="mx-auto flex min-h-0 w-full max-w-[720px] flex-1 flex-col px-4 pt-14">
+      <header class="mb-5 flex shrink-0 items-center gap-2">
+        <h1 class="flex"><img class="hidden h-5 w-auto dark:block" src="static/logo-dark.svg" alt="faah" width="35" height="13"><img class="block h-5 w-auto dark:hidden" src="static/logo-light.svg" alt="faah" width="35" height="13"></h1>
+        <span id="st-ver" class="font-mono text-xs text-muted-foreground" title="faah version"></span>
       </header>
-
-      <form id="wb-open" class="wb-open" autocomplete="off">
-        <div class="wb-field">
-          <input id="wb-target" type="text" spellcheck="false" autocapitalize="off"
-                 placeholder="~/path/to/folder or https://github.com/owner/repo/pull/123"
+      <form id="wb-open" class="dropdown-menu relative block shrink-0" autocomplete="off">
+        <div class="input-group group/field h-10">
+          <span data-align="inline-start"><span id="wb-kind" class="icon-[lucide--search] size-4" aria-hidden="true"></span></span>
+          <input id="wb-target" type="text" spellcheck="false" autocapitalize="off" autofocus
+                 placeholder="Folder path or pull request URL"
                  aria-label="Folder path or pull request URL" aria-autocomplete="list" aria-controls="wb-suggest">
-          <ul id="wb-suggest" class="wb-suggest" role="listbox" hidden></ul>
+          <button id="wb-go" type="submit" data-align="inline-end" class="btn me-1.5! gap-2 pe-1.5" data-variant="primary" data-size="sm" aria-label="Open" disabled>
+            <span id="wb-go-label" class="max-sm:hidden">Open</span><kbd class="kbd h-5 min-w-5 bg-primary-foreground/15 px-1 text-current" aria-hidden="true"><span class="icon-[lucide--corner-down-left] size-3"></span></kbd>
+          </button>
         </div>
-        <button type="submit" class="wb-btn wb-primary">Open</button>
+        <ul id="wb-suggest" data-popover class="absolute inset-x-0 top-full z-[60] mt-1 max-h-80 w-full! overflow-auto" role="listbox" hidden></ul>
       </form>
-      <p class="wb-keys"><kbd>/</kbd> focus · <kbd>Tab</kbd> complete folder · <kbd>↑</kbd><kbd>↓</kbd> choose · <kbd>Enter</kbd> open</p>
-      <p id="wb-msg" class="wb-msg" role="status" hidden></p>
+      <p id="wb-msg" class="mt-2 text-sm text-destructive" role="alert" hidden></p>
 
       <!-- Shown when a PR's repository has no known local clone: its PRs are
            always worktrees of one clone (workbench_clone.go). -->
-      <section id="wb-clone" class="wb-clone" hidden>
-        <p class="wb-clone-head">No local clone of <b id="wb-clone-repo"></b> found.</p>
-        <p class="wb-faint">Pull requests open as git worktrees of a clone of their repository, so nothing is cloned twice. Point faah at your clone, or let it make one.</p>
-        <form id="wb-clone-form" class="wb-open" autocomplete="off">
-          <div class="wb-field">
-            <input id="wb-clone-path" type="text" spellcheck="false" autocapitalize="off" placeholder="~/path/to/your/clone"
-                   aria-label="Folder of your local clone" aria-autocomplete="list" aria-controls="wb-clone-suggest">
-            <ul id="wb-clone-suggest" class="wb-suggest" role="listbox" hidden></ul>
-          </div>
-          <button type="submit" class="wb-btn wb-primary">Use this clone</button>
+      <section id="wb-clone" class="mt-4 flex shrink-0 flex-col gap-3 rounded-lg border bg-card p-4" hidden>
+        <header class="flex flex-col gap-1">
+          <h2 class="text-sm font-medium">No local clone of <span id="wb-clone-repo" class="font-mono"></span> found</h2>
+          <p class="text-sm text-muted-foreground">Pull requests open as git worktrees of one clone, so nothing is cloned twice. Point faah at your clone, pick it in Browse, or let faah make one.</p>
+        </header>
+        <form id="wb-clone-form" class="dropdown-menu relative flex gap-2" autocomplete="off">
+          <input id="wb-clone-path" type="text" spellcheck="false" autocapitalize="off" placeholder="~/path/to/your/clone"
+                 aria-label="Folder of your local clone" aria-autocomplete="list" aria-controls="wb-clone-suggest" class="input min-w-0 flex-1">
+          <ul id="wb-clone-suggest" data-popover class="absolute inset-x-0 top-full z-[60] mt-1 max-h-80 w-full! overflow-auto" role="listbox" hidden></ul>
+          <button type="submit" class="btn" data-variant="primary">Use this clone</button>
         </form>
-        <p class="wb-clone-actions">
-          <button id="wb-clone-managed" type="button" class="wb-btn">Let faah clone it</button>
-          <span id="wb-clone-dest" class="wb-faint wb-clone-dest"></span>
-          <button id="wb-clone-cancel" type="button" class="wb-btn">Cancel</button>
-        </p>
+        <footer class="flex flex-wrap items-center gap-2">
+          <button id="wb-clone-managed" type="button" class="btn" data-variant="outline" data-size="sm">Let faah clone it</button>
+          <span id="wb-clone-dest" class="min-w-0 flex-1 truncate text-xs text-muted-foreground"></span>
+          <button id="wb-clone-cancel" type="button" class="btn" data-variant="ghost" data-size="sm">Cancel</button>
+        </footer>
       </section>
 
-      <div class="wb-cols">
-        <section class="wb-panel" aria-labelledby="wb-recent-h">
-          <header class="panel-head">
-            <span id="wb-recent-h">Recent</span>
-            <span class="panel-actions">
-              <button id="wb-cwd" type="button" class="wb-link" hidden></button>
-            </span>
-          </header>
-          <ul id="wb-recent" class="wb-list"></ul>
-          <p id="wb-recent-empty" class="wb-empty" hidden>Nothing opened yet. Paste a pull request URL above, or pick a folder.</p>
-        </section>
-
-        <section class="wb-panel" aria-labelledby="wb-browse-h">
-          <header class="panel-head">
-            <span id="wb-browse-h">Browse</span>
-            <span class="panel-actions">
-              <label class="wb-check" title="Show hidden folders"><input id="wb-hidden" type="checkbox"> hidden</label>
-            </span>
-          </header>
-          <div class="wb-crumbs">
-            <button id="wb-up" type="button" class="mini" title="Parent folder" aria-label="Parent folder">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            </button>
-            <span id="wb-path" class="wb-path"></span>
-            <button id="wb-open-here" type="button" class="wb-btn wb-primary">Open this folder</button>
+      <div id="wb-tabs" class="tabs mt-5 min-h-0 flex-1 gap-2">
+        <nav role="tablist" aria-orientation="horizontal" data-variant="line" aria-label="Workspaces" class="w-full justify-start border-b [&>[role=tab]]:flex-none">
+          <button type="button" role="tab" id="wb-tab-recent" aria-controls="wb-panel-recent" aria-selected="true" tabindex="0">Recent</button>
+          <button type="button" role="tab" id="wb-tab-browse" aria-controls="wb-panel-browse" aria-selected="false" tabindex="-1">Browse</button>
+        </nav>
+        <div role="tabpanel" id="wb-panel-recent" aria-labelledby="wb-tab-recent" class="-mx-2 min-h-0 overflow-y-auto px-2 pb-6">
+          <ul id="wb-recent" class="item-group gap-0.5"></ul>
+          <button id="wb-more" type="button" class="btn mx-auto mt-2 flex" data-variant="ghost" data-size="sm" hidden></button>
+          <div id="wb-recent-empty" class="empty py-12" hidden>
+            <header>
+              <figure class="flex size-10 items-center justify-center rounded-lg bg-muted"><span class="icon-[lucide--folder-open] size-5" aria-hidden="true"></span></figure>
+              <h2>Nothing opened yet</h2>
+              <p>Paste a pull request URL or a folder path above, or find the folder in Browse.</p>
+            </header>
+            <footer><button id="wb-go-browse" type="button" class="btn" data-variant="outline" data-size="sm">Browse folders</button></footer>
           </div>
-          <ul id="wb-dirs" class="wb-list wb-dirs"></ul>
-        </section>
+        </div>
+        <div role="tabpanel" id="wb-panel-browse" aria-labelledby="wb-tab-browse" class="flex min-h-0 flex-col pb-4" hidden>
+          <div class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border bg-card/40">
+          <div class="flex shrink-0 items-center gap-2 border-b px-1.5 py-1.5">
+            <button id="wb-up" type="button" title="Back to the parent folder" aria-label="Back to the parent folder" class="btn" data-variant="ghost" data-size="icon-sm">
+              <span class="icon-[lucide--arrow-left] size-4" aria-hidden="true"></span>
+            </button>
+            <nav id="wb-path" aria-label="Folder path" class="flex min-w-0 flex-1 items-center overflow-x-auto text-sm [scrollbar-width:none]"></nav>
+            <button id="wb-mkdir" type="button" title="New folder" aria-label="New folder" class="btn" data-variant="ghost" data-size="icon-sm">
+              <span class="icon-[lucide--folder-plus] size-4" aria-hidden="true"></span>
+            </button>
+            <button id="wb-hidden" type="button" aria-pressed="false" title="Show hidden folders (Mod+Shift+.)" aria-label="Show hidden folders" class="btn text-muted-foreground aria-pressed:text-foreground" data-variant="ghost" data-size="icon-sm">
+              <span class="icon-[lucide--eye-off] size-4" aria-hidden="true"></span>
+            </button>
+            <button id="wb-open-here" type="button" class="btn" data-variant="secondary" data-size="sm">Open this folder</button>
+          </div>
+          <ul id="wb-dirs" role="listbox" tabindex="0" aria-label="Folders" class="flex min-h-0 flex-1 flex-col overflow-y-auto p-1 outline-none transition-opacity focus-visible:ring-[3px] focus-visible:ring-inset focus-visible:ring-ring/50"></ul>
+          </div>
+          <p class="shrink-0 pt-2 text-xs text-muted-foreground max-sm:hidden">Click or <kbd class="kbd">Enter</kbd> goes into a folder, <kbd class="kbd">Backspace</kbd> goes up, <kbd class="kbd" data-keys="Mod+Enter">Mod+Enter</kbd> opens it.</p>
+        </div>
       </div>
     </main>
   </div>
 
   <!-- Same status bar as the app: logo and version, then the CPU · RAM · LSP
        chip, here summed over the workbench and every running workspace. -->
-  <footer id="status" class="wb-status">
-    <a class="side-logo" href="https://github.com/zack-o-zack/faah" target="_blank" rel="noopener" title="faah">
-      <img class="logo-dark" src="static/logo-dark.svg" alt="faah" width="35" height="13">
-      <img class="logo-light" src="static/logo-light.svg" alt="faah" width="35" height="13">
-    </a>
-    <span id="st-ver" class="status-ver" title="faah version"></span>
-    <span class="status-sep"></span>
-    <span id="st-running"></span>
-    <span class="grow"></span>
-    <span id="st-metrics" class="status-metrics" role="button" tabindex="0" title="Process metrics: the workbench plus every running workspace">
+  <footer id="status" class="flex shrink-0 items-center gap-2 overflow-hidden whitespace-nowrap border-t bg-sidebar px-2 py-1 font-mono text-xs text-muted-foreground select-none [&>*]:shrink-0 [&_.metric-label]:max-[560px]:hidden">
+    <span id="st-running" class="inline-flex items-center gap-1.5 empty:hidden"></span>
+    <span class="flex-1"></span>
+    <span id="st-metrics" role="button" tabindex="0" class="btn font-mono desktop:[&>:not(.shell-ico)]:hidden" data-control="status-metrics" data-variant="ghost" data-size="xs" aria-label="Process metrics: the workbench plus every running workspace">
+      <span class="icon-[lucide--activity] size-3.5 shrink-0 shell-ico hidden desktop:block" aria-hidden="true"></span>
       <span class="metric"><span class="metric-label">CPU</span> <span id="st-cpu">--%</span></span>
-      <span class="metric-divider">·</span>
+      <span class="metric-divider text-muted-foreground">·</span>
       <span class="metric"><span class="metric-label">RAM</span> <span id="st-ram">-- MB</span></span>
-      <span id="st-lspmem-wrap" class="status-metrics-group" hidden>
-        <span class="metric-divider">·</span>
+      <span id="st-lspmem-wrap" class="inline-flex items-center gap-2" hidden>
+        <span class="metric-divider text-muted-foreground">·</span>
         <span class="metric"><span class="metric-label">LSP</span> <span id="st-lspmem">-- MB</span></span>
       </span>
     </span>
-    <span class="side-actions">
-      <a class="mini" href="https://github.com/zack-o-zack/faah" target="_blank" rel="noopener" title="faah on GitHub" aria-label="faah on GitHub">
-        <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
-      </a>
-      <button class="mini" id="btn-theme" title="Select theme" aria-label="Select theme" aria-haspopup="listbox">
-        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="1" fill="currentColor"/><circle cx="17.5" cy="10.5" r="1" fill="currentColor"/><circle cx="8.5" cy="7.5" r="1" fill="currentColor"/><circle cx="6.5" cy="12.5" r="1" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
-      </button>
-    </span>
+    <span class="h-3 w-px bg-border"></span>
+    <a class="btn" data-variant="ghost" data-size="icon-xs" href="https://github.com/zack-o-zack/faah" target="_blank" rel="noopener" title="faah on GitHub" aria-label="faah on GitHub">
+      <span class="icon-[lucide--github] size-3.5 shrink-0" aria-hidden="true"></span>
+    </a>
+    <button id="btn-theme" title="Select theme" aria-label="Select theme" aria-haspopup="listbox" class="btn" data-variant="ghost" data-size="icon-xs">
+      <span class="icon-[lucide--palette] size-3.5 shrink-0" aria-hidden="true"></span>
+    </button>
   </footer>
 </div>
 <div id="metrics-menu" role="menu" hidden></div>
-<ul id="wb-theme-menu" class="wb-menu" role="listbox" aria-label="Themes" hidden></ul>
-<div id="toast" hidden></div>
+<div id="wb-theme-menu" role="menu" aria-label="Themes" hidden></div>
 <script src="static/workbench.js"></script>
 </body>
 </html>

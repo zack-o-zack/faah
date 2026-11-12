@@ -1,3 +1,4 @@
+import { setPressed } from './controls.js';
 // web/src/imageview.js
 import { $, S, doc_, esc } from './state.js';
 import { on } from './bus.js';
@@ -79,6 +80,8 @@ export function applyImageTransform(d = doc_()) {
 
   const natW = d.imageMeta?.width || img.naturalWidth || 100;
   const natH = d.imageMeta?.height || img.naturalHeight || 100;
+  img.width = natW;
+  img.height = natH;
 
   let currentScale = d.imageScale || 1;
   if (d.imageFit) {
@@ -93,7 +96,8 @@ export function applyImageTransform(d = doc_()) {
   }
 
   canvas.style.transform = `translate(${d.imagePanX || 0}px, ${d.imagePanY || 0}px) scale(${currentScale})`;
-  canvas.className = 'bg-' + (d.imageBg || 'checker');
+  canvas.classList.remove('bg-checker', 'bg-dark', 'bg-light');
+  canvas.classList.add(d.imageBg === 'dark' ? 'bg-dark' : d.imageBg === 'light' ? 'bg-light' : 'bg-checker');
 
   img.classList.toggle('render-pixelated', !!d.imagePixelated);
   img.classList.toggle('render-smooth', !d.imagePixelated);
@@ -112,7 +116,7 @@ export function applyImageTransform(d = doc_()) {
   const pixelBtn = $('#iv-pixel');
   if (pixelBtn) {
     pixelBtn.textContent = d.imagePixelated ? 'Pixelated' : 'Smooth';
-    pixelBtn.classList.toggle('active', !!d.imagePixelated);
+    setPressed(pixelBtn, !!d.imagePixelated);
   }
 
   const metaEl = $('#iv-meta');

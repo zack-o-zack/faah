@@ -115,6 +115,7 @@ fs.mkdirSync(path.dirname(binary), { recursive: true });
 if (!await buildWeb() || !await buildBackend()) process.exit(1);
 installBackend();
 
+watch('web', false, file => file === 'tailwind.css' ? 'web' : null);
 watch('web/src', true, file => (file.endsWith('.js') && !file.endsWith('.test.js') ? 'web' : null));
 watch('.', false, goKind);
 watch('internal', true, goKind);

@@ -42,10 +42,10 @@ The sidebar's git panel is the one part of this feature that *does* write to the
 - **Battery and Focus Awareness**: The live stream automatically suspends when the browser tab is hidden (`document.visibilityState === 'hidden'`), conserving CPU cycles and laptop battery. When you switch back to faah, it instantly reconnects and queries `/api/git/refresh` to catch any changes made while the window was in the background.
 - **Per-File Stage Tick**: Every changed row in the file tree carries a small tick button next to its status badge. Clicking it stages or unstages that file (`git add` / `git reset`) without opening a terminal; the tick updates live as the same status stream that drives the badges reconciles it. If a staged file is edited again, its tick turns into a red **!**; one click stages the new changes and restores the tick.
 - **Git Panel (Commit, Push, Pull)**: A resizable panel at the bottom of the sidebar shows the current branch, a live `staged / changed` count, a monospace commit message box, and Commit, Push, and Pull buttons. The **Commit** button enables whenever changes exist; if no files are explicitly staged, committing automatically stages all modified and untracked files. You can trigger a commit from the keyboard with **`Cmd/Ctrl+Enter`** inside the commit message box.
-- **Commit with AI**: A harness and model picker (the same one used for inline edits) sits above the commit box. **Commit with AI** dispatches the selected harness with the staged diff — plus any instructions from `git.commitMessageInstruction` in Settings — asks it to write only the commit message text, drops that into the box, and commits with it in the same action.
+- **✨ Commit** (empty message): A harness and model picker (the same one used for inline edits) sits above the commit box. **✨ Commit** (empty message) dispatches the selected harness with the staged diff — plus any instructions from `git.commitMessageInstruction` in Settings — asks it to write only the commit message text, drops that into the box, and commits with it in the same action.
 - **Safe Repository & Unborn HEAD Support**: Seamlessly inspects repositories operating under safe directory configurations (`safe.directory`) and cleanly handles freshly initialized repositories before their first commit (unborn `HEAD`), without error dialogs during branch detection, unstaging, or diffing.
 - **Browse Recent Commits**: The git panel lists the latest commits. Click a commit to expand it in place: its author, when it was made, and every file it changed, each with an `A`/`M`/`D`/`R` status letter and `+`/`−` line counts. Click a file to read that commit's own diff, the same way the Unpushed list does: the tab is pinned to the commit and marked `@03beaf0`. A strip above the diff shows where the file sits in the commit (`3 / 17`); ‹ › step to the neighbouring file, swapping the tab in place rather than opening one per file. Click the short hash at the end of a row to copy it. Merge commits are shown against their first parent. In both lists, a large commit shows 100 files at a time, with a **Show 100 more** row below.
-- **Fast-Forward-Only Pull**: Pull always tries a clean fast-forward onto the remote (or, in a PR review session, the pull request's current head). If history has diverged, faah itself never starts a merge. Instead the git panel shows what diverged and offers **Rebase with AI** or **Merge with AI**, which hand the job, conflicts included, to your selected coding harness. Nothing runs unless you click one, and the harness is told never to push.
+- **Fast-Forward-Only Pull**: Pull always tries a clean fast-forward onto the remote (or, in a PR review session, the pull request's current head). If history has diverged, faah itself never starts a merge. Instead the git panel shows what diverged and offers **✨ Rebase** or **✨ Merge**, which hand the job, conflicts included, to your selected coding harness. Nothing runs unless you click one, and the harness is told never to push.
 - **Git Errors Stay in the Git Panel**: Every git failure (stage, commit, push, pull, abort) shows in a card at the top of the git panel, next to the buttons that caused it, never as a global toast. The card stays until you dismiss it or the next git action succeeds.
 - **Push to the Right Place**: In a plain workspace, Push pushes the current branch to its configured upstream (offering to set one up on a first push). In a PR review session, Push targets the pull request's actual head branch on its actual repository — a fork included — never wherever the checkout happens to be sitting.
 - **Unpushed Commits**: Under the file tree, the Git changes view lists the commits on your branch that the tracking branch doesn't have yet (`@{u}..HEAD`), labelled with the ref they're ahead of (e.g. `origin/master`) so it's clear what "unpushed" means here. Click a commit to see the files it touched, badged the same way as working-tree changes; click a file to read that commit's own diff in the normal diff viewer. Committing no longer hides your work: the toggle stays available on a clean working tree, precisely because the commits are then the only thing left to review. If the branch has no upstream configured, the section simply doesn't appear — faah never guesses a branch to measure against.
@@ -74,28 +74,28 @@ Before committing code from your terminal, open faah to perform a visual walk-th
 ### Stage, Write, and Commit Without Leaving the Browser
 Once you've reviewed a change in the diff view, finish the commit right there:
 1. Tick the files you want in this commit from the file tree (or click **Stage All**).
-2. Write a message in the git panel's commit box, or click **Commit with AI** to have your configured coding harness write one from the staged diff and commit with it directly.
-3. Click **Push** to send the branch to its remote. If it's the first push on a new branch, faah offers to set the upstream for you.
+2. Write a message in the git panel's commit box, or click **✨ Commit** (empty message) to have your configured coding harness write one from the staged diff and commit with it directly.
+3. Click **git sync** to send the branch to its remote (or pick **git push** from the menu beside it). If it's the first push on a new branch, faah offers to set the upstream for you.
 
 ### Reviewing Local Commits Before You Push
 When you've made several commits locally and want to read them over before sending them up:
 1. Switch to the **Git Changes** view. The **Unpushed** section under the tree lists every commit ahead of your tracking branch, newest first.
 2. Hover a commit to see who wrote it, its full message, and how much it changed.
 3. Click it to expand the files it touched, then click a file to read that commit's diff — just that commit's, unaffected by anything you've edited since.
-4. Fix anything that needs fixing, commit again (the list updates itself), and click **Push**. The section empties as the commits land.
+4. Fix anything that needs fixing, commit again (the list updates itself), and click **Sync**. The section empties as the commits land.
 
 ### Catching Up With a Moving Remote
 When a teammate (or CI) has pushed new commits to the branch you're reviewing:
-1. Click **Pull** in the git panel.
+1. Click **git sync** in the git panel (or pick **git pull** from the menu beside it).
 2. If your local branch can fast-forward cleanly onto the new commits, faah updates it and the diff view refreshes automatically.
 3. If your branch has diverged (you have local commits the remote doesn't), the git panel shows a **Can't fast-forward** card with the local and incoming commit counts and a harness picker. Pick one:
-   - **Rebase with AI** replays your commits on top of the remote for a straight history.
-   - **Merge with AI** joins the two histories with a merge commit.
+   - **✨ Rebase** replays your commits on top of the remote for a straight history.
+   - **✨ Merge** joins the two histories with a merge commit.
    - Or dismiss the card and resolve it in a terminal.
 4. While the harness runs, the card shows its progress and live output; **Cancel** stops it. Pull and Push are disabled until it finishes.
 5. faah then checks where the branch actually ended up:
    - **Rebased/Merged**: the branch is up to date, with a **Push** button to publish once you've reviewed the result.
-   - **Not finished**: the harness stopped mid-rebase or mid-merge, usually on a conflict. **Finish with AI** asks it to resolve and continue; **Abort** restores the branch exactly as it was.
+   - **Not finished**: the harness stopped mid-rebase or mid-merge, usually on a conflict. **✨ Finish** asks it to resolve and continue; **Abort** restores the branch exactly as it was.
    - **Didn't complete**: the branch is unchanged (the harness aborted or was cancelled); its output says why.
 
 A rebase or merge left half-done from a terminal is shown the same way when faah loads or Pull is clicked.
@@ -117,9 +117,10 @@ A rebase or merge left half-done from a terminal is shown the same way when faah
 | Hover a Commit | Unpushed Section | Show author, full message and diffstat, with Copy SHA |
 | **Stage All** | Git Panel | Stage every changed file |
 | **Commit** / `Cmd/Ctrl+Enter` | Git Panel / Commit Box | Commit staged changes (auto-stages all modifications if none staged) |
-| **Commit with AI** | Git Panel | Write a commit message from the staged diff with the selected harness, then commit with it |
-| **Pull** | Git Panel | Fast-forward onto the remote (or, in PR review, the PR's current head); on divergence, offers Rebase/Merge with AI |
-| **Push** | Git Panel | Push the current branch (or, in PR review, to the PR's head branch) |
+| **✨ Commit** (empty message) | Git Panel | Write a commit message from the staged diff with the selected harness, then commit with it |
+| **git sync** | Git Panel | Pull incoming commits, then push yours; shows the counts as `2↓ 3↑`. A pull that can't fast-forward stops before the push |
+| **Pull** | Git Panel, git sync menu | Fast-forward onto the remote (or, in PR review, the PR's current head); on divergence, offers Rebase/Merge with AI |
+| **Push** | Git Panel, git sync menu | Push the current branch (or, in PR review, to the PR's head branch) |
 | Click a commit | Recent Commits | Expand / collapse its changed files |
 | Click a changed file | Recent Commits | Open that file's diff within the commit, in a tab pinned to it |
 | **Show 100 more** | Recent Commits, Unpushed | List the next 100 files of a large commit |
@@ -142,10 +143,10 @@ Git behavior can be customized in Settings (`Cmd/Ctrl+,`):
 - **Git: Gutter Indicators** (`git.gutterIndicators`): Enable or disable real-time change indicator bars in the editor gutter (defaults to `true`).
 - **Diff Editor: Render Side-by-Side** (`diffEditor.renderSideBySide`): Default layout for the diff view (`true` for split, `false` for unified).
 - **Diff Editor: Ignore Trim Whitespace** (`diffEditor.ignoreTrimWhitespace`): Ignore leading and trailing whitespace diffs (defaults to `true`).
-- **Commit Message Instructions** (`git.commitMessageInstruction`): Free-text instructions appended to the prompt **Commit with AI** sends to your coding harness (e.g. *"Follow Conventional Commits"* or *"Reference the ticket number in the branch name"*). Defaults to empty. This setting renders as a multi-line textarea in the Settings UI.
-- **Coding Harness & Model**: **Commit with AI** uses the same globally selected harness and model as inline agent edits (`agent.harness`, and its persisted model) — see [Editing with Coding Agents](agent-editing.md).
+- **Commit Message Instructions** (`git.commitMessageInstruction`): Free-text instructions appended to the prompt **✨ Commit** (empty message) sends to your coding harness (e.g. *"Follow Conventional Commits"* or *"Reference the ticket number in the branch name"*). Defaults to empty. This setting renders as a multi-line textarea in the Settings UI.
+- **Coding Harness & Model**: **✨ Commit** (empty message) uses the same globally selected harness and model as inline agent edits (`agent.harness`, and its persisted model) — see [Editing with Coding Agents](agent-editing.md).
 - **CLI Flag `-no-git`**: Launch faah with Git features completely disabled (`faah -no-git`) for environments where Git is not installed or when viewing plain directory archives.
-- **CLI Flag `-no-agent`**: Disables **Commit with AI** along with every other coding-harness feature; Stage/Commit/Push/Pull remain available since they never invoke a harness.
+- **CLI Flag `-no-agent`**: Disables **✨ Commit** (empty message) along with every other coding-harness feature; Stage/Commit/Push/Pull remain available since they never invoke a harness.
 
 ---
 

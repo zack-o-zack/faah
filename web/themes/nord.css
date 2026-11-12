@@ -1,14 +1,16 @@
 /* Nord: based on the Nord palette. Token reference: docs/internals/styling-and-themes.md. */
 :root[data-theme="nord"] {
+  --image-dark: #121214;
+  --image-light: #ffffff;
   --theme-name: "Nord";
   color-scheme: dark;
 
   /* surfaces, from the editor out to raised hover states */
-  --bg: #2e3440; --bg2: #292e39; --bg3: #3b4252; --bg4: #434c5e;
+  --background: #2e3440; --sidebar: #292e39; --card: #292e39; --popover: #3b4252; --secondary: #434c5e; --muted: #3b4252; --sidebar-accent: #3b4252; --accent: #434c5e;
   /* text: primary, secondary, tertiary */
-  --fg: #d8dee9; --dim: #a5aebd; --faint: #616e88;
+  --foreground: #d8dee9; --card-foreground: #d8dee9; --popover-foreground: #d8dee9; --secondary-foreground: #d8dee9; --accent-foreground: #d8dee9; --sidebar-foreground: #d8dee9; --sidebar-accent-foreground: #d8dee9; --muted-foreground: #a5aebd; --faint: #616e88;
   /* borders and accent */
-  --line: #3b4252; --accent: #88c0d0; --accent-fg: #8fbcbb; --on-accent: #2e3440;
+  --border: #3b4252; --input: #434c5e; --sidebar-border: #3b4252; --primary: #88c0d0; --ring: #88c0d0; --sidebar-primary: #88c0d0; --sidebar-ring: #88c0d0; --primary-text: #8fbcbb; --primary-foreground: #2e3440; --sidebar-primary-foreground: #2e3440;
   /* selection, search matches, current line */
   --sel: #434c5e; --mark: rgba(235, 203, 139, 0.25); --mark-active: #d08770; --cur: #353b49;
   /* elevation */
@@ -18,7 +20,7 @@
   --k: #81a1c1; --kt: #81a1c1; --nf: #88c0d0; --nc: #8fbcbb; --nb: #88c0d0;
   --nv: #d8dee9; --no: #b48ead; --na: #8fbcbb; --nt: #81a1c1; --nd: #d08770;
   --np: #d8dee9; --s: #a3be8c; --m: #b48ead; --o: #81a1c1; --p: #eceff4;
-  --c: #616e88; --cp: #5e81ac; --err: #bf616a;
+  --c: #616e88; --cp: #5e81ac; --destructive: #bf616a; --err: #bf616a;
 
   /* diffs and status */
   --gi: #a3be8c; --gd: #bf616a;

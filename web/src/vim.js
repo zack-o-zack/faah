@@ -91,7 +91,10 @@ function updateVimStatus() {
   chip.hidden = !vimEnabled;
   if (!vimEnabled) return;
 
-  chip.className = 'status-vim-chip';
+  chip.className = 'btn font-mono';
+  chip.dataset.control = 'status-vim-chip';
+  chip.dataset.variant = vimMode === 'NORMAL' ? 'primary' : 'secondary';
+  chip.dataset.size = 'xs';
   let modeLabel = vimMode;
   if (vimMode === 'VISUAL_LINE') {
     chip.classList.add('mode-visual-line');
@@ -109,7 +112,7 @@ function updateVimStatus() {
   if (vimPending) extra += vimPending;
 
   if (extra) {
-    chip.innerHTML = esc(modeLabel) + ' <span class="status-vim-pending">' + esc(extra) + '</span>';
+    chip.innerHTML = esc(modeLabel) + ' <span class="badge font-mono">' + esc(extra) + '</span>';
   } else {
     chip.textContent = modeLabel;
   }
@@ -660,8 +663,9 @@ export const VIM_SHORTCUT_SECTIONS = [
 export function showVimHelp() {
   let modal = $('#vim-helpsheet');
   if (!modal) {
-    modal = document.createElement('div');
+    modal = document.createElement('dialog');
     modal.id = 'vim-helpsheet';
+    modal.className = 'dialog';
     document.body.appendChild(modal);
   }
 
@@ -670,35 +674,34 @@ export function showVimHelp() {
   const sectionsHtml = VIM_SHORTCUT_SECTIONS.map(sec => {
     const itemsHtml = sec.items.map(([combos, v]) => {
       const comboList = Array.isArray(combos) ? combos : [combos];
-      const keysHtml = comboList.map(keyCaps).filter(Boolean).join('<span class="key-or">/</span>');
+      const keysHtml = comboList.map(keyCaps).filter(Boolean).join('<span data-ui="key-or" class="text-muted-foreground">/</span>');
       return '<dt>' + keysHtml + '</dt><dd>' + esc(v) + '</dd>';
     }).join('');
-    return '<div class="vim-help-section">' +
-      '<div class="vim-sec-title">' + esc(sec.title) + '</div>' +
-      '<dl class="help-grid vim-help-grid">' + itemsHtml + '</dl>' +
+    return '<div data-ui="vim-help-section" class="flex flex-col gap-2">' +
+      '<div data-ui="vim-sec-title" class="label text-primary-text">' + esc(sec.title) + '</div>' +
+      '<dl data-ui="help-grid vim-help-grid" class="grid grid-cols-[auto_minmax(0,1fr)] gap-3 items-center [&_dt]:flex [&_dt]:gap-1 [&_dt]:justify-end [&_dd]:text-muted-foreground">' + itemsHtml + '</dl>' +
       '</div>';
   }).join('');
 
-  modal.innerHTML = '<div class="help-card vim-help-card">' +
-    '<div class="help-header vim-help-header">' +
-    '<div class="vim-help-title"><h2>Vim Keybindings</h2><span class="help-version">Modal Navigation</span></div>' +
-    '<div class="vim-toggle-row">' +
-    '<label class="vim-switch-label">' +
-    '<input type="checkbox" id="vim-toggle-input" ' + isChecked + '>' +
-    '<span class="vim-switch-slider"></span>' +
-    '<span class="vim-switch-text">' + (vimEnabled ? 'Enabled' : 'Disabled') + '</span>' +
+  modal.innerHTML = '<div class="sm:max-w-4xl overflow-auto">' +
+    '<header class="flex-row! items-center justify-between">' +
+    '<h2>Vim Keybindings</h2><span data-ui="help-version" class="p-3 font-mono text-primary-text">Modal Navigation</span>' +
+    '<div data-ui="vim-toggle-row" class="flex items-center gap-2">' +
+    '<label data-ui="vim-switch-label" class="label inline-flex items-center cursor-pointer select-none gap-2">' +
+    '<input type="checkbox" id="vim-toggle-input" ' + isChecked + ' class="input">' +
+    '<span data-ui="vim-switch-text" class="font-mono text-muted-foreground">' + (vimEnabled ? 'Enabled' : 'Disabled') + '</span>' +
     '</label>' +
-    '<button id="btn-close-vim-help" class="mini" title="Close (Esc)">✕</button>' +
+    '<button id="btn-close-vim-help" title="Close (Esc)" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Close (Esc)"><span class="icon-[lucide--x] size-3.5" aria-hidden="true"></span></button>' +
     '</div>' +
-    '</div>' +
-    '<div class="vim-help-content">' + sectionsHtml + '</div>' +
-    '<div class="vim-help-footer">' +
-    '<button id="btn-switch-to-std-help" class="settings-btn-link" title="View Standard Shortcuts (?)">View Standard Shortcuts (?)</button>' +
-    '<span class="agent-hint">Press Esc or click outside to dismiss</span>' +
-    '</div>' +
+    '</header>' +
+    '<section data-ui="vim-help-content" class="flex flex-col overflow-y-auto gap-2">' + sectionsHtml + '</section>' +
+    '<footer class="flex items-center justify-between">' +
+    '<button id="btn-switch-to-std-help" title="View Standard Shortcuts (?)" class="btn" data-control="settings-btn-link" data-variant="link" data-size="xs">View Standard Shortcuts (?)</button>' +
+    '<span data-ui="agent-hint" class="flex-1">Press Esc or click outside to dismiss</span>' +
+    '</footer>' +
     '</div>';
 
-  modal.hidden = false;
+  modal.showModal();
 
   // Toggle listener inside help sheet
   const toggleInput = modal.querySelector('#vim-toggle-input');
@@ -706,9 +709,9 @@ export function showVimHelp() {
     toggleInput.addEventListener('change', e => {
       const active = e.target.checked;
       setVimModeEnabled(active, true);
-      const txt = modal.querySelector('.vim-switch-text');
+      const txt = modal.querySelector('[data-ui~=vim-switch-text]');
       if (txt) txt.textContent = active ? 'Enabled' : 'Disabled';
-      showToast('✓', active ? 'Vim mode enabled' : 'Vim mode disabled');
+      showToast('success', active ? 'Vim mode enabled' : 'Vim mode disabled');
     });
   }
 
@@ -717,14 +720,14 @@ export function showVimHelp() {
     closeVimHelp();
     showHelp();
   });
-  modal.addEventListener('click', e => {
+  modal.addEventListener('pointerdown', e => {
     if (e.target === modal) closeVimHelp();
   });
 }
 
 export function closeVimHelp() {
   const modal = $('#vim-helpsheet');
-  if (modal) modal.hidden = true;
+  if (modal) modal.close();
 }
 
 export function initVim() {

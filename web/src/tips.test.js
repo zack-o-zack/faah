@@ -26,7 +26,7 @@ test('renderTipMarkdown formats bold, italic, code, and escapes html', () => {
 
   assert.ok(output.includes('<strong>bold</strong>'));
   assert.ok(output.includes('<em>italic</em>'));
-  assert.ok(output.includes('<code class="tip-code">code</code>'));
+  assert.ok(output.includes('<code data-ui="tip-code" class="rounded bg-muted px-1 py-px font-mono text-[0.85em] text-foreground">code</code>'));
   assert.ok(!output.includes('<script>'));
   assert.ok(output.includes('&lt;script&gt;alert(1)&lt;/script&gt;'));
 });
@@ -35,16 +35,16 @@ test('renderTipMarkdown formats links securely', () => {
   const input = 'Visit [px0](https://px0.ai) for more info.';
   const output = renderTipMarkdown(input);
 
-  assert.ok(output.includes('<a href="https://px0.ai" target="_blank" rel="noopener noreferrer" class="tip-link">px0</a>'));
+  assert.ok(output.includes('<a href="https://px0.ai" target="_blank" rel="noopener noreferrer" data-ui="tip-link" class="text-primary-text underline">px0</a>'));
 });
 
 test('renderTipMarkdown formats kbd and KBD tags as styled HTML', () => {
   const input = 'Press <kbd>Cmd</kbd> + <kbd>P</kbd> or <KBD>Enter</KBD> to confirm.';
   const output = renderTipMarkdown(input);
 
-  assert.ok(output.includes('<kbd class="tip-kbd">Cmd</kbd>'));
-  assert.ok(output.includes('<kbd class="tip-kbd">P</kbd>'));
-  assert.ok(output.includes('<kbd class="tip-kbd">Enter</kbd>'));
+  assert.ok(output.includes('<kbd class="kbd" data-control="tip-kbd">Cmd</kbd>'));
+  assert.ok(output.includes('<kbd class="kbd" data-control="tip-kbd">P</kbd>'));
+  assert.ok(output.includes('<kbd class="kbd" data-control="tip-kbd">Enter</kbd>'));
   assert.ok(!output.includes('&lt;kbd&gt;'));
   assert.ok(!output.includes('&lt;KBD&gt;'));
 });
@@ -53,7 +53,7 @@ test('renderTipMarkdown formats shortcut braces into kbd elements', () => {
   const input = 'Press {Mod+P} to open files.';
   const output = renderTipMarkdown(input);
 
-  assert.ok(output.includes('<kbd class="tip-kbd">Mod+P</kbd>'));
+  assert.ok(output.includes('<kbd class="kbd" data-control="tip-kbd">Mod+P</kbd>'));
 });
 
 test('escapeTipHtml properly escapes special characters', () => {

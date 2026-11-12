@@ -10,6 +10,7 @@
 // S.meta.forge, which the server builds from the provider's TokenSetup.
 import { $, S, esc, apiPostJson, keyLabel } from './state.js';
 import { showToast } from './ui.js';
+import { showError } from './errors.js';
 import { emit } from './bus.js';
 import { openSettings } from './settings.js';
 
@@ -38,7 +39,8 @@ function wireForgeConnect() {
     close();
     if (f) openSettings('ui', f.tokenCategory, f.tokenKey);
   });
-  m.addEventListener('click', e => { if (e.target === m) close(); });
+  m.addEventListener('cancel', e => { e.preventDefault(); close(); });
+  m.addEventListener('pointerdown', e => { if (e.target === m) close(); });
   $('#forge-connect-hint').textContent = keyLabel('Enter') + ' to connect, Esc to cancel';
   m.addEventListener('keydown', e => {
     if (e.key === 'Escape') { e.preventDefault(); close(); }
@@ -71,7 +73,7 @@ export function openForgeConnect(reason = '') {
   $('#forge-connect-why').innerHTML = why;
 
   const steps = [
-    `Open <a href="${esc(setup.url)}" target="_blank" rel="noopener noreferrer" class="pr-merge-link">${esc(info.label)}'s token page on ${esc(host)}</a>.`,
+    `Open <a href="${esc(setup.url)}" target="_blank" rel="noopener noreferrer" data-ui="pr-merge-link" class="text-primary-text">${esc(info.label)}'s token page on ${esc(host)}</a>.`,
     ...setup.steps.map(esc),
     'Paste it below.',
   ];
@@ -97,7 +99,7 @@ export function openForgeConnect(reason = '') {
   $('#forge-connect-extra-input').value = '';
   setForgeConnectErr('');
   setForgeConnectBusy(false);
-  connectModal().hidden = false;
+  connectModal().showModal();
   $('#forge-connect-token').focus();
 }
 
@@ -105,13 +107,11 @@ const codeTag = s => '<code>' + esc(s || '') + '</code>';
 
 function close() {
   const m = connectModal();
-  if (m) m.hidden = true;
+  if (m) m.close();
 }
 
 function setForgeConnectErr(msg) {
-  const el = $('#forge-connect-err');
-  el.hidden = !msg;
-  el.textContent = msg;
+  showError($('#forge-connect-err'), msg);
 }
 
 function setForgeConnectBusy(busy) {
@@ -145,6 +145,6 @@ async function submitForgeConnect() {
   let msg = `Connected to ${label}`;
   if (!res.saved) msg += ' for this session (a token for another host is already saved)';
   if (res.validated && !res.writeAccess) msg += '. Read access only: Approve and Merge need push access to this repository';
-  showToast('✓', msg, res.validated && !res.writeAccess ? 6000 : 3000);
+  showToast('success', msg, res.validated && !res.writeAccess ? 6000 : 3000);
   emit('forge:connected', res);
 }

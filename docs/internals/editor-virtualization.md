@@ -1,6 +1,6 @@
 # Editor Virtualization & Caret Engine
 
-This document provides a comprehensive technical breakdown of faah's bespoke virtualized code viewer, caret engine, and selection preservation system ([`web/src/renderer.js`](../../web/src/renderer.js), [`web/src/cursor.js`](../../web/src/cursor.js), and [`web/style.css`](../../web/style.css)).
+This document provides a comprehensive technical breakdown of faah's bespoke virtualized code viewer, caret engine, and selection preservation system ([`web/src/renderer.js`](../../web/src/renderer.js), [`web/src/cursor.js`](../../web/src/cursor.js), and [`web/tailwind.css`](../../web/tailwind.css)).
 
 The sidebar file tree uses a separate on-demand rendering path in [`web/src/tree.js`](../../web/src/tree.js). Its Expand All control loads indexed directory children in batches of four requests, skips ignored subtrees, and can be cancelled without allowing late responses to reopen collapsed folders. The editor viewport virtualization described below runs independently of the sidebar tree state.
 

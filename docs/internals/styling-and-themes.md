@@ -1,159 +1,194 @@
-# Styling & Theme Architecture
+# Styling and themes
 
-This document describes faah's styling architecture, CSS custom property design system, dynamic theme loading pipeline, and token specifications.
+faah uses Tailwind CSS 4.3.5 and Basecoat 1.1.0 (Vega). Basecoat supplies the
+components; vanilla JavaScript owns their behaviour. Basecoat JavaScript is not
+loaded. There are no separate browser, workbench or desktop component sheets.
 
-faah reads every colour in the user interface through a CSS custom property, known as a token. A theme is defined in a single CSS file that assigns values to these tokens.
+## Build and entry point
 
-## 1. How Themes Load
+`web/tailwind.css` is the only stylesheet source outside the theme directory.
+`node scripts/build-web.js` compiles it to the gitignored `web/app.css`, then
+bundles the editor, workbench and holding-page JavaScript. The Go server embeds
+the generated assets, not the Tailwind source or npm dependencies. Pages load
+`static/app.css` followed by `static/themes.css`.
 
-- `web/style.css`: Holds layout, grid geometry, and component styling. It contains no literal colors. Its `:root` block defines structural typography tokens (fonts, sizes) and provides fallbacks for optional colour tokens.
-- `web/themes/<id>.css`: Each theme resides in its own file under [`web/themes/`](../../web/themes/), containing a single rule for `:root[data-theme="<id>"]`. The filename without extension acts as the theme ID.
-- Dynamic Concatenation (`/static/themes.css`): The Go server concatenates every file matching `web/themes/*.css` in alphanumeric order once (`sync.Once`) and serves the cached stylesheet at `/static/themes.css`. [`web/index.html`](../../web/index.html) links this file immediately after `style.css`.
-- Client-Side Discovery: At application boot, [`web/src/theme.js`](../../web/src/theme.js) scans the loaded document stylesheets for rules matching `:root[data-theme="<id>"]`. It extracts the human-readable display name from `--theme-name` and the color scheme hint from `color-scheme`.
-- State Persistence: The active theme is applied via the `data-theme` attribute on the `<html>` root element and persisted in `localStorage` under `faah.theme`. If a saved theme is removed, faah falls back to the default `catppuccin-mocha`.
+The entry has these sections, in order:
 
-> [!NOTE]
-> Theme rules intentionally use `:root[data-theme="<id>"]` rather than a bare attribute selector `[data-theme="<id>"]`. The `:root` pseudo-class raises CSS specificity above the fallback rules in `style.css`, ensuring theme tokens always win regardless of stylesheet evaluation order.
+1. **Imports:** Tailwind's preflight, theme and utilities, then Basecoat Vega.
+2. **Sources:** `@source` scans the two HTML pages, `web/src/` and `workbench.go`.
+   The Go source matters because it contains the holding-page template.
+3. **Variants:** `dark:` follows the root `.dark` class; `desktop:` matches
+   `[data-shell]`; `win-linux:` matches the desktop platform attributes.
+4. **Theme mapping:** `@theme inline` exposes faah colours, fonts and type sizes
+   as utilities, such as `text-primary-text`, `bg-gi-bg` and `text-11`.
+5. **Fonts and base layer:** bundled Inter font faces, browser and desktop type
+   scales, titlebar geometry, page defaults, scrollbars and `[hidden]` enforcement.
+6. **Components layer:** code-selection state, syntax spans, Markdown prose,
+   Mermaid output, CSV tables, edit-mode measurement, diff rows, diagnostics,
+   minimap hits and keyframes. These rules style renderer output or states that
+   cannot be expressed on a fixed component's markup. Short section comments
+   group them by feature.
 
-The explorer header controls use the same tokenized `.mini` button style as Re-index. The Expand All progress state uses accent tokens; its pulse runs only when the browser allows motion, and keyboard focus uses a visible tokenized outline.
+Components come before Tailwind utilities in the cascade. A utility overrides a
+component rule even if that rule has a more specific selector. When a utility
+owns a property's default, put its state changes in variants too. For example,
+code rows use `[body.word-wrap_&]:h-auto` alongside their fixed-height utility.
+This prevents a component rule from silently losing to the utility layer.
 
-## 2. Built-in Themes
+## Components and controllers
 
-| Name             | ID                 | Scheme | Inspiration / Palette                  |
-| ---------------- | ------------------ | ------ | -------------------------------------- |
-| Catppuccin Latte | `catppuccin-latte` | light  | Catppuccin palette (contrast-tuned)    |
-| Catppuccin Mocha | `catppuccin-mocha` | dark   | Catppuccin palette (default faah theme) |
-| Dracula          | `dracula`          | dark   | Classic Dracula palette                |
-| GitHub Dark      | `github-dark`      | dark   | GitHub dark default                    |
-| Gruvbox Dark     | `gruvbox-dark`     | dark   | Gruvbox dark retro groove              |
-| Gruvbox Light    | `gruvbox-light`    | light  | Gruvbox light                          |
-| Monokai          | `monokai`          | dark   | Classic Monokai high-contrast          |
-| Nord             | `nord`             | dark   | Arctic Nord palette                    |
-| One Dark         | `one-dark`         | dark   | Atom One Dark                          |
-| Paper            | `light`            | light  | Minimalist GitHub light                |
-| Rose Pine        | `rose-pine`        | dark   | Rose Pine Soho vibes                   |
-| Solarized Dark   | `solarized-dark`   | dark   | Canonical Ethan Schoonover Solarized   |
-| Solarized Light  | `solarized-light`  | light  | Canonical Solarized light              |
-| Tokyo Night      | `dark`             | dark   | Tokyo Night deep blue                  |
+Use Basecoat's components first: `btn`, `input`, `card`, `item`, `empty`, `badge`,
+`dialog`, `dropdown-menu`, `tabs`, `kbd`, `command` and `toast`. Use their normal
+variants and sizes through `data-variant` and `data-size`. Add layout utilities
+for flex/grid placement, gaps, positioning, width, height and overflow only where
+the screen needs them. Do not recreate an old control's appearance with size,
+colour or radius overrides.
 
-## 3. Creating a Custom Theme
+faah's own modules still open dialogs, navigate menus, position popovers and
+manage keyboard focus. Basecoat CSS does not require its JavaScript controller.
+Keep existing IDs, roles, accessibility attributes, `hidden`, titles and data
+hooks when changing markup. Use `[hidden]`, not an invisible overlay, to remove
+closed surfaces from layout and pointer handling.
 
-1. Copy an existing theme file:
-  ```bash
-  cp web/themes/dark.css web/themes/midnight.css
-  ```
-1. Update the selector to match the new ID:
-  ```css
-  :root[data-theme="midnight"] {
-  ```
-1. Set the metadata properties:
-  ```css
-  --theme-name: "Midnight";
-  color-scheme: dark;
-  ```
-1. Define the required color tokens (see Token Reference below).
-1. Preview by running faah with `go run .` (rebuild after each CSS change; themes are embedded):
-  ```bash
-  go run . .
-  ```
-1. Run unit tests to verify theme conformance:
-  ```bash
-  go test ./...
-  ```
-  `TestThemesStylesheetJoinsEveryThemeFile` in [`px0_test.go`](../../px0_test.go) ensures all required tokens are present and selector IDs match filenames.
+The workbench uses cards for its Recent and Browse panels, items for folder and
+workspace rows, a dropdown menu for path completion, and normal buttons and
+inputs for actions. The holding page uses the same card and button components;
+its JavaScript applies the configured theme without persisting a preference and
+polls only while a workspace is starting.
 
-### Minimal Working Theme Example
+## Themes
 
-```css
-:root[data-theme="midnight"] {
-  --theme-name: "Midnight";
-  color-scheme: dark;
+Each `web/themes/<id>.css` file declares tokens on `:root[data-theme="<id>"]`.
+The server joins these files into `static/themes.css`. The theme picker discovers
+them from the loaded CSS rules, reading `--theme-name` and `color-scheme`; there
+is no second registry to maintain. Theme files hold tokens, not component rules.
 
-  --bg: #002b36; --bg2: #00252e; --bg3: #073642; --bg4: #0d4452;
-  --fg: #93a1a1; --dim: #839496; --faint: #586e75;
-  --line: #0a3b47; --accent: #268bd2; --accent-fg: #2aa198;
-  --sel: #0f4b5c; --mark: #4a3f0b; --mark-active: #7a4a12; --cur: #04313c;
-  --shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+`web/src/theme.js` sets `data-theme` and synchronizes the `.dark` class with the
+theme's declared `color-scheme`. Call `setTheme(id, false)` for a temporary
+preview; the default call also saves the preference. It emits `theme:changed`
+when the theme changes, allowing Mermaid and other rendered previews to update.
 
-  --k: #859900; --nf: #268bd2; --s: #2aa198; --m: #d33682; --c: #586e75; --err: #dc322f;
-}
-```
+To add a theme, copy a theme file, choose a unique ID and display name, set
+`color-scheme`, and supply all the colour tokens. Rebuild the embedded app, or
+reload with `FAAH_DEV_ROOT` pointing at the checkout. No JavaScript changes are
+needed. Check code, Markdown, selected text, diffs, menus and focus states in
+the new theme.
 
-## 4. Complete Token Reference
-### Surface Elevation Tokens
+### Basecoat tokens
 
-Four progressive elevation steps radiating from the editor viewport outward:
-
-| Token  | Required | Controls                                                                                                                |
-| ------ | -------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `--bg` | Yes      | Editor background, line gutter, active tab, text inputs, hovercard signature block, Markdown preview background.        |
-| `--bg2`| Yes      | File explorer sidebar, tab bar, right inspector, status bar, hovercard action row, Markdown code blocks and table headers.|
-| `--bg3`| Yes      | Floating surfaces (hovercard, findbar, command palette, shortcut cheatsheet, toast), row hover state, keycaps, badge fills.|
-| `--bg4`| Yes      | Small button hovers (close tab, status bar icons), active status buttons, double-click occurrence highlight, scrollbar thumb.|
-
-### Text & Contrast Tokens
-
-| Token              | Required | Fallback      | Controls                                                                                                              |
-| ------------------ | -------- | ------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `--fg`             | Yes      | -             | Primary text, active file tab, current line number, unstyled identifiers.                                             |
-| `--dim`            | Yes      | -             | Secondary text: inactive tabs, explorer file names, hovercard docs, Markdown blockquotes and footnotes.              |
-| `--faint`          | Yes      | -             | Line numbers, keyboard hints, tree chevrons, close buttons at rest, inactive LSP indicator.                         |
-| `--on-accent`      | No       | `#fff`        | Text rendered on top of an `--accent` background.                                                                     |
-| `--on-badge`       | No       | `var(--bg)`   | Text rendered inside colored badges (symbol kinds, file extensions).                                                  |
-| `--on-mark-active` | No       | `var(--bg)`   | Text of current search/find hit on top of `--mark-active`.                                                             |
-
-### Borders, Accents & Selection
-
-| Token            | Required | Controls                                                                                                |
-| ---------------- | -------- | ------------------------------------------------------------------------------------------------------- |
-| `--line`         | Yes      | Dividers, pane borders, occurrence outlines, Markdown table borders, code block borders.                |
-| `--accent`       | Yes      | Active tab top indicator, input focus borders, resizer drag handle, Ctrl+hover link underlines, button hovers.|
-| `--accent-fg`    | Yes      | Accent-colored text: active inspector tab, palette match characters, Markdown links, status button hovers.|
-| `--sel`          | Yes      | Selected tree row, palette row, native text selection, whole-file selection (Ctrl+A).                   |
-| `--mark`         | Yes      | Background of search and find matches.                                                                  |
-| `--mark-active`  | Yes      | Active find match, minimap match indicators, pulsing LSP status dot.                                   |
-| `--cur`          | Yes      | Active line background and current gutter cell highlight.                                               |
-| `--shadow`       | Yes      | Elevation box-shadow for floating overlays (palette, hovercard, findbar).                                |
-
-### Syntax Highlighting Tokens
-
-Generated by Chroma and formatted using short CSS classes ([`internal/render/render.go`](../../internal/render/render.go)):
-
-| Token   | Class  | Semantic Role                           | Required | Fallback   |
-| ------- | ------ | --------------------------------------- | -------- | ---------- |
-| `--k`   | `.k`   | Keywords (`func`, `return`, `class`)    | Yes      | -          |
-| `--kt`  | `.kt`  | Primitive types (`int`, `string`, `bool`)| No      | `var(--k)` |
-| `--nf`  | `.nf`  | Function names and method calls         | Yes      | -          |
-| `--nc`  | `.nc`  | Classes, structs, interfaces            | No       | `var(--nf)`|
-| `--nb`  | `.nb`  | Built-in functions and standard types   | No       | `var(--nf)`|
-| `--nv`  | `.nv`  | Variables and parameters                | No       | `var(--fg)`|
-| `--no`  | `.no`  | Constants                               | No       | `var(--m)` |
-| `--s`   | `.s`   | String literals and characters          | Yes      | -          |
-| `--m`   | `.m`   | Numeric literals                        | Yes      | -          |
-| `--o`   | `.o`   | Operators (`+`, `-`, `*`, `&&`)         | No       | `var(--fg)`|
-| `--p`   | `.p`   | Punctuation (braces, parentheses, commas)| No      | `var(--dim)`|
-| `--c`   | `.c`   | Comments (italicized)                   | Yes      | -          |
-| `--err` | `.err` | Syntax errors (wavy underline)          | Yes      | -          |
-| `--gi`  | `.gi`  | Git added lines, ready LSP dot          | No       | `var(--s)` |
-| `--gd`  | `.gd`  | Git deleted lines, failed LSP dot       | No       | `var(--err)`|
-
-## 5. Table Preview Styling
-
-CSV and TSV tabs render inside `#mdview` with the article's class switched from `md` to `csv`, so no `.md` rule reaches the table. Every rule is scoped under `#md.csv` / `.csv-t` in [`web/style.css`](../../web/style.css) and takes its colours from the tokens above, which is why no theme needs table-specific values:
-
-| Element | Tokens |
+| Tokens | Purpose |
 | --- | --- |
-| Header row (sticky `th`) | `--bg2` background, `--line` rule |
-| Alternate rows | `--cur` |
-| Column dividers, gutter edge | `--line` (inset box-shadows, so sticky cells keep their borders) |
-| Line-number gutter (sticky) | `--faint` text on `--bg` |
-| Missing cells | hatched `--bg3` |
-| Find matches | `--mark`, `--mark-active` / `--on-mark-active` |
-| Row-cap footer | `--dim` text, `--accent-fg` button |
+| `--background`, `--foreground` | Main editor surface and text |
+| `--card`, `--card-foreground` | Cards |
+| `--popover`, `--popover-foreground` | Floating surfaces |
+| `--secondary`, `--secondary-foreground` | Secondary controls |
+| `--muted`, `--muted-foreground` | Subdued surfaces and text |
+| `--accent`, `--accent-foreground` | Hover and selected surfaces |
+| `--primary`, `--primary-foreground` | Primary controls and their text |
+| `--destructive` | Errors and destructive actions |
+| `--border`, `--input`, `--ring` | Borders, input edges and focus rings |
+| `--sidebar`, `--sidebar-foreground`, `--sidebar-border` | Sidebar surfaces |
+| `--sidebar-accent`, `--sidebar-accent-foreground` | Sidebar hover state |
+| `--sidebar-primary`, `--sidebar-primary-foreground`, `--sidebar-ring` | Sidebar primary and focus states |
 
-## 6. Mermaid Diagram Styling
+Basecoat supplies its radius scale. Do not add separate control-radius, height
+or spacing token families to imitate a previous design.
 
-Mermaid fences render inside `.md-mermaid`, a tokenized, scrollable surface using `--bg2`, `--bg3`, `--bg4`, `--line`, and `--err`; generated SVG is constrained to the article width. Each diagram's controls toolbar provides zoom in/out, fit, and full-screen maximize using those same tokens, scaling only its `.md-mermaid-canvas`. In full-screen mode (`.md-mermaid.is-fullscreen`), the surface takes over the full viewport using `--bg`, locks `document.body` scroll via `.mermaid-fs-active`, pins the controls to the top-left, and provides dedicated close buttons (`.md-mermaid-fs-close` in the top-right corner and `.md-mermaid-fs-only` in the toolbar) for easy zoom and `Esc` dismissal. Mermaid itself receives a `base` theme derived from the active faah theme's `--bg`, `--bg2`, `--bg3`, `--fg`, `--dim`, and `--line` values. `setTheme` emits `theme:changed`, and the Markdown preview debounces a rerender of the active diagrams so both palette previews and persisted theme changes remain readable.
+### faah tokens
 
-Repository-supplied SVG is still removed by the Markdown sanitizer. Only SVG generated after sanitization by the pinned, strict-mode Mermaid runtime reaches `.md-mermaid`.
+| Tokens | Purpose |
+| --- | --- |
+| `--faint`, `--primary-text` | Tertiary text and accent-coloured text |
+| `--sel`, `--cur` | Code selection and current-line background |
+| `--mark`, `--mark-active`, `--on-mark-active` | Find matches and active-match text |
+| `--on-badge` | Text over syntax-coloured badges; defaults to the main background |
+| `--shadow` | Elevation for generated diagram controls and image previews |
+| `--warn` | Warning state; defaults to the theme's active-match colour |
+| `--gi`, `--gd`, `--gi-bg`, `--gd-bg` | Added/deleted text, markers and row backgrounds |
+| `--image-dark`, `--image-light` | Image-viewer contrast surfaces |
+
+Colours live in theme files. Elsewhere, use semantic utilities or `var(...)`.
+Derived colours may use `color-mix` with tokens and `transparent`; never add a
+literal hex, RGB or OKLCH value, including as a fallback.
+
+### Syntax tokens
+
+`internal/render` emits short Chroma classes. The components layer scopes their
+colours to code cells, Markdown fences, diff cells and hover signatures.
+
+| Token / class | Meaning |
+| --- | --- |
+| `--k` / `.k`, `--kt` / `.kt` | Keywords and types |
+| `--nf` / `.nf`, `--nc` / `.nc`, `--nb` / `.nb` | Functions, classes and built-ins |
+| `--nv` / `.nv`, `--no` / `.no` | Variables and constants |
+| `--na` / `.na`, `--nt` / `.nt`, `--nd` / `.nd`, `--np` / `.np` | Attributes, tags, decorators and namespaces |
+| `--s` / `.s`, `--m` / `.m` | Strings and numbers |
+| `--o` / `.o`, `--p` / `.p` | Operators and punctuation |
+| `--c` / `.c`, `--cp` / `.cp` | Comments and preprocessor directives |
+| `--err` / `.err` | Syntax errors; separate from UI destructive state |
+| `--gi` / `.gi`, `--gd` / `.gd` | Added and deleted text |
+
+Supply these tokens in every theme. Code-cell geometry lives in renderer
+utilities, so the short `.c` syntax class does not accidentally inherit the
+layout of an outer code cell.
+
+## Desktop shell and type scale
+
+The desktop preload marks the root with `data-shell="desktop"`, `data-platform`
+(`mac`, `win` or `linux`) and, where supported, `data-titlebar`. Browser tabs
+leave these attributes unset. Use `desktop:` for shared shell layout and
+`win-linux:` for the application-menu button; do not create another stylesheet.
+Titlebar height and native window-control insets use `--titlebar-h`,
+`--titlebar-left` and `--titlebar-right`. The workbench has a draggable empty strip;
+interactive controls and overlays opt out of dragging.
+
+`:root[data-shell]` changes `--ui` to bundled Inter and maps the `--t-*` scale to
+11, 12, 13, 14, 16 and 20 px. `@font-face` URLs are relative to `static/app.css`,
+so keep them as `fonts/...`. Browser defaults remain in `:root`.
+
+| Tokens | Browser sizes | Desktop sizes |
+| --- | --- | --- |
+| `--t-8-5` through `--t-11` | 8.5–11 px | 11 px |
+| `--t-11-5`, `--t-12`, `--t-12-5` | 11.5, 12, 12.5 px | 12 px |
+| `--t-13`, `--t-13-5` | 13, 13.5 px | 13 px |
+| `--t-14`, `--t-14-5` | 14, 14.5 px | 14 px |
+| `--t-15`, `--t-16` | 15, 16 px | 16 px |
+| `--t-18` | 18 px | 20 px |
+
+The mappings expose utilities such as `text-12-5`. Use Basecoat defaults for new
+controls, rather than choosing a bespoke size. Code still uses `--mono`, `--fs`
+and `--lh`, with `--tab-size` controlled by editor settings. The type-scale test
+scans source files and requires every used `--t-*` token to have both browser
+and desktop definitions and a Tailwind mapping.
+
+## Runtime content
+
+A compact handwritten prose block restores headings, lists, tables, links,
+quotes and code fences for sanitized Markdown. There is no typography plugin.
+`.md` is the document preview; `.thr-body` is compact thread prose. Image
+fallbacks and generated Mermaid canvases stay with these rules.
+
+CSV/TSV previews switch the article from `.md` to `.csv`; sticky headers and line
+gutters use the same border and surface tokens. Missing cells use a token-based
+hatch. Diff rules use the added/deleted colour families, not fixed red or green.
+Mermaid receives a theme derived from computed tokens, renders in strict mode,
+and supports zoom, pan and full screen without accepting repository-supplied SVG.
+
+Keep CSS here only when it styles generated content or shared runtime state.
+If JavaScript constructs a control or wrapper, put its Basecoat and layout
+classes in that markup instead. Use `@apply` when it makes a retained rule
+shorter, not to hide a second component system.
+
+## Contributor checklist
+
+- Choose a Basecoat component before adding custom CSS.
+- Use layout utilities and complete literal class strings in JavaScript. Select
+  between full strings; never construct utilities such as `'text-' + size`.
+- Use theme tokens only. Do not add colour literals outside `web/themes/`.
+- Preserve behaviour and accessibility hooks; do not load Basecoat JavaScript.
+- Keep generated `web/app.css` out of commits. Add no stylesheet imports for a
+  single feature and no npm dependency for prose styling.
+- Run `node scripts/build-web.js && node scripts/check-web.js`, `bun test web/src/`,
+  `go test ./...` and `npm test --prefix desktop`. Inspect both a dark and a light
+  theme, including desktop shell layout, when changing styling.
 

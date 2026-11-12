@@ -19,8 +19,8 @@ export async function showPanel(name) {
 
 export async function reindexWorkspace() {
   const btn = $('#btn-reindex');
-  const svg = btn?.querySelector('svg');
-  if (svg) svg.classList.add('spin');
+  const glyph = btn?.querySelector('[class*="lucide--"]');
+  glyph?.classList.add('animate-spin');
   try {
     const j = await api('/api/reindex');
     S.meta.files = j.files; S.meta.indexMs = j.indexMs;
@@ -34,11 +34,11 @@ export async function reindexWorkspace() {
     await refreshTree();
     await reloadOpenTabs();
     updateStatus();
-    showToast('✓', 'Workspace refreshed');
+    showToast('success', 'Workspace refreshed');
   } catch (e) {
-    showToast('!', 'Refresh failed: ' + e.message);
+    showToast('error', 'Refresh failed: ' + e.message);
   } finally {
-    if (svg) svg.classList.remove('spin');
+    glyph?.classList.remove('animate-spin');
   }
 }
 

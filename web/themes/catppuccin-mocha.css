@@ -1,26 +1,29 @@
 /* Catppuccin Mocha: based on the Catppuccin palette. Token reference: docs/internals/styling-and-themes.md. */
 :root[data-theme="catppuccin-mocha"] {
+  --warn: #fab387;
+  --image-dark: #121214;
+  --image-light: #ffffff;
   --theme-name: "Catppuccin Mocha";
   color-scheme: dark;
 
   /* surfaces, from the editor out to raised hover states */
-  --bg: #1e1e2e; --bg2: #181825; --bg3: #313244; --bg4: #45475a;
+  --background: #1e1e2e; --sidebar: #181825; --card: #181825; --popover: #313244; --secondary: #45475a; --muted: #313244; --sidebar-accent: #313244; --accent: #45475a;
   /* text: primary, secondary, tertiary */
-  --fg: #cdd6f4; --dim: #a6adc8; --faint: #6c7086;
+  --foreground: #cdd6f4; --card-foreground: #cdd6f4; --popover-foreground: #cdd6f4; --secondary-foreground: #cdd6f4; --accent-foreground: #cdd6f4; --sidebar-foreground: #cdd6f4; --sidebar-accent-foreground: #cdd6f4; --muted-foreground: #b5bdd7; --faint: #b5bdd7;
   /* borders and accent */
-  --line: #11111b; --accent: #cba6f7; --accent-fg: #89b4fa; --on-accent: #1e1e2e;
+  --border: #11111b; --input: #a6adc8; --sidebar-border: #11111b; --primary: #cba6f7; --ring: #cba6f7; --sidebar-primary: #cba6f7; --sidebar-ring: #cba6f7; --primary-text: #9fc5ff; --primary-foreground: #1e1e2e; --sidebar-primary-foreground: #1e1e2e;
   /* selection, search matches, current line */
   --sel: rgba(147, 153, 178, 0.25); --mark: rgba(249, 226, 175, 0.25); --mark-active: #fab387; --cur: #272738;
   /* elevation */
   --shadow: 0 4px 16px rgba(17, 17, 27, 0.7);
 
   /* syntax */
-  --k: #cba6f7; --kt: #f9e2af; --nf: #89b4fa; --nc: #f9e2af; --nb: #f38ba8;
-  --nv: #cdd6f4; --no: #fab387; --na: #f9e2af; --nt: #89b4fa; --nd: #fab387;
+  --k: #d1b1ff; --kt: #f9e2af; --nf: #9fc5ff; --nc: #f9e2af; --nb: #f9a8be;
+  --nv: #cdd6f4; --no: #fab387; --na: #f9e2af; --nt: #9fc5ff; --nd: #fab387;
   --np: #b4befe; --s: #a6e3a1; --m: #fab387; --o: #89dceb; --p: #bac2de;
-  --c: #9399b2; --cp: #f5c2e7; --err: #f38ba8;
+  --c: #b5bdd7; --cp: #f5c2e7; --destructive: #f9a8be; --err: #f9a8be;
 
   /* diffs and status */
-  --gi: #a6e3a1; --gd: #f38ba8;
+  --gi: #a6e3a1; --gd: #f9a8be;
   --gi-bg: rgba(166, 227, 161, 0.15); --gd-bg: rgba(243, 139, 168, 0.15);
 }

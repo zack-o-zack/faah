@@ -375,6 +375,7 @@ func (wb *workbench) routes() {
 	wb.mux.HandleFunc(wb.route("/api/wb/state"), wb.handleState)
 	wb.mux.HandleFunc(wb.route("/api/wb/browse"), wb.handleBrowse)
 	wb.mux.HandleFunc(wb.route("/api/wb/complete"), wb.handleComplete)
+	wb.mux.HandleFunc(wb.route("/api/wb/mkdir"), wb.handleMkdir)
 	wb.mux.HandleFunc(wb.route("/api/metrics"), wb.handleMetrics)
 	wb.mux.HandleFunc(wb.route("/api/settings"), wb.handleSettings)
 	wb.mux.HandleFunc(wb.route("/api/wb/open"), wb.handleOpen)
@@ -816,6 +817,42 @@ func (wb *workbench) handleBrowse(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]any{"path": dir, "parent": parent, "git": hasGitMarker(dir) || gitAvailable(dir), "entries": out})
 }
 
+// handleMkdir creates a folder for Browse's New folder. The path is a name
+// inside base (the folder being shown), or a ~ or absolute path; missing
+// parents are created too. A folder that already exists is an error, so a
+// typo cannot silently land somewhere else.
+func (wb *workbench) handleMkdir(w http.ResponseWriter, r *http.Request) {
+	if !localPost(w, r) {
+		return
+	}
+	var body struct {
+		Path string `json:"path"`
+		Base string `json:"base"`
+	}
+	if readJSONBody(r, &body) != nil || strings.TrimSpace(body.Path) == "" {
+		fail(w, http.StatusBadRequest, "folder name is required")
+		return
+	}
+	base := body.Base
+	if base == "" {
+		base = wb.cwd
+	}
+	dir, err := expandPath(body.Path, base)
+	if err != nil {
+		fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if _, err := os.Stat(dir); err == nil {
+		fail(w, http.StatusConflict, dir+" already exists")
+		return
+	}
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	writeJSON(w, map[string]any{"path": dir})
+}
+
 // handleComplete completes the folder name being typed: q's last path
 // element is a case-insensitive prefix of folders in its parent. A q ending
 // in a separator lists the folder itself. Each value keeps the q's own
@@ -1194,6 +1231,10 @@ func (wb *workbench) handleWorkspace(w http.ResponseWriter, r *http.Request) {
 	}
 	if snap.state == "failed" && r.URL.Query().Get("retry") == "" {
 		p := holdingPage{Title: snap.title, Error: snap.err}
+		if it, ok := wb.store.Get(id); ok {
+			p.Title, p.Sub = holdingNames(it)
+			p.PR = it.Kind == "pr"
+		}
 		if it, ok := wb.store.Get(id); ok && snap.noClone {
 			p.Choose = wb.basePath + "?open=" + url.QueryEscape(it.URL)
 		} else if !snap.gone {
@@ -1216,7 +1257,8 @@ func (wb *workbench) handleWorkspace(w http.ResponseWriter, r *http.Request) {
 	wb.mu.Lock()
 	progress := c.progress
 	wb.mu.Unlock()
-	wb.renderHolding(w, holdingPage{Title: itemTitle(it), Self: wb.childBase(id), Progress: progress, Starting: true})
+	title, sub := holdingNames(it)
+	wb.renderHolding(w, holdingPage{Title: title, Sub: sub, PR: it.Kind == "pr", Self: wb.childBase(id), Progress: progress, Starting: true})
 }
 
 func withoutItem(items []wbItem, id string) []wbItem {
@@ -1227,6 +1269,18 @@ func withoutItem(items []wbItem, id string) []wbItem {
 		}
 	}
 	return kept
+}
+
+// holdingNames splits an item into the holding page's title and subtitle.
+func holdingNames(it wbItem) (title, sub string) {
+	if it.Kind == "pr" {
+		sub = fmt.Sprintf("%s#%d", it.Repo, it.Number)
+		if it.Title != "" {
+			return it.Title, sub
+		}
+		return sub, ""
+	}
+	return filepath.Base(it.Path), it.Path
 }
 
 func itemTitle(it wbItem) string {
@@ -1242,6 +1296,8 @@ func itemTitle(it wbItem) string {
 
 type holdingPage struct {
 	Base, Theme, Title, Error, Retry, Self, Progress string
+	Sub                                              string // the PR's repo#number, or the folder's path
+	PR                                               bool
 	Choose                                           string // workbench URL that asks where the PR's clone is
 	Starting                                         bool
 }
@@ -1253,31 +1309,39 @@ var holdingTmpl = template.Must(template.New("holding").Parse(`<!doctype html>
 <base href="{{.Base}}">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 {{if .Starting}}<noscript><meta http-equiv="refresh" content="1; url={{.Self}}"></noscript>
-<script defer src="static/holding.js"></script>{{end}}
+{{end}}
+<script defer src="static/holding.js"></script>
 <title>{{if .Starting}}Opening…{{else}}faah{{end}}</title>
 <link rel="icon" type="image/svg+xml" href="static/favicon.svg">
-<link rel="stylesheet" href="static/style.css">
+<link rel="stylesheet" href="static/app.css">
 <link rel="stylesheet" href="static/themes.css">
-<link rel="stylesheet" href="static/workbench.css">
-<link rel="stylesheet" href="static/desktop.css">
 </head>
-<body class="wb">
-<button class="desktop-menu-btn" data-desktop-menu title="Menu" aria-label="Application menu">
-  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+<body class="before:desktop:fixed before:desktop:inset-x-0 before:desktop:top-0 before:desktop:h-[var(--titlebar-h,38px)] before:desktop:[-webkit-app-region:drag] before:desktop:content-['']">
+<button data-desktop-menu title="Menu" aria-label="Application menu" class="btn desktop-menu-btn hidden! win-linux:inline-flex! fixed top-2 left-2 z-1 [-webkit-app-region:no-drag]" data-variant="ghost" data-size="icon-xs">
+  <span class="icon-[lucide--menu] size-3.5" aria-hidden="true"></span>
 </button>
-<main class="wb-holding">
-  <div class="empty-logo">
-    <img class="logo-dark" src="static/logo-dark.svg" alt="faah" width="160" height="60">
-    <img class="logo-light" src="static/logo-light.svg" alt="faah" width="160" height="60">
-  </div>
+<main class="mx-auto flex min-h-dvh w-full max-w-[560px] flex-col justify-center gap-6 px-4 pb-[12vh]">
+  <header class="flex">
+    <img class="hidden h-5 w-auto dark:block" src="static/logo-dark.svg" alt="faah" width="35" height="13">
+    <img class="block h-5 w-auto dark:hidden" src="static/logo-light.svg" alt="faah" width="35" height="13">
+  </header>
+  <section class="flex items-center gap-3">
+    <figure class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted">{{if .PR}}<span class="icon-[lucide--git-pull-request] size-5 text-gi" aria-hidden="true"></span>{{else}}<span class="icon-[lucide--folder] size-5 text-muted-foreground" aria-hidden="true"></span>{{end}}</figure>
+    <div class="flex min-w-0 flex-col">
+      <h1 class="truncate font-medium">{{.Title}}</h1>
+      {{if .Sub}}<p class="truncate font-mono text-xs text-muted-foreground">{{.Sub}}</p>{{end}}
+    </div>
+  </section>
   {{if .Starting}}
-  <p class="wb-holding-msg"><span class="wb-spin" aria-hidden="true"></span>Opening <b>{{.Title}}</b>…</p>
-  <p id="wb-holding-progress" class="wb-faint">{{if .Progress}}{{.Progress}}…{{else}}Pull requests are checked out first; large repositories take a while.{{end}}</p>
+  <p class="flex items-start gap-2 text-sm text-muted-foreground" role="status"><span class="icon-[lucide--loader-circle] mt-0.5 size-4 shrink-0 animate-spin text-primary motion-reduce:animate-none" aria-hidden="true"></span><span id="wb-holding-progress">{{if .Progress}}{{.Progress}}…{{else}}Opening… Pull requests are checked out first, so large repositories take a while.{{end}}</span></p>
   {{else}}
-  <p class="wb-holding-msg">Could not open <b>{{.Title}}</b></p>
-  <pre class="wb-error">{{.Error}}</pre>
+  <div class="alert grid-cols-[auto_1fr] gap-x-2.5" data-variant="destructive" role="alert">
+    <span class="icon-[lucide--circle-alert] row-span-2 size-4 translate-y-0.5" aria-hidden="true"></span>
+    <h2 class="col-start-2">Could not open it</h2>
+    <section class="col-start-2 min-w-0"><p class="whitespace-pre-wrap wrap-anywhere font-mono text-xs">{{.Error}}</p></section>
+  </div>
   {{end}}
-  <p class="wb-holding-actions">{{if .Retry}}<a class="wb-btn wb-primary" href="{{.Retry}}">Retry</a>{{end}}{{if .Choose}}<a class="wb-btn wb-primary" href="{{.Choose}}">Choose a clone</a>{{end}}<a class="wb-btn" href="{{.Base}}">Back to workbench</a></p>
+  <footer class="flex flex-wrap gap-2">{{if .Retry}}<a class="btn" data-variant="primary" data-size="sm" href="{{.Retry}}">Retry</a>{{end}}{{if .Choose}}<a class="btn" data-variant="primary" data-size="sm" href="{{.Choose}}">Choose a clone</a>{{end}}<a class="btn first:-ms-2.5" data-variant="ghost" data-size="sm" href="{{.Base}}"><span class="icon-[lucide--arrow-left] size-4" aria-hidden="true"></span>Back to workbench</a></footer>
 </main>
 </body>
 </html>

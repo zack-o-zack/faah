@@ -22,6 +22,7 @@ build/
 node_modules/
 desktop/bin/
 web/app.js
+web/app.css
 web/workbench.js
 web/holding.js
 web/vendor/*.min.js

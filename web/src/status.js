@@ -1,11 +1,17 @@
+import { setMenuHidden } from './overlays.js';
+import { setPressed } from './controls.js';
 import { $, S, doc_, api, apiPost, esc, withKeys } from './state.js';
 import { previewing, previewKind } from './markdown.js';
-import { layoutPref } from './diff.js';
-import { copyToClipboard, showToast } from './ui.js';
+import { vp, copyToClipboard, showToast } from './ui.js';
 import { fmtBytes, showMetrics, initMetricsMenu, closeMetricsMenu } from './metricsview.js';
 
 export function updateStatus() {
   const d = doc_();
+  // Overlays keep source geometry for line mapping, without painting or exposing
+  // a second copy of the document underneath the active view.
+  const covered = !!(d && (d.isEditing || d.isImage || d.diffMode || previewing(d)));
+  vp.style.visibility = covered ? 'hidden' : '';
+  vp.inert = covered;
   const sizeEl = $('#st-size');
   if (sizeEl) sizeEl.textContent = d ? fmtBytes(d.size) : '';
 
@@ -24,18 +30,18 @@ export function updateStatus() {
   const mdBtn = $('[data-action="md-preview"]');
   if (mdBtn) {
     mdBtn.hidden = !isMd;
-    mdBtn.classList.toggle('active', shown);
-    const l = $('.footer-btn-label', mdBtn);
+    setPressed(mdBtn, shown);
+    const l = $('.bar-action-label', mdBtn);
     if (l && isMd) l.textContent = label;
   }
   const sw = $('#md-switch');
   if (sw) {
-    sw.hidden = !isMd;
+    sw.hidden = !isMd || !!d?.diffMode;
     const pb = $('[data-md="preview"]', sw);
     if (pb && isMd) pb.textContent = label;
     document.body.classList.toggle('md-tab', isMd);
     for (const b of sw.children) {
-      if (b.dataset.md) b.classList.toggle('on', isMd && (b.dataset.md === 'preview') === shown);
+      if (b.dataset.md) setPressed(b, isMd && (b.dataset.md === 'preview') === shown);
     }
   }
 
@@ -44,30 +50,23 @@ export function updateStatus() {
   const inGit = !!S.meta?.git;
   const hasDiff = !!(d && d.diffAvailable);
   const isDiffOn = !!(d && d.diffMode);
-  const currentLayout = (d && d.diffMode) || layoutPref();
   const dsw = $('#diff-switch');
   if (dsw) {
-    const showSwitch = inGit && isCode;
-    dsw.hidden = !showSwitch;
+    // Only files with changes get the switch; a clean file has nothing to compare.
+    dsw.hidden = !(inGit && isCode && (hasDiff || isDiffOn));
     document.body.classList.toggle('diff-tab', hasDiff);
-    const btn = $('#diff-btn');
-    if (btn) {
-      btn.disabled = !hasDiff;
-      btn.classList.toggle('disabled', !hasDiff);
-      btn.classList.toggle('on', hasDiff && isDiffOn);
-      btn.title = hasDiff
-        ? withKeys(`Show changes against HEAD, ${currentLayout === 'unified' ? 'unified' : 'split'} ({Mod+D})`)
-        : 'There are no git modified files.';
-    }
-    const srcBtn = $('#diff-source');
-    if (srcBtn) {
-      srcBtn.classList.toggle('on', !hasDiff || !isDiffOn);
-      srcBtn.title = withKeys('Show the file ({Mod+D})');
-    }
-    const menuItems = dsw.querySelectorAll('.diff-menu-item');
-    for (const item of menuItems) {
-      item.classList.toggle('active', item.dataset.diffOpt === currentLayout);
-    }
+    setPressed($('#diff-btn'), isDiffOn);
+    setPressed($('#diff-source'), !isDiffOn);
+  }
+  const layoutBtn = $('#diff-layout');
+  if (layoutBtn) {
+    const split = (d && d.diffMode) !== 'unified';
+    layoutBtn.hidden = !isDiffOn;
+    const label = split ? 'Show changes in one column' : 'Show changes side by side';
+    layoutBtn.title = label;
+    layoutBtn.setAttribute('aria-label', label);
+    $('#diff-layout-split').hidden = !split;
+    $('#diff-layout-unified').hidden = split;
   }
 
   const verEl = $('#st-ver');
@@ -106,21 +105,35 @@ export function setLspState(j) {
   drawLspStatus();
 }
 
+// The last language server list fetched, and when the status chip last asked for one.
+let lastLspData = null;
+let lspCountAt = 0;
+
 export function drawLspStatus() {
   const el = $('#st-lsp');
   if (!el) return;
-  const anyRunning = S.lsp.anyRunning || S.lsp.state === 'ready' || S.lsp.state === 'indexing';
-  el.textContent = 'LSP';
-  if (anyRunning) {
-    el.dataset.state = S.lsp.state === 'indexing' ? 'indexing' : 'ready';
-    el.title = 'Language Servers: Active (Click to manage)';
-  } else if (S.lsp.state === 'failed') {
-    el.dataset.state = 'failed';
-    el.title = 'Language Server failed (Click to manage)';
-  } else {
-    el.dataset.state = 'off';
-    el.title = 'Language Servers: Stopped (Click to manage)';
+  const servers = lastLspData?.servers || [];
+  const running = servers.filter(s => s.running).length;
+  const available = servers.filter(s => s.installed).length;
+  const anyRunning = running > 0 || S.lsp.anyRunning || S.lsp.state === 'ready' || S.lsp.state === 'indexing';
+  // A server started on its own since the list was fetched: fetch it again.
+  if (anyRunning !== running > 0 && Date.now() - lspCountAt > 3000) {
+    lspCountAt = Date.now();
+    void refreshLspMenu();
   }
+  let dot = 'bg-faint', title = 'Language servers: stopped (click to manage)';
+  if (anyRunning) {
+    dot = S.lsp.state === 'indexing' ? 'bg-warn' : 'bg-gi';
+    title = `Language servers: ${running || 1} of ${available || running || 1} running (click to manage)`;
+  } else if (S.lsp.state === 'failed') {
+    dot = 'bg-gd';
+    title = 'A language server failed (click to manage)';
+  }
+  // Counts appear once the server list is known and something is running.
+  const count = anyRunning && available ? `<span class="tabular-nums">${running}/${available}</span> ` : '';
+  el.innerHTML = `<span class="size-1.5 shrink-0 rounded-full ${dot}" aria-hidden="true"></span>${count}LSP`;
+  el.title = title;
+  el.setAttribute('aria-label', title);
 }
 
 function shortLang(lang) {
@@ -135,7 +148,6 @@ function shortLang(lang) {
 }
 
 const lspMenuEl = $('#lsp-menu');
-let lastLspData = null;
 let lspPollTimer = null;
 let pollActive = false;
 const installingServers = new Set();
@@ -148,6 +160,7 @@ export function startLspPoll() {
     try {
       const data = await api('/api/lsp/servers');
       if (data) {
+        lastLspData = data;
         S.lsp.anyRunning = data.anyRunning;
         drawLspStatus();
         if (lspMenuEl && !lspMenuEl.hidden) {
@@ -159,7 +172,7 @@ export function startLspPoll() {
         for (const s of data.servers || []) {
           if (installingServers.has(s.name) && s.installed && !s.running && s.state !== 'installing') {
             installingServers.delete(s.name);
-            showToast('✓', `${s.name} installed. Starting…`);
+            showToast('success', `${s.name} installed. Starting…`);
             apiPost('/api/lsp/start', { server: s.name }).then(d => {
               if (d) {
                 S.lsp.anyRunning = d.anyRunning;
@@ -189,71 +202,54 @@ export function renderLspMenu(data) {
   const servers = data.servers || [];
   const anyRunning = !!data.anyRunning;
 
-  let headAction = '';
-  if (servers.length > 0) {
-    if (anyRunning) {
-      headAction = `<button class="lsp-menu-head-action" id="lsp-action-all" data-action="stop-all" title="Stop all running language servers">Stop All</button>`;
-    } else {
-      const anyInstalled = servers.some(s => s.installed);
-      if (anyInstalled) {
-        headAction = `<button class="lsp-menu-head-action" id="lsp-action-all" data-action="start-all" title="Start all available language servers">Start All</button>`;
-      }
-    }
-  }
-
   let rows = '';
   if (servers.length === 0) {
-    rows = `<div class="lsp-empty-note">No language servers detected for workspace</div>`;
+    rows = `<div data-ui="lsp-empty-note" class="col-span-full py-2 text-muted-foreground">No language servers detected for workspace</div>`;
   } else {
+    const act = (name, kind, label, cls) => `<button data-name="${esc(name)}" data-act="${kind}" title="${label} ${esc(name)}" aria-label="${label} ${esc(name)}" class="btn ${cls}" data-control="lsp-btn" data-variant="ghost" data-size="icon-xs"><span class="${kind === 'start' ? 'icon-[lucide--play]' : 'icon-[lucide--square]'} size-3" aria-hidden="true"></span></button>`;
     rows = servers.map(s => {
-      let dotClass = s.state || 'stopped';
-      let metaText = '';
+      // The dot carries the state (a spinner while it changes); text appears only
+      // when it says something the dot cannot.
+      let dot = 'bg-faint';
+      let busy = false;
+      let note = '';
       let btnHtml = '';
 
       if (s.state === 'installing' || installingServers.has(s.name)) {
-        dotClass = 'starting';
-        metaText = 'Installing…';
-        btnHtml = `<button class="lsp-btn" disabled>Installing…</button>`;
-      } else if (s.running) {
-        dotClass = s.state === 'indexing' ? 'indexing' : 'ready';
-        metaText = s.memBytes ? fmtBytes(s.memBytes) : 'Running';
-        btnHtml = `<button class="lsp-btn lsp-btn-stop" data-name="${esc(s.name)}" data-act="stop" title="Stop ${esc(s.name)}">Stop</button>`;
+        busy = true;
+        btnHtml = '<span></span>';
       } else if (s.state === 'starting') {
-        dotClass = 'starting';
-        metaText = 'Starting…';
-        btnHtml = `<button class="lsp-btn lsp-btn-stop" data-name="${esc(s.name)}" data-act="stop" title="Stop ${esc(s.name)}">Stop</button>`;
+        busy = true;
+        btnHtml = act(s.name, 'stop', 'Stop', 'text-destructive');
+      } else if (s.running) {
+        dot = s.state === 'indexing' ? 'bg-warn' : 'bg-gi';
+        note = s.memBytes ? fmtBytes(s.memBytes) : '';
+        btnHtml = act(s.name, 'stop', 'Stop', 'text-destructive');
       } else if (s.state === 'failed') {
-        dotClass = 'failed';
-        metaText = s.error ? esc(s.error) : 'Failed';
-        btnHtml = `<button class="lsp-btn lsp-btn-start" data-name="${esc(s.name)}" data-act="start" title="Restart ${esc(s.name)}">Start</button>`;
+        dot = 'bg-gd';
+        note = 'Failed';
+        btnHtml = act(s.name, 'start', 'Restart', 'text-muted-foreground hover:text-foreground');
       } else if (s.installed) {
-        dotClass = 'stopped';
-        metaText = 'Stopped';
-        btnHtml = `<button class="lsp-btn lsp-btn-start" data-name="${esc(s.name)}" data-act="start" title="Start ${esc(s.name)}">Start</button>`;
+        btnHtml = act(s.name, 'start', 'Start', 'text-muted-foreground hover:text-foreground');
       } else {
-        dotClass = 'missing';
-        if (s.error) {
-          metaText = 'Install failed';
-        } else {
-          metaText = 'Not installed';
-        }
+        note = s.error ? 'Install failed' : 'Not installed';
         if (s.autoOpt !== undefined && s.autoOpt >= 0) {
-          btnHtml = `<button class="lsp-btn lsp-btn-install" data-name="${esc(s.name)}" data-opt="${s.autoOpt}" data-act="install" title="Install ${esc(s.name)}">Install</button>`;
+          btnHtml = `<button data-name="${esc(s.name)}" data-opt="${s.autoOpt}" data-act="install" title="Install ${esc(s.name)}" class="btn" data-control="lsp-btn" data-variant="ghost" data-size="xs">Install</button>`;
         } else if (s.options && s.options.length > 0) {
-          btnHtml = `<button class="lsp-btn lsp-btn-copy" data-cmd="${esc(s.options[0].cmd)}" data-act="copy" title="Copy install command: ${esc(s.options[0].cmd)}">Copy Cmd</button>`;
+          btnHtml = `<button data-cmd="${esc(s.options[0].cmd)}" data-act="copy" title="Copy install command: ${esc(s.options[0].cmd)}" class="btn" data-control="lsp-btn" data-variant="ghost" data-size="xs">Copy command</button>`;
         } else {
-          btnHtml = `<span class="lsp-meta-dim">Manual</span>`;
+          btnHtml = '<span></span>';
         }
       }
+      const dotHtml = busy
+        ? '<span data-ui="lsp-dot" class="icon-[lucide--loader-circle] size-3 animate-spin text-muted-foreground" aria-label="Working"></span>'
+        : `<span data-ui="lsp-dot" class="mx-0.5 size-2 rounded-full ${dot}"></span>`;
 
       return `
-        <div class="lsp-server-row">
-          <div class="lsp-server-info">
-            <span class="lsp-dot ${dotClass}"></span>
-            <span class="lsp-server-name">${esc(s.name)}</span>
-            <span class="lsp-server-lang">${esc(shortLang(s.lang))}</span>
-          </div>
-          <span class="lsp-server-meta" title="${esc(s.error || metaText)}">${metaText}</span>
+        <div data-ui="lsp-server-row" class="contents">
+          ${dotHtml}
+          <span data-ui="lsp-server-info" class="min-w-0 truncate"><span data-ui="lsp-server-name" class="font-medium">${esc(s.name)}</span> <span data-ui="lsp-server-lang" class="text-muted-foreground">${esc(shortLang(s.lang))}</span></span>
+          <span data-ui="lsp-server-meta" class="max-w-40 truncate text-right tabular-nums text-muted-foreground" title="${esc(s.error || note)}">${esc(note)}</span>
           ${btnHtml}
         </div>
       `;
@@ -261,11 +257,8 @@ export function renderLspMenu(data) {
   }
 
   lspMenuEl.innerHTML = `
-    <div class="lsp-menu-head">
-      <span>Language Servers</span>
-      ${headAction}
-    </div>
-    <div class="lsp-server-list">
+    <div data-ui="lsp-menu-head" class="px-2 pt-1.5 pb-1 text-xs font-medium text-muted-foreground">Language servers</div>
+    <div data-ui="lsp-server-list" class="grid grid-cols-[auto_1fr_auto_auto] items-center gap-x-3 gap-y-0.5 pl-2 text-xs">
       ${rows}
     </div>
   `;
@@ -275,8 +268,29 @@ export function renderLspMenu(data) {
   }
 }
 
+/** Start every installed language server (command palette). */
+export async function startAllLsp() {
+  const data = await apiPost('/api/lsp/start', { server: 'all' });
+  if (!data) return;
+  lastLspData = data;
+  S.lsp.anyRunning = data.anyRunning;
+  drawLspStatus();
+  if (lspMenuEl && !lspMenuEl.hidden) renderLspMenu(data);
+}
+
+/** Stop every running language server (command palette). */
+export async function stopAllLsp() {
+  const data = await apiPost('/api/lsp/stop');
+  if (!data) return;
+  lastLspData = data;
+  S.lsp.anyRunning = data.anyRunning;
+  S.lsp.state = 'off';
+  drawLspStatus();
+  if (lspMenuEl && !lspMenuEl.hidden) renderLspMenu(data);
+}
+
 export function closeLspMenu() {
-  if (lspMenuEl) lspMenuEl.hidden = true;
+  if (lspMenuEl) setMenuHidden(lspMenuEl, true);
 }
 
 function placeLspMenu() {
@@ -292,6 +306,7 @@ export async function refreshLspMenu() {
   try {
     const data = await api('/api/lsp/servers');
     if (data) {
+      lastLspData = data;
       S.lsp.anyRunning = data.anyRunning;
       drawLspStatus();
       if (lspMenuEl && !lspMenuEl.hidden) {
@@ -305,7 +320,7 @@ export async function refreshLspMenu() {
 export async function openLspMenu() {
   if (!lspMenuEl) return;
   closeMetricsMenu();
-  lspMenuEl.hidden = false;
+  setMenuHidden(lspMenuEl, false);
   placeLspMenu();
   try {
     const data = await api('/api/lsp/servers');
@@ -314,7 +329,7 @@ export async function openLspMenu() {
     S.lsp.anyRunning = data.anyRunning;
     drawLspStatus();
   } catch {
-    lspMenuEl.innerHTML = `<div class="lsp-empty-note">Failed to load language servers</div>`;
+    lspMenuEl.innerHTML = `<div data-ui="lsp-empty-note" class="col-span-full py-2 text-muted-foreground">Failed to load language servers</div>`;
   }
 }
 
@@ -328,6 +343,7 @@ export async function toggleLspMenu() {
 }
 
 export function initLspMenu() {
+  void refreshLspMenu(); // the status chip counts running servers
   const contEl = $('#st-lsp');
   if (contEl) {
     contEl.addEventListener('click', (e) => {
@@ -347,30 +363,6 @@ export function initLspMenu() {
       const btn = e.target.closest('button');
       if (!btn) return;
       e.stopPropagation();
-
-      if (btn.id === 'lsp-action-all') {
-        const action = btn.dataset.action;
-        btn.disabled = true;
-        try {
-          if (action === 'stop-all') {
-            const data = await apiPost('/api/lsp/stop');
-            if (data) {
-              S.lsp.anyRunning = data.anyRunning;
-              S.lsp.state = 'off';
-              renderLspMenu(data);
-              drawLspStatus();
-            }
-          } else if (action === 'start-all') {
-            const data = await apiPost('/api/lsp/start', { server: 'all' });
-            if (data) {
-              S.lsp.anyRunning = data.anyRunning;
-              renderLspMenu(data);
-              drawLspStatus();
-            }
-          }
-        } catch {}
-        return;
-      }
 
       const name = btn.dataset.name;
       const act = btn.dataset.act;
@@ -395,16 +387,15 @@ export function initLspMenu() {
           }
         } else if (act === 'install') {
           const opt = btn.dataset.opt || '0';
-          btn.textContent = 'Installing…';
           installingServers.add(name);
           try {
             await apiPost('/api/lsp/install', { server: name, option: opt });
-            showToast('✓', `Installing ${name} in background…`);
+            showToast('success', `Installing ${name} in background…`);
             startLspPoll();
             await refreshLspMenu();
           } catch (err) {
             installingServers.delete(name);
-            showToast('!', err.message || 'Install failed');
+            showToast('error', err.message || 'Install failed');
             await refreshLspMenu();
           }
         } else if (act === 'copy') {
@@ -452,21 +443,22 @@ export function initMetrics() {
 }
 
 /* The status bar stays on one line. When its contents outgrow the width, it
-   sheds detail in steps (see the fit-N rules in style.css), least useful first,
+   sheds detail in steps (see the fit-N variants on #status), least useful first,
    stopping at the first step that fits. A step comes back only with FIT_SLACK px
    to spare, so a 1px wobble of a resizer cannot flip it on every move. */
-const FIT_STEPS = 6, FIT_SLACK = 16;
+const FIT_CLASSES = ['fit-1', 'fit-2', 'fit-3', 'fit-4', 'fit-5', 'fit-6'];
+const FIT_STEPS = FIT_CLASSES.length, FIT_SLACK = 16;
 const statusEl = $('#status');
-const growEl = $('.grow', statusEl);
+const growEl = $('#status-spacer', statusEl);
 let fitLevel = 0;
 let appliedFit = -1;
 let fitRAF = 0;
 
-/* Apply fit level n and return the room left: the .grow spacer's width, or the
+/* Apply fit level n and return the room left: the status spacer's width, or the
    overflow as a negative number. */
 function applyFit(n) {
   if (n !== appliedFit) {
-    for (let i = 1; i <= FIT_STEPS; i++) statusEl.classList.toggle('fit-' + i, i <= n);
+    FIT_CLASSES.forEach((className, index) => statusEl.classList.toggle(className, index < n));
     appliedFit = n;
   }
   return growEl.offsetWidth - (statusEl.scrollWidth - statusEl.clientWidth);

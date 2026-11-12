@@ -1,3 +1,4 @@
+import { setMenuHidden } from './overlays.js';
 // web/src/metricsview.js
 // The status bar's CPU · RAM · LSP chip (#st-metrics) and the menu it opens
 // (#metrics-menu). Shared by the app (through status.js) and the workbench
@@ -16,33 +17,35 @@ let lastMetrics = null;
 let onMenuOpen = null;
 
 const row = (label, val) => `
-      <div class="metrics-row">
-        <span class="metrics-label">${esc(label)}</span>
-        <span class="metrics-val">${val}</span>
+      <span data-ui="metrics-label" class="min-w-0 truncate text-muted-foreground" title="${esc(label)}">${esc(label)}</span>
+      <span data-ui="metrics-val" class="text-right tabular-nums">${val}</span>`;
+
+// The two numbers people open this for, large; the rest stays small beneath them.
+const stat = (label, val) => `
+      <div data-ui="metrics-stat" class="flex flex-col">
+        <span data-ui="metrics-val" class="text-lg font-semibold tabular-nums leading-tight">${val}</span>
+        <span data-ui="metrics-label" class="text-xs text-muted-foreground">${esc(label)}</span>
       </div>`;
+
+const grid = rows => `<div data-ui="metrics-grid" class="grid grid-cols-[1fr_auto] gap-x-6 gap-y-1 px-3 py-2 text-xs">${rows}</div>`;
 
 // m.parts, when present (the workbench), breaks the totals down per process.
 function renderMetricsMenu(m) {
   const menuEl = $('#metrics-menu');
   if (!menuEl || !m) return;
-  const lspRow = m.lspEnabled ? row('Language Servers (RSS)', fmtBytes(m.lspMemBytes || 0)) : '';
-  const parts = Array.isArray(m.parts) && m.parts.length > 1 ? `
-    <div class="metrics-title"><span>By Process</span></div>
-    <div class="metrics-grid">${m.parts.map(p => row(p.name, `${fmtBytes(p.rssBytes || 0)} · ${fmtCpu(p)}`)).join('')}
-    </div>` : '';
+  const details = (m.lspEnabled && m.lspMemBytes ? row('Language servers', fmtBytes(m.lspMemBytes)) : '') +
+    row('Goroutines', m.goroutines || 0);
+  const parts = Array.isArray(m.parts) && m.parts.length > 1
+    ? grid(m.parts.map(p => row(p.name, `${fmtBytes(p.rssBytes || 0)} · ${fmtCpu(p)}`)).join(''))
+    : '';
   menuEl.innerHTML = `
-    <div class="metrics-title">
-      <span>Process Metrics</span>
-      <span class="toast-chip">faah</span>
-    </div>
-    <div class="metrics-grid">${row('Resident RAM (RSS)', fmtBytes(m.rssBytes || 0))}${row('CPU Usage', fmtCpu(m))}${row('Active Goroutines', m.goroutines || 0)}${lspRow}
-    </div>${parts}
-  `;
+    <div data-ui="metrics-stats" class="grid grid-cols-2 gap-6 px-3 pt-2.5 pb-2">${stat('Memory', fmtBytes(m.rssBytes || 0))}${stat('CPU', fmtCpu(m))}</div>
+    <hr class="border-border">${grid(details)}${parts ? '<hr class="border-border">' + parts : ''}`;
 }
 
 export function closeMetricsMenu() {
   const menuEl = $('#metrics-menu');
-  if (menuEl) menuEl.hidden = true;
+  if (menuEl) setMenuHidden(menuEl, true);
 }
 
 function placeMetricsMenu() {
@@ -63,7 +66,7 @@ export function toggleMetricsMenu() {
     return;
   }
   if (lastMetrics) renderMetricsMenu(lastMetrics);
-  menuEl.hidden = false;
+  setMenuHidden(menuEl, false);
   placeMetricsMenu();
   onMenuOpen?.();
 }
@@ -80,11 +83,6 @@ export function showMetrics(m) {
   const lspEl = $('#st-lspmem');
   if (lspWrap) lspWrap.hidden = !m.lspEnabled;
   if (lspEl && m.lspEnabled) lspEl.textContent = fmtBytes(m.lspMemBytes || 0);
-  const contEl = $('#st-metrics');
-  if (contEl) {
-    contEl.title = 'CPU ' + fmtCpu(m) + ' · RAM ' + fmtBytes(m.rssBytes || 0) +
-      (m.lspEnabled ? ' · LSP ' + fmtBytes(m.lspMemBytes || 0) : '');
-  }
   const menuEl = $('#metrics-menu');
   if (menuEl && !menuEl.hidden) {
     renderMetricsMenu(m);

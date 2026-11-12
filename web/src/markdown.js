@@ -1,3 +1,4 @@
+import { pictureSource } from './markdown-picture.js';
 // web/src/markdown.js
 import { $, $$, S, doc_, esc, api, isMac, MOD, LH } from './state.js';
 import { on } from './bus.js';
@@ -65,7 +66,7 @@ async function drawPreview(d) {
     } catch (e) {
       d.mdError = e.message; // this tab falls back to its source
       if (gen === mdGen && mdShown === d) {
-        showToast('!', 'No preview for ' + d.name + ': ' + e.message);
+        showToast('error', 'No preview for ' + d.name + ': ' + e.message);
         syncPreview();
         updateStatus();
       }
@@ -112,7 +113,7 @@ function scheduleMermaidThemeRender() {
 export function togglePreview() {
   const d = doc_();
   if (d && d.isEditing) return;
-  if (!previewKind(d)) { showToast('!', 'Preview works on Markdown, CSV and TSV files'); return; }
+  if (!previewKind(d)) { showToast('error', 'Preview works on Markdown, CSV and TSV files'); return; }
   hideHover();
   exitMermaidFullscreen();
   if (previewing(d)) {
@@ -142,11 +143,11 @@ function mdSetPref(d, on) {
 const HTML_NS = 'http://www.w3.org/1999/xhtml';
 // Removed along with everything inside them.
 const MD_DROP = new Set(('script style iframe frame frameset object embed applet template noscript noembed ' +
-  'svg math form textarea select option button link meta base title audio video source track canvas dialog').split(' '));
+  'svg math form textarea select option button link meta base title audio video track canvas dialog').split(' '));
 // Kept. Any other element is unwrapped: its children stay, the element goes.
 const MD_KEEP = new Set(('a abbr b bdi bdo blockquote br caption center cite code col colgroup dd del details dfn div dl dt ' +
   'em figcaption figure h1 h2 h3 h4 h5 h6 hr i img input ins kbd li mark ol p pre q rp rt ruby s samp section small span ' +
-  'strike strong sub summary sup table tbody td tfoot th thead tr tt u ul var wbr').split(' '));
+  'picture source strike strong sub summary sup table tbody td tfoot th thead tr tt u ul var wbr').split(' '));
 // Attributes that can neither run script nor reach the network.
 const MD_ATTRS = new Set(('align valign alt title lang dir width height colspan rowspan start reversed open checked ' +
   'disabled type data-line data-lang').split(' '));
@@ -185,13 +186,47 @@ function mdSanitize(html, docPath) {
         c === 'md-code' || c.startsWith('footnote') || (tag === 'i' && MD_TOKENS.has(c)));
       if (keep.length) el.className = keep.join(' ');
     }
+    if (tag === 'input') el.className = 'input mr-2';
+    if (tag === 'kbd') el.className = 'kbd';
     if (tag === 'input') /** @type {HTMLInputElement} */ (el).disabled = true;
+    if (tag === 'source') {
+      const candidate = el.parentElement?.localName === 'picture' && pictureSource(attrs.srcset || '', attrs.media || '');
+      if (!candidate) { el.remove(); continue; }
+      const image = document.createElement('img');
+      mdSetImage(image, candidate.src, base);
+      if (!image.hasAttribute('src')) { el.remove(); continue; }
+      el.setAttribute('srcset', image.getAttribute('src'));
+      el.dataset.mdScheme = candidate.scheme;
+      el.dataset.origSrc = candidate.src;
+      if (image.dataset.rawPath) el.dataset.rawPath = image.dataset.rawPath;
+    }
     if (tag === 'img') mdSetImage(el, mdURL(attrs.src || ''), base);
     if (tag === 'a' && attrs.href) mdSetLink(el, mdURL(attrs.href), base);
   }
   const frag = document.createDocumentFragment();
   while (body.firstChild) frag.appendChild(document.adoptNode(body.firstChild));
+  syncMarkdownPictures(frag);
   return frag;
+}
+
+// Server-rendered Markdown from anywhere but a workspace file (a PR comment),
+// cleaned the same way as the preview.
+export function sanitizeMarkdown(html) {
+  return mdSanitize(html, '');
+}
+
+/* Native media queries follow the OS; pictures in the preview follow the app theme. */
+function syncMarkdownPictures(root = mdArticle) {
+  const scheme = getComputedStyle(document.documentElement).colorScheme === 'dark' ? 'dark' : 'light';
+  for (const picture of root.querySelectorAll('picture')) {
+    const sources = [...picture.querySelectorAll('source[data-md-scheme]')];
+    const selected = sources.find(source => source.dataset.mdScheme === scheme);
+    const img = picture.querySelector('img');
+    if (img) img.dataset.picturePath = selected ? selected.dataset.rawPath || '' : img.dataset.rawPath || '';
+    for (const source of sources) {
+      source.setAttribute('media', source.dataset.mdScheme === scheme ? '(min-width: 0px)' : 'not all');
+    }
+  }
 }
 
 /* A reference without a scheme names a file in the workspace, relative to the
@@ -257,6 +292,10 @@ function mdSetLink(a, href, base) {
 /* ---------- presentation ---------- */
 
 const MD_ALERTS = { note: 'Note', tip: 'Tip', important: 'Important', warning: 'Warning', caution: 'Caution' };
+const MD_ALERT_CLASSES = {
+  note: 'md-alert-note', tip: 'md-alert-tip', important: 'md-alert-important',
+  warning: 'md-alert-warning', caution: 'md-alert-caution',
+};
 
 function mdEnhance() {
   for (const q of $$('blockquote', mdArticle)) mdAlert(q);
@@ -266,12 +305,20 @@ function mdEnhance() {
     if (pre.dataset.lang) wrap.dataset.lang = pre.dataset.lang;
     pre.replaceWith(wrap);
     const copy = document.createElement('button');
-    copy.className = 'md-copy';
+    copy.className = 'btn';
+    copy.dataset.control = 'md-copy';
+    copy.dataset.variant = 'ghost';
+    copy.dataset.size = 'icon-xs';
     copy.title = 'Copy code';
     copy.setAttribute('aria-label', 'Copy code');
     // An icon, not a label: find in the preview walks text nodes.
-    copy.innerHTML = '<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 3.5V3a1.5 1.5 0 0 0-1.5-1.5H4A1.5 1.5 0 0 0 2.5 3v5A1.5 1.5 0 0 0 4 9.5h.5"/></svg>';
-    wrap.append(pre, copy);
+    copy.innerHTML = '<span class="icon-[lucide--copy] size-3.5 shrink-0" aria-hidden="true"></span>';
+    const toolbar = document.createElement('div');
+    toolbar.className = 'flex items-center justify-between gap-2 border border-b-0 rounded-t-md bg-sidebar px-3 py-1 text-xs text-muted-foreground';
+    const language = document.createElement('span');
+    language.textContent = pre.dataset.lang || 'Code';
+    toolbar.append(language, copy);
+    wrap.append(toolbar, pre);
   }
 }
 
@@ -292,7 +339,7 @@ function mdAlert(q) {
   title.className = 'md-alert-title';
   title.textContent = MD_ALERTS[kind];
   q.prepend(title);
-  q.classList.add('md-alert', 'md-alert-' + kind);
+  q.classList.add('md-alert', MD_ALERT_CLASSES[kind]);
 }
 
 /* ---------- position ---------- */
@@ -382,7 +429,7 @@ async function mdFollow(path, anchor) {
   const line = /^L(\d+)/.exec(anchor);
   await openFile(path, line ? { line: +line[1] } : {});
   const nd = doc_();
-  if (!nd || nd.path !== path) { showToast('!', 'Cannot open ' + path); return; }
+  if (!nd || nd.path !== path) { showToast('error', 'Cannot open ' + path); return; }
   if (anchor && !line) {
     const el = mdDrawn === nd && mdFindAnchor(anchor);
     if (el) mdScrollTo(el); else nd.mdAnchor = anchor;
@@ -480,16 +527,16 @@ export function initMarkdown() {
 
   mdArticle.addEventListener('click', e => {
     if (e.target.closest('.csv-open-source')) { togglePreview(); return; }
-    const copy = e.target.closest('.md-copy');
+    const copy = e.target.closest('[data-control~=md-copy]');
     if (copy) {
       const pre = $('pre', copy.parentElement);
       if (pre) {
         copyToClipboard(pre.textContent || '', 'Copied code block');
         copy.classList.add('copied');
-        copy.innerHTML = '<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3.5 8.5 6.5 11.5 12.5 5.5"/></svg>';
+        copy.innerHTML = '<span class="icon-[lucide--check] size-3.5 shrink-0" aria-hidden="true"></span>';
         setTimeout(() => {
           copy.classList.remove('copied');
-          copy.innerHTML = '<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 3.5V3a1.5 1.5 0 0 0-1.5-1.5H4A1.5 1.5 0 0 0 2.5 3v5A1.5 1.5 0 0 0 4 9.5h.5"/></svg>';
+          copy.innerHTML = '<span class="icon-[lucide--copy] size-3.5 shrink-0" aria-hidden="true"></span>';
         }, 1400);
       }
       return;
@@ -517,7 +564,7 @@ export function initMarkdown() {
       const path = img.dataset.rawPath || img.dataset.origSrc || img.getAttribute('src') || 'image';
       const fallback = document.createElement('div');
       fallback.className = 'md-img-broken';
-      fallback.innerHTML = '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 14l5-5 3 3 4-4"/><circle cx="5.5" cy="5.5" r="1.5"/><line x1="2" y1="2" x2="14" y2="14"/></svg><span>Image not found: ' + esc(path) + '</span>';
+      fallback.innerHTML = '<span class="icon-[lucide--image-off] size-4 shrink-0" aria-hidden="true"></span><span>Image not found: ' + esc(path) + '</span>';
       img.replaceWith(fallback);
     }
   }, true);
@@ -526,14 +573,14 @@ export function initMarkdown() {
   const lb = $('#img-lightbox');
   if (lb) {
     lb.addEventListener('click', e => {
-      if (e.target.closest('.lightbox-close') || e.target.classList.contains('lightbox-backdrop')) {
-        lb.hidden = true;
+      if (e.target.closest('[data-control~=lightbox-close]') || e.target === lb) {
+        lb.close();
       }
     });
   }
   on('tab:activated', () => syncPreview());
   on('tabs:cleared', () => syncPreview());
-  on('theme:changed', scheduleMermaidThemeRender);
+  on('theme:changed', () => { syncMarkdownPictures(); scheduleMermaidThemeRender(); });
 }
 
 export function getDocRaw(d) {
@@ -556,7 +603,7 @@ export function getFragmentPlainText(frag) {
     const diagram = wrap.querySelector('.md-mermaid');
     if (source && diagram) diagram.replaceWith(document.createTextNode(source.textContent || ''));
   }
-  const bad = clone.querySelectorAll?.('.md-copy, .line-btn, [hidden], svg, style, script');
+  const bad = clone.querySelectorAll?.('[data-control~=md-copy], [data-control~=line-btn], [hidden], svg, style, script');
   if (bad) {
     for (const b of bad) b.remove();
   }
@@ -573,7 +620,7 @@ export function getFragmentHtml(frag) {
       diagram.remove();
     }
   }
-  const bad = clone.querySelectorAll?.('.md-copy, .line-btn, [hidden]');
+  const bad = clone.querySelectorAll?.('[data-control~=md-copy], [data-control~=line-btn], [hidden]');
   if (bad) {
     for (const b of bad) b.remove();
   }
@@ -600,7 +647,7 @@ export function domToMarkdown(node) {
   if (node.nodeType === 3) return node.nodeValue;
   if (node.nodeType !== 1 && node.nodeType !== 11) return '';
 
-  if (node.matches && (node.matches('.md-copy, .line-btn, [hidden], svg') || node.classList?.contains('md-copy'))) {
+  if (node.matches && (node.matches('[data-control~=md-copy], [data-control~=line-btn], [hidden], svg') || node.classList?.contains('md-copy'))) {
     return '';
   }
 
@@ -738,8 +785,8 @@ export function openLightbox(img) {
   const lbOpenTab = $('#lb-open-tab');
   const lbCopyPath = $('#lb-copy-path');
 
-  const src = img.getAttribute('src');
-  const rawPath = img.dataset.rawPath || '';
+  const src = img.currentSrc || img.getAttribute('src');
+  const rawPath = (img.parentElement?.localName === 'picture' ? img.dataset.picturePath : img.dataset.rawPath) || '';
   const alt = img.getAttribute('alt') || '';
   const displayTitle = rawPath || alt || src.split('/').pop() || 'Image Preview';
 
@@ -759,7 +806,7 @@ export function openLightbox(img) {
   if (rawPath) {
     lbOpenTab.hidden = false;
     lbOpenTab.onclick = () => {
-      lb.hidden = true;
+      lb.close();
       openFile(rawPath);
     };
     lbCopyPath.hidden = false;
@@ -773,5 +820,5 @@ export function openLightbox(img) {
     };
   }
 
-  lb.hidden = false;
+  lb.showModal();
 }

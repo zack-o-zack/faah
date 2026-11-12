@@ -27,6 +27,8 @@ jobs:
 
       # web/app.js is not committed — regenerate it so go:embed has a fresh
       # bundle, and prove the source modules bundle cleanly.
+      - run: npm ci
+
       - name: Bundle web assets
         run: node ./scripts/build-web.js
 

@@ -40,8 +40,8 @@ import (
 	"faah/internal/ui"
 )
 
-//go:embed web/index.html web/style.css web/desktop.css web/themes web/vendor web/fonts
-//go:embed web/workbench.html web/workbench.css web/workbench.js web/holding.js
+//go:embed web/index.html web/app.css web/themes web/vendor web/fonts
+//go:embed web/workbench.html web/workbench.js web/holding.js
 //go:embed web/app.js web/logo-dark.svg web/logo-light.svg web/favicon.svg
 var embedded embed.FS
 
@@ -203,6 +203,7 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc(s.routePath("/api/lsp/stop"), s.handleLSPStop)
 	s.mux.HandleFunc(s.routePath("/api/lsp/servers"), s.handleLSPServers)
 	s.mux.HandleFunc(s.routePath("/api/agent/harnesses"), s.handleAgentHarnesses)
+	s.mux.HandleFunc(s.routePath("/api/agent/models"), s.handleAgentModels)
 	s.mux.HandleFunc(s.routePath("/api/agent/select"), s.handleAgentSelect)
 	s.mux.HandleFunc(s.routePath("/api/agent/edit"), s.handleAgentEdit)
 	s.mux.HandleFunc(s.routePath("/api/agent/batch"), s.handleAgentBatchEdit)
@@ -1235,7 +1236,25 @@ func (s *Server) handleTree(w http.ResponseWriter, r *http.Request) {
 		fail(w, 404, "not indexed: "+dir)
 		return
 	}
+	if keep := treeViewFilter(r.URL.Query().Get("compact")); keep != nil {
+		kids, _ = s.ix.CompactChildren(dir, keep)
+	}
 	writeJSON(w, map[string]any{"dir": dir, "children": kids})
+}
+
+// treeViewFilter says which entries a sidebar view shows, for compacting
+// folder chains the way that view sees them: every entry, changed ones, or
+// in PR review the reviewer's own (not pushed) ones. Empty means no compacting.
+func treeViewFilter(view string) func(Node) bool {
+	switch view {
+	case "all":
+		return func(Node) bool { return true }
+	case "changed":
+		return func(n Node) bool { return n.Dirty || n.Status != "" }
+	case "yours":
+		return func(n Node) bool { return n.YourDirty || n.YourStatus != "" }
+	}
+	return nil
 }
 
 func (s *Server) handleFind(w http.ResponseWriter, r *http.Request) {

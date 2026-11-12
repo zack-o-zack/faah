@@ -1,3 +1,4 @@
+import { setPressed } from './controls.js';
 // web/src/search.js
 import { $, $$, esc, api, debounce } from './state.js';
 import { openFile } from './tabs.js';
@@ -28,12 +29,12 @@ export const runSearch = debounce(async () => {
   cancelSearch();
   const controller = new AbortController();
   searchAbort = controller;
-  resultsEl.innerHTML = '<div class="hint">searching…</div>';
+  resultsEl.innerHTML = '<div data-ui="hint" class="empty text-muted-foreground">searching…</div>';
   const params = {
     q, glob: $('#glob')?.value || '',
-    case: $('#o-case')?.classList.contains('on') ? 1 : '',
-    word: $('#o-word')?.classList.contains('on') ? 1 : '',
-    re: $('#o-re')?.classList.contains('on') ? 1 : '',
+    case: $('#o-case')?.getAttribute('aria-pressed') === 'true' ? 1 : '',
+    word: $('#o-word')?.getAttribute('aria-pressed') === 'true' ? 1 : '',
+    re: $('#o-re')?.getAttribute('aria-pressed') === 'true' ? 1 : '',
   };
   try {
     const j = await api('/api/search', params, { signal: controller.signal });
@@ -45,7 +46,7 @@ export const runSearch = debounce(async () => {
     if (e.name === 'AbortError') return;
     if (searchAbort === controller) {
       searchAbort = null;
-      resultsEl.innerHTML = '<div class="hint">' + esc(e.message) + '</div>';
+      resultsEl.innerHTML = '<div data-ui="hint" class="empty text-muted-foreground">' + esc(e.message) + '</div>';
     }
   }
 }, 160);
@@ -54,22 +55,22 @@ export function renderResults(j) {
   lastResults = j;
   if (!resultsEl) return;
   if (!j.results || !j.results.length) {
-    resultsEl.innerHTML = '<div class="hint">No results.</div>';
+    resultsEl.innerHTML = '<div data-ui="hint" class="empty text-muted-foreground">No results.</div>';
     return;
   }
   const head = j.header || (j.total.toLocaleString() + ' result' + (j.total === 1 ? '' : 's') +
     ' in ' + j.files.toLocaleString() + ' file' + (j.files === 1 ? '' : 's') + (j.truncated ? ' (truncated)' : ''));
-  let html = '<div class="hint">' + esc(head) + '</div>';
+  let html = '<div data-ui="hint" class="empty text-muted-foreground">' + esc(head) + '</div>';
   for (const f of j.results) {
-    html += '<div class="rfile" data-toggle="' + esc(f.path) + '" title="' + esc(f.path) + '">' +
-      '<span class="ar">&#9660;</span>' +
-      (f.ext ? '<span class="ext">ext</span>' : '') +
-      '<span class="fp">' + esc(displayPath(f.path)) + '</span>' +
-      '<span class="cnt">' + f.matches.length + '</span></div>' +
+    html += '<div data-ui="rfile" class="flex items-center gap-2 p-2 cursor-pointer hover:bg-accent select-none [&.closed_[data-ui~=ar]]:-rotate-90" data-toggle="' + esc(f.path) + '" title="' + esc(f.path) + '">' +
+      '<span data-ui="ar" class="icon-[lucide--chevron-down] size-3 shrink-0 text-muted-foreground" aria-hidden="true"></span>' +
+      (f.ext ? '<span data-ui="ext" class="badge">' + esc(f.ext) + '</span>' : '') +
+      '<span data-ui="fp" class="truncate min-w-0">' + esc(displayPath(f.path)) + '</span>' +
+      '<span data-ui="cnt" class="badge ml-auto">' + f.matches.length + '</span></div>' +
       '<div data-group="' + esc(f.path) + '">';
     for (const m of f.matches) {
-      html += '<div class="rline" data-p="' + esc(f.path) + '" data-n="' + m.line + '" title="Jump to ' + esc(f.path) + ':' + m.line + '">' +
-        '<span class="rn">' + m.line + '</span><span class="rt">' +
+      html += '<div data-ui="rline" class="flex min-w-0 items-center gap-2 p-2 cursor-pointer font-mono hover:bg-accent [&.sel]:bg-accent [&_mark]:bg-mark [&_mark]:text-inherit" data-p="' + esc(f.path) + '" data-n="' + m.line + '" title="Jump to ' + esc(f.path) + ':' + m.line + '">' +
+        '<span data-ui="rn" class="w-12 shrink-0 text-right text-muted-foreground">' + m.line + '</span><span data-ui="rt" class="flex-1 truncate text-muted-foreground">' +
         esc(m.pre) + '<mark>' + esc(m.mid) + '</mark>' + esc(m.post) + '</span></div>';
     }
     html += '</div>';
@@ -94,14 +95,14 @@ export function initSearch() {
       if (!g) return;
       const hidden = g.style.display === 'none';
       g.style.display = hidden ? '' : 'none';
-      const ar = $('.ar', t);
-      if (ar) ar.innerHTML = hidden ? '&#9660;' : '&#9654;';
+      const ar = $('[data-ui~=ar]', t);
+      if (ar) ar.classList.toggle('-rotate-90', !hidden);
       t.classList.toggle('closed', !hidden);
       return;
     }
-    const r = e.target.closest('.rline');
+    const r = e.target.closest('[data-ui~=rline]');
     if (r) {
-      $$('.rline.sel', resultsEl).forEach(x => x.classList.remove('sel'));
+      $$('[data-ui~=rline].sel', resultsEl).forEach(x => x.classList.remove('sel'));
       r.classList.add('sel');
       openFile(r.dataset.p, { line: +r.dataset.n });
       const q = $('#q')?.value;
@@ -111,8 +112,8 @@ export function initSearch() {
 
   $('#q')?.addEventListener('input', runSearch);
   $('#glob')?.addEventListener('input', runSearch);
-  $$('.opt').forEach(b => b.addEventListener('click', () => { b.classList.toggle('on'); runSearch(); }));
+  $$('[data-control~=opt]').forEach(b => b.addEventListener('click', () => { setPressed(b, b.getAttribute('aria-pressed') !== 'true'); runSearch(); }));
   $('#q')?.addEventListener('keydown', e => {
-    if (e.key === 'Enter') { e.preventDefault(); const f = $('.rline', resultsEl); if (f) f.click(); }
+    if (e.key === 'Enter') { e.preventDefault(); const f = $('[data-ui~=rline]', resultsEl); if (f) f.click(); }
   });
 }

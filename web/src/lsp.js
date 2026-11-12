@@ -1,3 +1,4 @@
+import { setPressed } from './controls.js';
 // web/src/lsp.js
 import { $, S, doc_, api } from './state.js';
 import { paint } from './renderer.js';
@@ -88,7 +89,7 @@ export async function gotoDefinition(arg, opts = {}) {
     setStatusNote('');
     showRightInspector('search');
     const q = $('#q');
-    if (q) { q.value = at.word; $('#o-word')?.classList.add('on'); runSearch(); }
+    if (q) { q.value = at.word; setPressed($('#o-word'), true); runSearch(); }
     return;
   }
   acceptHits(at.word, rx.defs, null, 'definition', rx.refCount, { view, soft });

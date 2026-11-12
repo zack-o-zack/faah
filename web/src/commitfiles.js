@@ -1,6 +1,6 @@
 // web/src/commitfiles.js
 // A commit's changed files as sidebar rows, shared by Recent Commits
-// (gitpanel.js) and the Unpushed section (unpushed.js), styled by the .up-file
+// (gitpanel.js) and the Unpushed section (unpushed.js), styled by the [data-commit-file]
 // rules. Rows are built COMMIT_FILES_PAGE at a time behind a "Show N more" row,
 // so a commit of thousands of files costs no more DOM than one of a hundred
 // until someone asks for more.
@@ -43,7 +43,7 @@ export function commitFileRows(files, from, to, active = '') {
   for (let i = from; i < to; i++) html += commitFileRow(files[i], files[i].path === active);
   const left = files.length - to;
   if (left > 0) {
-    html += '<div class="up-more" role="button" tabindex="0">Show ' + Math.min(left, COMMIT_FILES_PAGE) +
+    html += '<div class="btn w-full" data-control="up-more" data-variant="ghost" data-size="xs" role="button" tabindex="0">Show ' + Math.min(left, COMMIT_FILES_PAGE) +
       ' more · ' + left.toLocaleString() + ' remaining</div>';
   }
   return html;
@@ -54,14 +54,15 @@ function commitFileRow(f, sel) {
   const name = f.path.split('/').pop();
   const dir = f.path.slice(0, f.path.length - name.length).replace(/\/$/, '');
   const from = f.from ? ' (was ' + f.from + ')' : '';
-  const stat = f.binary ? '<span class="up-file-bin">bin</span>'
-    : (f.add ? '<span class="up-file-add">+' + f.add + '</span>' : '') +
-      (f.del ? '<span class="up-file-del">&minus;' + f.del + '</span>' : '');
-  return '<div class="up-file' + (sel ? ' sel' : '') + '" data-path="' + esc(f.path) + '" tabindex="0" role="button" ' +
+  // Fixed columns keep the counts and status letters lined up down the list.
+  const stat = f.binary ? '<span class="col-span-2 text-muted-foreground">bin</span>'
+    : '<span class="text-gi">' + (f.add ? '+' + f.add : '') + '</span>' +
+      '<span class="text-gd">' + (f.del ? '&minus;' + f.del : '') + '</span>';
+  return '<div data-commit-file class="flex min-w-0 items-center gap-2 rounded px-2 py-1 text-xs cursor-pointer hover:bg-accent [&.sel]:bg-accent' + (sel ? ' sel' : '') + '" data-path="' + esc(f.path) + '" tabindex="0" role="button" ' +
     'title="' + esc(f.path + from) + ' — ' + esc(g[1]) + ' in this commit">' +
-    '<span class="up-file-name">' + esc(name) + '</span>' +
-    (dir ? '<span class="up-file-dir">' + esc(dir) + '</span>' : '') +
-    (stat ? '<span class="up-file-stat">' + stat + '</span>' : '') +
-    '<span class="gs ' + g[0] + '" title="' + esc(g[1]) + '">' + esc(f.status) + '</span>' +
+    '<span class="min-w-0 shrink truncate">' + esc(name) + '</span>' +
+    '<span class="min-w-0 flex-1 truncate text-muted-foreground">' + esc(dir) + '</span>' +
+    '<span class="grid shrink-0 grid-cols-[5ch_5ch] gap-1 text-right font-mono tabular-nums">' + stat + '</span>' +
+    '<span class="gs w-3 shrink-0 text-center font-mono [&.git-M]:text-primary-text [&.git-R]:text-primary-text [&.git-A]:text-gi [&.git-untracked]:text-gi [&.git-D]:text-gd ' + g[0] + '" title="' + esc(g[1]) + '">' + esc(f.status) + '</span>' +
   '</div>';
 }

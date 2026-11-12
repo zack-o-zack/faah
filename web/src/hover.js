@@ -1,7 +1,8 @@
+import { wordAtColumn } from './hover-position.js';
 // web/src/hover.js
 import { $, esc, S, doc_, api, isMac, MOD, withKeys } from './state.js';
-import { vp, editor, copyToClipboard } from './ui.js';
-import { updateLinkDecoration } from './renderer.js';
+import { vp, editor, copyToClipboard, showToast } from './ui.js';
+import { updateLinkDecoration, rowFor } from './renderer.js';
 import { setLspState } from './status.js';
 import { wordAtPoint } from './cursor.js';
 import { gotoDefinition, findReferences } from './lsp.js';
@@ -64,7 +65,7 @@ export function hoverAt(x, y) {
   if (at && at.word) showHover(at, x, y);
 }
 
-export async function showHover(at, x, y) {
+export async function showHover(at, x, y, { focus = false } = {}) {
   const d = doc_();
   if (!d || at.path !== d.path) return;
   const seq = ++hoverSeq;
@@ -73,34 +74,45 @@ export async function showHover(at, x, y) {
   catch { return; }
   if (seq !== hoverSeq || doc_() !== d) return;   // the pointer moved on
   setLspState(j);
-  if (!j || j.empty || (!j.signature && !j.doc)) return;
+  const diags = (d.diagnostics || []).filter(dg => dg.line === at.line);
+  if ((!j || j.empty || (!j.signature && !j.doc)) && !diags.length) {
+    if (focus) showToast('info', 'No documentation for this symbol');
+    return;
+  }
+  j = j || {};
 
   /* The request can take seconds. Open the card where the pointer is *now*,
      not where it rested when the request went out -- an anchor that far behind
      puts the card outside its own corridor and closes it on the next move. If
      the pointer has gone somewhere else entirely, drop the answer instead. */
   const live = pointerPos();
-  if (live && Math.hypot(live.x - x, live.y - y) > HOVER_DRIFT) return;
-  const ax = live ? live.x : x, ay = live ? live.y : y;
+  if (!focus && live && Math.hypot(live.x - x, live.y - y) > HOVER_DRIFT) return;
+  const ax = !focus && live ? live.x : x, ay = !focus && live ? live.y : y;
 
   S.hover = at;
   S.hoverAnchor = { x: ax, y: ay };
   const refPath = d.path + ':' + at.line;
+  // A problem on this line leads the card: the line only shows its first sentence.
+  const act = (id, label, title) => '<button id="' + id + '" title="' + title + '" class="btn" data-variant="ghost" data-size="xs">' + label + '</button>';
   hovercard.innerHTML =
-    (j.signature ? '<div class="sig">' + j.signature + '</div>' : '') +
-    (j.doc ? '<div class="doc">' + esc(j.doc) + '</div>' : '') +
-    '<div class="actions">' +
-      '<button id="hc-def-src" title="' + withKeys('Jump to definition in Source ({Mod+Click})') + '">Definition (Source)</button>' +
-      '<button id="hc-def-diff" title="' + withKeys('Jump to definition in Diff ({Mod+Alt+Click})') + '">Definition (Diff)</button>' +
-      '<button id="hc-copy-ref" title="Copy file and line reference">Copy Ref</button>' +
-      '<button id="hc-copy-ai" title="Copy snippet with file path and line numbers">Copy with Context</button>' +
-      '<button id="hc-find-refs" title="Find all usages across codebase">Usages</button>' +
-      '<button id="hc-calls" title="' + withKeys('Trace callers and callees ({Alt+Shift+H})') + '">Calls</button>' +
-    '</div>' +
-    '<div class="foot"><b>' + esc(j.server || 'lsp') + '</b>' +
-    '<span>' + withKeys('{Mod+Click} source') + '</span>' +
-    '<span>' + withKeys('{Mod+Alt+Click} diff') + '</span>' +
-    '<span>' + withKeys('{Shift+F12} usages') + '</span></div>';
+    diags.map(dg => {
+      const err = (dg.severity || 1) === 1;
+      return '<div data-ui="diag" class="flex gap-2 border-b px-3 py-2 text-xs">' +
+        '<span class="' + (err ? 'icon-[lucide--circle-x] text-destructive' : 'icon-[lucide--triangle-alert] text-warn') + ' mt-px size-3.5 shrink-0" aria-hidden="true"></span>' +
+        '<span class="min-w-0 whitespace-pre-wrap wrap-anywhere">' + esc(dg.message || '') +
+        (dg.source ? ' <span class="text-muted-foreground">' + esc(dg.source) + (dg.code ? ' ' + esc(String(dg.code)) : '') + '</span>' : '') + '</span></div>';
+    }).join('') +
+    (j.signature ? '<div data-ui="sig" class="whitespace-pre-wrap wrap-anywhere px-3 py-2 font-mono text-xs">' + j.signature + '</div>' : '') +
+    (j.doc ? '<div data-ui="doc" class="max-h-60 overflow-auto whitespace-pre-wrap wrap-anywhere px-3 pb-2 text-sm text-muted-foreground">' + esc(j.doc) + '</div>' : '') +
+    '<div data-ui="actions" class="flex flex-wrap items-center gap-0.5 border-t px-1.5 py-1">' +
+      act('hc-def-src', 'Definition', withKeys('Jump to definition ({Mod+Click})')) +
+      act('hc-def-diff', 'In diff', withKeys('Jump to definition in the diff ({Mod+Alt+Click})')) +
+      act('hc-find-refs', 'Usages', withKeys('Find all usages ({Shift+F12})')) +
+      act('hc-calls', 'Calls', withKeys('Trace callers and callees ({Alt+Shift+H})')) +
+      act('hc-copy-ref', 'Copy ref', 'Copy file and line reference') +
+      act('hc-copy-ai', 'Copy with context', 'Copy the line with its file path and line number') +
+      '<span class="ml-auto px-1.5 text-xs text-muted-foreground">' + esc(j.server || 'lsp') + '</span>' +
+    '</div>';
 
   const btnDefSrc = hovercard.querySelector('#hc-def-src');
   const btnDefDiff = hovercard.querySelector('#hc-def-diff');
@@ -146,6 +158,19 @@ export async function showHover(at, x, y) {
   hovercard.hidden = false;
   placeHover(ax, ay);
   hoverKeeper.open({ x: ax, y: ay });
+  if (focus) hovercard.focus({ preventScroll: true });
+}
+
+/** Read symbol documentation without requiring a pointer hover. */
+export function showHoverAtCaret() {
+  const d = doc_();
+  if (!d || d.isImage || d.isEditing) return;
+  const row = d.diffMode ? diffview.querySelector(`[data-l="${d.cur}"]`) : rowFor(d.cur);
+  const code = row?.querySelector(d.diffMode ? '.diff-code' : '.c');
+  const token = code && wordAtColumn(code.textContent || '', d.col || 0);
+  if (!token) { showToast('info', 'Place the caret on a symbol to read its documentation'); return; }
+  const r = code.getBoundingClientRect();
+  showHover({ ...token, line: d.cur, path: d.path }, r.left + 8, r.top, { focus: true });
 }
 
 /* Anchor below the pointer, flipping above or inward when that would overflow

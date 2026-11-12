@@ -70,10 +70,10 @@ export const DEFAULT_TIPS = [
   },
   {
     id: "pr-scope-toggle",
-    title: "Scoped Review: PR Changes vs Yours",
+    title: "Scoped Review: PR Changes vs Not Pushed",
     category: "Git",
     tag: "PR Review",
-    content: "When reviewing pull requests, use the scope toggle above the file tree to switch between **PR changes** (all files in the PR) and **Yours** (files you edited since checkout)."
+    content: "When reviewing pull requests, use the scope toggle above the file tree to switch between **PR changes** (all files in the PR) and **Not pushed** (files you edited or committed here that are not in the PR yet). The toggle appears once you have some."
   },
   {
     id: "inline-pr-comments",
@@ -98,10 +98,10 @@ export const DEFAULT_TIPS = [
   },
   {
     id: "ai-commit-messages",
-    title: "Stage All & Commit with AI",
+    title: "Commit Without Writing a Message",
     category: "AI",
     tag: "Git",
-    content: "In the Git panel, click **Stage all + Commit with AI** to have your local AI coding harness inspect staged changes and generate conventional commit messages."
+    content: "In the Git panel, leave the message empty and click **Commit**: your coding harness reads the staged changes (all of them when nothing is staged) and writes the message. The sparkle button fills the message without committing, so you can edit it first."
   },
   {
     id: "quick-file-edit",
@@ -277,15 +277,15 @@ export function renderTipMarkdown(src) {
   const codes = [];
   const kbds = [];
 
-  // 1. Extract <kbd>...</kbd> tags (case-insensitive) before HTML escaping
+  // 1. Extract <kbd class="kbd">...</kbd> tags (case-insensitive) before HTML escaping
   let s = src.replace(/<kbd>([\s\S]*?)<\/kbd>/gi, (_, text) => {
-    kbds.push('<kbd class="tip-kbd">' + escapeTipHtml(text.trim()) + '</kbd>');
+    kbds.push('<kbd class="kbd" data-control="tip-kbd">' + escapeTipHtml(text.trim()) + '</kbd>');
     return '%%PXKBD' + (kbds.length - 1) + '%%';
   });
 
   // 2. Extract code blocks / inline code
   s = s.replace(/(`+)([\s\S]*?[^`])\1(?!`)/g, (_, q, code) => {
-    codes.push('<code class="tip-code">' + escapeTipHtml(code.trim()) + '</code>');
+    codes.push('<code data-ui="tip-code" class="rounded bg-muted px-1 py-px font-mono text-[0.85em] text-foreground">' + escapeTipHtml(code.trim()) + '</code>');
     return '%%PXCODE' + (codes.length - 1) + '%%';
   });
 
@@ -302,12 +302,12 @@ export function renderTipMarkdown(src) {
 
   // 5. Keyboard shortcuts in braces: e.g. {Mod+P}
   s = s.replace(/\{([A-Za-z0-9+]+)\}/g, (_, k) => {
-    return `<kbd class="tip-kbd">${escapeTipHtml(k)}</kbd>`;
+    return `<kbd class="kbd" data-control="tip-kbd">${escapeTipHtml(k)}</kbd>`;
   });
 
   // 6. Links: [text](url)
   s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (_, text, url) => {
-    return `<a href="${escapeTipHtml(url)}" target="_blank" rel="noopener noreferrer" class="tip-link">${text}</a>`;
+    return `<a href="${escapeTipHtml(url)}" target="_blank" rel="noopener noreferrer" data-ui="tip-link" class="text-primary-text underline">${text}</a>`;
   });
 
   // 7. Restore inline codes and kbds

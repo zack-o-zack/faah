@@ -96,7 +96,7 @@ The checkout is a real git worktree with the full git panel:
 
 - Edit a file (`Cmd/Ctrl+E`), or ask your coding harness to (`Alt+E` on a selection).
 - **⚡ Batch Apply** turns all your draft comments into code changes in one go.
-- Stage, then **Commit with AI** or write your own message, then **Push**. The push goes to the PR's own branch, even when it comes from a fork.
+- Stage, then **✨ Commit** (empty message) or write your own message, then **Push**. The push goes to the PR's own branch, even when it comes from a fork.
 - If someone pushes to the PR while you review, **Pull** brings their commits in.
 
 ---
@@ -105,7 +105,7 @@ The checkout is a real git worktree with the full git panel:
 
 When the base branch has moved on, the status pill in the PR bar shows **Conflicts with main** or **Behind main**, and the merge button becomes **Resolve conflicts** or **Update branch**. Click it:
 
-1. faah fetches the base branch and asks, in the git panel: **Rebase with AI** or **Merge with AI**? Pick the harness and model there.
+1. faah fetches the base branch and asks, in the git panel: **✨ Rebase** or **✨ Merge**? Pick the harness and model there.
 2. The harness resolves any conflicts and finishes. It never pushes.
 3. Review what it did, then push. A merge is a normal **Push to PR**. A rebase rewrites the PR's commits, so it needs a **Force-push**, which faah confirms first. The force-push is refused if anyone else pushed in the meantime, so their work is never lost.
 
@@ -137,7 +137,7 @@ When the pill says **Ready to merge**, use the split button next to Approve:
 | *The PR has new commits since this checkout* | Someone pushed after you loaded the PR. | **Pull**, review the new commits, then merge. |
 | *someone else pushed … since this checkout* on force-push | The lease protected their commits; your rebase exists only in this checkout. | Reopen the PR (`faah <url>`) to pick up their commits, then **Resolve conflicts** again. |
 | *diff base unresolved* badge, empty diff | faah couldn't fetch the base branch. | Check that the token can read the repository, then **Pull** to retry. |
-| **Rebase with AI** / **Rewrite with AI** missing | No coding harness is installed. | Install one (see [Editing with Coding Agents](agent-editing.md)). |
+| **✨ Resolve** / **Rewrite with AI** missing | No coding harness is installed. | Install one (see [Editing with Coding Agents](agent-editing.md)). |
 
 ---
 

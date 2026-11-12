@@ -1,3 +1,4 @@
+import { setMenuHidden } from './overlays.js';
 // web/src/selbar.js
 import { $, S, doc_, keyLabel, shortcutHtml } from './state.js';
 import { on } from './bus.js';
@@ -253,7 +254,7 @@ function showSelectionBar(info) {
       if (btnPreviewText) btnPreviewText.hidden = false;
       if (btnMarkdown) {
         btnMarkdown.hidden = false;
-        const l = btnMarkdown.querySelector('.footer-btn-label');
+        const l = btnMarkdown.querySelector('.bar-action-label');
         if (l) l.textContent = 'Copy Raw Markdown';
       }
     } else {
@@ -305,7 +306,7 @@ export function selectAll() {
   }, () => {
     if (allText !== text) return;
     clearSelectAll();
-    showToast('!', 'Could not read ' + d.path);
+    showToast('error', 'Could not read ' + d.path);
   });
 }
 
@@ -414,7 +415,7 @@ const menu = $('#sel-menu');
 
 export function closeSelMenu() {
   pinnedInfo = null;
-  if (menu && !menu.hidden) menu.hidden = true;
+  if (menu && !menu.hidden) setMenuHidden(menu, true);
 }
 
 /* The gutter's thread button: the same actions as the right-click menu, aimed
@@ -456,7 +457,10 @@ function openSelMenu(x, y, keep = (item) => true) {
     if (item.sel === 'explain' && !canExplain(info)) continue;
 
     const btn = document.createElement('button');
-    btn.className = 'sel-menu-item';
+    btn.className = 'btn w-full justify-start';
+    btn.dataset.control = 'sel-menu-item';
+    btn.dataset.variant = 'ghost';
+    btn.dataset.size = 'xs';
     btn.dataset.sel = item.sel;
     btn.setAttribute('role', 'menuitem');
     btn.title = item.label + (item.keys ? ` (${keyLabel(item.keys)})` : '');
@@ -465,13 +469,13 @@ function openSelMenu(x, y, keep = (item) => true) {
     btn.append(label);
     if (item.keys) {
       const kbd = document.createElement('kbd');
-      kbd.className = 'footer-kbd';
+      kbd.className = 'kbd has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1';
       kbd.innerHTML = shortcutHtml(item.keys);
       btn.append(kbd);
     }
     menu.append(btn);
   }
-  menu.hidden = false;
+  setMenuHidden(menu, false);
   // Open toward the pointer's bottom-right, flipping at the window's edges.
   const w = menu.offsetWidth, h = menu.offsetHeight;
   menu.style.left = Math.max(4, x + w > innerWidth - 4 ? x - w : x) + 'px';
@@ -492,7 +496,7 @@ export function initSelectionBar() {
       if (allInfo && allInfo.text) {
         e.preventDefault();
         e.clipboardData.setData('text/plain', allInfo.text);
-        showToast('✓', 'Copied ' + d.path + ' (' + d.total.toLocaleString() + ' lines)');
+        showToast('success', 'Copied ' + d.path + ' (' + d.total.toLocaleString() + ' lines)');
         return;
       }
     }
@@ -504,11 +508,11 @@ export function initSelectionBar() {
         if (info.html) {
           e.clipboardData.setData('text/html', info.html);
         }
-        showToast('✓', 'Copied formatted text (' + info.text.length.toLocaleString() + ' chars)');
+        showToast('success', 'Copied formatted text (' + info.text.length.toLocaleString() + ' chars)');
       } else {
         e.clipboardData.setData('text/plain', info.text);
         const lines = info.l2 - info.l1 + 1;
-        showToast('✓', 'Copied ' + (lines === 1 ? '1 line' : lines + ' lines'));
+        showToast('success', 'Copied ' + (lines === 1 ? '1 line' : lines + ' lines'));
       }
     }
   });
@@ -574,4 +578,3 @@ export function initSelectionBar() {
   document.addEventListener('scroll', closeSelMenu, true);
   on('tab:activated', clearSelectAll);
 }
-

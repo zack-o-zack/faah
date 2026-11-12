@@ -1,3 +1,5 @@
+import { showHoverAtCaret } from './hover.js';
+import { ownsNavigationKey } from './controls.js';
 // web/src/shortcuts.js
 import { $, $$, esc, S, doc_, isMac, MOD, LH, keyCaps } from './state.js';
 import { vp, sizer } from './ui.js';
@@ -39,6 +41,7 @@ export const SHORTCUTS = [
   [['Mod+G'], 'Go to line'], [['Mod+D'], 'Toggle diff view (git)'], [['Alt+Z'], 'Toggle word wrap'],
   [['[c', ']c'], 'Previous / next diff hunk'], [['[f', ']f'], 'Previous / next changed file'],
   [['Alt+M'], 'Toggle Markdown / table preview'],
+  [['Shift+F1'], 'Show symbol documentation'],
   [['Enter', 'Shift+Enter'], 'Next / previous match'],
   [['F12', 'Mod+Click'], 'Go to definition'], [['Shift+F12'], 'Find all references'],
   [['Alt+Shift+H'], 'Call trail (callers / callees)'],
@@ -61,42 +64,42 @@ export const SHORTCUTS = [
 
 export function showHelp() {
   const h = $('#helpsheet');
-  const ver = S.meta?.version ? ` <span class="help-version">v${esc(S.meta.version)}</span>` : '';
-  h.innerHTML = '<div class="help-card"><div class="help-header"><h2>Keyboard Shortcuts</h2>' + ver +
+  const ver = S.meta?.version ? ` <span data-ui="help-version" class="p-3 font-mono text-primary-text">v${esc(S.meta.version)}</span>` : '';
+  h.innerHTML = '<div class="sm:max-w-4xl overflow-auto"><header class="flex-row! items-center gap-2"><h2>Keyboard Shortcuts</h2>' + ver +
     '<div style="margin-left:auto;display:flex;gap:12px;align-items:center;">' +
-    '<button id="btn-switch-to-tips" class="settings-btn-link" style="font-size:12px;cursor:pointer;" title="View Tips & Tricks">💡 Tips & Tricks</button>' +
-    '<button id="btn-switch-to-vim-help" class="settings-btn-link" style="font-size:12px;cursor:pointer;" title="View Vim Keybindings">View Vim Keybindings</button>' +
-    '</div></div><dl class="help-grid">' +
+    '<button id="btn-switch-to-tips" style="font-size:12px;cursor:pointer;" title="View Tips & Tricks" class="btn" data-control="settings-btn-link" data-variant="link" data-size="xs"><span class="icon-[lucide--lightbulb] size-3.5" aria-hidden="true"></span> Tips & Tricks</button>' +
+    '<button id="btn-switch-to-vim-help" style="font-size:12px;cursor:pointer;" title="View Vim Keybindings" class="btn" data-control="settings-btn-link" data-variant="link" data-size="xs">View Vim Keybindings</button>' +
+    '</div></header><dl data-ui="help-grid" class="grid grid-cols-[auto_1fr_auto_1fr] gap-3 items-center [&_dt]:flex [&_dt]:gap-1 [&_dt]:justify-end [&_dd]:text-muted-foreground">' +
     SHORTCUTS.map(([combos, v]) => {
       const comboList = Array.isArray(combos) ? combos : [combos];
-      return '<dt>' + comboList.map(keyCaps).filter(Boolean).join('<span class="key-or">/</span>') + '</dt>' +
+      return '<dt>' + comboList.map(keyCaps).filter(Boolean).join('<span data-ui="key-or" class="text-muted-foreground">/</span>') + '</dt>' +
         '<dd>' + esc(v) + '</dd>';
     }).join('') + '</dl></div>';
-  h.hidden = false;
+  h.showModal();
   h.querySelector('#btn-switch-to-vim-help')?.addEventListener('click', (e) => {
     e.stopPropagation();
-    h.hidden = true;
+    h.close();
     showVimHelp();
   });
   h.querySelector('#btn-switch-to-tips')?.addEventListener('click', (e) => {
     e.stopPropagation();
-    h.hidden = true;
+    h.close();
     navigateToTips();
   });
 }
 
-export const inField = el => el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA');
+export const inField = el => el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT');
 
 export function initShortcuts() {
   $('#btn-theme')?.addEventListener('click', cycleTheme);
   $('#btn-settings')?.addEventListener('click', () => openSettings('ui'));
   $('#btn-help')?.addEventListener('click', () => navigateToTips());
   $('#st-ver')?.addEventListener('click', showHelp);
-  $('#helpsheet').addEventListener('click', () => { $('#helpsheet').hidden = true; });
+  $('#helpsheet').addEventListener('click', () => { $('#helpsheet').close(); });
 
   // Footer quick action buttons
   $('#footer-actions')?.addEventListener('click', e => {
-    const btn = e.target.closest('.footer-btn');
+    const btn = e.target.closest('[data-control~=bar-action]');
     if (!btn) return;
     const act = btn.dataset.action;
     if (act === 'quick-open') openPalette('file');
@@ -114,16 +117,36 @@ export function initShortcuts() {
 
   addEventListener('keydown', e => {
     const mod = e[MOD];
+    if (ownsNavigationKey(e)) return;
+    const nativePopover = document.querySelector('[popover]:popover-open');
+    if (nativePopover && e.key === 'Escape') {
+      e.preventDefault();
+      nativePopover.hidePopover();
+      document.querySelector(`[aria-controls="${nativePopover.id}"]`)?.focus();
+      return;
+    }
+    const menuOpen = document.querySelector('[data-popover][aria-hidden="false"]');
+    if (menuOpen && ['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return;
+    if (menuOpen && e.key === 'Escape') { e.preventDefault(); return; }
 
     if (e.key === 'Escape') {
+      if (e.defaultPrevented) return;
+      if (document.querySelector('dialog[open]')) {
+        e.preventDefault();
+        const top = [...document.querySelectorAll('dialog[open]')].at(-1);
+        top.dispatchEvent(new Event('cancel', { cancelable: true }));
+        if (top.open) top.close();
+        return;
+      }
       if (exitMermaidFullscreen()) return;
       const lb = $('#img-lightbox');
-      if (lb && !lb.hidden) { lb.hidden = true; return; }
-      if (!$('#vim-helpsheet')?.hidden) { closeVimHelp(); return; }
+      if (lb && lb.open) { lb.close(); return; }
+      if ($('#vim-helpsheet')?.open) { closeVimHelp(); return; }
       if (isVimEnabled() && handleVimKeyDown(e)) return;
       if (isSettingsOpen()) { closeSettings(); return; }
-      if (!overlay.hidden) { closePalette(); return; }
-      if (!$('#helpsheet').hidden) { $('#helpsheet').hidden = true; return; }
+      if (overlay.open) { closePalette(); return; }
+      if ($('#helpsheet').open) { $('#helpsheet').close(); return; }
+      if (document.querySelector('dialog[open]')) { document.querySelector('dialog[open]').close(); return; }
       if (!hovercard.hidden) { clearLink(); return; }
       if (!findbar.hidden) {
         clearFind();
@@ -235,6 +258,7 @@ export function initShortcuts() {
     }
 
     if (inField(document.activeElement)) return;
+    if (e.shiftKey && e.key === 'F1') { e.preventDefault(); showHoverAtCaret(); return; }
 
     // [c / ]c (prev/next diff hunk) and [f / ]f (prev/next changed file) chords
     if (!mod && !e.altKey && !e.shiftKey) {

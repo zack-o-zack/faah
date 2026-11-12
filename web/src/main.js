@@ -32,7 +32,8 @@ import { initPRScope } from './prscope.js';
 import { initEditView } from './editview.js';
 import { initNewItem } from './newitem.js';
 import { initTips, startTipsAsync } from './tips.js';
-import { initReviewFlow } from './reviewflow.js';
+import { initReviewFlow, setMode } from './reviewflow.js';
+import { initErrorCopy } from './ui.js';
 
 // Initialize all subsystems
 initRenderer();
@@ -65,6 +66,7 @@ initSettings();
 initVim();
 initImageViewer();
 initLineComment();
+initErrorCopy();
 initUnpushed();
 initPRScope();
 
@@ -107,11 +109,14 @@ initPRScope();
   if (S.meta.workbench) {
     // Opened from the workbench (workbench.go): link back to it.
     const back = document.createElement('a');
-    back.className = 'mini wb-back';
+    back.className = 'btn';
+    back.dataset.control = 'icon-action wb-back';
+    back.dataset.variant = 'ghost';
+    back.dataset.size = 'icon-xs';
     back.href = S.meta.workbench;
     back.title = 'Back to the faah workbench';
     back.setAttribute('aria-label', 'Back to the faah workbench');
-    back.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>';
+    back.innerHTML = '<span class="icon-[lucide--layout-grid] size-3.5" aria-hidden="true"></span>';
     $('#root-name').before(back);
   }
   if (S.meta.version) {
@@ -123,10 +128,8 @@ initPRScope();
       stVerEl.title = `faah v${S.meta.version} (Click for shortcuts & help)`;
     }
   }
-  // The desktop app drops the sidebar footer: the version sits on the title row
-  // and Settings joins the status bar.
+  // The desktop app keeps its footer for the workspace; Settings joins the status bar.
   if (document.documentElement.hasAttribute('data-shell')) {
-    $('#side .panel-actions').before($('#st-ver'));
     $('#status').append($('#btn-settings'));
   }
   updateStatus();
@@ -184,6 +187,8 @@ initPRScope();
     collapseAllDirs();
   }
   setAutoRevealSuppressed(false);
+  // A PR session opens on the pull request itself.
+  if (S.meta?.pr) setMode('review');
 
   if (document.fonts && document.fonts.ready) {
     document.fonts.ready.then(() => { measure(); layout(); render(); });

@@ -1,8 +1,9 @@
+import { showHoverAtCaret } from './hover.js';
 // web/src/palette.js
 import { $, esc, S, doc_, api, debounce, withKeys } from './state.js';
 import { render, toggleWordWrap } from './renderer.js';
 import { openFile, centerLine, closeTab, closeAllTabs, reopenClosedTab } from './tabs.js';
-import { updateStatus, openLspMenu } from './status.js';
+import { updateStatus, openLspMenu, startAllLsp, stopAllLsp } from './status.js';
 import { pushHistory } from './history.js';
 import { showPanel, reindexWorkspace } from './panels.js';
 import { openFind } from './find.js';
@@ -80,11 +81,14 @@ export const COMMANDS = [
   { name: 'Go to Line…', run: () => openPalette('line') },
   { name: 'Search in Files', run: () => showRightInspector('search') },
   { name: 'Find in Current File', run: () => openFind(S.lastWord) },
+  { name: 'Show Symbol Documentation (Shift+F1)', run: showHoverAtCaret },
   { name: 'Go to Definition', run: () => gotoDefinition() },
   { name: 'Find All References (Right Panel)', run: () => findReferences() },
   { name: withKeys('Show Call Trail: Callers / Callees ({Alt+Shift+H})'), run: () => showCalls() },
   { name: 'Language Servers: Setup & Manage…', run: () => openLspMenu() },
   { name: 'Set Up Language Server…', run: () => openLspMenu() },
+  { name: 'Language Servers: Start All', run: startAllLsp },
+  { name: 'Language Servers: Stop All', run: stopAllLsp },
   { name: 'Toggle Right Sidebar / Inspector', run: () => {
     if (document.body.classList.contains('right-hidden')) showRightInspector();
     else hideRightInspector();
@@ -112,20 +116,21 @@ export const COMMANDS = [
 ];
 
 export const PAL_MODES = {
-  file: { tag: 'File', hint: 'Type to fuzzy-match any file. Prefix : for a line, @ for a symbol, > for a command.' },
-  symbol: { tag: 'Symbol', hint: 'Symbols in the active file.' },
-  line: { tag: 'Line', hint: 'Enter a line number.' },
-  command: { tag: 'Command', hint: '' },
-  theme: { tag: 'Theme', hint: 'Arrows preview a theme. Enter keeps it, Esc restores the previous one.' },
-  openpr: { tag: 'Open PR', hint: 'Full pull request URL (e.g. https://github.com/owner/repo/pull/123), then Enter.' },
+  file: { tag: 'File', placeholder: 'Search files by name', hint: 'Type to fuzzy-match any file. Prefix : for a line, @ for a symbol, > for a command.' },
+  symbol: { tag: 'Symbol', placeholder: 'Go to symbol', hint: 'Symbols in the active file.' },
+  line: { tag: 'Line', placeholder: 'Go to line', hint: 'Enter a line number.' },
+  command: { tag: 'Command', placeholder: 'Run a command', hint: '' },
+  theme: { tag: 'Theme', placeholder: 'Select a theme', hint: 'Arrows preview a theme. Enter keeps it, Esc restores the previous one.' },
+  openpr: { tag: 'Open PR', placeholder: 'Paste a pull request URL', hint: 'Full pull request URL (e.g. https://github.com/owner/repo/pull/123), then Enter.' },
 };
 
 export function openPalette(mode, seed) {
   pal = { mode, items: [], sel: 0, restoreTheme: mode === 'theme' ? currentTheme() : null };
-  overlay.hidden = false;
+  overlay.showModal();
   palInput.value = seed !== undefined ? seed : ({ symbol: '@', line: ':', command: '>' }[mode] || '');
   $('#pal-mode').textContent = PAL_MODES[mode].tag;
   $('#pal-hint').textContent = PAL_MODES[mode].hint;
+  palInput.placeholder = PAL_MODES[mode].placeholder;
   palInput.focus();
   palInput.setSelectionRange(palInput.value.length, palInput.value.length);
   refreshPalette();
@@ -135,15 +140,22 @@ let palSeq = 0;
 
 export function closePalette() {
   palSeq++;
-  overlay.hidden = true;
+  overlay.close();
   if (pal && pal.restoreTheme) setTheme(pal.restoreTheme, false); // dismissed mid-preview
   pal = null;
 }
 
-export const refreshPalette = debounce(async () => {
+export const refreshPalette = debounce(() => {
+  if (pal && pal.loadingQuery !== palInput.value) void refreshPaletteNow();
+}, 40);
+
+export async function refreshPaletteNow() {
   if (!pal) return;
   const seq = ++palSeq;
-  let raw = palInput.value;
+  const session = pal, input = palInput.value;
+  const current = () => pal === session && seq === palSeq && input === palInput.value;
+  pal.loadingQuery = input;
+  let raw = input;
   // theme and openpr have no prefix character: once entered (via a command),
   // they stay put regardless of what's typed, unlike file/symbol/line/command
   // which re-derive their mode from the input on every keystroke.
@@ -155,6 +167,7 @@ export const refreshPalette = debounce(async () => {
   pal.mode = mode;
   $('#pal-mode').textContent = PAL_MODES[mode].tag;
   $('#pal-hint').textContent = PAL_MODES[mode].hint;
+  palInput.placeholder = PAL_MODES[mode].placeholder;
   const q = raw.trim();
 
   if (mode === 'line') {
@@ -168,7 +181,7 @@ export const refreshPalette = debounce(async () => {
     const d = doc_();
     if (d && !d.outline) {
       try { d.outline = (await api('/api/outline', { path: d.path })).symbols || []; } catch { d.outline = []; }
-      if (seq !== palSeq || !pal) return;
+      if (!current()) return;
     }
     const lq = q.toLowerCase();
     pal.items = ((d && d.outline) || []).filter(s => !lq || s.name.toLowerCase().includes(lq))
@@ -181,8 +194,11 @@ export const refreshPalette = debounce(async () => {
     pal.items = q ? [{ kind: 'openpr', target: q, label: 'Open PR: ' + esc(q), sub: 'Enter to open in a new tab', raw: true }] : [];
   } else {
     let j;
-    try { j = await api('/api/find', { q, limit: 120 }); } catch { return; }
-    if (seq !== palSeq || !pal) return;
+    try { j = await api('/api/find', { q, limit: 120 }); } catch {
+      if (current()) pal.loadingQuery = null;
+      return;
+    }
+    if (!current()) return;
     pal.indexing = !!j.indexing;
     pal.items = (j.results || []).map(r => {
       const cut = r.path.length - r.name.length;
@@ -199,9 +215,11 @@ export const refreshPalette = debounce(async () => {
       }, 300);
     }
   }
+  pal.loadingQuery = null;
+  pal.loadedQuery = input;
   pal.sel = mode === 'theme' ? Math.max(0, pal.items.findIndex(it => it.id === currentTheme())) : 0;
   drawPalette();
-}, 40);
+}
 
 export function fuzzyHTML(text, pos) {
   if (!pos || !pos.length) return esc(text);
@@ -220,17 +238,17 @@ export function drawPalette() {
   if (!pal) return;
   if (!pal.items.length) {
     if (pal.indexing) {
-      palList.innerHTML = '<div class="pi"><span class="pp">Indexing…</span></div>';
+      palList.innerHTML = '<div class="px-3 py-2"><span class="truncate">Indexing…</span></div>';
       return;
     }
-    palList.innerHTML = '<div class="pi"><span class="pp">No matches</span></div>';
+    palList.innerHTML = '<div class="px-3 py-2"><span class="truncate">No matches</span></div>';
     return;
   }
   palList.innerHTML = pal.items.map((it, i) =>
-    '<div class="pi' + (i === pal.sel ? ' sel' : '') + '" data-i="' + i + '">' +
-    '<span class="pn">' + (it.raw ? it.label : esc(it.label)) + '</span>' +
-    '<span class="pp">' + (it.raw ? it.sub : esc(it.sub || '')) + '</span>' +
-    (it.right ? '<span class="pr">' + esc(it.right) + '</span>' : '') + '</div>').join('');
+    '<div role="menuitem" class="whitespace-normal! data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground [&_b]:text-primary-text ' + (i === pal.sel ? 'active' : '') + '" data-selected="' + (i === pal.sel) + '" data-i="' + i + '">' +
+    '<span class="min-w-0 flex-1 whitespace-normal! wrap-anywhere">' + (it.raw ? it.label : esc(it.label)) + '</span>' +
+    '<span class="max-w-[35%] truncate">' + (it.raw ? it.sub : esc(it.sub || '')) + '</span>' +
+    (it.right ? '<span class="badge ml-auto" data-variant="outline">' + esc(it.right) + '</span>' : '') + '</div>').join('');
   const s = palList.children[pal.sel];
   if (s) s.scrollIntoView({ block: 'nearest' });
   if (pal.mode === 'theme') setTheme(pal.items[pal.sel].id, false); // live preview
@@ -243,7 +261,10 @@ export function movePalette(delta) {
 }
 
 export async function acceptPalette() {
-  if (!pal || !pal.items.length) return;
+  if (!pal) return;
+  const session = pal;
+  if (pal.loadedQuery !== palInput.value) await refreshPaletteNow();
+  if (pal !== session || pal.loadedQuery !== palInput.value || !pal.items.length) return;
   const it = pal.items[pal.sel];
   if (it.kind === 'theme') pal.restoreTheme = null;
   closePalette();
@@ -262,6 +283,7 @@ export async function acceptPalette() {
 }
 
 export function initPalette() {
+  overlay.addEventListener('cancel', e => { e.preventDefault(); closePalette(); });
   palInput.addEventListener('input', refreshPalette);
   palInput.addEventListener('keydown', e => {
     if (e.key === 'ArrowDown' || (e.ctrlKey && e.key === 'n')) { e.preventDefault(); movePalette(1); }
@@ -271,8 +293,8 @@ export function initPalette() {
     else if (e.key === 'Tab') { e.preventDefault(); movePalette(e.shiftKey ? -1 : 1); }
   });
   palList.addEventListener('click', e => {
-    const p = e.target.closest('.pi');
+    const p = e.target.closest('[data-i]');
     if (p && p.dataset.i !== undefined) { pal.sel = +p.dataset.i; acceptPalette(); }
   });
-  overlay.addEventListener('mousedown', e => { if (e.target === overlay) closePalette(); });
+  overlay.addEventListener('pointerdown', e => { if (e.target === overlay) closePalette(); });
 }

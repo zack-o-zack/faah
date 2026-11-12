@@ -32,8 +32,9 @@ macOS and Windows draw their window controls over faah's own top bar. Linux keep
 the system frame, because tiling window managers and Wayland compositors treat
 custom title bars differently. On Windows and Linux a menu button in the top bar
 opens the application menu. `desktop/preload.cjs` marks `<html>` with `data-shell`,
-`data-platform`, and `data-titlebar`, and `web/desktop.css` is scoped to them, so a
-browser tab never gets these styles.
+`data-platform`, and `data-titlebar`. The `desktop:` and `win-linux:` variants in
+`web/tailwind.css` scope shell layout to these attributes; browser tabs keep
+their normal layout. The same entry contains the shell's Inter font and type-scale tokens.
 
 ## Use the app
 

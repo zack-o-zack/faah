@@ -43,7 +43,7 @@ In a [PR review](github-pr-review.md) a thread has a scope, picked with the **Ab
 - **My changes**: only what you have done on top of the PR, uncommitted and unpushed.
 - **Selection**: just the code the thread is anchored to.
 
-The default comes from where you started: the editor section a selection was made in (PR changes or Your changes), then the sidebar's **PR changes / Yours** switch, otherwise the whole PR. You can change it at any time; the assistant is told on the next message. The assistant is given the exact git range for the scope and the diff saved as a file, so it reads the whole change instead of guessing.
+The default comes from where you started: the editor section a selection was made in (PR changes or Not pushed), then the sidebar's **PR changes / Not pushed** switch, otherwise the whole PR. You can change it at any time; the assistant is told on the next message. The assistant is given the exact git range for the scope and the diff saved as a file, so it reads the whole change instead of guessing.
 
 ## Explaining Code
 

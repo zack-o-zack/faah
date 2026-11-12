@@ -1,3 +1,4 @@
+import { setMenuHidden } from './overlays.js';
 // web/src/tabs.js
 import { $, esc, S, doc_, api, apiPost, LH, CHUNK, withKeys } from './state.js';
 import { emit } from './bus.js';
@@ -24,7 +25,7 @@ let tabMenu = null;
 let tabMenuIndex = -1;
 
 function closeTabMenu() {
-  if (tabMenu) tabMenu.hidden = true;
+  if (tabMenu) setMenuHidden(tabMenu, true);
   tabMenuIndex = -1;
 }
 
@@ -53,7 +54,10 @@ function openTabMenu(index, x, y) {
   for (const { action, label, disabled } of actions) {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'sel-menu-item';
+    button.className = 'btn w-full justify-start';
+    button.dataset.control = 'sel-menu-item';
+    button.dataset.variant = 'ghost';
+    button.dataset.size = 'xs';
     button.dataset.tabAction = action;
     button.setAttribute('role', 'menuitem');
     button.textContent = label;
@@ -61,7 +65,7 @@ function openTabMenu(index, x, y) {
     tabMenu.append(button);
   }
   tabMenuIndex = index;
-  tabMenu.hidden = false;
+  setMenuHidden(tabMenu, false);
   const w = tabMenu.offsetWidth, h = tabMenu.offsetHeight;
   tabMenu.style.left = Math.max(4, Math.min(x, innerWidth - w - 4)) + 'px';
   tabMenu.style.top = Math.max(4, Math.min(y, innerHeight - h - 4)) + 'px';
@@ -210,7 +214,7 @@ export async function openFile(path, opts = {}) {
   }
   render();
   updateStatus();
-  if ($('#panel-outline')?.classList.contains('active')) loadOutline();
+  if ($('#pane-right-symbols')?.classList.contains('active')) loadOutline();
   if (push) pushHistory(path, line || d.cur);
   emit('tab:activated', { doc: d, prevDoc: prev });
 }
@@ -387,7 +391,7 @@ export async function reloadOpenTabs({ onlyIfChanged = false } = {}) {
     layout();
     vp.scrollTop = d.scrollTop;
     render();
-    if ($('#panel-outline')?.classList.contains('active')) loadOutline();
+    if ($('#pane-right-symbols')?.classList.contains('active')) loadOutline();
   }
 
   drawTabs();
@@ -533,14 +537,14 @@ async function stepCommitFile(from, file) {
 
 export function drawTabs() {
   $('#tabs').innerHTML = S.tabs.map((t, i) =>
-    '<div class="tab' + (i === S.active ? ' active' : '') + (t.isImage ? ' tab-image' : '') + (t.deleted ? ' tab-deleted' : '') + (t.dirty ? ' tab-dirty' : '') + '" data-i="' + i +
+    '<div class="tab flex shrink-0 max-w-64 cursor-pointer select-none items-center gap-2 rounded px-3 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground [&.active]:bg-accent [&.active]:text-foreground [&.tab-deleted_.tn]:line-through' + (i === S.active ? ' active' : '') + (t.isImage ? ' tab-image' : '') + (t.deleted ? ' tab-deleted' : '') + (t.dirty ? ' tab-dirty' : '') + '" data-i="' + i +
     '" title="' + esc(t.path) + (t.diffRef ? ' — in commit ' + esc(t.diffRef.slice(0, 7)) : '') + '">' +
-    (t.isImage ? '<svg class="tab-icon" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="12" height="12" rx="2"/><circle cx="5.5" cy="5.5" r="1.5"/><path d="M14 10l-3.5-3.5L3 14"/></svg>' : '') +
-    '<span class="tn">' + esc(t.name) + '</span>' +
+    (t.isImage ? '<span class="icon-[lucide--image] size-3 shrink-0 tab-icon text-primary" aria-hidden="true"></span>' : '') +
+    '<button type="button" class="tn min-h-6 min-w-6 truncate text-left focus-visible:outline focus-visible:outline-ring" aria-pressed="' + (i === S.active) + '">' + esc(t.name) + '</button>' +
     // Pinned to a commit: the tab is not the working tree, and it should say so.
-    (t.diffRef ? '<span class="tab-ref">@' + esc(t.diffRef.slice(0, 7)) + '</span>' : '') +
-    (t.dirty ? '<span class="tab-dirty-dot" title="Unsaved changes">●</span>' : '') +
-    '<span class="x" data-close="' + i + '" title="' + withKeys('Close tab ({Alt+W})') + '"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 2l6 6M8 2l-6 6"/></svg></span></div>').join('');
+    (t.diffRef ? '<span class="tab-ref shrink-0 font-mono text-xs text-muted-foreground">@' + esc(t.diffRef.slice(0, 7)) + '</span>' : '') +
+    (t.dirty ? '<span class="tab-dirty-dot size-2 shrink-0 rounded-full bg-primary" title="Unsaved changes"></span>' : '') +
+    '<button type="button" class="btn" data-variant="ghost" data-size="icon-xs" aria-label="Close tab" data-close="' + i + '" title="' + withKeys('Close tab ({Alt+W})') + '"><span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true"></span></button></div>').join('');
   const act = $('#tabs .tab.active');
   if (act) act.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 }
@@ -575,7 +579,7 @@ export function switchTab(i) {
   drawTabs(); drawCrumbs(); layout();
   vp.scrollTop = S.tabs[i].scrollTop;
   render(); updateStatus();
-  if ($('#panel-outline')?.classList.contains('active')) loadOutline();
+  if ($('#pane-right-symbols')?.classList.contains('active')) loadOutline();
   pushHistory(S.tabs[i].path, S.tabs[i].cur);
   emit('tab:activated', { doc: S.tabs[i], prevDoc: prev });
 }
@@ -600,7 +604,7 @@ export function initTabs() {
   tabMenu = document.createElement('div');
   tabMenu.id = 'tab-menu';
   tabMenu.setAttribute('role', 'menu');
-  tabMenu.hidden = true;
+  setMenuHidden(tabMenu, true);
   document.body.append(tabMenu);
   tabMenu.addEventListener('click', e => {
     const button = e.target.closest('[data-tab-action]');

@@ -1,14 +1,16 @@
 /* Solarized Dark: based on the Solarized palette. Token reference: docs/internals/styling-and-themes.md. */
 :root[data-theme="solarized-dark"] {
+  --image-dark: #121214;
+  --image-light: #ffffff;
   --theme-name: "Solarized Dark";
   color-scheme: dark;
 
   /* surfaces, from the editor out to raised hover states */
-  --bg: #002b36; --bg2: #00212b; --bg3: #073642; --bg4: #0d4452;
+  --background: #002b36; --sidebar: #00212b; --card: #00212b; --popover: #073642; --secondary: #0d4452; --muted: #073642; --sidebar-accent: #073642; --accent: #0d4452;
   /* text: primary, secondary, tertiary */
-  --fg: #93a1a1; --dim: #839496; --faint: #586e75;
+  --foreground: #93a1a1; --card-foreground: #93a1a1; --popover-foreground: #93a1a1; --secondary-foreground: #93a1a1; --accent-foreground: #93a1a1; --sidebar-foreground: #93a1a1; --sidebar-accent-foreground: #93a1a1; --muted-foreground: #839496; --faint: #586e75;
   /* borders and accent */
-  --line: #073642; --accent: #268bd2; --accent-fg: #2aa198; --on-accent: #fdf6e3;
+  --border: #073642; --input: #0d4452; --sidebar-border: #073642; --primary: #429ede; --ring: #268bd2; --sidebar-primary: #429ede; --sidebar-ring: #268bd2; --primary-text: #2aa198; --primary-foreground: #002b36; --sidebar-primary-foreground: #002b36;
   /* selection, search matches, current line */
   --sel: #274642; --mark: rgba(181, 137, 0, 0.2); --mark-active: #b58900; --cur: #04313c;
   /* elevation */
@@ -18,7 +20,7 @@
   --k: #859900; --kt: #b58900; --nf: #268bd2; --nc: #b58900; --nb: #cb4b16;
   --nv: #268bd2; --no: #2aa198; --na: #93a1a1; --nt: #268bd2; --nd: #cb4b16;
   --np: #93a1a1; --s: #2aa198; --m: #d33682; --o: #859900; --p: #839496;
-  --c: #586e75; --cp: #cb4b16; --err: #dc322f;
+  --c: #586e75; --cp: #cb4b16; --destructive: #dc322f; --err: #dc322f;
 
   /* diffs and status */
   --gi: #859900; --gd: #dc322f;

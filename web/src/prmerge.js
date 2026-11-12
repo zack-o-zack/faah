@@ -1,3 +1,4 @@
+import { setMenuHidden } from './overlays.js';
 // web/src/prmerge.js
 // Merging a PR from the review bar, and keeping the review verdict honest
 // about the branch's state. The forge's mergeability (/api/pr/merge-status)
@@ -11,6 +12,7 @@
 // merging now a bad idea. Nothing here knows which forge it is talking to.
 import { $, S, esc, api, apiPostJson, keyLabel } from './state.js';
 import { showToast } from './ui.js';
+import { showError } from './errors.js';
 import { on, emit } from './bus.js';
 import { registerAgentPicker } from './agent.js';
 import { openSettings } from './settings.js';
@@ -51,10 +53,7 @@ export function initPRMerge(c) {
     renderPRMerge();
     ctx.onChange();
   });
-  $('#pr-merge-state')?.addEventListener('click', onPillClick);
-  $('#pr-rebase-ai')?.addEventListener('click', () => {
-    emit('pr:resolve');
-  });
+  $('#pr-merge-fix')?.addEventListener('click', onFixClick);
   $('#pr-merge')?.addEventListener('click', onMergeClick);
   $('#pr-merge-caret')?.addEventListener('click', e => { e.stopPropagation(); toggleMenu(); });
   document.addEventListener('click', e => { if (!e.target.closest?.('#pr-merge-group')) toggleMenu(false); });
@@ -124,7 +123,7 @@ export function reviewGate() {
 // what the forge will see next.
 function pill() {
   if (sync.running) return { tone: 'busy', text: 'Rebasing...', title: 'The harness is bringing the branch up to date' };
-  if (sync.inProgress) return { tone: 'warn', text: `${cap(sync.inProgress)} unfinished`, title: 'Open the git panel to finish or abort it', act: 'resolve' };
+  if (sync.inProgress) return { tone: 'warn', text: `${cap(sync.inProgress)} unfinished`, title: 'Open the git panel to finish or abort it', act: 'resolve', fix: 'Finish' };
   if (sync.rewritten) return { tone: 'warn', text: 'Rebased, not pushed', title: 'Force-push to update the PR', act: 'push' };
   const st = info?.status;
   if (!st) return null;
@@ -132,23 +131,34 @@ function pill() {
   switch (st.state) {
     case 'clean': return { tone: 'ok', text: 'Ready to merge', title: 'No conflicts with ' + baseBranch() };
     case 'unstable': return { tone: 'warn', text: 'Checks failing', title: reason || 'Mergeable, but some checks are failing' };
-    case 'conflicts': return { tone: 'err', text: 'Conflicts with ' + baseBranch(), title: 'Resolve them with your coding harness', act: 'resolve' };
-    case 'behind': return { tone: 'warn', text: 'Behind ' + baseBranch(), title: 'Bring the branch up to date with your coding harness', act: 'resolve' };
+    case 'conflicts': return { tone: 'err', text: 'Conflicts with ' + baseBranch(), title: 'Resolve them with your coding harness', act: 'resolve', fix: 'Resolve conflicts' };
+    case 'behind': return { tone: 'warn', text: 'Behind ' + baseBranch(), title: 'Bring the branch up to date with your coding harness', act: 'resolve', fix: 'Update branch' };
     case 'blocked': return { tone: 'muted', text: 'Merge blocked', title: reason || 'Branch protection refuses the merge' };
-    case 'draft': return { tone: 'muted', text: 'Draft', title: reason || 'This PR is still a draft' };
-    case 'unknown': return { tone: 'busy', text: 'Checking mergeability...', title: 'The forge is still computing whether this PR can merge' };
-    case 'closed': return { tone: 'muted', text: 'Closed', title: 'This PR is closed' };
+    case 'unknown': return { tone: 'busy', text: 'Checking…', title: 'The forge is still computing whether this PR can merge' };
   }
-  return null; // merged: the bar's own Merged badge says it
+  return null; // draft, merged, closed: the bar's state badge says it
 }
 
 const cap = s => s ? s[0].toUpperCase() + s.slice(1) : s;
 
-function onPillClick() {
+const PILL_ICONS = {
+  err: 'icon-[lucide--triangle-alert]',
+  warn: 'icon-[lucide--circle-alert]',
+  busy: 'icon-[lucide--loader-circle] animate-spin',
+  ok: 'icon-[lucide--circle-check]',
+  muted: 'icon-[lucide--circle-dashed]',
+};
+const PILL_FIXES = {
+  resolve: '<span class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true"></span>',
+  push: '<span class="icon-[lucide--arrow-up] size-3.5 shrink-0" aria-hidden="true"></span>',
+};
+
+const REWRITE_LABEL = '<span class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true"></span>Rewrite';
+
+function onFixClick() {
   const p = pill();
   if (p?.act === 'resolve') emit('pr:resolve');
   else if (p?.act === 'push') emit('pr:force-push');
-  else refreshMergeStatus();
 }
 
 // The split button's main half: always opens the merge dialog to review and merge.
@@ -165,15 +175,21 @@ function renderPRMerge() {
     pillEl.hidden = !p;
     if (p) {
       pillEl.dataset.tone = p.tone;
-      pillEl.textContent = p.text;
-      pillEl.title = p.title + (p.act ? '' : ' (click to refresh)');
+      const icon = PILL_ICONS[p.tone] || PILL_ICONS.muted;
+      pillEl.innerHTML = `<span class="${icon} size-3.5 shrink-0" aria-hidden="true"></span><span>${esc(p.text)}</span>`;
+      pillEl.title = p.title;
     }
   }
-  const rebaseBtn = $('#pr-rebase-ai');
-  if (rebaseBtn) {
-    const showRebase = p?.act === 'resolve' && !sync.running;
-    rebaseBtn.hidden = !showRebase;
-    rebaseBtn.disabled = !!sync.running;
+  // The fix is a button of its own beside Review, so it reads as something to press.
+  const fixBtn = $('#pr-merge-fix');
+  if (fixBtn) {
+    fixBtn.hidden = !p?.act;
+    if (p?.act) {
+      fixBtn.dataset.variant = p.act === 'resolve' ? 'special' : 'outline';
+      fixBtn.innerHTML = PILL_FIXES[p.act] + esc(p.fix || (p.act === 'push' ? 'Force-push' : 'Resolve'));
+      fixBtn.title = p.title;
+      fixBtn.disabled = !!sync.running;
+    }
   }
   const group = $('#pr-merge-group');
   if (!group) return;
@@ -203,9 +219,9 @@ function renderMenu() {
   const cur = chosenMethod();
   const n = info?.commits?.length || 0;
   menu.innerHTML = allowed().map(m =>
-    `<button type="button" role="menuitemradio" aria-checked="${m === cur}" data-method="${m}">` +
-    `<span class="pr-merge-menu-check">${m === cur ? '&#10003;' : ''}</span>` +
-    `<span class="pr-merge-menu-text"><b>${esc(METHODS[m].label)}</b><span>${esc(METHODS[m].explain(n, baseBranch()))}</span></span></button>`
+    `<button type="button" role="menuitemradio" aria-checked="${m === cur}" data-method="${m}" class="flex w-full items-start gap-2 whitespace-normal! rounded-md px-2 py-1.5 text-left hover:bg-accent focus-visible:bg-accent focus-visible:outline-none">` +
+    `<span data-ui="pr-merge-menu-check" class="mt-0.5 flex size-4 flex-none items-center justify-center text-primary-text">${m === cur ? '<span class="icon-[lucide--check] size-3.5" aria-hidden="true"></span>' : ''}</span>` +
+    `<span data-ui="pr-merge-menu-text" class="flex min-w-0 flex-col gap-0.5"><span class="text-sm font-medium">${esc(METHODS[m].label)}</span><span class="text-xs text-muted-foreground">${esc(METHODS[m].explain(n, baseBranch()))}</span></span></button>`
   ).join('');
   for (const b of menu.querySelectorAll('button')) {
     b.addEventListener('click', () => {
@@ -223,7 +239,16 @@ function renderMenu() {
 function toggleMenu(force) {
   const menu = $('#pr-merge-menu');
   if (!menu) return;
-  menu.hidden = force === undefined ? !menu.hidden : !force;
+  const open = force === undefined ? menu.hidden : force;
+  setMenuHidden(menu, !open);
+  if (!open) return;
+  // Fixed to the window and right-aligned to the caret, so it never runs off
+  // the edge; it opens upward when the bar sits too low.
+  const r = $('#pr-merge-caret').getBoundingClientRect();
+  Object.assign(menu.style, { left: 'auto', right: Math.max(8, innerWidth - r.right) + 'px', width: 'min(22rem, 90vw)', padding: '4px' });
+  const up = innerHeight - r.bottom < menu.offsetHeight + 12 && r.top > innerHeight - r.bottom;
+  menu.style.top = up ? 'auto' : r.bottom + 4 + 'px';
+  menu.style.bottom = up ? innerHeight - r.top + 4 + 'px' : 'auto';
 }
 
 /* ---------- the merge dialog ---------- */
@@ -266,7 +291,8 @@ function initDialog() {
     e.preventDefault();
     openSettings('ui', 'Git & Diff', 'git.commitMessageInstruction');
   });
-  m.addEventListener('click', e => { if (e.target === m) closeDialog(); });
+  m.addEventListener('cancel', e => { e.preventDefault(); closeDialog(); });
+  m.addEventListener('pointerdown', e => { if (e.target === m) closeDialog(); });
   m.addEventListener('keydown', e => {
     if (e.key === 'Escape') { e.preventDefault(); closeDialog(); }
     else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); confirmMerge(); }
@@ -274,9 +300,7 @@ function initDialog() {
   for (const id of ['#pr-merge-commit-title', '#pr-merge-commit-body']) {
     $(id)?.addEventListener('input', saveDraft);
   }
-  const harnessSelect = $('#pr-merge-harness');
-  const modelSelect = $('#pr-merge-model');
-  if (harnessSelect && modelSelect) registerAgentPicker({ el: m, harnessSelect, modelSelect });
+  registerAgentPicker($('#pr-merge-agent'));
   $('#pr-merge-hint').textContent = keyLabel('Mod+Enter') + ' to merge, Esc to cancel';
 }
 
@@ -292,24 +316,24 @@ async function openDialog(m) {
   if (cb) cb.checked = false;
   setPRMergeErr('');
   renderDialog();
-  mergeModal().hidden = false;
+  mergeModal().showModal();
   (method === 'rebase' ? $('#pr-merge-confirm') : $('#pr-merge-commit-title'))?.focus();
 }
 
 function closeDialog() {
   const m = mergeModal();
-  if (m) m.hidden = true;
+  if (m) m.close();
 }
 
 function renderDialog() {
   const meta = ctx.meta();
   const n = info.commits?.length || 0;
   $('#pr-merge-title').textContent = `Merge pull request #${meta.number}`;
-  $('#pr-merge-refs').innerHTML = `${codeHtml(meta.head)} &rarr; ${codeHtml(baseBranch())}`;
+  $('#pr-merge-refs').innerHTML = `${codeHtml(meta.head)} <span class="icon-[lucide--arrow-right] size-3 align-[-2px]" aria-hidden="true"></span> ${codeHtml(baseBranch())}`;
 
   const methods = $('#pr-merge-methods');
   methods.innerHTML = allowed().map(k =>
-    `<button type="button" role="radio" aria-checked="${k === method}" data-method="${k}" class="${k === method ? 'on' : ''}">${esc(METHODS[k].label)}</button>`
+    `<button type="button" role="radio" aria-checked="${k === method}" data-method="${k}" class="btn" aria-pressed="${k === method}" data-variant="${k === method ? 'secondary' : 'ghost'}" data-size="xs">${esc(METHODS[k].label)}</button>`
   ).join('');
   for (const b of methods.querySelectorAll('button')) {
     b.addEventListener('click', () => {
@@ -340,7 +364,7 @@ function renderDialog() {
   const list = $('#pr-merge-commit-list');
   list.hidden = method !== 'rebase';
   list.innerHTML = [...(info.commits || [])].reverse().map(c =>
-    `<li><code>${esc(c.short)}</code> ${esc(c.subject)}</li>`).join('') || '<li class="empty">No commits</li>';
+    `<li><code>${esc(c.short)}</code> ${esc(c.subject)}</li>`).join('') || '<li data-ui="pr-merge-empty" class="empty">No commits</li>';
 
   renderWarnings();
   $('#pr-merge-confirm').textContent = METHODS[method].confirm;
@@ -354,10 +378,10 @@ function renderWarnings() {
   else if (info.rewritten || sync.rewritten) block = 'This checkout was rebased but not pushed. Force-push it first, or the old commits are what merges.';
   else if (info.stale) block = 'The PR has commits this checkout has not seen. Pull and review them before merging.';
   else if (state() === 'conflicts') block = `This PR has conflicts with ${baseBranch()}. Resolve them first.`;
-  if (block) w.push(`<div class="pr-merge-warn block">${esc(block)}</div>`);
-  if (state() === 'unstable') w.push(`<div class="pr-merge-warn">${esc(info.status.reason || 'Some checks are failing or still running.')}</div>`);
+  if (block) w.push(`<div data-ui="pr-merge-warn" class="alert p-3 block">${esc(block)}</div>`);
+  if (state() === 'unstable') w.push(`<div data-ui="pr-merge-warn" class="alert p-3">${esc(info.status.reason || 'Some checks are failing or still running.')}</div>`);
   if (info.unpushed > 0 && !info.rewritten) {
-    w.push(`<div class="pr-merge-warn">${pluralize(info.unpushed, 'local commit')} in this checkout ${info.unpushed === 1 ? "isn't" : "aren't"} pushed to the PR and won't be part of the merge.</div>`);
+    w.push(`<div data-ui="pr-merge-warn" class="alert p-3">${pluralize(info.unpushed, 'local commit')} in this checkout ${info.unpushed === 1 ? "isn't" : "aren't"} pushed to the PR and won't be part of the merge.</div>`);
   }
   $('#pr-merge-warnings').innerHTML = w.join('');
   const confirm = $('#pr-merge-confirm');
@@ -377,15 +401,12 @@ function saveDraft() {
 }
 
 function setPRMergeErr(msg) {
-  const el = $('#pr-merge-err');
-  if (!el) return;
-  el.hidden = !msg;
-  el.textContent = msg;
+  showError($('#pr-merge-err'), msg);
 }
 
 async function confirmMerge() {
   const confirm = $('#pr-merge-confirm');
-  if (mergeModal()?.hidden || confirm.disabled) return;
+  if (!mergeModal()?.open || confirm.disabled) return;
   saveDraft();
   const d = drafts[method] || {};
   if (method !== 'rebase' && !d.title?.trim()) {
@@ -406,7 +427,7 @@ async function confirmMerge() {
     return;
   }
   closeDialog();
-  showToast('✓', `${METHODS[method].done} into ${baseBranch()}`);
+  showToast('success', `${METHODS[method].done} into ${baseBranch()}`);
   await ctx.onMerged(); // re-reads the PR, and with it this status
 }
 
@@ -418,7 +439,7 @@ async function rewriteWithAI() {
   saveDraft();
   const btn = $('#pr-merge-ai');
   const cb = $('#pr-merge-ai-checkbox');
-  const cbText = $('.pr-merge-checkbox-text');
+  const cbText = $('[data-ui~=pr-merge-checkbox-text]');
   if (cb && method === 'squash') cb.checked = true;
   const d = drafts[method] || {};
   setPRMergeErr('');
@@ -439,9 +460,9 @@ async function rewriteWithAI() {
   const reset = () => {
     aiJob = 0;
     btn.disabled = false;
-    btn.textContent = 'Rewrite with AI';
+    btn.innerHTML = REWRITE_LABEL;
     if (cbText) cbText.textContent = 'Rewrite commit message with AI';
-    if (!mergeModal().hidden) renderWarnings();
+    if (mergeModal().open) renderWarnings();
   };
   const poll = async () => {
     let j;
@@ -452,7 +473,7 @@ async function rewriteWithAI() {
     }
     if (j.running) {
       const statusText = `Rewriting... (${Math.round((j.ms || 0) / 1000)}s)`;
-      btn.textContent = statusText;
+      btn.innerHTML = '<span class="icon-[lucide--loader-circle] size-3.5 shrink-0 animate-spin" aria-hidden="true"></span>' + statusText;
       if (cbText && method === 'squash') cbText.textContent = statusText;
       setTimeout(poll, 700);
       return;

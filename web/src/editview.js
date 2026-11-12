@@ -244,7 +244,7 @@ export async function enterEditMode(line) {
       if (!res.ok) throw new Error('Failed to fetch file content');
       text = await res.text();
     } catch (err) {
-      showToast('!', 'Failed to load file for editing: ' + err.message);
+      showToast('error', 'Failed to load file for editing: ' + err.message);
       return;
     }
   }
@@ -321,11 +321,11 @@ export async function saveActiveFile() {
     d.total = (content.match(/\n/g) || []).length + 1;
     drawTabs();
     if (btnSaveFile) flashActionSuccess(btnSaveFile, 'Saved');
-    showToast('✓', 'Saved ' + d.name);
+    showToast('success', 'Saved ' + d.name);
     loadGutter(d);
     triggerRefresh();
   } catch (err) {
-    showToast('!', 'Failed to save: ' + (err.message || 'unknown error'));
+    showToast('error', 'Failed to save: ' + (err.message || 'unknown error'));
   } finally {
     if (btnSaveFile) btnSaveFile.disabled = false;
   }

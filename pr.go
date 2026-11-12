@@ -17,6 +17,7 @@ import (
 	"sync"
 	"time"
 
+	"faah/internal/render"
 	"faah/internal/settings"
 )
 
@@ -643,6 +644,7 @@ func (p *prSession) metaMap(files map[string]string) map[string]any {
 		"state":           p.meta.State,
 		"merged":          p.meta.Merged,
 		"mergedAt":        p.meta.MergedAt,
+		"draft":           p.meta.Draft,
 		"writeAccess":     p.writeAccess,
 		"readOnly":        p.token == "",
 		"draftCount":      len(p.comments),
@@ -681,7 +683,20 @@ func (s *Server) handlePRExistingComments(w http.ResponseWriter, r *http.Request
 	if review == nil {
 		review = []PRComment{}
 	}
+	renderCommentBodies(issue)
+	renderCommentBodies(review)
 	writeJSON(w, map[string]any{"issueComments": issue, "reviewComments": review})
+}
+
+// renderCommentBodies renders each body the way the forge shows it. Bots post
+// raw HTML (<details>, <picture>), so the result is unsafe until the page
+// sanitizes it, the same as a Markdown preview.
+func renderCommentBodies(cs []PRComment) {
+	for i := range cs {
+		if h, err := render.RenderMarkdown([]byte(cs[i].Body)); err == nil {
+			cs[i].BodyHTML = h
+		}
+	}
 }
 
 // handlePRIssueCommentPost posts a new top-level PR comment immediately (not
@@ -714,7 +729,9 @@ func (s *Server) handlePRIssueCommentPost(w http.ResponseWriter, r *http.Request
 		fail(w, http.StatusBadGateway, err.Error())
 		return
 	}
-	writeJSON(w, c)
+	cs := []PRComment{c}
+	renderCommentBodies(cs)
+	writeJSON(w, cs[0])
 }
 
 // handlePRReviewCommentReply posts an immediate, threaded reply to an
@@ -748,7 +765,9 @@ func (s *Server) handlePRReviewCommentReply(w http.ResponseWriter, r *http.Reque
 		fail(w, http.StatusBadGateway, err.Error())
 		return
 	}
-	writeJSON(w, c)
+	cs := []PRComment{c}
+	renderCommentBodies(cs)
+	writeJSON(w, cs[0])
 }
 
 func (s *Server) handlePRComments(w http.ResponseWriter, r *http.Request) {

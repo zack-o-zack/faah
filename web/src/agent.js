@@ -1,6 +1,8 @@
+import { updateAgentPicker } from './agent-picker.js';
 // web/src/agent.js
 import { $, esc, S, doc_, api, apiPost, apiPostJson, MOD, keyLabel } from './state.js';
 import { showToast } from './ui.js';
+import { showError } from './errors.js';
 import { setStatusNote } from './status.js';
 import { openFile, reloadOpenTabs } from './tabs.js';
 import { refreshTree, treeEl } from './tree.js';
@@ -34,15 +36,13 @@ const agentListEl = $('#agentbox-list');
 const batchBar = $('#agent-batch-bar');
 const batchCount = $('#agent-batch-count');
 const batchClear = $('#agent-batch-clear');
-const batchHarness = $('#agent-batch-harness');
-const batchModel = $('#agent-batch-model');
+const batchPicker = $('#agent-batch-agent');
 const batchHint = $('#agent-batch-hint');
 const batchApply = $('#agent-batch-apply');
 const batchCancel = $('#agent-batch-cancel');
 const batchOpen = $('#agent-batch-open');
 const batchErr = $('#agent-batch-err');
-const gitHarness = $('#git-harness');
-const gitModel = $('#git-model');
+const gitPicker = $('#git-agent');
 
 const sessions = new Map(); // local session id -> in-progress compose/edit
 let agentSeq = 0;
@@ -59,79 +59,58 @@ const chosenModel = () => (S.meta && S.meta.agentModel) || '';
 const targetRef = ({ path, l1, l2 }) => path + ':' + (l1 === l2 ? l1 : l1 + '-' + l2);
 const rangesOverlap = (a, b) => a.path === b.path && a.l1 <= b.l2 && b.l1 <= a.l2;
 
-// Harness/model selects owned by other panels (the thread composer). They
-// show the same global selection as every composer box and write it back.
+// Pickers owned by other panels (the thread composer). They show the same
+// global selection as every composer box and write it back.
 const extraPickers = new Set();
 export function registerAgentPicker(picker) {
+  if (!picker) return;
   extraPickers.add(picker);
-  picker.harnessSelect.addEventListener('change', () => {
-    if (picker.harnessSelect.value) select(picker.harnessSelect.value, msg => showToast('!', msg));
-  });
-  picker.modelSelect.addEventListener('change', () => {
-    select(picker.harnessSelect.value || chosen(), picker.modelSelect.value, msg => showToast('!', msg));
-  });
-  updateSessionMeta(picker);
+  wireAgentPicker(picker, msg => showToast('error', msg));
+  renderAgentPicker(picker);
 }
 
 export function applyAgentMeta() {
   for (const session of sessions.values()) {
-    updateSessionMeta(session);
+    renderAgentPicker(session.picker, session.el.classList.contains('busy'));
   }
-  for (const picker of extraPickers) updateSessionMeta(picker);
-  syncBatchMeta();
-  syncGitPanelHarnessMeta();
+  for (const picker of extraPickers) renderAgentPicker(picker);
+  renderAgentPicker(batchPicker, !!batchJobId);
+  renderAgentPicker(gitPicker);
 }
 
-function updateSessionMeta(session) {
-  if (!session.harnessSelect || !session.modelSelect) return;
-  const ready = (S.meta?.agents || []).filter(h => h.installed);
-  const currentHarness = chosen();
-  const currentModel = chosenModel();
+// Model discovery is shared across composers, and browsing never saves a choice.
+const discoveredAgentModels = new Map();
+async function loadPickerModels(name) {
+  if (discoveredAgentModels.has(name)) return discoveredAgentModels.get(name);
+  const pending = api('/api/agent/models', { name }).then(j => j.models || []);
+  discoveredAgentModels.set(name, pending);
+  try { return await pending; }
+  catch (error) { discoveredAgentModels.delete(name); throw error; }
+}
 
-  // Populate harness select
-  session.harnessSelect.innerHTML = '';
-  if (!ready.length) {
-    const opt = document.createElement('option');
-    opt.value = '';
-    opt.textContent = 'no harness';
-    session.harnessSelect.appendChild(opt);
-    session.harnessSelect.disabled = true;
-    session.modelSelect.innerHTML = '';
-    session.modelSelect.hidden = true;
-    return;
-  }
+// All composers share the same agent/model picker and saved selection.
+function renderAgentPicker(picker, busy = false) {
+  if (!picker) return;
+  const ready = installed();
+  const current = ready.find(h => h.name === chosen()) || ready[0];
+  const models = current?.models || [];
+  updateAgentPicker(picker, {
+    harnesses: ready,
+    loadModels: loadPickerModels,
+    harness: current?.name || '',
+    model: models.includes(chosenModel()) ? chosenModel() : models[0] || '',
+    pinned: !!S.meta?.agentPinned,
+    busy,
+  });
+}
 
-  for (const h of ready) {
-    const opt = document.createElement('option');
-    opt.value = h.name;
-    opt.textContent = h.name;
-    if (h.name === currentHarness) opt.selected = true;
-    session.harnessSelect.appendChild(opt);
-  }
-  const isBusy = session.el.classList.contains('busy');
-  session.harnessSelect.disabled = isBusy || !!(S.meta && S.meta.agentPinned);
-  session.harnessSelect.title = S.meta && S.meta.agentPinned
-    ? 'Fixed for this run by -agent'
-    : 'Change the coding harness';
-
-  // Populate model select for the currently selected harness
-  const activeH = ready.find(h => h.name === (session.harnessSelect.value || currentHarness)) || ready[0];
-  session.modelSelect.innerHTML = '';
-  const models = activeH?.models || [];
-  if (models.length > 0) {
-    for (const m of models) {
-      const opt = document.createElement('option');
-      opt.value = m;
-      opt.textContent = m;
-      if (m === currentModel) opt.selected = true;
-      session.modelSelect.appendChild(opt);
-    }
-    session.modelSelect.hidden = false;
-    session.modelSelect.disabled = isBusy;
-    session.modelSelect.title = 'Model for ' + activeH.name;
-  } else {
-    session.modelSelect.hidden = true;
-  }
+function wireAgentPicker(picker, onError, after) {
+  picker?.addEventListener('change', async () => {
+    const [harness, model] = JSON.parse(picker.value || '[""]');
+    if (!harness) return;
+    await select(harness, model, onError);
+    after?.();
+  });
 }
 
 // Loads harnesses and models asynchronously after the browser UI has loaded.
@@ -144,103 +123,6 @@ export async function loadAgentAsync() {
     S.meta.agentPinned = !!j.pinned;
     applyAgentMeta();
   } catch {}
-}
-
-function syncBatchMeta() {
-  if (!batchHarness || !batchModel) return;
-  const ready = installed();
-  const currentHarness = chosen();
-  const currentModel = chosenModel();
-
-  batchHarness.innerHTML = '';
-  if (!ready.length) {
-    const opt = document.createElement('option');
-    opt.value = '';
-    opt.textContent = 'no harness';
-    batchHarness.appendChild(opt);
-    batchHarness.disabled = true;
-    batchModel.innerHTML = '';
-    batchModel.hidden = true;
-    return;
-  }
-
-  for (const h of ready) {
-    const opt = document.createElement('option');
-    opt.value = h.name;
-    opt.textContent = h.name;
-    if (h.name === currentHarness) opt.selected = true;
-    batchHarness.appendChild(opt);
-  }
-  const isBusy = !!batchJobId;
-  batchHarness.disabled = isBusy || !!(S.meta && S.meta.agentPinned);
-  batchHarness.title = S.meta && S.meta.agentPinned ? 'Fixed for this run by -agent' : 'Change the coding harness';
-
-  const activeH = ready.find(h => h.name === (batchHarness.value || currentHarness)) || ready[0];
-  batchModel.innerHTML = '';
-  const models = activeH?.models || [];
-  if (models.length > 0) {
-    for (const m of models) {
-      const opt = document.createElement('option');
-      opt.value = m;
-      opt.textContent = m;
-      if (m === currentModel) opt.selected = true;
-      batchModel.appendChild(opt);
-    }
-    batchModel.hidden = false;
-    batchModel.disabled = isBusy;
-    batchModel.title = 'Model for ' + activeH.name;
-  } else {
-    batchModel.hidden = true;
-  }
-}
-
-// Harness/model pickers for the sidebar git panel's "Generate" commit
-// message action -- same global selection as every other harness picker,
-// just a second view onto it (see syncBatchMeta above).
-function syncGitPanelHarnessMeta() {
-  if (!gitHarness || !gitModel) return;
-  const ready = installed();
-  const currentHarness = chosen();
-  const currentModel = chosenModel();
-
-  gitHarness.innerHTML = '';
-  if (!ready.length) {
-    const opt = document.createElement('option');
-    opt.value = '';
-    opt.textContent = 'no harness';
-    gitHarness.appendChild(opt);
-    gitHarness.disabled = true;
-    gitModel.innerHTML = '';
-    gitModel.hidden = true;
-    return;
-  }
-
-  for (const h of ready) {
-    const opt = document.createElement('option');
-    opt.value = h.name;
-    opt.textContent = h.name;
-    if (h.name === currentHarness) opt.selected = true;
-    gitHarness.appendChild(opt);
-  }
-  gitHarness.disabled = !!(S.meta && S.meta.agentPinned);
-  gitHarness.title = S.meta && S.meta.agentPinned ? 'Fixed for this run by -agent' : 'Change the coding harness';
-
-  const activeH = ready.find(h => h.name === (gitHarness.value || currentHarness)) || ready[0];
-  gitModel.innerHTML = '';
-  const models = activeH?.models || [];
-  if (models.length > 0) {
-    for (const m of models) {
-      const opt = document.createElement('option');
-      opt.value = m;
-      opt.textContent = m;
-      if (m === currentModel) opt.selected = true;
-      gitModel.appendChild(opt);
-    }
-    gitModel.hidden = false;
-    gitModel.title = 'Model for ' + activeH.name;
-  } else {
-    gitModel.hidden = true;
-  }
 }
 
 function getReadySessions() {
@@ -294,7 +176,7 @@ function syncBatchBar() {
         : 'Select more code to add more';
     }
   }
-  syncBatchMeta();
+  renderAgentPicker(batchPicker, !!batchJobId);
 }
 
 function anyInFlight() {
@@ -313,7 +195,7 @@ export function openAgentEdit(info) {
   if (!info) return;
   for (const s of sessions.values()) {
     if (rangesOverlap(s.target, info)) {
-      showToast('!', 'Overlaps the edit already open on ' + targetRef(s.target));
+      showToast('error', 'Overlaps the edit already open on ' + targetRef(s.target));
       return;
     }
   }
@@ -367,23 +249,22 @@ function createSession(info) {
     jobId: null,
     harness: '',
     el,
-    refEl: el.querySelector('.agent-ref'),
-    metaEl: el.querySelector('.agent-meta'),
-    harnessSelect: el.querySelector('.agent-harness-select'),
-    modelSelect: el.querySelector('.agent-model-select'),
-    closeBtn: el.querySelector('.agent-close'),
-    pickEl: el.querySelector('.agent-pick'),
-    composeEl: el.querySelector('.agent-compose'),
-    input: el.querySelector('.agent-input'),
-    sendBtn: el.querySelector('.agent-send'),
-    nowBtn: el.querySelector('.agent-now:not(.agent-open-thread)'),
-    threadBtn: el.querySelector('.agent-open-thread'),
+    refEl: el.querySelector('[data-control~=agent-ref]'),
+    metaEl: el.querySelector('[data-ui~=agent-meta]'),
+    picker: el.querySelector('[data-control~=agent-picker]'),
+    closeBtn: el.querySelector('[data-control~=agent-close]'),
+    pickEl: el.querySelector('[data-ui~=agent-pick]'),
+    composeEl: el.querySelector('[data-ui~=agent-compose]'),
+    input: el.querySelector('[data-control~=agent-input]'),
+    sendBtn: el.querySelector('[data-control~=agent-send]'),
+    nowBtn: el.querySelector('[data-control~=agent-now]:not([data-control~=agent-open-thread])'),
+    threadBtn: el.querySelector('[data-control~=agent-open-thread]'),
     threadId: '',
-    queuedEl: el.querySelector('.agent-queued'),
+    queuedEl: el.querySelector('[data-control~=agent-queued]'),
     queued: false,
-    cancelBtn: el.querySelector('.agent-cancel'),
-    hintEl: el.querySelector('.agent-hint'),
-    errEl: el.querySelector('.agent-err'),
+    cancelBtn: el.querySelector('[data-control~=agent-cancel]'),
+    hintEl: el.querySelector('[data-ui~=agent-hint]'),
+    errEl: el.querySelector('[data-ui~=agent-err]'),
   };
   wireSession(session);
   refreshRef(session);
@@ -409,22 +290,7 @@ function wireSession(session) {
       openFile(session.target.path, { line: session.target.l1 });
     });
   }
-  if (session.harnessSelect) {
-    session.harnessSelect.addEventListener('change', async () => {
-      const hName = session.harnessSelect.value;
-      if (!hName) return;
-      await select(hName, msg => showErr(session, msg));
-      session.input.focus();
-    });
-  }
-  if (session.modelSelect) {
-    session.modelSelect.addEventListener('change', async () => {
-      const hName = session.harnessSelect?.value || chosen();
-      const mName = session.modelSelect.value;
-      await select(hName, mName, msg => showErr(session, msg));
-      session.input.focus();
-    });
-  }
+  wireAgentPicker(session.picker, msg => showErr(session, msg), () => session.input.focus());
   /* The composer swallows every key while it is open. Nothing typed into an
      instruction should also fire a viewport shortcut. */
   session.el.addEventListener('keydown', e => {
@@ -460,7 +326,7 @@ async function cancelSession(session) {
   resetHint(session);
   syncBatchBar();
   refreshStatusNote();
-  showToast('!', 'Cancelled edit on ' + targetRef(session.target));
+  showToast('error', 'Cancelled edit on ' + targetRef(session.target));
   if (jobId) {
     try {
       await apiPost('/api/agent/cancel', { id: jobId });
@@ -486,18 +352,18 @@ function refreshRef(session) {
 }
 
 function clearErr(session) {
-  const errEl = session.errEl;
-  if (!errEl) return;
-  errEl.textContent = '';
-  errEl.hidden = true;
+  showError(session.errEl, '');
 }
 
 function attachAlreadyRunningCancel(errContainer) {
   const row = document.createElement('div');
-  row.className = 'agent-err-actions';
+  row.setAttribute('data-ui', 'agent-err-actions'); row.className = 'mt-2 flex items-center';
   const btn = document.createElement('button');
   btn.type = 'button';
-  btn.className = 'agent-err-cancel-btn';
+  btn.className = 'btn';
+  btn.dataset.control = 'agent-err-cancel-btn';
+  btn.dataset.variant = 'ghost';
+  btn.dataset.size = 'xs';
   btn.textContent = 'Cancel in-flight edit';
   btn.title = 'Stop and cancel running edits on the server';
   btn.onclick = async (e) => {
@@ -507,10 +373,10 @@ function attachAlreadyRunningCancel(errContainer) {
     btn.textContent = 'Cancelling...';
     try {
       await apiPost('/api/agent/cancel', { id: 0 });
-      showToast('✓', 'Cancelled running edit');
+      showToast('success', 'Cancelled running edit');
       errContainer.hidden = true;
     } catch (err) {
-      showToast('!', 'Failed to cancel: ' + err.message);
+      showToast('error', 'Failed to cancel: ' + err.message);
       btn.disabled = false;
       btn.textContent = 'Cancel in-flight edit';
     }
@@ -522,27 +388,8 @@ function attachAlreadyRunningCancel(errContainer) {
 /* Renders a failure inline under the instruction. A harness run also carries
    what it printed, which is usually the only clue to why it exited non-zero. */
 function showErr(session, msg, streams = []) {
-  const errEl = session.errEl;
-  if (!errEl) return;
-  errEl.textContent = '';
-  const head = document.createElement('div');
-  head.className = 'agent-err-msg';
-  head.textContent = msg;
-  errEl.appendChild(head);
-  if (msg && msg.includes('already running')) {
-    attachAlreadyRunningCancel(errEl);
-  }
-  for (const [label, text] of streams) {
-    if (!text) continue;
-    const name = document.createElement('div');
-    name.className = 'agent-err-label';
-    name.textContent = label;
-    const pre = document.createElement('pre');
-    pre.className = 'agent-err-out';
-    pre.textContent = text;
-    errEl.append(name, pre);
-  }
-  errEl.hidden = false;
+  showError(session.errEl, msg, { streams });
+  if (msg && msg.includes('already running')) attachAlreadyRunningCancel(session.errEl);
 }
 
 function resetHint(session) {
@@ -591,8 +438,7 @@ function setBusy(session, busy, msg) {
   if (session.threadBtn) session.threadBtn.hidden = !(busy && session.threadId);
   if (session.cancelBtn) session.cancelBtn.hidden = !busy;
   session.closeBtn.disabled = false;
-  if (session.harnessSelect) session.harnessSelect.disabled = busy || !!(S.meta && S.meta.agentPinned);
-  if (session.modelSelect) session.modelSelect.disabled = busy;
+  renderAgentPicker(session.picker, busy);
   if (session.hintEl && msg) session.hintEl.textContent = msg;
 }
 
@@ -607,7 +453,7 @@ async function showPicker(session) {
   session.composeEl.hidden = true;
   if (session.metaEl) session.metaEl.hidden = true;
   session.pickEl.hidden = false;
-  session.pickEl.innerHTML = '<div class="hint">Looking for coding harnesses…</div>';
+  session.pickEl.innerHTML = '<div data-ui="hint" class="empty text-muted-foreground">Looking for coding harnesses…</div>';
 
   let list = S.meta?.agents || [];
   let settingsPath = '';
@@ -621,31 +467,24 @@ async function showPicker(session) {
     S.meta.agentModel = j.model || '';
     S.meta.agentPinned = !!j.pinned;
   } catch (e) {
-    session.pickEl.innerHTML = '<div class="hint">Could not look for harnesses: ' + esc(e.message) + '</div>';
+    session.pickEl.innerHTML = '<div data-ui="hint" class="empty text-muted-foreground">Could not look for harnesses: ' + esc(e.message) + '</div>';
     return;
   }
 
   const ready = list.filter(h => h.installed);
   if (!ready.length) {
-    showToast('!', 'Could not find any coding harness like Claude Code, OpenCode, Codex, Antigravity, Aider, etc. Install one and restart faah.', 6000);
-    session.pickEl.innerHTML = '<div class="hint" style="line-height: 1.5; padding: 4px 2px;">' +
+    showToast('error', 'Could not find any coding harness like Claude Code, OpenCode, Codex, Antigravity, Aider, etc. Install one and restart faah.', 6000);
+    session.pickEl.innerHTML = '<div data-ui="hint" class="empty text-muted-foreground" style="line-height: 1.5; padding: 4px 2px;">' +
       'Could not find any coding harness like <b>Claude Code</b>, <b>OpenCode</b>, <b>Codex</b>, <b>Antigravity</b> (<code>agy</code>), <b>Aider</b>, <b>Goose</b>, or <b>Cursor Agent</b>.<br><br>' +
       'Please install a coding harness, make sure it is on your <code>PATH</code>, and restart faah after that.</div>';
     return;
   }
 
-  session.pickEl.innerHTML = '<div class="hint">This harness will edit files in this workspace.</div>' +
+  session.pickEl.innerHTML = '<div data-ui="hint" class="empty text-muted-foreground">This harness will edit files in this workspace.</div>' +
     optionsHtml(ready, settingsPath);
 
   session.pickEl.querySelectorAll('[data-pick]').forEach(b => {
     b.addEventListener('click', () => pick(session, b.dataset.pick));
-  });
-  session.pickEl.querySelectorAll('.agent-model-select').forEach(sel => {
-    sel.addEventListener('change', async (e) => {
-      e.stopPropagation();
-      await select(sel.dataset.harness, sel.value, msg => showErr(session, msg));
-      showPicker(session);
-    });
   });
 }
 
@@ -653,23 +492,13 @@ function optionsHtml(ready, settingsPath) {
   let html = '';
   for (const h of ready) {
     const isSelected = h.name === chosen();
-    html += '<div class="agent-opt-wrap">' +
-      '<button class="agent-opt' + (isSelected ? ' on' : '') + '" data-pick="' + esc(h.name) + '">' +
-      '<span class="agent-opt-name">' + esc(h.name) + '</span>' +
-      '<code class="agent-opt-cmd">' + esc(h.cmd) + '</code></button>';
-    if (isSelected && h.models && h.models.length > 0) {
-      html += '<div class="agent-model-row">' +
-        '<span class="agent-model-label">Model:</span>' +
-        '<select class="agent-model-select" data-harness="' + esc(h.name) + '">';
-      for (const m of h.models) {
-        const sel = m === (h.model || chosenModel()) ? ' selected' : '';
-        html += '<option value="' + esc(m) + '"' + sel + '>' + esc(m) + '</option>';
-      }
-      html += '</select></div>';
-    }
+    html += '<div data-ui="agent-opt-wrap" class="flex flex-col w-full gap-2">' +
+      '<button aria-pressed="' + isSelected + '" data-variant="' + (isSelected ? 'secondary' : 'ghost') + '" data-pick="' + esc(h.name) + '" class="btn" data-control="agent-opt" data-size="xs">' +
+      '<span data-ui="agent-opt-name" class="font-semibold">' + esc(h.name) + '</span>' +
+      '<code data-ui="agent-opt-cmd" class="overflow-hidden whitespace-nowrap text-ellipsis font-mono text-muted-foreground">' + esc(h.cmd) + '</code></button>';
     html += '</div>';
   }
-  if (settingsPath) html += '<div class="agent-note">Remembered in ' + esc(settingsPath) + '</div>';
+  if (settingsPath) html += '<div data-ui="agent-note" class="wrap-anywhere font-mono text-muted-foreground">Remembered in ' + esc(settingsPath) + '</div>';
   return html;
 }
 
@@ -774,8 +603,7 @@ function setBatchBusy(busy, msg) {
   if (batchCancel) batchCancel.hidden = !busy;
   if (batchOpen) batchOpen.hidden = !(busy && batchThreadId);
   if (batchClear) batchClear.disabled = busy;
-  if (batchHarness) batchHarness.disabled = busy || !!(S.meta && S.meta.agentPinned);
-  if (batchModel) batchModel.disabled = busy;
+  renderAgentPicker(batchPicker, busy);
   if (batchHint) {
     if (msg) batchHint.textContent = msg;
     else syncBatchBar();
@@ -783,32 +611,12 @@ function setBatchBusy(busy, msg) {
 }
 
 function clearBatchErr() {
-  if (!batchErr) return;
-  batchErr.textContent = '';
-  batchErr.hidden = true;
+  showError(batchErr, '');
 }
 
 function showBatchErr(msg, streams = []) {
-  if (!batchErr) return;
-  batchErr.textContent = '';
-  const head = document.createElement('div');
-  head.className = 'agent-err-msg';
-  head.textContent = msg;
-  batchErr.appendChild(head);
-  if (msg && msg.includes('already running')) {
-    attachAlreadyRunningCancel(batchErr);
-  }
-  for (const [label, text] of streams) {
-    if (!text) continue;
-    const name = document.createElement('div');
-    name.className = 'agent-err-label';
-    name.textContent = label;
-    const pre = document.createElement('pre');
-    pre.className = 'agent-err-out';
-    pre.textContent = text;
-    batchErr.append(name, pre);
-  }
-  batchErr.hidden = false;
+  showError(batchErr, msg, { streams });
+  if (msg && msg.includes('already running')) attachAlreadyRunningCancel(batchErr);
 }
 
 export async function submitBatch() {
@@ -824,10 +632,10 @@ export async function submitBatch() {
   }
   if (!targets.length) {
     if (ready.length > 0) {
-      showToast('!', 'Please enter an instruction for the remaining comment(s)');
+      showToast('error', 'Please enter an instruction for the remaining comment(s)');
       ready[0].input.focus();
     } else {
-      showToast('!', 'All open edits are already in progress');
+      showToast('error', 'All open edits are already in progress');
     }
     return;
   }
@@ -838,7 +646,7 @@ export async function submitBatch() {
 
   const harnessName = chosen();
   if (!harnessName) {
-    showToast('!', 'Please select a coding harness first');
+    showToast('error', 'Please select a coding harness first');
     return;
   }
 
@@ -935,13 +743,13 @@ async function finishBatch(targets, j) {
 
   const changed = j.changed || [];
   if (!changed.length && j.tracked !== false) {
-    showToast('✓', 'Finished batch edit with no file changes. Saved in Threads');
+    showToast('success', 'Finished batch edit with no file changes. Saved in Threads');
     return;
   }
 
   const focusTarget = currentTargets[0]?.session?.target;
   if (!await reloadWorkspace(focusTarget, 'Batch edited')) return;
-  showToast('✓', (!changed.length ? 'Reloaded workspace'
+  showToast('success', (!changed.length ? 'Reloaded workspace'
     : changed.length === 1 ? 'Updated ' + changed[0] + ' (' + currentTargets.length + ' edits)'
     : 'Updated ' + changed.length + ' files across ' + currentTargets.length + ' edits') + '. Saved in Threads', 3200);
 }
@@ -965,7 +773,7 @@ async function cancelBatch() {
   activeBatchTargets = null;
   syncBatchBar();
   refreshStatusNote();
-  showToast('!', 'Cancelled batch edit');
+  showToast('error', 'Cancelled batch edit');
   if (id) {
     try {
       await apiPost('/api/agent/cancel', { id });
@@ -1024,12 +832,12 @@ async function finish(session, j) {
      means "unknown" rather than "nothing" and everything is reloaded. */
   const changed = j.changed || [];
   if (!changed.length && j.tracked !== false) {
-    showToast('✓', 'Finished with no file changes. Saved in Threads');
+    showToast('success', 'Finished with no file changes. Saved in Threads');
     return;
   }
 
   if (!await reloadWorkspace(editTarget, 'Edited')) return;
-  showToast('✓', (!changed.length ? 'Reloaded the workspace'
+  showToast('success', (!changed.length ? 'Reloaded the workspace'
     : changed.length === 1 ? 'Updated ' + changed[0]
       : 'Updated ' + changed.length + ' files') + '. Saved in Threads', 3200);
 }
@@ -1049,7 +857,7 @@ export function reloadWorkspace(focus, what = 'Changed') {
       }
       await refreshTree();
     } catch (e) {
-      showToast('!', what + ', but the reload failed: ' + e.message);
+      showToast('error', what + ', but the reload failed: ' + e.message);
       return false;
     }
     return true;
@@ -1067,34 +875,8 @@ export function initAgent() {
   if (batchCancel) batchCancel.addEventListener('click', () => cancelBatch());
   if (batchOpen) batchOpen.addEventListener('click', () => emit('threads:open', batchThreadId));
   if (batchClear) batchClear.addEventListener('click', () => clearAllEdits());
-  if (batchHarness) {
-    batchHarness.addEventListener('change', async () => {
-      const hName = batchHarness.value;
-      if (!hName) return;
-      await select(hName, msg => showBatchErr(msg));
-    });
-  }
-  if (batchModel) {
-    batchModel.addEventListener('change', async () => {
-      const hName = batchHarness?.value || chosen();
-      const mName = batchModel.value;
-      await select(hName, mName, msg => showBatchErr(msg));
-    });
-  }
-  if (gitHarness) {
-    gitHarness.addEventListener('change', async () => {
-      const hName = gitHarness.value;
-      if (!hName) return;
-      await select(hName, msg => showToast('!', msg));
-    });
-  }
-  if (gitModel) {
-    gitModel.addEventListener('change', async () => {
-      const hName = gitHarness?.value || chosen();
-      const mName = gitModel.value;
-      await select(hName, mName, msg => showToast('!', msg));
-    });
-  }
+  wireAgentPicker(batchPicker, msg => showBatchErr(msg));
+  wireAgentPicker(gitPicker, msg => showToast('error', msg));
 
   document.addEventListener('click', e => {
     const target = /** @type {HTMLElement|null} */ (e.target);

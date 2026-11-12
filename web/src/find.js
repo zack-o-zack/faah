@@ -1,3 +1,4 @@
+import { setPressed } from './controls.js';
 // web/src/find.js
 import { $, S, doc_, api, LH } from './state.js';
 import { on } from './bus.js';
@@ -59,7 +60,7 @@ export function clearFind() {
 }
 
 export function isFindCurrent() {
-  const cs = !!findCase?.classList?.contains('on');
+  const cs = (findCase?.getAttribute('aria-pressed') === 'true');
   return !!(S.find && S.find.q === findInput.value && S.find.cs === cs);
 }
 
@@ -67,7 +68,7 @@ export async function executeFind(jumpDelta = 0) {
   clearTimeout(findTimer);
   const d = doc_(); if (!d) return;
   const q = findInput.value;
-  const cs = !!findCase?.classList?.contains('on');
+  const cs = (findCase?.getAttribute('aria-pressed') === 'true');
 
   // The Markdown preview is searched as rendered text, in the page itself.
   if (previewing(d)) {
@@ -201,7 +202,7 @@ function onFindInput() {
       S.find = null;
       $('#find-count').textContent = '0';
       $('#minimap-hits').innerHTML = '';
-    } else if (S.find && (S.find.q !== findInput.value || S.find.cs !== !!findCase?.classList?.contains('on'))) {
+    } else if (S.find && (S.find.q !== findInput.value || S.find.cs !== (findCase?.getAttribute('aria-pressed') === 'true'))) {
       S.find = null;
       $('#find-count').textContent = '—';
       $('#minimap-hits').innerHTML = '';
@@ -229,7 +230,7 @@ export function initFind() {
     }
   });
   findCase.addEventListener('click', () => {
-    findCase.classList.toggle('on');
+    setPressed(findCase, findCase.getAttribute('aria-pressed') !== 'true');
     const d = doc_();
     if (d?.isEditing) {
       if (S.find) executeFind(0);

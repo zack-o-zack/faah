@@ -97,7 +97,7 @@ export function makeCardKeeper(el, { hide, grace = CARD_GRACE, pad = 16, corrido
     close() { keeper.cancel(); anchor = null; inside = false; },
     tick() {
       if (!el || el.hidden || !anchor) return;
-      if (inside || near(ptr)) keeper.cancel();
+      if (inside || el.contains?.(document.activeElement) || near(ptr)) keeper.cancel();
       else keeper.arm();
     },
   };
@@ -107,6 +107,7 @@ export function makeCardKeeper(el, { hide, grace = CARD_GRACE, pad = 16, corrido
     el.addEventListener('mouseleave', () => { inside = false; keeper.tick(); });
     // Tabbing to a button inside the card counts as being in it.
     el.addEventListener('focusin', () => keeper.cancel());
+    el.addEventListener('focusout', () => queueMicrotask(() => keeper.tick()));
   }
 
   keepers.add(keeper);

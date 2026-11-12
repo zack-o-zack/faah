@@ -1,3 +1,4 @@
+import { setPressed } from './controls.js';
 // web/src/inspector.js
 import { $, $$, esc, S, doc_, api } from './state.js';
 import { emit } from './bus.js';
@@ -10,15 +11,15 @@ import { displayPath, cancelSearch } from './search.js';
 import { groupHits, flashFind, canAskServer, lspCall, positionNow } from './lsp.js';
 
 export function firstInspectorTab() {
-  const first = Array.from($$('.inspector-tab')).find(b => !b.hidden);
+  const first = Array.from($$('[data-control~=inspector-tab]')).find(b => !b.hidden);
   return first?.dataset.itab || 'refs';
 }
 
 export function showRightInspector(tab) {
   document.body.classList.add('threads-hidden');
-  $('#btn-top-threads')?.classList.remove('active');
+  setPressed($('#btn-top-threads'), false);
   document.body.classList.remove('right-hidden');
-  $('#btn-open-right')?.classList.add('active');
+  setPressed($('#btn-open-right'), true);
   setRightInspectorTab(tab || firstInspectorTab());
   layout();
   render();
@@ -27,14 +28,14 @@ export function showRightInspector(tab) {
 export function hideRightInspector() {
   cancelSearch();
   document.body.classList.add('right-hidden');
-  $('#btn-open-right')?.classList.remove('active');
+  setPressed($('#btn-open-right'), false);
   layout();
   render();
 }
 
 export function setRightInspectorTab(tab) {
   if (tab !== 'search') cancelSearch();
-  $$('.inspector-tab').forEach(b => b.classList.toggle('active', b.dataset.itab === tab));
+  $$('[data-control~=inspector-tab]').forEach(b => setPressed(b, b.dataset.itab === tab));
   $('#pane-right-refs')?.classList.toggle('active', tab === 'refs');
   $('#pane-right-symbols')?.classList.toggle('active', tab === 'symbols');
   $('#pane-right-calls')?.classList.toggle('active', tab === 'calls');
@@ -61,24 +62,24 @@ export function renderRightResults(word, hits, server, isExact) {
   badgeEl.textContent = hits.length;
 
   if (!hits.length) {
-    listEl.innerHTML = '<div class="hint">No references found for "<b>' + esc(word) + '</b>".</div>';
+    listEl.innerHTML = '<div data-ui="hint" class="empty text-muted-foreground">No references found for "<b>' + esc(word) + '</b>".</div>';
     return;
   }
 
   const grouped = groupHits(hits);
   const head = hits.length + ' reference' + (hits.length === 1 ? '' : 's') +
     (server ? ' · ' + esc(server) : ' · text search');
-  let html = '<div class="hint">' + head + '</div>';
+  let html = '<div data-ui="hint" class="empty text-muted-foreground">' + head + '</div>';
 
   for (const f of grouped) {
-    html += '<div class="rfile" data-toggle="r-' + esc(f.path) + '" title="' + esc(f.path) + '">' +
-      '<span class="ar">&#9660;</span>' +
-      '<span class="fp">' + esc(displayPath(f.path)) + '</span>' +
-      '<span class="cnt">' + f.matches.length + '</span></div>' +
+    html += '<div data-ui="rfile" class="flex items-center gap-2 p-2 cursor-pointer hover:bg-accent select-none [&.closed_[data-ui~=ar]]:-rotate-90" data-toggle="r-' + esc(f.path) + '" title="' + esc(f.path) + '">' +
+      '<span data-ui="ar" class="icon-[lucide--chevron-down] size-3 shrink-0 text-muted-foreground" aria-hidden="true"></span>' +
+      '<span data-ui="fp" class="truncate min-w-0">' + esc(displayPath(f.path)) + '</span>' +
+      '<span data-ui="cnt" class="badge ml-auto">' + f.matches.length + '</span></div>' +
       '<div data-group="r-' + esc(f.path) + '">';
     for (const m of f.matches) {
-      html += '<div class="rline" data-p="' + esc(f.path) + '" data-n="' + m.line + '" title="Jump to ' + esc(f.path) + ':' + m.line + '">' +
-        '<span class="rn">' + m.line + '</span><span class="rt">' +
+      html += '<div data-ui="rline" class="flex min-w-0 items-center gap-2 p-2 cursor-pointer font-mono hover:bg-accent [&.sel]:bg-accent [&_mark]:bg-mark [&_mark]:text-inherit" data-p="' + esc(f.path) + '" data-n="' + m.line + '" title="Jump to ' + esc(f.path) + ':' + m.line + '">' +
+        '<span data-ui="rn" class="w-12 shrink-0 text-right text-muted-foreground">' + m.line + '</span><span data-ui="rt" class="flex-1 truncate text-muted-foreground">' +
         esc(m.pre) + '<mark>' + esc(m.mid || word) + '</mark>' + esc(m.post) + '</span></div>';
     }
     html += '</div>';
@@ -97,7 +98,7 @@ export async function inspectReferences(arg) {
   const listEl = $('#right-refs-list');
   if (targetEl) targetEl.textContent = at.word;
   if (badgeEl) badgeEl.textContent = '…';
-  if (listEl) listEl.innerHTML = '<div class="hint">Finding references for "' + esc(at.word) + '"…</div>';
+  if (listEl) listEl.innerHTML = '<div data-ui="hint" class="empty text-muted-foreground">Finding references for "' + esc(at.word) + '"…</div>';
 
   if (canAskServer(at)) {
     setStatusNote('references to ' + at.word + '…', 8000);
@@ -132,12 +133,12 @@ export async function inspectReferences(arg) {
   } catch (err) {
     updateStatus();
     setStatusNote('');
-    if (listEl) listEl.innerHTML = '<div class="hint">Search error: ' + esc(err.message) + '</div>';
+    if (listEl) listEl.innerHTML = '<div data-ui="hint" class="empty text-muted-foreground">Search error: ' + esc(err.message) + '</div>';
   }
 }
 
 export function initInspector() {
-  $$('.inspector-tab').forEach(btn => btn.addEventListener('click', () => {
+  $$('[data-control~=inspector-tab]').forEach(btn => btn.addEventListener('click', () => {
     setRightInspectorTab(btn.dataset.itab);
   }));
 
@@ -166,9 +167,9 @@ export function initInspector() {
 
   /* Right-side symbols list navigation */
   $('#right-symbols-list')?.addEventListener('click', e => {
-    const s = e.target.closest('.sym');
+    const s = e.target.closest('[data-ui~=sym]');
     if (!s) return;
-    $$('#right-symbols-list .sym.sel, #outline .sym.sel').forEach(x => x.classList.remove('sel'));
+    $$('#right-symbols-list [data-ui~=sym].sel, #outline [data-ui~=sym].sel').forEach(x => x.classList.remove('sel'));
     s.classList.add('sel');
     const d = doc_(); if (!d) return;
     d.cur = +s.dataset.n;
@@ -187,14 +188,14 @@ export function initInspector() {
       if (!g) return;
       const hidden = g.style.display === 'none';
       g.style.display = hidden ? '' : 'none';
-      const ar = $('.ar', t);
-      if (ar) ar.innerHTML = hidden ? '&#9660;' : '&#9654;';
+      const ar = $('[data-ui~=ar]', t);
+      if (ar) ar.classList.toggle('-rotate-90', !hidden);
       t.classList.toggle('closed', !hidden);
       return;
     }
-    const r = e.target.closest('.rline');
+    const r = e.target.closest('[data-ui~=rline]');
     if (r) {
-      $$('#right-refs-list .rline.sel').forEach(x => x.classList.remove('sel'));
+      $$('#right-refs-list [data-ui~=rline].sel').forEach(x => x.classList.remove('sel'));
       r.classList.add('sel');
       openFile(r.dataset.p, { line: +r.dataset.n });
       const targetEl = $('#right-ref-target');

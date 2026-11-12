@@ -70,10 +70,14 @@ func TestThemesStylesheetJoinsEveryThemeFile(t *testing.T) {
 	if len(files) == 0 {
 		t.Fatal("no themes in web/themes")
 	}
-	// Tokens with no fallback in style.css. Keep in sync with docs/internals/styling-and-themes.md.
+	// Required theme tokens read by the Tailwind entry. Keep in sync with docs/internals/styling-and-themes.md.
 	required := []string{
-		"--bg", "--bg2", "--bg3", "--bg4", "--fg", "--dim", "--faint", "--line",
-		"--accent", "--accent-fg", "--sel", "--mark", "--mark-active", "--cur", "--shadow",
+		"--background", "--foreground", "--card", "--card-foreground", "--popover", "--popover-foreground",
+		"--secondary", "--secondary-foreground", "--muted", "--muted-foreground", "--accent", "--accent-foreground",
+		"--sidebar", "--sidebar-foreground", "--sidebar-accent", "--sidebar-accent-foreground",
+		"--border", "--input", "--sidebar-border", "--primary", "--ring", "--sidebar-primary", "--sidebar-ring",
+		"--primary-foreground", "--sidebar-primary-foreground", "--primary-text", "--faint",
+		"--destructive", "--sel", "--mark", "--mark-active", "--cur", "--shadow",
 		"--k", "--nf", "--s", "--m", "--c", "--err",
 	}
 	body := rec.Body.String()
@@ -87,6 +91,11 @@ func TestThemesStylesheetJoinsEveryThemeFile(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		for _, old := range []string{"--bg", "--bg2", "--bg3", "--bg4", "--fg", "--dim", "--line", "--accent-fg", "--on-accent"} {
+			if strings.Contains(string(src), old+":") {
+				t.Errorf("%s: obsolete token %s", f, old)
+			}
+		}
 		for _, tok := range required {
 			if !strings.Contains(string(src), tok+":") {
 				t.Errorf("%s: missing required token %s", f, tok)
@@ -98,14 +107,14 @@ func TestThemesStylesheetJoinsEveryThemeFile(t *testing.T) {
 func TestStaticAssetServing(t *testing.T) {
 	s, _ := newTestServer(t)
 
-	// 1. Serving uncompressed assets (e.g. style.css)
+	// 1. Serving uncompressed assets (e.g. app.css)
 	rec := httptest.NewRecorder()
-	s.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/static/style.css", nil))
+	s.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/static/app.css", nil))
 	if rec.Code != http.StatusOK {
-		t.Fatalf("style.css status %d", rec.Code)
+		t.Fatalf("app.css status %d", rec.Code)
 	}
 	if ct := rec.Header().Get("Content-Type"); !strings.HasPrefix(ct, "text/css") {
-		t.Errorf("style.css content-type: %s", ct)
+		t.Errorf("app.css content-type: %s", ct)
 	}
 
 	// 2. Serving compressed vendor assets with Accept-Encoding: gzip
@@ -1012,7 +1021,7 @@ func TestSetRawHeaders(t *testing.T) {
 		{"index.html", "application/octet-stream", "index.html"},
 		{"app.js", "application/octet-stream", "app.js"},
 		{"main.go", "application/octet-stream", "main.go"},
-		{"nested/path/style.css", "application/octet-stream", "style.css"},
+		{"nested/path/theme.css", "application/octet-stream", "theme.css"},
 		{"assets/logo.png", "image/png", "logo.png"},
 		{"assets/photo.jpg", "image/jpeg", "photo.jpg"},
 		{"assets/anim.gif", "image/gif", "anim.gif"},

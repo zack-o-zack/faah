@@ -81,7 +81,7 @@ The internal documentation is modularized into the following focused guides:
 - [Image Viewer & Asset Inspection](image-viewer.md): First-class image tabs, interactive viewport transforms (zoom, drag-to-pan, fit-to-window), background contrast cycling, adaptive smooth vs. pixelated rendering, and Markdown click-to-expand lightbox.
 - [File Updates & In-Place Tab Reloading](file-reload-and-updates.md): End-to-end flow for workspace reindex and tab refreshing, in-place document reconciliation, concurrent chunk fetches, live viewport/markdown scroll snapshotting, and file shrinkage handling.
 - [Markdown Preview Implementation](markdown.md): Goldmark pipeline, source line anchors (`data-line`), robust browser-side DOM allowlist sanitizer, and synchronized bi-directional scrolling between preview and source.
-- [Theme Architecture & CSS Tokens](styling-and-themes.md): CSS custom property token architecture, zero literal colors in `style.css`, dynamic stylesheet discovery at `/static/themes.css`, and custom theme authoring.
+- [Theme Architecture & CSS Tokens](styling-and-themes.md): CSS custom property token architecture, zero literal colors in `web/tailwind.css`, dynamic stylesheet discovery at `/static/themes.css`, and custom theme authoring.
 
 ### Operations & Maintenance
 

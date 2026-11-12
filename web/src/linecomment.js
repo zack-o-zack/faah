@@ -12,13 +12,13 @@ let pressedSel = null;
 
 export function initLineComment() {
   document.addEventListener('mousedown', e => {
-    const btn = /** @type {HTMLElement|null} */ (e.target)?.closest?.('.line-btn');
+    const btn = /** @type {HTMLElement|null} */ (e.target)?.closest?.('[data-control~=line-btn]');
     pressedSel = btn ? getSelectedRangeInfo() : null;
     if (btn) e.preventDefault(); // keep the selection alive
   }, true);
   document.addEventListener('click', e => {
     const target = /** @type {HTMLElement|null} */ (e.target);
-    const btn = target?.closest('.line-btn');
+    const btn = target?.closest('[data-control~=line-btn]');
     if (!btn) return;
     e.preventDefault();
     e.stopPropagation();
@@ -45,7 +45,7 @@ function handleLineBtnClick(btn, sel) {
 
   // On a line GitHub knows about in a PR review session the menu's review
   // action needs the diff side, so build the richer description for it. Rows
-  // marked non-reviewable (diff.js's "Your changes" section, i.e. edits the
+  // marked non-reviewable (diff.js's "Not pushed" section, i.e. edits the
   // reviewer made locally since checkout) get a plain line instead: there is
   // nothing a submitted review could attach a comment to.
   if (diffRow && diffRow.dataset.reviewable !== '0' && S.meta?.pr && getReviewHandler()) {

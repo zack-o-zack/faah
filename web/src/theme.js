@@ -48,9 +48,11 @@ export function listThemes() {
 export const currentTheme = () => document.documentElement.dataset.theme;
 
 export function setTheme(id, persist = true) {
-  if (!listThemes().some(t => t.id === id)) return false;
+  const theme = listThemes().find(t => t.id === id);
+  if (!theme) return false;
   const changed = currentTheme() !== id;
   document.documentElement.dataset.theme = id;
+  document.documentElement.classList.toggle('dark', theme.scheme === 'dark');
   if (persist) {
     try { localStorage.setItem(KEY, id); } catch {}
     void apiPostJson('api/settings', { 'workbench.colorTheme': id }).catch(() => {});
