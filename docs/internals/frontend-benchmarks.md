@@ -160,3 +160,72 @@ Profile: [bench-out/profile.scroll.cpuprofile](../../bench-out/profile.scroll.cp
 The six statistics/profile unit tests, existing frontend check (51 passing tests,
 one existing optional tips-file skip), and full Go suite pass. The benchmark
 finished with zero failures. No files under `web/` or Go source were changed.
+
+## A1 — 13 November 2026
+
+Five runs on the same M4, Chrome 157.0.8103.51, React revision and synthetic
+fixture hashes as the vanilla baseline. Harness: Node 24.12.0; frontend build:
+Vite 8.3.8 under Node 24.15.0; Go 1.27.3; implementation `d2ad991`.
+Values use the existing pooled-sample
+contract. Raw samples: [a1-solid.json](../../scripts/bench-web/a1-solid.json);
+paired trace and heap summaries: [a1-profile-evidence.json](../../scripts/bench-web/a1-profile-evidence.json).
+
+| Metric | Unit | Vanilla median / p95 | A1 median / p95 | Median change |
+|---|---|---:|---:|---:|
+| cold.real.tree | ms | 526.80 / 725.90 | 495.90 / 718.00 | -5.9% |
+| cold.real.idle | ms | 1047.70 / 1254.20 | 1013.00 / 1237.20 | -3.3% |
+| cold.real.js_transfer | bytes | 160765.00 / 160765.00 | 166781.00 / 166781.00 | 3.7% |
+| cold.real.heap | bytes | 3126872.00 / 3165368.00 | 3601100.00 / 3610660.00 | 15.2% |
+| cold.real.dom_nodes | nodes | 4064.00 / 4064.00 | 4133.00 / 4133.00 | 1.7% |
+| cold.synthetic.tree | ms | 509.30 / 1089.70 | 506.90 / 524.40 | -0.5% |
+| cold.synthetic.idle | ms | 1033.90 / 1618.30 | 1019.40 / 1039.00 | -1.4% |
+| cold.synthetic.js_transfer | bytes | 160765.00 / 160765.00 | 166781.00 / 166781.00 | 3.7% |
+| cold.synthetic.heap | bytes | 3107440.00 / 3112712.00 | 3563904.00 / 3574940.00 | 14.7% |
+| cold.synthetic.dom_nodes | nodes | 4060.00 / 4060.00 | 4059.00 / 4059.00 | 0.0% |
+| finder.keystroke | ms | 64.20 / 78.50 | 77.30 / 79.20 | 20.4% |
+| file.open_50k | ms | 43.90 / 74.50 | 45.90 / 70.60 | 4.6% |
+| scroll.frame | ms | 16.70 / 16.80 | 16.70 / 16.80 | 0.0% |
+| scroll.frames_over_16_7 | frames | 17.00 / 19.00 | 13.00 / 16.00 | -23.5% |
+| scroll.long_tasks | tasks | 0.00 / 0.00 | 0.00 / 0.00 | — |
+| scroll.long_task_total | ms | 0.00 / 0.00 | 0.00 / 0.00 | — |
+| scroll.geometry_misses | checkpoints | 0.00 / 0.00 | 0.00 / 0.00 | — |
+| scroll.content_misses | checkpoints | 0.00 / 0.00 | 0.00 / 0.00 | — |
+| cursor.interaction | ms | 24.00 / 40.00 | 24.00 / 40.00 | 0.0% |
+| cursor.interactions_ge_16 | interactions | 300.00 / 300.00 | 300.00 / 300.00 | 0.0% |
+| edit.enter_50k | ms | 1647.20 / 1674.60 | 529.30 / 551.30 | -67.9% |
+| edit.keystroke | ms | 103.90 / 126.60 | 36.50 / 40.20 | -64.9% |
+| edit.interaction | ms | 88.00 / 112.00 | 40.00 / 40.00 | -54.5% |
+| edit.interactions_ge_16 | interactions | 200.00 / 200.00 | 200.00 / 200.00 | 0.0% |
+| tabs.switch | ms | 31.45 / 36.00 | 30.65 / 35.00 | -2.5% |
+| tree.expand_20k | ms | 1224.50 / 1452.70 | 1128.10 / 1164.60 | -7.9% |
+| tree.reveal_deep | ms | 140.80 / 233.20 | 114.40 / 186.20 | -18.8% |
+| search.results | ms | 895.60 / 972.30 | 874.50 / 887.10 | -2.4% |
+| preview.markdown_5k | ms | 194.20 / 391.70 | 119.60 / 185.10 | -38.4% |
+| preview.csv_20k | ms | 118.70 / 133.60 | 103.90 / 106.00 | -12.5% |
+| memory.heap_delta | bytes | 409988.00 / 411328.00 | 602756.00 / 603528.00 | 47.0% |
+| memory.dom_delta | nodes | 20.00 / 20.00 | 20.00 / 20.00 | 0.0% |
+| memory.attached_delta | elements | 0.00 / 0.00 | 0.00 / 0.00 | — |
+
+- Global CSS Highlight rules made every explorer node compute highlight inheritance.
+  Three expansion-only traces per variant measured median style recalculation of
+  671ms at `33c8596`, 1,012ms before the fix and 668ms after scoping to `#rows`.
+  Median expansion was 1,132 / 1,502 / 1,135ms respectively; tree source is unchanged.
+- Finder remains 20.4% above the original vanilla table. Fresh three-run comparisons
+  of `33c8596` and A1 measured 76.1 / 77.4ms (p95 79.6 / 79.1ms), a 1.7% A1
+  difference. Both runs retain the 40ms debounce and two rAF callbacks; the
+  final finder CPU profile is 82% idle. The paired cursor medians were both 32ms;
+  300 keydown dispatches took 87 / 83ms total and style work fell 130 / 74ms.
+- Full cold heap snapshots after GC: baseline 1,914,604 bytes; A1 2,337,388 bytes
+  (+422,784). Compiled code accounts for +218,936 bytes, objects +31,848, closures
+  +24,256 and arrays +23,812. There are no file-sized startup buffers; Vim help
+  is unmounted. Selection actions now mount on demand, and ending editing or
+  closing the tab clears the native textarea's full-text copy.
+- In separate snapshot runs, the first tab cycle retained 435,236 / 642,576 bytes
+  (baseline / A1). Cold-to-first-cycle compiled code grew 810,812 / 975,368 bytes;
+  this warm-up contributes to the larger first-cycle delta. A1 cycles two and three
+  retained 98,000 / 55,876 bytes. Between cycles one and three, code grew 163,936 of
+  181,120 bytes (90.5%);
+  closure bytes stayed at 220,124. Small history arrays grow toward their existing
+  caps; attached DOM growth stays zero. This is code warm-up plus the editor's
+  reactive graph, with no accumulating closed-tab closures in these snapshots.
+- CSV still renders the existing 1,000-row cap. The remote tips URL still returns 404.
