@@ -499,9 +499,9 @@
         <span id="pr-merged-badge" class="badge" data-variant="secondary" data-control="pr-merged-badge" hidden>Merged</span>
         <span id="pr-refs" data-ui="pr-refs" class="flex-none font-mono text-muted-foreground"></span>
         <button id="pr-merge-state" type="button" hidden class="btn" data-control="pr-merge-state" data-variant="outline" data-size="xs"></button>
-        <button id="pr-rebase-ai" type="button" hidden title="Rebase onto base branch with AI and resolve conflicts" class="btn" data-control="bar-action pr-btn-rebase-ai" data-variant="ghost" data-size="xs">
-          <span class="icon-[lucide--zap] size-3 shrink-0" aria-hidden="true"></span>
-          <span class="bar-action-label text-xs font-medium desktop:hidden">Rebase with AI</span>
+        <button id="pr-rebase-ai" type="button" hidden title="Have the harness rebase onto the base branch and resolve conflicts" class="btn" data-control="bar-action pr-btn-rebase-ai" data-variant="ghost" data-size="xs">
+          <span class="icon-[lucide--sparkles] size-3.5 shrink-0" aria-hidden="true"></span>
+          <span class="bar-action-label text-xs font-medium desktop:hidden">Rebase</span>
         </button>
         <span class="flex-1 min-w-0"></span>
         <span id="pr-diff-warning" data-ui="pr-diff-warning" class="flex-none p-3 text-destructive" hidden><span class="icon-[lucide--triangle-alert] size-3.5 shrink-0" aria-hidden="true"></span> diff base unresolved</span>
@@ -510,13 +510,13 @@
       </div>
       <div data-ui="pr-bar-row pr-review-row" class="flex items-start min-w-0 gap-2">
         <textarea id="pr-review-body" aria-label="Review summary" rows="1" spellcheck="false" autocomplete="off" placeholder="Review summary (optional)" class="textarea min-h-8 max-h-40 flex-1 resize-none py-1.5 [field-sizing:content]" data-control="pr-review-body"></textarea>
-        <button id="pr-batch-apply" hidden title="Dispatch AI agent to apply all draft review comments directly to the codebase" class="btn" data-control="bar-action pr-btn-batch-apply" data-variant="ghost" data-size="sm">
-          <span class="icon-[lucide--zap] size-3 shrink-0" aria-hidden="true"></span>
-          <span class="bar-action-label text-xs font-medium desktop:hidden">Batch Apply</span>
+        <button id="pr-batch-apply" hidden title="Have the harness apply your draft comments to the code" class="btn" data-control="bar-action pr-btn-batch-apply" data-variant="ghost" data-size="sm">
+          <span class="icon-[lucide--sparkles] size-3.5 shrink-0" aria-hidden="true"></span>
+          <span class="bar-action-label">Apply drafts</span>
         </button>
-        <button id="pr-submit-comment" title="Submit review with drafts, without approval or change requests" class="btn" data-control="bar-action pr-btn-neutral" data-variant="outline" data-size="sm">Submit Review</button>
-        <button id="pr-submit-request-changes" hidden title="Request changes on this PR" class="btn" data-control="bar-action pr-btn-request-changes" data-variant="destructive" data-size="sm">Request Changes</button>
-        <button id="pr-submit-approve" hidden title="Approve this PR" class="btn" data-control="bar-action pr-btn-approve" data-variant="primary" data-size="sm">Approve</button>
+        <button id="pr-submit-comment" title="Submit review with drafts, without approval or change requests" class="btn" data-control="bar-action pr-btn-neutral" data-variant="outline" data-size="sm"><span class="icon-[lucide--message-square] size-3.5 shrink-0" aria-hidden="true"></span>Comment</button>
+        <button id="pr-submit-request-changes" hidden title="Request changes on this PR" class="btn" data-control="bar-action pr-btn-request-changes" data-variant="outline" data-size="sm"><span class="icon-[lucide--circle-x] size-3.5 shrink-0 text-destructive" aria-hidden="true"></span>Request changes</button>
+        <button id="pr-submit-approve" hidden title="Approve this PR" class="btn" data-control="bar-action pr-btn-approve" data-variant="primary" data-size="sm"><span class="icon-[lucide--check] size-3.5 shrink-0" aria-hidden="true"></span>Approve</button>
         <!-- Merge: split button -- the last-used method, and a caret to pick another (web/src/prmerge.js) -->
         <div id="pr-merge-group" data-ui="pr-merge-group" class="relative flex flex-none gap-px" hidden>
           <button id="pr-merge" type="button" class="btn" data-control="bar-action pr-btn-merge" data-variant="primary" data-size="sm">Squash and merge</button>
@@ -538,10 +538,16 @@
         <button id="pr-comments-collapse" title="Expand/collapse comments panel" class="btn" data-control="pr-comments-collapse" data-variant="ghost" data-size="icon-xs" aria-label="Expand/collapse comments panel"><span class="icon-[lucide--chevron-down] size-3.5 shrink-0" aria-hidden="true"></span></button>
       </div>
       <div id="pr-comments-body" data-ui="pr-comments-body" class="flex flex-1 min-h-0 flex-col group-[.collapsed]/comments:hidden">
-        <div id="pr-comments-list" data-ui="pr-comments-list" class="flex flex-col flex-1 min-h-0 overflow-y-auto gap-2 p-3"></div>
-        <div id="pr-issue-compose" data-ui="pr-issue-compose" class="flex items-start flex-none gap-2 p-3">
-          <textarea id="pr-issue-compose-body" aria-label="Pull request comment" rows="2" spellcheck="false" autocomplete="off" placeholder="Write a comment on the PR conversation..." class="textarea resize-y" data-control="pr-review-body"></textarea>
-          <button id="pr-issue-compose-send" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs">Post Comment</button>
+        <div id="pr-comments-list" data-ui="pr-comments-list" class="[&>*]:shrink-0 flex flex-col flex-1 min-h-0 overflow-y-auto gap-2 p-3"></div>
+        <div id="pr-issue-compose" data-ui="pr-issue-compose" class="flex-none p-3 pt-0">
+          <div class="input-group" data-orientation="vertical">
+            <textarea id="pr-issue-compose-body" aria-label="Pull request comment" rows="1" spellcheck="false" autocomplete="off" placeholder="Comment on this pull request" class="max-h-40 min-h-9" data-control="pr-review-body"></textarea>
+            <footer data-align="block-end" class="gap-1">
+              <span class="text-xs text-muted-foreground">Markdown supported</span>
+              <span class="flex-1"></span>
+              <button id="pr-issue-compose-send" type="button" disabled title="Post comment (Mod+Enter)" aria-label="Post comment" class="btn rounded-full" data-variant="primary" data-size="icon-sm"><span class="icon-[lucide--arrow-up] size-4" aria-hidden="true"></span></button>
+            </footer>
+          </div>
         </div>
       </div>
     </div>

@@ -209,6 +209,12 @@ function mdSanitize(html, docPath) {
   return frag;
 }
 
+// Server-rendered Markdown from anywhere but a workspace file (a PR comment),
+// cleaned the same way as the preview.
+export function sanitizeMarkdown(html) {
+  return mdSanitize(html, '');
+}
+
 /* Native media queries follow the OS; pictures in the preview follow the app theme. */
 function syncMarkdownPictures(root = mdArticle) {
   const scheme = getComputedStyle(document.documentElement).colorScheme === 'dark' ? 'dark' : 'light';

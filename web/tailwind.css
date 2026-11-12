@@ -443,6 +443,12 @@
   .thr-body blockquote.thr-alert-warning { border-left-color: var(--mark-active); }
   .thr-body blockquote.thr-alert-important { border-left-color: var(--nc); }
   .thr-body blockquote.thr-alert-caution { border-left-color: var(--destructive); }
+  /* PR comments come as forge HTML: blocks need their own rhythm. */
+  .pr-md > * + *, .pr-md :is(blockquote, details, li) > * + * { margin-top: 8px; }
+  .pr-md details { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px 10px; }
+  .pr-md summary { cursor: pointer; color: var(--muted-foreground); }
+  .pr-md details[open] > summary { color: var(--foreground); }
+  .pr-md img { max-width: 100%; }
   .thr-body code { font: var(--t-11-5) var(--mono); background: var(--muted); border-radius: 3px; padding: 0 3px; }
   .thr-body .thr-pre { position: relative; }
   .thr-body pre {

@@ -62,6 +62,7 @@ type PRComment struct {
 	Author    string `json:"author"`
 	AvatarURL string `json:"avatarUrl,omitempty"`
 	Body      string `json:"body"`
+	BodyHTML  string `json:"bodyHtml,omitempty"` // Body rendered as Markdown; the page sanitizes it
 	CreatedAt string `json:"createdAt"`
 	URL       string `json:"url"`
 }

@@ -17,6 +17,8 @@ import { layout, render } from './renderer.js';
 import { initPRMerge, refreshMergeStatus, reviewGate } from './prmerge.js';
 import { openForgeConnect } from './forgeconnect.js';
 import { on } from './bus.js';
+import { sanitizeMarkdown } from './markdown.js';
+import { thrMd } from './thread.js';
 
 let meta = null;      // this session's PR info: {number, title, base, head, writeAccess, readOnly}
 let comments = [];    // draft comments known to the server
@@ -184,6 +186,16 @@ function wireBarButtons() {
   $('#pr-submit-request-changes')?.addEventListener('click', () => submitReview('REQUEST_CHANGES'));
   $('#pr-submit-approve')?.addEventListener('click', () => submitReview('APPROVE'));
   $('#pr-issue-compose-send')?.addEventListener('click', sendNewIssueComment);
+  const composeTa = $('#pr-issue-compose-body');
+  const composeBtn = $('#pr-issue-compose-send');
+  if (composeBtn) composeBtn.title = withKeys('Post comment ({Mod+Enter})');
+  composeTa?.addEventListener('input', syncComposeSend);
+  composeTa?.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      sendNewIssueComment();
+    }
+  });
   $('#pr-readonly-note')?.addEventListener('click', nudgeForgeToken);
 }
 
@@ -197,7 +209,8 @@ async function sendNewIssueComment() {
   const body = ta.value.trim();
   if (!body) return;
   const btn = $('#pr-issue-compose-send');
-  if (btn) btn.disabled = true;
+  if (btn?.dataset.busy) return;
+  if (btn) { btn.disabled = true; btn.dataset.busy = '1'; }
   try {
     const c = await apiPostJson('/api/pr/comments/issue', { body });
     issueComments.push(c);
@@ -208,8 +221,14 @@ async function sendNewIssueComment() {
   } catch (e) {
     showToast('error', e.message || 'Could not post comment');
   } finally {
-    if (btn) btn.disabled = false;
+    if (btn) delete btn.dataset.busy;
+    syncComposeSend();
   }
+}
+
+function syncComposeSend() {
+  const btn = $('#pr-issue-compose-send');
+  if (btn && !btn.dataset.busy) btn.disabled = !$('#pr-issue-compose-body')?.value.trim();
 }
 
 // Only the label swaps text; the icon markup (SVG + .bar-action-label span,
@@ -228,7 +247,7 @@ async function batchApplyComments() {
   const btn = $('#pr-batch-apply');
   if (btn) {
     btn.disabled = true;
-    setBatchBtnLabel(btn, 'Applying...');
+    setBatchBtnLabel(btn, 'Applying…');
   }
   const edits = applicable.map(c => ({
     path: c.path,
@@ -243,7 +262,7 @@ async function batchApplyComments() {
   } catch (e) {
     if (btn) {
       btn.disabled = false;
-      setBatchBtnLabel(btn, 'Batch Apply');
+      setBatchBtnLabel(btn, 'Apply drafts');
     }
     showToast('error', e.message || 'Could not dispatch batch edit');
   }
@@ -256,13 +275,13 @@ async function pollPRBatch(id, count) {
       const j = await api('/api/agent/job?id=' + id);
       if (j.running) {
         const sec = Math.round((j.ms || 0) / 1000);
-        if (btn) setBatchBtnLabel(btn, `Applying... (${sec}s)`);
+        if (btn) setBatchBtnLabel(btn, `Applying… ${sec}s`);
         setTimeout(poll, 600);
         return;
       }
       if (btn) {
         btn.disabled = false;
-        setBatchBtnLabel(btn, 'Batch Apply');
+        setBatchBtnLabel(btn, 'Apply drafts');
       }
       if (j.error) {
         showToast('error', `Agent error: ${j.error}`);
@@ -275,7 +294,7 @@ async function pollPRBatch(id, count) {
     } catch (e) {
       if (btn) {
         btn.disabled = false;
-        setBatchBtnLabel(btn, 'Batch Apply');
+        setBatchBtnLabel(btn, 'Apply drafts');
       }
       showToast('error', e.message || 'Batch failed');
     }
@@ -610,6 +629,7 @@ function wireCommentsPanel() {
   $('#pr-comments-list')?.addEventListener('click', e => {
     const replyBtn = e.target.closest('[data-control~=pr-issue-comment-reply-btn]');
     if (replyBtn) {
+      e.preventDefault(); // it sits in the card's summary: reply, don't fold
       const ta = $('#pr-issue-compose-body');
       if (ta) {
         const prefix = replyBtn.dataset.author ? '@' + replyBtn.dataset.author + ' ' : '';
@@ -708,39 +728,82 @@ function revealThreadInPanel(key) {
 // time, a one-line ellipsized preview of the body) and an [data-ui~=acc-body] that's
 // only in the flow when the item carries the 'open' class -- so a scan of
 // the panel is just headers until you click one open to read and reply.
+// One line of what a reader sees first: no HTML comments or tags, no
+// Markdown markers, no alert labels.
+function commentPreview(body) {
+  return (body || '').replace(/<!--[\s\S]*?-->/g, ' ').replace(/<[^>]*>/g, ' ')
+    .replace(/\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]/gi, ' ').replace(/^[\s>#*-]+/gm, '')
+    .replace(/[`*_|]|-{3,}/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+// Bodies render after the list is in place: posted comments from the
+// server's Markdown (sanitized here), drafts from the thread renderer.
+function commentBodyHtml(c) {
+  const fallback = c.bodyHtml ? esc(commentPreview(c.body)) : thrMd(c.body || '');
+  return '<div data-ui="pr-issue-comment-body" class="thr-body pr-md min-w-0 text-sm leading-relaxed wrap-anywhere"' +
+    (c.bodyHtml ? ' data-md-key="' + esc(String(c.kind || '') + ':' + c.id) + '"' : '') + '>' + fallback + '</div>';
+}
+
+const ALERT_KINDS = ['note', 'tip', 'important', 'warning', 'caution'];
+
+function fillCommentBodies(listEl) {
+  const byKey = new Map([...issueComments, ...reviewComments].map(c => [String(c.kind || '') + ':' + c.id, c]));
+  for (const el of listEl.querySelectorAll('[data-md-key]')) {
+    const c = byKey.get(el.dataset.mdKey);
+    if (!c?.bodyHtml) continue;
+    const frag = sanitizeMarkdown(c.bodyHtml);
+    // GitHub alerts: a quote that opens with [!NOTE] and the like.
+    for (const q of frag.querySelectorAll('blockquote')) {
+      const p = q.firstElementChild;
+      const m = p?.localName === 'p' && /^\s*\[!(\w+)\]\s*/.exec(p.textContent);
+      const kind = m && m[1].toLowerCase();
+      if (!kind || !ALERT_KINDS.includes(kind)) continue;
+      const first = p.firstChild;
+      if (first?.nodeType === 3) first.textContent = first.textContent.replace(/^\s*\[!\w+\]\s*/, '');
+      if (!p.textContent.trim() && !p.querySelector('img')) p.remove();
+      q.classList.add('thr-alert', 'thr-alert-' + kind);
+      const title = document.createElement('p');
+      title.className = 'thr-alert-title';
+      title.textContent = kind;
+      q.prepend(title);
+    }
+    el.replaceChildren(frag);
+  }
+}
+
 function issueCommentCardHtml(c) {
   const key = 'issue:' + c.id;
   const open = expandedKeys.has(key);
-  return '<details data-ui="acc-item pr-comment-card" class="card flex flex-col gap-2 p-3 [&.reply]:ml-4 [&.draft]:border-dashed group/accordion' + '"' + (open ? ' open' : '') + ' data-acc="' + esc(key) + '">' +
+  return '<details data-ui="acc-item pr-comment-card" class="card flex flex-col gap-0! px-3! py-2! [&.reply]:ml-4 [&.draft]:border-dashed group/accordion' + '"' + (open ? ' open' : '') + ' data-acc="' + esc(key) + '">' +
     '<summary data-ui="acc-head" class="flex items-center gap-2 min-w-0 cursor-pointer">' +
       '<span data-ui="acc-chevron" class="icon-[lucide--chevron-right] size-3.5 shrink-0 text-muted-foreground group-open/accordion:rotate-90" aria-hidden="true"></span>' +
-      '<span data-ui="pr-issue-comment-author" class="">' + esc(c.author || 'unknown') + '</span>' +
-      '<span data-ui="pr-issue-comment-time" class="text-muted-foreground">' + esc(fmtTime(c.createdAt)) + '</span>' +
-      '<span data-ui="acc-preview" class="flex-1 truncate text-muted-foreground group-open/accordion:hidden">' + esc(c.body) + '</span>' +
+      '<span data-ui="pr-issue-comment-author" class="shrink-0 font-medium">' + esc(c.author || 'unknown') + '</span>' +
+      '<span data-ui="pr-issue-comment-time" class="shrink-0 text-muted-foreground">' + esc(fmtTime(c.createdAt)) + '</span>' +
+      '<span data-ui="acc-preview" class="min-w-0 flex-1 truncate text-muted-foreground group-open/accordion:hidden">' + esc(commentPreview(c.body)) + '</span>' +
+      '<button type="button" data-author="' + esc(c.author || '') + '" class="btn ms-auto" data-control="pr-issue-comment-reply-btn" data-variant="ghost" data-size="icon-xs" title="Reply" aria-label="Reply"><span class="icon-[lucide--reply] size-3.5 shrink-0" aria-hidden="true"></span></button>' +
     '</summary>' +
-    '<div data-ui="acc-body" class="flex flex-col gap-2">' +
-      '<div data-ui="pr-issue-comment-body" class="whitespace-pre-wrap wrap-anywhere">' + esc(c.body) + '</div>' +
-      '<button data-author="' + esc(c.author || '') + '" class="btn" data-control="pr-issue-comment-reply-btn" data-variant="outline" data-size="xs">Reply</button>' +
+    '<div data-ui="acc-body" class="mt-2 flex flex-col gap-2">' +
+      commentBodyHtml(c) +
     '</div>' +
   '</details>';
 }
 
 function reviewCommentCardHtml(c) {
-  return '<div data-ui="pr-comment-card" class="card flex flex-col gap-2 p-3 [&.reply]:ml-4 [&.draft]:border-dashed' + (c.inReplyTo ? ' reply' : '') + '">' +
+  return '<div data-ui="pr-comment-card" class="card flex flex-col gap-2! p-3! [&.reply]:ml-4 [&.draft]:border-dashed' + (c.inReplyTo ? ' reply' : '') + '">' +
     '<div data-ui="pr-issue-comment-head" class="flex items-baseline min-w-0 gap-2">' +
-      '<span data-ui="pr-issue-comment-author" class="">' + esc(c.author || 'unknown') + '</span>' +
+      '<span data-ui="pr-issue-comment-author" class="font-medium">' + esc(c.author || 'unknown') + '</span>' +
       '<span data-ui="pr-issue-comment-time" class="text-muted-foreground">' + esc(fmtTime(c.createdAt)) + '</span>' +
     '</div>' +
-    '<div data-ui="pr-issue-comment-body" class="whitespace-pre-wrap wrap-anywhere">' + esc(c.body) + '</div>' +
+    commentBodyHtml(c) +
   '</div>';
 }
 
 function draftCardHtml(c) {
-  return '<div data-ui="pr-comment-card" class="card flex flex-col gap-2 p-3 [&.reply]:ml-4 [&.draft]:border-dashed draft">' +
+  return '<div data-ui="pr-comment-card" class="card flex flex-col gap-2! p-3! [&.reply]:ml-4 [&.draft]:border-dashed draft">' +
     '<div data-ui="pr-issue-comment-head" class="flex items-baseline min-w-0 gap-2"><span data-ui="pr-issue-comment-author" class="">You (draft, not yet submitted)</span></div>' +
-    '<div data-ui="pr-issue-comment-body" class="whitespace-pre-wrap wrap-anywhere">' + esc(c.body) + '</div>' +
+    commentBodyHtml(c) +
     '<div data-ui="pr-comment-card-actions" class="flex gap-2">' +
-      '<button data-draft-id="' + c.id + '" class="btn" data-control="pr-comment-delete-btn" data-variant="destructive" data-size="xs">Delete draft</button>' +
+      '<button type="button" data-draft-id="' + c.id + '" class="btn" data-control="pr-comment-delete-btn" data-variant="ghost" data-size="icon-xs" title="Delete draft" aria-label="Delete draft"><span class="icon-[lucide--trash-2] size-3.5 shrink-0" aria-hidden="true"></span></button>' +
     '</div>' +
   '</div>';
 }
@@ -763,7 +826,7 @@ function threadHtml(path, t, key) {
   const total = sortedExisting.length + t.drafts.length;
   const countBadge = total > 1 ? '<span class="badge" data-variant="secondary">' + total + '</span>' : '';
   const preview = root ? root.body : (t.drafts[0]?.body || '');
-  return '<details data-ui="acc-item pr-comment-thread" class="card flex flex-col gap-2 p-3 group/accordion' + '"' + (open ? ' open' : '') + ' data-thread-key="' + esc(key) + '" data-acc="' + esc(accKey) + '">' +
+  return '<details data-ui="acc-item pr-comment-thread" class="card flex flex-col gap-2! p-3! group/accordion' + '"' + (open ? ' open' : '') + ' data-thread-key="' + esc(key) + '" data-acc="' + esc(accKey) + '">' +
     '<summary data-ui="acc-head" class="flex items-center gap-2 min-w-0 cursor-pointer">' +
       '<span data-ui="acc-chevron" class="icon-[lucide--chevron-right] size-3.5 shrink-0 text-muted-foreground group-open/accordion:rotate-90" aria-hidden="true"></span>' +
       '<span data-ui="pr-comment-loc" class="inline-flex items-center cursor-pointer w-fit gap-2 p-3 font-mono text-primary-text" data-path="' + esc(path) + '" data-line="' + t.line + '">' + esc(loc) + '</span>' +
@@ -801,17 +864,16 @@ function renderCommentsPanel() {
   }
 
   const totalReview = reviewComments.length + comments.length;
-  let html = '<div data-ui="pr-comments-section-title" class="label text-muted-foreground">Conversation' +
-    (issueComments.length ? ' (' + issueComments.length + ')' : '') + '</div>';
-  html += issueComments.length
-    ? [...issueComments].sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || '')).map(issueCommentCardHtml).join('')
-    : '<div data-ui="pr-comments-empty" class="empty p-3 text-muted-foreground">No top-level comments yet.</div>';
-
-  html += '<div data-ui="pr-comments-section-title" class="label text-muted-foreground">Review comments' +
-    (totalReview ? ' (' + totalReview + ')' : '') + '</div>';
-  if (byPath.size === 0) {
-    html += '<div data-ui="pr-comments-empty" class="empty p-3 text-muted-foreground">No inline comments yet.</div>';
-  } else {
+  // Headings only earn their place when both kinds are there to tell apart.
+  const both = issueComments.length && byPath.size;
+  const heading = t => both ? '<div data-ui="pr-comments-section-title" class="text-xs font-medium text-muted-foreground">' + t + '</div>' : '';
+  let html = '';
+  if (issueComments.length) {
+    html += heading('Conversation');
+    html += [...issueComments].sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || '')).map(issueCommentCardHtml).join('');
+  }
+  if (byPath.size) {
+    html += heading('On the code');
     const entries = [];
     for (const [path, threads] of byPath) {
       for (const [key, t] of threads) entries.push([path, key, t]);
@@ -819,8 +881,10 @@ function renderCommentsPanel() {
     entries.sort((a, b) => a[0].localeCompare(b[0]) || a[2].line - b[2].line);
     html += entries.map(([path, key, t]) => threadHtml(path, t, key)).join('');
   }
+  if (!html) html = '<div data-ui="pr-comments-empty" class="empty p-3 text-center text-muted-foreground">No comments yet. Select lines in the diff to comment on the code.</div>';
 
   listEl.innerHTML = html;
+  fillCommentBodies(listEl);
   if (countEl) {
     const n = issueComments.length + totalReview;
     countEl.textContent = n ? String(n) : '';
