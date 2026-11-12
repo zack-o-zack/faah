@@ -52,7 +52,7 @@ export function initGitPanel() {
   }
 
   $('#git-commit')?.addEventListener('click', doCommit);
-  $('#git-commit-msg')?.addEventListener('input', () => $('#git-commit-msg')?.classList.remove('border-warn!'));
+  $('#git-commit-msg')?.addEventListener('input', syncCommitBtn);
   $('#git-commit-msg')?.addEventListener('keydown', e => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
       e.preventDefault();
@@ -61,18 +61,9 @@ export function initGitPanel() {
   });
   $('#git-push')?.addEventListener('click', () => (rewritten ? confirmForcePush() : doPush()));
   $('#git-pull')?.addEventListener('click', doPull);
-  $('#git-generate-msg')?.addEventListener('click', doCommitWithAI);
+  $('#git-generate-msg')?.addEventListener('click', doGenerateMessage);
   $('#git-token-nudge')?.addEventListener('click', nudgeForgeToken);
-  $('#git-write-msg-link')?.addEventListener('click', e => {
-    e.preventDefault();
-    toggleCommitMsgBox();
-  });
-  $('#git-generate-link')?.addEventListener('click', e => {
-    e.preventDefault();
-    doGenerateMessage();
-  });
-  $('#git-instructions-link')?.addEventListener('click', e => {
-    e.preventDefault();
+  $('#git-instructions-link')?.addEventListener('click', () => {
     openSettings('ui', 'Git & Diff', 'git.commitMessageInstruction');
   });
   $('#git-see-all-commits')?.addEventListener('click', handleSeeAllCommits);
@@ -121,7 +112,7 @@ export function updateGitPanel(payload) {
   const changed = payload?.gitChanges ?? (payload?.statuses ? Object.keys(payload.statuses).length : (S.meta?.gitChanges || 0));
   const countsEl = $('#git-counts');
   if (countsEl) {
-    countsEl.textContent = changed ? staged + ' / ' + changed + ' staged' : '';
+    countsEl.textContent = !changed ? '' : staged ? staged + ' of ' + changed + ' staged' : changed + ' changed';
   }
 
   // Lifecycle state management:
@@ -138,13 +129,11 @@ export function updateGitPanel(payload) {
   }
 
   // Commit button is enabled when there are changes or staged files
+  stagedCount = staged;
   const commitBtn = $('#git-commit');
-  if (commitBtn) {
+  if (commitBtn && !commitBtn.dataset.busy) {
     commitBtn.disabled = !hasChanges;
-    if (!commitBtn._flashTimer) commitBtn.textContent = 'Commit';
-    commitBtn.title = staged === 0
-      ? 'Commit all changes'
-      : `Commit ${staged} staged file${staged > 1 ? 's' : ''}`;
+    syncCommitBtn();
   }
 
   // Push button is enabled only when there are unpushed commits (ahead > 0)
@@ -156,17 +145,15 @@ export function updateGitPanel(payload) {
   if (pushBtn) {
     const ahead = payload?.ahead ?? 0;
     pushBtn.disabled = ahead === 0 || !!syncJob;
+    setBtnLabel(pushBtn, ahead > 0 ? String(ahead) : '');
     if (ahead > 0 && rewritten) {
       // A rebased PR branch only reaches the PR by replacing its commits.
-      pushBtn.textContent = 'Force-push';
       pushBtn.title = `This checkout was rebased: replace the commits on ${S.meta?.pr?.head || 'the PR branch'} with it (asks first)`;
     } else if (ahead > 0) {
-      pushBtn.textContent = `Push (${ahead})`;
       pushBtn.title = S.meta?.pr
         ? `Push ${ahead} of your commit${ahead > 1 ? 's' : ''} to PR #${S.meta.pr.number} (${S.meta.pr.head})`
         : `Push ${ahead} unpushed commit${ahead > 1 ? 's' : ''} to remote`;
     } else {
-      pushBtn.textContent = 'Push';
       pushBtn.title = S.meta?.pr ? 'Commit your changes to push them to this PR' : 'No unpushed commits to push';
     }
   }
@@ -175,11 +162,10 @@ export function updateGitPanel(payload) {
   const pullBtn = $('#git-pull');
   if (pullBtn) {
     const behind = payload?.behind ?? 0;
+    setBtnLabel(pullBtn, behind > 0 ? String(behind) : '');
     if (behind > 0) {
-      pullBtn.textContent = `Pull (${behind})`;
       pullBtn.title = `Pull ${behind} incoming commit${behind > 1 ? 's' : ''} from remote`;
     } else {
-      pullBtn.textContent = 'Pull';
       pullBtn.title = 'Pull changes from remote';
     }
     if (syncJob) pullBtn.disabled = true;
@@ -212,76 +198,54 @@ export async function unstagePath(path) {
   }
 }
 
-// The message box stays collapsed behind a text link since most commits use
-// "Stage all + Commit with AI"; open it on demand to write a message by hand.
-function toggleCommitMsgBox(open) {
-  const ta = $('#git-commit-msg');
-  const link = $('#git-write-msg-link');
-  if (!ta) return;
-  ta.hidden = open === undefined ? !ta.hidden : !open;
-  if (link) link.textContent = ta.hidden ? 'write message' : 'hide message';
-  const gen = $('#git-generate-link');
-  if (gen) {
-    gen.hidden = ta.hidden;
-    if (gen.previousElementSibling) gen.previousElementSibling.hidden = ta.hidden;
-  }
-  if (!ta.hidden) ta.focus();
+// One Commit button: with a message it commits as written; left empty, the
+// selected harness writes the message first (the sparkles mark that path).
+// Nothing staged means everything is committed, as the server stages it all.
+function syncCommitBtn() {
+  const btn = $('#git-commit');
+  if (!btn || btn.dataset.busy) return;
+  const typed = !!$('#git-commit-msg')?.value.trim();
+  const what = stagedCount ? `${stagedCount} staged file${stagedCount > 1 ? 's' : ''}` : 'all changes';
+  setBtn(btn, typed ? 'git-commit-horizontal' : 'sparkles', 'Commit');
+  btn.title = typed ? `Commit ${what}` : `Write a message for ${what} and commit`;
+}
+
+function setBtn(btn, icon, label) {
+  const i = btn?.querySelector('[data-ui=icon]');
+  if (i) i.className = i.className.replace(/icon-\[lucide--[\w-]+\]/, `icon-[lucide--${icon}]`).replace(/ ?animate-spin/, '') + (icon === 'loader-circle' ? ' animate-spin' : '');
+  if (label !== undefined) setBtnLabel(btn, label);
+}
+
+function setBtnLabel(btn, text) {
+  const l = btn?.querySelector('[data-ui=label]');
+  if (l) l.textContent = text;
+}
+
+function setBusy(btn, label) {
+  btn.dataset.busy = '1';
+  btn.disabled = true;
+  setBtn(btn, 'loader-circle', label);
+}
+
+function clearBusy(btn) {
+  delete btn.dataset.busy;
+  btn.disabled = false;
 }
 
 async function doCommit() {
   const ta = $('#git-commit-msg');
-  if (ta?.hidden) {
-    toggleCommitMsgBox(true);
-    return;
-  }
-  const message = ta ? ta.value.trim() : '';
-  if (!message) {
-    if (ta) {
-      ta.classList.remove('shake');
-      void ta.offsetWidth;
-      ta.classList.add('shake', 'border-warn!');
-      setTimeout(() => ta.classList.remove('shake'), 350);
-      ta.focus();
-    }
-    showGitError('Write a commit message first');
-    return;
-  }
   const btn = $('#git-commit');
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = 'Committing...';
-  }
-  try {
-    await apiPostJson('/api/git/commit', { message });
-    if (ta) {
-      ta.value = '';
-      ta.classList.remove('border-warn!');
-    }
-    toggleCommitMsgBox(false);
-    clearGitNotice();
-    showToast('success', 'Committed');
-    if (btn) {
-      btn.textContent = 'Commit';
-      flashActionSuccess(btn, 'Committed');
-    }
-    await fetchRecentCommits();
-    await refreshUnpushed();
-    await triggerRefresh();
-  } catch (e) {
-    if (btn) {
-      btn.textContent = 'Commit';
-      btn.disabled = false;
-    }
-    showGitError('Commit failed', e.message);
-  }
+  const message = ta ? ta.value.trim() : '';
+  if (!btn || btn.dataset.busy) return;
+  if (!message) return doCommitWithAI(btn);
+  await commitWithMessage(message, btn);
 }
 
 async function doPush(force = false) {
   const btn = $('#git-push');
-  const prevText = btn?.textContent || 'Push';
   if (btn) {
     btn.disabled = true;
-    btn.textContent = 'Pushing...';
+    setBtn(btn, 'loader-circle');
   }
   try {
     await apiPostJson('/api/git/push', force ? { force: true } : {});
@@ -290,8 +254,8 @@ async function doPush(force = false) {
     clearGitNotice();
     showToast('success', S.meta?.pr ? `${force ? 'Force-pushed' : 'Pushed'} to PR #${S.meta.pr.number}` : 'Pushed');
     if (btn) {
-      btn.textContent = 'Push';
-      flashActionSuccess(btn, 'Pushed');
+      setBtn(btn, 'arrow-up', '');
+      flashActionSuccess(btn, null);
       btn.title = 'No unpushed commits to push';
       btn.disabled = true;
     }
@@ -303,7 +267,7 @@ async function doPush(force = false) {
       await reloadOpenTabs();
     }
   } catch (e) {
-    if (btn) btn.textContent = prevText;
+    if (btn) setBtn(btn, 'arrow-up');
     showGitError('Push failed', e.message);
     if (btn) btn.disabled = false;
   }
@@ -311,22 +275,21 @@ async function doPush(force = false) {
 
 async function doPull() {
   const btn = $('#git-pull');
-  const prevText = btn?.textContent || 'Pull';
   if (btn) {
     btn.disabled = true;
-    btn.textContent = 'Pulling...';
+    setBtn(btn, 'loader-circle');
   }
   try {
     const j = await apiPostJson('/api/git/pull', {});
     clearGitNotice();
     showToast('success', j.message || 'Pulled');
     if (btn) {
-      btn.textContent = 'Pull';
-      flashActionSuccess(btn, 'Pulled');
+      setBtn(btn, 'arrow-down', '');
+      flashActionSuccess(btn, null);
     }
     await afterHistoryChange();
   } catch (e) {
-    if (btn) btn.textContent = prevText;
+    if (btn) setBtn(btn, 'arrow-down');
     // A refused fast-forward is a decision, not a dead end: offer to have the
     // harness rebase or merge. Nothing runs unless one of those is clicked.
     const b = e.body || {};
@@ -357,6 +320,7 @@ async function afterHistoryChange() {
    here first. 'git:sync' tells the PR bar what is going on, so Approve and
    Merge never act on commits the checkout has since moved past. */
 
+let stagedCount = 0;
 let rewritten = false; // PR mode: HEAD rebased past the PR head, not yet force-pushed
 
 function emitSync() {
@@ -440,6 +404,7 @@ function notice({ tone = 'err', title, html = '', picker = false, actions = [], 
     const b = document.createElement('button');
     b.type = 'button';
     b.textContent = a.label;
+    if (a.ai) b.insertAdjacentHTML('afterbegin', '<span class="icon-[lucide--sparkles] size-3.5 shrink-0" aria-hidden="true"></span>');
     b.className = 'btn';
     b.dataset.size = 'xs';
     b.dataset.variant = a.primary ? 'primary' : 'outline';
@@ -512,8 +477,8 @@ function offerSync(st, err = '') {
   notice({
     tone: 'warn', title, html, picker: true,
     actions: [
-      { label: 'Rebase with AI', primary: true, title: `Have the harness run git rebase ${up} and resolve conflicts`, run: () => startSync('rebase', st) },
-      { label: 'Merge with AI', title: `Have the harness run git merge ${up} and resolve conflicts`, run: () => startSync('merge', st) },
+      { label: 'Rebase', ai: true, primary: true, title: `Have the harness run git rebase ${up} and resolve conflicts`, run: () => startSync('rebase', st) },
+      { label: 'Merge', ai: true, title: `Have the harness run git merge ${up} and resolve conflicts`, run: () => startSync('merge', st) },
     ],
   });
 }
@@ -526,7 +491,7 @@ function offerUnfinished(st, log = '', err = '') {
     `<span data-ui="hint" class="empty text-muted-foreground">Abort to put the branch back exactly as it was before the ${op}, or have the harness resolve the conflicts and finish it.</span>`;
   if (err) html += `<span data-ui="hint" class="empty text-muted-foreground" style="color:var(--destructive)">${esc(err)}</span>`;
   const actions = [{ label: `Abort ${op}`, run: abortSync }];
-  if (hasHarness() && st.upstream) actions.unshift({ label: 'Finish with AI', primary: true, run: () => startSync(op, st) });
+  if (hasHarness() && st.upstream) actions.unshift({ label: `Finish ${op}`, ai: true, primary: true, run: () => startSync(op, st) });
   notice({ tone: 'warn', title: `${op === 'rebase' ? 'Rebase' : 'Merge'} not finished`, html, picker: hasHarness(), actions, log, closable: true });
 }
 
@@ -654,53 +619,28 @@ async function checkUnfinishedSync() {
   } catch {}
 }
 
-// Dispatches Stage + Commit with AI:
-// 1. Stages all changes
-// 2. Dispatches the selected coding harness to write a commit message
-//    (honoring git.commitMessageInstruction setting)
-// 3. Automatically commits with the generated message
-async function doCommitWithAI() {
-  const btn = $('#git-generate-msg');
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = 'Staging...';
-  }
-
-  // Stage all changes
-  try {
-    await apiPostJson('/api/git/stage', { path: '.' });
-  } catch (e) {
-    resetGenerateBtn(btn);
-    showGitError('Could not stage changes', e.message);
-    return;
-  }
-
-  if (btn) {
-    btn.textContent = 'Writing message...';
-  }
+// Has the selected harness write a message for the staged changes (all of
+// them when nothing is staged) and commits with it.
+async function doCommitWithAI(btn) {
+  setBusy(btn, 'Writing message…');
+  const reset = () => { clearBusy(btn); syncCommitBtn(); };
   let job;
   try {
     job = await apiPostJson('/api/git/commit-message', {});
   } catch (e) {
-    resetGenerateBtn(btn);
+    reset();
     showGitError('Could not write a commit message', e.message);
     return;
   }
   pollCommitMessage(job.id, {
-    progress: t => { if (btn) btn.textContent = t; },
-    reset: () => resetGenerateBtn(btn),
+    progress: t => setBtnLabel(btn, t),
+    reset,
     done: async text => {
       const ta = $('#git-commit-msg');
       if (ta) ta.value = text;
       await commitWithMessage(text, btn);
     },
   });
-}
-
-function resetGenerateBtn(btn) {
-  if (!btn) return;
-  btn.disabled = false;
-  btn.textContent = 'Stage all + Commit with AI';
 }
 
 // Polls the commit-message job. `ui` abstracts the trigger element:
@@ -718,7 +658,7 @@ function pollCommitMessage(id, ui) {
     }
     if (j.running) {
       const sec = Math.round((j.ms || 0) / 1000);
-      ui.progress('Writing message... (' + sec + 's)');
+      ui.progress('Writing message… ' + sec + 's');
       setTimeout(poll, 600);
       return;
     }
@@ -738,19 +678,13 @@ function pollCommitMessage(id, ui) {
   setTimeout(poll, 400);
 }
 
-// Generates a message for already-staged changes and fills the textarea
-// without committing, so it can be reviewed or edited first.
+// Fills the message box without committing, so it can be read or edited
+// first.
 async function doGenerateMessage() {
-  const link = $('#git-generate-link');
-  const ta = $('#git-commit-msg');
-  if (!link || link.dataset.busy) return;
-  const label = link.textContent;
-  link.dataset.busy = '1';
-  const reset = () => {
-    delete link.dataset.busy;
-    link.textContent = label;
-  };
-  link.textContent = 'Writing message...';
+  const btn = $('#git-generate-msg');
+  if (!btn || btn.dataset.busy) return;
+  setBusy(btn);
+  const reset = () => { clearBusy(btn); setBtn(btn, 'sparkles'); };
   let job;
   try {
     job = await apiPostJson('/api/git/commit-message', {});
@@ -760,40 +694,35 @@ async function doGenerateMessage() {
     return;
   }
   pollCommitMessage(job.id, {
-    progress: t => { link.textContent = t; },
-    reset,
+    progress: t => { btn.title = t; },
+    reset: () => { reset(); btn.title = 'Write a message for these changes'; },
     done: text => {
       reset();
-      if (ta) ta.value = text;
-      toggleCommitMsgBox(true);
+      btn.title = 'Write a message for these changes';
+      const ta = $('#git-commit-msg');
+      if (ta) { ta.value = text; ta.focus(); }
+      syncCommitBtn();
     },
   });
 }
 
 async function commitWithMessage(message, btn) {
-  if (btn) btn.textContent = 'Committing...';
+  setBusy(btn, 'Committing…');
   try {
     await apiPostJson('/api/git/commit', { message });
     const ta = $('#git-commit-msg');
-    if (ta) {
-      ta.value = '';
-      ta.classList.remove('border-warn!');
-    }
+    if (ta) ta.value = '';
     clearGitNotice();
-    showToast('success', 'Committed with AI');
+    showToast('success', 'Committed');
+    clearBusy(btn);
+    syncCommitBtn();
     await fetchRecentCommits();
     await refreshUnpushed();
     await triggerRefresh();
-    if (btn) {
-      btn.textContent = 'Stage all + Commit with AI';
-      flashActionSuccess(btn, 'Committed');
-    }
   } catch (e) {
-    toggleCommitMsgBox(true); // surface the generated message so it isn't lost
+    clearBusy(btn);
+    syncCommitBtn();
     showGitError('Commit failed', e.message);
-  } finally {
-    if (!btn?._flashTimer) resetGenerateBtn(btn);
-    else btn.disabled = false;
   }
 }
 

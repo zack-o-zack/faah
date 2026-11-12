@@ -98,10 +98,10 @@ export const DEFAULT_TIPS = [
   },
   {
     id: "ai-commit-messages",
-    title: "Stage All & Commit with AI",
+    title: "Commit Without Writing a Message",
     category: "AI",
     tag: "Git",
-    content: "In the Git panel, click **Stage all + Commit with AI** to have your local AI coding harness inspect staged changes and generate conventional commit messages."
+    content: "In the Git panel, leave the message empty and click **Commit**: your coding harness reads the staged changes (all of them when nothing is staged) and writes the message. The sparkles button fills the message without committing, so you can edit it first."
   },
   {
     id: "quick-file-edit",

@@ -48,6 +48,8 @@
         <span id="git-branch" class="git-branch truncate font-medium"></span>
         <span id="git-counts" class="git-counts shrink-0 font-mono text-xs text-muted-foreground"></span>
         <span class="flex-1 min-w-0"></span>
+        <button id="git-pull" type="button" title="Pull changes from remote" aria-label="Pull" class="btn gap-1 px-1.5!" data-variant="ghost" data-size="xs"><span data-ui="icon" class="icon-[lucide--arrow-down] size-3.5 shrink-0" aria-hidden="true"></span><span data-ui="label" class="font-mono tabular-nums empty:hidden"></span></button>
+        <button id="git-push" type="button" title="No unpushed commits to push" aria-label="Push" disabled class="btn gap-1 px-1.5!" data-variant="ghost" data-size="xs"><span data-ui="icon" class="icon-[lucide--arrow-up] size-3.5 shrink-0" aria-hidden="true"></span><span data-ui="label" class="font-mono tabular-nums empty:hidden"></span></button>
         <button id="git-panel-collapse" title="Collapse" class="btn" data-control="pr-comments-collapse" data-variant="ghost" data-size="icon-xs" aria-label="Collapse"><span class="icon-[lucide--chevron-down] size-3.5 shrink-0" aria-hidden="true"></span></button>
       </div>
       <div id="git-panel-body" class="git-panel-body flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-3">
@@ -68,38 +70,27 @@
           <details id="git-notice-log" class="git-notice-log [&_summary]:cursor-pointer [&_summary]:text-muted-foreground [&_pre]:mt-2 [&_pre]:max-h-40 [&_pre]:overflow-auto [&_pre]:whitespace-pre-wrap [&_pre]:wrap-anywhere [&_pre]:font-mono [&_pre]:text-xs" hidden><summary>Agent output</summary><pre></pre></details>
         </div>
         <div id="git-commit-section" class="git-commit-section flex flex-col gap-2">
-          <div class="git-agent-picker flex flex-col gap-2">
-            <div id="git-agent" class="inline-flex min-w-0 max-w-full" data-control="agent-picker" data-placeholder="No harness"><button class="btn max-w-full" data-variant="outline" type="button" data-size="sm" aria-haspopup="dialog" aria-expanded="false" aria-label="Coding harness and model" title="Coding harness and model"><span class="truncate"></span><i class="icon-[lucide--chevrons-up-down] size-3.5 shrink-0 text-muted-foreground" aria-hidden="true"></i></button></div>
-            <div class="git-ai-row flex w-full items-center gap-2">
-              <button id="git-generate-msg" title="Stage all changes and write a commit message using the selected coding harness" class="btn" data-control="git-generate-btn" data-variant="primary" data-size="xs">Stage all + Commit with AI</button>
-            </div>
+          <div class="input-group" data-orientation="vertical">
+            <textarea id="git-commit-msg" aria-label="Commit message" rows="1" spellcheck="false" autocomplete="off" placeholder="Message (optional)" class="max-h-40 min-h-9" data-control="git-commit-msg"></textarea>
+            <footer data-align="block-end" class="gap-1">
+              <div id="git-agent" class="inline-flex min-w-0 max-w-full" data-control="agent-picker" data-placeholder="No harness"><button type="button" data-variant="ghost" data-size="sm" class="btn max-w-full h-7! text-muted-foreground! border-transparent! bg-transparent! px-2! text-xs! shadow-none! hover:bg-accent! hover:text-foreground!" aria-haspopup="dialog" aria-expanded="false" aria-label="Coding harness and model" title="Coding harness and model"><span class="truncate"></span><i class="icon-[lucide--chevrons-up-down] size-3.5 shrink-0" aria-hidden="true"></i></button></div>
+              <span class="flex-1"></span>
+              <button id="git-instructions-link" type="button" title="Message instructions" aria-label="Message instructions" class="btn" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--sliders-horizontal] size-3.5 shrink-0" aria-hidden="true"></span></button>
+              <button id="git-generate-msg" type="button" title="Write a message for these changes" aria-label="Write a message for these changes" class="btn" data-variant="ghost" data-size="icon-xs"><span data-ui="icon" class="icon-[lucide--sparkles] size-3.5 shrink-0" aria-hidden="true"></span></button>
+            </footer>
           </div>
-          <textarea id="git-commit-msg" aria-label="Commit message" rows="3" spellcheck="false" autocomplete="off" placeholder="Commit message..." hidden class="textarea resize-y" data-control="git-commit-msg"></textarea>
-          <div class="git-instructions-wrap flex items-center">
-            <a id="git-write-msg-link" href="#" role="button" title="Write the commit message yourself" class="btn" data-control="git-instructions-link" data-variant="link" data-size="xs">write message</a>
-            <span class="git-link-sep mx-2 text-xs text-muted-foreground" aria-hidden="true" hidden>&middot;</span>
-            <a id="git-generate-link" href="#" role="button" title="Generate a message for staged changes using the AI instructions" hidden class="btn" data-control="git-instructions-link" data-variant="link" data-size="xs">generate with AI</a>
-            <span class="git-link-sep mx-2 text-xs text-muted-foreground" aria-hidden="true">&middot;</span>
-            <a id="git-instructions-link" href="#" role="button" title="Configure commit message instructions for AI in Settings" class="btn" data-control="git-instructions-link" data-variant="link" data-size="xs">instructions for AI</a>
-          </div>
+          <button id="git-commit" type="button" disabled class="btn w-full" data-variant="primary" data-size="sm"><span data-ui="icon" class="icon-[lucide--sparkles] size-3.5 shrink-0" aria-hidden="true"></span><span data-ui="label">Commit</span></button>
         </div>
         <div id="git-clean-state" class="git-clean-state flex items-center justify-center gap-2 rounded border border-dashed p-3 text-xs text-muted-foreground [&_svg]:shrink-0 [&_svg]:text-primary" hidden>
           <span class="icon-[lucide--check] size-3.5 shrink-0" aria-hidden="true"></span>
           <span>Working tree clean</span>
         </div>
-        <div class="git-panel-actions grid w-full grid-cols-3 gap-2">
-          <button id="git-commit" title="Tick modified files to stage them for commit" disabled class="btn flex-1 min-w-0" data-control="bar-action" data-variant="outline" data-size="xs">Commit</button>
-          <button id="git-push" title="No unpushed commits to push" disabled class="btn flex-1 min-w-0" data-control="bar-action" data-variant="outline" data-size="xs">Push</button>
-          <button id="git-pull" title="Pull (fast-forward only; if the branches diverged, offers a rebase or merge by your coding harness)" class="btn flex-1 min-w-0" data-control="bar-action" data-variant="outline" data-size="xs">Pull</button>
-        </div>
         <div id="git-recent-commits" class="git-recent-commits mt-1 flex flex-col gap-1 border-t pt-2">
           <div class="git-recent-head flex items-center justify-between">
             <span class="git-recent-title shrink-0 text-xs font-medium text-muted-foreground">Recent Commits</span>
+            <a id="git-see-all-commits" class="btn" data-variant="ghost" data-size="icon-xs" href="#" target="_blank" rel="noopener" title="See all commits" aria-label="See all commits"><span class="icon-[lucide--external-link] size-3.5 shrink-0" aria-hidden="true"></span></a>
           </div>
           <div id="git-commits-list" class="git-commits-list flex flex-col gap-1"></div>
-          <div class="git-see-all-wrap px-2 py-1">
-            <a id="git-see-all-commits" class="git-see-all-commits cursor-pointer text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground" href="#" target="_blank" rel="noopener">See all commits</a>
-          </div>
         </div>
       </div>
     </div>
