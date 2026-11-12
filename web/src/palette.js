@@ -13,13 +13,13 @@ import { showRightInspector, hideRightInspector } from './inspector.js';
 import { showCalls } from './calls.js';
 import { showHelp } from './shortcuts.js';
 
-import { togglePreview } from './markdown.js';
+import { togglePreview } from './app/legacy-bridge.js';
 import { openSettings, isAutoRevealEnabled } from './settings.js';
 
 import { launchPR } from './pr.js';
 import { newThread, deleteCurrentThread, showThreadsSidebar } from './thread.js';
 import { copyToClipboard, copyRichToClipboard } from './ui.js';
-import { getDocRaw } from './markdown.js';
+import { getDocRaw } from './app/legacy-bridge.js';
 
 import { promptNewItem } from './newitem.js';
 import { navigateToTips, showTipWidget } from './tips.js';

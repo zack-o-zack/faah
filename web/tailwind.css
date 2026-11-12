@@ -296,7 +296,6 @@
   .md-mermaid-fs-only { display: none; }
   .md-mermaid.is-fullscreen .md-mermaid-fs-only { display: grid; }
 
-  body.mermaid-fs-active { overflow: hidden; }
   .md table { display: block; width: max-content; max-width: 100%; overflow: auto; border-collapse: collapse; font-size: .94em; }
   .md th, .md td { padding: 6px 13px; border: 1px solid var(--border); }
   .md th { font-weight: 600; background: var(--sidebar); }
@@ -590,3 +589,11 @@
 #rows ::highlight(editor-occ) { background: var(--accent); color: inherit; }
 #rows ::highlight(editor-link) { text-decoration: underline; color: var(--primary-text); }
 #rows ::highlight(editor-active) { background: var(--mark-active); color: var(--on-mark-active); }
+
+@layer components {
+  #imgview-canvas.bg-checker { background: repeating-conic-gradient(var(--muted) 0 25%, var(--sidebar) 0 50%) 0 0 / 16px 16px; }
+  #imgview-canvas.bg-dark { background: var(--image-dark); }
+  #imgview-canvas.bg-light { background: var(--image-light); }
+  #imgview-img.render-pixelated { image-rendering: pixelated; }
+  #imgview-viewport.panning { cursor: grabbing; }
+}

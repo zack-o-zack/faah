@@ -4,7 +4,7 @@ import { setPressed } from './controls.js';
 import { $, $$, esc, S } from './state.js';
 
 import { chooseThemePreference, DEFAULT_THEME } from './lib/theme-preference.js';
-import { setLayoutPref } from './diff.js';
+import { setLayoutPref } from './app/legacy-bridge.js';
 
 export let settingsModalEl = null;
 const BUILTIN_SCHEMA = [

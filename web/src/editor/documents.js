@@ -1,3 +1,4 @@
+import { initialImage, previewKind } from '../viewers/view.js';
 import { batch, createSignal } from 'solid-js';
 import { reconcile } from 'solid-js/store';
 import { createDocumentBuffer } from './buffer.js';
@@ -14,6 +15,10 @@ import { CHUNK } from './layout.js';
  * @property {number} scrollTop
  * @property {boolean} dirty
  * @property {boolean} isEditing
+ * @property {'source'|'markdown'|'table'|'image'} view
+ * @property {{fit:boolean,scale:number,panX:number,panY:number,bg:string,pixelated:boolean|null}} image
+ * @property {number} viewerRevision
+ * @property {string} diffRef
  * @property {string|null} diffMode
  * @property {{line:number,col:number}|null} selAnchor
  */
@@ -94,12 +99,13 @@ export function createDocuments(
         scrollTop: 0,
         dirty: false,
         isEditing: false,
-        markdown: !!result.markdown,
-        table: !!result.table,
         isImage: !!result.image,
         deleted: !!result.deleted,
         lsp: result.lsp || { state: 'off', server: '' },
         diagnostics: result.diagnostics || [],
+        view: result.image ? 'image' : previewKind({ path, lang: result.lang }) || 'source',
+        image: initialImage(),
+        viewerRevision: 0,
         diffMode,
         diffAvailable: !!hasDiff,
         diffDismissed: options.view === 'source',
@@ -111,6 +117,13 @@ export function createDocuments(
         outline: null,
         gutter: null,
       };
+      if (options.view === 'source') document.view = 'source';
+      const kind = previewKind(document);
+      if (
+        (kind === 'markdown' && !state.editor.mdPreview) ||
+        (kind === 'table' && !state.editor.tablePreview)
+      )
+        document.view = 'source';
       batch(() => {
         set('documents', 'tabs', state.documents.tabs.length, document);
         index = indexOf(path);
@@ -124,6 +137,7 @@ export function createDocuments(
         const result = await createBuffer(path, ref).loadChunk(0);
         const available = !!(result?.diffAvailable || options.base);
         patchDocument(path, {
+          viewerRevision: (document.viewerRevision || 0) + 1,
           diffRef: ref,
           diffBase: options.base || '',
           diffAvailable: available,

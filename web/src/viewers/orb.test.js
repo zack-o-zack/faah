@@ -1,5 +1,12 @@
 import { test, expect } from 'vitest';
-import { orbStart, orbFromThread, orbFromStep, orbFromSummary, orbView, orbSnippet } from './orb.js';
+import {
+  orbStart,
+  orbFromThread,
+  orbFromStep,
+  orbFromSummary,
+  orbView,
+  orbSnippet,
+} from './orb-model.js';
 
 const thread = (turn) => ({ id: 't1', turns: [{ id: 1, ...turn }] });
 
@@ -15,7 +22,10 @@ test('orb shows the latest step and notes while an explanation runs', () => {
 });
 
 test('orb reports the outcome from the final snapshot', () => {
-  const done = orbFromThread(orbStart(), thread({ running: false, tools: ['Read a.go'], notes: [{}], walkthroughs: [{ steps: [] }] }));
+  const done = orbFromThread(
+    orbStart(),
+    thread({ running: false, tools: ['Read a.go'], notes: [{}], walkthroughs: [{ steps: [] }] }),
+  );
   expect(orbView(done)).toMatchObject({ text: 'Explained · 1 note · walkthrough', busy: false });
   const failed = orbFromThread(orbStart(), thread({ running: false, error: 'agent exited' }));
   expect(orbView(failed).text).toBe('Explanation failed');
@@ -35,17 +45,34 @@ test('the list summary ends a running orb', () => {
 });
 
 test('a failure before the thread exists has no link to open', () => {
-  const m = { ...orbStart(), phase: /** @type {const} */ ('failed'), error: 'no agent\nstack trace' };
+  const m = {
+    ...orbStart(),
+    phase: /** @type {const} */ ('failed'),
+    error: 'no agent\nstack trace',
+  };
   expect(orbView(m).label).toBe('Explanation failed: no agent');
 });
 
 test('a finished orb shows the last paragraph of the answer as plain text', () => {
-  expect(orbSnippet('First part.\n\n```go\nx := 1\n```\n\n- **add** sums [two ints](main.go:4)\n  and returns `a + b`.')).toBe('add sums two ints and returns a + b.');
+  expect(
+    orbSnippet(
+      'First part.\n\n```go\nx := 1\n```\n\n- **add** sums [two ints](main.go:4)\n  and returns `a + b`.',
+    ),
+  ).toBe('add sums two ints and returns a + b.');
   expect(orbSnippet('')).toBe('');
-  const done = orbFromThread(orbStart(), thread({ running: false, reply: 'Intro.\n\nIt sums two numbers.' }));
+  const done = orbFromThread(
+    orbStart(),
+    thread({ running: false, reply: 'Intro.\n\nIt sums two numbers.' }),
+  );
   expect(orbView(done)).toMatchObject({ snippet: 'It sums two numbers.', shown: '' });
-  const noted = orbFromThread(orbStart(), thread({ running: false, reply: 'It sums.', notes: [{}, {}] }));
-  expect(orbView(noted)).toMatchObject({ shown: '2 notes', label: 'Explained · 2 notes. Open the explanation' });
+  const noted = orbFromThread(
+    orbStart(),
+    thread({ running: false, reply: 'It sums.', notes: [{}, {}] }),
+  );
+  expect(orbView(noted)).toMatchObject({
+    shown: '2 notes',
+    label: 'Explained · 2 notes. Open the explanation',
+  });
   const running = orbFromThread(orbStart(), thread({ running: true, reply: 'Partial' }));
   expect(orbView(running).snippet).toBe('');
 });

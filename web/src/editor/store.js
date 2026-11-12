@@ -150,6 +150,7 @@ export function createEditorStore(store) {
   }
   function centerLine(line) {
     if (active()?.isEditing) return editor.actions.centerEditLine(line);
+    if (active()?.diffMode) return services.diff?.scrollLine(line);
     if (services.previewing?.()) return services.previewLine?.(line);
     const y = offsets()[Math.max(0, Math.min((active()?.total || 1) - 1, line - 1))] || 0;
     services.source?.scrollTo(Math.max(0, y - geometry.height / 2 + geometry.lineHeight * 2));

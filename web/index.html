@@ -171,36 +171,7 @@
       <!-- Direct editing overlay -->
 
       <!-- Preview: covers the code view for a Markdown tab, or a CSV/TSV tab as a table (Alt+M toggles) -->
-      <div id="mdview" class="absolute inset-0 overflow-auto bg-background" hidden><article id="md" class="md"></article></div>
-      <!-- Diff view: covers the code view while a diff layout is active (Mod+D toggles) -->
-      <div id="diffview" class="absolute inset-0 overflow-auto bg-background" hidden><div id="diffcontent"></div></div>
-      <!-- Image viewer: covers the code view for an image tab -->
-      <div id="imgview" hidden class="absolute inset-0 z-5 flex flex-col overflow-hidden bg-background">
-        <div id="imgview-viewport" class="relative flex flex-1 h-full w-full items-center justify-center overflow-hidden cursor-grab select-none [&.panning]:cursor-grabbing">
-          <div id="imgview-canvas" class="relative inline-flex max-w-none max-h-none origin-center [&.bg-checker]:[background:repeating-conic-gradient(var(--muted)_0_25%,var(--sidebar)_0_50%)_0_0/16px_16px] [&.bg-dark]:bg-[var(--image-dark)] [&.bg-light]:bg-[var(--image-light)] bg-checker">
-            <img id="imgview-img" src="" alt="" class="block pointer-events-none max-w-none max-h-none [&.render-pixelated]:[image-rendering:pixelated]">
-          </div>
-        </div>
-        <div id="imgview-hud" class="card absolute bottom-4 right-4 z-10 flex flex-row flex-wrap items-center gap-2 p-3 max-w-full">
-          <div data-ui="imgview-hud-group" class="flex items-center gap-2">
-            <button id="iv-zoom-out" title="Zoom out (-)" aria-label="Zoom out" class="btn" data-control="iv-btn" data-variant="ghost" data-size="xs">−</button>
-            <button id="iv-zoom-label" title="Reset zoom (0 to fit, 1 for 100%)" class="btn" data-control="iv-btn iv-btn-text" data-variant="ghost" data-size="xs">Fit</button>
-            <button id="iv-zoom-in" title="Zoom in (+)" aria-label="Zoom in" class="btn" data-control="iv-btn" data-variant="ghost" data-size="xs">+</button>
-          </div>
-          <span data-ui="iv-sep" class=""></span>
-          <div data-ui="imgview-hud-group" class="flex items-center gap-2">
-            <button id="iv-fit" title="Fit to window (0)" class="btn" data-control="iv-btn" data-variant="ghost" data-size="xs">Fit</button>
-            <button id="iv-100" title="Actual size 1:1 (1)" class="btn" data-control="iv-btn" data-variant="ghost" data-size="xs">1:1</button>
-          </div>
-          <span data-ui="iv-sep" class=""></span>
-          <div data-ui="imgview-hud-group" class="flex items-center gap-2">
-            <button id="iv-bg" title="Toggle background (b)" class="btn" data-control="iv-btn" data-variant="ghost" data-size="xs">Checker</button>
-            <button id="iv-pixel" title="Toggle smooth / pixelated (p)" class="btn" data-control="iv-btn" data-variant="ghost" data-size="xs">Smooth</button>
-          </div>
-          <span data-ui="iv-sep" class=""></span>
-          <span id="iv-meta" data-ui="iv-meta" class="whitespace-nowrap font-mono text-muted-foreground"></span>
-        </div>
-      </div>
+      <div id="viewers-root" class="contents"></div>
       <div id="editor-minimap-root" class="contents"></div>
 
       <!-- Welcome / Empty State Screen -->
@@ -234,19 +205,7 @@
       <div data-ui="editor-corner" class="pointer-events-none absolute top-2 right-2 z-20 flex max-w-[calc(100%_-_16px)] flex-col items-end gap-2 *:pointer-events-auto">
 
 
-        <div id="explain-orb" data-ui="explain-orb" class="group flex max-w-full items-center overflow-hidden rounded-full border bg-popover text-popover-foreground shadow-md data-[phase=done]:items-start data-[phase=done]:rounded-xl data-[phase=done]:bg-popover/70 data-[phase=done]:backdrop-blur-sm" hidden>
-          <button id="explain-orb-open" type="button" class="btn min-w-0 shrink group-data-[phase=done]:h-auto group-data-[phase=done]:items-start group-data-[phase=done]:py-2 group-data-[phase=done]:text-left" data-variant="ghost" data-size="sm">
-            <span data-orb="spin" class="size-3 shrink-0 rounded-full border-2 border-border border-t-primary animate-spin motion-reduce:animate-none" aria-hidden="true"></span>
-            <span data-orb="done" class="icon-[lucide--check] size-3.5 shrink-0 text-primary" aria-hidden="true" hidden></span>
-            <span data-orb="fail" class="icon-[lucide--circle-alert] size-3.5 shrink-0 text-destructive" aria-hidden="true" hidden></span>
-            <span class="flex min-w-0 max-w-md flex-col gap-0.5">
-              <span data-orb="text" class="truncate group-data-[phase=done]:text-xs group-data-[phase=done]:text-muted-foreground"></span>
-              <span data-orb="snippet" class="line-clamp-2 whitespace-normal font-normal" hidden></span>
-            </span>
-          </button>
-          <button id="explain-orb-close" type="button" class="btn" data-variant="ghost" data-size="icon-sm" title="Dismiss" aria-label="Dismiss" hidden><span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true"></span></button>
-        </div>
-        <span id="explain-orb-live" class="sr-only" role="status" aria-live="polite"></span>
+        <div id="explanation-root" class="contents"></div>
       </div>
 
       <template id="agentbox-tpl">
@@ -915,24 +874,7 @@
 </dialog>
 
 <!-- Markdown Image Lightbox Overlay -->
-<dialog id="img-lightbox" class="dialog">
-  <div class="sm:max-w-[92vw] overflow-auto">
-    <header class="flex-row! items-center gap-3">
-      <span data-ui="lightbox-title" class="label overflow-hidden whitespace-nowrap text-ellipsis font-mono font-semibold" id="lb-title"></span>
-      <span data-ui="lightbox-meta" class="font-mono text-muted-foreground" id="lb-meta"></span>
-      <div data-ui="lightbox-actions" class="flex items-center gap-2">
-        <button id="lb-open-tab" title="Open image in dedicated tab" class="btn" data-control="lightbox-btn" data-variant="outline" data-size="xs">Open in Tab</button>
-        <button id="lb-copy-path" title="Copy image path" class="btn" data-control="lightbox-btn" data-variant="outline" data-size="xs">Copy Path</button>
-        <button id="lb-close" title="Close (Esc)" aria-label="Close (Esc)" class="btn" data-control="lightbox-btn lightbox-close" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true"></span></button>
-      </div>
-    </header>
-    <section data-ui="lightbox-body" class="flex items-center justify-center overflow-auto relative p-3">
-      <div data-ui="lightbox-canvas" class="flex items-center justify-center overflow-hidden [background:repeating-conic-gradient(var(--muted)_0_25%,var(--sidebar)_0_50%)_0_0/16px_16px]" id="lb-canvas">
-        <img id="lb-img" src="" alt="">
-      </div>
-    </section>
-  </div>
-</dialog>
+
 
 
 <!-- Modal Dialog for Adding a New Review Stage -->

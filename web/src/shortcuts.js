@@ -10,12 +10,12 @@ import { showRightInspector, hideRightInspector } from './inspector.js';
 import { hideThreadsSidebar } from './thread.js';
 import { overlay, openPalette, closePalette } from './palette.js';
 
-import { previewing, togglePreview, previewKey } from './markdown.js';
-import { exitMermaidFullscreen } from './mermaid.js';
-import { toggleDiff, stepDiffHunk, stepChangedFile } from './diff.js';
+import { previewing, togglePreview, previewKey } from './app/legacy-bridge.js';
+import { exitMermaidFullscreen } from './app/legacy-bridge.js';
+import { toggleDiff, stepDiffHunk, stepChangedFile } from './app/legacy-bridge.js';
 import { openSettings, closeSettings, isSettingsOpen } from './settings.js';
 
-import { handleImageKey } from './imageview.js';
+import { handleImageKey } from './app/legacy-bridge.js';
 import { submitBatch } from './agent.js';
 import { reindexWorkspace } from './panels.js';
 

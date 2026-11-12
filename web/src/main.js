@@ -2,9 +2,6 @@ import { initOutline, drawOutline } from './outline-pane.js';
 import { emit } from './bus.js';
 import { warmLSP, gotoDefinition, findReferences } from './lsp.js';
 import { showCalls, initCalls } from './calls.js';
-import { syncImageView, initImageViewer } from './imageview.js';
-import { syncPreview, previewing, previewLine, findInPreview, showPreviewHit, clearPreviewMarks, getDocRaw, domToMarkdown, getFragmentPlainText, getFragmentHtml, getMarkdownRangeLines, previewTopLine, selectPreview, initMarkdown } from './markdown.js';
-import { syncDiffView, setSourceJumpHandler, setCommitStepHandler, initDiff } from './diff.js';
 import { copyToClipboard, copyRichToClipboard, initErrorCopy } from './ui.js';
 import { setLspState, initMetrics, initLspMenu, refreshLspMenu, initStatusFit, updateMetricsDisplay, updateStatus } from './status.js';
 import { openPalette, initPalette } from './palette.js';
@@ -32,11 +29,8 @@ import { initReviewFlow, setMode } from './reviewflow.js';
 
 export function initLegacy() {
 configureLegacyServices({
- emit, setSourceJumpHandler, setCommitStepHandler, warmLSP, updateStatus, setLspState, gotoDefinition, findReferences, showCalls,
+ emit, warmLSP, updateStatus, setLspState, gotoDefinition, findReferences, showCalls,
  copyToClipboard, copyRichToClipboard, openPalette, showHelp, triggerRefresh, drawOutline,
- previewing, previewLine, findInPreview, showPreviewHit, clearPreviewMarks, getDocRaw,
- domToMarkdown, getFragmentPlainText, getFragmentHtml, getMarkdownRangeLines, previewTopLine, selectPreview,
- syncViewers() { syncImageView(); syncPreview(); syncDiffView(); },
 });
 initOutline();
 // Initialize all subsystems
@@ -51,15 +45,12 @@ initInspector();
 initCalls();
 initPalette();
 initShortcuts();
-initMarkdown();
-initDiff();
 initAgent();
 initThreads();
 initMetrics();
 initLspMenu();
 initStatusFit();
 initSettings();
-initImageViewer();
 initLineComment();
 initErrorCopy();
 initUnpushed();

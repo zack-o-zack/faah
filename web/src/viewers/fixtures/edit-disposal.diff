@@ -1,0 +1,15 @@
+diff --git a/web/src/editor/EditView.jsx b/web/src/editor/EditView.jsx
+index 48ba35e..0e881c5 100644
+--- a/web/src/editor/EditView.jsx
++++ b/web/src/editor/EditView.jsx
+@@ -35,8 +35,9 @@ export function EditView() {
+     on(
+       () => [editor.active()?.path, editor.active()?.isEditing, editor.buffer()],
+       () => {
++        // Release the native textarea's copy when the editable buffer is discarded or closed.
++        textarea.value = editor.active()?.isEditing ? editor.buffer().editContent || '' : '';
+         if (!editor.active()?.isEditing) return;
+-        textarea.value = editor.buffer().editContent || '';
+         textarea.scrollTop = editor.active().editScrollTop || 0;
+       },
+     ),

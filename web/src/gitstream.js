@@ -2,7 +2,7 @@ import { drawTabs, loadGutter, closeTab, reloadOpenTabs, render, doc_, apiPost }
 import { S } from './state.js';
 import { updateSidebarToggleState, patchTreeGitStatus, treeEl, setSidebarMode, hasGitView } from './tree.js';
 
-import { syncDiffView } from './diff.js';
+import { syncDiffView } from './app/legacy-bridge.js';
 
 import { updateStatus, updateMetricsDisplay } from './status.js';
 import { updateGitPanel } from './gitpanel.js';

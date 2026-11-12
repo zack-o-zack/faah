@@ -4,7 +4,7 @@ import { setPressed } from './controls.js';
 // web/src/tree.js
 import { $, $$, esc, S } from './state.js';
 
-import { syncDiffView, focusDiffScope, isFileViewed } from './diff.js';
+import { syncDiffView, focusDiffScope, isFileViewed } from './app/legacy-bridge.js';
 import { copyToClipboard } from './ui.js';
 
 import { emit, on } from './bus.js';

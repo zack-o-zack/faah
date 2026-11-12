@@ -13,7 +13,7 @@ import { setPressed } from './controls.js';
 import { $, S } from './state.js';
 import { on } from './bus.js';
 import { treeEl, relabelTreeBadges, inGitMode, redrawTreeView } from './tree.js';
-import { focusDiffScope, syncDiffView } from './diff.js';
+import { focusDiffScope, syncDiffView } from './app/legacy-bridge.js';
 
 let scope = 'all';           // 'all' | 'yours'
 let allCount = 0, yourCount = 0;

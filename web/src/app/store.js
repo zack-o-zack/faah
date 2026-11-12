@@ -1,3 +1,4 @@
+import { createViewerActions } from '../viewers/actions.js';
 import { createDocuments } from '../editor/documents.js';
 import { createMemo } from 'solid-js';
 import { createStore, reconcile } from 'solid-js/store';
@@ -22,6 +23,8 @@ import { createStore, reconcile } from 'solid-js/store';
  * @property {Object<string, unknown>} settings
  * @property {{targets: object[]}} agents
  * @property {{unpushedCount: number}} git
+ * @property {{viewed: Object<string, boolean>}} viewers
+ * @property {{model: import('../viewers/orb-model.js').OrbModel|null, shown: boolean}} explanation
  */
 /** @returns {AppState} */
 function initialState() {
@@ -49,6 +52,8 @@ function initialState() {
     settings: {},
     agents: { targets: [] },
     git: { unpushedCount: 0 },
+    viewers: { viewed: {} },
+    explanation: { model: null, shown: false },
   };
 }
 
@@ -57,17 +62,21 @@ export function createAppStore(options = {}) {
   const [state, set] = createStore(initialState());
   const documents = createDocuments(state, set, options);
   const activeDocument = createMemo(() => state.documents.tabs[state.documents.active] || null);
-  return {
+  const store = {
     state,
     activeDocument,
     buffers: documents.buffers,
     bufferRevision: documents.bufferRevision,
     actions: {
       ...documents,
+      setViewed: (path, value) => set('viewers', 'viewed', path, value),
+      setExplanation: (model) => set('explanation', 'model', reconcile(model)),
+      setExplanationShown: (shown) => set('explanation', 'shown', shown),
       setAgentTargets: (targets) => set('agents', 'targets', targets),
       setNavigation: (patch) => set('navigation', patch),
       setGeometry: (patch) => set('editor', patch),
       setWorkspace: (meta) => set('workspace', 'meta', reconcile(meta)),
+      patchWorkspace: (name, value) => set('workspace', 'meta', name, value),
       setEditorPreference: (name, value) => {
         if (!['wrap', 'lineNumbers', 'mdPreview', 'tablePreview'].includes(name))
           throw new Error('Unknown editor preference');
@@ -78,4 +87,6 @@ export function createAppStore(options = {}) {
       patchLsp: (name, value) => set('lsp', name, value),
     },
   };
+  store.viewerActions = createViewerActions(store);
+  return store;
 }

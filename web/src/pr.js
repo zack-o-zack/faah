@@ -9,7 +9,7 @@ import { setReviewHandler, openFile, layout, render, doc_, api, apiPostJson, key
 // in-memory draft list (pr.go's prSession), which is the only source of truth.
 import { $, $$, S, esc } from './state.js';
 
-import { diffview, setPRSyncHandler } from './diff.js';
+import { diffview, setPRSyncHandler } from './app/legacy-bridge.js';
 import { reloadWorkspace } from './agent.js';
 
 import { refreshTree } from './tree.js';
@@ -17,7 +17,7 @@ import { refreshTree } from './tree.js';
 import { initPRMerge, refreshMergeStatus, reviewGate } from './prmerge.js';
 import { openForgeConnect } from './forgeconnect.js';
 import { on } from './bus.js';
-import { sanitizeMarkdown } from './markdown.js';
+import { sanitizeMarkdown } from './app/legacy-bridge.js';
 import { thrMd } from './thread.js';
 
 let meta = null;      // this session's PR info: {number, title, base, head, writeAccess, readOnly}

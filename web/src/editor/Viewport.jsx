@@ -139,6 +139,7 @@ export function Viewport() {
   onMount(() => {
     dom = createSourceDOM(rows, editor.active);
     const view = {
+      topLine: () => offsets().findIndex((value) => value >= viewport.scrollTop) || 1,
       scrollTo: (top) => {
         viewport.scrollTop = top;
       },

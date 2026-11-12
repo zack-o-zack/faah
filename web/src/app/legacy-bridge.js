@@ -1,3 +1,6 @@
+import { apiText } from '../lib/api.js';
+import { previewKind as documentPreviewKind, viewMode, canDiff } from '../viewers/view.js';
+import { sanitizeMarkdown as cleanMarkdown } from '../viewers/markdown-dom.js';
 // Removed when the last legacy module is migrated.
 import { createSourceDOM } from '../editor/source-dom.js';
 import { createSymbolActions } from '../editor/symbols.js';
@@ -34,7 +37,6 @@ import { toast } from '../lib/toast.jsx';
 import { listThemes, getStoredTheme, DEFAULT_THEME, chooseThemePreference } from '../lib/theme.js';
 import { lineText, LH, CHUNK, OVERSCAN } from '../editor/layout.js';
 import { SEL_KEYS, SEL_MENU_ITEMS, selectionRef, contextSnippet } from '../editor/selection.js';
-import { wordAtColumn } from '../editor/cursor.js';
 export {
   LH,
   CHUNK,
@@ -45,7 +47,6 @@ export {
   getStoredTheme,
   DEFAULT_THEME,
   chooseThemePreference,
-  wordAtColumn,
 };
 let editorStore;
 let themeStore;
@@ -55,7 +56,7 @@ let hoverTimer;
 const services = {};
 const facades = new Map();
 const extras = new Map();
-export let vp, sizer, rowsEl, editor, editTextarea, hovercard, findbar, findInput;
+export let vp, sizer, rowsEl, editor, editTextarea;
 export function bindLegacyEditor(value, theme) {
   editorStore = value;
   themeStore = theme;
@@ -64,6 +65,25 @@ export function bindLegacyEditor(value, theme) {
     acceptLsp: (value) => services.setLspState?.(value),
   });
   onCleanup(symbols.dispose);
+  const metadata = new Proxy(
+    {},
+    {
+      get: (_, key) => value.store.state.workspace.meta?.[key],
+      set: (_, key, next) => {
+        value.store.actions.patchWorkspace(key, next);
+        return true;
+      },
+      ownKeys: () => Object.keys(value.store.state.workspace.meta || {}),
+      getOwnPropertyDescriptor: () => ({ enumerable: true, configurable: true }),
+    },
+  );
+  Object.defineProperty(S, 'meta', {
+    configurable: true,
+    get: () => (value.store.state.workspace.meta ? metadata : null),
+    set: (next) => {
+      value.store.actions.setWorkspace(next);
+    },
+  });
   const mappings = {
     active: ['documents', 'active'],
     hist: ['documents', 'history'],
@@ -110,7 +130,7 @@ export function bindLegacyEditor(value, theme) {
             hits: value.ui.hits,
             active: value.ui.activeHit,
             byLine: new Set(value.ui.hits.filter(Boolean).map((hit) => hit.line)),
-            preview: !!services.previewing?.(),
+            preview: previewing(),
             editing: !!value.active()?.isEditing,
           }
         : null,
@@ -149,22 +169,9 @@ export function attachLegacyDOM() {
   rowsEl = $('#rows');
   editor = $('#editor');
   editTextarea = $('#editview-textarea');
-  hovercard = $('#hovercard');
-  findbar = $('#findbar');
-  findInput = $('#find-input');
   sourceDOM = createSourceDOM(rowsEl, doc_);
-  const selected = () => {
-    const selection = window.getSelection();
-    if (!selection?.rangeCount || selection.isCollapsed) return;
-    const range = selection.getRangeAt(0);
-    if (vp.contains(range.commonAncestorContainer)) return;
-    editorStore.actions.setSelection(viewerSelection(range, doc_()));
-  };
-  document.addEventListener('selectionchange', selected);
-  onCleanup(() => {
-    document.removeEventListener('selectionchange', selected);
-    clearTimeout(hoverTimer);
-  });
+  diffview = $('#diffview');
+  onCleanup(() => clearTimeout(hoverTimer));
 }
 
 function legacyDocument(path) {
@@ -201,25 +208,7 @@ function legacyDocument(path) {
           editorStore.actions.refresh();
           return true;
         }
-        if (
-          [
-            'mdHtml',
-            'mdError',
-            'rawText',
-            'diffText',
-            'gutter',
-            'diffHunks',
-            'prDiffHunks',
-            'yourDiffHunks',
-            'fullFileLines',
-            'fullFileRaw',
-            'tableData',
-            'imageMeta',
-            'mdReq',
-            'rawTextPromise',
-            'diffReq',
-          ].includes(key)
-        ) {
+        if (['gutter'].includes(key)) {
           if (!extras.has(path)) extras.set(path, {});
           extras.get(path)[key] = value;
           editorStore.actions.refresh();
@@ -235,25 +224,24 @@ function legacyDocument(path) {
 }
 export function configureLegacyServices(value) {
   Object.assign(services, value);
-  value.setSourceJumpHandler(jumpToSourceLine);
-  value.setCommitStepHandler(async (from, file) => {
+  editorStore.services.stepDiffFile = async (from, file) => {
     const { diffRef: ref, diffBase: base, turnFiles, turnLabel } = from;
     await openFile(file.path, { ref, base, turnFiles, turnLabel, view: 'diff' });
-    const index = S.tabs.indexOf(from);
-    if (index >= 0 && from !== doc_() && from.diffRef === ref) closeTab(index);
-  });
+    const index = S.tabs.findIndex((tab) => tab.path === from.path);
+    if (index >= 0 && from.path !== doc_()?.path && from.diffRef === ref) closeTab(index);
+  };
   Object.assign(editorStore.services, {
     activate() {
       const document = doc_();
       if (!document) {
         $('#empty').hidden = false;
-        value.syncViewers();
+        syncViewers();
         value.updateStatus();
         return;
       }
       $('#empty').hidden = true;
       S.lsp = document.lsp || { state: 'off', server: '' };
-      value.syncViewers();
+      syncViewers();
       value.warmLSP(document);
       if ($('#pane-right-symbols')?.classList.contains('active')) void loadOutline();
       if (!document.gutterLoaded) void loadGutter(document);
@@ -267,16 +255,28 @@ export function configureLegacyServices(value) {
       value.emit('tab:closed', { doc: document });
       if (!S.tabs.length) value.emit('tabs:cleared');
     },
-    syncViewers: value.syncViewers,
+    syncViewers,
+    getDocRaw,
+    modKey: MOD,
+    viewerWord(event, definition) {
+      const word = wordAtPoint(event.clientX, event.clientY);
+      if (!word) return;
+      S.at = word;
+      S.lastWord = word.word;
+      if (definition) {
+        event.preventDefault();
+        value.gotoDefinition(word, { view: event.altKey ? 'source' : 'diff' });
+      } else hoverAt(event.clientX, event.clientY);
+    },
     loadGutter: (path) => loadGutter(legacyDocument(path)),
     saved: value.triggerRefresh,
-    previewing: value.previewing,
-    previewLine: value.previewLine,
+    previewing,
+    previewLine,
     findPreview(query, cs) {
-      return new Array(value.findInPreview(query, cs)).fill(null);
+      return editorStore.services.preview?.find(query, cs) || [];
     },
-    showPreviewHit: value.showPreviewHit,
-    clearPreviewMarks: value.clearPreviewMarks,
+    showPreviewHit,
+    clearPreviewMarks,
     hoverAllowed: () =>
       S.settings?.['lsp.hover.enabled'] !== false &&
       S.settings?.['lsp.enabled'] !== false &&
@@ -285,14 +285,14 @@ export function configureLegacyServices(value) {
     vimPreference: (enabled) => {
       S.settings['editor.vimMode'] = enabled;
     },
-    previewTopLine: value.previewTopLine,
+    previewTopLine,
     definition(at, options) {
       const document = editorStore.active();
       if (document) editorStore.store.actions.pushHistory(document.path, document.cur);
       return value.gotoDefinition(at || editorStore.actions.wordAtCaret(), options);
     },
     selectAll,
-    selectPreview: value.selectPreview,
+    selectPreview,
     references: (at) => value.findReferences(at || editorStore.actions.wordAtCaret()),
     calls: (at) => value.showCalls(at || editorStore.actions.wordAtCaret()),
     lspState: value.setLspState,
@@ -300,7 +300,6 @@ export function configureLegacyServices(value) {
     palette: () => value.openPalette('command'),
     beforeUnload: value.beforeUnload,
     blocked: () => !!$('dialog[open]') || !!$('#overlay')?.open,
-    viewerSelection: viewerSelection,
     selectionAction,
   });
 }
@@ -319,11 +318,11 @@ export const reopenClosedTab = () =>
 export const reloadOpenTabs = () => editorStore.actions.reloadOpenTabs();
 export const centerLine = (line) => editorStore.actions.centerLine(line);
 export const jumpToSourceLine = (line) => {
-  const document = doc_();
-  if (document) document.diffMode = null;
+  const document = activeDocument();
+  if (document) viewerActions().setView(document, 'source');
   editorStore.actions.patch({ cur: line });
   editorStore.actions.centerLine(line);
-  services.syncViewers?.();
+  syncViewers();
 };
 export const pushHistory = (path, line) => editorStore.store.actions.pushHistory(path, line);
 export const go = (delta) =>
@@ -344,11 +343,6 @@ export function measure() {
 export const layout = () => editorStore?.actions.refresh();
 export const render = layout;
 export const paint = layout;
-
-export const rowFor = (line) => sourceDOM.rowFor(line);
-export const toPos = (node, offset) => sourceDOM.toPos(node, offset);
-export const toPoint = (point) => sourceDOM.toPoint(point);
-export const lineTopY = (line) => editorStore.offsets()[Math.max(0, line - 1)] || 0;
 
 export const toggleWordWrap = (forced) => editorStore.actions.toggleWrap(forced);
 export function toggleLineNumbers(forced) {
@@ -449,7 +443,11 @@ export const runSelectionAction = (action, trigger, override) =>
 export async function selectAll() {
   const document = doc_();
   if (!document) return;
-  const text = await services.getDocRaw(document);
+  const target = activeDocument();
+  const buffer = editorStore.store.buffers.get(document.path);
+  const text = await getDocRaw(document);
+  if (activeDocument() !== target || editorStore.store.buffers.get(document.path) !== buffer)
+    return;
   S.selAll = document;
   editorStore.setUI('selection', {
     text,
@@ -496,8 +494,7 @@ function selectionAction(action, info, trigger) {
     if (info.rawMarkdown)
       services.copyToClipboard(info.rawMarkdown, 'Copied raw Markdown', trigger);
     else
-      services
-        .getDocRaw(doc_())
+      getDocRaw(doc_())
         .then((text) => {
           const lines = text
             .split(/\r?\n/)
@@ -533,7 +530,7 @@ export async function loadGutter(document) {
       document.openedInDiffView
     ) {
       document.diffMode = localStorage.getItem('faah.diffLayout') || 'split';
-      if (doc_() === document) services.syncViewers?.();
+      if (doc_() === document) syncViewers();
     }
     const marks = new Map();
     for (const line of result.modified || []) marks.set(line, 'mod');
@@ -557,132 +554,121 @@ export async function loadOutline({ upgrade = true } = {}) {
   }
 }
 
-export function markNodes(el, needle, caseSensitive, cls) {
-  if (!el || !needle) return [];
-  const out = [];
-  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-  const texts = [];
-  for (let n = walker.nextNode(); n; n = walker.nextNode()) texts.push(n);
-  for (const node of texts) {
-    const raw = node.nodeValue;
-    const hay = caseSensitive ? raw : raw.toLowerCase();
-    const nd = caseSensitive ? needle : needle.toLowerCase();
-    let i = hay.indexOf(nd),
-      at = 0;
-    if (i < 0) continue;
-    const frag = document.createDocumentFragment();
-    while (i >= 0) {
-      if (i > at) frag.appendChild(document.createTextNode(raw.slice(at, i)));
-      const mk = document.createElement(cls === 'mark' ? 'mark' : 'span');
-      if (cls !== 'mark') mk.className = cls;
-      mk.textContent = raw.slice(i, i + nd.length);
-      frag.appendChild(mk);
-      out.push(mk);
-      at = i + nd.length;
-      i = hay.indexOf(nd, at);
-    }
-    if (at < raw.length) frag.appendChild(document.createTextNode(raw.slice(at)));
-    node.parentNode.replaceChild(frag, node);
-  }
-  return out;
-}
-
-function extractMarkdownSelection(range, d) {
-  const frag = range.cloneContents();
-  const text = getFragmentPlainText(frag).trim();
-  if (!text) return null;
-
-  const html = getFragmentHtml(frag);
-  const rawMarkdown = domToMarkdown(frag).trim();
-  const { l1, l2 } = getMarkdownRangeLines(range);
-
-  return {
-    text,
-    html,
-    rawMarkdown,
-    l1: l1 || 1,
-    l2: l2 || d.total || 1,
-    path: d.path,
-    isMarkdownPreview: true,
-  };
-}
-
-function clipToRange(el, range) {
-  const r = document.createRange();
-  r.selectNodeContents(el);
-  if (range.compareBoundaryPoints(Range.START_TO_START, r) > 0)
-    r.setStart(range.startContainer, range.startOffset);
-  if (range.compareBoundaryPoints(Range.END_TO_END, r) < 0)
-    r.setEnd(range.endContainer, range.endOffset);
-  return r.toString();
-}
-
-/* A diff selection is anchored to the working-tree lines stamped on its rows,
-   on either side of a split. A selection of deleted lines alone has nothing on
-   disk, so it is anchored to the lines either side of where they were. The text
-   is gathered from the code cells alone, leaving out the line-number and +/-
-   gutters a raw selection would otherwise sweep up, and a context line showing
-   on both sides of a split is taken once. */
-function diffSelection(range, d) {
-  let l1 = Infinity,
-    l2 = -Infinity,
-    at1 = Infinity,
-    at2 = -Infinity;
-  let old1 = Infinity,
-    old2 = -Infinity;
-  const parts = [];
-  const seen = new Set();
-  for (const el of $('#diffview').querySelectorAll('[data-l], [data-at], [data-old-l]')) {
-    if (!range.intersectsNode(el)) continue;
-    const code = el.querySelector('.diff-code');
-    if (el.dataset.l !== undefined) {
-      const n = +el.dataset.l;
-      if (n < l1) l1 = n;
-      if (n > l2) l2 = n;
-      if (seen.has(n)) continue;
-      seen.add(n);
-    } else if (el.dataset.at !== undefined) {
-      const n = +el.dataset.at;
-      if (n < at1) at1 = n;
-      if (n > at2) at2 = n;
-    }
-    if (el.dataset.oldL !== undefined && el.dataset.l === undefined) {
-      const n = +el.dataset.oldL;
-      if (n < old1) old1 = n;
-      if (n > old2) old2 = n;
-    }
-    parts.push(code ? clipToRange(code, range) : '');
-  }
-  if (!parts.length) return null;
-  const isDeletedOnly = l1 === Infinity;
-  let side = 'RIGHT';
-  let delL1 = 0,
-    delL2 = 0;
-  if (isDeletedOnly) {
-    side = 'LEFT';
-    delL1 = old1 !== Infinity ? old1 : 1;
-    delL2 = old2 !== Infinity ? old2 : delL1;
-    const last = Math.max(1, d.total || 1);
-    l1 = Math.min(last, Math.max(1, at1 - 1));
-    l2 = Math.max(l1, Math.min(last, at2));
-  }
-  const text = parts.join('\n');
-  if (!text) return null;
-  return { text, l1, l2, delL1, delL2, path: d.path, fromDiff: true, side };
-}
-
-const domToMarkdown = (...args) => services.domToMarkdown(...args);
-const getFragmentPlainText = (...args) => services.getFragmentPlainText(...args);
-const getFragmentHtml = (...args) => services.getFragmentHtml(...args);
-const getMarkdownRangeLines = (...args) => services.getMarkdownRangeLines(...args);
-function viewerSelection(range, document) {
-  const md = $('#mdview');
-  const diff = $('#diffview');
-  if (md && !md.hidden && md.contains(range.commonAncestorContainer))
-    return extractMarkdownSelection(range, document);
-  if (diff && !diff.hidden && diff.contains(range.commonAncestorContainer))
-    return diffSelection(range, document);
-  return null;
-}
-
 export const drawOutline = () => services.drawOutline?.();
+
+// Phase B/C consumers keep their imperative calls at this boundary.
+const activeDocument = () => editorStore?.active();
+const viewerActions = () => editorStore.store.viewerActions;
+export const previewKind = (document = activeDocument()) => documentPreviewKind(document);
+export const previewing = (document = activeDocument()) =>
+  ['markdown', 'table'].includes(viewMode(document));
+export const previewLine = (line) => {
+  viewerActions().requestPreviewLine(activeDocument(), line);
+  editorStore.services.preview?.line(line);
+};
+export const previewTopLine = () => editorStore.services.preview?.topLine() || 1;
+export const findInPreview = (query, sensitive) =>
+  (editorStore.services.preview?.find(query, sensitive) || []).length;
+export const showPreviewHit = (index) => editorStore.services.preview?.showHit(index);
+export const clearPreviewMarks = () => editorStore.services.preview?.clearMarks();
+export const selectPreview = () => editorStore.services.preview?.select();
+export const previewKey = (event) => editorStore.services.preview?.key(event) || false;
+export function togglePreview() {
+  const document = activeDocument();
+  if (!previewKind(document))
+    return showToast('error', 'Preview works on Markdown, CSV and TSV files');
+  const shown = previewing();
+  const line = shown ? previewTopLine() : editorStore.services.source?.topLine?.() || document.cur;
+  viewerActions().togglePreview(document, line);
+  if (shown) editorStore.actions.centerLine(line);
+  if (editorStore.ui.findOpen) void editorStore.actions.executeFind();
+  services.updateStatus?.();
+}
+export const handleImageKey = (event) => editorStore.services.imageKey?.(event) || false;
+export const exitMermaidFullscreen = () => {
+  for (const exit of editorStore.services.diagramFullscreens || []) if (exit()) return true;
+  return false;
+};
+export const getDocRaw = (document) =>
+  document
+    ? apiText('api/raw', { path: document.path, ref: document.diffRef || '' })
+    : Promise.resolve('');
+export const sanitizeMarkdown = (html) => cleanMarkdown(html);
+export let diffview;
+export const setPRSyncHandler = (handler) => {
+  editorStore.services.diffRendered = handler;
+};
+export const syncViewers = () => editorStore.services.diffRendered?.();
+export function syncDiffView(force = false) {
+  if (force || activeDocument()?.diffMode) viewerActions().invalidate(activeDocument());
+  editorStore.services.diffRendered?.();
+}
+export const setLayoutPref = (mode) => localStorage.setItem('faah.diffLayout', mode);
+export const toggleDiff = () => {
+  const document = activeDocument();
+  if (!canDiff(document, editorStore.store.state.workspace.meta)) return;
+  viewerActions().setDiffMode(
+    document,
+    document.diffMode ? 'source' : localStorage.getItem('faah.diffLayout') || 'split',
+  );
+  services.updateStatus?.();
+};
+export const stepDiffHunk = (direction) => editorStore.services.diff?.stepHunk(direction);
+export const stepChangedFile = async (direction) => {
+  const document = activeDocument();
+  if (!document) return;
+  let files = document.turnFiles;
+  if (!files && document.diffRef)
+    files = (await api('api/commitfiles', { sha: document.diffRef })).files;
+  files ||= (editorStore.store.state.workspace.meta?.gitFiles || []).map((path) => ({ path }));
+  files = files
+    .map((file) => (typeof file === 'string' ? { path: file } : file))
+    .filter((file) => !file.binary);
+  const index = files.findIndex((file) => file.path === document.path);
+  const next = files[index + direction];
+  if (next) editorStore.services.stepDiffFile?.(document, next);
+};
+export const isFileViewed = (path) => !!editorStore.store.state.viewers.viewed[path];
+export function focusDiffScope(document) {
+  const actual = editorStore.store.state.documents.tabs.find((tab) => tab.path === document?.path);
+  if (!actual || !editorStore.store.state.workspace.meta?.pr) return;
+  const tree = $('#tree');
+  viewerActions().focusScope(actual, tree?.classList.contains('scope-yours') ? 'yours' : 'pr');
+}
+let orbHooks;
+export function initOrb(hooks) {
+  orbHooks = hooks;
+  editorStore.services.openExplanation = hooks.open;
+  editorStore.services.viewedChanged = (path) => {
+    for (const row of $$('#tree .tr.file[data-file="' + CSS.escape(path) + '"]'))
+      row.classList.toggle('file-viewed', isFileViewed(path));
+  };
+  const observer = new MutationObserver(orbSync);
+  observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  onCleanup(() => observer.disconnect());
+}
+export const orbSync = () =>
+  viewerActions().showOrbThread(
+    !!orbHooks?.showing(editorStore.store.state.explanation.model?.id || null),
+  );
+export const orbBegin = () => {
+  viewerActions().orbBegin();
+  orbSync();
+};
+export const orbAttach = (thread) => {
+  viewerActions().orbAttach(thread);
+  orbSync();
+};
+export const orbFailed = (message) => {
+  viewerActions().orbFailed(message);
+  orbSync();
+};
+export const orbThread = (thread) => {
+  viewerActions().orbThread(thread);
+  orbSync();
+};
+export const orbStep = (id, text) => viewerActions().orbStep(id, text);
+export const orbSummary = (summary) => {
+  viewerActions().orbSummary(summary);
+  orbSync();
+};

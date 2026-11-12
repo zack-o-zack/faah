@@ -6,6 +6,7 @@ import { Toaster } from './lib/toast.jsx';
 import { bindLegacyEditor, attachLegacyDOM } from './app/legacy-bridge.js';
 import { createEditorStore } from './editor/store.js';
 import { EditorProvider } from './editor/context.jsx';
+import { ViewerShell } from './viewers/ViewerShell.jsx';
 import { EditorShell } from './editor/EditorShell.jsx';
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
   return (
     <EditorProvider value={editorStore}>
       <EditorShell />
+      <ViewerShell />
       <Toaster />
     </EditorProvider>
   );

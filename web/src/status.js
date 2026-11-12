@@ -2,7 +2,7 @@ import { doc_, api, apiPost, withKeys, showToast } from './app/legacy-bridge.js'
 import { setMenuHidden } from './overlays.js';
 import { setPressed } from './controls.js';
 import { $, S, esc } from './state.js';
-import { previewing, previewKind } from './markdown.js';
+import { previewing, previewKind } from './app/legacy-bridge.js';
 import { copyToClipboard } from './ui.js';
 import { fmtBytes, showMetrics, initMetricsMenu, closeMetricsMenu } from './metricsview.js';
 
@@ -14,7 +14,7 @@ export function updateStatus() {
   if (d && d.isImage) {
     const posEl = $('#st-pos');
     if (posEl) {
-      const zoomText = d.imageFit ? `Fit (${Math.round((d.imageScale || 1) * 100)}%)` : `${Math.round((d.imageScale || 1) * 100)}%`;
+      const zoomText = d.image?.fit ? 'Fit' : `${Math.round((d.image?.scale || 1) * 100)}%`;
       posEl.textContent = d.imageMeta ? `${d.imageMeta.width} × ${d.imageMeta.height} px · ${zoomText}` : zoomText;
     }
   }
@@ -30,40 +30,6 @@ export function updateStatus() {
     const l = $('.bar-action-label', mdBtn);
     if (l && isMd) l.textContent = label;
   }
-  const sw = $('#md-switch');
-  if (sw) {
-    sw.hidden = !isMd || !!d?.diffMode;
-    const pb = $('[data-md="preview"]', sw);
-    if (pb && isMd) pb.textContent = label;
-    document.body.classList.toggle('md-tab', isMd);
-    for (const b of sw.children) {
-      if (b.dataset.md) setPressed(b, isMd && (b.dataset.md === 'preview') === shown);
-    }
-  }
-
-  const isCode = d && !d.isImage;
-  const inGit = !!S.meta?.git;
-  const hasDiff = !!(d && d.diffAvailable);
-  const isDiffOn = !!(d && d.diffMode);
-  const dsw = $('#diff-switch');
-  if (dsw) {
-    // Only files with changes get the switch; a clean file has nothing to compare.
-    dsw.hidden = !(inGit && isCode && (hasDiff || isDiffOn));
-    document.body.classList.toggle('diff-tab', hasDiff);
-    setPressed($('#diff-btn'), isDiffOn);
-    setPressed($('#diff-source'), !isDiffOn);
-  }
-  const layoutBtn = $('#diff-layout');
-  if (layoutBtn) {
-    const split = (d && d.diffMode) !== 'unified';
-    layoutBtn.hidden = !isDiffOn;
-    const label = split ? 'Show changes in one column' : 'Show changes side by side';
-    layoutBtn.title = label;
-    layoutBtn.setAttribute('aria-label', label);
-    $('#diff-layout-split').hidden = !split;
-    $('#diff-layout-unified').hidden = split;
-  }
-
   const verEl = $('#st-ver');
   if (verEl && S.meta?.version) {
     verEl.textContent = 'v' + S.meta.version;

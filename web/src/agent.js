@@ -8,7 +8,6 @@ import { setStatusNote } from './status.js';
 
 import { refreshTree, treeEl } from './tree.js';
 
-import { syncDiffAgentTargets } from './diff.js';
 import { emit } from './bus.js';
 
 /* faah does not author edits. Each box composes an instruction and the range it
@@ -220,7 +219,6 @@ function syncAgentTargets() {
     l2: s.target.l2,
   }));
   render();
-  syncDiffAgentTargets();
 }
 
 function createSession(info) {

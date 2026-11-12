@@ -150,22 +150,28 @@ callbacks stay in props; reactive data props are passed as values.
 
 ## Temporary main-app bridge
 
-`main.jsx` mounts providers, `EditorShell` and the toaster, then starts `initLegacy()`.
+`main.jsx` mounts providers, `EditorShell`, `ViewerShell` and the toaster, then starts `initLegacy()`.
 Only `app/legacy-bridge.js` adapts migrated APIs for legacy consumers. It carries the
 removal marker and replaces the previous theme bridge. Its adapters cover:
 
-- `S.tabs`, active tab, history, editor preferences, cursor/navigation and LSP state.
-- Legacy document facades over metadata and plain buffers, with viewer caches outside
-  proxies and guards against writing through a disposed or replaced document.
+- `S.tabs`, active tab, history, workspace metadata, editor preferences, cursor/navigation
+  and LSP state. Legacy metadata field writes enter named store actions.
+- Legacy document facades over metadata and plain buffers, with Git gutter data outside
+  proxies and guards against writing through a disposed or replaced document. Viewer
+  HTML, parsed tables, diff rows and full-file expansion buffers belong to mounted resources.
 - File open/switch/close/reopen, history, line jumps, layout notifications, find,
   selection, hover, edit and Vim actions; theme observation and theme changes.
-- Legacy DOM handles used by phase A2 viewers, viewer selections/marks, Git gutters,
-  outline notifications, and agent/thread/review/explain selection callbacks.
+- Narrow preview navigation/find/selection, image-key and Mermaid fullscreen operations;
+  diff refresh, scope, file/hunk stepping, viewed flags and layout preference.
+- The stable diff root used by legacy PR comment placement, its repaint notification,
+  server-Markdown sanitization for PR comments, and explain-thread events.
+- Remaining source DOM handles, Git gutters, outline notifications and
+  agent/thread/review/explain selection callbacks.
 
-Remaining tree, palette, search, Git/PR/review, agent, status and viewer modules import
+Remaining tree, palette, search, Git/PR/review, agent and status modules import
 these APIs directly from this one bridge. `state.js` and `ui.js` do not re-export migrated
-editor APIs. Markdown, Mermaid, tables, images, diffs and the explain orb remain legacy
-until phase A2. `outline-pane.js` keeps only the existing right-pane rendering and events;
+editor or viewer APIs. Markdown, Mermaid, tables, images, diffs and the explain orb
+are Solid components in `viewers/`. `outline-pane.js` keeps only the existing right-pane rendering and events;
 it remains in both explicit legacy lists until phase B replaces that UI. Editor-side
 symbol fetching and state are already migrated. Delete the bridge, legacy boot/state
 helpers and static shell when the final legacy consumer is migrated.
@@ -247,3 +253,55 @@ holding contain none. The selection bar mounts its actions only while selected;
 Vim help mounts only when requested.
 Components invoke named actions for find-case, selection-menu and Vim-help changes;
 the shared UI setter stays in store actions and the temporary bridge.
+
+
+## File viewers (phase A2)
+
+Document entries own the chosen preview/source view, diff layout/ref/scope, collapsed
+sections, scroll targets and image transform/background/pixelation state. Capabilities
+derive from the path/language and Git metadata. `FileActions` renders these choices;
+`viewers/actions.js` provides named transitions and the explanation store slice.
+
+`ViewerShell` mounts `PreviewViewer`, `ImageViewer`, `DiffViewer` and `ExplainOrb`.
+Markdown/table/diff resources are keyed by path, buffer identity and generation,
+revision and diff ref/base. Replaced requests are aborted; Solid discards stale results.
+Unrelated chunk publications do not refetch. Parsed data remains outside deep proxies
+and is released with its mounted viewer. Loading, error and retry views live in JSX.
+
+`markdown-dom.js` applies the existing inert allowlist sanitizer and serializes selections.
+`PreviewContent` owns its rendered article, enhancement setup, delegated link/copy/image
+handlers and narrow preview operations. `markdown-logic.js`, `markdown-picture.js` and
+`view.js` contain tested URL, picture-source, capability and source-line calculations.
+`MermaidDiagram` uses the theme store directly and lazily loads the existing vendor asset.
+Its strict SVG output is parsed into the owned canvas. The runtime serializes renderer
+calls and bounds its diagram cache to 50 entries. `TableViewer` renders text cells with
+`For`/`Index`, retains the 1,000-row cap and provides source-line buttons.
+
+`image-math.js` holds tested fit, zoom and pan calculations. `ImageViewer` owns image
+loading, metadata, pointer/wheel listeners and resize observation; `ImageHUD` invokes
+named document actions. `Lightbox` mounts only when a preview image is opened.
+
+Diff parsing/serialization, split/unified rows, intraline parts, gutter/selection mapping,
+context expansion and measured window calculations live in the pure `diff-*.js` modules
+(except the DOM Range adapter `diff-selection.js`). `diff-actions.js` owns guarded hunk
+requests and releases expanded file buffers on disposal. `DiffContent`, `DiffSection`,
+`DiffStrip`, `DiffRows` and `DiffRow` own their markup. Hunks above 400 rows reuse bounded
+`Index` slots with ResizeObserver measurements, preserving wrapped line heights.
+Rows expose numeric line positions, never elements, for navigation. Agent highlights
+derive from the shared target ranges. Legacy PR annotations still attach through the
+bridge to the stable diff root until phase C.
+
+The A2 effect audit retains three new `createEffect` calls:
+
+- `PreviewContent`: applies app-theme picture sources and requested source-line/anchor
+  scrolls to its owned rendered article.
+- `MermaidDiagram`: adopts and sizes the strict vendor renderer's SVG in its owned canvas.
+- `DiffContent`: schedules the legacy PR annotation repaint after layout, section or
+  expanded-context DOM changes, cancelling the frame on disposal.
+
+Other viewer setup uses owned `onMount` callbacks with cleanup for listeners, observers,
+timers and registered operations. The explain orb and image controls need no effects.
+No migrated component obtains another component's elements through context. A2 removes
+viewer cache fields, Markdown selection/marking adapters, row/point geometry exports and
+the imperative agent-diff highlight callback from the bridge. The remaining metadata and
+orb sidebar observer are temporary legacy adapters confined to that file.
