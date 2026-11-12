@@ -4,9 +4,8 @@ import { $ } from './state.js';
 /* The orb is the editor's sign that an explanation is running. It names the
    latest step and how many notes the agent has shown so far, then the
    outcome. It follows one explanation at a time and stays across tab
-   switches. Explanations no longer open the sidebar, and notes do not show on
-   the code yet, so a finished explanation stays here until the reader opens
-   or dismisses it. */
+   switches. A finished explanation fades after a few seconds, since its notes
+   are on the code; a failed one stays until it is opened or dismissed. */
 
 /** @typedef {{id: string|null, phase: 'running'|'done'|'failed', step: string, notes: number, walkthrough: boolean, error: string, reply: string}} OrbModel */
 
@@ -85,7 +84,10 @@ const el = {};
 function orbSet(next) {
   const prev = model;
   model = next;
+  clearTimeout(fadeTimer);
+  el.root.classList.remove('opacity-0');
   if (!model) { orbSync(); return; }
+  if (model.phase === 'done') fadeTimer = setTimeout(fade, FADE_AFTER);
   const v = orbView(model);
   el.text.textContent = v.shown;
   el.snippet.textContent = v.snippet;
@@ -100,6 +102,16 @@ function orbSet(next) {
   el.close.hidden = v.busy;
   if (prev?.phase !== model.phase) el.live.textContent = v.announce;
   orbSync();
+}
+
+/* Hovering or focusing the orb holds it. */
+const FADE_AFTER = 5000;
+let fadeTimer = 0;
+function fade() {
+  if (el.root.matches(':hover, :focus-within')) { fadeTimer = setTimeout(fade, 1000); return; }
+  el.root.classList.add('opacity-0');
+  const quick = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  fadeTimer = setTimeout(() => orbSet(null), quick ? 0 : 200);
 }
 
 /* Hidden while the sidebar shows the same thread, which carries the same
