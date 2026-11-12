@@ -1,5 +1,6 @@
 dist/
 bench-repos/
+bench-out/
 faah
 faah.exe
 *.test
