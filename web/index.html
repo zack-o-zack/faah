@@ -75,7 +75,7 @@
             <footer data-align="block-end" class="gap-1">
               <div id="git-agent" class="inline-flex min-w-0 flex-1" data-control="agent-picker" data-placeholder="No harness"><button type="button" data-variant="ghost" data-size="sm" class="btn max-w-full h-7! text-muted-foreground! border-transparent! bg-transparent! px-2! text-xs! shadow-none! hover:bg-accent! hover:text-foreground!" aria-haspopup="dialog" aria-expanded="false" aria-label="Coding harness and model" title="Coding harness and model"><span class="truncate"></span><i class="icon-[lucide--chevrons-up-down] size-3.5 shrink-0" aria-hidden="true"></i></button></div>
               <button id="git-instructions-link" type="button" title="Message instructions" aria-label="Message instructions" class="btn" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--sliders-horizontal] size-3.5 shrink-0" aria-hidden="true"></span></button>
-              <button id="git-generate-msg" type="button" title="Write a message for these changes" aria-label="Write a message for these changes" class="btn" data-variant="ghost" data-size="icon-xs"><span data-ui="icon" class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true"></span></button>
+              <button id="git-generate-msg" type="button" title="Write a message for these changes" aria-label="Write a message for these changes" class="btn" data-variant="special" data-size="icon-xs"><span data-ui="icon" class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true"></span></button>
             </footer>
           </div>
           <button id="git-commit" type="button" disabled class="btn w-full" data-variant="primary" data-size="sm"><span data-ui="icon" class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true"></span><span data-ui="label">Commit</span></button>
@@ -325,7 +325,7 @@
 
     <!-- Review Mode Workflow View -->
     <div id="review-view" data-ui="review-view" class="group/review relative flex flex-1 min-h-0 flex-col overflow-hidden layout-vertical" hidden>
-      <!-- Review Sub-Navbar: Walkthrough & Diff vs Workflow Stages -->
+      <!-- Review Sub-Navbar: Walkthrough & Diff vs Review pipeline -->
       <div id="review-sub-bar" data-ui="review-sub-bar" class="flex flex-wrap items-center shrink-0 select-none gap-2 p-3">
         <div data-ui="review-sub-tabs" class="flex items-center gap-2" role="tablist">
           <button id="btn-review-tab-walkthrough" role="tab" aria-selected="true" title="Scrollytelling code diff and guardrail understanding" class="btn" data-control="review-sub-tab" data-variant="secondary" data-size="xs" aria-pressed="true">
@@ -333,9 +333,9 @@
             <span>Diff & Understanding</span>
             <span id="review-walkthrough-files-badge" class="badge" data-variant="secondary">0</span>
           </button>
-          <button id="btn-review-tab-stages" role="tab" aria-selected="false" title="AI review pipeline stages" class="btn" data-control="review-sub-tab" data-variant="ghost" data-size="xs">
-            <span class="icon-[lucide--square-check-big] size-3.5 shrink-0" aria-hidden="true"></span>
-            <span>Workflow Stages</span>
+          <button id="btn-review-tab-stages" role="tab" aria-selected="false" title="Your coding harness answers each review question in turn" class="btn" data-control="review-sub-tab" data-variant="ghost" data-size="xs">
+            <span class="icon-[lucide--sparkle] size-3.5 shrink-0 text-special" aria-hidden="true"></span>
+            <span>Review pipeline</span>
             <span id="review-stages-count-badge" class="badge" data-variant="secondary">4</span>
           </button>
         </div>
@@ -376,70 +376,69 @@
         </section>
       </div>
 
-      <!-- Existing Workflow Stages Pipeline View -->
+      <!-- Review pipeline: the coding harness answers each stage's question in turn -->
       <div id="review-stages-view" data-ui="review-stages-view" class="flex flex-1 min-h-0 overflow-hidden group-[.layout-horizontal]/review:flex-col" hidden>
-        <!-- Left sidebar / Top bar: Sequential Stages Pipeline -->
-        <aside id="review-pipeline" data-ui="review-pipeline" class="flex w-80 max-w-1/2 shrink-0 flex-col overflow-auto group-[.layout-horizontal]/review:w-full group-[.layout-horizontal]/review:max-w-none group-[.layout-horizontal]/review:max-h-64">
-        <div data-ui="review-pipeline-head" class="flex flex-wrap items-center justify-between gap-2 p-3">
-          <div data-ui="review-workflow-info" class="flex flex-col min-w-0 gap-2">
-            <span data-ui="review-section-title" class="label font-semibold text-muted-foreground">Workflow</span>
-            <span id="review-workflow-name" data-ui="review-workflow-name" class="overflow-hidden whitespace-nowrap text-ellipsis font-semibold">PR Review Workflow</span>
+        <aside id="review-pipeline" data-ui="review-pipeline" class="flex w-72 max-w-1/2 shrink-0 flex-col overflow-hidden border-r group-[.layout-horizontal]/review:w-full group-[.layout-horizontal]/review:max-w-none group-[.layout-horizontal]/review:max-h-64 group-[.layout-horizontal]/review:border-r-0 group-[.layout-horizontal]/review:border-b">
+          <div data-ui="review-pipeline-head" class="flex items-start gap-2 px-3 pt-3 pb-2">
+            <div data-ui="review-workflow-info" class="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span class="flex min-w-0 items-center gap-1.5">
+                <span class="icon-[lucide--sparkle] size-3.5 shrink-0 text-special" aria-hidden="true"></span>
+                <button type="button" id="review-workflow-name" data-ui="review-workflow-name" class="min-w-0 truncate text-left text-sm font-semibold hover:underline underline-offset-2">Review pipeline</button>
+              </span>
+              <span class="text-xs text-muted-foreground">Your coding harness answers each question in order.</span>
+            </div>
+            <div data-ui="review-pipeline-head-actions" class="flex shrink-0 items-center">
+              <button id="btn-toggle-review-layout" title="Stages beside or above the answer" aria-label="Toggle layout" class="btn" data-variant="ghost" data-size="icon-xs">
+                <span id="icon-layout-vert" class="icon-[lucide--columns-2] size-3.5 shrink-0" aria-hidden="true"></span>
+                <span id="icon-layout-horiz" class="icon-[lucide--rows-2] size-3.5 shrink-0" aria-hidden="true"></span>
+              </button>
+              <button id="btn-add-review-stage" title="Add a stage" aria-label="Add a stage" class="btn" data-variant="ghost" data-size="icon-xs">
+                <span class="icon-[lucide--plus] size-3.5 shrink-0" aria-hidden="true"></span>
+              </button>
+              <button id="btn-review-settings" title="Edit all stages" aria-label="Edit all stages" class="btn" data-variant="ghost" data-size="icon-xs">
+                <span class="icon-[lucide--settings] size-3.5 shrink-0" aria-hidden="true"></span>
+              </button>
+            </div>
           </div>
-          <div data-ui="review-pipeline-head-actions" class="flex items-center gap-2">
-            <button id="btn-toggle-review-layout" title="Toggle Layout: Vertical / Horizontal" aria-label="Toggle Layout" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs">
-              <span id="icon-layout-vert" class="icon-[lucide--columns-2] size-3.5 shrink-0" aria-hidden="true"></span>
-              <span id="icon-layout-horiz" class="icon-[lucide--rows-2] size-3.5 shrink-0" aria-hidden="true"></span>
+          <ol id="review-stages-container" data-ui="review-stages-container" class="flex flex-1 flex-col overflow-y-auto px-1.5 pb-2" aria-label="Stages"></ol>
+          <div data-ui="review-pipeline-actions" class="border-t p-3">
+            <button id="btn-run-review-flow" title="Run every stage in order" class="btn w-full" data-variant="special" data-size="sm">
+              <span class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true"></span>
+              <span id="btn-run-review-label">Run pipeline</span>
             </button>
-            <button id="btn-add-review-stage" title="Add a new stage to this workflow" class="btn" data-control="mini review-btn-add" data-variant="ghost" data-size="icon-xs" aria-label="Add a new stage to this workflow">
-              <span class="icon-[lucide--plus] size-3.5 shrink-0" aria-hidden="true"></span>
-            </button>
-            <button id="btn-review-settings" title="Configure workflow stages" aria-label="Configure workflow" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs">
-              <span class="icon-[lucide--settings] size-3.5 shrink-0" aria-hidden="true"></span>
+            <button id="btn-stop-review-flow" title="Stop after the current answer" hidden class="btn w-full" data-variant="outline" data-size="sm">
+              <span class="size-2.5 shrink-0 rounded-[2px] bg-current" aria-hidden="true"></span>
+              <span>Stop</span>
             </button>
           </div>
-        </div>
-        <div id="review-stages-container" data-ui="review-stages-container" class="flex flex-col flex-1 overflow-y-auto gap-2 p-3"></div>
-        <div data-ui="review-pipeline-actions" class="flex flex-col gap-2 p-3">
-          <button id="btn-run-review-flow" title="Run workflow stages sequentially" class="btn" data-control="review-run-btn" data-variant="primary" data-size="xs">
-            <span class="icon-[lucide--play] size-3.5 shrink-0" aria-hidden="true"></span>
-            <span id="btn-run-review-label">Run Workflow</span>
-          </button>
-          <button id="btn-stop-review-flow" title="Stop running workflow" hidden class="btn" data-control="review-stop-btn" data-variant="destructive" data-size="xs">
-            <span class="icon-[lucide--square] size-3.5 shrink-0" aria-hidden="true"></span>
-            <span>Stop</span>
-          </button>
-        </div>
-      </aside>
+        </aside>
 
-      <!-- Center/Right: Active Stage Question & Conversation Thread -->
-      <section id="review-stage-main" data-ui="review-stage-main" class="flex flex-1 min-w-0 min-h-0 flex-col overflow-hidden">
-        <header data-ui="review-stage-header" class="flex flex-wrap items-center justify-between gap-2 p-3">
-          <div data-ui="review-stage-header-info" class="flex items-center min-w-0 gap-2">
-            <span id="review-stage-badge" class="badge" data-variant="secondary">Stage 1</span>
-            <h2 id="review-stage-title" data-ui="review-stage-title" class="label overflow-hidden whitespace-nowrap text-ellipsis font-semibold">PR Intent & Overview</h2>
-          </div>
-          <div data-ui="review-stage-header-actions" class="flex shrink-0 flex-wrap items-center gap-2">
-            <span id="review-stage-status-tag" class="badge" data-variant="secondary">Pending</span>
-            <button id="btn-edit-stage-inline" title="Edit this stage title, question and prompt" class="btn" data-control="mini review-btn-edit-stage" data-variant="ghost" data-size="sm" aria-label="Edit this stage title, question and prompt">
-              <span class="icon-[lucide--square-pen] size-3.5 shrink-0" aria-hidden="true"></span>
-              <span>Edit Stage</span>
-            </button>
-            <button id="btn-rerun-stage" title="Re-run just this stage" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Re-run just this stage">
-              <span class="icon-[lucide--rotate-cw] size-3.5 shrink-0" aria-hidden="true"></span>
-            </button>
-          </div>
-        </header>
-
-        <div id="review-question-banner" data-ui="review-question-banner" class="flex flex-wrap items-center justify-between gap-2 p-3">
-          <span data-ui="review-q-label" class="label flex-none font-semibold text-primary-text">Question:</span>
-          <span id="review-question-text" data-ui="review-question-text" class="flex-1 min-w-0"></span>
-          <button id="btn-quick-edit-q" title="Edit Question" class="btn" data-control="mini review-btn-quick-edit" data-variant="ghost" data-size="icon-xs" aria-label="Edit Question">
-            <span class="icon-[lucide--square-pen] size-3 shrink-0" aria-hidden="true"></span>
-          </button>
-        </div>
+        <section id="review-stage-main" data-ui="review-stage-main" class="flex flex-1 min-w-0 min-h-0 flex-col overflow-hidden">
+          <header data-ui="review-stage-header" class="flex items-start gap-3 border-b px-4 py-3">
+            <div data-ui="review-stage-header-info" class="flex min-w-0 flex-1 flex-col gap-1">
+              <span class="flex items-center gap-2 text-xs text-muted-foreground">
+                <span id="review-stage-badge">Stage 1 of 4</span>
+                <span aria-hidden="true">·</span>
+                <span id="review-stage-status-tag" class="inline-flex items-center gap-1.5"></span>
+              </span>
+              <h2 id="review-stage-title" data-ui="review-stage-title" class="min-w-0 truncate text-base font-semibold"></h2>
+              <div id="review-question-banner" data-ui="review-question-banner" class="flex min-w-0 items-start gap-1">
+                <span id="review-question-text" data-ui="review-question-text" class="min-w-0 text-sm text-muted-foreground"></span>
+                <button id="btn-quick-edit-q" hidden title="Edit the question" aria-label="Edit the question" class="btn" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--square-pen] size-3 shrink-0" aria-hidden="true"></span></button>
+              </div>
+            </div>
+            <div data-ui="review-stage-header-actions" class="flex shrink-0 items-center">
+              <button id="btn-edit-stage-inline" title="Edit this stage's title, question and instructions" aria-label="Edit this stage" class="btn" data-variant="ghost" data-size="icon-sm">
+                <span class="icon-[lucide--square-pen] size-3.5 shrink-0" aria-hidden="true"></span>
+              </button>
+              <button id="btn-rerun-stage" title="Run this stage again" aria-label="Run this stage again" class="btn" data-variant="ghost" data-size="icon-sm">
+                <span class="icon-[lucide--rotate-cw] size-3.5 shrink-0" aria-hidden="true"></span>
+              </button>
+            </div>
+          </header>
 
         <!-- Inline Stage Editor (Right inside the Review View) -->
-        <div id="review-stage-inline-editor" data-ui="review-stage-inline-editor" class="flex flex-col gap-2 p-3" hidden>
+        <div id="review-stage-inline-editor" data-ui="review-stage-inline-editor" class="flex flex-col gap-3 border-b px-4 py-3" hidden>
           <div data-ui="review-inline-edit-row" class="field flex flex-col gap-2">
             <label class="label">Stage Title</label>
             <input type="text" id="inline-edit-stage-title" aria-label="Stage title" placeholder="e.g. Performance Impact" class="input h-8!" data-control="review-inline-input">
@@ -449,8 +448,8 @@
             <textarea id="inline-edit-stage-q" aria-label="Stage question" rows="2" placeholder="e.g. Are there any performance bottlenecks or lock contentions?" class="textarea resize-y" data-control="review-inline-textarea"></textarea>
           </div>
           <div data-ui="review-inline-edit-row" class="field flex flex-col gap-2">
-            <label class="label">Detailed AI Prompt Instructions</label>
-            <textarea id="inline-edit-stage-prompt" aria-label="Stage instructions" rows="3" placeholder="Detailed instructions for the AI reviewer..." class="textarea resize-y" data-control="review-inline-textarea"></textarea>
+            <label class="label">Instructions for the harness</label>
+            <textarea id="inline-edit-stage-prompt" aria-label="Stage instructions" rows="3" placeholder="What the harness should look at and how to answer" class="textarea resize-y" data-control="review-inline-textarea"></textarea>
           </div>
           <div data-ui="review-inline-edit-actions" class="flex gap-2">
             <button id="btn-save-stage-inline" class="btn" data-control="bar-action" data-variant="primary" data-size="xs">Save Changes</button>
@@ -459,16 +458,17 @@
         </div>
 
         <!-- Transcript of this stage's thread -->
-        <div id="review-thread-msgs" data-ui="review-thread-msgs thr-msgs" class="flex flex-col flex-1 min-h-0 overflow-y-auto gap-2 p-3 flex flex-1 min-h-0 flex-col gap-4 overflow-y-auto p-4"></div>
+        <div id="review-thread-msgs" data-ui="review-thread-msgs thr-msgs" class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4"></div>
 
-        <!-- Composer to ask follow-up questions on this stage -->
-        <div data-ui="review-compose-wrap" class="p-3">
-          <div data-ui="review-compose-inner" class="flex flex-col gap-2">
-            <textarea id="review-compose-input" aria-label="Follow-up about this stage" rows="2" spellcheck="false" autocomplete="off" placeholder="Ask follow-up question about this stage..." class="textarea resize-y" data-control="agent-input review-input"></textarea>
-            <div data-ui="review-compose-foot" class="flex items-center justify-between">
-              <span data-ui="agent-hint" class="flex-1">Enter to send, Shift+Enter for new line</span>
-              <button id="review-compose-send" class="btn" data-control="agent-send review-send-btn" data-variant="primary" data-size="xs">Send</button>
-            </div>
+        <!-- Follow-up questions on this stage go to the same thread -->
+        <div data-ui="review-compose-wrap" class="px-4 pb-3">
+          <div class="input-group" data-orientation="vertical">
+            <textarea id="review-compose-input" aria-label="Follow-up about this stage" rows="1" spellcheck="false" autocomplete="off" placeholder="Ask a follow-up about this stage" class="max-h-40 min-h-9" data-control="agent-input review-input"></textarea>
+            <footer data-align="block-end" class="gap-1">
+              <span data-ui="agent-hint" class="text-xs text-muted-foreground">Enter to send · Shift+Enter for a new line</span>
+              <span class="flex-1"></span>
+              <button id="review-compose-send" type="button" disabled title="Send (Enter)" aria-label="Send" class="btn rounded-full" data-variant="primary" data-size="icon-sm"><span class="icon-[lucide--arrow-up] size-4" aria-hidden="true"></span></button>
+            </footer>
           </div>
         </div>
       </section>
@@ -505,7 +505,7 @@
       </div>
       <div id="pr-review-row" data-ui="pr-bar-row pr-review-row" class="ml-auto flex shrink-0 items-center gap-2">
         <button id="pr-merge-fix" type="button" hidden class="btn" data-variant="outline" data-size="sm"></button>
-        <button id="pr-batch-apply" hidden title="Have the harness apply your draft comments to the code" class="btn" data-control="bar-action pr-btn-batch-apply" data-variant="ghost" data-size="sm">
+        <button id="pr-batch-apply" hidden title="Have the harness apply your draft comments to the code" class="btn" data-control="bar-action pr-btn-batch-apply" data-variant="special" data-size="sm">
           <span class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true"></span>
           <span class="bar-action-label">Apply drafts</span>
         </button>
@@ -872,7 +872,7 @@
         <div class="git-agent-picker flex flex-col gap-2">
           <div id="pr-merge-agent" class="inline-flex min-w-0 max-w-full" data-control="agent-picker" data-placeholder="No harness"><button class="btn max-w-full" data-variant="outline" type="button" data-size="sm" aria-haspopup="dialog" aria-expanded="false" aria-label="Coding harness and model" title="Coding harness and model"><span class="truncate"></span><i class="icon-[lucide--chevrons-up-down] size-3.5 shrink-0 text-muted-foreground" aria-hidden="true"></i></button></div>
         </div>
-        <button id="pr-merge-ai" type="button" title="Have the harness rewrite the title and message from the PR's commits and diff" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs">Rewrite with AI</button>
+        <button id="pr-merge-ai" type="button" title="Have the harness rewrite the title and message from the PR's commits and diff" class="btn" data-control="bar-action" data-variant="special" data-size="xs"><span class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true"></span>Rewrite</button>
       </div>
       <span id="pr-merge-instructions-note" data-ui="pr-merge-note" class="text-muted-foreground" hidden>Your <a id="pr-merge-instructions-link" href="#" data-ui="pr-merge-link" class="text-primary-text">commit message instructions</a> from Settings apply too.</span>
     </div>
@@ -1033,7 +1033,7 @@
       </div>
       <div data-ui="review-config-field" class="field flex flex-col gap-2">
         <label class="label">Detailed AI Prompt</label>
-        <textarea rows="3" id="add-stage-prompt-input" placeholder="Detailed instructions for the AI reviewer..." class="textarea resize-y"></textarea>
+        <textarea rows="3" id="add-stage-prompt-input" placeholder="What the harness should look at and how to answer" class="textarea resize-y"></textarea>
       </div>
     </section>
     <footer class="">

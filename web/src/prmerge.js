@@ -153,6 +153,8 @@ const PILL_FIXES = {
   push: '<span class="icon-[lucide--arrow-up] size-3.5 shrink-0" aria-hidden="true"></span>',
 };
 
+const REWRITE_LABEL = '<span class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true"></span>Rewrite';
+
 function onFixClick() {
   const p = pill();
   if (p?.act === 'resolve') emit('pr:resolve');
@@ -183,6 +185,7 @@ function renderPRMerge() {
   if (fixBtn) {
     fixBtn.hidden = !p?.act;
     if (p?.act) {
+      fixBtn.dataset.variant = p.act === 'resolve' ? 'special' : 'outline';
       fixBtn.innerHTML = PILL_FIXES[p.act] + esc(p.fix || (p.act === 'push' ? 'Force-push' : 'Resolve'));
       fixBtn.title = p.title;
       fixBtn.disabled = !!sync.running;
@@ -216,9 +219,9 @@ function renderMenu() {
   const cur = chosenMethod();
   const n = info?.commits?.length || 0;
   menu.innerHTML = allowed().map(m =>
-    `<button type="button" role="menuitemradio" aria-checked="${m === cur}" data-method="${m}" class="btn" data-variant="outline" data-size="xs">` +
-    `<span data-ui="pr-merge-menu-check" class="flex-none text-primary-text">${m === cur ? '<span class="icon-[lucide--check] size-3.5" aria-hidden="true"></span>' : ''}</span>` +
-    `<span data-ui="pr-merge-menu-text" class="flex flex-col gap-2 text-muted-foreground"><b>${esc(METHODS[m].label)}</b><span>${esc(METHODS[m].explain(n, baseBranch()))}</span></span></button>`
+    `<button type="button" role="menuitemradio" aria-checked="${m === cur}" data-method="${m}" class="flex w-full items-start gap-2 whitespace-normal! rounded-md px-2 py-1.5 text-left hover:bg-accent focus-visible:bg-accent focus-visible:outline-none">` +
+    `<span data-ui="pr-merge-menu-check" class="mt-0.5 flex size-4 flex-none items-center justify-center text-primary-text">${m === cur ? '<span class="icon-[lucide--check] size-3.5" aria-hidden="true"></span>' : ''}</span>` +
+    `<span data-ui="pr-merge-menu-text" class="flex min-w-0 flex-col gap-0.5"><span class="text-sm font-medium">${esc(METHODS[m].label)}</span><span class="text-xs text-muted-foreground">${esc(METHODS[m].explain(n, baseBranch()))}</span></span></button>`
   ).join('');
   for (const b of menu.querySelectorAll('button')) {
     b.addEventListener('click', () => {
@@ -236,7 +239,16 @@ function renderMenu() {
 function toggleMenu(force) {
   const menu = $('#pr-merge-menu');
   if (!menu) return;
-  setMenuHidden(menu, force === undefined ? !menu.hidden : !force);
+  const open = force === undefined ? menu.hidden : force;
+  setMenuHidden(menu, !open);
+  if (!open) return;
+  // Fixed to the window and right-aligned to the caret, so it never runs off
+  // the edge; it opens upward when the bar sits too low.
+  const r = $('#pr-merge-caret').getBoundingClientRect();
+  Object.assign(menu.style, { left: 'auto', right: Math.max(8, innerWidth - r.right) + 'px', width: 'min(22rem, 90vw)', padding: '4px' });
+  const up = innerHeight - r.bottom < menu.offsetHeight + 12 && r.top > innerHeight - r.bottom;
+  menu.style.top = up ? 'auto' : r.bottom + 4 + 'px';
+  menu.style.bottom = up ? innerHeight - r.top + 4 + 'px' : 'auto';
 }
 
 /* ---------- the merge dialog ---------- */
@@ -448,7 +460,7 @@ async function rewriteWithAI() {
   const reset = () => {
     aiJob = 0;
     btn.disabled = false;
-    btn.textContent = 'Rewrite with AI';
+    btn.innerHTML = REWRITE_LABEL;
     if (cbText) cbText.textContent = 'Rewrite commit message with AI';
     if (mergeModal().open) renderWarnings();
   };
@@ -461,7 +473,7 @@ async function rewriteWithAI() {
     }
     if (j.running) {
       const statusText = `Rewriting... (${Math.round((j.ms || 0) / 1000)}s)`;
-      btn.textContent = statusText;
+      btn.innerHTML = '<span class="icon-[lucide--loader-circle] size-3.5 shrink-0 animate-spin" aria-hidden="true"></span>' + statusText;
       if (cbText && method === 'squash') cbText.textContent = statusText;
       setTimeout(poll, 700);
       return;

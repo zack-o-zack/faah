@@ -407,7 +407,7 @@ function notice({ tone = 'err', title, html = '', picker = false, actions = [], 
     if (a.ai) b.insertAdjacentHTML('afterbegin', '<span class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true"></span>');
     b.className = 'btn';
     b.dataset.size = 'xs';
-    b.dataset.variant = a.primary ? 'primary' : 'outline';
+    b.dataset.variant = a.ai ? 'special' : a.primary ? 'primary' : 'outline';
     if (a.title) b.title = a.title;
     b.addEventListener('click', () => {
       for (const x of $('#git-notice-actions').children) x.disabled = true;

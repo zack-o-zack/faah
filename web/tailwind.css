@@ -21,6 +21,7 @@
   --color-mark-active: var(--mark-active);
   --color-cur: var(--cur);
   --color-gi: var(--gi);
+  --color-special: var(--nf);
   --color-gd: var(--gd);
   --color-gi-bg: var(--gi-bg);
   --color-gd-bg: var(--gd-bg);
@@ -76,6 +77,14 @@
 }
 
 @layer components {
+  /* Special: actions that stand apart from ordinary ones (today, the ones the
+     coding harness carries out). Tinted with the theme's function colour, the
+     way destructive is tinted red: themes rarely make functions red, so it
+     stays apart from errors. */
+  .btn[data-variant='special'] {
+    @apply border border-special/30 bg-special/10 text-special hover:bg-special/20 focus-visible:border-special/50 focus-visible:ring-special/25 aria-expanded:bg-special/20 disabled:opacity-50;
+  }
+
 
   ::selection { background: var(--sel); }
 

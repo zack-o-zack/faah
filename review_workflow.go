@@ -71,7 +71,7 @@ func defaultWorkflows() []ReviewWorkflowDef {
 	return []ReviewWorkflowDef{
 		{
 			ID:          "standard",
-			Name:        "PR Review Workflow",
+			Name:        "Review pipeline",
 			Description: "Sequential review workflow answering key PR questions: intent, performance, quality, and testing.",
 			Stages: []ReviewStageDef{
 				{
@@ -171,6 +171,15 @@ func (m *ReviewWorkflowManager) loadConfig() ReviewWorkflowConfig {
 			}
 		}
 	}
+	// The old default name was renamed; a saved config still holding it shows the new one.
+	if cfg.Name == "PR Review Workflow" {
+		cfg.Name = defaults[0].Name
+		for i := range cfg.Workflows {
+			if cfg.Workflows[i].Name == "PR Review Workflow" {
+				cfg.Workflows[i].Name = cfg.Name
+			}
+		}
+	}
 	m.config = cfg
 	return cfg
 }
@@ -181,7 +190,7 @@ func (m *ReviewWorkflowManager) saveConfig(cfg ReviewWorkflowConfig) error {
 
 	if len(cfg.Stages) > 0 {
 		if cfg.Name == "" {
-			cfg.Name = "PR Review Workflow"
+			cfg.Name = "Review pipeline"
 		}
 		cfg.Workflows = []ReviewWorkflowDef{
 			{

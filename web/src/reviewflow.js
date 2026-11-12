@@ -11,7 +11,7 @@ import { initReviewWalkthrough, loadReviewWalkthrough, getWalkthroughSubTab, set
 let currentMode = 'code'; // 'code' | 'review'
 let currentLayout = (typeof localStorage !== 'undefined' && localStorage.getItem('faah-review-layout')) || 'vertical';
 let reviewConfig = {
-  name: 'PR Review Workflow',
+  name: 'Review pipeline',
   stages: [
     {
       id: 'summary',
@@ -48,13 +48,16 @@ let activeStageIdx = 0;
 let stageThread = null; // { id, t, release }: the stage thread shown, and its live feed
 let lastJumpContext = null; // { path, line, stageTitle }
 
-const statusIcons = {
-  pending: '<span class="icon-[lucide--clock] size-3.5 shrink-0" aria-hidden="true"></span>',
-  running: '<span class="icon-[lucide--loader-circle] size-3.5 shrink-0 animate-spin" aria-hidden="true"></span>',
-  completed: '<span class="icon-[lucide--circle-check] size-3.5 shrink-0" aria-hidden="true"></span>',
-  failed: '<span class="icon-[lucide--circle-alert] size-3.5 shrink-0" aria-hidden="true"></span>',
-  stopped: '<span class="icon-[lucide--circle-stop] size-3.5 shrink-0" aria-hidden="true"></span>'
+// Status as a dot: green done, yellow working, grey not started yet.
+const STATUS = {
+  pending: { dot: 'bg-muted-foreground/40', label: 'Not started' },
+  running: { dot: 'bg-warn animate-pulse', label: 'Working' },
+  completed: { dot: 'bg-gi', label: 'Done' },
+  failed: { dot: 'bg-destructive', label: 'Failed' },
+  stopped: { dot: 'bg-muted-foreground/40 ring-1 ring-muted-foreground', label: 'Stopped' },
 };
+const statusOf = s => STATUS[s] || STATUS.pending;
+const dotHtml = (s, extra = '') => `<span class="size-2 shrink-0 rounded-full ${statusOf(s).dot} ${extra}" aria-hidden="true"></span>`;
 
 // Safe property getters supporting both lower and upper case keys from Go JSON
 function getDef(st) {
@@ -91,7 +94,7 @@ function getWorkflowStages() {
 }
 
 function getWorkflowName() {
-  return reviewConfig.name || reviewConfig.workflows?.[0]?.name || reviewConfig.Workflows?.[0]?.Name || 'PR Review Workflow';
+  return reviewConfig.name || reviewConfig.workflows?.[0]?.name || reviewConfig.Workflows?.[0]?.Name || 'Review pipeline';
 }
 
 export function getMode() {
@@ -366,7 +369,7 @@ function renderPipeline() {
 
   const stagesList = getWorkflowStages();
   if (stagesList.length === 0) {
-    container.innerHTML = '<div class="review-empty">No stages in review workflow</div>';
+    container.innerHTML = '<li class="px-2 py-3 text-xs text-muted-foreground">No stages yet. Add one with +.</li>';
     return;
   }
 
@@ -386,25 +389,24 @@ function renderPipeline() {
     const status = getStatus(st);
     const isActive = idx === activeStageIdx;
 
-    const card = document.createElement('div');
-    card.setAttribute('data-ui', 'review-stage-card'); card.className = `card flex shrink-0 flex-col gap-3 p-4 [&.active]:ring-2 [&.active]:ring-ring ${status} ${isActive ? 'active' : ''}`;
+    const last = idx === items.length - 1;
+    const card = document.createElement('li');
+    card.setAttribute('data-ui', 'review-stage-card');
+    card.className = `group relative flex rounded-md [&.active]:bg-accent ${status} ${isActive ? 'active' : ''}`;
     card.dataset.index = String(idx);
 
-    const iconHtml = statusIcons[status] || statusIcons.pending;
-
+    // A dot per stage on a thin rail, like steps in a sequence.
     card.innerHTML = `
-      <button type="button" data-control="review-stage-select" aria-pressed="${isActive}" class="flex w-full min-w-0 items-start gap-2 text-left rounded focus-visible:outline focus-visible:outline-ring">
-        <span data-ui="review-stage-card-icon" class="flex shrink-0 items-center text-muted-foreground">${iconHtml}</span>
-        <span data-ui="review-stage-card-body" class="flex min-w-0 flex-1 flex-col gap-1">
-          <span data-ui="review-stage-card-num" class="text-xs text-muted-foreground">Stage ${idx + 1}</span>
-          <span data-ui="review-stage-card-title" class="font-semibold wrap-anywhere">${esc(title)}</span>
-          <span data-ui="review-stage-card-desc" class="text-sm text-muted-foreground wrap-anywhere">${esc(question)}</span>
+      <button type="button" data-control="review-stage-select" aria-pressed="${isActive}" aria-label="Stage ${idx + 1}: ${esc(title)}, ${statusOf(status).label}" class="flex w-full min-w-0 items-start gap-2.5 rounded-md px-2 py-2 pr-14 text-left hover:bg-accent/50 focus-visible:outline focus-visible:outline-ring">
+        <span class="relative flex w-2 shrink-0 justify-center self-stretch pt-1.5">${dotHtml(status, 'relative z-10')}${last ? '' : '<span class="absolute top-4 -bottom-3 w-px bg-border" aria-hidden="true"></span>'}</span>
+        <span data-ui="review-stage-card-body" class="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span data-ui="review-stage-card-title" class="text-sm font-medium wrap-anywhere">${esc(title)}</span>
+          <span data-ui="review-stage-card-desc" class="line-clamp-2 text-xs text-muted-foreground wrap-anywhere">${esc(question)}</span>
         </span>
       </button>
-      <div data-ui="review-stage-card-actions" class="flex flex-wrap items-center gap-1">
-        <span class="badge mr-auto" data-variant="secondary">${status}</span>
+      <div data-ui="review-stage-card-actions" class="absolute right-1.5 top-1.5 flex items-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">
         <button type="button" title="Edit this stage" class="btn" data-control="mini review-stage-card-edit-btn" data-variant="ghost" data-size="icon-xs" aria-label="Edit this stage"><span class="icon-[lucide--square-pen] size-3.5 shrink-0" aria-hidden="true"></span></button>
-        <button type="button" title="Remove stage from workflow" aria-label="Remove stage" class="btn" data-control="mini review-stage-remove-btn" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true"></span></button>
+        <button type="button" title="Remove this stage" aria-label="Remove stage" class="btn" data-control="mini review-stage-remove-btn" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true"></span></button>
       </div>
     `;
 
@@ -515,11 +517,7 @@ function renderActiveStage() {
   if (question) question.textContent = questionText;
 
   const status = currentStageState ? getStatus(currentStageState) : 'pending';
-  if (tag) {
-    tag.textContent = status;
-    tag.className = 'badge';
-    tag.dataset.variant = status === 'failed' ? 'destructive' : 'secondary';
-  }
+  if (tag) tag.innerHTML = dotHtml(status) + esc(statusOf(status).label);
 
   // Hide inline editor when changing stages
   const inlineEditor = $('#review-stage-inline-editor');
@@ -533,9 +531,9 @@ function renderActiveStage() {
 
   if (!threadId) {
     msgsEl.innerHTML = `
-      <div data-ui="review-thread-placeholder" class="empty flex flex-col items-center justify-center h-full gap-2 text-muted-foreground">
-        <p>This stage has not been executed yet.</p>
-        <button id="btn-start-single-stage" class="btn" data-control="bar-action" data-variant="primary" data-size="default">Run Stage ${activeStageIdx + 1} Now</button>
+      <div data-ui="review-thread-placeholder" class="empty flex h-full flex-col items-center justify-center gap-3 text-center text-sm text-muted-foreground">
+        <p>Your coding harness hasn't answered this one yet.</p>
+        <button id="btn-start-single-stage" class="btn" data-control="bar-action" data-variant="special" data-size="sm"><span class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true"></span>Run this stage</button>
       </div>
     `;
     const startSingle = $('#btn-start-single-stage');
@@ -666,29 +664,22 @@ function renderThreadTranscript(t) {
     const error = turn.error || turn.Error;
     const tools = turn.tools || turn.Tools || [];
 
-    html += `
-      <div data-ui="thr-msg" class="flex min-w-0 flex-col gap-2  user">
-        <div class="thr-role">${i === 0 ? 'Review Question' : 'Follow-up'}</div>
-        <div class="thr-body">${thrMd(prompt)}</div>
-      </div>
-    `;
-
-    if (tools.length > 0) {
-      html += `
-        <div class="thr-tools">
-          <div class="thr-tools-title">Analysis Steps (${tools.length})</div>
-          <div class="thr-tools-list">
-            ${tools.map(tl => `<div class="thr-tool-item flex items-center gap-2"><span class="size-1 shrink-0 rounded-full bg-muted-foreground"></span>${esc(tl)}</div>`).join('')}
-          </div>
-        </div>
-      `;
-    }
+    // The first turn is the stage's own instructions: there for reference,
+    // folded away. Follow-ups are the reviewer's words, shown like a chat.
+    html += i === 0
+      ? `<details data-ui="thr-msg" class="user group/instr rounded-md border px-3 py-2 text-xs text-muted-foreground [&::details-content]:overflow-hidden">
+          <summary class="flex cursor-pointer list-none items-center gap-1.5"><span class="icon-[lucide--chevron-right] size-3 shrink-0 group-open/instr:rotate-90" aria-hidden="true"></span>Instructions sent to the harness</summary>
+          <div class="thr-body mt-2">${thrMd(prompt)}</div>
+        </details>`
+      : `<div data-ui="thr-msg" class="user thr-user ml-8 self-end min-w-0 rounded-lg bg-muted px-3 py-2 text-sm"><div class="thr-body">${thrMd(prompt)}</div></div>`;
 
     if (reply || running) {
+      const steps = tools.length ? `<details class="group/steps text-xs text-muted-foreground [&::details-content]:overflow-hidden"><summary class="flex cursor-pointer list-none items-center gap-1.5"><span class="icon-[lucide--chevron-right] size-3 shrink-0 group-open/steps:rotate-90" aria-hidden="true"></span>${tools.length} step${tools.length === 1 ? '' : 's'}</summary><ul class="mt-1 flex flex-col gap-0.5 pl-4">${tools.map(tl => `<li class="truncate">${esc(tl)}</li>`).join('')}</ul></details>` : '';
       html += `
-        <div data-ui="thr-msg" class="flex min-w-0 flex-col gap-2  assistant ${running ? 'running' : ''}">
-          <div class="thr-role">Review Analysis ${model ? `(${esc(model)})` : ''}</div>
-          <div class="thr-body">${reply ? thrMd(reply) : '<span class="thr-loading">Analyzing changes...</span>'}</div>
+        <div data-ui="thr-msg" class="assistant flex min-w-0 flex-col gap-2 ${running ? 'running' : ''}">
+          <span class="flex items-center gap-1.5 text-xs font-medium text-special"><span class="icon-[lucide--sparkle] size-3 shrink-0" aria-hidden="true"></span>${esc(model || 'Coding harness')}</span>
+          ${steps}
+          <div class="thr-body text-sm">${reply ? thrMd(reply) : '<span class="inline-flex items-center gap-2 text-muted-foreground"><span class="icon-[lucide--loader-circle] size-3.5 animate-spin" aria-hidden="true"></span>Reading the changes…</span>'}</div>
         </div>
       `;
     }
@@ -737,11 +728,13 @@ function wireComposeActions() {
     } catch (err) {
       showToast('error', err.message);
     } finally {
-      sendBtn.disabled = false;
+      sync();
     }
   };
 
   if (sendBtn) sendBtn.onclick = send;
+  const sync = () => { if (sendBtn) sendBtn.disabled = !input?.value.trim(); };
+  if (input) input.oninput = sync;
   if (input) {
     input.onkeydown = (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {

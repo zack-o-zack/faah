@@ -106,7 +106,7 @@ test('pending stages use icon edit controls, a run button and no empty question 
     assert.equal(elements.get('review-stage-title').textContent, 'Check changes');
     const messages = elements.get('review-thread-msgs').innerHTML;
     assert.match(messages, /id="btn-start-single-stage" class="btn"/);
-    assert.match(messages, /data-variant="primary"/);
+    assert.match(messages, /data-variant="special"/);
     const cards = elements.get('review-stages-container').children;
     const card = cards[cards.length - 1].innerHTML;
     assert.match(card, /aria-label="Edit this stage"><span class="icon-\[lucide--square-pen\]/);
