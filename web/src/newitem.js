@@ -1,8 +1,7 @@
+import { openFile, enterEditMode, apiPostJson, showToast } from './app/legacy-bridge.js';
 // web/src/newitem.js
-import { $, apiPostJson } from './state.js';
-import { showToast } from './ui.js';
-import { openFile } from './tabs.js';
-import { enterEditMode } from './editview.js';
+import { $ } from './state.js';
+
 import { triggerRefresh } from './gitstream.js';
 import { drawTree, revealDir, treeEl } from './tree.js';
 

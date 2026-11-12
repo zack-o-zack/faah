@@ -1,4 +1,4 @@
-import { createResource, createSignal, createUniqueId, Show } from 'solid-js';
+import { createResource, createSignal, createUniqueId, onMount, Show } from 'solid-js';
 import { api } from '../lib/api.js';
 import { looksLikeURL } from './logic.js';
 import { PathSuggestions } from './PathSuggestions.jsx';
@@ -7,6 +7,10 @@ export function PathInput(props) {
   const [selected, setSelected] = createSignal(-1);
   const id = createUniqueId();
   let input;
+  onMount(() => {
+    if (props.autofocus) input.focus();
+    props.onReady?.(() => input.focus());
+  });
   const [entries] = createResource(
     () => (focused() && props.value.trim() && !looksLikeURL(props.value) ? props.value : false),
     async (q) => {
@@ -30,7 +34,6 @@ export function PathInput(props) {
       <input
         ref={(el) => {
           input = el;
-          props.inputRef?.(el);
         }}
         class="input w-full"
         value={props.value}

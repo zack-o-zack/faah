@@ -1,17 +1,13 @@
+import { doc_, api, apiPost, withKeys, showToast } from './app/legacy-bridge.js';
 import { setMenuHidden } from './overlays.js';
 import { setPressed } from './controls.js';
-import { $, S, doc_, api, apiPost, esc, withKeys } from './state.js';
+import { $, S, esc } from './state.js';
 import { previewing, previewKind } from './markdown.js';
-import { vp, copyToClipboard, showToast } from './ui.js';
+import { copyToClipboard } from './ui.js';
 import { fmtBytes, showMetrics, initMetricsMenu, closeMetricsMenu } from './metricsview.js';
 
 export function updateStatus() {
   const d = doc_();
-  // Overlays keep source geometry for line mapping, without painting or exposing
-  // a second copy of the document underneath the active view.
-  const covered = !!(d && (d.isEditing || d.isImage || d.diffMode || previewing(d)));
-  vp.style.visibility = covered ? 'hidden' : '';
-  vp.inert = covered;
   const sizeEl = $('#st-size');
   if (sizeEl) sizeEl.textContent = d ? fmtBytes(d.size) : '';
 
@@ -44,7 +40,6 @@ export function updateStatus() {
       if (b.dataset.md) setPressed(b, isMd && (b.dataset.md === 'preview') === shown);
     }
   }
-
 
   const isCode = d && !d.isImage;
   const inGit = !!S.meta?.git;
@@ -93,7 +88,6 @@ export function setStatusNote(msg, timeoutMs = 0) {
     }, timeoutMs);
   }
 }
-
 
 export function setLspState(j) {
   if (!j || !j.state) return;

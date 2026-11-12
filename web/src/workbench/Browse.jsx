@@ -8,7 +8,7 @@ import { Kbd } from '../lib/shortcuts.jsx';
 export function Browse() {
   const { state, actions } = useWorkbench();
   const [mkdir, setMkdir] = createSignal(false);
-  let list;
+  let focusList;
   const selected = () => state.directory.entries[state.selected];
   const useFolder = () => actions.useFolder(selected()?.path || state.directory.path);
   const keydown = (e) => {
@@ -46,13 +46,13 @@ export function Browse() {
         <NewFolderForm
           onDone={() => {
             setMkdir(false);
-            list.focus();
+            focusList?.();
           }}
         />
       </Show>
       <DirectoryList
-        listRef={(element) => {
-          list = element;
+        onReady={(focus) => {
+          focusList = focus;
         }}
         onKeyDown={keydown}
       />

@@ -1,15 +1,14 @@
+import { openFile, setThreadHandler, setExplainHandler, setExplainPrepareHandler, hideSelectionBar, highlightRange, layout, render, doc_, api, apiPost, apiPostJson, applyKeyLabels, showToast } from './app/legacy-bridge.js';
 import { setPressed } from './controls.js';
 // web/src/thread.js
-import { $, $$, S, esc, doc_, api, apiPost, apiPostJson, applyKeyLabels } from './state.js';
+import { $, $$, S, esc } from './state.js';
 import { on } from './bus.js';
-import { showToast, copyToClipboard } from './ui.js';
+import { copyToClipboard } from './ui.js';
 import { errorAlertHtml } from './errors.js';
-import { openFile } from './tabs.js';
-import { setThreadHandler, setExplainHandler, setExplainPrepareHandler, hideSelectionBar } from './selbar.js';
-import { highlightRange } from './renderer.js';
+
 import { linkTarget, explainEvidenceLine, explainStaleLabel } from './threadrefs.js';
 import { hideRightInspector } from './inspector.js';
-import { layout, render } from './renderer.js';
+
 import { registerAgentPicker, reloadWorkspace } from './agent.js';
 import { onStream, setStreamTopic, watchThread } from './stream.js';
 import { initOrb, orbBegin, orbAttach, orbFailed, orbThread, orbStep, orbSummary, orbSync } from './orb.js';

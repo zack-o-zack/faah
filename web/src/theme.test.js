@@ -22,7 +22,6 @@ test('ignores removed faah theme preferences while preserving other choices', ()
   assert.equal(chooseThemePreference('faah', 'dracula'), 'dracula');
 });
 
-
 import { createRoot } from 'solid-js';
 import { render } from '@solidjs/testing-library';
 import { createThemeStore } from './lib/theme.js';

@@ -1,3 +1,4 @@
+import { setReviewHandler, openFile, layout, render, doc_, api, apiPostJson, keyLabel, shortcutHtml, withKeys, showToast } from './app/legacy-bridge.js';
 // web/src/pr.js
 // GitHub PR review: shown only when this process was launched as `faah pr ...`
 // (S.meta.pr, set by main.go/pr.go). A persistent bar above the tabs shows
@@ -6,14 +7,13 @@
 // comment. Everything here talks to /api/pr/*; nothing is stored client-side
 // beyond what's needed to repaint -- a page refresh re-fetches the server's
 // in-memory draft list (pr.go's prSession), which is the only source of truth.
-import { $, $$, S, doc_, esc, api, apiPostJson, keyLabel, shortcutHtml, withKeys } from './state.js';
-import { showToast } from './ui.js';
-import { setReviewHandler, SEL_MENU_ITEMS } from './selbar.js';
+import { $, $$, S, esc } from './state.js';
+
 import { diffview, setPRSyncHandler } from './diff.js';
 import { reloadWorkspace } from './agent.js';
-import { openFile } from './tabs.js';
+
 import { refreshTree } from './tree.js';
-import { layout, render } from './renderer.js';
+
 import { initPRMerge, refreshMergeStatus, reviewGate } from './prmerge.js';
 import { openForgeConnect } from './forgeconnect.js';
 import { on } from './bus.js';
@@ -33,9 +33,6 @@ export function initPR() {
   meta = S.meta.pr;
   document.body.classList.add('pr-mode');
 
-  if (!SEL_MENU_ITEMS.some(item => item.sel === 'review-comment')) {
-    SEL_MENU_ITEMS.push({ sel: 'review-comment', label: 'Add Review Comment', keys: 'Alt+R' });
-  }
   setReviewHandler(openCommentComposer);
   setPRSyncHandler(renderMarkersForActiveDoc);
   injectFooterButton();

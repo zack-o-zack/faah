@@ -1,20 +1,24 @@
-import { createEffect, createSignal, Show } from 'solid-js';
+import { createSignal, onCleanup, onMount, Show } from 'solid-js';
 import { api } from '../lib/api.js';
 import { createPolling } from '../lib/events.js';
 import { holdingUpdate } from './logic.js';
 export function Holding(props) {
   const data = () => props.data;
-  const [progress, setProgress] = createSignal('');
-  createEffect(() => {
-    setProgress(data().Progress);
+  const [polledProgress, setProgress] = createSignal();
+  const progress = () => polledProgress() ?? data().Progress;
+  onMount(() => {
     if (!data().Starting) return;
+    const controller = new AbortController();
+    onCleanup(() => controller.abort());
     createPolling(
       async () => {
         try {
           const state = await (props.request || api)('api/wb/state', null, {
+            signal: controller.signal,
             cache: 'no-store',
             timeout: 10000,
           });
+          if (controller.signal.aborted) return;
           const update = holdingUpdate(state.items, location.pathname);
           if (update.reload) (props.reload || (() => location.replace(location.href)))();
           else if (update.progress) setProgress(update.progress);

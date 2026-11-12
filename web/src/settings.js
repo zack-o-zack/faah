@@ -1,12 +1,10 @@
+import { applyEditorTypography, toggleWordWrap, toggleLineNumbers, setTheme, listThemes, setVimModeEnabled, showVimHelp, api, apiPost, apiPostJson, showToast } from './app/legacy-bridge.js';
 import { setPressed } from './controls.js';
 // web/src/settings.js
-import { $, $$, esc, S, api, apiPost, apiPostJson } from './state.js';
-import { showToast } from './ui.js';
-import { applyEditorTypography, toggleWordWrap, toggleLineNumbers } from './renderer.js';
-import { setTheme, listThemes } from './app/theme-bridge.js';
+import { $, $$, esc, S } from './state.js';
+
 import { chooseThemePreference, DEFAULT_THEME } from './lib/theme-preference.js';
 import { setLayoutPref } from './diff.js';
-import { setVimModeEnabled, showVimHelp } from './vim.js';
 
 export let settingsModalEl = null;
 const BUILTIN_SCHEMA = [

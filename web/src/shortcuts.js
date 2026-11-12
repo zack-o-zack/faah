@@ -1,32 +1,24 @@
-import { showHoverAtCaret } from './hover.js';
+import { layout, render, toggleWordWrap, openFind, cycleTheme, isVimEnabled, showVimHelp, doc_, vp, sizer, MOD, keyCaps } from './app/legacy-bridge.js';
+
 import { ownsNavigationKey } from './controls.js';
 // web/src/shortcuts.js
-import { $, $$, esc, S, doc_, isMac, MOD, LH, keyCaps } from './state.js';
-import { vp, sizer } from './ui.js';
-import { layout, render, paint, toggleWordWrap } from './renderer.js';
+import { $, $$, esc, S } from './state.js';
+
 import { updateStatus } from './status.js';
-import { closeTab, switchTab, reopenClosedTab } from './tabs.js';
-import { go } from './history.js';
-import { clearLink, hovercard } from './hover.js';
-import { openFind, clearFind, findbar, findNextMatch } from './find.js';
-import { gotoDefinition, findReferences } from './lsp.js';
+
 import { showRightInspector, hideRightInspector } from './inspector.js';
 import { hideThreadsSidebar } from './thread.js';
 import { overlay, openPalette, closePalette } from './palette.js';
-import { moveCursor, moveCol, moveWord, caretToEdge } from './cursor.js';
-import { showCalls } from './calls.js';
-import { SEL_KEYS, runSelectionAction, selectAll, clearSelectAll, copySelectAll, getSelectedRangeInfo } from './selbar.js';
 
-import { cycleTheme } from './app/theme-bridge.js';
-import { previewing, togglePreview, previewKey, selectPreview } from './markdown.js';
+import { previewing, togglePreview, previewKey } from './markdown.js';
 import { exitMermaidFullscreen } from './mermaid.js';
 import { toggleDiff, stepDiffHunk, stepChangedFile } from './diff.js';
 import { openSettings, closeSettings, isSettingsOpen } from './settings.js';
-import { handleVimKeyDown, isVimEnabled, getVimMode, showVimHelp, closeVimHelp } from './vim.js';
+
 import { handleImageKey } from './imageview.js';
 import { submitBatch } from './agent.js';
 import { reindexWorkspace } from './panels.js';
-import { enterEditMode, exitEditMode, saveActiveFile, editTextarea } from './editview.js';
+
 import { navigateToTips } from './tips.js';
 
 /* Each entry lists alternative combos, written as for keyLabel in state.js so
@@ -141,23 +133,12 @@ export function initShortcuts() {
       if (exitMermaidFullscreen()) return;
       const lb = $('#img-lightbox');
       if (lb && lb.open) { lb.close(); return; }
-      if ($('#vim-helpsheet')?.open) { closeVimHelp(); return; }
-      if (isVimEnabled() && handleVimKeyDown(e)) return;
       if (isSettingsOpen()) { closeSettings(); return; }
       if (overlay.open) { closePalette(); return; }
       if ($('#helpsheet').open) { $('#helpsheet').close(); return; }
       if (document.querySelector('dialog[open]')) { document.querySelector('dialog[open]').close(); return; }
-      if (!hovercard.hidden) { clearLink(); return; }
-      if (!findbar.hidden) {
-        clearFind();
-        const d = doc_();
-        if (d?.isEditing && editTextarea) editTextarea.focus();
-        return;
-      }
-      if (S.selAll) { clearSelectAll(); return; }
       if (!document.body.classList.contains('threads-hidden')) { hideThreadsSidebar(); return; }
       if (!document.body.classList.contains('right-hidden')) { hideRightInspector(); return; }
-      if (S.occ) { S.occ = null; paint(); return; }
       if (inField(document.activeElement)) /** @type {HTMLElement} */ (document.activeElement).blur();
       return;
     }
@@ -188,54 +169,9 @@ export function initShortcuts() {
     if (mod && e.shiftKey && (e.key === 'R' || e.key === 'r')) { e.preventDefault(); reindexWorkspace(); return; }
     if (mod && !e.shiftKey && (e.key === 'p' || e.key === 'P')) { e.preventDefault(); openPalette('file'); return; }
     if (mod && (e.key === 'g' || e.key === 'G')) { e.preventDefault(); openPalette('line'); return; }
-    if (mod && (e.key === 'f' || e.key === 'F')) { e.preventDefault(); openFind(S.lastWord); return; }
-    if (mod && (e.key === 's' || e.key === 'S')) {
-      e.preventDefault();
-      saveActiveFile();
-      return;
-    }
-    if (mod && !e.shiftKey && (e.key === 'e' || e.key === 'E')) {
-      const d = doc_();
-      if (d && !d.isImage && !d.deleted && !d.diffRef) {
-        e.preventDefault();
-        if (d.isEditing) exitEditMode();
-        else enterEditMode();
-        return;
-      }
-    }
     if (mod && (e.key === 'b' || e.key === 'B')) { e.preventDefault(); document.body.classList.toggle('side-hidden'); layout(); render(); return; }
     // Diff view of the open file (git only; fails quiet when git is off).
     if (mod && !e.shiftKey && (e.key === 'd' || e.key === 'D')) { if (S.meta?.git) { e.preventDefault(); toggleDiff(); } return; }
-    // Alt shortcuts match e.code: on a Mac, Option+letter types a symbol, so e.key is not the letter.
-    if ((mod && (e.key === 'w' || e.key === 'W')) || (e.altKey && e.code === 'KeyW')) {
-      e.preventDefault();
-      e.stopPropagation();
-      if (S.active >= 0) closeTab(S.active);
-      return;
-    }
-    if (e.altKey && e.shiftKey && !mod && e.code === 'KeyT') { e.preventDefault(); reopenClosedTab(); return; }
-    if (e.key === 'F12') {
-      e.preventDefault();
-      if (e.shiftKey) findReferences(); else gotoDefinition();
-      return;
-    }
-    if (e.altKey && e.key === 'ArrowLeft') { e.preventDefault(); go(-1); return; }
-    if (e.altKey && e.key === 'ArrowRight') { e.preventDefault(); go(1); return; }
-    if (e.ctrlKey && e.key === 'Tab') {
-      e.preventDefault();
-      if (S.tabs.length > 1) switchTab((S.active + (e.shiftKey ? -1 : 1) + S.tabs.length) % S.tabs.length);
-      return;
-    }
-    if (e.altKey && e.shiftKey && e.code === 'KeyH') { e.preventDefault(); showCalls(); return; }
-    if (e.altKey && !mod && !e.shiftKey && /^Digit[1-9]$/.test(e.code)) { e.preventDefault(); switchTab(+e.code.slice(5) - 1); return; }
-    // Selection actions, live only while the status bar is showing them.
-    if (e.altKey && !mod && !e.shiftKey && SEL_KEYS[e.code] && runSelectionAction(SEL_KEYS[e.code])) { e.preventDefault(); return; }
-    if (e.altKey && e.code === 'KeyZ') {
-      e.preventDefault();
-      toggleWordWrap();
-      return;
-    }
-
     if (e.altKey && !mod && !e.shiftKey && e.code === 'KeyM') {
       e.preventDefault();
       togglePreview();
@@ -251,14 +187,7 @@ export function initShortcuts() {
       }
     }
 
-    if (!mod && e.key === 'Enter' && !findbar.hidden) {
-      e.preventDefault();
-      findNextMatch(e.shiftKey ? -1 : 1);
-      return;
-    }
-
     if (inField(document.activeElement)) return;
-    if (e.shiftKey && e.key === 'F1') { e.preventDefault(); showHoverAtCaret(); return; }
 
     // [c / ]c (prev/next diff hunk) and [f / ]f (prev/next changed file) chords
     if (!mod && !e.altKey && !e.shiftKey) {
@@ -285,45 +214,11 @@ export function initShortcuts() {
       }
     }
 
-    // Select all takes the open file only, never the sidebar or status bar around it.
-    const plainMod = mod && !e.shiftKey && !e.altKey;
-    if (plainMod && (e.key === 'a' || e.key === 'A')) { e.preventDefault(); if (previewing()) selectPreview(); else selectAll(); return; }
-    if (plainMod && (e.key === 'c' || e.key === 'C')) {
-      if (copySelectAll()) { e.preventDefault(); return; }
-      const info = getSelectedRangeInfo();
-      if (info) {
-        e.preventDefault();
-        runSelectionAction(info.isMarkdownPreview ? 'copy-preview-text' : 'copy-source');
-        return;
-      }
-    }
-
-    if (handleVimKeyDown(e)) return;
-
     if (e.key === '?') { e.preventDefault(); showHelp(); return; }
     const d = doc_();
     if (!d) return;
     if (d.isImage) { if (handleImageKey(e)) e.preventDefault(); return; }
     if (previewing(d)) { if (previewKey(e)) e.preventDefault(); return; }
-    const toTop = () => { vp.scrollTop = 0; d.cur = 1; render(); updateStatus(); };
-    const toBottom = () => { vp.scrollTop = sizer.offsetHeight; d.cur = d.total; render(); updateStatus(); };
-    const shift = e.shiftKey;
-    if (mod && e.key === 'Home') { e.preventDefault(); if (shift) caretToEdge(false, true); else toTop(); return; }
-    if (mod && e.key === 'End') { e.preventDefault(); if (shift) caretToEdge(true, true); else toBottom(); return; }
-    // A Mac keyboard has no Home or End: Cmd with the arrows does their job there.
-    if (isMac && mod && e.key === 'ArrowUp') { e.preventDefault(); toTop(); return; }
-    if (isMac && mod && e.key === 'ArrowDown') { e.preventDefault(); toBottom(); return; }
-    if (isMac && mod && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) { e.preventDefault(); caretToEdge(e.key === 'ArrowRight', shift); return; }
-    if (mod && !isMac && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) { e.preventDefault(); moveWord(e.key === 'ArrowRight' ? 1 : -1, shift); return; }
-    if (isMac && e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) { e.preventDefault(); moveWord(e.key === 'ArrowRight' ? 1 : -1, shift); return; }
-    if (!mod && (e.key === 'ArrowDown' || e.key === 'j')) { e.preventDefault(); moveCursor(1, shift); return; }
-    if (!mod && (e.key === 'ArrowUp' || e.key === 'k')) { e.preventDefault(); moveCursor(-1, shift); return; }
-    if (!mod && !e.altKey && e.key === 'ArrowLeft') { e.preventDefault(); moveCol(-1, shift); return; }
-    if (!mod && !e.altKey && e.key === 'ArrowRight') { e.preventDefault(); moveCol(1, shift); return; }
-    if (!mod && (e.key === 'Home' || e.key === 'End')) { e.preventDefault(); caretToEdge(e.key === 'End', shift); return; }
-    if (e.key === 'PageDown') { e.preventDefault(); moveCursor(Math.floor(vp.clientHeight / LH) - 2, shift); return; }
-    if (e.key === 'PageUp') { e.preventDefault(); moveCursor(-(Math.floor(vp.clientHeight / LH) - 2), shift); return; }
   }, { capture: true });
-
 
 }

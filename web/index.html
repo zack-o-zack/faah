@@ -162,47 +162,14 @@
     </header>
 
     <!-- File Tabs (Level 2: directly below top menu bar) -->
-    <div id="tab-row" class="flex shrink-0 items-center border-b bg-sidebar has-[#tabs:empty]:hidden">
-      <div id="tabs" class="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto overflow-y-hidden p-1 [scrollbar-width:none]"></div>
-      <!-- Controls for the open file only -->
-      <div id="file-actions" class="flex shrink-0 items-center gap-1 px-1">
-        <!-- Markdown and table files only: rendered view or source -->
-        <div id="md-switch" class="button-group" role="group" aria-label="Preview or source" hidden>
-          <button data-md="preview" title="Rendered view ({Alt+M})" class="btn" data-variant="outline" data-size="xs">Preview</button>
-          <button data-md="source" title="File source ({Alt+M})" class="btn" data-variant="outline" data-size="xs">Source</button>
-        </div>
-        <!-- Files with changes only: the file, or what changed in it -->
-        <div id="diff-switch" class="button-group" role="group" aria-label="File or changes" hidden>
-          <button id="diff-source" title="Show the file ({Mod+D})" class="btn" data-variant="outline" data-size="xs">File</button>
-          <button id="diff-btn" title="Show what changed in this file ({Mod+D})" class="btn" data-variant="outline" data-size="xs">Changes</button>
-        </div>
-        <button id="diff-layout" title="Show changes in one column" aria-label="Show changes in one column" class="btn" data-variant="ghost" data-size="icon-xs" hidden>
-          <span id="diff-layout-split" class="icon-[lucide--rectangle-vertical] size-3.5 shrink-0" aria-hidden="true"></span>
-          <span id="diff-layout-unified" class="icon-[lucide--columns-2] size-3.5 shrink-0" aria-hidden="true" hidden></span>
-        </button>
-        <div id="edit-switch" class="flex items-center gap-1" role="group" aria-label="Edit controls" hidden>
-          <button id="btn-edit-mode" title="Edit this file ({Mod+E})" aria-label="Edit this file" class="btn" data-variant="ghost" data-size="icon-xs">
-            <span class="icon-[lucide--square-pen] size-3.5 shrink-0" aria-hidden="true"></span>
-          </button>
-          <button id="btn-cancel-edit" title="Stop editing" hidden class="btn" data-control="edit-btn-done" data-variant="outline" data-size="xs">Done</button>
-          <button id="btn-save-file" title="Save changes ({Mod+S})" hidden class="btn" data-control="edit-btn-save" data-variant="primary" data-size="xs">Save</button>
-        </div>
-      </div>
-    </div>
+    <div id="editor-tabs-root" class="contents"></div>
 
     <!-- Virtualized Code Editor Viewport -->
     <div id="editor" class="relative min-h-0 flex-1 overflow-hidden bg-background">
       <!-- #viewport handles scrolling; #sizer sets full document scroll height; #rows renders only visible DOM rows -->
-      <div id="viewport" class="absolute inset-0 overflow-auto [body.word-wrap_&]:overflow-x-hidden [contain:strict] cursor-text">
-        <div id="sizer" class="relative"><div id="rows" class="absolute top-0 left-0 will-change-transform"></div><div id="caret" hidden></div></div>
-      </div>
+      <div id="editor-source-root" class="contents"></div>
       <!-- Direct editing overlay -->
-      <div id="editview" class="absolute inset-0 z-[6] flex overflow-hidden bg-background" hidden>
-        <div id="editview-gutter" class="editview-gutter"></div>
-        <div class="relative h-full flex-1 overflow-hidden">
-          <textarea id="editview-textarea" aria-label="File contents" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
-        </div>
-      </div>
+
       <!-- Preview: covers the code view for a Markdown tab, or a CSV/TSV tab as a table (Alt+M toggles) -->
       <div id="mdview" class="absolute inset-0 overflow-auto bg-background" hidden><article id="md" class="md"></article></div>
       <!-- Diff view: covers the code view while a diff layout is active (Mod+D toggles) -->
@@ -234,7 +201,7 @@
           <span id="iv-meta" data-ui="iv-meta" class="whitespace-nowrap font-mono text-muted-foreground"></span>
         </div>
       </div>
-      <div id="minimap-hits" class="absolute inset-y-0 right-0 z-[6] w-3 empty:pointer-events-none"></div>
+      <div id="editor-minimap-root" class="contents"></div>
 
       <!-- Welcome / Empty State Screen -->
       <div id="empty" class="absolute inset-0 grid place-items-center bg-background">
@@ -261,20 +228,11 @@
       </div>
 
       <!-- Hovercard: Type signature, documentation, and quick AI/Usages actions -->
-      <div id="hovercard" role="region" aria-label="Symbol documentation" tabindex="-1" class="card absolute z-[60] w-[calc(100%_-_24px)] max-w-[560px] max-h-[min(70vh,calc(100%_-_16px))] overflow-auto gap-0 py-0" hidden></div>
+
 
       <!-- Top-right corner of the editor: find bar, then the explanation orb -->
       <div data-ui="editor-corner" class="pointer-events-none absolute top-2 right-2 z-20 flex max-w-[calc(100%_-_16px)] flex-col items-end gap-2 *:pointer-events-auto">
-        <div id="findbar" class="card w-96 max-w-full flex-row flex-wrap items-center gap-2" hidden>
-          <input id="find-input" aria-label="Find in file" type="text" spellcheck="false" placeholder="Find" autocomplete="off" class="input min-w-24 flex-1">
-          <div class="ml-auto flex items-center gap-1">
-          <button id="find-case" title="Match case" class="btn" data-variant="outline" data-size="xs">Aa</button>
-          <span id="find-count" class="min-w-16 text-right font-mono text-muted-foreground">0</span>
-          <button id="find-prev" title="Previous ({Shift+Enter})" class="btn" data-variant="ghost" data-size="icon-xs" aria-label="Previous ({Shift+Enter})"><span class="icon-[lucide--arrow-up] size-3.5 shrink-0" aria-hidden="true"></span></button>
-          <button id="find-next" title="Next ({Enter})" class="btn" data-variant="ghost" data-size="icon-xs" aria-label="Next ({Enter})"><span class="icon-[lucide--arrow-down] size-3.5 shrink-0" aria-hidden="true"></span></button>
-          <button id="find-close" title="Close ({Esc})" class="btn" data-variant="ghost" data-size="icon-xs" aria-label="Close ({Esc})"><span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true"></span></button>
-          </div>
-        </div>
+
 
         <div id="explain-orb" data-ui="explain-orb" class="group flex max-w-full items-center overflow-hidden rounded-full border bg-popover text-popover-foreground shadow-md data-[phase=done]:items-start data-[phase=done]:rounded-xl data-[phase=done]:bg-popover/70 data-[phase=done]:backdrop-blur-sm" hidden>
           <button id="explain-orb-open" type="button" class="btn min-w-0 shrink group-data-[phase=done]:h-auto group-data-[phase=done]:items-start group-data-[phase=done]:py-2 group-data-[phase=done]:text-left" data-variant="ghost" data-size="sm">
@@ -567,7 +525,7 @@
     <div id="solid-root"></div>
 
     <!-- Selection context menu: the footer's selection actions, at the pointer -->
-    <div id="sel-menu" role="menu" hidden></div>
+
 
     <!-- Tree context menu: file & folder actions on the left sidebar -->
     <div id="tree-menu" role="menu" hidden></div>
@@ -607,37 +565,25 @@
     </div>
 
     <!-- Bottom Status Bar -->
-    <footer id="status" class="flex shrink-0 items-center gap-2 overflow-hidden whitespace-nowrap border-t bg-sidebar px-2 py-1 font-mono text-xs text-muted-foreground select-none [&>*]:shrink-0 [&.selecting]:border-primary [&.fit-1_kbd]:hidden [&.fit-2_#st-size]:hidden [&.fit-3_.metric-label]:hidden [&.fit-4_[data-action=wrap]]:hidden [&.fit-4_[data-action=help]]:hidden [&.fit-4_.sel-chip]:hidden [&.fit-4_#sel-stats]:hidden! [&.fit-5_#st-lang]:hidden [&.fit-6_#st-pos]:hidden">
+    <footer id="status" class="flex shrink-0 items-center gap-2 overflow-hidden whitespace-nowrap border-t bg-sidebar px-2 py-1 font-mono text-xs text-muted-foreground select-none [&>*]:shrink-0 [&:has(#footer-sel:not([hidden]))]:border-primary [&.fit-1_kbd]:hidden [&.fit-2_#st-size]:hidden [&.fit-3_.metric-label]:hidden [&.fit-4_[data-action=wrap]]:hidden [&.fit-4_[data-action=help]]:hidden [&.fit-4_.sel-chip]:hidden [&.fit-4_#sel-stats]:hidden! [&.fit-5_#st-lang]:hidden [&.fit-6_#st-pos]:hidden">
       <!-- Selection actions: replace the buttons and size below while code is selected -->
-      <div id="footer-sel" class="hidden min-w-0 items-center gap-2 [#status.selecting_&]:flex">
-        <span class="sel-chip badge">Selection</span>
-        <button data-sel="copy-source" title="Copy source code as is ({Mod+C})" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Copy Source</span><kbd data-keys="Mod+C" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-sel="copy-preview-text" title="Copy formatted text ({Mod+C})" hidden class="btn" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Copy Text</span><kbd data-keys="Mod+C" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-sel="copy-markdown" title="Copy raw Markdown" hidden class="btn" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Copy Raw Markdown</span><kbd data-keys="Alt+M" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-sel="copy-ref" title="Copy file and line reference ({Alt+C})" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Copy Ref</span><kbd data-keys="Alt+C" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-sel="copy-agent" title="Copy snippet with file path and line numbers ({Alt+A})" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Copy with Context</span><kbd data-keys="Alt+A" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-sel="thread" title="Start a thread on this selection ({Alt+T})" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Thread</span><kbd data-keys="Alt+T" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-sel="explain" title="Explain this selection ({Alt+X})" hidden class="btn" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Explain</span><kbd data-keys="Alt+X" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-sel="agent-edit" title="Edit this selection inline ({Alt+E})" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Edit Inline</span><kbd data-keys="Alt+E" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-      </div>
-      <div id="footer-actions" class="flex items-center gap-1 [#status.selecting_&]:hidden">
+
+      <div id="footer-actions" class="flex items-center gap-1 [#status:has(#footer-sel:not([hidden]))_&]:hidden">
         <button data-action="quick-open" title="Go to File ({Mod+P})" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="icon-[lucide--zap] size-3.5 shrink-0 shell-ico hidden desktop:block" aria-hidden="true"></span><span class="bar-action-label text-xs font-medium desktop:hidden">Files</span><kbd data-keys="Mod+P" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
         <button data-action="search" title="Search in Files ({Mod+Shift+F})" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="icon-[lucide--search] size-3.5 shrink-0 shell-ico hidden desktop:block" aria-hidden="true"></span><span class="bar-action-label text-xs font-medium desktop:hidden">Search</span><kbd data-keys="Mod+Shift+F" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
         <button data-action="find" title="Find in File ({Mod+F})" class="btn desktop:hidden!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Find in File</span><kbd data-keys="Mod+F" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
         <button data-action="goto" title="Go to Line ({Mod+G})" class="btn desktop:hidden!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Go to</span><kbd data-keys="Mod+G" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
         <button data-action="md-preview" title="Toggle Markdown / table preview ({Alt+M})" hidden class="btn desktop:hidden!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Preview</span><kbd data-keys="Alt+M" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
         <button data-action="wrap" title="Toggle Word Wrap ({Alt+Z})" class="btn desktop:hidden!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Wrap</span><kbd data-keys="Alt+Z" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button id="btn-vim-help" data-action="vim-help" title="Vim Keybindings" hidden class="btn desktop:hidden!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Vim Keys</span><kbd class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut">?</kbd></button>
         <button data-action="help" title="Keyboard Shortcuts ({?})" class="btn desktop:hidden!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Help</span><kbd data-keys="?" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
       </div>
-      <span class="status-sep h-3 w-px shrink-0 bg-border [#status.selecting_#footer-actions+&]:hidden"></span>
-      <span id="st-vim" hidden role="button" tabindex="0" title="Vim Mode (Click for shortcuts)" class="btn font-mono" data-control="status-vim-chip" data-variant="ghost" data-size="xs">NORMAL</span>
-      <span id="st-size" class="[#status.selecting_&]:hidden"></span>
+      <span class="status-sep h-3 w-px shrink-0 bg-border [#status:has(#footer-sel:not([hidden]))_#footer-actions+&]:hidden"></span>
+      <span id="editor-vim-root" class="contents"></span>
+      <span id="st-size" class="[#status:has(#footer-sel:not([hidden]))_&]:hidden"></span>
       <span class="empty:hidden" id="st-pos"></span>
-      <span id="status-spacer" class="flex-1"></span>
+      <span id="editor-selection-root" class="contents"></span><span id="editor-cursor-root" class="contents"></span><span id="status-spacer" class="flex-1"></span>
       <span id="st-lsp" role="button" tabindex="0" title="Language Servers (Click to manage)" class="btn text-muted-foreground" data-variant="ghost" data-size="xs">LSP</span>
-      <span id="sel-stats" class="hidden [#status.selecting_&]:inline-flex"></span>
-      <span class="status-sep h-3 w-px shrink-0 bg-border [#status.selecting_#footer-actions+&]:hidden"></span>
+      <span class="status-sep h-3 w-px shrink-0 bg-border [#status:has(#footer-sel:not([hidden]))_#footer-actions+&]:hidden"></span>
       <span id="st-metrics" role="button" tabindex="0" class="btn font-mono desktop:[&>:not(.shell-ico)]:hidden" data-control="status-metrics" data-variant="ghost" data-size="xs">
         <span class="icon-[lucide--activity] size-3.5 shrink-0 shell-ico hidden desktop:block" aria-hidden="true"></span>
         <span class="metric"><span class="metric-label">CPU</span> <span id="st-cpu">--%</span></span>
@@ -839,7 +785,6 @@
 
 <!-- SECTION: Keyboard Shortcuts Cheat Sheet Overlay (?) -->
 <dialog id="helpsheet" class="dialog"></dialog>
-<dialog id="vim-helpsheet" class="dialog"></dialog>
 
 <!-- SECTION: Settings Modal (Cmd+, / Ctrl+,) -->
 <!-- PR merge dialog: method, commit title/message (rewritable by the harness), and what blocks merging now (web/src/prmerge.js) -->

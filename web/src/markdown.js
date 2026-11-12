@@ -1,17 +1,16 @@
-import { onThemeChanged } from './app/theme-bridge.js';
+import { onThemeChanged, render, paint, rowFor, markNodes, lineTopY, openFile, pushHistory, findbar, runFind, hideHover, doc_, LH, vp, rowsEl, api, isMac, MOD, showToast } from './app/legacy-bridge.js';
+
 import { pictureSource } from './markdown-picture.js';
 // web/src/markdown.js
-import { $, $$, S, doc_, esc, api, isMac, MOD, LH } from './state.js';
+import { $, $$, S, esc } from './state.js';
 import { on } from './bus.js';
-import { vp, rowsEl, copyToClipboard, showToast } from './ui.js';
-import { render, paint, rowFor, markNodes, lineTopY } from './renderer.js';
-import { openFile } from './tabs.js';
+import { copyToClipboard } from './ui.js';
+
 import { updateStatus } from './status.js';
-import { pushHistory } from './history.js';
+
 import { showPanel } from './panels.js';
 import { revealDir } from './tree.js';
-import { findbar, runFind } from './find.js';
-import { hideHover } from './hover.js';
+
 import { buildTable } from './table.js';
 import { renderMermaidBlocks, exitMermaidFullscreen } from './mermaid.js';
 
@@ -774,7 +773,6 @@ function innerDomToMarkdown(node) {
   }
   return s;
 }
-
 
 export function openLightbox(img) {
   const lb = $('#img-lightbox');

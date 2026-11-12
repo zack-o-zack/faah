@@ -1,6 +1,7 @@
+import { doc_ } from './app/legacy-bridge.js';
 import { setPressed } from './controls.js';
 // web/src/imageview.js
-import { $, S, doc_, esc } from './state.js';
+import { $, S, esc } from './state.js';
 import { on } from './bus.js';
 import { updateStatus } from './status.js';
 import { fmtBytes } from './metricsview.js';

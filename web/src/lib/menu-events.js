@@ -27,18 +27,19 @@ export function createMenuEvents(options) {
     if (!options.open()) return;
     if (event.key === 'Escape') {
       event.preventDefault();
-      event.stopPropagation();
+      event.stopImmediatePropagation();
       options.close();
     } else if (options.roving?.()) {
       focusMenuItem(event, options.panel());
+      if (event.defaultPrevented) event.stopImmediatePropagation();
     }
   };
   onMount(() => {
     document.addEventListener('pointerdown', pointerdown);
-    document.addEventListener('keydown', keydown);
+    window.addEventListener('keydown', keydown, true);
   });
   onCleanup(() => {
     document.removeEventListener('pointerdown', pointerdown);
-    document.removeEventListener('keydown', keydown);
+    window.removeEventListener('keydown', keydown, true);
   });
 }

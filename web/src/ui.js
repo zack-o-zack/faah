@@ -1,16 +1,6 @@
-import { toast } from './lib/toast.jsx';
+import { showToast } from './app/legacy-bridge.js';
 // web/src/ui.js
 import { $, esc } from './state.js';
-
-export const vp = $('#viewport');
-export const sizer = $('#sizer');
-export const rowsEl = $('#rows');
-export const editor = $('#editor');
-export const toastEl = $('#toaster');
-
-export function showToast(kind, text, duration) {
-  return toast(kind, text, duration);
-}
 
 /** Every error alert's copy button (errors.js) puts the whole output on the clipboard and in the console. */
 export function initErrorCopy() {

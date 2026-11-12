@@ -1,7 +1,7 @@
+import { api, showToast } from './app/legacy-bridge.js';
 import { setPressed } from './controls.js';
 // web/src/reviewwalkthrough.js
-import { $, $$, esc, api } from './state.js';
-import { showToast } from './ui.js';
+import { $, $$, esc } from './state.js';
 
 let walkthroughData = null;
 let activeFilter = 'all'; // 'all' | 'fastReturns' | 'edgeCases' | 'coreLogic'

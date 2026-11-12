@@ -1,18 +1,19 @@
+import { reloadOpenTabs, layout, render, openFile, api, apiPostJson, showToast } from './app/legacy-bridge.js';
 // web/src/gitpanel.js
 // Sidebar git panel: stage/commit/push/pull, shown whenever the workspace is
 // a git repo (same gate as the diff-view toggle in status.js). In a PR
 // review session (S.meta.pr set), Push/Pull target the PR's actual head
 // branch instead of the checkout's own remote -- see pr.go's Push/Pull.
-import { $, esc, S, api, apiPostJson } from './state.js';
-import { showToast, copyToClipboard, flashActionSuccess } from './ui.js';
+import { $, esc, S } from './state.js';
+import { copyToClipboard, flashActionSuccess } from './ui.js';
 import { reindexWorkspace } from './panels.js';
 import { setMenuHidden } from './overlays.js';
 import { refreshPRMeta, nudgeForgeToken, forgeInfo } from './pr.js';
-import { reloadOpenTabs } from './tabs.js';
+
 import { openSettings } from './settings.js';
-import { layout, render } from './renderer.js';
+
 import { refreshUnpushed } from './unpushed.js';
-import { openFile } from './tabs.js';
+
 import { on, emit } from './bus.js';
 import { commitFileRows, COMMIT_FILES_PAGE, loadCommitFiles, cachedCommitFiles } from './commitfiles.js';
 import { handleGitStatus, triggerRefresh } from './gitstream.js';

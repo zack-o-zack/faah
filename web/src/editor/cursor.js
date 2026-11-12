@@ -12,31 +12,34 @@ const word = /[A-Za-z0-9_$]/;
 export function movePosition(position, delta, textAt, total, axis = 'line') {
   let { line, col } = position;
   if (axis === 'line') return { line: Math.max(1, Math.min(total, line + delta)), col };
-  const text = textAt(line - 1);
-  col = Math.min(col, text.length);
-  if (axis === 'word') {
-    const direction = Math.sign(delta);
-    for (let step = 0; step < Math.abs(delta); step++) {
-      if (direction < 0) {
-        if (col === 0 && line > 1) return { line: line - 1, col: textAt(line - 2).length };
-        col = Math.max(0, col - 1);
-        while (col > 0 && /\s/.test(text[col])) col--;
-        const isWord = word.test(text[col]);
-        while (col > 0 && !/\s/.test(text[col - 1]) && word.test(text[col - 1]) === isWord) col--;
-      } else {
-        if (col === text.length && line < total) return { line: line + 1, col: 0 };
-        const isWord = word.test(text[col]);
-        while (col < text.length && !/\s/.test(text[col]) && word.test(text[col]) === isWord) col++;
-        while (col < text.length && /\s/.test(text[col])) col++;
-      }
+  const direction = Math.sign(delta);
+  for (let step = 0; step < Math.abs(delta); step++) {
+    const text = textAt(line - 1);
+    col = Math.min(col, text.length);
+    if (direction < 0 && col === 0 && line > 1) {
+      line--;
+      col = textAt(line - 1).length;
+      continue;
     }
-  } else {
-    col += delta;
-    if (col < 0 && line > 1) return { line: line - 1, col: textAt(line - 2).length };
-    if (col > text.length && line < total) return { line: line + 1, col: 0 };
+    if (direction > 0 && col === text.length && line < total) {
+      line++;
+      col = 0;
+      continue;
+    }
+    if (axis === 'word' && direction < 0) {
+      col = Math.max(0, col - 1);
+      while (col > 0 && /\s/.test(text[col])) col--;
+      const isWord = word.test(text[col]);
+      while (col > 0 && !/\s/.test(text[col - 1]) && word.test(text[col - 1]) === isWord) col--;
+    } else if (axis === 'word') {
+      const isWord = word.test(text[col]);
+      while (col < text.length && !/\s/.test(text[col]) && word.test(text[col]) === isWord) col++;
+      while (col < text.length && /\s/.test(text[col])) col++;
+    } else col = Math.max(0, Math.min(text.length, col + direction));
   }
-  return { line, col: Math.max(0, Math.min(text.length, col)) };
+  return { line, col };
 }
+
 export function selectedText(anchor, head, textAt) {
   if (!anchor) return null;
   const reverse = anchor.line > head.line || (anchor.line === head.line && anchor.col > head.col);

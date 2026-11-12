@@ -49,3 +49,31 @@ test('clone requests preserve the original PR and cancellation restores tab', as
   expect(store.state.clone).toBeNull();
   expect(store.state.tab).toBe('recent');
 });
+
+test('stale refreshes and workspace opens cannot replace newer results', async () => {
+  const refreshes = [];
+  const opens = [];
+  const navigate = vi.fn();
+  const store = createWorkbenchStore(
+    (path) =>
+      path === 'api/wb/state'
+        ? new Promise((resolve) => refreshes.push(resolve))
+        : Promise.resolve({ path: '/code', entries: [] }),
+    () => new Promise((resolve) => opens.push(resolve)),
+    navigate,
+  );
+  const first = store.actions.refresh();
+  const second = store.actions.refresh();
+  refreshes[1]({ items: [], version: 'new' });
+  await second;
+  refreshes[0]({ items: [], version: 'old' });
+  await first;
+  expect(store.state.version).toBe('new');
+  const oldOpen = store.actions.open('/old');
+  const newOpen = store.actions.open('/new');
+  opens[1]({ href: '/w/new/' });
+  await newOpen;
+  opens[0]({ href: '/w/old/' });
+  await oldOpen;
+  expect(navigate).toHaveBeenCalledExactlyOnceWith('/w/new/');
+});

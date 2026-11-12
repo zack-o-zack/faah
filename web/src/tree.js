@@ -1,11 +1,12 @@
+import { openFile, closeSelMenu, api, apiPost, apiPostJson, showToast } from './app/legacy-bridge.js';
 import { setMenuHidden } from './overlays.js';
 import { setPressed } from './controls.js';
 // web/src/tree.js
-import { $, $$, esc, api, apiPost, apiPostJson, S } from './state.js';
-import { openFile } from './tabs.js';
+import { $, $$, esc, S } from './state.js';
+
 import { syncDiffView, focusDiffScope, isFileViewed } from './diff.js';
-import { showToast, copyToClipboard } from './ui.js';
-import { closeSelMenu } from './selbar.js';
+import { copyToClipboard } from './ui.js';
+
 import { emit, on } from './bus.js';
 import { isAutoRevealEnabled } from './settings.js';
 import { promptNewItem } from './newitem.js';

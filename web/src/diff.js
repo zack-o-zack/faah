@@ -1,3 +1,4 @@
+import { wordAtPoint, hoverAt, pushHistory, doc_, api, apiPostJson, MOD, showToast } from './app/legacy-bridge.js';
 import { setPressed } from './controls.js';
 // web/src/diff.js
 // Git diff view for the active tab: renders the file's unified diff against
@@ -5,15 +6,14 @@ import { setPressed } from './controls.js';
 // side-by-side split layout (default) or a single-column unified layout.
 // Unlike the code viewport this is not virtualized -- a file's own diff is
 // bounded in size, so a plain DOM render is simple and fast enough.
-import { $, $$, S, doc_, esc, api, apiPostJson, MOD } from './state.js';
+import { $, $$, S, esc } from './state.js';
 import { on } from './bus.js';
-import { showToast } from './ui.js';
+
 import { syncPreview } from './markdown.js';
 import { setStatusNote, updateStatus } from './status.js';
-import { wordAtPoint } from './cursor.js';
+
 import { gotoDefinition } from './lsp.js';
-import { hoverAt } from './hover.js';
-import { pushHistory } from './history.js';
+
 import { COMMIT_STATUS, loadCommitFiles, cachedCommitFiles } from './commitfiles.js';
 
 export const diffview = $('#diffview');

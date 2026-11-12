@@ -1,10 +1,10 @@
+import { getReviewHandler, openLineMenu, getSelectedRangeInfo, doc_ } from './app/legacy-bridge.js';
 // web/src/linecomment.js
 // Handles hovering on line numbers to show a thread icon, and clicking it to
 // open the same actions menu as a right click on a selection, aimed at that
 // line: start a thread, edit inline, copy a reference, and (in a PR review
 // session's diff view) add a review comment.
-import { S, doc_ } from './state.js';
-import { getReviewHandler, openLineMenu, getSelectedRangeInfo } from './selbar.js';
+import { S } from './state.js';
 
 // The selection as it stood when the button was pressed: a press can collapse it
 // before the click lands, and the menu should act on what was selected.

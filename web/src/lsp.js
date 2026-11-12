@@ -1,12 +1,12 @@
+import { paint, openFile, centerEditLine, editTextarea, doc_, api } from './app/legacy-bridge.js';
 import { setPressed } from './controls.js';
 // web/src/lsp.js
-import { $, S, doc_, api } from './state.js';
-import { paint } from './renderer.js';
+import { $, S } from './state.js';
+
 import { updateStatus, setStatusNote, setLspState } from './status.js';
-import { openFile } from './tabs.js';
+
 import { renderResults, runSearch } from './search.js';
 import { inspectReferences, showRightInspector } from './inspector.js';
-import { centerEditLine, editTextarea } from './editview.js';
 
 /* Language servers answer precisely but can take a long time to wake up, while
    the regex index answers in milliseconds and is always there. So: use the

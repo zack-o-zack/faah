@@ -1,3 +1,4 @@
+import { doc_ } from './app/legacy-bridge.js';
 import { setPressed } from './controls.js';
 // web/src/prscope.js
 // PR review sidebar scope: "All PR changes" vs "Not pushed".
@@ -9,7 +10,7 @@ import { setPressed } from './controls.js';
 // between the whole PR and only what you have edited or committed since
 // checkout (yourStatuses, from the git-status stream). The filtering itself is
 // CSS on #tree (.scope-yours, .scope-pr); this module only owns the counts and the choice.
-import { $, S, doc_ } from './state.js';
+import { $, S } from './state.js';
 import { on } from './bus.js';
 import { treeEl, relabelTreeBadges, inGitMode, redrawTreeView } from './tree.js';
 import { focusDiffScope, syncDiffView } from './diff.js';

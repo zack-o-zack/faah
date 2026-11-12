@@ -24,3 +24,8 @@ test('hidden-folder shortcut accepts the shifted period key', () => {
     ),
   ).toBe(true);
 });
+
+test('navigation aliases match browser Arrow key names', () => {
+  const event = { key: 'ArrowLeft', altKey: true, metaKey: false, ctrlKey: false, shiftKey: false };
+  expect(matchesShortcut(event, 'Alt+Left', false)).toBe(true);
+});

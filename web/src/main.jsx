@@ -1,15 +1,28 @@
-import { onMount } from 'solid-js';
+import { getOwner, onMount, runWithOwner } from 'solid-js';
 import { render } from 'solid-js/web';
-import { AppProvider } from './app/context.jsx';
+import { AppProvider, useApp } from './app/context.jsx';
 import { ThemeProvider, useTheme } from './lib/theme-context.jsx';
 import { Toaster } from './lib/toast.jsx';
-import { attachLegacyTheme } from './app/theme-bridge.js';
-import { initLegacy } from './main.js';
+import { bindLegacyEditor, attachLegacyDOM } from './app/legacy-bridge.js';
+import { createEditorStore } from './editor/store.js';
+import { EditorProvider } from './editor/context.jsx';
+import { EditorShell } from './editor/EditorShell.jsx';
+
 function App() {
-  attachLegacyTheme(useTheme());
-  // Removed when the last legacy module is migrated.
-  onMount(initLegacy);
-  return <Toaster />;
+  const editorStore = createEditorStore(useApp());
+  const owner = getOwner();
+  bindLegacyEditor(editorStore, useTheme());
+  onMount(async () => {
+    attachLegacyDOM();
+    const { initLegacy } = await import('./main.js');
+    runWithOwner(owner, initLegacy);
+  });
+  return (
+    <EditorProvider value={editorStore}>
+      <EditorShell />
+      <Toaster />
+    </EditorProvider>
+  );
 }
 render(
   () => (

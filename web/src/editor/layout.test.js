@@ -6,6 +6,7 @@ import {
   lineIndexAtY,
   visibleRange,
   codeWidth,
+  visualColumn,
 } from './layout.js';
 
 test('highlighted text preserves UTF-16 columns, entities and tab stops', () => {
@@ -45,4 +46,17 @@ test('visible range stays bounded across a fifty-thousand-line document', () => 
 test('narrow viewports and huge lines always have a finite positive height', () => {
   const offsets = lineOffsets(new Int32Array([100000]), { wrap: true, width: 0, charWidth: 8 });
   expect(offsets[1]).toBe(2000000);
+});
+
+test('caret columns expand tabs and wide characters without DOM measurement', () => {
+  expect(visualColumn('a\t😀中', 6)).toBe(8);
+  expect(visualColumn('e\u0301x', 2)).toBe(1);
+});
+
+test('measured wrap heights replace estimates without changing unmeasured lines', () => {
+  const options = { wrap: true, width: 40, charWidth: 10, heights: new Map([[1, 80]]) };
+  expect([...lineOffsets(new Int32Array([1, 5, 1]), options)]).toEqual([0, 20, 100, 120]);
+  expect([...lineOffsets(new Int32Array([1, 5, 1]), { ...options, wrap: false })]).toEqual([
+    0, 20, 40, 60,
+  ]);
 });

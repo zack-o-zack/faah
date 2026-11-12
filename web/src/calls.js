@@ -1,8 +1,9 @@
+import { openFile, doc_, api, keyLabel } from './app/legacy-bridge.js';
 import { setPressed } from './controls.js';
 // web/src/calls.js
-import { $, $$, esc, S, doc_, api, keyLabel } from './state.js';
+import { $, $$, esc, S } from './state.js';
 import { updateStatus, setStatusNote, setLspState } from './status.js';
-import { openFile } from './tabs.js';
+
 import { showRightInspector } from './inspector.js';
 import { positionNow, flashFind } from './lsp.js';
 import { renderLspSetup, cancelLspSetup } from './lspsetup.js';

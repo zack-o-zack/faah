@@ -1,7 +1,8 @@
+import { doc_, api, keyCaps, showToast } from './app/legacy-bridge.js';
 // web/src/tips.js
-import { $, $$, esc, S, api, keyCaps, doc_ } from './state.js';
+import { $, $$, esc, S } from './state.js';
 import { on, emit } from './bus.js';
-import { showToast } from './ui.js';
+
 import { showRightInspector } from './inspector.js';
 import { TIPS_URL, TIPS_STORAGE_KEY_HIDDEN, TIPS_STORAGE_KEY_CACHE, TIPS_STORAGE_KEY_INDEX, DEFAULT_TIPS, renderTipMarkdown } from './tips-util.js';
 

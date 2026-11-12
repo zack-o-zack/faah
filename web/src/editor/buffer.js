@@ -1,4 +1,5 @@
 import { createSignal } from 'solid-js';
+import { textOffsets } from './edit.js';
 import { api } from '../lib/api.js';
 import { CHUNK, htmlTextLen, lineText, lineOffsets } from './layout.js';
 
@@ -8,6 +9,9 @@ export function createDocumentBuffer(
   { fetcher = api, ref = '', onMetadata = () => {} } = {},
 ) {
   const [revision, setRevision] = createSignal(0);
+  const [editRevision, editChanged] = createSignal(0);
+  let editContent = null;
+  let editStarts = [0];
   const lines = [];
   const chunks = new Set();
   const pending = new Map();
@@ -16,6 +20,9 @@ export function createDocumentBuffer(
   let generation = 0;
   let disposed = false;
   let layoutKey = '';
+  let measureKey = '';
+  let wrapping = false;
+  const heights = new Map();
   let offsets = new Float64Array(1);
   const changed = () => {
     layoutKey = '';
@@ -32,6 +39,7 @@ export function createDocumentBuffer(
       const at = start + index;
       lines[at] = result.lines[index];
       columns[at] = htmlTextLen(result.lines[index]);
+      heights.delete(at);
     }
     chunks.add(Math.floor(start / CHUNK));
     onMetadata(result);
@@ -89,6 +97,18 @@ export function createDocumentBuffer(
   }
   return {
     lines,
+    editRevision,
+    get editContent() {
+      return editContent;
+    },
+    get editStarts() {
+      return editStarts;
+    },
+    setEditContent(content) {
+      editContent = content;
+      editStarts = content == null ? [0] : textOffsets(content);
+      editChanged((value) => value + 1);
+    },
     chunks,
     pending,
     refining,
@@ -112,12 +132,28 @@ export function createDocumentBuffer(
       ) {
         work.push(loadChunk(chunk));
       }
-      return Promise.allSettled(work);
+      return Promise.all(work);
+    },
+    measureHeights(entries) {
+      if (!wrapping) return;
+      let dirty = false;
+      for (const [index, height] of entries) {
+        if (index < 0 || index >= lines.length || height <= 0) continue;
+        if (Math.abs(height - (offsets[index + 1] - offsets[index])) < 0.5) continue;
+        heights.set(index, height);
+        dirty = true;
+      }
+      if (dirty) changed();
     },
     layout(options) {
       const key = JSON.stringify(options);
+      wrapping = options.wrap;
+      if (measureKey !== key) {
+        heights.clear();
+        measureKey = key;
+      }
       if (layoutKey !== key) {
-        offsets = lineOffsets(columns, options);
+        offsets = lineOffsets(columns, { ...options, heights });
         layoutKey = key;
       }
       return offsets;
@@ -125,12 +161,16 @@ export function createDocumentBuffer(
     reset() {
       cancel();
       chunks.clear();
+      heights.clear();
       lines.fill(undefined);
       columns.fill(-1);
       changed();
     },
     dispose() {
       disposed = true;
+      editContent = null;
+      editStarts = [0];
+      heights.clear();
       cancel();
       lines.length = 0;
       columns = new Int32Array(0);

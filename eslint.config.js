@@ -5,6 +5,7 @@ import prettier from 'eslint-config-prettier';
 
 // Legacy modules leave this list as they are migrated.
 const legacy = [
+  'web/src/outline-pane.js', // Phase B replaces the right-pane UI.
   'web/src/agent-picker.js',
   'web/src/agent-picker.test.js',
   'web/src/agent.js',
@@ -16,19 +17,12 @@ const legacy = [
   'web/src/contrast.test.js',
   'web/src/controls.js',
   'web/src/controls.test.js',
-  'web/src/cursor.js',
   'web/src/diff.js',
-  'web/src/editview.js',
   'web/src/errors.js',
   'web/src/errors.test.js',
-  'web/src/find.js',
   'web/src/forgeconnect.js',
   'web/src/gitpanel.js',
   'web/src/gitstream.js',
-  'web/src/history.js',
-  'web/src/hover-position.js',
-  'web/src/hover-position.test.js',
-  'web/src/hover.js',
   'web/src/imageview.js',
   'web/src/inspector.js',
   'web/src/linecomment.js',
@@ -43,7 +37,6 @@ const legacy = [
   'web/src/newitem.js',
   'web/src/orb.js',
   'web/src/orb.test.js',
-  'web/src/outline.js',
   'web/src/overlays.js',
   'web/src/overlays.test.js',
   'web/src/palette.js',
@@ -52,19 +45,16 @@ const legacy = [
   'web/src/pr.js',
   'web/src/prmerge.js',
   'web/src/prscope.js',
-  'web/src/renderer.js',
   'web/src/reviewflow.js',
   'web/src/reviewflow.test.js',
   'web/src/reviewwalkthrough.js',
   'web/src/search.js',
-  'web/src/selbar.js',
   'web/src/settings.js',
   'web/src/shortcuts.js',
   'web/src/state.js',
   'web/src/status.js',
   'web/src/stream.js',
   'web/src/table.js',
-  'web/src/tabs.js',
   'web/src/theme.test.js',
   'web/src/thread.js',
   'web/src/threadrefs.js',
@@ -77,7 +67,6 @@ const legacy = [
   'web/src/typescale.test.js',
   'web/src/ui.js',
   'web/src/unpushed.js',
-  'web/src/vim.js',
 ];
 const frontend = ['web/src/**/*.{js,jsx}'];
 const tooling = [
@@ -113,6 +102,27 @@ export default [
     rules: {
       ...solidRules,
       'no-nested-ternary': 'error',
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "CallExpression[callee.name='createEffect'] > :matches(ArrowFunctionExpression, FunctionExpression)[async=true]",
+          message: 'Use createResource or a cancellable store action for async work.',
+        },
+        {
+          selector: "VariableDeclarator[id.type='ObjectPattern'][init.name='props']",
+          message: 'Keep props reactive; use props.name, splitProps or mergeProps.',
+        },
+        {
+          selector:
+            "JSXExpressionContainer:not([parent.type='JSXAttribute']) > LogicalExpression[operator='&&']",
+          message: 'Use Show for conditional rendering.',
+        },
+        {
+          selector: "JSXExpressionContainer > CallExpression[callee.property.name='map']",
+          message: 'Use For or Index for list rendering.',
+        },
+      ],
       'max-statements-per-line': ['error', { max: 1 }],
     },
   },

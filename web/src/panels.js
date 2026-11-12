@@ -1,11 +1,11 @@
+import { layout, render, loadOutline, reloadOpenTabs, api, showToast } from './app/legacy-bridge.js';
 // web/src/panels.js
-import { $, $$, S, api } from './state.js';
-import { layout, render } from './renderer.js';
+import { $, $$, S } from './state.js';
+
 import { updateStatus } from './status.js';
-import { loadOutline } from './outline.js';
+
 import { treeEl, refreshTree, setSidebarMode, hasGitView } from './tree.js';
-import { reloadOpenTabs } from './tabs.js';
-import { showToast } from './ui.js';
+
 import { refreshUnpushed } from './unpushed.js';
 
 export async function showPanel(name) {

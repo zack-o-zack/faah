@@ -1,3 +1,4 @@
+import { api, apiPostJson, keyLabel, showToast } from './app/legacy-bridge.js';
 import { setMenuHidden } from './overlays.js';
 // web/src/prmerge.js
 // Merging a PR from the review bar, and keeping the review verdict honest
@@ -10,8 +11,8 @@ import { setMenuHidden } from './overlays.js';
 // lands on the base: method, commit title and message (rewritable by the
 // harness, with the user's commit instructions), and anything that makes
 // merging now a bad idea. Nothing here knows which forge it is talking to.
-import { $, S, esc, api, apiPostJson, keyLabel } from './state.js';
-import { showToast } from './ui.js';
+import { $, S, esc } from './state.js';
+
 import { showError } from './errors.js';
 import { on, emit } from './bus.js';
 import { registerAgentPicker } from './agent.js';

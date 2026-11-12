@@ -31,13 +31,17 @@ export function matchesShortcut(event, combo, mac = isMac) {
   const variant = combo.includes('|') ? combo.split('|')[mac ? 1 : 0] : combo;
   if (!variant) return false;
   const parts = variant.toLowerCase().split('+');
-  const key = parts.pop();
+  const name = parts.pop();
+  const key =
+    { left: 'arrowleft', right: 'arrowright', up: 'arrowup', down: 'arrowdown' }[name] || name;
   const eventKey =
     key === '.' && event.shiftKey && (event.code === 'Period' || event.key === '>')
       ? '.'
       : event.key.toLowerCase();
+  const codeKey = event.code?.replace(/^(Key|Digit)/, '').toLowerCase();
+  const actual = event.altKey && /^[a-z0-9]$/.test(key) && codeKey ? codeKey : eventKey;
   return (
-    eventKey === key &&
+    actual === key &&
     event.metaKey === (parts.includes('meta') || (mac && parts.includes('mod'))) &&
     event.ctrlKey === (parts.includes('ctrl') || (!mac && parts.includes('mod'))) &&
     event.shiftKey === parts.includes('shift') &&

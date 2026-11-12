@@ -13,7 +13,15 @@ export function vimKey(previous, event, document, now = 0) {
   const cursor = { line: document.line, col: document.col };
   let anchor = document.anchor;
   const commands = [];
-  const result = (handled) => ({ state, cursor, anchor, commands, handled });
+  const result = (handled) => {
+    cursor.line = Math.max(1, Math.min(document.total || 1, cursor.line));
+    if (state.mode === 'VISUAL_LINE' && anchor) {
+      const reverse = cursor.line < anchor.line;
+      anchor = { ...anchor, col: reverse ? document.textAt(anchor.line - 1).length : 0 };
+      cursor.col = reverse ? 0 : document.textAt(cursor.line - 1).length;
+    }
+    return { state, cursor, anchor, commands, handled };
+  };
   const reset = () => {
     state.count = '';
     state.pending = '';
@@ -40,8 +48,13 @@ export function vimKey(previous, event, document, now = 0) {
   const count = Math.max(1, parseInt(state.count, 10) || 1);
   if (event.ctrlKey) {
     const pages = { d: 0.5, u: -0.5, f: 1, b: -1 };
-    if (pages[event.key]) move(Math.trunc(document.pageLines * pages[event.key]) * count);
-    else if (event.key === 'o' || event.key === 'i')
+    if (pages[event.key]) {
+      const size =
+        Math.abs(pages[event.key]) === 1
+          ? document.pageLines - 2
+          : Math.floor(document.pageLines / 2);
+      move(Math.sign(pages[event.key]) * Math.max(1, size) * count);
+    } else if (event.key === 'o' || event.key === 'i')
       action('history', (event.key === 'o' ? -1 : 1) * count);
     else return result(false);
     reset();
@@ -51,11 +64,21 @@ export function vimKey(previous, event, document, now = 0) {
     const nextMode = event.key === 'V' ? 'VISUAL_LINE' : 'VISUAL';
     if (event.key === 'v' || event.key === 'V') {
       if (state.mode === nextMode) normal();
-      else state.mode = nextMode;
+      else {
+        state.mode = nextMode;
+        if (nextMode === 'VISUAL_LINE') anchor = { line: cursor.line, col: 0 };
+      }
       return result(true);
     }
     if (['y', 'Y', 'e', 'c', 'u'].includes(event.key)) {
-      const info = selectedText(anchor, cursor, document.textAt);
+      const head =
+        state.mode === 'VISUAL_LINE'
+          ? {
+              ...cursor,
+              col: cursor.line < anchor.line ? 0 : document.textAt(cursor.line - 1).length,
+            }
+          : cursor;
+      const info = selectedText(anchor, head, document.textAt);
       if (event.key === 'y') {
         state.register = info?.text || '';
         action('yank', state.register);
@@ -76,7 +99,14 @@ export function vimKey(previous, event, document, now = 0) {
       cursor.line = Math.min(document.total, count);
       cursor.col = 0;
     }
-    if (event.key === 't' || event.key === 'T') action('tab', event.key === 't' ? 1 : -1);
+    if (event.key === 't') {
+      const indexed = state.count && count <= (document.tabCount ?? Infinity);
+      action(indexed ? 'tabIndex' : 'tab', indexed ? count - 1 : 1);
+    }
+    if (event.key === 'T') action('tab', -1);
+    if (event.key === 'd') action('definition');
+    if (event.key === 'r') action('references');
+    if (event.key === 'h') action('calls');
     reset();
     return result(true);
   }

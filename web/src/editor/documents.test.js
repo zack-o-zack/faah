@@ -55,3 +55,46 @@ test('history back and forward do not append navigation entries', async () => {
   expect(store.state.documents.history).toHaveLength(2);
   store.actions.disposeDocuments();
 });
+
+test('opening another revision resets diff metadata and disposes old buffers', async () => {
+  const store = makeStore({
+    fetcher: async (...args) => ({
+      ...(await fetcher(...args)),
+      diffAvailable: true,
+    }),
+  });
+  await store.actions.openDocument('one.go', { ref: 'old', base: 'parent', layout: 'unified' });
+  const old = store.buffers.get('one.go');
+  expect(store.activeDocument().diffMode).toBe('unified');
+  await store.actions.openDocument('one.go', { ref: 'new', base: 'other', view: 'source' });
+  expect(old.lines).toHaveLength(0);
+  expect(store.buffers.get('one.go')).not.toBe(old);
+  expect(store.activeDocument()).toMatchObject({
+    diffRef: 'new',
+    diffBase: 'other',
+    diffMode: null,
+  });
+  store.actions.patchDocument('one.go', { isEditing: true });
+  await store.actions.openDocument('one.go', { ref: 'new', base: 'other', view: 'diff' });
+  expect(store.activeDocument()).toMatchObject({ isEditing: false, diffMode: 'split' });
+  store.actions.disposeDocuments();
+});
+
+test('concurrent opens of the same file share one request and one tab', async () => {
+  let finish;
+  const request = vi.fn(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  const store = makeStore({ fetcher: request });
+  const first = store.actions.openDocument('one.go');
+  const second = store.actions.openDocument('one.go', { line: 15 });
+  finish(await fetcher('api/file', {}));
+  await Promise.all([first, second]);
+  expect(request).toHaveBeenCalledOnce();
+  expect(store.state.documents.tabs).toHaveLength(1);
+  expect(store.activeDocument().cur).toBe(15);
+  store.actions.disposeDocuments();
+});

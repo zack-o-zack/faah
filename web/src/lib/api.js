@@ -35,6 +35,10 @@ const request = async (method, path, params, opts = {}) => {
   }
 
   const r = await fetch(u, fetchOpts);
+  if (opts.text) {
+    if (!r.ok) throw new Error(`Request failed (${r.status})`);
+    return r.text();
+  }
   const j = await r.json();
   // The body rides along: some replies, like a failed agent job, carry detail beyond the message.
   if (j.error) throw Object.assign(new Error(j.error), { body: j });
@@ -45,3 +49,6 @@ export const api = (path, params, opts) => request('GET', path, params, opts);
 export const apiPost = (path, params, opts) => request('POST', path, params, opts);
 export const apiPostJson = (path, params, opts) =>
   request('POST', path, params, { json: true, ...opts });
+
+export const apiText = (path, params, opts) =>
+  request('GET', path, params, { ...opts, text: true });

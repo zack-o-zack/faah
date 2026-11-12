@@ -9,10 +9,9 @@ export function OpenWorkspaceForm() {
   const [target, setTarget] = createSignal('');
   const kind = createMemo(() => fieldKind(target()));
   const label = () => openLabel(kind());
-  let input;
-  createShortcut('/', () => input.focus());
+  let focusInput;
+  createShortcut('/', () => focusInput?.());
   onMount(() => {
-    input.focus();
     const open = new URLSearchParams(location.search).get('open');
     if (open) {
       history.replaceState(null, '', location.pathname);
@@ -36,8 +35,9 @@ export function OpenWorkspaceForm() {
           actions.clearError();
         }}
         onFolder={actions.browse}
-        inputRef={(el) => {
-          input = el;
+        autofocus
+        onReady={(focus) => {
+          focusInput = focus;
         }}
         label="Folder path or pull request URL"
         placeholder="Folder path or pull request URL"

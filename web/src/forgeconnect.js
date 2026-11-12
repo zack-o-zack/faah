@@ -1,3 +1,4 @@
+import { apiPostJson, keyLabel, showToast } from './app/legacy-bridge.js';
 // web/src/forgeconnect.js
 // The Connect dialog: getting a forge token without leaving faah or reading
 // docs first. It opens wherever a token is missing (the PR bar's "No token"
@@ -8,8 +9,8 @@
 // (/api/forge/connect) and a running review uses it at once -- no restart.
 // It knows nothing forge-specific itself: everything comes from
 // S.meta.forge, which the server builds from the provider's TokenSetup.
-import { $, S, esc, apiPostJson, keyLabel } from './state.js';
-import { showToast } from './ui.js';
+import { $, S, esc } from './state.js';
+
 import { showError } from './errors.js';
 import { emit } from './bus.js';
 import { openSettings } from './settings.js';

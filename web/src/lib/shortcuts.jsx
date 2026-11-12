@@ -1,4 +1,4 @@
-import { For, onCleanup, Show } from 'solid-js';
+import { Index, onCleanup, Show } from 'solid-js';
 import { keyLabel, keyCaps, matchesShortcut } from './keyboard.js';
 export function Kbd(props) {
   return (
@@ -10,20 +10,24 @@ export function Kbd(props) {
 function ShowCaps(props) {
   return (
     <Show when={props.caps} fallback={keyLabel(props.combo)}>
-      <For each={keyCaps(props.combo)}>{(key) => <kbd class="kbd">{key}</kbd>}</For>
+      <Index each={keyCaps(props.combo)}>{(key) => <kbd class="kbd">{key()}</kbd>}</Index>
     </Show>
   );
 }
 export function createShortcut(combo, action, options = {}) {
   const target = options.target || document;
   const listener = (event) => {
-    if (!options.inputs && event.target?.closest?.('input, textarea, [contenteditable="true"]'))
+    if (
+      !options.inputs &&
+      event.target?.closest?.('input, textarea, select, [contenteditable="true"], [role="menu"]')
+    )
       return;
-    if (matchesShortcut(event, combo) && (!options.when || options.when())) {
-      event.preventDefault();
+    if ((combo === null || matchesShortcut(event, combo)) && (!options.when || options.when())) {
+      if (options.preventDefault !== false) event.preventDefault();
+      if (options.stopPropagation) event.stopImmediatePropagation();
       action(event);
     }
   };
-  target.addEventListener('keydown', listener);
-  onCleanup(() => target.removeEventListener('keydown', listener));
+  target.addEventListener('keydown', listener, !!options.capture);
+  onCleanup(() => target.removeEventListener('keydown', listener, !!options.capture));
 }

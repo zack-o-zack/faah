@@ -1,12 +1,11 @@
+import { layout, render, openFile, centerLine, pushHistory, loadOutline, drawOutline, doc_, api } from './app/legacy-bridge.js';
 import { setPressed } from './controls.js';
 // web/src/inspector.js
-import { $, $$, esc, S, doc_, api } from './state.js';
+import { $, $$, esc, S } from './state.js';
 import { emit } from './bus.js';
-import { layout, render } from './renderer.js';
+
 import { updateStatus, setStatusNote } from './status.js';
-import { openFile, centerLine } from './tabs.js';
-import { pushHistory } from './history.js';
-import { loadOutline, drawOutline } from './outline.js';
+
 import { displayPath, cancelSearch } from './search.js';
 import { groupHits, flashFind, canAskServer, lspCall, positionNow } from './lsp.js';
 

@@ -104,16 +104,71 @@ Workbench is composed from `WorkbenchHeader`, `OpenWorkspaceForm`,
 `NewFolderForm`, `Clone`, `WorkbenchFooter`, `MetricsMenu` and `ThemeMenu`, with
 one component per file. Path completion uses `PathInput` and `PathSuggestions`.
 
+## Solid practices
+
+- Pass values as props; children should not need to know which values came from signals.
+- Keep `props.name` reads intact; use `splitProps` or `mergeProps` to preserve getters.
+- Read reactive values in JSX, functions or memos; component setup runs only once.
+- Derive values instead of copying them with effects; memoize only useful shared or costly work.
+- Reserve effects for external APIs; use `on` for explicit dependencies and `onMount` for setup.
+- Fetch with resources or request-guarded actions; expose loading and errors and cancel stale work.
+- Use stores for complex state and path setters for updates; preserve unrelated field subscriptions.
+- Render with Solid control flow; use `For` for objects and `Index` for primitive or reused slots.
+- Own DOM refs locally; expose narrow focus, scroll or measurement operations when needed.
+- Inject stores and services through context; pass local parent-to-child data as value props.
+- Keep components, named store actions and tested pure logic separate; dependencies point inward.
+- Split by responsibility when it helps reading or tests; avoid abstractions added only for symmetry.
+
+ESLint also rejects async effect callbacks, direct props destructuring, and `.map()` or `&&`
+render expressions. These guards supplement `eslint-plugin-solid`; they do not replace review.
+
+## Editor core (phase A1)
+
+`app/store.js` owns document metadata and history through `editor/documents.js`.
+`editor/buffer.js` owns plain per-document HTML, loaded chunks, cancellable requests,
+column widths, measured heights, layout offsets and editable text. Revision signals
+publish changes without putting these large buffers in deep store proxies.
+
+`editor/store.js` composes editor state, selectors and named actions. The `find-actions`,
+`edit-actions`, `hover-actions`, `selection-actions` and `vim-actions` modules own request
+lifetimes and state transitions. They use injected services, never DOM elements. Pure
+`layout`, `cursor`, `find`, `edit`, `selection`, `hover` and `vim` modules contain tested
+calculations. `symbols.js` guards outline and LSP symbol requests by document identity.
+
+`EditorShell` mounts tabs, file actions, the source viewport, editing, find, hover,
+selection actions, cursor status, Vim status/help and minimap. `Viewport` uses `Index`
+slots and one scroll/resize update per animation frame. A resource loads its visible
+windows. `EditorRow` derives decorations and uses the CSS Highlight API without
+rewriting source HTML. `EditView` keeps its gutter virtualized instead of creating
+50,000 line-number elements and measuring a full mirror on every input.
+
+Components own their refs. `source-dom.js` holds DOM-only position adapters instantiated
+by the viewport (and the temporary bridge); it is not a pure logic module. Components
+register narrow view operations such as focus, scroll, selection and coordinates in the
+injected services. No view operation returns an element. Parent-to-child measurement
+callbacks stay in props; reactive data props are passed as values.
+
 ## Temporary main-app bridge
 
-`main.jsx` mounts providers and the Solid toaster beside the existing markup in
-`index.html`, then calls `initLegacy()` from `main.js` after mounting. Remaining
-legacy modules still use `S`, the bus, DOM ids and HTML strings until their phase
-replaces them. Do not copy these patterns into new code. `app/theme-bridge.js`
-lets legacy settings, shortcuts, palettes and markdown observe the provider's
-theme. It is part of the explicitly temporary main-app bridge. Delete it,
-`main.js`, legacy state helpers and static shell when the final legacy module
-is migrated. The bridge is annotated at its entry points.
+`main.jsx` mounts providers, `EditorShell` and the toaster, then starts `initLegacy()`.
+Only `app/legacy-bridge.js` adapts migrated APIs for legacy consumers. It carries the
+removal marker and replaces the previous theme bridge. Its adapters cover:
+
+- `S.tabs`, active tab, history, editor preferences, cursor/navigation and LSP state.
+- Legacy document facades over metadata and plain buffers, with viewer caches outside
+  proxies and guards against writing through a disposed or replaced document.
+- File open/switch/close/reopen, history, line jumps, layout notifications, find,
+  selection, hover, edit and Vim actions; theme observation and theme changes.
+- Legacy DOM handles used by phase A2 viewers, viewer selections/marks, Git gutters,
+  outline notifications, and agent/thread/review/explain selection callbacks.
+
+Remaining tree, palette, search, Git/PR/review, agent, status and viewer modules import
+these APIs directly from this one bridge. `state.js` and `ui.js` do not re-export migrated
+editor APIs. Markdown, Mermaid, tables, images, diffs and the explain orb remain legacy
+until phase A2. `outline-pane.js` keeps only the existing right-pane rendering and events;
+it remains in both explicit legacy lists until phase B replaces that UI. Editor-side
+symbol fetching and state are already migrated. Delete the bridge, legacy boot/state
+helpers and static shell when the final legacy consumer is migrated.
 
 ## Component tests
 
@@ -145,3 +200,40 @@ Shared setup cleans mounted components after each test. Legacy tests with
 hand-built browser objects still run under jsdom; new component tests use its
 real document. See `lib/primitives.test.jsx`, `workbench/Workbench.test.jsx` and
 `holding/Holding.test.jsx` for working examples.
+
+## A1 Solid audit
+
+Effects retained after the phase 0/A1 audit:
+
+- `lib/theme.js`: applies the resolved theme to the document root.
+- `lib/Dialog.jsx`: drives native modal open/close and restores focus.
+- `lib/ToastItem.jsx`: owns notification expiry timers and cancels them on disposal.
+- `app/legacy-bridge.js`: notifies imperative legacy theme consumers.
+- `editor/EditorShell.jsx`: applies editor mode classes to the static document body,
+  using explicit dependencies with `on`.
+- `editor/EditorRow.jsx`: registers each owned row with ResizeObserver and updates
+  CSS Highlight ranges after source or highlight inputs change.
+- `editor/Viewport.jsx`: restores native selection after virtual slots move;
+  it does not derive or update selection state in that effect.
+- `editor/EditView.jsx`: updates the native textarea value and scroll when switching
+  editing documents, with explicit dependencies rather than tracking input updates.
+- `editor/HoverCard.jsx`: owns pointer/outside/blur listeners, measures the card's
+  actual dimensions, positions it and handles requested keyboard focus.
+- `editor/TabStrip.jsx`: focuses the native context menu and restores prior focus.
+
+Removed or replaced effects:
+
+- Holding derives initial progress from props; `onMount` starts one cancellable poll,
+  and only poll results write progress.
+- Selection status derives from `#footer-sel` through CSS `:has`, eliminating the
+  class-synchronization effect. Selection actions own explanation-preparation timers.
+- Vim disable/reset and prefix expiry happen in named actions with owned timers.
+- A viewport resource owns chunk-window loading instead of an effect starting requests.
+- Editable buffers publish their own revision; no effect increments a second revision
+  to synchronize editable state.
+
+The audit removed the controller/ref registry, moved DOM adapters into the viewport,
+and separated feature actions from pure algorithms. Workbench children expose focus
+operations instead of handing DOM elements to parents. Workbench refresh/open actions
+also reject stale responses. Context injects stores and services, and no migrated
+component receives signal accessors as data props or destructures its props.

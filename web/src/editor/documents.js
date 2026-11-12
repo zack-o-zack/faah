@@ -1,3 +1,4 @@
+import { batch, createSignal } from 'solid-js';
 import { reconcile } from 'solid-js/store';
 import { createDocumentBuffer } from './buffer.js';
 import { CHUNK } from './layout.js';
@@ -22,6 +23,7 @@ export function createDocuments(
   { fetcher, onActivate = () => {}, onClose = () => {} } = {},
 ) {
   const buffers = new Map();
+  const [bufferRevision, bumpBuffers] = createSignal(0);
   const closed = [];
   const opening = new Map();
   const indexOf = (path) => state.documents.tabs.findIndex((tab) => tab.path === path);
@@ -39,6 +41,7 @@ export function createDocuments(
       },
     });
     buffers.set(path, buffer);
+    bumpBuffers((value) => value + 1);
     return buffer;
   }
   function pushHistory(path, line) {
@@ -76,7 +79,8 @@ export function createDocuments(
       }
       if (!result) return;
       const hasDiff = !result.image && (result.diffAvailable || options.base);
-      const diffMode = hasDiff && options.view !== 'source' ? 'split' : null;
+      const layout = options.layout || 'split';
+      const diffMode = hasDiff && (options.view !== 'source' || result.deleted) ? layout : null;
       const document = {
         path,
         name: path.split('/').pop(),
@@ -107,44 +111,70 @@ export function createDocuments(
         outline: null,
         gutter: null,
       };
-      set('documents', 'tabs', (tabs) => [...tabs, document]);
-      index = indexOf(path);
+      batch(() => {
+        set('documents', 'tabs', state.documents.tabs.length, document);
+        index = indexOf(path);
+        if (options.activate !== false) activateDocument(index, { push: options.push !== false });
+      });
+      return state.documents.tabs[index];
     } else {
       const document = state.documents.tabs[index];
-      if ((document.diffRef || '') !== ref) {
+      if ((document.diffRef || '') !== ref || (document.diffBase || '') !== (options.base || '')) {
         buffers.get(path)?.dispose();
-        await createBuffer(path, ref).loadChunk(0);
-        patchDocument(path, { diffRef: ref, diffText: undefined, diffHunks: undefined });
+        const result = await createBuffer(path, ref).loadChunk(0);
+        const available = !!(result?.diffAvailable || options.base);
+        patchDocument(path, {
+          diffRef: ref,
+          diffBase: options.base || '',
+          diffAvailable: available,
+          diffDismissed: options.view === 'source',
+          diffMode: available && options.view !== 'source' ? options.layout || 'split' : null,
+          openedInDiffView: available && options.view !== 'source',
+          isEditing: false,
+          outline: null,
+        });
       }
       if (options.line) patchDocument(path, { cur: options.line, col: options.col || 0 });
-      if (options.view === 'source') patchDocument(path, { diffMode: null, diffDismissed: true });
+      if (options.turnFiles || options.turnLabel)
+        patchDocument(path, { turnFiles: options.turnFiles, turnLabel: options.turnLabel });
+      if (options.view === 'source' && !document.deleted)
+        patchDocument(path, { diffMode: null, diffDismissed: true, openedInDiffView: false });
       if (options.view === 'diff' && document.diffAvailable)
-        patchDocument(path, { diffMode: 'split', diffDismissed: false });
+        patchDocument(path, {
+          diffMode: options.layout || 'split',
+          diffDismissed: false,
+          openedInDiffView: true,
+          isEditing: false,
+        });
     }
-    activateDocument(index, { push: options.push !== false });
+    if (options.activate !== false) activateDocument(index, { push: options.push !== false });
     return state.documents.tabs[index];
   }
   function closeDocuments(indices) {
-    const targets = new Set(indices);
-    const active = state.documents.tabs[state.documents.active];
-    const removed = state.documents.tabs.filter((_, index) => targets.has(index));
-    for (const document of removed) {
-      closed.push({ path: document.path, line: document.cur });
-      if (closed.length > 20) closed.shift();
-      buffers.get(document.path)?.dispose();
-      buffers.delete(document.path);
-      onClose(document);
-    }
-    const tabs = state.documents.tabs.filter((_, index) => !targets.has(index));
-    set('documents', 'tabs', reconcile(tabs, { key: 'path' }));
-    const next = tabs.findIndex((document) => document.path === active?.path);
-    const fallback = Math.min(state.documents.active, tabs.length - 1);
-    set('documents', 'active', next >= 0 ? next : fallback);
-    if (tabs.length) onActivate(tabs[state.documents.active]);
-    return removed;
+    return batch(() => {
+      const targets = new Set(indices);
+      const active = state.documents.tabs[state.documents.active];
+      const removed = state.documents.tabs.filter((_, index) => targets.has(index));
+      for (const document of removed) {
+        closed.push({ path: document.path, line: document.cur });
+        if (closed.length > 20) closed.shift();
+        buffers.get(document.path)?.dispose();
+        buffers.delete(document.path);
+        bumpBuffers((value) => value + 1);
+        onClose(document);
+      }
+      const tabs = state.documents.tabs.filter((_, index) => !targets.has(index));
+      set('documents', 'tabs', reconcile(tabs, { key: 'path' }));
+      const next = tabs.findIndex((document) => document.path === active?.path);
+      const fallback = Math.min(state.documents.active, tabs.length - 1);
+      set('documents', 'active', next >= 0 ? next : fallback);
+      if (tabs.length) onActivate(tabs[state.documents.active]);
+      return removed;
+    });
   }
   return {
     buffers,
+    bufferRevision,
     patchDocument,
     openDocument,
     activateDocument,

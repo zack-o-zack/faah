@@ -1,10 +1,11 @@
+import { api } from './app/legacy-bridge.js';
 // web/src/commitfiles.js
 // A commit's changed files as sidebar rows, shared by Recent Commits
 // (gitpanel.js) and the Unpushed section (unpushed.js), styled by the [data-commit-file]
 // rules. Rows are built COMMIT_FILES_PAGE at a time behind a "Show N more" row,
 // so a commit of thousands of files costs no more DOM than one of a hundred
 // until someone asks for more.
-import { esc, api } from './state.js';
+import { esc } from './state.js';
 
 export const COMMIT_FILES_PAGE = 100;
 

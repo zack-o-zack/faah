@@ -1,8 +1,9 @@
-import { S, apiPost, doc_ } from './state.js';
+import { drawTabs, loadGutter, closeTab, reloadOpenTabs, render, doc_, apiPost } from './app/legacy-bridge.js';
+import { S } from './state.js';
 import { updateSidebarToggleState, patchTreeGitStatus, treeEl, setSidebarMode, hasGitView } from './tree.js';
-import { drawTabs, loadGutter, closeTab, reloadOpenTabs } from './tabs.js';
+
 import { syncDiffView } from './diff.js';
-import { render } from './renderer.js';
+
 import { updateStatus, updateMetricsDisplay } from './status.js';
 import { updateGitPanel } from './gitpanel.js';
 import { refreshUnpushed } from './unpushed.js';

@@ -1,27 +1,26 @@
-import { showHoverAtCaret } from './hover.js';
+import { showHoverAtCaret, render, toggleWordWrap, openFile, centerLine, closeTab, closeAllTabs, reopenClosedTab, pushHistory, openFind, listThemes, currentTheme, setTheme, cycleTheme, showVimHelp, isVimEnabled, setVimModeEnabled, getSelectedRangeInfo, enterEditMode, exitEditMode, saveActiveFile, doc_, api, withKeys } from './app/legacy-bridge.js';
+
 // web/src/palette.js
-import { $, esc, S, doc_, api, debounce, withKeys } from './state.js';
-import { render, toggleWordWrap } from './renderer.js';
-import { openFile, centerLine, closeTab, closeAllTabs, reopenClosedTab } from './tabs.js';
+import { $, esc, S, debounce } from './state.js';
+
 import { updateStatus, openLspMenu, startAllLsp, stopAllLsp } from './status.js';
-import { pushHistory } from './history.js';
+
 import { showPanel, reindexWorkspace } from './panels.js';
-import { openFind } from './find.js';
+
 import { gotoDefinition, findReferences } from './lsp.js';
 import { revealFile } from './tree.js';
 import { showRightInspector, hideRightInspector } from './inspector.js';
 import { showCalls } from './calls.js';
 import { showHelp } from './shortcuts.js';
-import { listThemes, currentTheme, setTheme, cycleTheme } from './app/theme-bridge.js';
+
 import { togglePreview } from './markdown.js';
 import { openSettings, isAutoRevealEnabled } from './settings.js';
-import { showVimHelp, isVimEnabled, setVimModeEnabled } from './vim.js';
+
 import { launchPR } from './pr.js';
 import { newThread, deleteCurrentThread, showThreadsSidebar } from './thread.js';
 import { copyToClipboard, copyRichToClipboard } from './ui.js';
 import { getDocRaw } from './markdown.js';
-import { getSelectedRangeInfo } from './selbar.js';
-import { enterEditMode, exitEditMode, saveActiveFile } from './editview.js';
+
 import { promptNewItem } from './newitem.js';
 import { navigateToTips, showTipWidget } from './tips.js';
 
@@ -29,7 +28,6 @@ export const overlay = $('#overlay');
 export const palInput = $('#pal');
 export const palList = $('#pal-list');
 export let pal = null;
-
 
 export const COMMANDS = [
   { name: withKeys('File: Copy Source Code ({Mod+C})'), run: () => {

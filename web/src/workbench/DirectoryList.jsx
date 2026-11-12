@@ -1,12 +1,12 @@
-import { For } from 'solid-js';
+import { For, onMount } from 'solid-js';
 import { useWorkbench } from './context.jsx';
 export function DirectoryList(props) {
   const { state, actions } = useWorkbench();
+  let list;
+  onMount(() => props.onReady?.(() => list.focus()));
   return (
     <ul
-      ref={(element) => {
-        props.listRef(element);
-      }}
+      ref={list}
       role="listbox"
       tabindex="0"
       aria-label="Folders"

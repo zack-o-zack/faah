@@ -51,6 +51,8 @@ export function createWorkbenchStore(
   const [state, set] = createStore(initialState());
   // Ignore stale responses when a newer browse request has already started.
   let browseSequence = 0;
+  let refreshSequence = 0;
+  let openSequence = 0;
   const groups = createMemo(() => recentGroups(state.items, state.showAll));
   const actions = {
     selectTab: (tab) => set('tab', tab),
@@ -58,13 +60,15 @@ export function createWorkbenchStore(
     showAll: () => set('showAll', true),
     clearError: () => set('error', ''),
     async refresh() {
+      const sequence = ++refreshSequence;
       try {
         const result = await request('api/wb/state');
+        if (sequence !== refreshSequence) return;
         for (const name of ['items', 'cwd', 'home', 'sep', 'version'])
           if (result[name] !== undefined) set(name, reconcile(result[name]));
         if (!state.directory.path) await actions.browse(result.cwd);
       } catch (err) {
-        set('error', err.message);
+        if (sequence === refreshSequence) set('error', err.message);
       }
     },
     async browse(path, select = '') {
@@ -85,9 +89,11 @@ export function createWorkbenchStore(
       }
     },
     async open(target, clone) {
+      const sequence = ++openSequence;
       set('error', '');
       try {
         const result = await post('api/wb/open', clone ? { target, clone } : { target });
+        if (sequence !== openSequence) return;
         if (result.needClone) {
           set('clone', {
             target,
@@ -98,7 +104,7 @@ export function createWorkbenchStore(
           set('tab', 'browse');
         } else navigate(result.href);
       } catch (err) {
-        set('error', err.message);
+        if (sequence === openSequence) set('error', err.message);
       }
     },
     useFolder: (path) =>

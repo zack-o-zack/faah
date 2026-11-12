@@ -1,4 +1,4 @@
-import { For, Show } from 'solid-js';
+import { Index, Show } from 'solid-js';
 import { useWorkbench } from './context.jsx';
 import { Recent } from './Recent.jsx';
 import { Browse } from './Browse.jsx';
@@ -20,21 +20,21 @@ export function WorkbenchTabs() {
           }
         }}
       >
-        <For each={['recent', 'browse']}>
+        <Index each={['recent', 'browse']}>
           {(tab) => (
             <button
               class="capitalize"
-              id={`tab-${tab}`}
+              id={`tab-${tab()}`}
               role="tab"
-              tabindex={state.tab === tab ? 0 : -1}
-              aria-selected={state.tab === tab}
-              aria-controls={`panel-${tab}`}
-              onClick={() => actions.selectTab(tab)}
+              tabindex={state.tab === tab() ? 0 : -1}
+              aria-selected={state.tab === tab()}
+              aria-controls={`panel-${tab()}`}
+              onClick={() => actions.selectTab(tab())}
             >
-              {tab}
+              {tab()}
             </button>
           )}
-        </For>
+        </Index>
       </nav>
       <div
         role="tabpanel"

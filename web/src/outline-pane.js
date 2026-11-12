@@ -1,36 +1,8 @@
-// web/src/outline.js
-import { $, $$, esc, S, doc_, api } from './state.js';
-import { centerLine } from './tabs.js';
-import { render } from './renderer.js';
-import { updateStatus, setLspState } from './status.js';
-import { pushHistory } from './history.js';
+import { centerLine, render, pushHistory, doc_ } from './app/legacy-bridge.js';
+// The inspector UI remains legacy until the right-pane migration.
+import { $, $$, esc, S } from './state.js';
 
-export async function loadOutline() {
-  const d = doc_();
-  const el = $('#outline');
-  if (!d) { if (el) el.innerHTML = '<div data-ui="hint" class="empty text-muted-foreground">No file open.</div>'; return; }
-  if (!d.outline) {
-    try { d.outline = (await api('/api/outline', { path: d.path })).symbols || []; }
-    catch { d.outline = []; }
-  }
-  drawOutline();
-  upgradeOutline(d);
-}
-
-/* A language server's document symbols beat regex on every axis, so swap them
-   in whenever one answers. Panel only: this never moves the viewport. */
-export async function upgradeOutline(d) {
-  if (d.outlineLSP || S.lsp.state === 'off' || S.lsp.state === 'failed') return;
-  d.outlineLSP = true;
-  let j;
-  try { j = await api('/api/lsp/symbols', { path: d.path, wait: 20000 }); }
-  catch { d.outlineLSP = false; return; }
-  setLspState(j);
-  if (!j.symbols || !j.symbols.length) { d.outlineLSP = false; return; }
-  d.outline = j.symbols;
-  d.outlineSource = j.server;
-  if (doc_() === d) drawOutline();
-}
+import { updateStatus } from './status.js';
 
 export function drawOutline() {
   const d = doc_();

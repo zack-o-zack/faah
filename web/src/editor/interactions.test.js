@@ -76,3 +76,28 @@ test('Vim prefixes expire and browser modifiers fall through', () => {
   expect(vimKey(state, { key: 'j' }, doc, 2000).cursor.line).toBe(2);
   expect(vimKey(state, { key: 'p', metaKey: true }, doc, 20).handled).toBe(false);
 });
+
+test('Vim viewport motions, numbered tabs and navigation commands remain pure', () => {
+  expect(keys(['H'], { ...doc, line: 3 }).cursor.line).toBe(1);
+  expect(keys(['M']).cursor.line).toBe(2);
+  expect(keys(['L']).cursor.line).toBe(4);
+  expect(keys(['2', 'g', 't']).commands).toEqual([{ type: 'tabIndex', value: 1 }]);
+  expect(keys(['g', 'd']).commands).toEqual([{ type: 'definition', value: undefined }]);
+  expect(keys(['g', 'r']).commands[0].type).toBe('references');
+  expect(keys(['z', 'z']).commands).toEqual([{ type: 'scroll', value: 'z' }]);
+  expect(vimKey(initialVimState(), { key: 'u', ctrlKey: true }, doc).cursor.line).toBe(1);
+});
+test('Vim visual line yank includes complete lines and resets its anchor', () => {
+  const result = keys(['V', 'j', 'j', 'y']);
+  expect(result.state.register).toBe('first second\n\n  third fourth');
+  expect(result.anchor).toBeNull();
+  expect(result.state.mode).toBe('NORMAL');
+  expect(keys(['9', 'j']).cursor.line).toBe(4);
+  expect(keys(['9', 'k']).cursor.line).toBe(1);
+});
+
+test('counted word and column motions continue across empty lines', () => {
+  expect(movePosition({ line: 1, col: 11 }, 4, textAt, 4, 'column')).toEqual({ line: 3, col: 1 });
+  expect(movePosition({ line: 1, col: 6 }, 4, textAt, 4, 'word')).toEqual({ line: 3, col: 2 });
+  expect(movePosition({ line: 3, col: 2 }, -4, textAt, 4, 'word')).toEqual({ line: 1, col: 6 });
+});

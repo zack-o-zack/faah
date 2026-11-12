@@ -1,7 +1,8 @@
+import { openFile, api } from './app/legacy-bridge.js';
 import { setPressed } from './controls.js';
 // web/src/search.js
-import { $, $$, esc, api, debounce } from './state.js';
-import { openFile } from './tabs.js';
+import { $, $$, esc, debounce } from './state.js';
+
 import { flashFind } from './lsp.js';
 
 export const resultsEl = $('#results');

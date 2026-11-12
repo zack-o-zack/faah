@@ -61,8 +61,12 @@ export function createAppStore(options = {}) {
     state,
     activeDocument,
     buffers: documents.buffers,
+    bufferRevision: documents.bufferRevision,
     actions: {
       ...documents,
+      setAgentTargets: (targets) => set('agents', 'targets', targets),
+      setNavigation: (patch) => set('navigation', patch),
+      setGeometry: (patch) => set('editor', patch),
       setWorkspace: (meta) => set('workspace', 'meta', reconcile(meta)),
       setEditorPreference: (name, value) => {
         if (!['wrap', 'lineNumbers', 'mdPreview', 'tablePreview'].includes(name))
@@ -71,6 +75,7 @@ export function createAppStore(options = {}) {
       },
       setSettings: (settings) => set('settings', reconcile(settings)),
       setLsp: (lsp) => set('lsp', reconcile(lsp)),
+      patchLsp: (name, value) => set('lsp', name, value),
     },
   };
 }

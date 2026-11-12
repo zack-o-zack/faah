@@ -22,14 +22,14 @@ export function htmlTextLen(html, tabSize = 4) {
 }
 export function lineOffsets(
   columns,
-  { wrap = false, width = 800, charWidth = 7.8, lineHeight = LH, estimate = 0 } = {},
+  { wrap = false, width = 800, charWidth = 7.8, lineHeight = LH, estimate = 0, heights } = {},
 ) {
   const offsets = new Float64Array(columns.length + 1);
   const capacity = Math.max(1, Math.floor(Math.max(1, width) / charWidth));
   for (let index = 0; index < columns.length; index++) {
     const length = columns[index] < 0 ? estimate : columns[index];
     const rows = wrap ? Math.max(1, Math.ceil(length / capacity)) : 1;
-    offsets[index + 1] = offsets[index] + rows * lineHeight;
+    offsets[index + 1] = offsets[index] + ((wrap && heights?.get(index)) || rows * lineHeight);
   }
   return offsets;
 }
@@ -55,4 +55,24 @@ export function visibleRange(offsets, scrollTop, height, overscan = OVERSCAN * L
 export function codeWidth(width, total, charWidth, numbers = true) {
   const gutter = numbers ? String(total || 1).length * charWidth + 30 : 0;
   return Math.max(40, width - gutter - 40);
+}
+
+export function visualColumn(text, column, tabSize = 4) {
+  let width = 0;
+  for (const char of text.slice(0, column)) {
+    const code = char.codePointAt(0);
+    if (char === '\t') width += tabSize - (width % tabSize);
+    else if (/\p{Mark}/u.test(char)) continue;
+    else if (
+      code >= 0x1100 &&
+      (code <= 0x115f ||
+        (code >= 0x2e80 && code <= 0xa4cf) ||
+        (code >= 0xac00 && code <= 0xd7a3) ||
+        (code >= 0xf900 && code <= 0xfaff) ||
+        code >= 0x1f300)
+    )
+      width += 2;
+    else width++;
+  }
+  return width;
 }

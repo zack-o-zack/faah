@@ -1,58 +1,54 @@
-// web/src/main.js
-import { $, S, api, applyKeyLabels } from './state.js';
-import { measure, layout, render, initRenderer, updateEditorOptionControls } from './renderer.js';
-import { initTabs, openFile, switchTab } from './tabs.js';
-import { initCursor } from './cursor.js';
-import { initHover } from './hover.js';
-import { initSelectionBar } from './selbar.js';
+import { initOutline, drawOutline } from './outline-pane.js';
+import { emit } from './bus.js';
+import { warmLSP, gotoDefinition, findReferences } from './lsp.js';
+import { showCalls, initCalls } from './calls.js';
+import { syncImageView, initImageViewer } from './imageview.js';
+import { syncPreview, previewing, previewLine, findInPreview, showPreviewHit, clearPreviewMarks, getDocRaw, domToMarkdown, getFragmentPlainText, getFragmentHtml, getMarkdownRangeLines, previewTopLine, selectPreview, initMarkdown } from './markdown.js';
+import { syncDiffView, setSourceJumpHandler, setCommitStepHandler, initDiff } from './diff.js';
+import { copyToClipboard, copyRichToClipboard, initErrorCopy } from './ui.js';
+import { setLspState, initMetrics, initLspMenu, refreshLspMenu, initStatusFit, updateMetricsDisplay, updateStatus } from './status.js';
+import { openPalette, initPalette } from './palette.js';
+import { showHelp, initShortcuts } from './shortcuts.js';
+import { measure, layout, render, updateEditorOptionControls, openFile, switchTab, configureLegacyServices, api, applyKeyLabels } from './app/legacy-bridge.js';
+import { $, S } from './state.js';
 import { drawTree, treeEl, initTree, revealFile, refreshTree, collapseAllDirs, expandDirtyDirs, inGitMode, setAutoRevealSuppressed, setSidebarMode, updateSidebarToggleState, hasGitView } from './tree.js';
 import { initSearch } from './search.js';
-import { initOutline } from './outline.js';
 import { initPanels } from './panels.js';
 import { initInspector } from './inspector.js';
-import { initCalls } from './calls.js';
-import { initFind } from './find.js';
-import { initPalette } from './palette.js';
-import { initShortcuts } from './shortcuts.js';
-import { initMarkdown } from './markdown.js';
-import { initDiff } from './diff.js';
 import { initAgent, applyAgentMeta, loadAgentAsync } from './agent.js';
 import { initThreads } from './thread.js';
-import { initMetrics, initLspMenu, refreshLspMenu, initStatusFit, updateMetricsDisplay, updateStatus } from './status.js';
 import { initSettings } from './settings.js';
-import { initVim } from './vim.js';
-import { initImageViewer } from './imageview.js';
 import { initGitStream, triggerRefresh } from './gitstream.js';
 import { initGitPanel, syncGitPanelMeta } from './gitpanel.js';
 import { initPR } from './pr.js';
 import { initLineComment } from './linecomment.js';
 import { initUnpushed, refreshUnpushed } from './unpushed.js';
 import { initPRScope } from './prscope.js';
-import { initEditView } from './editview.js';
 import { initNewItem } from './newitem.js';
 import { initTips, startTipsAsync } from './tips.js';
 import { initReviewFlow, setMode } from './reviewflow.js';
-import { initErrorCopy } from './ui.js';
+
+// web/src/main.js
 
 export function initLegacy() {
+configureLegacyServices({
+ emit, setSourceJumpHandler, setCommitStepHandler, warmLSP, updateStatus, setLspState, gotoDefinition, findReferences, showCalls,
+ copyToClipboard, copyRichToClipboard, openPalette, showHelp, triggerRefresh, drawOutline,
+ previewing, previewLine, findInPreview, showPreviewHit, clearPreviewMarks, getDocRaw,
+ domToMarkdown, getFragmentPlainText, getFragmentHtml, getMarkdownRangeLines, previewTopLine, selectPreview,
+ syncViewers() { syncImageView(); syncPreview(); syncDiffView(); },
+});
+initOutline();
 // Initialize all subsystems
-initRenderer();
-initTabs();
-initEditView();
 initNewItem();
 initTips();
 initReviewFlow();
-initCursor();
-initHover();
-initSelectionBar();
 initTree();
 initGitPanel();
 initSearch();
-initOutline();
 initPanels();
 initInspector();
 initCalls();
-initFind();
 initPalette();
 initShortcuts();
 initMarkdown();
@@ -63,7 +59,6 @@ initMetrics();
 initLspMenu();
 initStatusFit();
 initSettings();
-initVim();
 initImageViewer();
 initLineComment();
 initErrorCopy();

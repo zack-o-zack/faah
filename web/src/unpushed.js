@@ -1,3 +1,4 @@
+import { openFile, api } from './app/legacy-bridge.js';
 // web/src/unpushed.js
 // The Unpushed section in the sidebar: the local commits ahead of the tracking
 // branch (@{u}..HEAD), each expandable into the files it touched, each file
@@ -13,9 +14,9 @@
 // show. No upstream configured means no section at all -- there is no guessed
 // fallback branch, since a list measured against the wrong ref is worse than
 // no list.
-import { $, S, esc, api } from './state.js';
+import { $, S, esc } from './state.js';
 import { on } from './bus.js';
-import { openFile } from './tabs.js';
+
 import { copyToClipboard } from './ui.js';
 import { treeEl, updateSidebarToggleState, inGitMode } from './tree.js';
 import { makeCardKeeper, pointerPos } from './cardkeep.js';
@@ -37,7 +38,6 @@ const upDetails = new Map();      // sha -> CommitDetail
 let upSig = '';                   // last (ahead, head SHA) seen, to skip pointless refetches
 let upCardTimer = 0, upCardSeq = 0, upCardSha = '';
 let upKeeper = null;
-
 
 /* Visible only in "changed files only" mode, and only with something to list. */
 export function syncUnpushedVisibility() {

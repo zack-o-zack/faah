@@ -1,6 +1,7 @@
+import { doc_, api, apiPost, showToast } from './app/legacy-bridge.js';
 // web/src/lspsetup.js
-import { esc, S, doc_, api, apiPost } from './state.js';
-import { copyToClipboard, showToast } from './ui.js';
+import { esc, S } from './state.js';
+import { copyToClipboard } from './ui.js';
 import { setLspState, updateStatus } from './status.js';
 import { warmLSP } from './lsp.js';
 
