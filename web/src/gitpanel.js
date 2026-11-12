@@ -237,7 +237,7 @@ function setBtnLabel(btn, text) {
   if (l) l.textContent = text;
 }
 
-function setBusy(btn, label) {
+function setGitButtonBusy(btn, label) {
   btn.dataset.busy = '1';
   btn.disabled = true;
   setBtn(btn, 'loader-circle', label);
@@ -705,7 +705,7 @@ async function checkUnfinishedSync() {
 // Has the selected harness write a message for the staged changes (all of
 // them when nothing is staged) and commits with it.
 async function doCommitWithAI(btn) {
-  setBusy(btn, 'Writing message…');
+  setGitButtonBusy(btn, 'Writing message…');
   const reset = () => { clearBusy(btn); syncCommitBtn(); };
   let job;
   try {
@@ -766,7 +766,7 @@ function pollCommitMessage(id, ui) {
 async function doGenerateMessage() {
   const btn = $('#git-generate-msg');
   if (!btn || btn.dataset.busy) return;
-  setBusy(btn);
+  setGitButtonBusy(btn);
   const reset = () => { clearBusy(btn); setBtn(btn, 'sparkle'); };
   let job;
   try {
@@ -790,7 +790,7 @@ async function doGenerateMessage() {
 }
 
 async function commitWithMessage(message, btn) {
-  setBusy(btn, 'Committing…');
+  setGitButtonBusy(btn, 'Committing…');
   try {
     await apiPostJson('/api/git/commit', { message });
     const ta = $('#git-commit-msg');
