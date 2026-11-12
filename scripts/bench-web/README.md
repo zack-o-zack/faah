@@ -104,13 +104,18 @@ cycles separately if retained growth becomes a concern.
 
 ## Profiles, failures, and checks
 
-Finder/open and scrolling each get a separate diagnostic pass with CDP CPU
+Finder/open, scrolling, editing, tree/search and memory each get a separate diagnostic pass with CDP CPU
 profiling at a requested 1ms sampling interval. These passes do not enter the
 timing summary. Profiles are written to `bench-out/profile.finder.cpuprofile` and
 `bench-out/profile.scroll.cpuprofile`; stdout and JSON include the top 15 frames by
 self time, calculated from sample time deltas. Idle, runtime, native DOM work, and
 benchmark instrumentation are included. Minified function names are meaningful
 only together with the recorded binary hash and bundle line/column.
+The editor and tree/search diagnostics also write Chrome timeline traces, reporting
+native layout/style/paint time alongside sampled JavaScript. The memory diagnostic
+writes a sampled live-allocation profile (4 KiB sampling interval); its estimates
+include warm-up and are not an exact retained-heap delta. None of these diagnostic
+passes enters the timing summary.
 Use a separate `--out` directory for later comparisons to preserve these profiles.
 
 Each action has a 15s timeout, navigation 30s, startup 60s, and scenarios a 180s

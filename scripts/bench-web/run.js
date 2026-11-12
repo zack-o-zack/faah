@@ -24,6 +24,7 @@ const { values } = parseArgs({ options: {
   runs: { type: 'string', default: '5' }, json: { type: 'string', default: 'bench-out/frontend.json' },
   synthetic: { type: 'string', default: path.join(root, 'bench-repos/web-synthetic-v1') },
   out: { type: 'string', default: path.join(root, 'bench-out') },
+  'diagnostics-only': { type: 'boolean', default: false },
   help: { type: 'boolean', short: 'h', default: false },
 } });
 if (values.help) {
@@ -31,6 +32,7 @@ if (values.help) {
   --workspace PATH  Real repository for cold-load tests (default: clone/reuse bench-repos/react).
   --synthetic PATH  Generated stress corpus (default: bench-repos/web-synthetic-v1).
   --out PATH        CPU profiles and diagnostics (default: bench-out).
+  --diagnostics-only  Run untimed profiles without collecting timing samples.
 No builds are performed. Requires Chrome, or npx playwright-core install chromium.
 Failures are written to JSON; any failed scenario causes exit status 1.`);
 } else {
@@ -52,12 +54,12 @@ async function main(count) {
       version: execFileSync(binary, ['--version'], { encoding: 'utf8', timeout: 5000 }).trim() },
     machine: { platform: os.platform(), release: os.release(), arch: os.arch(), cpu: os.cpus()[0]?.model,
       logicalCpus: os.cpus().length, memoryBytes: os.totalmem(), node: process.version },
-    config: { runs: count, viewport: { width: 1440, height: 900 }, headless: true, serverFlags,
-      profilePasses: 'Separate untimed diagnostic passes for finder and scroll',
+    config: { runs: values['diagnostics-only'] ? 0 : count, viewport: { width: 1440, height: 900 }, headless: true, serverFlags,
+      profilePasses: 'Separate untimed diagnostic passes for finder, scroll, editor, tree/search and memory',
       aggregation: 'Pooled action samples across all runs; nearest-rank p95, interpolated median',
       cold: 'Fresh browser context, empty HTTP cache, indexed long-running server; not cold OS/backend cache',
       frameBudgetMs: 16.7, scrollSteps: 240, scrollLines: 20_000, eventTimingThresholdMs: 16 },
-    workspaces: { real, synthetic }, runs: [], profiles: [], failures: [],
+    workspaces: { real, synthetic }, runs: [], profiles: [], traces: [], allocationProfiles: [], failures: [],
   };
   let browser;
   const servers = [];
@@ -88,10 +90,10 @@ async function main(count) {
       ['finder', finder], ['scroll', scroll], ['editor', editor], ['tabs', tabs],
       ['tree-search', treeSearch], ['previews', previews], ['memory', memory],
     ];
-    for (let run = 1; run <= count; run++) for (const [name, scenario, url = syntheticServer.url] of scenarios) {
+    for (let run = 1; !values['diagnostics-only'] && run <= count; run++) for (const [name, scenario, url = syntheticServer.url] of scenarios) {
       await execute(name, scenario, url, run);
     }
-    for (const [name, scenario] of [['finder', finder], ['scroll', scroll]]) {
+    for (const [name, scenario] of [['finder', finder], ['scroll', scroll], ['editor', editor], ['tree-search', treeSearch], ['memory', memory]]) {
       await execute(`profile.${name}`, scenario, syntheticServer.url, 0, true);
     }
   } catch (error) {
@@ -125,6 +127,8 @@ async function main(count) {
     const pageErrors = [];
     page.on('pageerror', error => pageErrors.push(error.message));
     let cdp;
+    let traceEvents;
+    let sampling = false;
     let scenarioTimer;
     try {
       if (scenario !== cold) await load(page, url);
@@ -133,6 +137,16 @@ async function main(count) {
         await cdp.send('Profiler.enable');
         await cdp.send('Profiler.setSamplingInterval', { interval: 1000 });
         await cdp.send('Profiler.start');
+        if (name === 'profile.editor' || name === 'profile.tree-search') {
+          traceEvents = [];
+          cdp.on('Tracing.dataCollected', ({ value }) => traceEvents.push(...value));
+          await cdp.send('Tracing.start', { categories: 'devtools.timeline,blink.user_timing',
+            options: 'record-as-much-as-possible' });
+        }
+        if (name === 'profile.memory') {
+          await cdp.send('HeapProfiler.startSampling', { samplingInterval: 4096 });
+          sampling = true;
+        }
       }
       await Promise.race([
         scenario({ page, result, url, prefix: name }),
@@ -152,6 +166,35 @@ async function main(count) {
       clearTimeout(scenarioTimer);
       if (cdp) {
         try {
+          if (traceEvents) {
+            const completed = new Promise(resolve => cdp.once('Tracing.tracingComplete', resolve));
+            await cdp.send('Tracing.end');
+            await completed;
+            const filename = path.join(output, `${name}.trace.json`);
+            await writeFile(filename, JSON.stringify({ traceEvents }));
+            const times = {};
+            for (const event of traceEvents) if (event.ph === 'X' && event.dur) {
+              times[event.name] = (times[event.name] || 0) + event.dur / 1000;
+            }
+            report.traces.push({ scenario: name, path: path.relative(root, filename), times });
+          }
+          if (sampling) {
+            const { profile } = await cdp.send('HeapProfiler.stopSampling');
+            const filename = path.join(output, `${name}.heapprofile`);
+            await writeFile(filename, JSON.stringify(profile));
+            const allocations = new Map();
+            function collect(node) {
+              const frame = node.callFrame;
+              const key = `${frame.functionName || '(anonymous)'}:${frame.url}:${frame.lineNumber}:${frame.columnNumber}`;
+              const entry = allocations.get(key) || { ...frame, bytes: 0 };
+              entry.bytes += node.selfSize;
+              allocations.set(key, entry);
+              for (const child of node.children || []) collect(child);
+            }
+            collect(profile.head);
+            report.allocationProfiles.push({ scenario: name, path: path.relative(root, filename),
+              top: [...allocations.values()].sort((a, b) => b.bytes - a.bytes).slice(0, 20) });
+          }
           const { profile } = await cdp.send('Profiler.stop');
           const filename = path.join(output, `${name}.cpuprofile`);
           await writeFile(filename, JSON.stringify(profile));

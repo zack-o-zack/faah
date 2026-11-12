@@ -132,6 +132,7 @@ export function createDocuments(
           openedInDiffView: available && options.view !== 'source',
           isEditing: false,
           outline: null,
+          gutterLoaded: false,
         });
       }
       if (options.line) patchDocument(path, { cur: options.line, col: options.col || 0 });

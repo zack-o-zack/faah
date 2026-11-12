@@ -1,4 +1,4 @@
-import { showHoverAtCaret, render, toggleWordWrap, openFile, centerLine, closeTab, closeAllTabs, reopenClosedTab, pushHistory, openFind, listThemes, currentTheme, setTheme, cycleTheme, showVimHelp, isVimEnabled, setVimModeEnabled, getSelectedRangeInfo, enterEditMode, exitEditMode, saveActiveFile, doc_, api, withKeys } from './app/legacy-bridge.js';
+import { showHoverAtCaret, loadOutline, render, toggleWordWrap, openFile, centerLine, closeTab, closeAllTabs, reopenClosedTab, pushHistory, openFind, listThemes, currentTheme, setTheme, cycleTheme, showVimHelp, isVimEnabled, setVimModeEnabled, getSelectedRangeInfo, enterEditMode, exitEditMode, saveActiveFile, doc_, api, withKeys } from './app/legacy-bridge.js';
 
 // web/src/palette.js
 import { $, esc, S, debounce } from './state.js';
@@ -178,7 +178,7 @@ export async function refreshPaletteNow() {
   } else if (mode === 'symbol') {
     const d = doc_();
     if (d && !d.outline) {
-      try { d.outline = (await api('/api/outline', { path: d.path })).symbols || []; } catch { d.outline = []; }
+      await loadOutline({ upgrade: false });
       if (!current()) return;
     }
     const lq = q.toLowerCase();

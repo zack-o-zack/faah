@@ -255,8 +255,8 @@ export function configureLegacyServices(value) {
       S.lsp = document.lsp || { state: 'off', server: '' };
       value.syncViewers();
       value.warmLSP(document);
-      void symbols.load(document.path).catch(() => {});
-      void loadGutter(document);
+      if ($('#pane-right-symbols')?.classList.contains('active')) void loadOutline();
+      if (!document.gutterLoaded) void loadGutter(document);
       value.updateStatus();
       value.emit('tab:activated', { doc: document });
     },
@@ -524,6 +524,7 @@ export async function loadGutter(document) {
   try {
     const result = await api('api/gutter', { path: document.path, ref });
     if ((document.diffRef || '') !== ref) return;
+    document.gutterLoaded = true;
     document.diffAvailable = !!(result.available || document.diffBase);
     if (
       document.diffAvailable &&
@@ -545,12 +546,12 @@ export async function loadGutter(document) {
     /* Git can disappear while a workspace is closing. */
   }
 }
-export async function loadOutline() {
+export async function loadOutline({ upgrade = true } = {}) {
   const document = doc_();
   if (!document) return;
   try {
     await symbols.load(document.path);
-    await symbols.upgrade(document.path);
+    if (upgrade) await symbols.upgrade(document.path);
   } catch {
     /* A closing workspace can drop symbol requests. */
   }
