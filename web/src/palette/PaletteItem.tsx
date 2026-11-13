@@ -1,12 +1,23 @@
+import type { PaletteItem as Item } from './types.ts';
+
+interface PaletteItemProps {
+  item: Item;
+  index: number;
+  selected: boolean;
+  onChoose: () => void;
+}
+import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { fuzzyParts } from './logic.ts';
-export function PaletteItem(props) {
-  const positions = () =>
-    props.item.kind === 'file'
-      ? props.item.positions
-          .filter((position) => position >= props.item.path.length - props.item.label.length)
-          .map((position) => position - props.item.path.length + props.item.label.length)
+export function PaletteItem(props: PaletteItemProps): JSX.Element {
+  const positions = () => {
+    const item = props.item;
+    return item.kind === 'file'
+      ? item.positions
+          .filter((position) => position >= item.path.length - item.label.length)
+          .map((position) => position - item.path.length + item.label.length)
       : [];
+  };
   return (
     <div
       role="menuitem"
@@ -25,12 +36,7 @@ export function PaletteItem(props) {
           )}
         </For>
       </span>
-      <span class="max-w-[35%] truncate">{props.item.sub}</span>
-      <Show when={props.item.right}>
-        <span class="badge ml-auto" data-variant="outline">
-          {props.item.right}
-        </span>
-      </Show>
+      <span class="max-w-[35%] truncate">{'sub' in props.item ? props.item.sub : undefined}</span>
     </div>
   );
 }

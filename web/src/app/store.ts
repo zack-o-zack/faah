@@ -1,3 +1,5 @@
+import type { ServerInfo } from '../lsp/decode.ts';
+import { decodeServers } from '../lsp/decode.ts';
 import type { WordPosition } from '../editor/contracts.ts';
 import type { GitSnapshot, Metrics } from '../workspace/decode.ts';
 import { decodeMeta, decodeMetrics } from '../workspace/decode.ts';
@@ -45,7 +47,7 @@ export interface AppState {
     reference?: { path: string; l1: number; l2: number };
   };
   lsp: {
-    servers: unknown[];
+    servers: ServerInfo[];
     state: string;
     server: string;
     missing?: string;
@@ -135,7 +137,7 @@ function buildAppStore(options: AppOptions) {
       patchWorkspace: (name: keyof WorkspaceMeta, value: unknown): void =>
         set('workspace', 'meta', name, value),
       setUnpushedCount: (count: number): void => set('git', 'unpushedCount', count),
-      acceptLspServers: (result: { servers?: unknown[]; anyRunning?: boolean }): void =>
+      acceptLspServers: (result: { servers?: ServerInfo[]; anyRunning?: boolean }): void =>
         batch(() => {
           set('lsp', 'servers', reconcile(result.servers || [], { key: 'name' }));
           set('lsp', 'anyRunning', !!result.anyRunning);
@@ -163,7 +165,8 @@ function buildAppStore(options: AppOptions) {
         else if ((name === 'anyRunning' || name === 'enabled') && typeof value === 'boolean')
           set('lsp', name, value);
         else if (name === 'memBytes' && typeof value === 'number') set('lsp', name, value);
-        else if (name === 'servers' && Array.isArray(value)) set('lsp', name, value);
+        else if (name === 'servers' && Array.isArray(value))
+          set('lsp', name, decodeServers({ servers: value }).servers);
       },
     },
   };

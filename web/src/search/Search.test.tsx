@@ -1,13 +1,19 @@
+import { required } from '../lib/test-values.ts';
+import { record } from '../lib/decode.ts';
+import { createEditorStore } from '../editor/store.ts';
+import { createAppStore } from '../app/store.ts';
 import { render, screen, fireEvent, waitFor } from '@solidjs/testing-library';
 import { afterEach, expect, test, vi } from 'vitest';
 import { createRoot } from 'solid-js';
 import { createSearchStore } from './store.ts';
 import { searchRequest, groupHits } from './logic.ts';
-import { Search } from './Search.jsx';
+import { Search } from './Search.tsx';
 import { EditorProvider } from '../editor/context.tsx';
 afterEach(() => vi.useRealTimers());
 test('query options shape requests and references group by file', () => {
-  expect(searchRequest({ query: 'a', glob: '*.go', word: true })).toEqual({
+  expect(
+    searchRequest({ query: 'a', glob: '*.go', word: true, caseSensitive: false, regex: false }),
+  ).toEqual({
     q: 'a',
     glob: '*.go',
     word: 1,
@@ -15,55 +21,53 @@ test('query options shape requests and references group by file', () => {
     re: '',
   });
   expect(
-    groupHits([
-      { path: 'a', line: 1 },
-      { path: 'a', line: 2 },
-    ])[0].matches,
+    required(
+      groupHits([
+        { path: 'a', line: 1 },
+        { path: 'a', line: 2 },
+      ])[0],
+    ).matches,
   ).toHaveLength(2);
 });
 test('a newer resource key owns results even when the old request ignores abort', async () => {
-  let finish, dispose;
+  let finish: (() => void) | undefined;
+  let dispose: (() => void) | undefined;
   const search = createRoot((cleanup) => {
     dispose = cleanup;
     return createSearchStore({
       request: async (_, params) => {
-        if (params.q === 'old')
-          await new Promise((resolve) => {
+        if (record(params).q === 'old')
+          await new Promise<void>((resolve) => {
             finish = resolve;
           });
-        return { header: params.q, results: [] };
+        return { header: record(params).q, results: [] };
       },
     });
   });
   try {
     search.actions.searchWorkspace('old');
     search.actions.searchWorkspace('new');
-    await vi.waitFor(() => expect(search.data()?.header).toBe('new'));
-    finish();
+    await vi.waitFor(() => expect(search.data()).toMatchObject({ header: 'new' }));
+    required(finish)();
     await Promise.resolve();
     await Promise.resolve();
-    expect(search.data().header).toBe('new');
+    expect(search.data()).toMatchObject({ header: 'new' });
   } finally {
-    dispose();
+    required(dispose)();
   }
 });
 test('renders results and sends case/word/regex/glob through named actions', async () => {
-  let search;
-  const request = vi.fn(async () => ({
+  let search: ReturnType<typeof createSearchStore> | undefined;
+  const request = vi.fn(async (_path: string, _params?: unknown) => ({
     total: 1,
     files: 1,
     results: [{ path: 'one.go', matches: [{ line: 1, mid: 'needle' }] }],
   }));
   render(() => {
     search = createSearchStore({ request });
+    const base = createEditorStore(createAppStore());
     return (
-      <EditorProvider
-        value={{
-          search,
-          actions: search.actions,
-          store: { state: { layout: { right: false, inspector: 'search' } } },
-        }}
-      >
+      <EditorProvider value={{ ...base, search, actions: { ...base.actions, ...search.actions } }}>
         <Search />
       </EditorProvider>
     );
@@ -77,9 +81,9 @@ test('renders results and sends case/word/regex/glob through named actions', asy
   fireEvent.input(screen.getByRole('textbox', { name: 'Files to include' }), {
     target: { value: '*.go' },
   });
-  search.actions.runSearch();
+  required(search).actions.runSearch();
   await waitFor(() => expect(document.querySelector('[data-ui=rline]')).toBeTruthy());
-  expect(request.mock.calls.at(-1)[1]).toEqual({
+  expect(required(request.mock.calls.at(-1))[1]).toEqual({
     q: 'needle',
     glob: '*.go',
     case: 1,

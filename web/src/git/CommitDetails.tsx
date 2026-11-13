@@ -1,26 +1,38 @@
+import { decodeCommitDetail } from './decode.ts';
+
+interface CommitDetailsProps {
+  sha: string;
+  sideWidth: number;
+  children: (hover: {
+    onMouseEnter: (event: MouseEvent) => void;
+    onMouseLeave: () => void;
+    hide: () => void;
+  }) => JSX.Element;
+}
+import type { JSX } from 'solid-js';
 import { createResource, createSignal, onCleanup, onMount, Show } from 'solid-js';
 import { Portal } from 'solid-js/web';
 import { createResourceRequest } from '../lib/resource-request.ts';
 import { copyText } from '../lib/clipboard.ts';
-export function CommitDetails(props) {
+export function CommitDetails(props: CommitDetailsProps): JSX.Element {
   const request = createResourceRequest();
   const [open, setOpen] = createSignal(false);
   const [position, setPosition] = createSignal({ left: '8px', top: '8px' });
   const [copied, setCopied] = createSignal(false);
   const [detail] = createResource(
     () => open() && props.sha,
-    (sha) => request('api/commitdetail', { sha }),
+    (sha) => request('api/commitdetail', { sha }).then(decodeCommitDetail),
   );
-  let timer,
-    leaveTimer,
-    copiedTimer,
-    pointerY = 0;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let leaveTimer: ReturnType<typeof setTimeout> | undefined;
+  let copiedTimer: ReturnType<typeof setTimeout> | undefined;
+  let pointerY = 0;
   const hide = () => {
     clearTimeout(timer);
     clearTimeout(leaveTimer);
     setOpen(false);
   };
-  const enter = (event) => {
+  const enter = (event: MouseEvent) => {
     clearTimeout(leaveTimer);
     pointerY = event.clientY;
     clearTimeout(timer);
@@ -31,7 +43,7 @@ export function CommitDetails(props) {
     leaveTimer = setTimeout(hide, 180);
   };
   onMount(() => {
-    const key = (event) => {
+    const key = (event: KeyboardEvent) => {
       if (event.key === 'Escape') hide();
     };
     document.addEventListener('keydown', key);

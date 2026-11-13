@@ -6,7 +6,7 @@ import { createEditorStore } from '../editor/store.ts';
 import { EditorProvider, useEditor } from '../editor/context.tsx';
 import { EditorShortcuts } from '../editor/EditorShortcuts.tsx';
 import { EditorMeasure, type EditorGeometry } from '../editor/EditorMeasure.tsx';
-import { Palette } from '../palette/Palette.jsx';
+import { Palette } from '../palette/Palette.tsx';
 import { NewItemDialog } from '../workspace/NewItemDialog.tsx';
 import { ReturnPill } from '../review/ReturnPill.jsx';
 import { MergeDialog } from '../pr/MergeDialog.jsx';

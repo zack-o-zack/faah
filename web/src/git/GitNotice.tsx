@@ -1,9 +1,10 @@
+import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
-import { AgentChoice } from './AgentChoice.jsx';
-export function GitNotice() {
+import { AgentChoice } from './AgentChoice.tsx';
+export function GitNotice(): JSX.Element {
   const editor = useEditor();
-  const labels = {
+  const labels: Record<string, string> = {
     rebase: 'Rebase',
     merge: 'Merge',
     finish: 'Finish',
@@ -13,10 +14,11 @@ export function GitNotice() {
     dismiss: 'Not now',
     cancel: 'Cancel',
   };
-  function choose(choice) {
+  function choose(choice: string) {
     const notice = editor.git.state.notice;
     if (choice === 'rebase' || choice === 'merge') return editor.actions.startSync(choice);
-    if (choice === 'finish') return editor.actions.startSync(notice.sync.inProgress);
+    if (choice === 'finish' && notice?.sync?.inProgress)
+      return editor.actions.startSync(notice.sync.inProgress);
     if (choice === 'abort') return editor.actions.abortGitSync();
     if (choice === 'force') return editor.actions.pushGit(true);
     if (choice === 'push') return editor.actions.pushGit();

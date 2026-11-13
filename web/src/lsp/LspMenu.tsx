@@ -1,7 +1,8 @@
+import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { Popover } from '../lib/Popover.tsx';
-export function LspMenu() {
+export function LspMenu(): JSX.Element {
   const editor = useEditor();
   const language = editor.language;
   return (
@@ -52,7 +53,7 @@ export function LspMenu() {
                           <button
                             class="btn"
                             onClick={() =>
-                              void navigator.clipboard.writeText(server.options[0].cmd)
+                              void navigator.clipboard.writeText(server.options[0]?.cmd || '')
                             }
                           >
                             Copy command

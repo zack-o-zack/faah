@@ -1,20 +1,27 @@
+import type { JSX } from 'solid-js';
 import { createEffect, on } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
-import { ResultGroup } from './ResultGroup.jsx';
+import { ResultGroup } from './ResultGroup.tsx';
 import { resultHeading } from './logic.ts';
-export function Search() {
+export function Search(): JSX.Element {
   const editor = useEditor();
-  let input;
+  let input: HTMLInputElement | undefined;
   createEffect(
     on(
       () => editor.store.state.layout.right && editor.store.state.layout.inspector === 'search',
       (visible) => {
-        if (visible) input.focus();
+        if (visible) input?.focus();
       },
     ),
   );
   const search = editor.search;
+  const toggles: ['caseSensitive' | 'word' | 'regex', string, string, string][] = [
+    ['caseSensitive', 'Match case', 'Aa', 'o-case'],
+    ['word', 'Whole word', '|ab|', 'o-word'],
+    ['regex', 'Regular expression', '.*', 'o-re'],
+  ];
+
   return (
     <>
       <div data-ui="search-form" class="flex flex-col gap-2 p-3">
@@ -34,13 +41,7 @@ export function Search() {
           }}
         />
         <div class="flex flex-wrap gap-1">
-          <For
-            each={[
-              ['caseSensitive', 'Match case', 'Aa', 'o-case'],
-              ['word', 'Whole word', '|ab|', 'o-word'],
-              ['regex', 'Regular expression', '.*', 'o-re'],
-            ]}
-          >
+          <For each={toggles}>
             {(option) => (
               <button
                 id={option[3]}

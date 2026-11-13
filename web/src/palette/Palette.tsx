@@ -1,11 +1,13 @@
+import { errorMessage } from '../lib/decode.ts';
+import type { JSX } from 'solid-js';
 import { For, onCleanup, onMount, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { createShortcut } from '../lib/shortcuts.tsx';
 import { Dialog } from '../lib/Dialog.tsx';
-import { PaletteItem } from './PaletteItem.jsx';
+import { PaletteItem } from './PaletteItem.tsx';
 import { MODES, scrollToItem } from './logic.ts';
 import { PALETTE_HELP } from '../shortcuts/help.ts';
-export function Palette() {
+export function Palette(): JSX.Element {
   const editor = useEditor();
   createShortcut('Mod+p', () => editor.actions.openPalette('file'), {
     capture: true,
@@ -24,17 +26,20 @@ export function Palette() {
     </Show>
   );
 }
-function PaletteDialog() {
+function PaletteDialog(): JSX.Element {
   const editor = useEditor();
   const palette = editor.palette;
-  let input, list;
+  let input: HTMLInputElement | undefined;
+  let list: HTMLDivElement | undefined;
   onMount(() => {
+    if (!input) return;
     input.focus();
     input.setSelectionRange(input.value.length, input.value.length);
   });
-  function move(delta) {
+  function move(delta: number) {
     editor.actions.movePalette(delta);
-    const row = list.querySelector(`[data-i="${palette.state.selected}"]`);
+    if (!list) return;
+    const row = list.querySelector<HTMLElement>(`[data-i="${palette.state.selected}"]`);
     if (row)
       list.scrollTop = scrollToItem(
         list.scrollTop,
@@ -43,7 +48,7 @@ function PaletteDialog() {
         row.offsetHeight,
       );
   }
-  function key(event) {
+  function key(event: KeyboardEvent) {
     if (event.key === 'ArrowDown' || (event.ctrlKey && event.key === 'n')) move(1);
     else if (event.key === 'ArrowUp' || (event.ctrlKey && event.key === 'p')) move(-1);
     else if (event.key === 'Tab') move(event.shiftKey ? -1 : 1);
@@ -77,13 +82,13 @@ function PaletteDialog() {
             value={palette.state.query}
             onInput={(event) => {
               editor.actions.setPaletteQuery(event.currentTarget.value);
-              list.scrollTop = 0;
+              if (list) list.scrollTop = 0;
             }}
             onKeyDown={key}
           />
         </header>
         <Show when={palette.error()}>
-          <p role="alert">{palette.error().message}</p>
+          <p role="alert">{errorMessage(palette.error())}</p>
         </Show>
         <div ref={list} id="pal-list" role="menu">
           <For each={palette.items()}>

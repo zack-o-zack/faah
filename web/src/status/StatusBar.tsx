@@ -3,7 +3,7 @@ import { onCleanup, onMount } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { SelectionBar } from '../editor/SelectionBar.tsx';
 import { VimStatus } from '../editor/VimStatus.tsx';
-import { LspMenu } from '../lsp/LspMenu.jsx';
+import { LspMenu } from '../lsp/LspMenu.tsx';
 import { Metrics } from './Metrics.tsx';
 import { StatusActions } from './StatusActions.tsx';
 import { fmtBytes, statusMessage } from './logic.ts';

@@ -1,10 +1,18 @@
+import type { SearchMatch } from './decode.ts';
+import type { FileMatches } from './decode.ts';
+
+interface ResultGroupProps {
+  file: FileMatches;
+  query: string;
+}
+import type { JSX } from 'solid-js';
 import { createSignal, For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { displayPath } from './logic.ts';
-export function ResultGroup(props) {
+export function ResultGroup(props: ResultGroupProps): JSX.Element {
   const editor = useEditor();
   const [collapsed, setCollapsed] = createSignal(false);
-  async function open(match) {
+  async function open(match: SearchMatch) {
     await editor.actions.openFile(props.file.path, { line: match.line });
     editor.actions.flashFind?.(match.mid || props.query);
   }

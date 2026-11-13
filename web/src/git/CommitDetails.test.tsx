@@ -1,18 +1,18 @@
 import { fireEvent, render, screen, waitFor } from '@solidjs/testing-library';
 import { afterEach, expect, test, vi } from 'vitest';
-import { CommitDetails } from './CommitDetails.jsx';
+import { CommitDetails } from './CommitDetails.tsx';
 
 afterEach(() => vi.restoreAllMocks());
 test('commit details open on hover without adding a click trigger', async () => {
-  vi.spyOn(globalThis, 'fetch').mockResolvedValue({
-    json: async () => ({
+  vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+    Response.json({
       hash: 'abc1234',
       short: 'abc1234',
       author: 'Reader',
       subject: 'A commit',
       files: 1,
     }),
-  });
+  );
   render(() => (
     <CommitDetails sha="abc1234" sideWidth={340}>
       {(hover) => (

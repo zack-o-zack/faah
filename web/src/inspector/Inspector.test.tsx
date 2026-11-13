@@ -1,28 +1,31 @@
 import { render, screen, fireEvent } from '@solidjs/testing-library';
-import { createSignal } from 'solid-js';
+import { createResource } from 'solid-js';
+import { createEditorStore } from '../editor/store.ts';
+import { testDocument } from '../editor/test-document.ts';
+import { decodeSetup } from '../lsp/decode.ts';
 import { expect, test, vi } from 'vitest';
 import { createAppStore } from '../app/store.ts';
 import { EditorProvider } from '../editor/context.tsx';
-import { InspectorToolbar } from './InspectorToolbar.jsx';
-import { Symbols } from './Symbols.jsx';
-import { LspSetup } from '../lsp/LspSetup.jsx';
+import { InspectorToolbar } from './InspectorToolbar.tsx';
+import { Symbols } from './Symbols.tsx';
+import { LspSetup } from '../lsp/LspSetup.tsx';
 test('fresh inspector tabs and symbol filtering invoke named navigation actions', () => {
   const centerLine = vi.fn();
   render(() => {
     const app = createAppStore();
     app.actions.showRightInspector('symbols');
-    const [symbolResource] = createSignal([]);
+    const base = createEditorStore(app);
     const editor = {
-      store: app,
-      active: () => ({
-        path: 'one.js',
-        outline: [
-          { name: 'alpha', kind: 'func', line: 3 },
-          { name: 'beta', kind: 'const', line: 8 },
-        ],
-      }),
-      actions: { ...app.actions, patch: vi.fn(), centerLine },
-      language: { symbols: symbolResource },
+      ...base,
+      active: () =>
+        testDocument({
+          path: 'one.js',
+          outline: [
+            { name: 'alpha', kind: 'func', line: 3, indent: 0 },
+            { name: 'beta', kind: 'const', line: 8, indent: 0 },
+          ],
+        }),
+      actions: { ...base.actions, patch: vi.fn(), centerLine },
     };
     return (
       <EditorProvider value={editor}>
@@ -43,13 +46,17 @@ test('fresh inspector tabs and symbol filtering invoke named navigation actions'
   );
 });
 test('setup explains a disabled language service without offering installation', () => {
-  render(() => (
-    <EditorProvider
-      value={{ language: { setup: () => ({ enabled: false }), state: {} }, active: () => null }}
-    >
-      <LspSetup />
-    </EditorProvider>
-  ));
+  render(() => {
+    const base = createEditorStore(createAppStore());
+    const [setup] = createResource(async () => decodeSetup({ enabled: false }), {
+      initialValue: decodeSetup({ enabled: false }),
+    });
+    return (
+      <EditorProvider value={{ ...base, language: { ...base.language, setup } }}>
+        <LspSetup />
+      </EditorProvider>
+    );
+  });
   expect(screen.getByText(/Restart it without that flag/)).toBeTruthy();
   expect(screen.queryByRole('button', { name: 'Install' })).toBeNull();
 });

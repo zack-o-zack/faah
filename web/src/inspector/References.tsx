@@ -1,7 +1,8 @@
+import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
-import { ResultGroup } from '../search/ResultGroup.jsx';
-export function References() {
+import { ResultGroup } from '../search/ResultGroup.tsx';
+export function References(): JSX.Element {
   const editor = useEditor();
   const language = editor.language;
   return (
@@ -40,7 +41,7 @@ export function References() {
                 {data().header || `${data().total || 0} references`}
               </div>
               <For each={data().results}>
-                {(file) => <ResultGroup file={file} query={language.state.refs?.word} />}
+                {(file) => <ResultGroup file={file} query={language.state.refs?.word || ''} />}
               </For>
             </>
           )}

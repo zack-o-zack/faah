@@ -187,7 +187,7 @@ function buildLanguageStore(editor: LanguageHost, options: LanguageOptions = {})
   );
   async function lspAction(
     kind: string,
-    params: { server?: string; option?: number } = {},
+    params: { server?: string; option?: number; path?: string } = {},
   ): Promise<void> {
     if (state.pending) return;
     const controller = new AbortController();

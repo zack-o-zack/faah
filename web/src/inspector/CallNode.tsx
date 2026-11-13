@@ -1,11 +1,21 @@
+import type { CallNode as Node } from '../lsp/decode.ts';
+import { decodeCalls } from '../lsp/decode.ts';
+
+interface CallNodeProps {
+  node: Node;
+  ancestors: string[];
+  root?: boolean;
+  path: string;
+}
+import type { JSX } from 'solid-js';
 import { createMemo, createResource, createSignal, For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { createResourceRequest } from '../lib/resource-request.ts';
 import { callIdentity, callTarget, isCallCycle } from '../lsp/logic.ts';
-export function CallNode(props) {
+export function CallNode(props: CallNodeProps): JSX.Element {
   const editor = useEditor();
   const request = createResourceRequest();
-  const [toggled, setToggled] = createSignal(null);
+  const [toggled, setToggled] = createSignal<boolean | null>(null);
   const cycle = () => isCallCycle(props.node, props.ancestors);
   const expanded = () => !cycle() && (toggled() ?? props.root);
   const ancestors = createMemo(() => [...props.ancestors, callIdentity(props.node)]);
@@ -14,7 +24,7 @@ export function CallNode(props) {
       expanded()
         ? { item: props.node.item, dir: editor.language.state.direction, path: props.path }
         : false,
-    (key) => request('api/lsp/calls', { ...key, wait: 30000 }),
+    (key) => request('api/lsp/calls', { ...key, wait: 30000 }).then(decodeCalls),
   );
   const target = () => callTarget(props.node, editor.language.state.direction);
   async function jump() {
@@ -40,7 +50,7 @@ export function CallNode(props) {
           onClick={() => void jump()}
         >
           {props.node.name} · {target().line}
-          <Show when={props.node.sites?.length > 1}> ×{props.node.sites.length}</Show>
+          <Show when={(props.node.sites?.length || 0) > 1}> ×{props.node.sites?.length}</Show>
         </button>
       </div>
       <Show when={expanded()}>

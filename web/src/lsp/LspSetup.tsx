@@ -1,7 +1,8 @@
+import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { installLog } from './logic.ts';
-export function LspSetup() {
+export function LspSetup(): JSX.Element {
   const editor = useEditor();
   const language = editor.language;
   return (
@@ -63,7 +64,7 @@ export function LspSetup() {
                     </For>
                     <Show when={server.job}>
                       <pre class="max-h-40 overflow-auto whitespace-pre-wrap">
-                        {server.job.error || ''}
+                        {server.job?.error || ''}
                         {installLog(server.job)}
                       </pre>
                     </Show>

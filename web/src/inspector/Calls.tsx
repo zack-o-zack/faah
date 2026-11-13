@@ -1,9 +1,10 @@
+import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
-import { CallNode } from './CallNode.jsx';
-import { LspSetup } from '../lsp/LspSetup.jsx';
+import { CallNode } from './CallNode.tsx';
+import { LspSetup } from '../lsp/LspSetup.tsx';
 import { keyLabel } from '../lib/keyboard.ts';
-export function Calls() {
+export function Calls(): JSX.Element {
   const editor = useEditor();
   const language = editor.language;
   return (
@@ -62,7 +63,7 @@ export function Calls() {
                         node={node}
                         ancestors={[]}
                         root={true}
-                        path={language.state.calls.path}
+                        path={language.state.calls?.path || ''}
                       />
                     )}
                   </For>

@@ -1,15 +1,17 @@
+import type { SymbolInfo } from '../editor/decode.ts';
+import type { JSX } from 'solid-js';
 import { createEffect, on } from 'solid-js';
 import { createMemo, createSignal, For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { shortKind } from '../lsp/logic.ts';
-export function Symbols() {
+export function Symbols(): JSX.Element {
   const editor = useEditor();
-  let input;
+  let input: HTMLInputElement | undefined;
   createEffect(
     on(
       () => editor.store.state.layout.right && editor.store.state.layout.inspector === 'symbols',
       (visible) => {
-        if (visible) input.focus();
+        if (visible) input?.focus();
       },
     ),
   );
@@ -19,7 +21,7 @@ export function Symbols() {
       symbol.name.toLowerCase().includes(query().toLowerCase()),
     ),
   );
-  function jump(symbol) {
+  function jump(symbol: SymbolInfo) {
     const document = editor.active();
     if (!document) return;
     editor.actions.patch({ cur: symbol.line });

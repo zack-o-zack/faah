@@ -95,3 +95,37 @@ export function decodeSyncError(error: unknown): SyncState | null {
   if (!(error instanceof Error) || !('body' in error)) return null;
   return decodeSync(error.body);
 }
+
+export interface CommitDetail {
+  hash: string;
+  short: string;
+  subject: string;
+  message: string;
+  author: string;
+  email: string;
+  date: string;
+  dateIso: string;
+  files: number;
+  insertions: number;
+  deletions: number;
+  authorUrl: string;
+  commitUrl: string;
+}
+export function decodeCommitDetail(value: unknown): CommitDetail {
+  const row = record(value);
+  return {
+    hash: text(row.hash),
+    short: text(row.short),
+    subject: text(row.subject),
+    message: text(row.message),
+    author: text(row.author),
+    email: text(row.email),
+    date: text(row.date),
+    dateIso: text(row.dateIso),
+    files: number(row.files),
+    insertions: number(row.insertions),
+    deletions: number(row.deletions),
+    authorUrl: text(row.authorUrl),
+    commitUrl: text(row.commitUrl),
+  };
+}

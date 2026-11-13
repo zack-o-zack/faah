@@ -1,7 +1,8 @@
+import type { JSX } from 'solid-js';
 import { Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
-import { AgentChoice } from './AgentChoice.jsx';
-export function CommitForm() {
+import { AgentChoice } from './AgentChoice.tsx';
+export function CommitForm(): JSX.Element {
   const editor = useEditor();
   return (
     <Show when={editor.git.counts().hasChanges}>

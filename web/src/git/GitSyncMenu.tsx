@@ -1,13 +1,14 @@
+import type { JSX } from 'solid-js';
 import { For } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { DropdownMenu } from '../lib/DropdownMenu.tsx';
-export function GitSyncMenu() {
+export function GitSyncMenu(): JSX.Element {
   const editor = useEditor();
   const ahead = () => editor.store.state.git.snapshot?.ahead || 0;
   const behind = () => editor.store.state.git.snapshot?.behind || 0;
   const counts = () =>
     [behind() ? behind() + '↓' : '', ahead() ? ahead() + '↑' : ''].filter(Boolean).join(' ');
-  function itemCounts(id) {
+  function itemCounts(id: string) {
     if (id === 'git-push') return ahead() ? ahead() + '↑' : '';
     if (id === 'git-pull') return behind() ? behind() + '↓' : '';
     return counts();

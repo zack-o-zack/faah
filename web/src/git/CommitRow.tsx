@@ -1,10 +1,18 @@
+import type { GitCommit } from '../workspace/decode.ts';
+import type { UnpushedCommit } from './decode.ts';
+
+interface CommitRowProps {
+  commit: GitCommit | UnpushedCommit;
+  unpushed?: boolean;
+}
+import type { JSX } from 'solid-js';
 import { createSignal, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { copyText } from '../lib/clipboard.ts';
-import { CommitFiles } from './CommitFiles.jsx';
-import { CommitDetails } from './CommitDetails.jsx';
+import { CommitFiles } from './CommitFiles.tsx';
+import { CommitDetails } from './CommitDetails.tsx';
 import { commitIdentity } from './logic.ts';
-export function CommitRow(props) {
+export function CommitRow(props: CommitRowProps): JSX.Element {
   const editor = useEditor();
   const [expanded, setExpanded] = createSignal(false);
   const sha = () => commitIdentity(props.commit);
@@ -94,7 +102,8 @@ export function CommitRow(props) {
               }
             >
               <span class="up-sha shrink-0 font-mono text-xs text-muted-foreground">
-                {props.commit.short || props.commit.hash?.slice(0, 7)}
+                {('short' in props.commit ? props.commit.short : undefined) ||
+                  props.commit.hash?.slice(0, 7)}
               </span>
             </Show>
           </div>

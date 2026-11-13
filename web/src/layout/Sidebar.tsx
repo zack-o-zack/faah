@@ -3,8 +3,8 @@ import { useEditor } from '../editor/context.tsx';
 import { TreeToolbar } from '../workspace/TreeToolbar.tsx';
 import { TreeScope } from '../workspace/TreeScope.tsx';
 import { Tree } from '../workspace/Tree.tsx';
-import { GitPanel } from '../git/GitPanel.jsx';
-import { Unpushed } from '../git/Unpushed.jsx';
+import { GitPanel } from '../git/GitPanel.tsx';
+import { Unpushed } from '../git/Unpushed.tsx';
 import { SidebarFooter } from './SidebarFooter.tsx';
 export function Sidebar(): JSX.Element {
   const editor = useEditor();

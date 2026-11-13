@@ -1,11 +1,12 @@
+import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { SplitHandle } from '../lib/SplitHandle.tsx';
-import { CommitRow } from './CommitRow.jsx';
-export function Unpushed() {
+import { CommitRow } from './CommitRow.tsx';
+export function Unpushed(): JSX.Element {
   const editor = useEditor();
   const git = editor.git;
-  let panel;
+  let panel: HTMLElement | undefined;
   return (
     <Show when={editor.tree.mode() === 'git' && git.state.unpushed.length}>
       <section

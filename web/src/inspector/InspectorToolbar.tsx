@@ -1,8 +1,9 @@
+import type { JSX } from 'solid-js';
 import { For } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
-export function InspectorToolbar() {
+export function InspectorToolbar(): JSX.Element {
   const editor = useEditor();
-  const tabs = [
+  const tabs: [string, string][] = [
     ['refs', 'References'],
     ['symbols', 'Symbols'],
     ['calls', 'Calls'],

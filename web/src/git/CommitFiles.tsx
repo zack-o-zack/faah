@@ -1,7 +1,14 @@
+interface CommitFilesProps {
+  sha: string;
+  unpushed?: boolean;
+  author?: string;
+  date?: string;
+}
+import type { JSX } from 'solid-js';
 import { createResource, createSignal, For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { filePage } from './logic.ts';
-export function CommitFiles(props) {
+export function CommitFiles(props: CommitFilesProps): JSX.Element {
   const editor = useEditor();
   const [shown, setShown] = createSignal(100);
   const [files] = createResource(() => props.sha, editor.actions.loadCommitFiles);
@@ -66,10 +73,10 @@ export function CommitFiles(props) {
       </For>
       <Show when={shown() < (files.error ? 0 : files()?.length || 0)}>
         <button class="btn w-full" data-control="up-more" onClick={() => setShown(shown() + 100)}>
-          Show {Math.min(100, files().length - shown())} more
+          Show {Math.min(100, (files()?.length || 0) - shown())} more
         </button>
       </Show>
-      <Show when={!files.error && files() && files().length === 0}>
+      <Show when={!files.error && files() && (files()?.length || 0) === 0}>
         <p>No file changes</p>
       </Show>
     </div>

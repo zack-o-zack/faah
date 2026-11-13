@@ -1,11 +1,12 @@
+import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { SplitHandle } from '../lib/SplitHandle.tsx';
-import { CommitRow } from './CommitRow.jsx';
-import { CommitForm } from './CommitForm.jsx';
-import { GitSyncMenu } from './GitSyncMenu.jsx';
-import { GitNotice } from './GitNotice.jsx';
-export function GitPanel() {
+import { CommitRow } from './CommitRow.tsx';
+import { CommitForm } from './CommitForm.tsx';
+import { GitSyncMenu } from './GitSyncMenu.tsx';
+import { GitNotice } from './GitNotice.tsx';
+export function GitPanel(): JSX.Element {
   const editor = useEditor();
   const git = editor.git;
   const meta = () => editor.store.state.workspace.meta;
@@ -33,9 +34,9 @@ export function GitPanel() {
             aria-hidden="true"
           />
           <span id="git-branch" class="git-branch truncate font-medium">
-            {meta().pr
-              ? `${meta().pr.head} (PR review)`
-              : editor.store.state.git.snapshot?.branch || meta().branch}
+            {meta()?.pr
+              ? `${meta()?.pr?.head} (PR review)`
+              : editor.store.state.git.snapshot?.branch}
           </span>
           <span id="git-counts" class="git-counts shrink-0 font-mono text-xs text-muted-foreground">
             {git.counts().changed ? git.counts().label : ''}
@@ -58,7 +59,7 @@ export function GitPanel() {
             id="git-panel-body"
             class="git-panel-body flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-3"
           >
-            <Show when={meta().forge && !meta().forge.hasToken && !meta().pr}>
+            <Show when={meta()?.forge && !meta()?.forge?.hasToken && !meta()?.pr}>
               <button
                 id="git-token-nudge"
                 class="btn"
@@ -68,7 +69,7 @@ export function GitPanel() {
                 onClick={() => editor.actions.openForgeConnect()}
               >
                 <span class="icon-[lucide--circle-alert] size-3 shrink-0" aria-hidden="true" />
-                <span>No {meta().forge.kind || 'forge'} token configured — add one</span>
+                <span>No forge token configured — add one</span>
               </button>
             </Show>
             <GitNotice />
