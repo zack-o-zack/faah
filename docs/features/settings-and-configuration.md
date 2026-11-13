@@ -27,7 +27,7 @@ faah stores all configuration in a single per-user global file (`~/.faah/setting
 | Setting Key | Category | Default | Allowed Values / Range | Description |
 | :--- | :--- | :--- | :--- | :--- |
 | `editor.fontSize` | Text Editor | `13.5` | `9.0` – `32.0` (px) | Font size in the code viewer |
-| `editor.fontFamily` | Text Editor | JetBrains Mono stack | CSS font stack string | Font family stack for viewer |
+| `editor.fontFamily` | Text Editor | `ui-monospace, monospace` | CSS font stack string | Font family stack for viewer |
 | `editor.lineHeight` | Text Editor | `21.0` | `14.0` – `48.0` (px) | Line height for viewer rows |
 | `editor.tabSize` | Text Editor | `4` | `2`, `4`, `8` | Number of spaces per tab |
 | `editor.wordWrap` | Text Editor | `"on"` | `"on"`, `"off"` | Soft line wrapping at editor boundary (also applies to the edit view) |
@@ -82,7 +82,7 @@ For automated machine setup, dotfile repositories, or scripting, you can directl
 ```json
 {
   "editor.fontSize": 14,
-  "editor.fontFamily": "\"JetBrains Mono\", monospace",
+  "editor.fontFamily": "ui-monospace, monospace",
   "editor.lineHeight": 22,
   "workbench.colorTheme": "tokyo-night",
   "diffEditor.renderSideBySide": true,

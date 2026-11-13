@@ -62,6 +62,6 @@ When committing a version bump (triggered after the user updates the `VERSION` f
 
 ## 5. Frontend Architecture & Code Map for Agents
 
-The browser UI is a Solid app under [`web/src/`](../../web/src/). [`web/index.html`](../../web/index.html) is only a mount point with fonts and stylesheets; `web/src/main.tsx` renders the page into it. [`docs/internals/frontend.md`](../internals/frontend.md) is the code map: the directory table, the store slices and their owners, the action surface, start-up, the event stream, shortcut and command registries, and the lint guards.
+The browser UI is a Solid app under [`web/src/`](../../web/src/). [`web/index.html`](../../web/index.html) is only a mount point with stylesheets; `web/src/main.tsx` renders the page into it. [`docs/internals/frontend.md`](../internals/frontend.md) is the code map: the directory table, the store slices and their owners, the action surface, start-up, the event stream, shortcut and command registries, and the lint guards.
 
 To find a feature's code, start from its directory (`editor/`, `viewers/`, `workspace/`, `git/`, `review/`, `pr/`, `threads/`, `agents/`, `inspector/`, `palette/`, `settings/`, `shortcuts/`, `layout/`, `status/`). Each has a `store.js` or `actions.js` for state and named actions, `logic.js` for pure, tested functions, and one JSX component per file. Element ids used by the stylesheet (`#main`, `#editor`, `#viewport`, `#tab-row`, `#empty`, `#review-view` and others) are set in those components; search for the id to find its owner.

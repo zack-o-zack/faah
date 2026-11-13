@@ -34,7 +34,8 @@ custom title bars differently. On Windows and Linux a menu button in the top bar
 opens the application menu. `desktop/preload.cjs` marks `<html>` with `data-shell`,
 `data-platform`, and `data-titlebar`. The `desktop:` and `win-linux:` variants in
 `web/tailwind.css` scope shell layout to these attributes; browser tabs keep
-their normal layout. The same entry contains the shell's Inter font and type-scale tokens.
+their normal layout. Browser and desktop pages use system fonts by default;
+the same entry contains the shell's type-scale tokens.
 
 ## Use the app
 

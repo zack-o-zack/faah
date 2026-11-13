@@ -24,7 +24,7 @@ The entry has these sections, in order:
    `[data-shell]`; `win-linux:` matches the desktop platform attributes.
 4. **Theme mapping:** `@theme inline` exposes faah colours, fonts and type sizes
    as utilities, such as `text-primary-text`, `bg-gi-bg` and `text-11`.
-5. **Fonts and base layer:** bundled Inter font faces, browser and desktop type
+5. **Fonts and base layer:** system font defaults, browser and desktop type
    scales, titlebar geometry, page defaults, scrollbars and `[hidden]` enforcement.
 6. **Components layer:** code-selection state, syntax spans, Markdown prose,
    Mermaid output, CSV tables, edit-mode measurement, diff rows, diagnostics,
@@ -146,9 +146,10 @@ Titlebar height and native window-control insets use `--titlebar-h`,
 `--titlebar-left` and `--titlebar-right`. The workbench has a draggable empty strip;
 interactive controls and overlays opt out of dragging.
 
-`:root[data-shell]` changes `--ui` to bundled Inter and maps the `--t-*` scale to
-11, 12, 13, 14, 16 and 20 px. `@font-face` URLs are relative to `static/app.css`,
-so keep them as `fonts/...`. Browser defaults remain in `:root`.
+`:root` uses `system-ui, sans-serif` for `--ui` and `ui-monospace, monospace`
+for `--mono`. The app ships no font files; `editor.fontFamily` can override the
+monospace stack with an installed font. `:root[data-shell]` keeps these font
+defaults and maps the `--t-*` scale to 11, 12, 13, 14, 16 and 20 px.
 
 | Tokens | Browser sizes | Desktop sizes |
 | --- | --- | --- |

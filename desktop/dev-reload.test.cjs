@@ -10,7 +10,7 @@ test('stylesheets swap in place and page assets reload', () => {
   assert.equal(reloadKind(path.join('themes', 'nord.css')), 'styles');
   assert.equal(reloadKind(path.join('dist', 'app.js')), 'page');
   assert.equal(reloadKind('workbench.html'), 'page');
-  assert.equal(reloadKind(path.join('fonts', 'jetbrains-mono.css')), 'styles');
+  assert.equal(reloadKind(path.join('custom', 'theme.css')), 'styles');
 });
 
 test('bundler inputs and unrelated files are ignored', () => {

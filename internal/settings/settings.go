@@ -100,7 +100,7 @@ var Schema = []SchemaItem{
 		Description: "Controls the font family used in the code viewer.",
 		Category:    "Text Editor",
 		Type:        "string",
-		Default:     `"JetBrains Mono", "Fira Code", "Cascadia Code", "SF Mono", Menlo, Consolas, ui-monospace, monospace`,
+		Default:     "ui-monospace, monospace",
 	},
 	{
 		Key:         "editor.lineHeight",

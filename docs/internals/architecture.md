@@ -267,8 +267,8 @@ The `/api/lsp/install` and `/api/lsp/start` endpoints execute shell commands (e.
 
 - `default-src 'self';`
 - `script-src 'self';` (disallows inline scripts; blocks injected `<script>` tags and event handlers)
-- `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;` (allows Google Fonts and dynamic UI styling)
-- `font-src 'self' https://fonts.gstatic.com;`
+- `style-src 'self' 'unsafe-inline';` (allows local stylesheets and dynamic UI styling)
+- `font-src 'self';`
 - `img-src 'self' data: https: http:;` (supports icons, data URI previews, and external markdown images)
 - `connect-src 'self';` (prevents exfiltration to third-party endpoints)
 - `object-src 'none';`

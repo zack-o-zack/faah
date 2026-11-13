@@ -15,10 +15,14 @@ package-lock.json; refresh the tracked pnpm lock with
 
 ## Performance notes
 
-Measurements on an Apple M4 with Chrome 157 at default editor settings:
+The browser and desktop app use system UI and monospace fonts by default, with
+no bundled font files or font requests. `editor.fontFamily` can select another
+installed font. The editor measures character width at runtime because system
+font metrics vary by platform.
 
-- JetBrains Mono WOFF2 fonts are embedded, so startup does not wait for a remote
-  stylesheet. Character width is 8.1 px and line height is 21 px.
+These historical measurements were taken on an Apple M4 with Chrome 157 before
+the switch to system fonts, using the then-bundled editor font:
+
 - Entering edit mode on a 50,000-line file takes about 549 ms. Profiling attributed
   roughly 438 ms to laying out the full native textarea. The gutter is virtualized;
   the native editing surface is not. Incremental line starts reduce input CPU work.
@@ -32,7 +36,7 @@ Measurements on an Apple M4 with Chrome 157 at default editor settings:
 
 ## Pages and mount points
 
-Each page is a mount point plus fonts and stylesheets; JSX renders everything
+Each page is a mount point plus stylesheets; JSX renders everything
 visible.
 
 - `web/index.html` → `src/main.tsx`: the code reader. Renders into `#root`.

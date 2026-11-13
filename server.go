@@ -40,7 +40,7 @@ import (
 	"faah/internal/ui"
 )
 
-//go:embed web/index.html web/workbench.html web/dist web/themes web/vendor web/fonts
+//go:embed web/index.html web/workbench.html web/dist web/themes web/vendor
 //go:embed web/logo-dark.svg web/logo-light.svg web/favicon.svg
 var embedded embed.FS
 
