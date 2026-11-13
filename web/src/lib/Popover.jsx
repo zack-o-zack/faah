@@ -1,6 +1,6 @@
 import { Portal } from 'solid-js/web';
 import { createSignal, createUniqueId, onMount, onCleanup, Show } from 'solid-js';
-import { createMenuEvents } from './menu-events.js';
+import { createMenuEvents } from './menu-events.ts';
 
 export function Popover(props) {
   const [localOpen, setLocalOpen] = createSignal(false);

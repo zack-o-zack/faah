@@ -5,7 +5,7 @@ import { diffSelection } from './diff-selection.js';
 import { DiffContent } from './DiffContent.jsx';
 import { viewMode } from './view.js';
 import { createSourceDOM } from '../editor/source-dom.js';
-import { isMac } from '../lib/keyboard.js';
+import { isMac } from '../lib/keyboard.ts';
 
 const modifier = isMac ? 'metaKey' : 'ctrlKey';
 

@@ -1,6 +1,6 @@
 import { onMount, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { keyLabel } from '../lib/keyboard.js';
+import { keyLabel } from '../lib/keyboard.ts';
 // A draft review comment on one diff line.
 export function PRComposer(props) {
   const editor = useEditor();

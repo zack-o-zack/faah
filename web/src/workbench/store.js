@@ -1,5 +1,5 @@
 import { createStore, reconcile } from 'solid-js/store';
-import { api, apiPostJson } from '../lib/api.js';
+import { api, apiPostJson } from '../lib/api.ts';
 import { createMemo } from 'solid-js';
 import { recentGroups } from './logic.js';
 /**

@@ -1,5 +1,5 @@
 import { createMemo, createResource, onCleanup } from 'solid-js';
-import { api } from '../lib/api.js';
+import { api } from '../lib/api.ts';
 
 // Solid drops superseded results; abort also releases the old response and parser work.
 export function createViewerResource(editor, document, endpoint) {

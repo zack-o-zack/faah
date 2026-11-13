@@ -1,5 +1,5 @@
 import type { Component } from 'solid-js';
-import { withKeys } from '../lib/keyboard.js';
+import { withKeys } from '../lib/keyboard.ts';
 import { useSettings } from './context.ts';
 import type { SaveStatus } from './store.ts';
 

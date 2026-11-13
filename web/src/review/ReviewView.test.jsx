@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@solidjs/testing-library';
 import { expect, test, vi } from 'vitest';
-import { createAppStore } from '../app/store.js';
+import { createAppStore } from '../app/store.ts';
 import { EditorProvider } from '../editor/context.jsx';
 import { createReviewStore } from './store.js';
 import { ReviewView } from './ReviewView.jsx';

@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import { createStore } from 'solid-js/store';
-import { createAppStore } from '../app/store.js';
+import { createAppStore } from '../app/store.ts';
 import { createPRStore } from './store.js';
 import { createMergeStore } from './merge-store.js';
 import { createForgeStore } from './forge-store.js';

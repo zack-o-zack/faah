@@ -1,6 +1,6 @@
 import { batch, createMemo, onCleanup } from 'solid-js';
 import { createStore, produce, reconcile } from 'solid-js/store';
-import { api, apiPostJson } from '../lib/api.js';
+import { api, apiPostJson } from '../lib/api.ts';
 import { toast } from '../lib/toast.jsx';
 import {
   applicableDrafts,

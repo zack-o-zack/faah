@@ -1,12 +1,33 @@
+export interface Theme {
+  id: string;
+  name: string;
+  scheme: string;
+}
+export interface ThemeOptions {
+  configured?: () => string | undefined;
+  save?: (id: string) => void;
+}
+export interface ThemeStore {
+  preference: () => string;
+  current: () => string;
+  themes: () => Theme[];
+  setTheme: (id: string, persist?: boolean) => boolean;
+}
+function isImport(rule: CSSRule): rule is CSSImportRule {
+  return 'styleSheet' in rule;
+}
+function isGroup(rule: CSSRule): rule is CSSGroupingRule {
+  return 'cssRules' in rule;
+}
 import { createEffect, createSignal, onCleanup } from 'solid-js';
-import { apiPostJson } from './api.js';
-import { DEFAULT_THEME, chooseThemePreference } from './theme-preference.js';
+import { apiPostJson } from './api.ts';
+import { DEFAULT_THEME, chooseThemePreference } from './theme-preference.ts';
 export { DEFAULT_THEME, chooseThemePreference };
 const KEY = 'faah.theme';
 // Discover themes from CSS so adding one needs no JavaScript change.
 const THEME_SELECTOR = /^(?::root|html)?\[data-theme=["']?([\w-]+)["']?\]$/;
 
-function getStoredTheme() {
+function getStoredTheme(): string | null {
   try {
     return localStorage.getItem(KEY);
   } catch {
@@ -14,11 +35,11 @@ function getStoredTheme() {
   }
 }
 
-function listThemes() {
-  const found = new Map();
-  const walk = (rules) => {
+function listThemes(): Theme[] {
+  const found = new Map<string, Theme>();
+  const walk = (rules: CSSRuleList): void => {
     for (const r of rules) {
-      if (r.styleSheet) {
+      if (isImport(r) && r.styleSheet) {
         try {
           walk(r.styleSheet.cssRules);
         } catch {
@@ -26,13 +47,13 @@ function listThemes() {
         }
         continue;
       } // @import
-      if (!r.selectorText) {
-        if (r.cssRules) walk(r.cssRules);
+      if (!(r instanceof CSSStyleRule)) {
+        if (isGroup(r)) walk(r.cssRules);
         continue;
       } // @media, @layer
       for (const part of r.selectorText.split(',')) {
         const m = part.trim().match(THEME_SELECTOR);
-        if (!m) continue;
+        if (!m?.[1]) continue;
         const t = found.get(m[1]) || { id: m[1], name: m[1], scheme: '' };
         const name = r.style
           .getPropertyValue('--theme-name')
@@ -61,19 +82,19 @@ export { listThemes, getStoredTheme };
  * another; a preview (setTheme with persist false) shows over both until it is cleared.
  * options.save persists a pick as the setting; without it the pick goes to /api/settings.
  */
-export function createThemeStore(options = {}) {
+export function createThemeStore(options: ThemeOptions = {}): ThemeStore {
   const [stored, setStored] = createSignal(getStoredTheme());
   const initial = document.documentElement.dataset.theme;
-  const [preview, setPreview] = createSignal(null);
+  const [preview, setPreview] = createSignal<string | null>(null);
   const chosen = () =>
     chooseThemePreference(stored(), options.configured ? options.configured() : initial);
   const preference = () => preview() ?? chosen();
   const media = window.matchMedia('(prefers-color-scheme: dark)');
   const [dark, setDark] = createSignal(media.matches);
-  const changed = (event) => setDark(event.matches);
+  const changed = (event: MediaQueryListEvent) => setDark(event.matches);
   media.addEventListener('change', changed);
   onCleanup(() => media.removeEventListener('change', changed));
-  function resolve(id) {
+  function resolve(id: string): Theme | undefined {
     const all = listThemes();
     if (id === 'system') id = dark() ? 'dark' : 'light';
     return (
@@ -93,7 +114,7 @@ export function createThemeStore(options = {}) {
     preference,
     current,
     themes: listThemes,
-    setTheme(id, persist = true) {
+    setTheme(id: string, persist = true) {
       if (!['system', 'light', 'dark'].includes(id) && !listThemes().some((t) => t.id === id))
         return false;
       if (!persist) {

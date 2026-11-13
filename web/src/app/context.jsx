@@ -1,5 +1,5 @@
 import { createContext, onCleanup, untrack, useContext } from 'solid-js';
-import { createAppStore } from './store.js';
+import { createAppStore } from './store.ts';
 const AppContext = createContext();
 export function AppProvider(props) {
   // Store injection is fixed for the lifetime of this provider.

@@ -1,4 +1,4 @@
-import { api } from '../lib/api.js';
+import { api } from '../lib/api.ts';
 
 export function createSymbolActions(
   store,

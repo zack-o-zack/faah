@@ -1,5 +1,5 @@
 import { For, Show } from 'solid-js';
-import { copyText } from './clipboard.js';
+import { copyText } from './clipboard.ts';
 export function ErrorNotice(props) {
   return (
     <Show when={props.error}>

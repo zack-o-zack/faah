@@ -1,6 +1,6 @@
 import { onCleanup } from 'solid-js';
-import { apiText } from '../lib/api.js';
-import { copyRich, copyText } from '../lib/clipboard.js';
+import { apiText } from '../lib/api.ts';
+import { copyRich, copyText } from '../lib/clipboard.ts';
 import { toast } from '../lib/toast.jsx';
 import { selectedText } from './cursor.js';
 import { contextSnippet, selectionRef } from './selection.js';

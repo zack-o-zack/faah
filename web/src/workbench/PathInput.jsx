@@ -1,5 +1,5 @@
 import { createResource, createSignal, createUniqueId, onMount, Show } from 'solid-js';
-import { api } from '../lib/api.js';
+import { api } from '../lib/api.ts';
 import { looksLikeURL } from './logic.js';
 import { PathSuggestions } from './PathSuggestions.jsx';
 export function PathInput(props) {

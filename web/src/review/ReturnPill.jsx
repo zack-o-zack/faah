@@ -1,6 +1,6 @@
 import { Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { withKeys } from '../lib/keyboard.js';
+import { withKeys } from '../lib/keyboard.ts';
 export function ReturnPill() {
   const editor = useEditor();
   const review = editor.review;

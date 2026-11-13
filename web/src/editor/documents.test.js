@@ -1,6 +1,6 @@
 import { createRoot } from 'solid-js';
 import { afterEach, test, expect, vi } from 'vitest';
-import { createAppStore } from '../app/store.js';
+import { createAppStore } from '../app/store.ts';
 const disposers = [];
 afterEach(() => {
   for (const dispose of disposers.splice(0)) dispose();

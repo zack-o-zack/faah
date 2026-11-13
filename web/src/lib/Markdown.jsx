@@ -1,8 +1,8 @@
 import { createMemo, For, Match, Show, Switch } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
-import { citation, inlineMarkdown, markdownBlocks } from './markdown.js';
+import { citation, inlineMarkdown, markdownBlocks } from './markdown.ts';
 import { linkTarget } from '../threads/references.js';
-import { copyText } from './clipboard.js';
+import { copyText } from './clipboard.ts';
 export function Markdown(props) {
   const blocks = createMemo((previous) => markdownBlocks(props.text, previous));
   return (

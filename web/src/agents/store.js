@@ -1,6 +1,6 @@
 import { batch, createMemo, onCleanup } from 'solid-js';
 import { createStore } from 'solid-js/store';
-import { api, apiPost } from '../lib/api.js';
+import { api, apiPost } from '../lib/api.ts';
 import { toast } from '../lib/toast.jsx';
 import { agentSelection, editRequest, rangesOverlap } from './logic.js';
 import { createAgentJobs } from './jobs.js';

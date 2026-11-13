@@ -1,6 +1,6 @@
 import { Show, type Component } from 'solid-js';
 import { Dialog } from '../lib/Dialog.jsx';
-import { withKeys } from '../lib/keyboard.js';
+import { withKeys } from '../lib/keyboard.ts';
 import { useSettings } from './context.ts';
 import { SettingsNav } from './SettingsNav.tsx';
 import { SettingsList } from './SettingsList.tsx';

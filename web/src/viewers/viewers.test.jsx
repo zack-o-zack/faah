@@ -1,7 +1,7 @@
 import { createRoot, createSignal, Show } from 'solid-js';
 import { render, screen, fireEvent, waitFor } from '@solidjs/testing-library';
 import { afterEach, test, expect, vi } from 'vitest';
-import { createAppStore } from '../app/store.js';
+import { createAppStore } from '../app/store.ts';
 import { EditorProvider } from '../editor/context.jsx';
 import { ThemeProvider } from '../lib/theme-context.jsx';
 import { createViewerResource } from './resource.js';
@@ -14,7 +14,7 @@ import { MermaidDiagram } from './MermaidDiagram.jsx';
 import { renderDiagram } from './mermaid-runtime.js';
 import { DiffRows } from './DiffRows.jsx';
 import { diffSelection } from './diff-selection.js';
-import { api } from '../lib/api.js';
+import { api } from '../lib/api.ts';
 import { sanitizeHTML } from './markdown-dom.js';
 vi.mock('./markdown-dom.js', async (original) => {
   const actual = await original();
@@ -25,7 +25,7 @@ vi.mock('./mermaid-runtime.js', () => ({
     async () => '<svg xmlns="http://www.w3.org/2000/svg"><text>Diagram</text></svg>',
   ),
 }));
-vi.mock('../lib/api.js', () => ({ api: vi.fn(), apiPost: vi.fn(), apiPostJson: vi.fn() }));
+vi.mock('../lib/api.ts', () => ({ api: vi.fn(), apiPost: vi.fn(), apiPostJson: vi.fn() }));
 const disposers = [];
 afterEach(() => {
   disposers.splice(0).forEach((dispose) => dispose());

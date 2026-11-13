@@ -20,7 +20,7 @@ import { createHoverActions } from './hover-actions.js';
 import { createVimActions } from './vim-actions.js';
 import { createStore } from 'solid-js/store';
 import { batch, createMemo, createSignal, onCleanup } from 'solid-js';
-import { apiPostJson } from '../lib/api.js';
+import { apiPostJson } from '../lib/api.ts';
 import { toast } from '../lib/toast.jsx';
 import { codeWidth, LH } from './layout.js';
 import { movePosition } from './cursor.js';

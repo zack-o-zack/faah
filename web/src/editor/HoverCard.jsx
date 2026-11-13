@@ -1,7 +1,7 @@
 import { createEffect, createSignal, For, on, onCleanup, Show } from 'solid-js';
 import { useEditor } from './context.jsx';
 import { nearCard, placeCard } from './hover.js';
-import { copyText } from '../lib/clipboard.js';
+import { copyText } from '../lib/clipboard.ts';
 
 export function HoverCard() {
   const editor = useEditor();

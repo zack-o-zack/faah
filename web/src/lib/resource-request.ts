@@ -1,8 +1,11 @@
 import { onCleanup } from 'solid-js';
-import { api } from './api.js';
+import type { Request, RequestParams } from './api.ts';
+import { api } from './api.ts';
 // One resource owns one replaceable request, including servers that ignore abort.
-export function createResourceRequest(request = api) {
-  let controller;
+export function createResourceRequest(
+  request: Request = api,
+): (path: string, params?: RequestParams) => Promise<unknown> {
+  let controller: AbortController | undefined;
   onCleanup(() => controller?.abort());
   return (path, params) => {
     controller?.abort();

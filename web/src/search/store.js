@@ -1,6 +1,6 @@
 import { createResource, createSignal, onCleanup } from 'solid-js';
 import { createStore } from 'solid-js/store';
-import { api } from '../lib/api.js';
+import { api } from '../lib/api.ts';
 import { searchRequest } from './logic.js';
 /** @returns {{query:string,glob:string,caseSensitive:boolean,word:boolean,regex:boolean,external:object|null}} */
 function initialState() {

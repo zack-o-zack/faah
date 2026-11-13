@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@solidjs/testing-library';
 import { expect, test } from 'vitest';
-import { createAppStore } from '../app/store.js';
+import { createAppStore } from '../app/store.ts';
 import { EditorProvider } from '../editor/context.jsx';
 import { Metrics } from './Metrics.jsx';
 import { fmtBytes, imageStatus, statusMessage } from './logic.js';

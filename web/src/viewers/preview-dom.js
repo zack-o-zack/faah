@@ -5,7 +5,7 @@ import {
   getFragmentHtml,
   getMarkdownRangeLines,
 } from './markdown-dom.js';
-import { isMac } from '../lib/keyboard.js';
+import { isMac } from '../lib/keyboard.ts';
 
 export function createPreviewDOM(viewport, article) {
   const blocks = () => [...article.querySelectorAll('[data-line]')];

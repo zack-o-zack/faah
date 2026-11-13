@@ -1,6 +1,6 @@
 import { batch, createMemo, onCleanup } from 'solid-js';
 import { createStore, produce } from 'solid-js/store';
-import { api, apiPostJson } from '../lib/api.js';
+import { api, apiPostJson } from '../lib/api.ts';
 import { toast } from '../lib/toast.jsx';
 import { createTreeModel } from './tree-model.js';
 import { copyPath, newItemRequest, parentPath, treeDecoration } from './tree-logic.js';

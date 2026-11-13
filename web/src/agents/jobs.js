@@ -1,5 +1,5 @@
 import { onCleanup } from 'solid-js';
-import { api, apiPostJson } from '../lib/api.js';
+import { api, apiPostJson } from '../lib/api.ts';
 /** Completion is polled; live output uses the workspace's owned thread subscription. */
 export function createAgentJobs(app, options = {}) {
   const request = options.request || api;

@@ -2,7 +2,7 @@ import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
 import { Dialog } from '../lib/Dialog.jsx';
 import { ErrorNotice } from '../lib/ErrorNotice.jsx';
-import { keyLabel } from '../lib/keyboard.js';
+import { keyLabel } from '../lib/keyboard.ts';
 import { FORGE_SOURCES } from './logic.js';
 // Everything forge-specific comes from the server's token setup for this host.
 export function ForgeConnectDialog() {

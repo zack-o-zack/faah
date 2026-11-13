@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 import { render } from '@solidjs/testing-library';
-import { DEFAULT_THEME, chooseThemePreference } from './theme-preference.js';
-import { createThemeStore } from './theme.js';
+import { DEFAULT_THEME, chooseThemePreference } from './theme-preference.ts';
+import { createThemeStore } from './theme.ts';
 
 test('prefers saved theme over fallback default setting', () => {
   expect(chooseThemePreference('nord', DEFAULT_THEME)).toBe('nord');
@@ -27,18 +27,18 @@ test('applying themes updates the dark class, including boot and repeated applic
   style.textContent =
     ':root[data-theme="catppuccin-mocha"] { color-scheme: dark; } :root[data-theme="light"] { color-scheme: light; }';
   document.head.append(style);
-  let store;
+  let store: ReturnType<typeof createThemeStore> | undefined;
   const view = render(() => {
     store = createThemeStore();
     return null;
   });
   const dark = () => document.documentElement.classList.contains('dark');
   expect(dark()).toBe(true);
-  store.setTheme('light', false);
+  store?.setTheme('light', false);
   expect(dark()).toBe(false);
-  store.setTheme('catppuccin-mocha', false);
+  store?.setTheme('catppuccin-mocha', false);
   expect(dark()).toBe(true);
-  expect(store.setTheme('missing', false)).toBe(false);
+  expect(store?.setTheme('missing', false)).toBe(false);
   view.unmount();
   style.remove();
 });

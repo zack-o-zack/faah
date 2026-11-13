@@ -1,6 +1,6 @@
 import { createRoot } from 'solid-js';
 import { expect, test, vi } from 'vitest';
-import { createAppStore } from '../app/store.js';
+import { createAppStore } from '../app/store.ts';
 import { createAgentStore } from './store.js';
 function fixture(options = {}) {
   let agents, dispose;

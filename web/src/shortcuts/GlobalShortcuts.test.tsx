@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@solidjs/testing-library';
 import { createStore } from 'solid-js/store';
 import { expect, test, vi } from 'vitest';
 import { EditorProvider } from '../editor/context.jsx';
-import { isMac } from '../lib/keyboard.js';
+import { isMac } from '../lib/keyboard.ts';
 import { GlobalShortcuts } from './GlobalShortcuts.tsx';
 import { HelpSheet } from './HelpSheet.tsx';
 import { createShortcutRegistry } from './registry.ts';

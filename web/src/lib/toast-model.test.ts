@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { toastConfig } from './toast-model.js';
+import { toastConfig } from './toast-model.ts';
 
 test('toast kinds pick an icon and show the text as the title', () => {
   const config = toastConfig('success', 'Saved');

@@ -1,6 +1,6 @@
 import { createRoot } from 'solid-js';
 import { afterEach, expect, test, vi } from 'vitest';
-import { createAppStore } from '../app/store.js';
+import { createAppStore } from '../app/store.ts';
 import { createGitStore } from './store.js';
 import { cleanCommitMessage, gitCounts, syncPlan, syncNotice } from './logic.js';
 const disposers = [];

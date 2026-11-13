@@ -1,7 +1,7 @@
 import { createMemo, createResource, onCleanup } from 'solid-js';
 import { createStore } from 'solid-js/store';
-import { api } from '../lib/api.js';
-import { listThemes } from '../lib/theme.js';
+import { api } from '../lib/api.ts';
+import { listThemes } from '../lib/theme.ts';
 import { createCommandRegistry } from './commands.js';
 import { paletteQuery, rankCommands } from './logic.js';
 /** @returns {{open:boolean,base:string,query:string,selected:number,restoreTheme:string|null}} */

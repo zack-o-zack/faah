@@ -2,7 +2,7 @@ import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
 import { Dialog } from '../lib/Dialog.jsx';
 import { ErrorNotice } from '../lib/ErrorNotice.jsx';
-import { keyLabel } from '../lib/keyboard.js';
+import { keyLabel } from '../lib/keyboard.ts';
 import { AgentPicker } from '../agents/AgentPicker.jsx';
 import { MERGE_METHODS } from './logic.js';
 // Shows exactly what lands on the base: method, commit title and message, and what blocks it.

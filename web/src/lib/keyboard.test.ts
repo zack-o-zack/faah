@@ -1,5 +1,5 @@
 import { test, expect } from 'vitest';
-import { detectMac, keyLabel, keyCaps, withKeys, matchesShortcut } from './keyboard.js';
+import { detectMac, keyLabel, keyCaps, withKeys, matchesShortcut } from './keyboard.ts';
 test('formats platform-specific shortcuts without DOM', () => {
   expect(detectMac('iPad')).toBe(true);
   expect(keyLabel('Mod+Shift+F', true)).toBe('⌘⇧F');

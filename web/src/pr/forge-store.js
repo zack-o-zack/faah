@@ -1,6 +1,6 @@
 import { createStore } from 'solid-js/store';
 import { onCleanup } from 'solid-js';
-import { apiPostJson } from '../lib/api.js';
+import { apiPostJson } from '../lib/api.ts';
 import { toast } from '../lib/toast.jsx';
 import { connectedMessage } from './logic.js';
 

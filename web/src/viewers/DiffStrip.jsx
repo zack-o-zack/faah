@@ -1,6 +1,6 @@
 import { createMemo, createResource, onCleanup, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { api } from '../lib/api.js';
+import { api } from '../lib/api.ts';
 import { commitStepTarget } from './diff-rows.js';
 
 export function DiffStrip(props) {

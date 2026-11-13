@@ -1,6 +1,6 @@
 import { createRoot } from 'solid-js';
 import { expect, test, vi } from 'vitest';
-import { createAppStore } from '../app/store.js';
+import { createAppStore } from '../app/store.ts';
 import { createReviewStore } from './store.js';
 
 const def = (id) => ({ id, title: id, question: 'Why?', prompt: 'Look' });

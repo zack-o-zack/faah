@@ -1,6 +1,6 @@
 import { createRoot } from 'solid-js';
 import { expect, test, vi } from 'vitest';
-import { createAppStore } from '../app/store.js';
+import { createAppStore } from '../app/store.ts';
 import { createThreadStore } from './store.js';
 import { threadFileOptions } from './logic.js';
 function fixture(request = vi.fn(), post = vi.fn()) {

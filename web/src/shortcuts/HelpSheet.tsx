@@ -1,7 +1,7 @@
 import { For, Show, type Component } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
 import { Dialog } from '../lib/Dialog.jsx';
-import { keyCaps } from '../lib/keyboard.js';
+import { keyCaps } from '../lib/keyboard.ts';
 import type { ShortcutRegistry } from './registry.ts';
 
 interface HelpEditor {

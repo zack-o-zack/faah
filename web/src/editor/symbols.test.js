@@ -1,6 +1,6 @@
 import { createRoot } from 'solid-js';
 import { test, expect, vi } from 'vitest';
-import { createAppStore } from '../app/store.js';
+import { createAppStore } from '../app/store.ts';
 import { createSymbolActions } from './symbols.js';
 const options = { fetcher: async () => ({ lines: ['source'], total: 1, exact: true }) };
 

@@ -1,7 +1,7 @@
 import { onCleanup, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
 import { createShortcut } from '../lib/shortcuts.jsx';
-import { withKeys } from '../lib/keyboard.js';
+import { withKeys } from '../lib/keyboard.ts';
 import { REVIEW_HELP } from '../shortcuts/help.ts';
 // The top bar's way into the overview, and back to the editor while it shows.
 export function ReviewToggle() {

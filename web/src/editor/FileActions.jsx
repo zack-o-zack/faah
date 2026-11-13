@@ -3,7 +3,7 @@ import { Show } from 'solid-js';
 import { useEditor } from './context.jsx';
 import { EditControls } from './EditControls.jsx';
 import { canDiff, previewKind, viewMode } from '../viewers/view.js';
-import { withKeys } from '../lib/keyboard.js';
+import { withKeys } from '../lib/keyboard.ts';
 
 export function FileActions() {
   const editor = useEditor();

@@ -1,4 +1,4 @@
-import { withKeys } from '../lib/keyboard.js';
+import { withKeys } from '../lib/keyboard.ts';
 import { Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
 import { AgentSessions } from '../agents/AgentSessions.jsx';

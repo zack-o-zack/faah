@@ -1,5 +1,5 @@
 import { onCleanup } from 'solid-js';
-import { api, apiPostJson } from '../lib/api.js';
+import { api, apiPostJson } from '../lib/api.ts';
 import { toast } from '../lib/toast.jsx';
 import { serializeHunk } from './diff-parse.js';
 import { expandContext } from './diff-rows.js';

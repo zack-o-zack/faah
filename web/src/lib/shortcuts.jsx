@@ -1,5 +1,5 @@
 import { Index, onCleanup, Show } from 'solid-js';
-import { keyLabel, keyCaps, matchesShortcut } from './keyboard.js';
+import { keyLabel, keyCaps, matchesShortcut } from './keyboard.ts';
 export function Kbd(props) {
   return (
     <kbd class="kbd">

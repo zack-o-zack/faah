@@ -1,6 +1,6 @@
 import { createSignal } from 'solid-js';
 import { textOffsets } from './edit.js';
-import { api } from '../lib/api.js';
+import { api } from '../lib/api.ts';
 import { CHUNK, htmlTextLen, lineText, lineOffsets } from './layout.js';
 
 /** Large arrays live here, outside the metadata store's deep proxy. */

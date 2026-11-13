@@ -1,5 +1,5 @@
 import { onMount, Show, type Component } from 'solid-js';
-import { withKeys } from '../lib/keyboard.js';
+import { withKeys } from '../lib/keyboard.ts';
 import { useSettings } from './context.ts';
 
 export const SettingsJson: Component = () => {

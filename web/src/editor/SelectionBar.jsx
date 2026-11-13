@@ -3,7 +3,7 @@ import { For, Show } from 'solid-js';
 import { useEditor } from './context.jsx';
 import { SEL_MENU_ITEMS } from './selection.js';
 import { Kbd } from '../lib/shortcuts.jsx';
-import { createMenuEvents } from '../lib/menu-events.js';
+import { createMenuEvents } from '../lib/menu-events.ts';
 
 export function SelectionBar() {
   const editor = useEditor();

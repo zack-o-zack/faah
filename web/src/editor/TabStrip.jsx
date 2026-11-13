@@ -1,6 +1,6 @@
 import { createEffect, createSignal, For, Index, onCleanup, Show } from 'solid-js';
 import { useEditor } from './context.jsx';
-import { createMenuEvents } from '../lib/menu-events.js';
+import { createMenuEvents } from '../lib/menu-events.ts';
 
 export function TabStrip(props) {
   const editor = useEditor();

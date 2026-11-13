@@ -1,15 +1,19 @@
 import { toast } from './toast.jsx';
-export async function copyText(text, message = 'Copied') {
+export async function copyText(text: string, message = 'Copied'): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(text);
     toast('success', message);
     return true;
   } catch (error) {
-    toast('error', error.message);
+    toast('error', error instanceof Error ? error.message : String(error));
     return false;
   }
 }
-export async function copyRich(text, html, message = 'Copied formatted text') {
+export async function copyRich(
+  text: string,
+  html: string,
+  message = 'Copied formatted text',
+): Promise<void> {
   try {
     if (html && typeof ClipboardItem !== 'undefined')
       await navigator.clipboard.write([
@@ -21,6 +25,6 @@ export async function copyRich(text, html, message = 'Copied formatted text') {
     else await navigator.clipboard.writeText(text);
     toast('success', message);
   } catch (error) {
-    toast('error', error.message);
+    toast('error', error instanceof Error ? error.message : String(error));
   }
 }

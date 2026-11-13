@@ -1,6 +1,6 @@
 import { batch, onCleanup } from 'solid-js';
 import { reconcile } from 'solid-js/store';
-import { api, apiPost } from '../lib/api.js';
+import { api, apiPost } from '../lib/api.ts';
 import { createWorkspaceStream } from './stream.js';
 import { workspacePatch } from './snapshot.js';
 

@@ -1,6 +1,6 @@
 import { createSignal, For } from 'solid-js';
 import { ToastItem } from './ToastItem.jsx';
-import { toastConfig } from './toast-model.js';
+import { toastConfig } from './toast-model.ts';
 export function createToastStore() {
   const [items, setItems] = createSignal([]);
   let next = 0;

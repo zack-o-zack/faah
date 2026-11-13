@@ -1,12 +1,12 @@
 import { createRoot } from 'solid-js';
 import { createStore } from 'solid-js/store';
 import { expect, test, vi } from 'vitest';
-import { apiText } from '../lib/api.js';
-import { copyText } from '../lib/clipboard.js';
+import { apiText } from '../lib/api.ts';
+import { copyText } from '../lib/clipboard.ts';
 import { createSelectionActions } from './selection-actions.js';
 
-vi.mock('../lib/api.js', () => ({ apiText: vi.fn() }));
-vi.mock('../lib/clipboard.js', () => ({ copyText: vi.fn(async () => true), copyRich: vi.fn() }));
+vi.mock('../lib/api.ts', () => ({ apiText: vi.fn() }));
+vi.mock('../lib/clipboard.ts', () => ({ copyText: vi.fn(async () => true), copyRich: vi.fn() }));
 
 function setup() {
   return createRoot((dispose) => {

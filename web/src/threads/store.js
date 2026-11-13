@@ -1,7 +1,7 @@
 import { createWorkspaceSubscription } from '../workspace/stream.js';
 import { batch, onCleanup } from 'solid-js';
 import { createStore, reconcile, produce } from 'solid-js/store';
-import { api, apiPostJson } from '../lib/api.js';
+import { api, apiPostJson } from '../lib/api.ts';
 import { explainRequest, isThreadRunning, threadFileOptions, threadSummary } from './logic.js';
 /** @returns {{available:boolean,list:object[],records:Object,current:string,draft:object|null,filter:string,message:string,pending:string,error:string,stale:object|null}} */
 function initialState() {

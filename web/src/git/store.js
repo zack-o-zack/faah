@@ -1,6 +1,6 @@
 import { batch, createMemo, onCleanup } from 'solid-js';
 import { createStore, reconcile } from 'solid-js/store';
-import { api, apiPostJson } from '../lib/api.js';
+import { api, apiPostJson } from '../lib/api.ts';
 import { toast } from '../lib/toast.jsx';
 import { cleanCommitMessage, gitCounts, syncPlan, syncNotice } from './logic.js';
 /** @returns {{message:string,pending:string,error:string,notice:object|null,recent:object[],unpushed:object[],upstream:string,commitsUrl:string,sync:object,collapsed:boolean,unpushedCollapsed:boolean,height:number,unpushedHeight:number}} */

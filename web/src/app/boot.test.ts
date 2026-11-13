@@ -1,10 +1,10 @@
 import { createStore } from 'solid-js/store';
 import { afterEach, expect, test, vi } from 'vitest';
-import { api } from '../lib/api.js';
+import { api } from '../lib/api.ts';
 import { bootWorkspace, type BootEditor } from './boot.ts';
 import type { WorkspaceMeta } from './types.ts';
 
-vi.mock('../lib/api.js', () => ({ api: vi.fn() }));
+vi.mock('../lib/api.ts', () => ({ api: vi.fn() }));
 vi.mock('../lib/toast.jsx', () => ({ toast: vi.fn() }));
 
 interface Tab {

@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@solidjs/testing-library';
 import { createSignal } from 'solid-js';
 import { test, expect, vi } from 'vitest';
-import { createMenuEvents } from './menu-events.js';
+import { createMenuEvents } from './menu-events.ts';
 
 function MenuHarness(props) {
   const [open] = createSignal(true);

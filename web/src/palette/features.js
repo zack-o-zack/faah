@@ -1,6 +1,6 @@
-import { listThemes } from '../lib/theme.js';
-import { withKeys } from '../lib/keyboard.js';
-import { copyRich, copyText } from '../lib/clipboard.js';
+import { listThemes } from '../lib/theme.ts';
+import { withKeys } from '../lib/keyboard.ts';
+import { copyRich, copyText } from '../lib/clipboard.ts';
 export function registerFeatureCommands(editor, theme) {
   const actions = editor.actions;
   const document = editor.active;

@@ -10,8 +10,8 @@ import { Tooltip } from './Tooltip.jsx';
 import { ContextMenu } from './ContextMenu.jsx';
 import { createToastStore, Toaster } from './toast.jsx';
 import { createShortcut, Kbd } from './shortcuts.jsx';
-import { createEventStream, createPolling } from './events.js';
-import { createAppStore } from '../app/store.js';
+import { createEventStream, createPolling } from './events.ts';
+import { createAppStore } from '../app/store.ts';
 import { AppProvider, useApp } from '../app/context.jsx';
 test('mounts a component with isolated app state', () => {
   const store = createAppStore();

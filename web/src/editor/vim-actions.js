@@ -1,7 +1,7 @@
 import { onCleanup } from 'solid-js';
 import { initialVimState, vimKey } from './vim.js';
 import { lineIndexAtY } from './layout.js';
-import { copyText } from '../lib/clipboard.js';
+import { copyText } from '../lib/clipboard.ts';
 
 export function createVimActions(editor) {
   const { active, buffer, store, ui, setUI, geometry, offsets, services } = editor;

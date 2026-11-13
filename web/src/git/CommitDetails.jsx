@@ -1,5 +1,5 @@
 import { createResource, Show } from 'solid-js';
-import { createResourceRequest } from '../lib/resource-request.js';
+import { createResourceRequest } from '../lib/resource-request.ts';
 import { Popover } from '../lib/Popover.jsx';
 export function CommitDetails(props) {
   return <Popover label="Commit details">{() => <Details sha={props.sha} />}</Popover>;

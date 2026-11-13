@@ -1,5 +1,5 @@
 import { onCleanup } from 'solid-js';
-import { apiPostJson, apiText } from '../lib/api.js';
+import { apiPostJson, apiText } from '../lib/api.ts';
 import { toast } from '../lib/toast.jsx';
 
 export function createEditActions(editor) {

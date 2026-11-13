@@ -1,7 +1,7 @@
 import { createRoot } from 'solid-js';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { createWorkspaceStream } from './stream.js';
-import { createAppStore } from '../app/store.js';
+import { createAppStore } from '../app/store.ts';
 import { streamPath, workspacePatch } from './snapshot.js';
 let sources;
 const disposers = [];

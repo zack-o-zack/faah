@@ -1,6 +1,6 @@
 import { createSignal, Show } from 'solid-js';
 import { Portal } from 'solid-js/web';
-import { createMenuEvents } from './menu-events.js';
+import { createMenuEvents } from './menu-events.ts';
 
 export function ContextMenu(props) {
   const [point, setPoint] = createSignal(null);

@@ -1,5 +1,5 @@
 import { createRoot, onCleanup } from 'solid-js';
-import { createEventStream } from '../lib/events.js';
+import { createEventStream } from '../lib/events.ts';
 import { streamPath } from './snapshot.js';
 
 /** Owns the workspace's one event connection: snapshots, metrics, and the threads and review topics while they are wanted. */

@@ -1,5 +1,5 @@
 import { onCleanup } from 'solid-js';
-import { api } from '../lib/api.js';
+import { api } from '../lib/api.ts';
 import { toast } from '../lib/toast.jsx';
 import { wordAtColumn } from './cursor.js';
 

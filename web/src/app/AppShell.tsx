@@ -1,6 +1,6 @@
 import { Show, type Component } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { withKeys } from '../lib/keyboard.js';
+import { withKeys } from '../lib/keyboard.ts';
 import { Sidebar } from '../layout/Sidebar.jsx';
 import { RightSidebar } from '../layout/RightSidebar.jsx';
 import { PanelHandle } from '../layout/PanelHandle.jsx';

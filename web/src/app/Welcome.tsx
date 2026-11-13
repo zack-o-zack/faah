@@ -1,5 +1,5 @@
 import { For, Show, type Component } from 'solid-js';
-import { keyCaps } from '../lib/keyboard.js';
+import { keyCaps } from '../lib/keyboard.ts';
 
 interface Hint {
   combo?: string;

@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@solidjs/testing-library';
 import { afterEach, expect, test, vi } from 'vitest';
-import { createAppStore } from '../app/store.js';
+import { createAppStore } from '../app/store.ts';
 import { EditorProvider } from '../editor/context.jsx';
 import { createTreeStore } from './tree-store.js';
 import { Tree } from './Tree.jsx';

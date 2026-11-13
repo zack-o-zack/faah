@@ -1,7 +1,7 @@
 import { createEffect, createSignal } from 'solid-js';
 import { render } from '@solidjs/testing-library';
 import { test, expect, vi } from 'vitest';
-import { createEventStream } from './events.js';
+import { createEventStream } from './events.ts';
 
 function mockSource() {
   let stream;
