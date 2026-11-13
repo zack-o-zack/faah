@@ -35,5 +35,5 @@ export function groupHits(hits: NavHit[]): FileMatches[] {
 }
 export function resultHeading(result: SearchReply): string {
   if (result.header) return result.header;
-  return `${(result.total || 0).toLocaleString()} results in ${(result.files || 0).toLocaleString()} files${result.truncated ? ' (truncated)' : ''}`;
+  return `${(result.total || 0).toLocaleString()} result${result.total === 1 ? '' : 's'} in ${(result.files || 0).toLocaleString()} file${result.files === 1 ? '' : 's'}${result.truncated ? ' (truncated)' : ''}`;
 }

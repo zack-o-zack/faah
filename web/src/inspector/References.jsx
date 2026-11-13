@@ -5,26 +5,47 @@ export function References() {
   const editor = useEditor();
   const language = editor.language;
   return (
-    <div class="min-h-0 flex-1 overflow-auto" id="right-refs-list">
-      <p class="p-2 text-xs" id="right-ref-target">
-        {language.state.refs?.word || 'Select or click a symbol to inspect references.'}
-      </p>
-      <Show when={language.references.loading}>
-        <p>Finding references…</p>
-      </Show>
-      <Show when={language.references.error}>
-        <p role="alert">{language.references.error.message}</p>
-      </Show>
-      <Show when={!language.references.error && language.references()}>
-        {(data) => (
-          <>
-            <p class="p-2 text-xs">{data().header || `${data().total || 0} references`}</p>
-            <For each={data().results}>
-              {(file) => <ResultGroup file={file} query={language.state.refs?.word} />}
-            </For>
-          </>
-        )}
-      </Show>
-    </div>
+    <>
+      <div class="inspector-bar flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2 text-xs has-[#right-ref-target:empty]:hidden">
+        <span class="inspector-sym-title truncate font-mono font-semibold" id="right-ref-target">
+          {language.state.refs?.word || ''}
+        </span>
+        <span
+          class="badge"
+          data-variant="secondary"
+          data-control="inspector-badge"
+          id="right-ref-badge"
+        >
+          {language.references()?.total || ''}
+        </span>
+      </div>
+      <div class="panel-body min-h-0 flex-1 overflow-auto pb-4" id="right-refs-list">
+        <Show when={!language.state.refs}>
+          <div data-ui="hint" class="empty text-muted-foreground">
+            Select or click a symbol to inspect references.
+          </div>
+        </Show>
+        <Show when={language.references.loading}>
+          <div data-ui="hint" class="empty text-muted-foreground">
+            Finding references…
+          </div>
+        </Show>
+        <Show when={language.references.error}>
+          <p role="alert">{language.references.error.message}</p>
+        </Show>
+        <Show when={!language.references.error && language.references()}>
+          {(data) => (
+            <>
+              <div data-ui="hint" class="empty text-muted-foreground">
+                {data().header || `${data().total || 0} references`}
+              </div>
+              <For each={data().results}>
+                {(file) => <ResultGroup file={file} query={language.state.refs?.word} />}
+              </For>
+            </>
+          )}
+        </Show>
+      </div>
+    </>
   );
 }

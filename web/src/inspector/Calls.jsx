@@ -2,19 +2,23 @@ import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
 import { CallNode } from './CallNode.jsx';
 import { LspSetup } from '../lsp/LspSetup.jsx';
-import { Kbd } from '../lib/shortcuts.jsx';
+import { keyLabel } from '../lib/keyboard.ts';
 export function Calls() {
   const editor = useEditor();
   const language = editor.language;
   return (
     <>
-      <div class="flex shrink-0 items-center gap-2 border-b p-2 text-xs">
-        <span id="right-calls-target" class="min-w-0 flex-1 truncate">
+      <div class="inspector-bar flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2 text-xs">
+        <span id="right-calls-target" class="inspector-sym-title truncate font-mono font-semibold">
           {language.state.calls?.word}
         </span>
         <div role="group" id="calls-dir" class="button-group">
           <button
             class="btn"
+            data-dir="in"
+            data-control="opt"
+            data-size="xs"
+            data-variant={language.state.direction === 'in' ? 'secondary' : 'outline'}
             aria-pressed={language.state.direction === 'in'}
             onClick={() => editor.actions.setCallDirection('in')}
           >
@@ -22,6 +26,10 @@ export function Calls() {
           </button>
           <button
             class="btn"
+            data-dir="out"
+            data-control="opt"
+            data-size="xs"
+            data-variant={language.state.direction === 'out' ? 'secondary' : 'outline'}
             aria-pressed={language.state.direction === 'out'}
             onClick={() => editor.actions.setCallDirection('out')}
           >
@@ -29,15 +37,18 @@ export function Calls() {
           </button>
         </div>
       </div>
-      <div class="min-h-0 flex-1 overflow-auto" id="right-calls-list">
+      <div class="panel-body min-h-0 flex-1 overflow-auto pb-4" id="right-calls-list">
         <Show
-          when={['off', 'failed'].includes(editor.active()?.lsp?.state || 'off')}
+          when={
+            language.state.calls && ['off', 'failed'].includes(editor.active()?.lsp?.state || 'off')
+          }
           fallback={
             <>
               <Show when={!language.state.calls}>
-                <p class="p-3 text-xs">
-                  Click a function name, then press <Kbd combo="Alt+Shift+H" />.
-                </p>
+                <div data-ui="hint" class="empty text-muted-foreground">
+                  Click a function name, then press <b>{keyLabel('Alt+Shift+H')}</b> to trace its
+                  calls.
+                </div>
               </Show>
               <Show when={language.calls.loading}>
                 <p>Tracing calls…</p>

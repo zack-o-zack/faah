@@ -17,11 +17,11 @@ export function Search() {
   const search = editor.search;
   return (
     <>
-      <div class="flex shrink-0 flex-col gap-2 p-3">
+      <div data-ui="search-form" class="flex flex-col gap-2 p-3">
         <input
           ref={input}
           id="q"
-          class="input"
+          class="input h-8!"
           aria-label="Search in files"
           placeholder="Search in files"
           value={search.state.query}
@@ -33,7 +33,7 @@ export function Search() {
             }
           }}
         />
-        <div class="flex gap-1">
+        <div class="flex flex-wrap gap-1">
           <For
             each={[
               ['caseSensitive', 'Match case', 'Aa', 'o-case'],
@@ -45,6 +45,9 @@ export function Search() {
               <button
                 id={option[3]}
                 class="btn"
+                data-control="opt"
+                data-size="xs"
+                data-variant={search.state[option[0]] ? 'secondary' : 'ghost'}
                 aria-label={option[1]}
                 title={option[1]}
                 aria-pressed={search.state[option[0]]}
@@ -57,16 +60,18 @@ export function Search() {
         </div>
         <input
           id="glob"
-          class="input"
+          class="input h-8!"
           aria-label="Files to include"
-          placeholder="Files to include e.g. *.go"
+          placeholder="files to include e.g. *.go"
           value={search.state.glob}
           onInput={(event) => editor.actions.setSearchField('glob', event.currentTarget.value)}
         />
       </div>
-      <div id="results" class="min-h-0 flex-1 overflow-auto">
+      <div id="results" class="panel-body min-h-0 flex-1 overflow-auto pb-4">
         <Show when={search.results.loading && !search.state.external}>
-          <p class="p-2">Searching…</p>
+          <div data-ui="hint" class="empty text-muted-foreground">
+            searching…
+          </div>
         </Show>
         <Show when={search.results.error && !search.state.external}>
           <p role="alert">{search.results.error.message}</p>
@@ -74,15 +79,26 @@ export function Search() {
         <Show when={search.data()}>
           {(data) => (
             <>
-              <p class="p-2 text-xs text-muted-foreground">{resultHeading(data())}</p>
+              <Show when={data().results?.length}>
+                <div data-ui="hint" class="empty text-muted-foreground">
+                  {resultHeading(data())}
+                </div>
+              </Show>
               <For each={data().results}>
                 {(file) => <ResultGroup file={file} query={search.state.query} />}
               </For>
               <Show when={!data().results?.length}>
-                <p>No results.</p>
+                <div data-ui="hint" class="empty text-muted-foreground">
+                  No results.
+                </div>
               </Show>
             </>
           )}
+        </Show>
+        <Show when={!search.data() && !search.state.query}>
+          <div data-ui="hint" class="empty text-muted-foreground">
+            Search text across every indexed file.
+          </div>
         </Show>
       </div>
     </>
