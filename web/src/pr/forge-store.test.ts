@@ -1,18 +1,17 @@
+import type { PREditorOptions } from './test-editor.ts';
 import { createRoot } from 'solid-js';
 import { expect, test, vi } from 'vitest';
 import { toast } from '../lib/toast.jsx';
-import { createPREditor } from './test-editor.js';
+import { createPREditor } from './test-editor.ts';
 
 vi.mock('../lib/toast.jsx', () => ({ toast: vi.fn() }));
 
-function fixture(options) {
-  let editor, dispose;
-  createRoot((release) => {
-    dispose = release;
-    editor = createPREditor(options);
+function fixture(options: PREditorOptions = {}) {
+  return createRoot((dispose) => {
+    const editor = createPREditor(options);
+    editor.actions.refreshPRMeta = vi.fn(async () => {});
+    return { editor, dispose };
   });
-  editor.actions.refreshPRMeta = vi.fn(async () => {});
-  return { editor, dispose };
 }
 const forge = { info: { label: 'GitHub' }, hasToken: false, source: '' };
 
@@ -49,7 +48,7 @@ test('connecting checks the token, records its source and re-reads the PR', asyn
     expect.anything(),
   );
   expect(editor.forge.state.open).toBe(false);
-  expect(editor.store.state.workspace.meta.forge).toMatchObject({
+  expect(editor.store.state.workspace.meta?.forge).toMatchObject({
     hasToken: true,
     source: 'settings',
   });

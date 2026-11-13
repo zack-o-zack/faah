@@ -12,7 +12,7 @@ import {
   reviewGate,
   rowTarget,
   splitMessage,
-} from './logic.js';
+} from './logic.ts';
 
 const idle = { running: false, inProgress: '', rewritten: false };
 
@@ -31,14 +31,14 @@ test('comment threads group posted replies and drafts by location, root first', 
       { id: 3, path: 'a.go', line: 9, side: 'LEFT', createdAt: '2026-01-01' },
     ],
     [
-      { id: 'd1', path: 'b.go', line: 4, side: 'RIGHT', body: 'nit' },
-      { id: 'd2', body: 'loose' },
+      { id: 101, path: 'b.go', line: 4, side: 'RIGHT', body: 'nit' },
+      { id: 102, body: 'loose' },
     ],
   );
   expect(threads.map((thread) => thread.key)).toEqual(['a.go|LEFT:9', 'b.go|RIGHT:4']);
-  expect(threads[1].root.id).toBe(1);
-  expect(threads[1].existing.map((comment) => comment.id)).toEqual([1, 2]);
-  expect(threads[1].drafts).toHaveLength(1);
+  expect(threads[1]?.root?.id).toBe(1);
+  expect(threads[1]?.existing.map((comment) => comment.id)).toEqual([1, 2]);
+  expect(threads[1]?.drafts).toHaveLength(1);
   expect(
     markerCounts([{ path: 'b.go', line: 4 }], [{ path: 'b.go', line: 4 }]).get('b.go|RIGHT:4'),
   ).toBe(2);
@@ -68,12 +68,12 @@ test('the checkout state gates verdicts before the forge state does', () => {
 });
 
 test('the merge pill names the next step', () => {
-  expect(mergePill({ ...idle, rewritten: true }, null, 'main').act).toBe('push');
+  expect(mergePill({ ...idle, rewritten: true }, null, 'main')?.act).toBe('push');
   expect(mergePill(idle, { state: 'conflicts' }, 'main')).toMatchObject({
     tone: 'err',
     act: 'resolve',
   });
-  expect(mergePill(idle, { state: 'clean' }, 'main').text).toBe('Ready to merge');
+  expect(mergePill(idle, { state: 'clean' }, 'main')?.text).toBe('Ready to merge');
   expect(mergePill(idle, { state: 'weird' }, 'main')).toBe(null);
   expect(mergePill(idle, null, 'main')).toBe(null);
 });

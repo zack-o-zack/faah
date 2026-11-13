@@ -136,9 +136,10 @@ export function createViewerActions(store: ViewerStore) {
       const current = model();
       if (current?.id === id) setOrb(orbFromStep(current, text));
     },
-    orbSummary(summary: { id: string; running: boolean; failed?: boolean }): void {
+    orbSummary(summary: { id: string; running?: boolean; failed?: boolean }): void {
       const current = model();
-      if (current?.id === summary.id) setOrb(orbFromSummary(current, summary));
+      if (current?.id === summary.id)
+        setOrb(orbFromSummary(current, { ...summary, running: !!summary.running }));
     },
     dismissOrb() {
       setOrb(null);

@@ -1,3 +1,58 @@
+import type { AppStore } from '../app/store.ts';
+import type { Request } from '../lib/api.ts';
+import type { CoreActions } from '../editor/contracts.ts';
+import type { PRComment, Draft, Composer } from './types.ts';
+import {
+  decodeDrafts,
+  decodeDraft,
+  decodeComments,
+  decodeComment,
+  decodePRMeta,
+  decodeLaunch,
+} from './decode.ts';
+import { isAbort, errorMessage } from '../lib/decode.ts';
+export interface PROptions {
+  request?: Request;
+  post?: Request;
+}
+interface ReplyState {
+  body: string;
+  pending: boolean;
+  error: string;
+}
+interface PRState {
+  drafts: Draft[];
+  issueComments: PRComment[];
+  reviewComments: PRComment[];
+  loading: { comments: boolean; existing: boolean; meta: boolean };
+  loadError: string;
+  review: { open: boolean; body: string; pending: string; error: string };
+  composers: Composer[];
+  focus: string;
+  issue: ReplyState;
+  replies: Record<number, ReplyState>;
+  deleting: Record<number, boolean>;
+  expanded: Record<string, boolean>;
+  panel: { collapsed: boolean; height: number };
+  reveal: { key: string; sequence: number };
+  batch: { pending: boolean; seconds: number; error: string };
+}
+interface PRHost {
+  store: AppStore;
+  active: () => { path: string; diffMode: string | null } | null;
+  actions: Pick<
+    CoreActions,
+    | 'openForgeConnect'
+    | 'refreshTree'
+    | 'refreshMergeStatus'
+    | 'setSelection'
+    | 'centerLine'
+    | 'openFile'
+    | 'runAgentJob'
+    | 'reloadWorkspace'
+    | 'setReviewMode'
+  >;
+}
 import { batch, createMemo, onCleanup } from 'solid-js';
 import { createStore, produce, reconcile } from 'solid-js/store';
 import { api, apiPostJson } from '../lib/api.ts';
@@ -8,7 +63,7 @@ import {
   composerTarget,
   markerCounts,
   threadKey,
-} from './logic.js';
+} from './logic.ts';
 
 const VERDICTS = {
   APPROVE: 'Review approved',
@@ -16,26 +71,7 @@ const VERDICTS = {
   COMMENT: 'Review comment submitted',
 };
 
-/**
- * @typedef {Object} PRState
- * @property {object[]} drafts
- * @property {object[]} issueComments
- * @property {object[]} reviewComments
- * @property {{comments:boolean,existing:boolean,meta:boolean}} loading
- * @property {string} loadError
- * @property {{open:boolean,body:string,pending:string,error:string}} review
- * @property {object[]} composers
- * @property {string} focus
- * @property {{body:string,pending:boolean,error:string}} issue
- * @property {Object<string, {body:string,pending:boolean,error:string}>} replies
- * @property {Object<string, boolean>} deleting
- * @property {Object<string, boolean>} expanded
- * @property {{collapsed:boolean,height:number}} panel
- * @property {{key:string,sequence:number}} reveal
- * @property {{pending:boolean,seconds:number,error:string}} batch
- */
-/** @returns {PRState} */
-function initialState() {
+function initialState(): PRState {
   return {
     drafts: [],
     issueComments: [],
@@ -55,12 +91,12 @@ function initialState() {
   };
 }
 
-export function createPRStore(editor, options = {}) {
+export function createPRStore(editor: PRHost, options: PROptions = {}) {
   const app = editor.store;
   const request = options.request || api;
   const post = options.post || apiPostJson;
   const [state, set] = createStore(initialState());
-  const controllers = new Set();
+  const controllers = new Set<AbortController>();
   let disposed = false;
   let composerId = 0;
 
@@ -72,7 +108,7 @@ export function createPRStore(editor, options = {}) {
   const commentCount = () =>
     state.issueComments.length + state.reviewComments.length + state.drafts.length;
 
-  async function owned(call) {
+  async function owned<T>(call: (signal: AbortSignal) => Promise<T>): Promise<T> {
     const controller = new AbortController();
     controllers.add(controller);
     try {
@@ -81,12 +117,13 @@ export function createPRStore(editor, options = {}) {
       controllers.delete(controller);
     }
   }
-  const get = (path, params) => owned((signal) => request(path, params, { signal }));
-  const send = (path, body) => owned((signal) => post(path, body, { signal }));
-  const live = (error) => !disposed && error?.name !== 'AbortError';
+  const get = (path: string, params?: unknown): Promise<unknown> =>
+    owned((signal) => request(path, params, { signal }));
+  const send = (path: string, body: unknown): Promise<unknown> =>
+    owned((signal) => post(path, body, { signal }));
+  const live = (error: unknown): boolean => !disposed && !isAbort(error);
 
-  /** Writes need a token; without one the Connect dialog explains why. */
-  function needsToken(reason) {
+  function needsToken(reason: string): boolean {
     if (!meta()?.readOnly) return false;
     editor.actions.openForgeConnect(reason);
     return true;
@@ -95,11 +132,11 @@ export function createPRStore(editor, options = {}) {
   async function refreshComments() {
     set('loading', 'comments', true);
     try {
-      const reply = await get('api/pr/comments');
-      if (!disposed) set('drafts', reconcile(reply.comments || [], { key: 'id' }));
+      const reply = decodeDrafts(await get('api/pr/comments'));
+      if (!disposed) set('drafts', reconcile(reply, { key: 'id' }));
     } catch (error) {
       // A read-only session has no drafts; the bar still shows PR metadata.
-      if (live(error)) set('loadError', error.message);
+      if (live(error)) set('loadError', errorMessage(error));
     } finally {
       if (!disposed) set('loading', 'comments', false);
     }
@@ -109,7 +146,7 @@ export function createPRStore(editor, options = {}) {
   async function refreshExistingComments() {
     set('loading', 'existing', true);
     try {
-      const reply = await get('api/pr/existing-comments');
+      const reply = decodeComments(await get('api/pr/existing-comments'));
       if (disposed) return;
       batch(() => {
         set('issueComments', reconcile(reply.issueComments || [], { key: 'id' }));
@@ -117,7 +154,7 @@ export function createPRStore(editor, options = {}) {
         set('loadError', '');
       });
     } catch (error) {
-      if (live(error)) set('loadError', error.message);
+      if (live(error)) set('loadError', errorMessage(error));
     } finally {
       if (!disposed) set('loading', 'existing', false);
     }
@@ -127,14 +164,15 @@ export function createPRStore(editor, options = {}) {
     if (!meta()) return;
     set('loading', 'meta', true);
     try {
-      const reply = await get('api/pr/meta');
+      const reply = decodePRMeta(await get('api/pr/meta'));
       if (disposed) return;
-      const filesChanged = JSON.stringify(meta().files || []) !== JSON.stringify(reply.files || []);
+      const filesChanged =
+        JSON.stringify(meta()?.files || []) !== JSON.stringify(reply.files || []);
       app.actions.patchWorkspace('pr', { ...meta(), ...reply });
       // Tree rows carry a PR-file flag from this set.
       if (filesChanged) await editor.actions.refreshTree();
     } catch (error) {
-      if (live(error)) set('loadError', error.message);
+      if (live(error)) set('loadError', errorMessage(error));
     } finally {
       if (!disposed) set('loading', 'meta', false);
     }
@@ -149,7 +187,7 @@ export function createPRStore(editor, options = {}) {
     void editor.actions.refreshMergeStatus();
   }
 
-  async function submitReview(event) {
+  async function submitReview(event: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT'): Promise<void> {
     if (state.review.pending || needsToken('to submit a review')) return;
     const body = state.review.body.trim();
     if (event === 'REQUEST_CHANGES' && !body && !state.drafts.length) {
@@ -169,13 +207,22 @@ export function createPRStore(editor, options = {}) {
       // An approval can be what branch protection was waiting for.
       void editor.actions.refreshMergeStatus();
     } catch (error) {
-      if (live(error)) set('review', 'error', error.message || 'Could not submit review');
+      if (live(error)) set('review', 'error', errorMessage(error) || 'Could not submit review');
     } finally {
       if (!disposed) set('review', 'pending', '');
     }
   }
 
-  function openPRComposer(info) {
+  function openPRComposer(
+    info: {
+      path: string;
+      l1: number;
+      l2: number;
+      side?: string;
+      delL1?: number;
+      delL2?: number;
+    } | null,
+  ): void {
     if (!meta() || !info?.path) return;
     const target = composerTarget(info);
     const id = 'prc' + ++composerId;
@@ -191,22 +238,25 @@ export function createPRStore(editor, options = {}) {
     });
     editor.actions.setSelection(null);
   }
-  const composerIndex = (id) => state.composers.findIndex((composer) => composer.id === id);
-  function closeComposer(id) {
+  const composerIndex = (id: string): number =>
+    state.composers.findIndex((composer) => composer.id === id);
+  function closeComposer(id: string): void {
     set('composers', (list) => list.filter((composer) => composer.id !== id));
   }
-  async function sendComposer(id) {
+  async function sendComposer(id: string): Promise<void> {
     const index = composerIndex(id);
     const composer = state.composers[index];
     if (!composer || composer.pending || !composer.body.trim()) return;
     set('composers', index, { pending: true, error: '' });
     try {
-      const draft = await send('api/pr/comments', {
-        path: composer.path,
-        line: composer.line,
-        side: composer.side,
-        body: composer.body.trim(),
-      });
+      const draft = decodeDraft(
+        await send('api/pr/comments', {
+          path: composer.path,
+          line: composer.line,
+          side: composer.side,
+          body: composer.body.trim(),
+        }),
+      );
       if (disposed) return;
       batch(() => {
         set('drafts', state.drafts.length, draft);
@@ -218,11 +268,11 @@ export function createPRStore(editor, options = {}) {
       if (live(error) && current >= 0)
         set('composers', current, {
           pending: false,
-          error: error.message || 'Could not add comment',
+          error: errorMessage(error) || 'Could not add comment',
         });
     }
   }
-  async function revealComposer(id) {
+  async function revealComposer(id: string): Promise<void> {
     const composer = state.composers[composerIndex(id)];
     if (!composer) return;
     if (editor.active()?.path === composer.path && editor.active()?.diffMode)
@@ -230,14 +280,14 @@ export function createPRStore(editor, options = {}) {
     else await editor.actions.openFile(composer.path, { line: composer.line, view: 'diff' });
   }
 
-  async function deleteDraft(id) {
+  async function deleteDraft(id: number): Promise<void> {
     if (state.deleting[id]) return;
     set('deleting', id, true);
     try {
       await send('api/pr/comments/delete?id=' + id, {});
       if (!disposed) set('drafts', (list) => list.filter((draft) => draft.id !== id));
     } catch (error) {
-      if (live(error)) toast('error', error.message || 'Could not delete draft');
+      if (live(error)) toast('error', errorMessage(error) || 'Could not delete draft');
     } finally {
       if (!disposed)
         set(
@@ -254,7 +304,7 @@ export function createPRStore(editor, options = {}) {
     if (!body || state.issue.pending) return;
     set('issue', { pending: true, error: '' });
     try {
-      const comment = await send('api/pr/comments/issue', { body });
+      const comment = decodeComment(await send('api/pr/comments/issue', { body }));
       if (disposed) return;
       batch(() => {
         set('issueComments', state.issueComments.length, comment);
@@ -263,20 +313,22 @@ export function createPRStore(editor, options = {}) {
       });
       toast('success', 'Comment posted');
     } catch (error) {
-      if (live(error)) set('issue', 'error', error.message || 'Could not post comment');
+      if (live(error)) set('issue', 'error', errorMessage(error) || 'Could not post comment');
     } finally {
       if (!disposed) set('issue', 'pending', false);
     }
   }
 
-  async function sendReply(rootId) {
+  async function sendReply(rootId: number): Promise<void> {
     if (needsToken('to reply to comments')) return;
     const reply = state.replies[rootId];
     const body = reply?.body.trim();
-    if (!body || reply.pending) return;
+    if (!body || !reply || reply.pending) return;
     set('replies', rootId, { pending: true, error: '' });
     try {
-      const comment = await send('api/pr/comments/review-reply', { commentId: rootId, body });
+      const comment = decodeComment(
+        await send('api/pr/comments/review-reply', { commentId: rootId, body }),
+      );
       if (disposed) return;
       batch(() => {
         set('reviewComments', state.reviewComments.length, comment);
@@ -284,7 +336,7 @@ export function createPRStore(editor, options = {}) {
       });
       toast('success', 'Reply posted');
     } catch (error) {
-      if (live(error)) set('replies', rootId, 'error', error.message || 'Could not reply');
+      if (live(error)) set('replies', rootId, 'error', errorMessage(error) || 'Could not reply');
     } finally {
       if (!disposed) set('replies', rootId, 'pending', false);
     }
@@ -321,39 +373,39 @@ export function createPRStore(editor, options = {}) {
       await editor.actions.reloadWorkspace(null);
       await refreshComments();
     } catch (error) {
-      if (live(error)) set('batch', 'error', error.message || 'Batch failed');
+      if (live(error)) set('batch', 'error', errorMessage(error) || 'Batch failed');
     } finally {
       if (!disposed) set('batch', 'pending', false);
     }
   }
 
   // A forge that opens in the workbench gets a new workspace tab there.
-  async function launchPR(target) {
+  async function launchPR(target: string): Promise<void> {
     const workbench = app.state.workspace.meta?.workbench;
     if (!workbench) {
       try {
         await post('api/pr/launch', { target });
         toast('success', 'Opening PR in a new tab…');
       } catch (error) {
-        toast('error', error.message || 'Could not launch PR review');
+        toast('error', errorMessage(error) || 'Could not launch PR review');
       }
       return;
     }
     // The tab opens before the request so the browser counts it as the user's action.
     const tab = window.open('about:blank', '_blank');
     try {
-      const reply = await fetch(new URL(workbench + 'api/wb/open', location.origin), {
+      const value: unknown = await fetch(new URL(workbench + 'api/wb/open', location.origin), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ target }),
       }).then((response) => response.json());
-      if (reply.error) throw new Error(reply.error);
+      const reply = decodeLaunch(value);
       const href = new URL(reply.href, location.origin).href;
       if (tab) tab.location.href = href;
       else location.href = href;
     } catch (error) {
       tab?.close();
-      toast('error', error.message || 'Could not launch PR review');
+      toast('error', errorMessage(error) || 'Could not launch PR review');
     }
   }
 
@@ -370,8 +422,9 @@ export function createPRStore(editor, options = {}) {
     markers,
     applicable,
     commentCount,
-    marker: (path, side, line) => markers().get(threadKey(path, side, line)) || 0,
-    composersAt: (path, side, line) =>
+    marker: (path: string, side: string, line: number) =>
+      markers().get(threadKey(path, side, line)) || 0,
+    composersAt: (path: string, side: string, line: number) =>
       state.composers.filter(
         (composer) => composer.path === path && composer.side === side && composer.line === line,
       ),
@@ -382,28 +435,34 @@ export function createPRStore(editor, options = {}) {
       refreshExistingComments,
       submitReview,
       openPRComposer,
-      setComposerBody: (id, body) => set('composers', composerIndex(id), 'body', body),
+      setComposerBody: (id: string, body: string) =>
+        set('composers', composerIndex(id), 'body', body),
       sendComposer,
       composerFocused: () => set('focus', ''),
       closeComposer,
       revealComposer,
       deleteDraft,
-      setIssueBody: (body) => set('issue', 'body', body),
+      setIssueBody: (body: string) => set('issue', 'body', body),
       sendIssueComment,
-      setReplyBody: (rootId, body) => set('replies', rootId, { body, error: '' }),
+      setReplyBody: (rootId: number, body: string) =>
+        set('replies', rootId, {
+          body,
+          pending: state.replies[rootId]?.pending || false,
+          error: '',
+        }),
       sendReply,
       applyDrafts,
       launchPR,
-      setReviewPanel: (open) => set('review', { open, error: '' }),
-      setReviewBody: (body) => set('review', 'body', body),
-      replyToAuthor(author) {
+      setReviewPanel: (open: boolean) => set('review', { open, error: '' }),
+      setReviewBody: (body: string) => set('review', 'body', body),
+      replyToAuthor(author: string): void {
         const prefix = author ? '@' + author + ' ' : '';
         if (!state.issue.body.startsWith(prefix)) set('issue', 'body', prefix + state.issue.body);
         set('panel', 'collapsed', false);
       },
-      setThreadExpanded: (key, open) => set('expanded', key, open),
+      setThreadExpanded: (key: string, open: boolean) => set('expanded', key, open),
       // The comments panel shows with the overview, so a gutter marker opens it there.
-      revealPRThread(key) {
+      revealPRThread(key: string): void {
         batch(() => {
           editor.actions.setReviewMode('review');
           set('panel', 'collapsed', false);
@@ -412,7 +471,7 @@ export function createPRStore(editor, options = {}) {
         });
       },
       togglePRPanel: () => set('panel', 'collapsed', (collapsed) => !collapsed),
-      setPRPanelHeight(height) {
+      setPRPanelHeight(height: number): void {
         const max = Math.round(window.innerHeight * 0.8);
         set('panel', { collapsed: false, height: Math.max(80, Math.min(max, height)) });
       },

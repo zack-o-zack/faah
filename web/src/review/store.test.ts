@@ -1,30 +1,36 @@
+import type { ReviewOptions } from './store.ts';
+import type { StreamHandler } from '../lib/events.ts';
+import { required } from '../lib/test-values.ts';
 import { createRoot } from 'solid-js';
 import { expect, test, vi } from 'vitest';
 import { createAppStore } from '../app/store.ts';
-import { createReviewStore } from './store.js';
+import { createReviewStore } from './store.ts';
 
-const def = (id) => ({ id, title: id, question: 'Why?', prompt: 'Look' });
-function fixture(options = {}) {
-  let review, app, dispose;
-  const subscribers = new Map();
-  createRoot((release) => {
-    dispose = release;
-    app = createAppStore();
+const def = (id: string) => ({ id, title: id, question: 'Why?', prompt: 'Look' });
+function fixture(options: ReviewOptions = {}) {
+  const subscribers = new Map<string, StreamHandler>();
+  return createRoot((dispose) => {
+    const app = createAppStore();
     app.actions.subscribeWorkspaceEvent = (name, handler) => {
       subscribers.set(name, handler);
-      return () => subscribers.delete(name);
+      return () => {
+        subscribers.delete(name);
+      };
     };
     app.actions.setWorkspaceTopic = vi.fn();
     app.actions.watchWorkspaceThread = vi.fn(() => vi.fn());
     const editor = {
       store: app,
-      actions: { loadThread: vi.fn(async () => ({})), acceptThread: vi.fn(), openFile: vi.fn() },
+      actions: {
+        loadThread: vi.fn(async (id: string) => ({ id, turns: [] })),
+        acceptThread: vi.fn(),
+        openFile: vi.fn(async () => {}),
+      },
     };
-    review = createReviewStore(editor, options);
-    editor.actions = { ...editor.actions, ...review.actions };
+    const review = createReviewStore(editor, options);
+    const emit = (name: string, data: unknown) => required(subscribers.get('review:' + name))(data);
+    return { review, app, dispose, emit };
   });
-  const emit = (name, data) => subscribers.get('review:' + name)(data);
-  return { review, app, dispose, emit };
 }
 const reply = () => structuredClone(statusReply);
 const statusReply = {
@@ -58,14 +64,14 @@ test('stage events update one stage by path and keep the others', async () => {
   const { review, dispose, emit } = fixture({ request: async () => reply() });
   review.actions.setReviewMode('review');
   await vi.waitFor(() => expect(review.state.run).not.toBe(null));
-  const first = review.state.run.stages[0];
+  const first = required(review.state.run).stages[0];
   emit('stage_completed', {
     runId: 'r1',
     stageIndex: 1,
     stage: { def: def('b'), status: 'completed', threadId: 't2' },
   });
-  expect(review.stages()[1].status).toBe('completed');
-  expect(review.state.run.stages[0]).toBe(first);
+  expect(review.stages()[1]?.status).toBe('completed');
+  expect(required(review.state.run).stages[0]).toBe(first);
   emit('run_completed', { ...reply().run, status: 'completed' });
   expect(review.running()).toBe(false);
   dispose();
@@ -79,14 +85,14 @@ test('the stage on screen follows its thread only while the pipeline tab shows',
   expect(app.actions.watchWorkspaceThread).not.toHaveBeenCalled();
   review.actions.setReviewTab('stages');
   expect(app.actions.watchWorkspaceThread).toHaveBeenCalledWith('t1');
-  const release = app.actions.watchWorkspaceThread.mock.results[0].value;
+  const release = required(vi.mocked(app.actions.watchWorkspaceThread).mock.results[0]).value;
   review.actions.setReviewTab('walkthrough');
   expect(release).toHaveBeenCalled();
   dispose();
 });
 
 test('editing saves through named actions and refuses structural changes while running', async () => {
-  const post = vi.fn(async (path, body) => ({ config: body }));
+  const post = vi.fn(async (_path, body) => ({ config: body }));
   const { review, dispose } = fixture({ request: async () => reply(), post });
   review.actions.setReviewMode('review');
   await vi.waitFor(() => expect(review.state.run).not.toBe(null));

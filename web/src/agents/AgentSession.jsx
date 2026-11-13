@@ -3,7 +3,7 @@ import { useEditor } from '../editor/context.jsx';
 import { createShortcut } from '../lib/shortcuts.jsx';
 import { ErrorNotice } from '../lib/ErrorNotice.jsx';
 import { AgentPicker } from './AgentPicker.jsx';
-import { targetRef } from './logic.js';
+import { targetRef } from './logic.ts';
 export function AgentSession(props) {
   const editor = useEditor();
   let input;

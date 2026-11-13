@@ -129,10 +129,10 @@ export function createDocumentGitActions(
     if (!files && document.diffRef)
       files = decodeCommitFiles(await request('api/commitfiles', { sha: document.diffRef })).files;
     files ||= (app.state.workspace.meta?.gitFiles || []).map((path) => ({ path }));
-    files = files
+    const navigable = files
       .map((file) => (typeof file === 'string' ? { path: file } : file))
       .filter((file) => !file.binary);
-    const next = files[files.findIndex((file) => file.path === document.path) + direction];
+    const next = navigable[navigable.findIndex((file) => file.path === document.path) + direction];
     if (next) await editor.actions.stepDiffFile(document, next);
   }
   return {

@@ -40,7 +40,7 @@ test('metadata retains feature-owned payloads while checking workspace fields', 
     agents: [{ name: 'agent' }],
   });
   expect(result.pr).toMatchObject({ number: 7, files: { 'one.go': 'M' } });
-  expect(result.agents).toEqual([{ name: 'agent' }]);
+  expect(result.agents).toMatchObject([{ name: 'agent' }]);
   expect(() => decodeMeta({ git: 'yes' })).toThrow('boolean');
   expect(decodeNewItem({ ok: true, path: 'new.go', type: 'file' })).toEqual({ path: 'new.go' });
   expect(decodeReindex({ files: 20, indexMs: 10, gitChanges: 1, gitFiles: ['new.go'] })).toEqual({

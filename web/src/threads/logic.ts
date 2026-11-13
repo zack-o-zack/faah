@@ -1,9 +1,11 @@
-export const isThreadRunning = (thread) => !!thread?.turns?.at(-1)?.running;
-export function explainRequest(info) {
+import type { Thread, ThreadTurn, ThreadSummary, ExplainTarget } from './decode.ts';
+import type { OpenOptions } from '../editor/types.ts';
+export const isThreadRunning = (thread: Thread | null): boolean => !!thread?.turns?.at(-1)?.running;
+export function explainRequest(info: ExplainTarget): ExplainTarget {
   const { path, l1, l2, c1, c2, text } = info;
   return { path, l1, l2, c1, c2, text };
 }
-export function threadSummary(thread) {
+export function threadSummary(thread: Thread): ThreadSummary {
   const last = thread.turns?.at(-1);
   return {
     id: thread.id,
@@ -19,7 +21,7 @@ export function threadSummary(thread) {
     touched: !!last?.changed?.length || last?.tracked === false,
   };
 }
-export function threadFileOptions(turn) {
+export function threadFileOptions(turn: ThreadTurn): OpenOptions | undefined {
   return turn.beforeSha && turn.afterSha && !turn.reverted
     ? {
         ref: turn.afterSha,
@@ -30,14 +32,14 @@ export function threadFileOptions(turn) {
       }
     : undefined;
 }
-export function relativeTime(ms, now) {
+export function relativeTime(ms: number, now: number): string {
   const seconds = Math.max(0, Math.floor((now - ms) / 1000));
   if (seconds < 60) return 'just now';
   if (seconds < 3600) return Math.floor(seconds / 60) + 'm ago';
   if (seconds < 86400) return Math.floor(seconds / 3600) + 'h ago';
   return Math.floor(seconds / 86400) + 'd ago';
 }
-export function turnDuration(ms = 0) {
+export function turnDuration(ms = 0): string {
   if (ms < 1000) return ms + 'ms';
   if (ms < 60000) return (ms / 1000).toFixed(1) + 's';
   return Math.floor(ms / 60000) + 'm ' + Math.round((ms % 60000) / 1000) + 's';

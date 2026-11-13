@@ -1,3 +1,4 @@
+import { required } from '../lib/test-values.ts';
 import { expect, test } from 'vitest';
 import {
   activeAfterChange,
@@ -12,10 +13,10 @@ import {
   stageDefinition,
   visibleFiles,
   workflowConfig,
-} from './logic.js';
+} from './logic.ts';
 
-const def = (id) => ({ id, title: id.toUpperCase(), question: '', prompt: '' });
-const run = (id, statuses) => ({
+const def = (id: string) => ({ id, title: id.toUpperCase(), question: '', prompt: '' });
+const run = (id: string, statuses: string[]) => ({
   id,
   status: 'running',
   activeStage: 0,
@@ -39,23 +40,30 @@ test('stage events patch one stage by index or by definition id', () => {
     stageIndex: 1,
     stage: { def: def('s1'), status: 'running' },
   });
-  expect(started.activeStage).toBe(1);
-  expect(started.stages[1].status).toBe('running');
-  expect(started.stages[0]).toBe(current.stages[0]);
+  expect(required(started).activeStage).toBe(1);
+  expect(required(started).stages[1]?.status).toBe('running');
+  expect(required(started).stages[0]).toBe(current.stages[0]);
   const failed = reviewTransition(started, 'stage_failed', { def: def('s0'), status: 'failed' });
-  expect(failed.stages[0].status).toBe('failed');
+  expect(required(failed).stages[0]?.status).toBe('failed');
   expect(reviewTransition(started, 'stage_updated', { runId: 'other', stageIndex: 0 })).toBe(
     started,
   );
-  expect(reviewTransition(null, 'stage_started', { stageIndex: 0, stage: {} })).toBe(null);
-  expect(reviewTransition(started, 'stage_failed', { def: def('missing') })).toBe(started);
+  expect(
+    reviewTransition(null, 'stage_started', {
+      stageIndex: 0,
+      stage: { def: def('unused'), status: 'pending' },
+    }),
+  ).toBe(null);
+  expect(reviewTransition(started, 'stage_failed', { def: def('missing'), status: 'failed' })).toBe(
+    started,
+  );
 });
 
 test('configured stages show their run state only while the run still matches them', () => {
   const config = { name: 'P', stages: [def('s0'), def('s9')] };
   const stages = reviewStages(config, run('r', ['completed', 'completed']));
-  expect(stages[0].status).toBe('completed');
-  expect(stages[0].def).toBe(config.stages[0]);
+  expect(stages[0]?.status).toBe('completed');
+  expect(stages[0]?.def).toBe(config.stages[0]);
   expect(stages[1]).toEqual({ def: def('s9'), status: 'pending' });
 });
 
@@ -81,11 +89,11 @@ test('stage moves stay in bounds and the last stage cannot be removed', () => {
   expect(changeStage(config, 0, 'up')).toBe(config);
   expect(changeStage(config, 0, 'down').stages.map((stage) => stage.id)).toEqual(['b', 'a']);
   expect(changeStage(config, 1, 'remove').stages).toHaveLength(1);
-  expect(() => changeStage({ stages: [def('a')] }, 0, 'remove')).toThrow(/at least one/);
+  expect(() => changeStage({ name: 'P', stages: [def('a')] }, 0, 'remove')).toThrow(/at least one/);
 });
 
 test('stage definitions need a title; new stages derive question and prompt', () => {
-  expect(() => stageDefinition({ title: ' ', question: '', prompt: '' }, 'x')).toThrow();
+  expect(() => stageDefinition({ title: ' ', question: '', prompt: '' }, 'x', false)).toThrow();
   const added = stageDefinition({ title: 'Security', question: '', prompt: '' }, 'x', true);
   expect(added).toMatchObject({
     id: 'x',
@@ -98,14 +106,20 @@ test('stage definitions need a title; new stages derive question and prompt', ()
 
 test('insight filters narrow the file list and count each kind', () => {
   const files = [
-    { path: 'a.go', understanding: { edgeCases: [{ line: 3 }], coreLogic: [{ line: 1 }] } },
+    {
+      path: 'a.go',
+      understanding: {
+        edgeCases: [{ line: 3, kind: 'error', text: '', explanation: '' }],
+        coreLogic: [{ line: 1, kind: 'core', text: '', explanation: '' }],
+      },
+    },
     { path: 'b.go', understanding: {} },
   ];
   expect(insightCounts(files)).toEqual({ all: 2, fastReturns: 0, edgeCases: 1, coreLogic: 1 });
   expect(visibleFiles(files, 'all')).toHaveLength(2);
   expect(visibleFiles(files, 'edgeCases').map((file) => file.path)).toEqual(['a.go']);
-  expect(fileInsights(files[0], 'all')).toEqual([]);
-  expect(fileInsights(files[0], 'edgeCases')[0].line).toBe(3);
+  expect(fileInsights(required(files[0]), 'all')).toEqual([]);
+  expect(fileInsights(required(files[0]), 'edgeCases')[0]?.line).toBe(3);
 });
 
 test('the selected stage follows a move and stays in range after removal', () => {

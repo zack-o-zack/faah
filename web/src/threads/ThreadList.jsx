@@ -1,7 +1,7 @@
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { targetRef } from '../agents/logic.js';
-import { relativeTime } from './logic.js';
+import { targetRef } from '../agents/logic.ts';
+import { relativeTime } from './logic.ts';
 export function ThreadList() {
   const editor = useEditor();
   return (

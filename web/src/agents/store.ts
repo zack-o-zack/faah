@@ -1,11 +1,52 @@
+import type { AppStore } from '../app/store.ts';
+import type { WorkspaceMeta } from '../app/types.ts';
+import type { Request } from '../lib/api.ts';
+import type { CoreActions } from '../editor/contracts.ts';
+import type { EditTarget } from './logic.ts';
+import type { AgentJob } from './job-decode.ts';
+import type { Harness } from './decode.ts';
+import { decodeAgents, decodeModels } from './decode.ts';
+import { isAbort, errorMessage } from '../lib/decode.ts';
+export interface AgentOptions {
+  request?: Request;
+  post?: Request;
+}
+interface EditSession {
+  id: number;
+  target: EditTarget;
+  instruction: string;
+  queued: boolean;
+  pending: boolean;
+  error: string;
+  job: AgentJob | null;
+  threadId: string;
+}
+interface AgentState {
+  harnesses: Harness[];
+  selected: string;
+  model: string;
+  pinned: boolean;
+  pending: string;
+  error: string;
+  sessions: EditSession[];
+  focus: { id: number; sequence: number };
+  batch: { pending: boolean; error: string; threadId: string; job: AgentJob | null };
+}
+interface AgentHost {
+  store: AppStore;
+  actions: Pick<
+    CoreActions,
+    'reloadOpenTabs' | 'openFile' | 'setSelection' | 'setPanelVisible' | 'refreshTree'
+  >;
+}
 import { batch, createMemo, onCleanup } from 'solid-js';
 import { createStore } from 'solid-js/store';
 import { api, apiPost } from '../lib/api.ts';
 import { toast } from '../lib/toast.jsx';
-import { agentSelection, editRequest, rangesOverlap } from './logic.js';
+import { agentSelection, editRequest, rangesOverlap } from './logic.ts';
 import { createAgentJobs } from './jobs.ts';
-/** @returns {{harnesses:object[],selected:string,model:string,pinned:boolean,pending:string,error:string,sessions:object[],batch:object}} */
-function initialState() {
+
+function initialState(): AgentState {
   return {
     harnesses: [],
     selected: '',
@@ -18,31 +59,33 @@ function initialState() {
     batch: { pending: false, error: '', threadId: '', job: null },
   };
 }
-export function createAgentStore(editor, options = {}) {
+export function createAgentStore(editor: AgentHost, options: AgentOptions = {}) {
   const [state, set] = createStore(initialState());
   const request = options.request || api;
   const post = options.post || apiPost;
   const app = editor.store;
   const jobs = createAgentJobs(app, options);
-  const requests = new Set();
-  const edits = new Map();
-  const models = new Map();
+  const requests = new Set<AbortController>();
+  const edits = new Map<number, AbortController>();
+  const models = new Map<string, Promise<string[]>>();
   let sequence = 0,
     selectedVersion = 0,
     disposed = false,
-    batchController;
+    batchController: AbortController | undefined;
   let reloadChain = Promise.resolve();
   const targets = createMemo(() =>
     state.sessions.map((session) => ({ id: session.id, ...session.target })),
   );
   const ready = () =>
     state.sessions.filter((session) => !session.pending && session.instruction.trim());
-  const indexOf = (id) => state.sessions.findIndex((session) => session.id === id);
-  const patchSession = (id, patch) => {
+  const indexOf = (id: number): number => state.sessions.findIndex((session) => session.id === id);
+  const patchSession = (id: number, patch: Partial<EditSession>): void => {
     const index = indexOf(id);
     if (index >= 0) set('sessions', index, patch);
   };
-  async function requestOwned(operation) {
+  async function requestOwned(
+    operation: (signal: AbortSignal) => Promise<unknown>,
+  ): Promise<unknown> {
     const controller = new AbortController();
     requests.add(controller);
     try {
@@ -51,7 +94,7 @@ export function createAgentStore(editor, options = {}) {
       requests.delete(controller);
     }
   }
-  function reloadWorkspace(focus) {
+  function reloadWorkspace(focus?: EditTarget | null): Promise<void> {
     const run = async () => {
       if (disposed) return;
       await app.actions.reindexWorkspace();
@@ -68,47 +111,47 @@ export function createAgentStore(editor, options = {}) {
     if (app.state.workspace.meta?.agentEnabled === false) return;
     set({ pending: 'discover', error: '' });
     try {
-      const result = await requestOwned((signal) =>
-        request('api/agent/harnesses', undefined, { signal }),
+      const result = decodeAgents(
+        await requestOwned((signal) => request('api/agent/harnesses', undefined, { signal })),
       );
       if (!disposed) set(agentSelection(result));
     } catch (error) {
-      if (!disposed && error.name !== 'AbortError') set('error', error.message);
+      if (!disposed && !isAbort(error)) set('error', errorMessage(error));
     } finally {
       if (!disposed) set('pending', '');
     }
   }
-  async function selectAgent(name, model = '') {
+  async function selectAgent(name: string, model = ''): Promise<boolean> {
     const version = ++selectedVersion;
     set({ pending: 'select', error: '' });
     try {
-      const result = await requestOwned((signal) =>
-        post('api/agent/select', { name, model }, { signal }),
+      const result = decodeAgents(
+        await requestOwned((signal) => post('api/agent/select', { name, model }, { signal })),
       );
       if (disposed || version !== selectedVersion) return false;
-      set(agentSelection({ harnesses: state.harnesses, ...result }));
+      set(agentSelection(result));
       return true;
     } catch (error) {
-      if (!disposed && version === selectedVersion && error.name !== 'AbortError')
-        set('error', error.message);
+      if (!disposed && version === selectedVersion && !isAbort(error))
+        set('error', errorMessage(error));
       return false;
     } finally {
       if (!disposed && version === selectedVersion) set('pending', '');
     }
   }
-  function loadAgentModels(name) {
+  function loadAgentModels(name: string): Promise<string[]> {
     if (!models.has(name)) {
       const operation = requestOwned((signal) => request('api/agent/models', { name }, { signal }))
-        .then((reply) => reply.models || [])
+        .then(decodeModels)
         .catch((error) => {
           models.delete(name);
           throw error;
         });
       models.set(name, operation);
     }
-    return models.get(name);
+    return models.get(name) || Promise.resolve([]);
   }
-  function openAgentEdit(info) {
+  function openAgentEdit(info: EditTarget | null): number | undefined {
     if (!info?.path) return;
     if (state.sessions.some((session) => rangesOverlap(session.target, info))) {
       toast('error', 'An edit already overlaps this range');
@@ -129,7 +172,7 @@ export function createAgentStore(editor, options = {}) {
     editor.actions.setSelection(null);
     return id;
   }
-  async function cancelAgentEdit(id) {
+  async function cancelAgentEdit(id: number): Promise<void> {
     const session = state.sessions[indexOf(id)];
     edits.get(id)?.abort();
     edits.delete(id);
@@ -137,13 +180,13 @@ export function createAgentStore(editor, options = {}) {
     if (session?.job?.running && session.job.id)
       await jobs
         .cancelAgentJob(session.job.id)
-        .catch((error) => patchSession(id, { error: error.message }));
+        .catch((error) => patchSession(id, { error: errorMessage(error) }));
   }
-  function closeAgentEdit(id) {
+  function closeAgentEdit(id: number): void {
     void cancelAgentEdit(id);
     set('sessions', (sessions) => sessions.filter((session) => session.id !== id));
   }
-  async function applyAgentEdit(id) {
+  async function applyAgentEdit(id: number): Promise<void> {
     const session = state.sessions[indexOf(id)];
     if (!session || session.pending || !session.instruction.trim()) return;
     const controller = new AbortController();
@@ -164,7 +207,7 @@ export function createAgentStore(editor, options = {}) {
         toast('success', 'Edit saved in Threads');
       }
     } catch (error) {
-      if (!disposed && !controller.signal.aborted) patchSession(id, { error: error.message });
+      if (!disposed && !controller.signal.aborted) patchSession(id, { error: errorMessage(error) });
     } finally {
       edits.delete(id);
       if (!disposed) patchSession(id, { pending: false });
@@ -174,7 +217,8 @@ export function createAgentStore(editor, options = {}) {
     if (state.batch.pending) return;
     const sessions = ready();
     if (!sessions.length) return;
-    if (sessions.length === 1) return applyAgentEdit(sessions[0].id);
+    const first = sessions[0];
+    if (sessions.length === 1 && first) return applyAgentEdit(first.id);
     batchController = new AbortController();
     const controller = batchController;
     batch(() => {
@@ -197,9 +241,9 @@ export function createAgentStore(editor, options = {}) {
         set('sessions', (current) => current.filter((session) => !ids.has(session.id)));
         toast('success', 'Batch edit saved in Threads');
       }
-      if (job.changed?.length || job.tracked === false) await reloadWorkspace(sessions[0].target);
+      if (job.changed?.length || job.tracked === false) await reloadWorkspace(sessions[0]?.target);
     } catch (error) {
-      if (!disposed && !controller.signal.aborted) set('batch', 'error', error.message);
+      if (!disposed && !controller.signal.aborted) set('batch', 'error', errorMessage(error));
     } finally {
       if (!disposed)
         batch(() => {
@@ -213,7 +257,7 @@ export function createAgentStore(editor, options = {}) {
     if (state.batch.job?.id)
       await jobs
         .cancelAgentJob(state.batch.job.id)
-        .catch((error) => set('batch', 'error', error.message));
+        .catch((error) => set('batch', 'error', errorMessage(error)));
   }
   onCleanup(() => {
     disposed = true;
@@ -238,12 +282,12 @@ export function createAgentStore(editor, options = {}) {
       cancelAgentBatch,
       reloadWorkspace,
       ...jobs,
-      setAgentInstruction: (id, instruction) => patchSession(id, { instruction }),
-      queueAgentEdit: (id, queued = true) => patchSession(id, { queued }),
+      setAgentInstruction: (id: number, instruction: string) => patchSession(id, { instruction }),
+      queueAgentEdit: (id: number, queued = true) => patchSession(id, { queued }),
       clearAgentEdits: () => {
         for (const session of [...state.sessions]) closeAgentEdit(session.id);
       },
-      focusAgentAt(path, line) {
+      focusAgentAt(path: string, line: number): void {
         const session = state.sessions.find(
           (item) => item.target.path === path && line >= item.target.l1 && line <= item.target.l2,
         );
@@ -252,7 +296,7 @@ export function createAgentStore(editor, options = {}) {
         set('focus', { id: session.id, sequence: state.focus.sequence + 1 });
         app.actions.setPanelVisible('threads', true);
       },
-      acceptAgentMeta: (meta) =>
+      acceptAgentMeta: (meta: WorkspaceMeta) =>
         set(
           agentSelection({
             harnesses: meta.agents,

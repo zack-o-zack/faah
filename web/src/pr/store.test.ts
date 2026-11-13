@@ -1,20 +1,20 @@
+import { decodeAgentJob } from '../agents/job-decode.ts';
+import type { AgentJob } from '../agents/job-decode.ts';
+import { record } from '../lib/decode.ts';
+import type { PREditorOptions } from './test-editor.ts';
+import { required } from '../lib/test-values.ts';
 import { createRoot } from 'solid-js';
 import { expect, test, vi } from 'vitest';
-import { createPREditor, prMeta, routes } from './test-editor.js';
+import { createPREditor, prMeta, routes } from './test-editor.ts';
 
 vi.mock('../lib/toast.jsx', () => ({ toast: vi.fn() }));
 
-function fixture(options) {
-  let editor, dispose;
-  createRoot((release) => {
-    dispose = release;
-    editor = createPREditor(options);
-  });
-  return { editor, dispose };
+function fixture(options: PREditorOptions = {}) {
+  return createRoot((dispose) => ({ editor: createPREditor(options), dispose }));
 }
 const comments = {
   'api/pr/comments': {
-    comments: [{ id: 'd1', path: 'a.go', line: 3, side: 'RIGHT', body: 'nit' }],
+    comments: [{ id: 101, path: 'a.go', line: 3, side: 'RIGHT', body: 'nit' }],
   },
   'api/pr/existing-comments': {
     issueComments: [{ id: 1, author: 'ann', body: 'Hi' }],
@@ -85,13 +85,13 @@ test('a composer adds a draft and closes; a failure stays open with the error', 
   const post = routes({
     'api/pr/comments': (body) => {
       if (fail) throw new Error('Line is outside the diff');
-      return { id: 'd9', ...body };
+      return { id: 109, ...body };
     },
   });
   const { editor, dispose } = fixture({ post });
   editor.actions.openPRComposer({ path: 'a.go', l1: 4, l2: 4 });
   expect(editor.actions.setSelection).toHaveBeenCalledWith(null);
-  const [composer] = editor.pr.state.composers;
+  const composer = required(editor.pr.state.composers[0]);
   expect(editor.pr.composersAt('a.go', 'RIGHT', 4)).toHaveLength(1);
   editor.actions.setComposerBody(composer.id, 'rename this');
   await editor.actions.sendComposer(composer.id);
@@ -102,7 +102,7 @@ test('a composer adds a draft and closes; a failure stays open with the error', 
   fail = false;
   await editor.actions.sendComposer(composer.id);
   expect(editor.pr.state.composers).toHaveLength(0);
-  expect(editor.pr.state.drafts[0]).toMatchObject({ id: 'd9', line: 4, body: 'rename this' });
+  expect(editor.pr.state.drafts[0]).toMatchObject({ id: 109, line: 4, body: 'rename this' });
   expect(editor.pr.state.expanded['a.go|RIGHT:4']).toBe(true);
   dispose();
 });
@@ -110,15 +110,17 @@ test('a composer adds a draft and closes; a failure stays open with the error', 
 test('applying drafts reports progress and keeps the harness error', async () => {
   const { editor, dispose } = fixture({ request: routes(comments) });
   await editor.actions.refreshPRComments();
-  let finish;
-  editor.actions.runAgentJob.mockImplementation((endpoint, params, { progress }) => {
-    expect(params.edits).toEqual([{ path: 'a.go', l1: 3, l2: 3, instruction: 'nit' }]);
-    progress({ ms: 4200 });
-    return new Promise((resolve) => (finish = resolve));
+  let finish: (job: AgentJob) => void = () => {
+    throw new Error('Missing job');
+  };
+  editor.actions.runAgentJob.mockImplementation((_endpoint, params, { progress } = {}) => {
+    expect(record(params).edits).toEqual([{ path: 'a.go', l1: 3, l2: 3, instruction: 'nit' }]);
+    progress?.(decodeAgentJob({ ms: 4200 }));
+    return new Promise<AgentJob>((resolve) => (finish = resolve));
   });
   const applying = editor.actions.applyDrafts();
   expect(editor.pr.state.batch).toMatchObject({ pending: true, seconds: 4 });
-  finish({ error: 'Harness quit', changed: [] });
+  finish(decodeAgentJob({ error: 'Harness quit', changed: [] }));
   await applying;
   expect(editor.pr.state.batch).toMatchObject({ pending: false, error: 'Harness quit' });
   expect(editor.actions.reloadWorkspace).not.toHaveBeenCalled();

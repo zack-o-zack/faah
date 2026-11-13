@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { linkTarget, explainEvidenceLine, explainStaleLabel } from './references.js';
+import { linkTarget, explainEvidenceLine, explainStaleLabel } from './references.ts';
 
 describe('linkTarget', () => {
   test('links anything path-shaped without refs', () => {

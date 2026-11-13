@@ -3,7 +3,7 @@ import { useEditor } from '../editor/context.jsx';
 import { SplitHandle } from '../lib/SplitHandle.jsx';
 import { ErrorNotice } from '../lib/ErrorNotice.jsx';
 import { withKeys } from '../lib/keyboard.ts';
-import { sortedByTime } from './logic.js';
+import { sortedByTime } from './logic.ts';
 import { IssueComment } from './IssueComment.jsx';
 import { CommentThread } from './CommentThread.jsx';
 // Posted comments (conversation and inline) plus your drafts, for the life of the session.

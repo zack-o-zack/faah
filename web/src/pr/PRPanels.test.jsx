@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@solidjs/testing-library';
 import { expect, test, vi } from 'vitest';
 import { EditorProvider } from '../editor/context.jsx';
-import { createPREditor, routes } from './test-editor.js';
+import { createPREditor, routes } from './test-editor.ts';
 import { PRBar } from './PRBar.jsx';
 import { CommentsPanel } from './CommentsPanel.jsx';
 import { MergeDialog } from './MergeDialog.jsx';

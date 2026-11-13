@@ -1,3 +1,5 @@
+import type { PRMeta, ForgeMeta } from '../pr/types.ts';
+import type { Harness } from '../agents/decode.ts';
 /** What /api/meta says about the open workspace. The app store keeps it as received. */
 export interface WorkspaceMeta {
   /** Absolute root path. */
@@ -15,18 +17,10 @@ export interface WorkspaceMeta {
   ready?: boolean;
   threadsEnabled?: boolean;
   metrics?: unknown;
-  pr?: { files?: Record<string, string>; [key: string]: unknown };
-  forge?: {
-    info: {
-      name: string;
-      label: string;
-      tokenKey: string;
-      tokenCategory: string;
-      tokenHint: string;
-    };
-    hasToken: boolean;
-  } | null;
-  agents?: unknown;
+  pr?: PRMeta;
+  forge?: ForgeMeta | null;
+  agentEnabled?: boolean;
+  agents?: Harness[];
   agent?: string;
   agentModel?: string;
   agentPinned?: boolean;

@@ -1,3 +1,38 @@
+import type { AppStore } from '../app/store.ts';
+import type { Request } from '../lib/api.ts';
+import type { CoreActions } from '../editor/contracts.ts';
+import type { MergeInfo, MergeMessage, SyncContext } from './types.ts';
+import { decodeMerge } from './decode.ts';
+import { errorMessage, isAbort, isRecord } from '../lib/decode.ts';
+export interface MergeOptions {
+  request?: Request;
+  post?: Request;
+}
+interface MergeState {
+  info: MergeInfo | null;
+  pending: boolean;
+  error: string;
+  remembered: string;
+  checkedAt: number;
+  dialog: {
+    open: boolean;
+    method: string;
+    drafts: Record<string, MergeMessage>;
+    instruction: string;
+    rewrite: boolean;
+    rewriting: { pending: boolean; seconds: number };
+    pending: boolean;
+    error: string;
+  };
+}
+interface MergeHost {
+  store: AppStore;
+  git: { state: { pending: string; sync: SyncContext } };
+  actions: Pick<
+    CoreActions,
+    'runAgentJob' | 'refreshPRMeta' | 'resolvePRBase' | 'confirmForcePush'
+  >;
+}
 import { batch, onCleanup } from 'solid-js';
 import { createStore, reconcile } from 'solid-js/store';
 import { api, apiPostJson } from '../lib/api.ts';
@@ -9,7 +44,7 @@ import {
   mergeWarnings,
   reviewGate,
   splitMessage,
-} from './logic.js';
+} from './logic.ts';
 
 const METHOD_KEY = 'faah.prMergeMethod';
 // The forge computes mergeability lazily: right after a push it often says "unknown".
@@ -24,19 +59,7 @@ function rememberedMethod() {
   }
 }
 
-/**
- * @typedef {Object} MergeDialog
- * @property {boolean} open
- * @property {string} method
- * @property {Object<string, {title:string,message:string}>} drafts
- * @property {string} instruction
- * @property {boolean} rewrite
- * @property {{pending:boolean,seconds:number}} rewriting
- * @property {boolean} pending
- * @property {string} error
- */
-/** @returns {{info:object|null,pending:boolean,error:string,remembered:string,checkedAt:number,dialog:MergeDialog}} */
-function initialState() {
+function initialState(): MergeState {
   return {
     info: null,
     pending: false,
@@ -56,16 +79,16 @@ function initialState() {
   };
 }
 
-export function createMergeStore(editor, options = {}) {
+export function createMergeStore(editor: MergeHost, options: MergeOptions = {}) {
   const app = editor.store;
   const request = options.request || api;
   const post = options.post || apiPostJson;
   const [state, set] = createStore(initialState());
   let disposed = false;
   let retries = 0;
-  let retryTimer;
-  let statusController;
-  let rewriteController;
+  let retryTimer: ReturnType<typeof setTimeout> | undefined;
+  let statusController: AbortController | undefined;
+  let rewriteController: AbortController | undefined;
 
   const meta = () => app.state.workspace.meta?.pr || null;
   const sync = () => ({
@@ -96,11 +119,13 @@ export function createMergeStore(editor, options = {}) {
     set({ pending: true, checkedAt: Date.now() });
     let info = null;
     try {
-      info = await request('api/pr/merge-status', undefined, { signal: controller.signal });
+      info = decodeMerge(
+        await request('api/pr/merge-status', undefined, { signal: controller.signal }),
+      );
     } catch (error) {
       if (controller.signal.aborted || disposed) return;
       // No pill beats a wrong one.
-      set('error', error.message);
+      set('error', errorMessage(error));
     }
     if (disposed || controller.signal.aborted) return;
     batch(() => {
@@ -114,7 +139,7 @@ export function createMergeStore(editor, options = {}) {
     } else retries = 0;
   }
 
-  function rememberMethod(value) {
+  function rememberMethod(value: string): void {
     set('remembered', value);
     try {
       localStorage.setItem(METHOD_KEY, value);
@@ -123,13 +148,13 @@ export function createMergeStore(editor, options = {}) {
     }
   }
 
-  async function openMergeDialog(requested) {
+  async function openMergeDialog(requested?: string): Promise<void> {
     // Re-read right before showing it: what the dialog says is what merges.
     await refreshMergeStatus();
     if (disposed || !canMerge()) return;
-    const value = allowed().includes(requested) ? requested : method();
-    const drafts = {};
-    for (const [key, draft] of Object.entries(state.info.defaults || {}))
+    const value = requested && allowed().includes(requested) ? requested : method();
+    const drafts: Record<string, MergeMessage> = {};
+    for (const [key, draft] of Object.entries(state.info?.defaults || {}))
       drafts[key] = { ...draft };
     set('dialog', {
       open: true,
@@ -142,7 +167,7 @@ export function createMergeStore(editor, options = {}) {
     });
   }
 
-  function defaultDraft(value) {
+  function defaultDraft(value: string): MergeMessage {
     return { ...(state.info?.defaults?.[value] || { title: '', message: '' }) };
   }
 
@@ -170,11 +195,12 @@ export function createMergeStore(editor, options = {}) {
       if (!message.title) throw new Error('The harness returned an empty message.');
       set('dialog', 'drafts', target, message);
     } catch (error) {
-      if (disposed || error.name === 'AbortError') return;
-      const harness = error.body?.harness;
+      if (disposed || isAbort(error)) return;
+      const body = error instanceof Error && 'body' in error ? error.body : null;
+      const harness = isRecord(body) && typeof body.harness === 'string' ? body.harness : '';
       set('dialog', {
         rewrite: false,
-        error: harness ? `${harness}: ${error.message}` : error.message,
+        error: harness ? `${harness}: ${errorMessage(error)}` : errorMessage(error),
       });
     } finally {
       if (!disposed && rewriteController === controller)
@@ -185,7 +211,7 @@ export function createMergeStore(editor, options = {}) {
   async function confirmMerge() {
     const dialog = state.dialog;
     if (!dialog.open || dialog.pending || dialog.rewriting.pending || warnings()?.block) return;
-    const draft = dialog.drafts[dialog.method] || {};
+    const draft = dialog.drafts[dialog.method] || { title: '', message: '' };
     if (dialog.method !== 'rebase' && !draft.title?.trim()) {
       set('dialog', 'error', 'The commit needs a title.');
       return;
@@ -199,12 +225,12 @@ export function createMergeStore(editor, options = {}) {
       });
     } catch (error) {
       if (disposed) return;
-      set('dialog', { pending: false, error: error.message || 'Merge failed' });
+      set('dialog', { pending: false, error: errorMessage(error) || 'Merge failed' });
       void refreshMergeStatus();
       return;
     }
     if (disposed) return;
-    const done = MERGE_METHODS[dialog.method].done;
+    const done = MERGE_METHODS[dialog.method]?.done || 'Merged';
     set('dialog', { open: false, pending: false });
     toast('success', `${done} into ${base()}`);
     // Re-reads the PR, and with it this status.
@@ -237,15 +263,15 @@ export function createMergeStore(editor, options = {}) {
         set('dialog', { open: false, rewriting: { pending: false, seconds: 0 } });
       },
       // Picking a method is picking what to do: open the dialog for it when merging is possible.
-      chooseMergeMethod(value) {
+      chooseMergeMethod(value: string): void {
         rememberMethod(value);
         if (canMerge() && !sync().running) void openMergeDialog(value);
       },
-      setMergeMethod(value) {
+      setMergeMethod(value: string): void {
         rememberMethod(value);
         set('dialog', 'method', value);
       },
-      setMergeField: (field, value) =>
+      setMergeField: (field: 'title' | 'message', value: string) =>
         set('dialog', 'drafts', state.dialog.method, (draft) => ({
           ...(draft || defaultDraft(state.dialog.method)),
           [field]: value,
@@ -255,7 +281,7 @@ export function createMergeStore(editor, options = {}) {
         set('dialog', { rewrite: false, error: '' });
         set('dialog', 'drafts', state.dialog.method, defaultDraft(state.dialog.method));
       },
-      setMergeRewrite(enabled) {
+      setMergeRewrite(enabled: boolean): void {
         if (enabled) void rewriteMergeMessage();
         else {
           rewriteController?.abort();
@@ -263,7 +289,7 @@ export function createMergeStore(editor, options = {}) {
           set('dialog', 'drafts', state.dialog.method, defaultDraft(state.dialog.method));
         }
       },
-      setMergeInstruction: (value) => set('dialog', 'instruction', value),
+      setMergeInstruction: (value: string) => set('dialog', 'instruction', value),
       rewriteMergeMessage,
       confirmMerge,
       runMergeFix() {

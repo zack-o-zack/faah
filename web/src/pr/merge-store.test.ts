@@ -1,20 +1,20 @@
+import type { PREditorOptions } from './test-editor.ts';
+import { decodeAgentJob } from '../agents/job-decode.ts';
 import { createRoot } from 'solid-js';
 import { afterEach, expect, test, vi } from 'vitest';
-import { createPREditor, routes } from './test-editor.js';
+import { createPREditor, routes } from './test-editor.ts';
 
 vi.mock('../lib/toast.jsx', () => ({ toast: vi.fn() }));
 afterEach(() => vi.useRealTimers());
 
-function fixture(options) {
-  let editor, dispose;
-  createRoot((release) => {
-    dispose = release;
-    editor = createPREditor(options);
+function fixture(options: PREditorOptions = {}) {
+  return createRoot((dispose) => {
+    const editor = createPREditor(options);
+    editor.actions.refreshPRMeta = vi.fn(async () => {});
+    return { editor, dispose };
   });
-  editor.actions.refreshPRMeta = vi.fn(async () => {});
-  return { editor, dispose };
 }
-const status = (state, fields = {}) => ({
+const status = (state: string, fields = {}) => ({
   canMerge: true,
   base: 'main',
   commits: [{ sha: 'a' }, { sha: 'b' }],
@@ -32,9 +32,9 @@ test('an unknown mergeability is re-read until the forge decides', async () => {
   const request = vi.fn(async () => replies.shift());
   const { editor, dispose } = fixture({ request });
   await editor.actions.refreshMergeStatus();
-  expect(editor.merge.pill().text).toBe('Checking…');
+  expect(editor.merge.pill()?.text).toBe('Checking…');
   await vi.advanceTimersByTimeAsync(2500);
-  expect(editor.merge.pill().text).toBe('Ready to merge');
+  expect(editor.merge.pill()?.text).toBe('Ready to merge');
   expect(request).toHaveBeenCalledTimes(2);
   dispose();
 });
@@ -51,7 +51,7 @@ test('the dialog opens on the chosen method with the forge defaults', async () =
   await editor.actions.confirmMerge();
   expect(editor.merge.state.dialog.error).toBe('The commit needs a title.');
   editor.actions.resetMergeMessage();
-  expect(editor.merge.state.dialog.drafts.squash.title).toBe('Fix the parser (#7)');
+  expect(editor.merge.state.dialog.drafts.squash?.title).toBe('Fix the parser (#7)');
   dispose();
 });
 
@@ -87,7 +87,7 @@ test('a blocking warning or a failed merge keeps the dialog open', async () => {
     pending: false,
     error: 'Base branch was modified',
   });
-  await vi.waitFor(() => expect(editor.merge.warnings().block).toMatch(/conflicts/));
+  await vi.waitFor(() => expect(editor.merge.warnings()?.block).toMatch(/conflicts/));
   post.mockClear();
   await editor.actions.confirmMerge();
   expect(post).not.toHaveBeenCalled();
@@ -99,11 +99,11 @@ test('the harness rewrite fills the message and shows its progress', async () =>
     request: routes({ 'api/pr/merge-status': status('clean') }),
   });
   await editor.actions.openMergeDialog('squash');
-  editor.actions.runAgentJob.mockImplementation(async (endpoint, params, { progress }) => {
+  editor.actions.runAgentJob.mockImplementation(async (endpoint, _params, { progress } = {}) => {
     expect(endpoint).toBe('api/pr/merge-message');
-    progress({ ms: 2000 });
+    progress?.(decodeAgentJob({ ms: 2000 }));
     expect(editor.merge.state.dialog.rewriting).toEqual({ pending: true, seconds: 2 });
-    return { stdout: 'Better title\n\nBetter body' };
+    return decodeAgentJob({ stdout: 'Better title\n\nBetter body' });
   });
   await editor.actions.setMergeRewrite(true);
   await vi.waitFor(() => expect(editor.merge.state.dialog.rewriting.pending).toBe(false));

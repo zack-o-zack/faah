@@ -19,13 +19,13 @@ interface EditorOptions {
   language?: FeatureOptions;
 }
 import { isPreview, previewKind } from '../viewers/view.ts';
-import { createAgentStore } from '../agents/store.js';
-import { createThreadStore } from '../threads/store.js';
-import { createReviewStore } from '../review/store.js';
-import { createPRStore } from '../pr/store.js';
+import { createAgentStore } from '../agents/store.ts';
+import { createThreadStore } from '../threads/store.ts';
+import { createReviewStore } from '../review/store.ts';
+import { createPRStore } from '../pr/store.ts';
 import { createShortcutRegistry } from '../shortcuts/registry.ts';
-import { createMergeStore } from '../pr/merge-store.js';
-import { createForgeStore } from '../pr/forge-store.js';
+import { createMergeStore } from '../pr/merge-store.ts';
+import { createForgeStore } from '../pr/forge-store.ts';
 import { registerFeatureCommands } from '../palette/features.ts';
 import { createDocumentGitActions } from '../git/documents.ts';
 import { createLanguageStore } from '../lsp/store.ts';
@@ -271,6 +271,18 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
   // Factories resolve peer actions after assembly; closures avoid unsafe construction casts.
   const coreActions: CoreActions = {
     ...baseActions,
+    setSelection: (...args) => selectionActions.setSelection(...args),
+    refreshTree: () => tree.actions.refreshTree(),
+    reloadWorkspace: (...args) => agents.actions.reloadWorkspace(...args),
+    loadThread: (...args) => threads.actions.loadThread(...args),
+    acceptThread: (...args) => threads.actions.acceptThread(...args),
+    openForgeConnect: (...args) => forge.actions.openForgeConnect(...args),
+    refreshMergeStatus: () => merge.actions.refreshMergeStatus(),
+    runAgentJob: (...args) => agents.actions.runAgentJob(...args),
+    setReviewMode: (...args) => review.actions.setReviewMode(...args),
+    refreshPRMeta: () => pr.actions.refreshPRMeta(),
+    resolvePRBase: () => git.actions.resolvePRBase(),
+    confirmForcePush: () => git.actions.confirmForcePush(),
     wordAtCaret: () => hoverActions.wordAtCaret(),
     searchWorkspace: (...args) => search.actions.searchWorkspace(...args),
     setSearchResults: (...args) => search.actions.setSearchResults(...args),
@@ -300,6 +312,12 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
     openPalette: (...args) => palette.actions.openPalette(...args),
   };
   const editor: EditorHost = {
+    get tree() {
+      return tree;
+    },
+    get git() {
+      return git;
+    },
     actions: coreActions,
     store,
     settings: store.settings,
@@ -358,7 +376,7 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
     historyChanged: () => actions.historyChanged(),
   });
   const search = createSearchStore();
-  const palette = createPaletteStore(Object.assign(prEditor, { tree }), options);
+  const palette = createPaletteStore(prEditor, options);
   const language = createLanguageStore(prEditor, options.language);
   const documentActions = createDocumentGitActions(prEditor);
   const featureActions = Object.assign(
@@ -389,7 +407,8 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
       },
     },
   );
-  const result = Object.assign(prEditor, {
+  const result = {
+    ...prEditor,
     merge,
     forge,
     tree,
@@ -401,7 +420,7 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
     shortcuts: shortcutRegistry,
     revision,
     setGeometry,
-  });
+  };
   onCleanup(
     store.settings.onSaved((keys) => {
       if (keys.includes('agent.harness')) void agents.actions.initializeAgents();

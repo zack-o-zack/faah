@@ -1,6 +1,6 @@
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { fileInsights, shortRef, visibleFiles } from './logic.js';
+import { fileInsights, shortRef, visibleFiles } from './logic.ts';
 import { LineStats } from './LineStats.jsx';
 // The left pane lists files; insights stay hidden until a filter asks for one kind.
 export function WalkthroughFiles(props) {

@@ -3,7 +3,7 @@ import { useEditor } from '../editor/context.jsx';
 import { ContextMenu } from '../lib/ContextMenu.jsx';
 import { DropdownMenu } from '../lib/DropdownMenu.jsx';
 import { MenuItem } from '../lib/MenuItem.jsx';
-import { STAGE_STATUS, stageStatus } from './logic.js';
+import { STAGE_STATUS, stageStatus } from './logic.ts';
 import { StageDot } from './StageDot.jsx';
 export function StageCard(props) {
   const editor = useEditor();

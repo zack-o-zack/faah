@@ -1,6 +1,6 @@
 import { For, Index, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { INSIGHT_KINDS, insightCounts, pipelineProgress } from './logic.js';
+import { INSIGHT_KINDS, insightCounts, pipelineProgress } from './logic.ts';
 import { StageDot } from './StageDot.jsx';
 export function ReviewTabs() {
   const editor = useEditor();

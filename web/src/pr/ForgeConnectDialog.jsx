@@ -3,7 +3,7 @@ import { useEditor } from '../editor/context.jsx';
 import { Dialog } from '../lib/Dialog.jsx';
 import { ErrorNotice } from '../lib/ErrorNotice.jsx';
 import { keyLabel } from '../lib/keyboard.ts';
-import { FORGE_SOURCES } from './logic.js';
+import { FORGE_SOURCES } from './logic.ts';
 // Everything forge-specific comes from the server's token setup for this host.
 export function ForgeConnectDialog() {
   const editor = useEditor();

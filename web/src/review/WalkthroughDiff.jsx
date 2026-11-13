@@ -1,6 +1,6 @@
 import { For, onCleanup } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { activeBlock } from './logic.js';
+import { activeBlock } from './logic.ts';
 import { WalkthroughFile } from './WalkthroughFile.jsx';
 // Scrolling the diff marks the file under the sticky header as active in the file list.
 export function WalkthroughDiff(props) {

@@ -41,7 +41,7 @@ export interface DocTab {
   openedInDiffView: boolean;
   diffRef: string;
   diffBase: string;
-  turnFiles: { path: string; binary?: boolean }[] | null;
+  turnFiles: (string | { path: string; binary?: boolean })[] | null;
   turnLabel: string;
   outline: SymbolInfo[] | null;
   outlineSource?: string;
@@ -59,6 +59,6 @@ export interface OpenOptions {
   activate?: boolean;
   push?: boolean;
   soft?: boolean;
-  turnFiles?: { path: string; binary?: boolean }[];
+  turnFiles?: (string | { path: string; binary?: boolean })[];
   turnLabel?: string;
 }

@@ -2,8 +2,8 @@ import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
 import { Markdown } from '../lib/Markdown.jsx';
 import { ErrorNotice } from '../lib/ErrorNotice.jsx';
-import { explainEvidenceLine, explainStaleLabel } from './references.js';
-import { turnDuration } from './logic.js';
+import { explainEvidenceLine, explainStaleLabel } from './references.ts';
+import { turnDuration } from './logic.ts';
 export function ThreadTurn(props) {
   const editor = useEditor();
   const open = (target) => {

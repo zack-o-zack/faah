@@ -1,6 +1,6 @@
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { rowTarget, threadKey } from './logic.js';
+import { rowTarget, threadKey } from './logic.ts';
 import { PRComposer } from './PRComposer.jsx';
 /** A diff line's comment marker; it opens the line's thread in the comments panel. */
 export function CommentMarker(props) {

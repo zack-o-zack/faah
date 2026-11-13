@@ -1,5 +1,5 @@
 import { useEditor } from '../editor/context.jsx';
-import { commentPreview, formatTime } from './logic.js';
+import { commentPreview, formatTime } from './logic.ts';
 import { CommentBody } from './CommentBody.jsx';
 export function IssueComment(props) {
   const editor = useEditor();

@@ -1,23 +1,38 @@
+import type { AppStore } from '../app/store.ts';
+import type { Request } from '../lib/api.ts';
+import type { CoreActions } from '../editor/contracts.ts';
+import { decodeForgeReply } from './decode.ts';
+import { isAbort, errorMessage } from '../lib/decode.ts';
+export interface ForgeOptions {
+  post?: Request;
+}
+interface ForgeState {
+  open: boolean;
+  reason: string;
+  token: string;
+  extra: string;
+  pending: boolean;
+  error: string;
+}
+interface ForgeHost {
+  store: AppStore;
+  actions: Pick<CoreActions, 'openSettings' | 'refreshPRMeta'>;
+}
 import { createStore } from 'solid-js/store';
 import { onCleanup } from 'solid-js';
 import { apiPostJson } from '../lib/api.ts';
 import { toast } from '../lib/toast.jsx';
-import { connectedMessage } from './logic.js';
+import { connectedMessage } from './logic.ts';
 
-/** @returns {{open:boolean,reason:string,token:string,extra:string,pending:boolean,error:string}} */
-function initialState() {
+function initialState(): ForgeState {
   return { open: false, reason: '', token: '', extra: '', pending: false, error: '' };
 }
 
-/**
- * The Connect dialog: a forge token without a restart. The server checks the token
- * against the forge before keeping it, and a running review uses it at once.
- */
-export function createForgeStore(editor, options = {}) {
+export function createForgeStore(editor: ForgeHost, options: ForgeOptions = {}) {
   const app = editor.store;
   const post = options.post || apiPostJson;
   const [state, set] = createStore(initialState());
-  let controller;
+  let controller: AbortController | undefined;
   onCleanup(() => controller?.abort());
   const forge = () => app.state.workspace.meta?.forge || null;
 
@@ -41,17 +56,19 @@ export function createForgeStore(editor, options = {}) {
     set({ pending: true, error: '' });
     let reply;
     try {
-      reply = await post(
-        'api/forge/connect',
-        { token, extra: state.extra.trim() },
-        { signal: controller.signal },
+      reply = decodeForgeReply(
+        await post(
+          'api/forge/connect',
+          { token, extra: state.extra.trim() },
+          { signal: controller.signal },
+        ),
       );
     } catch (error) {
-      if (error.name !== 'AbortError')
-        set({ pending: false, error: error.message || 'Could not connect' });
+      if (!isAbort(error))
+        set({ pending: false, error: errorMessage(error) || 'Could not connect' });
       return;
     }
-    const label = forge().info.label;
+    const label = forge()?.info.label || 'forge';
     app.actions.patchWorkspace('forge', {
       ...forge(),
       hasToken: true,
@@ -77,8 +94,8 @@ export function createForgeStore(editor, options = {}) {
         controller?.abort();
         set({ open: false, pending: false });
       },
-      setForgeToken: (value) => set('token', value),
-      setForgeExtra: (value) => set('extra', value),
+      setForgeToken: (value: string) => set('token', value),
+      setForgeExtra: (value: string) => set('extra', value),
     },
   };
 }

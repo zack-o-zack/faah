@@ -1,4 +1,4 @@
-import { STAGE_STATUS } from './logic.js';
+import { STAGE_STATUS } from './logic.ts';
 export function StageDot(props) {
   return (
     <span

@@ -1,6 +1,6 @@
 import { Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { PILL_ICONS } from './logic.js';
+import { PILL_ICONS } from './logic.ts';
 const TONES = { err: 'text-destructive', warn: 'text-warn', ok: 'text-gi' };
 export function MergePill() {
   const editor = useEditor();

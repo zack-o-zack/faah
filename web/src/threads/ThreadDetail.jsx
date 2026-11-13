@@ -1,7 +1,7 @@
 import { For, onMount, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
 import { AgentPicker } from '../agents/AgentPicker.jsx';
-import { targetRef } from '../agents/logic.js';
+import { targetRef } from '../agents/logic.ts';
 import { ThreadTranscript } from './ThreadTranscript.jsx';
 export function ThreadDetail() {
   const editor = useEditor();

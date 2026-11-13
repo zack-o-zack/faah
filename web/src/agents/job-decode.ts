@@ -14,7 +14,7 @@ export interface AgentJob {
   tracked: boolean;
   threadId: string;
   batchCount: number;
-  items: { path: string; l1: number; l2: number; comment: string }[];
+  items: { path: string; l1: number; l2: number; instruction: string }[];
 }
 export function decodeAgentJob(value: unknown): AgentJob {
   const v = record(value);
@@ -35,7 +35,12 @@ export function decodeAgentJob(value: unknown): AgentJob {
     batchCount: number(v.batchCount),
     items: list(v.items).map((item) => {
       const i = record(item);
-      return { path: text(i.path), l1: number(i.l1), l2: number(i.l2), comment: text(i.comment) };
+      return {
+        path: text(i.path),
+        l1: number(i.l1),
+        l2: number(i.l2),
+        instruction: text(i.instruction),
+      };
     }),
   };
 }

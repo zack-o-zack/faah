@@ -1,3 +1,5 @@
+import { decodePRMeta, decodeForge } from '../pr/decode.ts';
+import { decodeHarnesses } from '../agents/decode.ts';
 import {
   record,
   text,
@@ -122,23 +124,6 @@ export function decodeMetrics(value: unknown): Metrics {
 }
 export function decodeMeta(value: unknown): WorkspaceMeta {
   const row = record(value);
-  let forge: WorkspaceMeta['forge'];
-  if (row.forge) {
-    const f = record(row.forge),
-      info = record(f.info);
-    forge = {
-      ...f,
-      hasToken: boolean(f.hasToken),
-      info: {
-        name: text(info.name),
-        label: text(info.label),
-        tokenKey: text(info.tokenKey),
-        tokenCategory: text(info.tokenCategory),
-        tokenHint: text(info.tokenHint),
-      },
-    };
-  }
-  const pr = row.pr ? record(row.pr) : undefined;
   return {
     ...row,
     root: text(row.root),
@@ -153,8 +138,10 @@ export function decodeMeta(value: unknown): WorkspaceMeta {
     ready: boolean(row.ready),
     threadsEnabled: boolean(row.threadsEnabled),
     metrics: row.metrics === undefined ? undefined : decodeMetrics(row.metrics),
-    forge,
-    pr: pr ? { ...pr, files: stringMap(pr.files) } : undefined,
+    forge: row.forge ? decodeForge(row.forge) : undefined,
+    pr: row.pr ? decodePRMeta(row.pr) : undefined,
+    agents: decodeHarnesses(row.agents),
+    agentEnabled: row.agentEnabled === undefined ? undefined : boolean(row.agentEnabled),
     agent: text(row.agent),
     agentModel: text(row.agentModel),
     agentPinned: boolean(row.agentPinned),

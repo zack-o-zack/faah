@@ -4,7 +4,7 @@ import { Dialog } from '../lib/Dialog.jsx';
 import { ErrorNotice } from '../lib/ErrorNotice.jsx';
 import { keyLabel } from '../lib/keyboard.ts';
 import { AgentPicker } from '../agents/AgentPicker.jsx';
-import { MERGE_METHODS } from './logic.js';
+import { MERGE_METHODS } from './logic.ts';
 // Shows exactly what lands on the base: method, commit title and message, and what blocks it.
 export function MergeDialog() {
   const editor = useEditor();

@@ -1,3 +1,9 @@
+import type { PanelName } from '../layout/logic.ts';
+import type { Thread, ThreadSummary } from '../threads/decode.ts';
+import type { EditTarget } from '../agents/logic.ts';
+import type { AgentJob } from '../agents/job-decode.ts';
+import type { AgentJobOptions } from '../agents/jobs.ts';
+import type { SettingsMode } from '../settings/store.ts';
 import type { Accessor } from 'solid-js';
 import type { SetStoreFunction } from 'solid-js/store';
 import type { AppStore } from '../app/store.ts';
@@ -73,6 +79,26 @@ export interface Services {
   diff?: { scrollLine: (line: number) => void; stepHunk: (direction: number) => void };
 }
 export interface CoreActions {
+  setPanelVisible: (name: PanelName, visible: boolean) => void;
+  setSelection: (info: SelectionInfo | null) => void;
+  refreshTree: () => Promise<void>;
+  reloadWorkspace: (target?: EditTarget | null) => Promise<void>;
+  orbThread: (thread: Thread) => void;
+  orbSummary: (summary: ThreadSummary) => void;
+  orbStep: (id: string, text: string) => void;
+  orbBegin: () => void;
+  orbAttach: (thread: Thread) => void;
+  orbFailed: (message: string) => void;
+  loadThread: (id: string) => Promise<Thread>;
+  acceptThread: (thread: Thread) => void;
+  openForgeConnect: (reason?: string) => void;
+  refreshMergeStatus: () => Promise<void>;
+  runAgentJob: (endpoint: string, params: unknown, options?: AgentJobOptions) => Promise<AgentJob>;
+  setReviewMode: (mode: string) => void;
+  openSettings: (mode?: SettingsMode, category?: string, key?: string) => void;
+  refreshPRMeta: () => Promise<void>;
+  resolvePRBase: () => Promise<unknown>;
+  confirmForcePush: () => void;
   executeFind: (delta?: number) => Promise<void>;
   patch: (patch: Partial<DocTab>) => void;
   refresh: () => void;
@@ -112,6 +138,8 @@ export interface CoreActions {
   acceptLspReply: (reply: LspBrief) => void;
 }
 export interface EditorHost {
+  tree: { scope: () => string; autoReveal: () => boolean };
+  git: { state: { pending: string; sync: { inProgress?: string; rewritten?: boolean } } };
   active: Accessor<DocTab | null>;
   buffer: Accessor<DocumentBuffer | undefined>;
   store: AppStore;
