@@ -1,0 +1,40 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "diagnostics": [],
+    "diffAvailable": false,
+    "exact": true,
+    "lang": "plaintext",
+    "lines": [
+      "remote revision",
+      ""
+    ],
+    "lsp": {
+      "anyRunning": false,
+      "server": "",
+      "state": "off"
+    },
+    "markdown": false,
+    "maxCols": 15,
+    "path": "history.txt",
+    "raw": [
+      "remote revision",
+      ""
+    ],
+    "refine": false,
+    "size": 16,
+    "start": 0,
+    "table": false,
+    "total": 2
+  }
+}

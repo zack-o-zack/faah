@@ -1,0 +1,14 @@
+{
+  "status": 301,
+  "headers": {
+    "content-type": "text/html; charset=utf-8",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": "/contract/",
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": "<a href=\"/contract/\">Moved Permanently</a>.\n\n"
+}

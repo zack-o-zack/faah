@@ -1,0 +1,32 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "available": true,
+    "diff": "diff --git a/deleted.txt b/deleted.txt\ndeleted file mode 100644\nindex 2d030d7..0000000\n--- a/deleted.txt\n+++ /dev/null\n@@ -1 +0,0 @@\n-delete me\n",
+    "hunks": [
+      {
+        "oldStart": 1,
+        "newStart": 0,
+        "rows": [
+          {
+            "type": "del",
+            "oldLine": 1,
+            "text": "delete me",
+            "html": "delete me"
+          }
+        ]
+      }
+    ],
+    "path": "deleted.txt"
+  }
+}

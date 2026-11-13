@@ -1,0 +1,22 @@
+{
+  "status": 409,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "error": "can't fast-forward: main has diverged from origin/main",
+    "code": "diverged",
+    "branch": "main",
+    "upstream": "origin/main",
+    "ahead": 1,
+    "behind": 1,
+    "dirty": false
+  }
+}

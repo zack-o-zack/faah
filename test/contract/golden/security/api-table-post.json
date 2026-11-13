@@ -1,0 +1,45 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "header": [
+      "name",
+      "note"
+    ],
+    "headerLine": 1,
+    "rows": [
+      {
+        "line": 2,
+        "cells": [
+          "Doe, Jane",
+          "line one\nline two"
+        ]
+      },
+      {
+        "line": 4,
+        "cells": [
+          "ragged"
+        ]
+      },
+      {
+        "line": 5,
+        "cells": [
+          "a",
+          "b",
+          "c"
+        ]
+      }
+    ],
+    "cols": 3,
+    "truncated": false
+  }
+}

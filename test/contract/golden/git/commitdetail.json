@@ -1,0 +1,26 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "hash": "067573179e4065bf07150adc0aedcbb9b8c29a87",
+    "short": "0675731",
+    "subject": "Update history",
+    "message": "Update history",
+    "author": "Contract Author",
+    "email": "contract@example.invalid",
+    "date": "<RELATIVE_DATE>",
+    "dateIso": "2020-01-02T03:04:05Z",
+    "files": 1,
+    "insertions": 1,
+    "deletions": 1
+  }
+}

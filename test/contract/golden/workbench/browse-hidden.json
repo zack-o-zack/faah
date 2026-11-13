@@ -1,0 +1,44 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "entries": [
+      {
+        "name": ".git",
+        "path": "<ROOT>/.git"
+      },
+      {
+        "name": "cache",
+        "path": "<ROOT>/cache"
+      },
+      {
+        "name": "ignored",
+        "path": "<ROOT>/ignored"
+      },
+      {
+        "name": "nested",
+        "path": "<ROOT>/nested"
+      },
+      {
+        "name": "src",
+        "path": "<ROOT>/src"
+      },
+      {
+        "name": "unicode",
+        "path": "<ROOT>/unicode"
+      }
+    ],
+    "git": true,
+    "parent": "<TEMP>",
+    "path": "<ROOT>"
+  }
+}

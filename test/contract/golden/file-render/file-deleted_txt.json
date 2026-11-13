@@ -1,0 +1,33 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "deleted": true,
+    "diffAvailable": true,
+    "exact": true,
+    "lang": "plaintext",
+    "lines": [],
+    "lsp": {
+      "anyRunning": false,
+      "server": "",
+      "state": "off"
+    },
+    "markdown": false,
+    "maxCols": 0,
+    "path": "deleted.txt",
+    "refine": false,
+    "size": 0,
+    "start": 0,
+    "table": false,
+    "total": 0
+  }
+}

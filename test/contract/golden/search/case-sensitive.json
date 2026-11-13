@@ -1,0 +1,31 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "files": 1,
+    "results": [
+      {
+        "path": "unicode/你好-😀-é.txt",
+        "matches": [
+          {
+            "line": 1,
+            "pre": "你好 😀 é İ K ſ É é ",
+            "mid": "ASCII",
+            "post": " ascii"
+          }
+        ]
+      }
+    ],
+    "total": 1,
+    "truncated": false
+  }
+}

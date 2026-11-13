@@ -1,0 +1,61 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "files": 1,
+    "results": [
+      {
+        "path": "unicode/你好-😀-é.txt",
+        "matches": [
+          {
+            "line": 1,
+            "pre": "你好 😀 é İ ",
+            "mid": "K",
+            "post": " ſ É é ASCII ascii"
+          },
+          {
+            "line": 1,
+            "pre": "你好 😀 é İ K ",
+            "mid": "ſ",
+            "post": " É é ASCII ascii"
+          },
+          {
+            "line": 1,
+            "pre": "你好 😀 é İ K ſ ",
+            "mid": "É",
+            "post": " é ASCII ascii"
+          },
+          {
+            "line": 1,
+            "pre": "你好 😀 é İ K ſ É ",
+            "mid": "é",
+            "post": " ASCII ascii"
+          },
+          {
+            "line": 1,
+            "pre": "你好 😀 é İ K ſ É é A",
+            "mid": "S",
+            "post": "CII ascii"
+          },
+          {
+            "line": 1,
+            "pre": "你好 😀 é İ K ſ É é ASCII a",
+            "mid": "s",
+            "post": "cii"
+          }
+        ]
+      }
+    ],
+    "total": 6,
+    "truncated": false
+  }
+}

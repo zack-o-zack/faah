@@ -1,0 +1,14 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "text/html; charset=utf-8",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": "<!doctype html>\n<html lang=\"en\" data-theme=\"catppuccin-mocha\">\n<head>\n<meta charset=\"utf-8\">\n<base href=\"/contract/\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<title>faah</title>\n<link rel=\"icon\" type=\"image/svg+xml\" href=\"static/favicon.svg\">\n<link rel=\"stylesheet\" href=\"static/app.css\">\n<!-- Every web/themes/*.css joined by the server. See docs/internals/styling-and-themes.md. -->\n<link rel=\"stylesheet\" href=\"static/themes.css\">\n</head>\n<!-- The code reader: web/src/main.tsx renders the whole page into #root (bundled to static/app.js). -->\n<body class=\"right-hidden threads-hidden\"><div id=\"root\"></div><script src=\"static/app.js\"></script></body>\n</html>\n"
+}

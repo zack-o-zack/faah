@@ -1,0 +1,32 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "cwd": "<ROOT>",
+    "home": "<TEMP>/home",
+    "items": [
+      {
+        "id": "<WORKSPACE_ID>",
+        "kind": "dir",
+        "path": "<ROOT>",
+        "title": "workspace",
+        "pinned": true,
+        "lastOpened": 0,
+        "state": "stopped",
+        "error": "faah exited unexpectedly",
+        "href": "/w/<WORKSPACE_ID>/"
+      }
+    ],
+    "sep": "/",
+    "version": "<VERSION>"
+  }
+}

@@ -1,0 +1,206 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "children": [
+      {
+        "name": "cache",
+        "path": "cache",
+        "dir": true,
+        "size": 0,
+        "ignored": true
+      },
+      {
+        "name": "ignored",
+        "path": "ignored",
+        "dir": true,
+        "size": 0,
+        "ignored": true
+      },
+      {
+        "name": "nested",
+        "path": "nested",
+        "dir": true,
+        "size": 0
+      },
+      {
+        "name": "src",
+        "path": "src",
+        "dir": true,
+        "size": 0
+      },
+      {
+        "name": "unicode",
+        "path": "unicode",
+        "dir": true,
+        "size": 0
+      },
+      {
+        "name": ".gitignore",
+        "path": ".gitignore",
+        "dir": false,
+        "size": 47
+      },
+      {
+        "name": ".hidden",
+        "path": ".hidden",
+        "dir": false,
+        "size": 8
+      },
+      {
+        "name": "bad.csv",
+        "path": "bad.csv",
+        "dir": false,
+        "size": 24
+      },
+      {
+        "name": "binary.bin",
+        "path": "binary.bin",
+        "dir": false,
+        "size": 5
+      },
+      {
+        "name": "caps.txt",
+        "path": "caps.txt",
+        "dir": false,
+        "size": 1030
+      },
+      {
+        "name": "crlf.txt",
+        "path": "crlf.txt",
+        "dir": false,
+        "size": 18
+      },
+      {
+        "name": "data.csv",
+        "path": "data.csv",
+        "dir": false,
+        "size": 58
+      },
+      {
+        "name": "data.tsv",
+        "path": "data.tsv",
+        "dir": false,
+        "size": 38
+      },
+      {
+        "name": "deleted.txt",
+        "path": "deleted.txt",
+        "dir": false,
+        "size": 0,
+        "status": "D"
+      },
+      {
+        "name": "drop.log",
+        "path": "drop.log",
+        "dir": false,
+        "size": 0,
+        "ignored": true
+      },
+      {
+        "name": "empty.csv",
+        "path": "empty.csv",
+        "dir": false,
+        "size": 0
+      },
+      {
+        "name": "empty.txt",
+        "path": "empty.txt",
+        "dir": false,
+        "size": 0
+      },
+      {
+        "name": "history.txt",
+        "path": "history.txt",
+        "dir": false,
+        "size": 16
+      },
+      {
+        "name": "keep.log",
+        "path": "keep.log",
+        "dir": false,
+        "size": 8
+      },
+      {
+        "name": "long.txt",
+        "path": "long.txt",
+        "dir": false,
+        "size": 21055
+      },
+      {
+        "name": "partial.txt",
+        "path": "partial.txt",
+        "dir": false,
+        "size": 19,
+        "status": "M",
+        "staged": true,
+        "partial": true
+      },
+      {
+        "name": "pixel.png",
+        "path": "pixel.png",
+        "dir": false,
+        "size": 68
+      },
+      {
+        "name": "README.md",
+        "path": "README.md",
+        "dir": false,
+        "size": 253
+      },
+      {
+        "name": "rename-new.txt",
+        "path": "rename-new.txt",
+        "dir": false,
+        "size": 15,
+        "status": "R",
+        "staged": true
+      },
+      {
+        "name": "root-only.txt",
+        "path": "root-only.txt",
+        "dir": false,
+        "size": 0,
+        "ignored": true
+      },
+      {
+        "name": "staged.txt",
+        "path": "staged.txt",
+        "dir": false,
+        "size": 12,
+        "status": "M",
+        "staged": true
+      },
+      {
+        "name": "tabs.txt",
+        "path": "tabs.txt",
+        "dir": false,
+        "size": 12
+      },
+      {
+        "name": "unstaged.txt",
+        "path": "unstaged.txt",
+        "dir": false,
+        "size": 6,
+        "status": "M"
+      },
+      {
+        "name": "untracked.txt",
+        "path": "untracked.txt",
+        "dir": false,
+        "size": 17,
+        "status": "U"
+      }
+    ],
+    "dir": ""
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "available": true,
+    "commits": [
+      {
+        "hash": "5ed4466c5494b3bdb91dbad6ca2bb4a263c29810",
+        "short": "5ed4466",
+        "subject": "Contract commit",
+        "author": "Contract Author",
+        "date": "<RELATIVE_DATE>"
+      }
+    ],
+    "upstream": "origin/main"
+  }
+}

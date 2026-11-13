@@ -1,0 +1,27 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "indexing": false,
+    "results": [
+      {
+        "path": "src/hello.go",
+        "name": "hello.go",
+        "pos": [
+          0,
+          1,
+          2
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "git": true,
+    "gitChanges": 0,
+    "gitFiles": [],
+    "statuses": {},
+    "branch": "main",
+    "recentCommits": [
+      {
+        "hash": "211eb0e",
+        "full": "211eb0ee43ceb32c29471f901e5c42392468845e",
+        "subject": "Auto stage commit",
+        "author": "Contract Author",
+        "date": "<RELATIVE_DATE>"
+      },
+      {
+        "hash": "0675731",
+        "full": "067573179e4065bf07150adc0aedcbb9b8c29a87",
+        "subject": "Update history",
+        "author": "Contract Author",
+        "date": "<RELATIVE_DATE>"
+      },
+      {
+        "hash": "2f05f5a",
+        "full": "2f05f5a4a860bd61fa216976a0ad70d128ae2d6a",
+        "subject": "Initial fixture",
+        "author": "Contract Author",
+        "date": "<RELATIVE_DATE>"
+      }
+    ],
+    "ahead": 1,
+    "behind": 0
+  }
+}

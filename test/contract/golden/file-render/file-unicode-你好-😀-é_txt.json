@@ -1,0 +1,42 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "diagnostics": [],
+    "diffAvailable": false,
+    "exact": true,
+    "lang": "plaintext",
+    "lines": [
+      "你好 😀 é İ K ſ É é ASCII ascii",
+      "前缀 needle 后缀",
+      ""
+    ],
+    "lsp": {
+      "anyRunning": false,
+      "server": "",
+      "state": "off"
+    },
+    "markdown": false,
+    "maxCols": 29,
+    "path": "unicode/你好-😀-é.txt",
+    "raw": [
+      "你好 😀 é İ K ſ É é ASCII ascii",
+      "前缀 needle 后缀",
+      ""
+    ],
+    "refine": false,
+    "size": 65,
+    "start": 0,
+    "table": false,
+    "total": 3
+  }
+}

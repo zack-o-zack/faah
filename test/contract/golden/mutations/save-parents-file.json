@@ -1,0 +1,40 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "diagnostics": [],
+    "diffAvailable": false,
+    "exact": true,
+    "lang": "plaintext",
+    "lines": [
+      "parent created",
+      ""
+    ],
+    "lsp": {
+      "anyRunning": false,
+      "server": "",
+      "state": "off"
+    },
+    "markdown": false,
+    "maxCols": 14,
+    "path": "created/deep/new.txt",
+    "raw": [
+      "parent created",
+      ""
+    ],
+    "refine": false,
+    "size": 15,
+    "start": 0,
+    "table": false,
+    "total": 2
+  }
+}

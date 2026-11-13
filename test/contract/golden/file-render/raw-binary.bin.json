@@ -1,0 +1,16 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/octet-stream",
+    "cache-control": "no-store",
+    "content-disposition": "attachment; filename=binary.bin",
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": "nosniff",
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "base64": "AAEC/wo="
+  }
+}

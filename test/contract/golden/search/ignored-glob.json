@@ -1,0 +1,31 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "files": 1,
+    "results": [
+      {
+        "path": "ignored/secret.txt",
+        "matches": [
+          {
+            "line": 1,
+            "pre": "ignored ",
+            "mid": "needle",
+            "post": ""
+          }
+        ]
+      }
+    ],
+    "total": 1,
+    "truncated": false
+  }
+}

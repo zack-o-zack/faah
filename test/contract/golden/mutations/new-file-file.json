@@ -1,0 +1,38 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "diagnostics": [],
+    "diffAvailable": false,
+    "exact": true,
+    "lang": "plaintext",
+    "lines": [
+      ""
+    ],
+    "lsp": {
+      "anyRunning": false,
+      "server": "",
+      "state": "off"
+    },
+    "markdown": false,
+    "maxCols": 0,
+    "path": "newfile/deep.txt",
+    "raw": [
+      ""
+    ],
+    "refine": false,
+    "size": 0,
+    "start": 0,
+    "table": false,
+    "total": 1
+  }
+}

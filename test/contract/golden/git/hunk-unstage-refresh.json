@@ -1,0 +1,59 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "git": true,
+    "gitChanges": 6,
+    "gitFiles": [
+      "deleted.txt",
+      "partial.txt",
+      "rename-new.txt",
+      "staged.txt",
+      "unstaged.txt",
+      "untracked.txt"
+    ],
+    "statuses": {
+      "deleted.txt": "D",
+      "partial.txt": "M",
+      "rename-new.txt": "R",
+      "staged.txt": "M",
+      "unstaged.txt": "M",
+      "untracked.txt": "U"
+    },
+    "staged": {
+      "partial.txt": true,
+      "rename-new.txt": true
+    },
+    "partial": {
+      "partial.txt": true
+    },
+    "branch": "main",
+    "recentCommits": [
+      {
+        "hash": "0675731",
+        "full": "067573179e4065bf07150adc0aedcbb9b8c29a87",
+        "subject": "Update history",
+        "author": "Contract Author",
+        "date": "<RELATIVE_DATE>"
+      },
+      {
+        "hash": "2f05f5a",
+        "full": "2f05f5a4a860bd61fa216976a0ad70d128ae2d6a",
+        "subject": "Initial fixture",
+        "author": "Contract Author",
+        "date": "<RELATIVE_DATE>"
+      }
+    ],
+    "ahead": 0,
+    "behind": 0
+  }
+}

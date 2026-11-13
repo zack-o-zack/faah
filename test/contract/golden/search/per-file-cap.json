@@ -1,0 +1,325 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "files": 1,
+    "results": [
+      {
+        "path": "caps.txt",
+        "matches": [
+          {
+            "line": 1,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 0"
+          },
+          {
+            "line": 2,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 1"
+          },
+          {
+            "line": 3,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 2"
+          },
+          {
+            "line": 4,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 3"
+          },
+          {
+            "line": 5,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 4"
+          },
+          {
+            "line": 6,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 5"
+          },
+          {
+            "line": 7,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 6"
+          },
+          {
+            "line": 8,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 7"
+          },
+          {
+            "line": 9,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 8"
+          },
+          {
+            "line": 10,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 9"
+          },
+          {
+            "line": 11,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 10"
+          },
+          {
+            "line": 12,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 11"
+          },
+          {
+            "line": 13,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 12"
+          },
+          {
+            "line": 14,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 13"
+          },
+          {
+            "line": 15,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 14"
+          },
+          {
+            "line": 16,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 15"
+          },
+          {
+            "line": 17,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 16"
+          },
+          {
+            "line": 18,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 17"
+          },
+          {
+            "line": 19,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 18"
+          },
+          {
+            "line": 20,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 19"
+          },
+          {
+            "line": 21,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 20"
+          },
+          {
+            "line": 22,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 21"
+          },
+          {
+            "line": 23,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 22"
+          },
+          {
+            "line": 24,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 23"
+          },
+          {
+            "line": 25,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 24"
+          },
+          {
+            "line": 26,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 25"
+          },
+          {
+            "line": 27,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 26"
+          },
+          {
+            "line": 28,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 27"
+          },
+          {
+            "line": 29,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 28"
+          },
+          {
+            "line": 30,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 29"
+          },
+          {
+            "line": 31,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 30"
+          },
+          {
+            "line": 32,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 31"
+          },
+          {
+            "line": 33,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 32"
+          },
+          {
+            "line": 34,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 33"
+          },
+          {
+            "line": 35,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 34"
+          },
+          {
+            "line": 36,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 35"
+          },
+          {
+            "line": 37,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 36"
+          },
+          {
+            "line": 38,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 37"
+          },
+          {
+            "line": 39,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 38"
+          },
+          {
+            "line": 40,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 39"
+          },
+          {
+            "line": 41,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 40"
+          },
+          {
+            "line": 42,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 41"
+          },
+          {
+            "line": 43,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 42"
+          },
+          {
+            "line": 44,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 43"
+          },
+          {
+            "line": 45,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 44"
+          },
+          {
+            "line": 46,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 45"
+          },
+          {
+            "line": 47,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 46"
+          },
+          {
+            "line": 48,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 47"
+          },
+          {
+            "line": 49,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 48"
+          },
+          {
+            "line": 50,
+            "pre": "",
+            "mid": "capneedle",
+            "post": " 49"
+          }
+        ]
+      }
+    ],
+    "total": 50,
+    "truncated": false
+  }
+}

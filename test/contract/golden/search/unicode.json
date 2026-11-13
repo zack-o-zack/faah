@@ -1,0 +1,48 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "files": 2,
+    "results": [
+      {
+        "path": "README.md",
+        "matches": [
+          {
+            "line": 5,
+            "pre": "## ",
+            "mid": "你好",
+            "post": " 😀"
+          },
+          {
+            "line": 28,
+            "pre": "return \"",
+            "mid": "你好",
+            "post": "\""
+          }
+        ]
+      },
+      {
+        "path": "unicode/你好-😀-é.txt",
+        "matches": [
+          {
+            "line": 1,
+            "pre": "",
+            "mid": "你好",
+            "post": " 😀 é İ K ſ É é ASCII ascii"
+          }
+        ]
+      }
+    ],
+    "total": 3,
+    "truncated": false
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "image/png",
+    "cache-control": "no-store",
+    "content-disposition": "attachment; filename=pixel.png",
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": "nosniff",
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aLPsAAAAASUVORK5CYII="
+  }
+}

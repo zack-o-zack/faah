@@ -1,0 +1,44 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "diagnostics": [],
+    "diffAvailable": false,
+    "exact": true,
+    "lang": "plaintext",
+    "lines": [
+      "one",
+      "two",
+      "\tthree",
+      ""
+    ],
+    "lsp": {
+      "anyRunning": false,
+      "server": "",
+      "state": "off"
+    },
+    "markdown": false,
+    "maxCols": 9,
+    "path": "crlf.txt",
+    "raw": [
+      "one",
+      "two",
+      "\tthree",
+      ""
+    ],
+    "refine": false,
+    "size": 18,
+    "start": 0,
+    "table": false,
+    "total": 4
+  }
+}

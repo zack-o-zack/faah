@@ -1,0 +1,39 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "available": true,
+    "diff": "diff --git a/unstaged.txt b/unstaged.txt\nindex 90be1f3..294186e 100644\n--- a/unstaged.txt\n+++ b/unstaged.txt\n@@ -1 +1 @@\n-before\n+after\n",
+    "hunks": [
+      {
+        "oldStart": 1,
+        "newStart": 1,
+        "rows": [
+          {
+            "type": "del",
+            "oldLine": 1,
+            "at": 1,
+            "text": "before",
+            "html": "before"
+          },
+          {
+            "type": "add",
+            "newLine": 1,
+            "text": "after",
+            "html": "after"
+          }
+        ]
+      }
+    ],
+    "path": "unstaged.txt"
+  }
+}

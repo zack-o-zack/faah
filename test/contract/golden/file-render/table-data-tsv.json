@@ -1,0 +1,37 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "header": [
+      "name",
+      "city"
+    ],
+    "headerLine": 1,
+    "rows": [
+      {
+        "line": 2,
+        "cells": [
+          "Doe, Jane",
+          "東京"
+        ]
+      },
+      {
+        "line": 3,
+        "cells": [
+          "short"
+        ]
+      }
+    ],
+    "cols": 2,
+    "truncated": false
+  }
+}

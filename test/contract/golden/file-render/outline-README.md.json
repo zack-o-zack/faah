@@ -1,0 +1,36 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "path": "README.md",
+    "symbols": [
+      {
+        "name": "Hello",
+        "kind": "heading",
+        "line": 1,
+        "indent": 0
+      },
+      {
+        "name": "Hello",
+        "kind": "heading",
+        "line": 3,
+        "indent": 0
+      },
+      {
+        "name": "你好 😀",
+        "kind": "heading",
+        "line": 5,
+        "indent": 1
+      }
+    ]
+  }
+}

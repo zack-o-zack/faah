@@ -1,0 +1,57 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "children": [
+      {
+        "name": "deep",
+        "path": "nested/deep",
+        "dir": true,
+        "size": 0
+      },
+      {
+        "name": "only-dir",
+        "path": "nested/only-dir",
+        "dir": true,
+        "size": 0,
+        "ignored": true
+      },
+      {
+        "name": ".gitignore",
+        "path": "nested/.gitignore",
+        "dir": false,
+        "size": 40
+      },
+      {
+        "name": "anchored.txt",
+        "path": "nested/anchored.txt",
+        "dir": false,
+        "size": 0,
+        "ignored": true
+      },
+      {
+        "name": "drop.tmp",
+        "path": "nested/drop.tmp",
+        "dir": false,
+        "size": 0,
+        "ignored": true
+      },
+      {
+        "name": "keep.tmp",
+        "path": "nested/keep.tmp",
+        "dir": false,
+        "size": 5
+      }
+    ],
+    "dir": "nested"
+  }
+}

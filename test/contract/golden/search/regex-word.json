@@ -1,0 +1,82 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "files": 4,
+    "results": [
+      {
+        "path": "README.md",
+        "matches": [
+          {
+            "line": 1,
+            "pre": "# ",
+            "mid": "Hello",
+            "post": ""
+          },
+          {
+            "line": 3,
+            "pre": "# ",
+            "mid": "Hello",
+            "post": ""
+          },
+          {
+            "line": 19,
+            "pre": "func ",
+            "mid": "Hello",
+            "post": "() {}"
+          },
+          {
+            "line": 27,
+            "pre": "def ",
+            "mid": "hello",
+            "post": "():"
+          }
+        ]
+      },
+      {
+        "path": "src/hello.go",
+        "matches": [
+          {
+            "line": 3,
+            "pre": "func ",
+            "mid": "Hello",
+            "post": "() string {"
+          }
+        ]
+      },
+      {
+        "path": "src/hello.py",
+        "matches": [
+          {
+            "line": 1,
+            "pre": "def ",
+            "mid": "Hello",
+            "post": "():"
+          }
+        ]
+      },
+      {
+        "path": "src/hello.ts",
+        "matches": [
+          {
+            "line": 1,
+            "pre": "export function ",
+            "mid": "Hello",
+            "post": "(): string {"
+          }
+        ]
+      }
+    ],
+    "total": 7,
+    "truncated": false
+  }
+}

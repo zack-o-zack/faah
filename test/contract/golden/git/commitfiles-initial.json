@@ -1,0 +1,230 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "files": [
+      {
+        "path": ".gitignore",
+        "status": "A",
+        "add": 5,
+        "del": 0
+      },
+      {
+        "path": ".hidden",
+        "status": "A",
+        "add": 1,
+        "del": 0
+      },
+      {
+        "path": "README.md",
+        "status": "A",
+        "add": 31,
+        "del": 0
+      },
+      {
+        "path": "bad.csv",
+        "status": "A",
+        "add": 2,
+        "del": 0
+      },
+      {
+        "path": "binary.bin",
+        "status": "A",
+        "add": 0,
+        "del": 0,
+        "binary": true
+      },
+      {
+        "path": "caps.txt",
+        "status": "A",
+        "add": 80,
+        "del": 0
+      },
+      {
+        "path": "crlf.txt",
+        "status": "A",
+        "add": 3,
+        "del": 0
+      },
+      {
+        "path": "data.csv",
+        "status": "A",
+        "add": 5,
+        "del": 0
+      },
+      {
+        "path": "data.tsv",
+        "status": "A",
+        "add": 3,
+        "del": 0
+      },
+      {
+        "path": "deleted.txt",
+        "status": "A",
+        "add": 1,
+        "del": 0
+      },
+      {
+        "path": "empty.csv",
+        "status": "A",
+        "add": 0,
+        "del": 0
+      },
+      {
+        "path": "empty.txt",
+        "status": "A",
+        "add": 0,
+        "del": 0
+      },
+      {
+        "path": "external-link.txt",
+        "status": "A",
+        "add": 1,
+        "del": 0
+      },
+      {
+        "path": "history.txt",
+        "status": "A",
+        "add": 1,
+        "del": 0
+      },
+      {
+        "path": "keep.log",
+        "status": "A",
+        "add": 1,
+        "del": 0
+      },
+      {
+        "path": "link.txt",
+        "status": "A",
+        "add": 1,
+        "del": 0
+      },
+      {
+        "path": "long.txt",
+        "status": "A",
+        "add": 1,
+        "del": 0
+      },
+      {
+        "path": "nested/.gitignore",
+        "status": "A",
+        "add": 4,
+        "del": 0
+      },
+      {
+        "path": "nested/deep/anchored.txt",
+        "status": "A",
+        "add": 1,
+        "del": 0
+      },
+      {
+        "path": "nested/deep/leaf.txt",
+        "status": "A",
+        "add": 1,
+        "del": 0
+      },
+      {
+        "path": "nested/deep/only-dir",
+        "status": "A",
+        "add": 1,
+        "del": 0
+      },
+      {
+        "path": "nested/keep.tmp",
+        "status": "A",
+        "add": 1,
+        "del": 0
+      },
+      {
+        "path": "partial.txt",
+        "status": "A",
+        "add": 3,
+        "del": 0
+      },
+      {
+        "path": "pixel.png",
+        "status": "A",
+        "add": 0,
+        "del": 0,
+        "binary": true
+      },
+      {
+        "path": "rename-old.txt",
+        "status": "A",
+        "add": 1,
+        "del": 0
+      },
+      {
+        "path": "src/hello.go",
+        "status": "A",
+        "add": 5,
+        "del": 0
+      },
+      {
+        "path": "src/hello.py",
+        "status": "A",
+        "add": 2,
+        "del": 0
+      },
+      {
+        "path": "src/hello.ts",
+        "status": "A",
+        "add": 3,
+        "del": 0
+      },
+      {
+        "path": "src/large.go",
+        "status": "A",
+        "add": 1209,
+        "del": 0
+      },
+      {
+        "path": "src/large.py",
+        "status": "A",
+        "add": 1210,
+        "del": 0
+      },
+      {
+        "path": "src/large.ts",
+        "status": "A",
+        "add": 1207,
+        "del": 0
+      },
+      {
+        "path": "staged.txt",
+        "status": "A",
+        "add": 1,
+        "del": 0
+      },
+      {
+        "path": "tabs.txt",
+        "status": "A",
+        "add": 1,
+        "del": 0
+      },
+      {
+        "path": "unicode/你好-😀-é.txt",
+        "status": "A",
+        "add": 2,
+        "del": 0
+      },
+      {
+        "path": "unstaged.txt",
+        "status": "A",
+        "add": 1,
+        "del": 0
+      }
+    ],
+    "sha": "2f05f5a4a860bd61fa216976a0ad70d128ae2d6a"
+  }
+}

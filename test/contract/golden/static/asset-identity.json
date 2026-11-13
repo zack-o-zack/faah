@@ -1,0 +1,17 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "text/javascript; charset=utf-8",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "sha256": "51235a8a9c12bbc08148a089d5298de3c04351085748974afb2a57ee2e49adb1",
+    "bytes": 525660
+  }
+}

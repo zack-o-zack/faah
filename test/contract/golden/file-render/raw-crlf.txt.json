@@ -1,0 +1,16 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/octet-stream",
+    "cache-control": "no-store",
+    "content-disposition": "attachment; filename=crlf.txt",
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": "nosniff",
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "base64": "b25lDQp0d28NCgl0aHJlZQ0K"
+  }
+}

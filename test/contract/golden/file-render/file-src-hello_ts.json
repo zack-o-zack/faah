@@ -1,0 +1,44 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "diagnostics": [],
+    "diffAvailable": false,
+    "exact": true,
+    "lang": "TypeScript",
+    "lines": [
+      "<i class=k>export</i> <i class=k>function</i> Hello<i class=p>()</i><i class=o>:</i> <i class=kt>string</i> <i class=p>{</i>",
+      "\t<i class=k>return</i> <i class=s>\"needle\"</i><i class=p>;</i>",
+      "<i class=p>}</i>",
+      ""
+    ],
+    "lsp": {
+      "anyRunning": false,
+      "server": "",
+      "state": "off"
+    },
+    "markdown": false,
+    "maxCols": 33,
+    "path": "src/hello.ts",
+    "raw": [
+      "export function Hello(): string {",
+      "\treturn \"needle\";",
+      "}",
+      ""
+    ],
+    "refine": false,
+    "size": 54,
+    "start": 0,
+    "table": false,
+    "total": 4
+  }
+}

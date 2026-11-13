@@ -1,0 +1,391 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "files": 7,
+    "results": [
+      {
+        "path": "caps.txt",
+        "matches": [
+          {
+            "line": 1,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 0"
+          },
+          {
+            "line": 2,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 1"
+          },
+          {
+            "line": 3,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 2"
+          },
+          {
+            "line": 4,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 3"
+          },
+          {
+            "line": 5,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 4"
+          },
+          {
+            "line": 6,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 5"
+          },
+          {
+            "line": 7,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 6"
+          },
+          {
+            "line": 8,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 7"
+          },
+          {
+            "line": 9,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 8"
+          },
+          {
+            "line": 10,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 9"
+          },
+          {
+            "line": 11,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 10"
+          },
+          {
+            "line": 12,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 11"
+          },
+          {
+            "line": 13,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 12"
+          },
+          {
+            "line": 14,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 13"
+          },
+          {
+            "line": 15,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 14"
+          },
+          {
+            "line": 16,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 15"
+          },
+          {
+            "line": 17,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 16"
+          },
+          {
+            "line": 18,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 17"
+          },
+          {
+            "line": 19,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 18"
+          },
+          {
+            "line": 20,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 19"
+          },
+          {
+            "line": 21,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 20"
+          },
+          {
+            "line": 22,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 21"
+          },
+          {
+            "line": 23,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 22"
+          },
+          {
+            "line": 24,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 23"
+          },
+          {
+            "line": 25,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 24"
+          },
+          {
+            "line": 26,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 25"
+          },
+          {
+            "line": 27,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 26"
+          },
+          {
+            "line": 28,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 27"
+          },
+          {
+            "line": 29,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 28"
+          },
+          {
+            "line": 30,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 29"
+          },
+          {
+            "line": 31,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 30"
+          },
+          {
+            "line": 32,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 31"
+          },
+          {
+            "line": 33,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 32"
+          },
+          {
+            "line": 34,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 33"
+          },
+          {
+            "line": 35,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 34"
+          },
+          {
+            "line": 36,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 35"
+          },
+          {
+            "line": 37,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 36"
+          },
+          {
+            "line": 38,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 37"
+          },
+          {
+            "line": 39,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 38"
+          },
+          {
+            "line": 40,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 39"
+          },
+          {
+            "line": 41,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 40"
+          },
+          {
+            "line": 42,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 41"
+          },
+          {
+            "line": 43,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 42"
+          },
+          {
+            "line": 44,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 43"
+          },
+          {
+            "line": 45,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 44"
+          },
+          {
+            "line": 46,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 45"
+          },
+          {
+            "line": 47,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 46"
+          },
+          {
+            "line": 48,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 47"
+          },
+          {
+            "line": 49,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 48"
+          },
+          {
+            "line": 50,
+            "pre": "cap",
+            "mid": "needle",
+            "post": " 49"
+          }
+        ]
+      },
+      {
+        "path": "nested/deep/leaf.txt",
+        "matches": [
+          {
+            "line": 1,
+            "pre": "nested leaf ",
+            "mid": "needle",
+            "post": ""
+          }
+        ]
+      },
+      {
+        "path": "src/hello.go",
+        "matches": [
+          {
+            "line": 4,
+            "pre": "return \"",
+            "mid": "needle",
+            "post": "\""
+          }
+        ]
+      },
+      {
+        "path": "src/hello.py",
+        "matches": [
+          {
+            "line": 2,
+            "pre": "return \"",
+            "mid": "needle",
+            "post": "\""
+          }
+        ]
+      },
+      {
+        "path": "src/hello.ts",
+        "matches": [
+          {
+            "line": 2,
+            "pre": "return \"",
+            "mid": "needle",
+            "post": "\";"
+          }
+        ]
+      },
+      {
+        "path": "unicode/你好-😀-é.txt",
+        "matches": [
+          {
+            "line": 2,
+            "pre": "前缀 ",
+            "mid": "needle",
+            "post": " 后缀"
+          }
+        ]
+      },
+      {
+        "path": "untracked.txt",
+        "matches": [
+          {
+            "line": 1,
+            "pre": "untracked ",
+            "mid": "needle",
+            "post": ""
+          }
+        ]
+      }
+    ],
+    "total": 56,
+    "truncated": false
+  }
+}

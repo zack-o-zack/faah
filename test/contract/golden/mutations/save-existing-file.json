@@ -1,0 +1,40 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "diagnostics": [],
+    "diffAvailable": true,
+    "exact": true,
+    "lang": "plaintext",
+    "lines": [
+      "saved 你好 😀",
+      ""
+    ],
+    "lsp": {
+      "anyRunning": false,
+      "server": "",
+      "state": "off"
+    },
+    "markdown": false,
+    "maxCols": 10,
+    "path": "unstaged.txt",
+    "raw": [
+      "saved 你好 😀",
+      ""
+    ],
+    "refine": false,
+    "size": 18,
+    "start": 0,
+    "table": false,
+    "total": 2
+  }
+}

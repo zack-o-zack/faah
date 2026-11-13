@@ -1,0 +1,25 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "commits": [
+      {
+        "hash": "0675731",
+        "full": "067573179e4065bf07150adc0aedcbb9b8c29a87",
+        "subject": "Update history",
+        "author": "Contract Author",
+        "date": "<RELATIVE_DATE>"
+      }
+    ],
+    "commitsUrl": ""
+  }
+}

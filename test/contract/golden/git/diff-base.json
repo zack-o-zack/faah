@@ -1,0 +1,41 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "available": true,
+    "base": "2f05f5a4a860bd61fa216976a0ad70d128ae2d6a",
+    "diff": "diff --git a/history.txt b/history.txt\nindex 806b517..3ec573a 100644\n--- a/history.txt\n+++ b/history.txt\n@@ -1 +1 @@\n-first revision\n+second revision\n",
+    "hunks": [
+      {
+        "oldStart": 1,
+        "newStart": 1,
+        "rows": [
+          {
+            "type": "del",
+            "oldLine": 1,
+            "at": 1,
+            "text": "first revision",
+            "html": "first revision"
+          },
+          {
+            "type": "add",
+            "newLine": 1,
+            "text": "second revision",
+            "html": "second revision"
+          }
+        ]
+      }
+    ],
+    "path": "history.txt",
+    "ref": "067573179e4065bf07150adc0aedcbb9b8c29a87"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "files": 3,
+    "results": [
+      {
+        "path": "README.md",
+        "matches": [
+          {
+            "line": 19,
+            "pre": "",
+            "mid": "func Hello",
+            "post": "() {}"
+          }
+        ]
+      },
+      {
+        "path": "src/hello.go",
+        "matches": [
+          {
+            "line": 3,
+            "pre": "",
+            "mid": "func Hello",
+            "post": "() string {"
+          }
+        ]
+      },
+      {
+        "path": "src/hello.ts",
+        "matches": [
+          {
+            "line": 1,
+            "pre": "export ",
+            "mid": "function Hello",
+            "post": "(): string {"
+          }
+        ]
+      }
+    ],
+    "total": 3,
+    "truncated": false
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "files": 33,
+    "gitChanges": 6,
+    "gitFiles": [
+      "deleted.txt",
+      "partial.txt",
+      "rename-new.txt",
+      "staged.txt",
+      "unstaged.txt",
+      "untracked.txt"
+    ],
+    "indexMs": 0
+  }
+}

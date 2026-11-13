@@ -1,0 +1,32 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "children": [
+      {
+        "name": "huge.md",
+        "path": "ignored/huge.md",
+        "dir": false,
+        "size": 0,
+        "ignored": true
+      },
+      {
+        "name": "secret.txt",
+        "path": "ignored/secret.txt",
+        "dir": false,
+        "size": 0,
+        "ignored": true
+      }
+    ],
+    "dir": "ignored"
+  }
+}

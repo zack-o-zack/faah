@@ -1,0 +1,39 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "available": true,
+    "diff": "diff --git a/staged.txt b/staged.txt\nindex 3bfa1ef..57bc787 100644\n--- a/staged.txt\n+++ b/staged.txt\n@@ -1 +1 @@\n-stage before\n+stage after\n",
+    "hunks": [
+      {
+        "oldStart": 1,
+        "newStart": 1,
+        "rows": [
+          {
+            "type": "del",
+            "oldLine": 1,
+            "at": 1,
+            "text": "stage before",
+            "html": "stage before"
+          },
+          {
+            "type": "add",
+            "newLine": 1,
+            "text": "stage after",
+            "html": "stage after"
+          }
+        ]
+      }
+    ],
+    "path": "staged.txt"
+  }
+}

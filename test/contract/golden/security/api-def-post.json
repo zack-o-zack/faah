@@ -1,0 +1,47 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "defs": [
+      {
+        "path": "src/hello.go",
+        "line": 3,
+        "pre": "func ",
+        "mid": "Hello",
+        "post": "() string {",
+        "def": true
+      },
+      {
+        "path": "src/hello.py",
+        "line": 1,
+        "pre": "def ",
+        "mid": "Hello",
+        "post": "():",
+        "def": true
+      },
+      {
+        "path": "src/hello.ts",
+        "line": 1,
+        "pre": "export function ",
+        "mid": "Hello",
+        "post": "(): string {",
+        "def": true
+      }
+    ],
+    "lsp": {
+      "server": "",
+      "state": "off"
+    },
+    "refCount": 3,
+    "symbol": "Hello"
+  }
+}

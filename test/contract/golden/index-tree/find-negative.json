@@ -1,0 +1,72 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "indexing": false,
+    "results": [
+      {
+        "path": "src/hello.go",
+        "name": "hello.go",
+        "pos": [
+          0,
+          1,
+          2
+        ]
+      },
+      {
+        "path": "src/hello.py",
+        "name": "hello.py",
+        "pos": [
+          0,
+          1,
+          2
+        ]
+      },
+      {
+        "path": "src/hello.ts",
+        "name": "hello.ts",
+        "pos": [
+          0,
+          1,
+          2
+        ]
+      },
+      {
+        "path": "src/large.go",
+        "name": "large.go",
+        "pos": [
+          0,
+          1,
+          2
+        ]
+      },
+      {
+        "path": "src/large.py",
+        "name": "large.py",
+        "pos": [
+          0,
+          1,
+          2
+        ]
+      },
+      {
+        "path": "src/large.ts",
+        "name": "large.ts",
+        "pos": [
+          0,
+          1,
+          2
+        ]
+      }
+    ]
+  }
+}

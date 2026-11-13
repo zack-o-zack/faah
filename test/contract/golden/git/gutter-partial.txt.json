@@ -1,0 +1,23 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "added": [],
+    "available": true,
+    "deleted": [],
+    "modified": [
+      1,
+      3
+    ],
+    "path": "partial.txt"
+  }
+}

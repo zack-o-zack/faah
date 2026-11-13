@@ -1,0 +1,32 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "available": true,
+    "diff": "diff --git a/rename-new.txt b/rename-new.txt\nnew file mode 100644\nindex 0000000..f152cb0\n--- /dev/null\n+++ b/rename-new.txt\n@@ -0,0 +1 @@\n+rename content\n",
+    "hunks": [
+      {
+        "oldStart": 0,
+        "newStart": 1,
+        "rows": [
+          {
+            "type": "add",
+            "newLine": 1,
+            "text": "rename content",
+            "html": "rename content"
+          }
+        ]
+      }
+    ],
+    "path": "rename-new.txt"
+  }
+}

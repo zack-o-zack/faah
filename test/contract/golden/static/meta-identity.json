@@ -1,0 +1,50 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "agent": "",
+    "agentEnabled": false,
+    "agentModel": "",
+    "agentPinned": false,
+    "agents": [],
+    "basePath": "/contract/",
+    "builtAt": "<TIME>",
+    "files": 33,
+    "forge": null,
+    "git": true,
+    "gitChanges": 6,
+    "gitFiles": [
+      "deleted.txt",
+      "partial.txt",
+      "rename-new.txt",
+      "staged.txt",
+      "unstaged.txt",
+      "untracked.txt"
+    ],
+    "indexMs": 0,
+    "lspServers": [],
+    "metrics": {
+      "rssBytes": 0,
+      "peakRSSBytes": 0,
+      "cpuUsage": 0,
+      "goroutines": 0,
+      "lspEnabled": false,
+      "lspMemBytes": 0
+    },
+    "name": "workspace",
+    "ready": true,
+    "root": "<ROOT>",
+    "threadsEnabled": false,
+    "version": "<VERSION>",
+    "workbench": "/"
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "files": 6,
+    "results": [
+      {
+        "path": "nested/deep/leaf.txt",
+        "matches": [
+          {
+            "line": 1,
+            "pre": "nested leaf ",
+            "mid": "needle",
+            "post": ""
+          }
+        ]
+      },
+      {
+        "path": "src/hello.go",
+        "matches": [
+          {
+            "line": 4,
+            "pre": "return \"",
+            "mid": "needle",
+            "post": "\""
+          }
+        ]
+      },
+      {
+        "path": "src/hello.py",
+        "matches": [
+          {
+            "line": 2,
+            "pre": "return \"",
+            "mid": "needle",
+            "post": "\""
+          }
+        ]
+      },
+      {
+        "path": "src/hello.ts",
+        "matches": [
+          {
+            "line": 2,
+            "pre": "return \"",
+            "mid": "needle",
+            "post": "\";"
+          }
+        ]
+      },
+      {
+        "path": "unicode/你好-😀-é.txt",
+        "matches": [
+          {
+            "line": 2,
+            "pre": "前缀 ",
+            "mid": "needle",
+            "post": " 后缀"
+          }
+        ]
+      },
+      {
+        "path": "untracked.txt",
+        "matches": [
+          {
+            "line": 1,
+            "pre": "untracked ",
+            "mid": "needle",
+            "post": ""
+          }
+        ]
+      }
+    ],
+    "total": 6,
+    "truncated": false
+  }
+}

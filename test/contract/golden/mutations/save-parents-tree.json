@@ -1,0 +1,25 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "children": [
+      {
+        "name": "new.txt",
+        "path": "created/deep/new.txt",
+        "dir": false,
+        "size": 15,
+        "status": "U"
+      }
+    ],
+    "dir": "created/deep"
+  }
+}

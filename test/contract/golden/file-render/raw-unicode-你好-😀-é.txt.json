@@ -1,0 +1,16 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/octet-stream",
+    "cache-control": "no-store",
+    "content-disposition": "attachment; filename*=utf-8''%E4%BD%A0%E5%A5%BD-%F0%9F%98%80-e%CC%81.txt",
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": "nosniff",
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "base64": "5L2g5aW9IPCfmIAgZcyBIMSwIOKEqiDFvyDDiSDDqSBBU0NJSSBhc2NpaQrliY3nvIAgbmVlZGxlIOWQjue8gAo="
+  }
+}

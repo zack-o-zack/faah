@@ -1,0 +1,27 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "indexing": false,
+    "results": [
+      {
+        "path": "unicode/你好-😀-é.txt",
+        "name": "你好-😀-é.txt",
+        "pos": [
+          20,
+          21,
+          22
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,183 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "indexing": false,
+    "results": [
+      {
+        "path": ".gitignore",
+        "name": ".gitignore",
+        "pos": null
+      },
+      {
+        "path": ".hidden",
+        "name": ".hidden",
+        "pos": null
+      },
+      {
+        "path": "README.md",
+        "name": "README.md",
+        "pos": null
+      },
+      {
+        "path": "bad.csv",
+        "name": "bad.csv",
+        "pos": null
+      },
+      {
+        "path": "binary.bin",
+        "name": "binary.bin",
+        "pos": null
+      },
+      {
+        "path": "caps.txt",
+        "name": "caps.txt",
+        "pos": null
+      },
+      {
+        "path": "crlf.txt",
+        "name": "crlf.txt",
+        "pos": null
+      },
+      {
+        "path": "data.csv",
+        "name": "data.csv",
+        "pos": null
+      },
+      {
+        "path": "data.tsv",
+        "name": "data.tsv",
+        "pos": null
+      },
+      {
+        "path": "empty.csv",
+        "name": "empty.csv",
+        "pos": null
+      },
+      {
+        "path": "empty.txt",
+        "name": "empty.txt",
+        "pos": null
+      },
+      {
+        "path": "history.txt",
+        "name": "history.txt",
+        "pos": null
+      },
+      {
+        "path": "keep.log",
+        "name": "keep.log",
+        "pos": null
+      },
+      {
+        "path": "long.txt",
+        "name": "long.txt",
+        "pos": null
+      },
+      {
+        "path": "nested/.gitignore",
+        "name": ".gitignore",
+        "pos": null
+      },
+      {
+        "path": "nested/deep/anchored.txt",
+        "name": "anchored.txt",
+        "pos": null
+      },
+      {
+        "path": "nested/deep/leaf.txt",
+        "name": "leaf.txt",
+        "pos": null
+      },
+      {
+        "path": "nested/deep/only-dir",
+        "name": "only-dir",
+        "pos": null
+      },
+      {
+        "path": "nested/keep.tmp",
+        "name": "keep.tmp",
+        "pos": null
+      },
+      {
+        "path": "partial.txt",
+        "name": "partial.txt",
+        "pos": null
+      },
+      {
+        "path": "pixel.png",
+        "name": "pixel.png",
+        "pos": null
+      },
+      {
+        "path": "rename-new.txt",
+        "name": "rename-new.txt",
+        "pos": null
+      },
+      {
+        "path": "src/hello.go",
+        "name": "hello.go",
+        "pos": null
+      },
+      {
+        "path": "src/hello.py",
+        "name": "hello.py",
+        "pos": null
+      },
+      {
+        "path": "src/hello.ts",
+        "name": "hello.ts",
+        "pos": null
+      },
+      {
+        "path": "src/large.go",
+        "name": "large.go",
+        "pos": null
+      },
+      {
+        "path": "src/large.py",
+        "name": "large.py",
+        "pos": null
+      },
+      {
+        "path": "src/large.ts",
+        "name": "large.ts",
+        "pos": null
+      },
+      {
+        "path": "staged.txt",
+        "name": "staged.txt",
+        "pos": null
+      },
+      {
+        "path": "tabs.txt",
+        "name": "tabs.txt",
+        "pos": null
+      },
+      {
+        "path": "unicode/你好-😀-é.txt",
+        "name": "你好-😀-é.txt",
+        "pos": null
+      },
+      {
+        "path": "unstaged.txt",
+        "name": "unstaged.txt",
+        "pos": null
+      },
+      {
+        "path": "untracked.txt",
+        "name": "untracked.txt",
+        "pos": null
+      }
+    ]
+  }
+}

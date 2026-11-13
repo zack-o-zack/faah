@@ -1,0 +1,16 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/octet-stream",
+    "cache-control": "no-store",
+    "content-disposition": "attachment; filename=history.txt",
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": "nosniff",
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "base64": "c2Vjb25kIHJldmlzaW9uCg=="
+  }
+}

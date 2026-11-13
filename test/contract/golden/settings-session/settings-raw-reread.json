@@ -1,0 +1,538 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "defaults": {
+      "agent": "",
+      "agent.autoAcceptEdits": false,
+      "agent.harness": "",
+      "agent.timeoutSeconds": 120,
+      "bitbucket.email": "",
+      "bitbucket.token": "",
+      "diffEditor.ignoreTrimWhitespace": true,
+      "diffEditor.renderSideBySide": true,
+      "editor.bracketPairColorization": true,
+      "editor.cursorBlinking": "smooth",
+      "editor.cursorStyle": "line",
+      "editor.fontFamily": "ui-monospace, monospace",
+      "editor.fontSize": 13.5,
+      "editor.lineHeight": 21,
+      "editor.lineNumbers": "on",
+      "editor.minimap.enabled": true,
+      "editor.occurrencesHighlight": true,
+      "editor.renderLineHighlight": "line",
+      "editor.renderWhitespace": "selection",
+      "editor.scrollBeyondLastLine": true,
+      "editor.tabSize": 4,
+      "editor.vimMode": false,
+      "editor.wordWrap": "on",
+      "explain.agent": "",
+      "explain.model": "",
+      "explain.prefetch": true,
+      "explain.reader": "",
+      "explorer.autoRelveal": true,
+      "explorer.autoReveal": true,
+      "explorer.compactFolders": true,
+      "files.exclude": "**/.git, **/node_modules, **/target, **/.DS_Store",
+      "git.commitMessageInstruction": "",
+      "git.gutterIndicators": true,
+      "gitea.host": "",
+      "gitea.token": "",
+      "github.token": "",
+      "gitlab.host": "",
+      "gitlab.token": "",
+      "lsp.enabled": true,
+      "lsp.hover.enabled": true,
+      "markdown.preview.open": true,
+      "models": {},
+      "search.maxResults": 1000,
+      "search.smartCase": true,
+      "server.basePath": "/",
+      "table.preview.open": true,
+      "workbench.colorTheme": "catppuccin-mocha"
+    },
+    "path": "<TEMP>/config/faah/settings.json",
+    "raw": "{\n  \"editor.fontSize\": 19,\n  \"unknown.contract\": [\n    1,\n    null\n  ]\n}\n",
+    "schema": [
+      {
+        "key": "editor.fontSize",
+        "title": "Font Size",
+        "description": "Controls the font size in pixels for the code viewer.",
+        "category": "Text Editor",
+        "type": "number",
+        "default": 13.5,
+        "min": 9,
+        "max": 32,
+        "step": 0.5
+      },
+      {
+        "key": "editor.fontFamily",
+        "title": "Font Family",
+        "description": "Controls the font family used in the code viewer.",
+        "category": "Text Editor",
+        "type": "string",
+        "default": "ui-monospace, monospace"
+      },
+      {
+        "key": "editor.lineHeight",
+        "title": "Line Height",
+        "description": "Controls the line height in pixels for the code viewer.",
+        "category": "Text Editor",
+        "type": "number",
+        "default": 21,
+        "min": 14,
+        "max": 48,
+        "step": 1
+      },
+      {
+        "key": "editor.tabSize",
+        "title": "Tab Size",
+        "description": "The number of spaces a tab is equal to.",
+        "category": "Text Editor",
+        "type": "select",
+        "default": 4,
+        "options": [
+          "2",
+          "4",
+          "8"
+        ]
+      },
+      {
+        "key": "editor.wordWrap",
+        "title": "Word Wrap",
+        "description": "Controls whether lines should wrap around or scroll horizontally.",
+        "category": "Text Editor",
+        "type": "select",
+        "default": "on",
+        "options": [
+          "on",
+          "off"
+        ]
+      },
+      {
+        "key": "editor.lineNumbers",
+        "title": "Line Numbers",
+        "description": "Controls the display of line numbers in the gutter.",
+        "category": "Text Editor",
+        "type": "select",
+        "default": "on",
+        "options": [
+          "on",
+          "off"
+        ]
+      },
+      {
+        "key": "editor.vimMode",
+        "title": "Vim Keybindings",
+        "description": "Enable Vim modal navigation (Normal mode, Visual mode, motions, search, and LSP shortcuts).",
+        "category": "Text Editor",
+        "type": "boolean",
+        "default": false
+      },
+      {
+        "key": "editor.renderWhitespace",
+        "title": "Render Whitespace",
+        "description": "Controls how whitespace characters are rendered in the viewer.",
+        "category": "Text Editor",
+        "type": "select",
+        "default": "selection",
+        "options": [
+          "none",
+          "boundary",
+          "selection",
+          "all"
+        ]
+      },
+      {
+        "key": "editor.minimap.enabled",
+        "title": "Minimap Hits",
+        "description": "Controls whether search hit indicators are shown in the scroll minimap gutter.",
+        "category": "Text Editor",
+        "type": "boolean",
+        "default": true
+      },
+      {
+        "key": "workbench.colorTheme",
+        "title": "Color Theme",
+        "description": "Specifies the color theme used in the workbench.",
+        "category": "Workbench",
+        "type": "select",
+        "default": "catppuccin-mocha",
+        "options": [
+          "catppuccin-mocha",
+          "catppuccin-latte",
+          "github-dark",
+          "dark",
+          "light",
+          "dracula",
+          "gruvbox-dark",
+          "gruvbox-light",
+          "monokai",
+          "nord",
+          "one-dark",
+          "rose-pine",
+          "solarized-dark",
+          "solarized-light"
+        ]
+      },
+      {
+        "key": "diffEditor.renderSideBySide",
+        "title": "Diff Side By Side",
+        "description": "Controls whether the diff editor shows changes in split (side-by-side) or unified mode.",
+        "category": "Workbench",
+        "type": "boolean",
+        "default": true
+      },
+      {
+        "key": "markdown.preview.open",
+        "title": "Markdown Preview",
+        "description": "Controls whether Markdown files open in rendered preview by default.",
+        "category": "Workbench",
+        "type": "boolean",
+        "default": true
+      },
+      {
+        "key": "table.preview.open",
+        "title": "Table View",
+        "description": "Controls whether CSV and TSV files open as a table by default.",
+        "category": "Workbench",
+        "type": "boolean",
+        "default": true
+      },
+      {
+        "key": "editor.cursorStyle",
+        "title": "Cursor Style",
+        "description": "Controls the cursor style in the code viewer.",
+        "category": "Text Editor",
+        "type": "select",
+        "default": "line",
+        "options": [
+          "line",
+          "block",
+          "underline"
+        ]
+      },
+      {
+        "key": "editor.cursorBlinking",
+        "title": "Cursor Blinking",
+        "description": "Controls the cursor animation style.",
+        "category": "Text Editor",
+        "type": "select",
+        "default": "smooth",
+        "options": [
+          "blink",
+          "smooth",
+          "solid"
+        ]
+      },
+      {
+        "key": "editor.renderLineHighlight",
+        "title": "Render Line Highlight",
+        "description": "Controls how the editor should render the current line highlight.",
+        "category": "Text Editor",
+        "type": "select",
+        "default": "line",
+        "options": [
+          "line",
+          "none"
+        ]
+      },
+      {
+        "key": "editor.occurrencesHighlight",
+        "title": "Occurrences Highlight",
+        "description": "Controls whether the editor should highlight occurrences of the selected word.",
+        "category": "Text Editor",
+        "type": "boolean",
+        "default": true
+      },
+      {
+        "key": "editor.scrollBeyondLastLine",
+        "title": "Scroll Beyond Last Line",
+        "description": "Controls whether the editor will scroll beyond the last line of the file.",
+        "category": "Text Editor",
+        "type": "boolean",
+        "default": true
+      },
+      {
+        "key": "editor.bracketPairColorization",
+        "title": "Bracket Pair Colorization",
+        "description": "Controls whether bracket pair colorization and matching is enabled.",
+        "category": "Text Editor",
+        "type": "boolean",
+        "default": true
+      },
+      {
+        "key": "explorer.compactFolders",
+        "title": "Compact Folders",
+        "description": "Controls whether the file tree renders single-child directory chains compactly.",
+        "category": "Files & Explorer",
+        "type": "boolean",
+        "default": true
+      },
+      {
+        "key": "explorer.autoReveal",
+        "title": "Auto Reveal",
+        "description": "Controls whether the file explorer automatically scrolls to and reveals active tabs.",
+        "category": "Files & Explorer",
+        "type": "boolean",
+        "default": true
+      },
+      {
+        "key": "files.exclude",
+        "title": "Files Exclude Patterns",
+        "description": "Configure glob patterns for excluding files and folders from search and trees.",
+        "category": "Files & Explorer",
+        "type": "string",
+        "default": "**/.git, **/node_modules, **/target, **/.DS_Store"
+      },
+      {
+        "key": "search.smartCase",
+        "title": "Smart Case Search",
+        "description": "Searches case-insensitively when query is lowercase, and case-sensitively when uppercase characters exist.",
+        "category": "Search",
+        "type": "boolean",
+        "default": true
+      },
+      {
+        "key": "search.maxResults",
+        "title": "Max Search Results",
+        "description": "Controls the maximum number of results returned in workspace-wide searches.",
+        "category": "Search",
+        "type": "number",
+        "default": 1000,
+        "min": 50,
+        "max": 10000,
+        "step": 50
+      },
+      {
+        "key": "diffEditor.ignoreTrimWhitespace",
+        "title": "Diff: Ignore Trim Whitespace",
+        "description": "Controls whether the diff viewer ignores changes in leading or trailing whitespace.",
+        "category": "Git & Diff",
+        "type": "boolean",
+        "default": true
+      },
+      {
+        "key": "git.gutterIndicators",
+        "title": "Git Gutter Indicators",
+        "description": "Controls whether changed line indicators are shown in the editor gutter.",
+        "category": "Git & Diff",
+        "type": "boolean",
+        "default": true
+      },
+      {
+        "key": "lsp.enabled",
+        "title": "Language Server Protocol (LSP)",
+        "description": "Master switch for language server integrations (definitions, references, diagnostics).",
+        "category": "LSP & Intelligence",
+        "type": "boolean",
+        "default": true
+      },
+      {
+        "key": "lsp.hover.enabled",
+        "title": "Hover Documentation",
+        "description": "Controls whether hovercards with documentation and type signatures appear on hover.",
+        "category": "LSP & Intelligence",
+        "type": "boolean",
+        "default": true
+      },
+      {
+        "key": "agent.harness",
+        "title": "Coding Harness",
+        "description": "Coding agent harness invoked for code edits (e.g. claude, codex, agy, opencode, cursor-agent).",
+        "category": "Agent / AI",
+        "type": "string",
+        "default": ""
+      },
+      {
+        "key": "agent.timeoutSeconds",
+        "title": "Agent Timeout (Seconds)",
+        "description": "Controls the maximum execution time in seconds for agent edits before canceling.",
+        "category": "Agent / AI",
+        "type": "number",
+        "default": 120,
+        "min": 10,
+        "max": 600,
+        "step": 10
+      },
+      {
+        "key": "agent.autoAcceptEdits",
+        "title": "Auto Accept Agent Edits",
+        "description": "Controls whether agent-generated code diffs are accepted without manual confirmation.",
+        "category": "Agent / AI",
+        "type": "boolean",
+        "default": false
+      },
+      {
+        "key": "git.commitMessageInstruction",
+        "title": "Commit Message Instructions",
+        "description": "Extra instructions given to the coding harness when it writes a commit message for the staged diff (e.g. \"Follow Conventional Commits\" or \"Reference the ticket number in the branch name\").",
+        "category": "Git & Diff",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "github.token",
+        "title": "GitHub Token",
+        "description": "Personal access token used to check out and review pull requests (faah <url>). Takes precedence over the GITHUB_TOKEN environment variable and 'gh auth token'.",
+        "category": "GitHub",
+        "type": "string",
+        "default": "",
+        "secret": true
+      },
+      {
+        "key": "gitlab.token",
+        "title": "GitLab Token",
+        "description": "Personal access token (api scope) used to check out, review and merge GitLab merge requests, on gitlab.com or a self-hosted instance. Sent only to the GitLab Host below; other self-hosted instances use the token 'glab auth login' stored for them. Takes precedence over the GITLAB_TOKEN environment variable.",
+        "category": "GitLab",
+        "type": "string",
+        "default": "",
+        "secret": true
+      },
+      {
+        "key": "gitlab.host",
+        "title": "GitLab Host",
+        "description": "The GitLab instance the GitLab token belongs to (e.g. gitlab.example.com). Merge requests on any other host are opened without it. Falls back to GITLAB_HOST, then gitlab.com.",
+        "category": "GitLab",
+        "type": "string",
+        "default": ""
+      },
+      {
+        "key": "gitea.token",
+        "title": "Gitea Token",
+        "description": "Access token (repository and issue read/write scopes) for Gitea, Forgejo or Codeberg pull request review. Sent only to the Gitea Host below. Takes precedence over the GITEA_TOKEN environment variable.",
+        "category": "Gitea",
+        "type": "string",
+        "default": "",
+        "secret": true
+      },
+      {
+        "key": "gitea.host",
+        "title": "Gitea Host",
+        "description": "The Gitea or Forgejo instance the Gitea token belongs to (e.g. gitea.example.com). Pull requests on any other host are opened without it. Falls back to GITEA_HOST, then codeberg.org.",
+        "category": "Gitea",
+        "type": "string",
+        "default": ""
+      },
+      {
+        "key": "bitbucket.token",
+        "title": "Bitbucket Token",
+        "description": "Bitbucket Cloud token for pull request review: a repository, project or workspace access token, or an Atlassian API token (then also set Bitbucket Email). Takes precedence over the BITBUCKET_TOKEN environment variable.",
+        "category": "Bitbucket",
+        "type": "string",
+        "default": "",
+        "secret": true
+      },
+      {
+        "key": "bitbucket.email",
+        "title": "Bitbucket Email",
+        "description": "The Atlassian account email an API token belongs to. Leave empty when Bitbucket Token is an access token. Falls back to BITBUCKET_EMAIL. Checking push access (and so Approve and Merge) needs an API token.",
+        "category": "Bitbucket",
+        "type": "string",
+        "default": ""
+      },
+      {
+        "key": "server.basePath",
+        "title": "Base Path",
+        "description": "Base URL path prefix for the faah server and web interface (e.g. /rev-123/).",
+        "category": "Server",
+        "type": "string",
+        "default": "/"
+      },
+      {
+        "key": "explain.agent",
+        "title": "Explain Agent",
+        "description": "The coding harness that writes explanations (claude, codex, agy, opencode or cursor-agent). Leave empty to use the harness selected for editing. Ignored when faah is started with -agent.",
+        "category": "Explain",
+        "type": "string",
+        "default": ""
+      },
+      {
+        "key": "explain.model",
+        "title": "Explain Model",
+        "description": "The model explanations run on, as the explain agent names it. A smaller model answers faster. Leave empty to use that harness's own model.",
+        "category": "Explain",
+        "type": "string",
+        "default": ""
+      },
+      {
+        "key": "explain.prefetch",
+        "title": "Prepare Explanations on Selection",
+        "description": "Gathers definitions, callers and references in the background when you select code, so Explain starts sooner.",
+        "category": "Explain",
+        "type": "boolean",
+        "default": true
+      },
+      {
+        "key": "explain.reader",
+        "title": "About You",
+        "description": "Added to the explain agent's prompt to describe the reader, for example \"I'm new to Go\".",
+        "category": "Explain",
+        "type": "string",
+        "default": ""
+      }
+    ],
+    "settings": {
+      "agent": "",
+      "agent.autoAcceptEdits": false,
+      "agent.harness": "",
+      "agent.timeoutSeconds": 120,
+      "bitbucket.email": "",
+      "bitbucket.token": "",
+      "diffEditor.ignoreTrimWhitespace": true,
+      "diffEditor.renderSideBySide": true,
+      "editor.bracketPairColorization": true,
+      "editor.cursorBlinking": "smooth",
+      "editor.cursorStyle": "line",
+      "editor.fontFamily": "ui-monospace, monospace",
+      "editor.fontSize": 19,
+      "editor.lineHeight": 21,
+      "editor.lineNumbers": "on",
+      "editor.minimap.enabled": true,
+      "editor.occurrencesHighlight": true,
+      "editor.renderLineHighlight": "line",
+      "editor.renderWhitespace": "selection",
+      "editor.scrollBeyondLastLine": true,
+      "editor.tabSize": 4,
+      "editor.vimMode": false,
+      "editor.wordWrap": "on",
+      "explain.agent": "",
+      "explain.model": "",
+      "explain.prefetch": true,
+      "explain.reader": "",
+      "explorer.autoRelveal": true,
+      "explorer.autoReveal": true,
+      "explorer.compactFolders": true,
+      "files.exclude": "**/.git, **/node_modules, **/target, **/.DS_Store",
+      "git.commitMessageInstruction": "",
+      "git.gutterIndicators": true,
+      "gitea.host": "",
+      "gitea.token": "",
+      "github.token": "",
+      "gitlab.host": "",
+      "gitlab.token": "",
+      "lsp.enabled": true,
+      "lsp.hover.enabled": true,
+      "markdown.preview.open": true,
+      "models": {},
+      "search.maxResults": 1000,
+      "search.smartCase": true,
+      "server.basePath": "/",
+      "table.preview.open": true,
+      "unknown.contract": [
+        1,
+        null
+      ],
+      "workbench.colorTheme": "catppuccin-mocha"
+    }
+  }
+}
