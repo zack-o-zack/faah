@@ -3,7 +3,7 @@ import { doc_, api, keyCaps, showToast } from './app/legacy-bridge.js';
 import { $, $$, esc, S } from './state.js';
 import { on, emit } from './bus.js';
 
-import { showRightInspector } from './inspector.js';
+import { showRightInspector } from './app/legacy-bridge.js';
 import { TIPS_URL, TIPS_STORAGE_KEY_HIDDEN, TIPS_STORAGE_KEY_CACHE, TIPS_STORAGE_KEY_INDEX, DEFAULT_TIPS, renderTipMarkdown } from './tips-util.js';
 
 export {

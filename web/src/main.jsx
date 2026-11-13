@@ -1,5 +1,5 @@
 import { Palette } from './palette/Palette.jsx';
-import { SearchShell } from './search/SearchShell.jsx';
+import { InspectorShell } from './inspector/InspectorShell.jsx';
 import { GitShell } from './git/GitShell.jsx';
 import { getOwner, onMount, runWithOwner } from 'solid-js';
 import { render } from 'solid-js/web';
@@ -26,7 +26,7 @@ function App() {
   return (
     <EditorProvider value={editorStore}>
       <Palette />
-      <SearchShell />
+      <InspectorShell />
       <TreeShell />
       <GitShell />
       <EditorShell />

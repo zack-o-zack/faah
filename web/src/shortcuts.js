@@ -6,7 +6,7 @@ import { $, $$, esc, S } from './state.js';
 
 import { updateStatus } from './status.js';
 
-import { showRightInspector, hideRightInspector } from './inspector.js';
+import { showRightInspector, hideRightInspector } from './app/legacy-bridge.js';
 import { hideThreadsSidebar } from './thread.js';
 import { isPaletteOpen, openPalette, closePalette } from './app/legacy-bridge.js';
 

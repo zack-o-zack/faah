@@ -1,3 +1,5 @@
+import { createLayoutActions } from '../layout/actions.js';
+import { readLayout } from '../layout/logic.js';
 import { createWorkspaceActions } from '../workspace/actions.js';
 import { createViewerActions } from '../viewers/actions.js';
 import { createDocuments } from '../editor/documents.js';
@@ -30,6 +32,7 @@ import { createStore, reconcile } from 'solid-js/store';
 /** @returns {AppState} */
 function initialState() {
   return {
+    layout: readLayout(localStorage.getItem('faah.layout')),
     workspace: {
       meta: /** @type {WorkspaceMeta|null} */ (null),
       generation: 0,
@@ -97,12 +100,28 @@ export function createAppStore(options = {}) {
       setSetting: (name, value) => set('settings', name, value),
       setUnpushedCount: (count) => set('git', 'unpushedCount', count),
       setSettings: (settings) => set('settings', reconcile(settings)),
+      acceptLspServers: (result) =>
+        batch(() => {
+          set('lsp', 'servers', reconcile(result.servers || [], { key: 'name' }));
+          set('lsp', 'anyRunning', !!result.anyRunning);
+        }),
+      acceptLspReply: (reply, path = activeDocument()?.path) => {
+        if (!reply?.state) return;
+        const brief = {
+          state: reply.state,
+          server: reply.server || '',
+          missing: reply.missing || '',
+        };
+        if (path) store.actions.patchDocument(path, { lsp: brief });
+        if (path === activeDocument()?.path) set('lsp', brief);
+      },
       setLsp: (lsp) => set('lsp', reconcile(lsp)),
       patchLsp: (name, value) => set('lsp', name, value),
     },
   };
   Object.assign(
     store.actions,
+    createLayoutActions(store, set),
     createViewerActions(store),
     createWorkspaceActions(store, set, options),
   );

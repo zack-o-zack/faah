@@ -409,3 +409,27 @@ keyboard movement changes only the list's native scrollTop when necessary.
 Neither feature adds an effect. The two original palette race tests now exercise
 the fresh store and injected requests. `search.js`, `palette.js` and its old test
 are deleted.
+
+## Inspector and language services (phase B checkpoint 5)
+
+`inspector/` owns tabs, references, filtered symbols and recursive call rows.
+`lsp/store.js` owns shared server state, warm-up, guarded definition actions,
+references/call/setup resources and one installation-refresh scheduler, active
+only during an explicit install. Resource keys copy target fields so a new target
+cannot retain the previous object's identity. `lsp/logic.js` tests position
+precision, call sites and recursion. `lib/resource-request.js` gives each resource
+one replaceable request with disposal cancellation.
+
+The existing stream publishes LSP enabled/memory data through workspace metrics;
+its protocol does not publish a server list. The shared server resource refreshes
+on initialization and explicit management actions. Consumers read this one list,
+not separate polling loops. The layout slice owns inspector selection/visibility;
+its final DOM/layout owner follows in checkpoint 6.
+
+Search and Symbols each retain one effect to focus their own input when the pane
+opens. The bridge temporarily applies pane visibility/width to the static shell,
+and separately notifies the remaining imperative Tips pane. LSP and inspector
+stores add no effects. Popover panels now portal outside clipping containers;
+owned scroll/resize listeners position them. Editor definition/reference/call
+and LSP-state service hooks are deleted: these are named actions, not DOM handles.
+`calls.js`, `inspector.js`, `outline-pane.js`, `lsp.js` and `lspsetup.js` are deleted.

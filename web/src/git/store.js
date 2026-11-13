@@ -46,7 +46,8 @@ export function createGitStore(app, options = {}) {
     }
   }
   function notice(value) {
-    set({ notice: value, collapsed: false });
+    set('notice', reconcile(value));
+    set('collapsed', false);
   }
   async function refreshUnpushed(snapshot) {
     if (!app.state.workspace.meta?.git) return;

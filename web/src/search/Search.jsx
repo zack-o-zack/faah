@@ -1,14 +1,25 @@
+import { createEffect, on } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
 import { ResultGroup } from './ResultGroup.jsx';
 import { resultHeading } from './logic.js';
 export function Search() {
   const editor = useEditor();
+  let input;
+  createEffect(
+    on(
+      () => editor.store.state.layout.right && editor.store.state.layout.inspector === 'search',
+      (visible) => {
+        if (visible) input.focus();
+      },
+    ),
+  );
   const search = editor.search;
   return (
     <>
       <div class="flex shrink-0 flex-col gap-2 p-3">
         <input
+          ref={input}
           id="q"
           class="input"
           aria-label="Search in files"

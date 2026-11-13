@@ -8,7 +8,7 @@ import { copyToClipboard } from './ui.js';
 import { errorAlertHtml } from './errors.js';
 
 import { linkTarget, explainEvidenceLine, explainStaleLabel } from './threadrefs.js';
-import { hideRightInspector } from './inspector.js';
+import { hideRightInspector } from './app/legacy-bridge.js';
 
 import { registerAgentPicker, reloadWorkspace } from './agent.js';
 

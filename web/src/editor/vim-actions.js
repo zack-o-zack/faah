@@ -53,9 +53,9 @@ export function createVimActions(editor) {
       if (command.type === 'selection')
         editor.actions.runSelectionAction(command.value, null, selection);
       if (command.type === 'tabIndex') editor.actions.switchTab(command.value);
-      if (command.type === 'definition') services.definition?.();
-      if (command.type === 'references') services.references?.();
-      if (command.type === 'calls') services.calls?.();
+      if (command.type === 'definition') editor.actions.gotoDefinition();
+      if (command.type === 'references') editor.actions.findReferences();
+      if (command.type === 'calls') editor.actions.showCalls();
       if (command.type === 'hover') editor.actions.showHoverAtCaret();
       if (command.type === 'find') {
         editor.actions.openFind('', command.value < 0 ? -1 : 0);

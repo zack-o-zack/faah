@@ -19,7 +19,11 @@ export function createWorkspaceActions(store, set, { request = api, post = apiPo
     for (const observer of observers) observer(snapshot);
   }
   function acceptMetrics(metrics) {
-    if (!disposed) set('workspace', 'metrics', reconcile(metrics));
+    if (!disposed)
+      batch(() => {
+        set('workspace', 'metrics', reconcile(metrics));
+        set('lsp', { enabled: !!metrics.lspEnabled, memBytes: metrics.lspMemBytes || 0 });
+      });
   }
   async function refreshWorkspace() {
     if (refreshing || disposed) return refreshing;

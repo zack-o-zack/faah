@@ -76,7 +76,7 @@
           <span data-ui="thr-tab-dot" class="inline-block" hidden></span>
         </button>
         <!-- Opens/toggles the right sidebar inspector (LSP & Tips) -->
-        <button id="btn-open-right" title="Inspector (References, Symbols, Calls, Search, Tips) ({Mod+J})" aria-label="Toggle inspector" class="btn" data-control="header-action open-right" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--panel-right] size-3.5 shrink-0" aria-hidden="true"></span></button>
+        <span id="inspector-toggle-root" class="contents"></span>
       </div>
     </header>
 
@@ -413,7 +413,6 @@
     <div id="metrics-menu" role="menu" hidden></div>
 
     <!-- LSP management menu, opened from LSP status bar button -->
-    <div id="lsp-menu" role="menu" hidden></div>
 
     <!-- Floating Async Tip Widget (web/src/tips.js) -->
     <div id="tip-widget" class="card fixed bottom-[34px] right-[18px] w-[360px] max-w-[calc(100vw-36px)] z-40 gap-0 py-0! overflow-hidden" hidden>
@@ -458,7 +457,7 @@
       <span id="st-size" class="[#status:has(#footer-sel:not([hidden]))_&]:hidden"></span>
       <span class="empty:hidden" id="st-pos"></span>
       <span id="editor-selection-root" class="contents"></span><span id="editor-cursor-root" class="contents"></span><span id="status-spacer" class="flex-1"></span>
-      <span id="st-lsp" role="button" tabindex="0" title="Language Servers (Click to manage)" class="btn text-muted-foreground" data-variant="ghost" data-size="xs">LSP</span>
+      <span id="lsp-root" class="contents"></span>
       <span class="status-sep h-3 w-px shrink-0 bg-border [#status:has(#footer-sel:not([hidden]))_#footer-actions+&]:hidden"></span>
       <span id="st-metrics" role="button" tabindex="0" class="btn font-mono desktop:[&>:not(.shell-ico)]:hidden" data-control="status-metrics" data-variant="ghost" data-size="xs">
         <span class="icon-[lucide--activity] size-3.5 shrink-0 shell-ico hidden desktop:block" aria-hidden="true"></span>
@@ -474,60 +473,12 @@
   </main>
 
   <!-- Right Inspector Resizer Divider -->
-  <div id="right-resizer" title="Drag to resize inspector" class="-mr-0.5 w-1 shrink-0 cursor-col-resize z-10 hover:bg-primary [&.drag]:bg-primary [body.right-hidden_&]:hidden"></div>
+  <div id="right-resizer-root" class="contents"></div>
 
   <!-- SECTION: Right-side Inspector (Symbols & References) -->
   <aside id="right-side" class="flex w-96 shrink-0 flex-col overflow-hidden border-l bg-sidebar [body.right-hidden_&]:hidden">
-    <header class="inspector-head desktop:min-h-[var(--titlebar-h,2.5rem)] desktop:[-webkit-app-region:drag] desktop:[&_button]:[-webkit-app-region:no-drag] desktop:[&_a]:[-webkit-app-region:no-drag] desktop:[&_[role=group]]:[-webkit-app-region:no-drag] desktop:[&_[role=tab]]:[-webkit-app-region:no-drag] flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2">
-      <div class="tabs min-w-0 overflow-x-auto"><div class="inspector-tabs" role="tablist" aria-label="Inspector">
-        <button role="tab" data-itab="refs" title="View references across workspace" class="px-2! text-xs!" data-control="inspector-tab" data-variant="secondary" data-size="xs" aria-pressed="true" aria-selected="true">References</button>
-        <button role="tab" data-itab="symbols" title="View file symbols outline" class="px-2! text-xs!" data-control="inspector-tab" data-variant="ghost" data-size="xs">Symbols</button>
-        <button role="tab" data-itab="calls" title="Trace callers and callees ({Alt+Shift+H})" class="px-2! text-xs!" data-control="inspector-tab" data-variant="ghost" data-size="xs">Calls</button>
-        <button role="tab" data-itab="search" title="Search text across workspace ({Mod+Shift+F})" class="px-2! text-xs!" data-control="inspector-tab" data-variant="ghost" data-size="xs">Search</button>
-        <button role="tab" data-itab="tips" id="tab-tips" title="Tips & Tricks" class="px-2! text-xs!" data-control="inspector-tab" data-variant="ghost" data-size="xs">Tips</button>
-      </div></div>
-      <div class="inspector-head-actions flex items-center">
-        <button id="btn-close-right" title="Close inspector (Esc)" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Close inspector (Esc)"><span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true"></span></button>
-      </div>
-    </header>
-
-    <!-- Right Pane 1: References for active symbol -->
-    <section class="inspector-pane hidden min-h-0 flex-1 flex-col overflow-hidden [&.active]:flex active" id="pane-right-refs">
-      <div class="inspector-bar flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2 text-xs has-[#right-ref-target:empty]:hidden">
-        <span class="inspector-sym-title truncate font-mono font-semibold" id="right-ref-target"></span>
-        <span class="badge" data-variant="secondary" data-control="inspector-badge" id="right-ref-badge"></span>
-      </div>
-      <div class="panel-body min-h-0 flex-1 overflow-auto pb-4" id="right-refs-list">
-        <div data-ui="hint" class="empty text-muted-foreground">Select or click a symbol to inspect references.</div>
-      </div>
-    </section>
-
-    <!-- Right Pane 2: Symbols outline for active file -->
-    <section class="inspector-pane hidden min-h-0 flex-1 flex-col overflow-hidden [&.active]:flex" id="pane-right-symbols">
-      <div data-ui="search-form" class="flex flex-col gap-2 p-3">
-        <input id="right-symbols-filter" aria-label="Filter symbols" type="text" spellcheck="false" placeholder="Filter file symbols" autocomplete="off" class="input h-8!">
-      </div>
-      <div class="panel-body min-h-0 flex-1 overflow-auto pb-4" id="right-symbols-list"></div>
-    </section>
-
-    <!-- Right Pane 3: Call trail (callers / callees) for a function -->
-    <section class="inspector-pane hidden min-h-0 flex-1 flex-col overflow-hidden [&.active]:flex" id="pane-right-calls">
-      <div class="inspector-bar flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2 text-xs">
-        <span class="inspector-sym-title truncate font-mono font-semibold" id="right-calls-target"></span>
-        <span role="group" class="button-group" id="calls-dir">
-          <button data-dir="in" title="Functions that call this one, up toward entry points" class="btn" data-control="opt" data-variant="secondary" data-size="xs" aria-pressed="true">Callers</button>
-          <button data-dir="out" title="Functions this one calls, down toward leaves" class="btn" data-control="opt" data-variant="outline" data-size="xs">Callees</button>
-        </span>
-      </div>
-      <div class="panel-body min-h-0 flex-1 overflow-auto pb-4" id="right-calls-list">
-        <div data-ui="hint" class="empty text-muted-foreground">Click a function name, then press <b data-keys="Alt+Shift+H"></b> to trace its calls.</div>
-      </div>
-    </section>
-
-    <!-- Right Pane 4: Full-text search across the workspace -->
-    <section class="inspector-pane hidden min-h-0 flex-1 flex-col overflow-hidden [&.active]:flex" id="pane-right-search">
-      <div id="search-root" class="contents"></div>
-    </section>
+    <div id="inspector-head-root" class="contents"></div>
+    <div id="inspector-panes-root" class="contents"></div>
     <!-- Right Pane 5: Tips & Tricks. Browse, search and filter all faah tips. web/src/tips.js owns it. -->
     <section class="hidden h-full flex-col overflow-hidden [&.active]:flex inspector-pane hidden min-h-0 flex-1 flex-col overflow-hidden [&.active]:flex" id="pane-right-tips">
       <div data-ui="tips-header-bar" class="inspector-bar flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2 text-xs flex items-center gap-2 p-3">

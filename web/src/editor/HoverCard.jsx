@@ -77,7 +77,7 @@ export function HoverCard() {
               <button
                 class="btn"
                 onClick={() => {
-                  editor.services.definition?.(hover().at, { view: 'source' });
+                  editor.actions.gotoDefinition(hover().at, { view: 'source' });
                   editor.actions.hideHover();
                 }}
               >
@@ -86,16 +86,16 @@ export function HoverCard() {
               <button
                 class="btn"
                 onClick={() => {
-                  editor.services.definition?.(hover().at, { view: 'diff' });
+                  editor.actions.gotoDefinition(hover().at, { view: 'diff' });
                   editor.actions.hideHover();
                 }}
               >
                 In diff
               </button>
-              <button class="btn" onClick={() => editor.services.references?.(hover().at)}>
+              <button class="btn" onClick={() => editor.actions.findReferences(hover().at)}>
                 Usages
               </button>
-              <button class="btn" onClick={() => editor.services.calls?.(hover().at)}>
+              <button class="btn" onClick={() => editor.actions.showCalls(hover().at)}>
                 Calls
               </button>
               <button

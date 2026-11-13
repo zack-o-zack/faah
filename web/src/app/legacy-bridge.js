@@ -3,7 +3,6 @@ import { previewKind as documentPreviewKind, viewMode, canDiff } from '../viewer
 import { sanitizeMarkdown as cleanMarkdown } from '../viewers/markdown-dom.js';
 // Removed when the last legacy module is migrated.
 import { createSourceDOM } from '../editor/source-dom.js';
-import { createSymbolActions } from '../editor/symbols.js';
 import { createEffect, createMemo, on, onCleanup } from 'solid-js';
 import { S, $, $$, esc } from '../state.js';
 import { api, apiPost, apiPostJson } from '../lib/api.js';
@@ -50,7 +49,6 @@ export {
 };
 let editorStore;
 let themeStore;
-let symbols;
 let sourceDOM;
 let hoverTimer;
 const services = {};
@@ -60,11 +58,6 @@ export let vp, sizer, rowsEl, editor, editTextarea;
 export function bindLegacyEditor(value, theme) {
   editorStore = value;
   themeStore = theme;
-  symbols = createSymbolActions(value.store, {
-    onChange: () => services.drawOutline?.(),
-    acceptLsp: (value) => services.setLspState?.(value),
-  });
-  onCleanup(symbols.dispose);
   const metadata = new Proxy(
     {},
     {
@@ -295,7 +288,6 @@ export function configureLegacyServices(value) {
   const showPanel = value.showPanel;
   editorStore.actions.showFilesPanel = () => value.showPanel('files');
   editorStore.actions.openLegacyPR = value.launchPR;
-  editorStore.actions.loadSymbols = () => loadOutline({ upgrade: false });
   const releaseCommands = editorStore.palette.commands.register([
     {
       name: withKeys('File: Copy Source Code ({Mod+C})'),
@@ -424,6 +416,33 @@ export function configureLegacyServices(value) {
     { name: 'Keyboard Shortcuts', run: showHelp },
   ]);
   onCleanup(releaseCommands);
+  createEffect(
+    on(
+      () => [
+        editorStore.store.state.layout.right,
+        editorStore.store.state.layout.threads,
+        editorStore.store.state.layout.rightWidth,
+      ],
+      ([right, threads, width]) => {
+        document.body.classList.toggle('right-hidden', !right);
+        document.body.classList.toggle('threads-hidden', !threads);
+        $('#right-side').style.width = width + 'px';
+        $('#btn-open-right')?.setAttribute('aria-pressed', String(right));
+      },
+    ),
+  );
+  createEffect(
+    on(
+      () => [editorStore.store.state.layout.inspector, editorStore.store.state.layout.right],
+      ([tab, visible]) => {
+        $('#pane-right-tips')?.classList.toggle('active', tab === 'tips');
+        if (tab === 'tips' && visible) {
+          value.emit('tips:shown');
+          $('#tips-filter')?.focus();
+        }
+      },
+    ),
+  );
   Object.assign(editorStore.actions, {
     openLegacySettings: value.openSettings,
     nudgeLegacyForgeToken: value.nudgeForgeToken,
@@ -511,10 +530,7 @@ export function configureLegacyServices(value) {
         return;
       }
       $('#empty').hidden = true;
-      S.lsp = document.lsp || { state: 'off', server: '' };
       syncViewers();
-      value.warmLSP(document);
-      if ($('#pane-right-symbols')?.classList.contains('active')) void loadOutline();
       if (!document.gutterLoaded) void loadGutter(document);
       value.updateStatus();
       value.emit('tab:activated', { doc: document });
@@ -526,7 +542,7 @@ export function configureLegacyServices(value) {
       }
     },
     closed(document) {
-      symbols.cancel(document.path);
+      editorStore.actions.cancelSymbols(document.path);
       facades.delete(document.path);
       extras.delete(document.path);
       value.emit('tab:closed', { doc: document });
@@ -563,16 +579,8 @@ export function configureLegacyServices(value) {
       S.settings['editor.vimMode'] = enabled;
     },
     previewTopLine,
-    definition(at, options) {
-      const document = editorStore.active();
-      if (document) editorStore.store.actions.pushHistory(document.path, document.cur);
-      return value.gotoDefinition(at || editorStore.actions.wordAtCaret(), options);
-    },
     selectAll,
     selectPreview,
-    references: (at) => value.findReferences(at || editorStore.actions.wordAtCaret()),
-    calls: (at) => value.showCalls(at || editorStore.actions.wordAtCaret()),
-    lspState: value.setLspState,
     copy: value.copyToClipboard,
     palette: () => value.openPalette('command'),
     beforeUnload: value.beforeUnload,
@@ -820,18 +828,7 @@ export async function loadGutter(document) {
     /* Git can disappear while a workspace is closing. */
   }
 }
-export async function loadOutline({ upgrade = true } = {}) {
-  const document = doc_();
-  if (!document) return;
-  try {
-    await symbols.load(document.path);
-    if (upgrade) await symbols.upgrade(document.path);
-  } catch {
-    /* A closing workspace can drop symbol requests. */
-  }
-}
-
-export const drawOutline = () => services.drawOutline?.();
+export const loadOutline = () => editorStore.actions.loadSymbols();
 
 // Phase B/C consumers keep their imperative calls at this boundary.
 const activeDocument = () => editorStore?.active();
@@ -1060,3 +1057,12 @@ export const runSearch = () => editorStore.actions.runSearch();
 export const cancelSearch = () => editorStore.actions.cancelSearch();
 export const renderResults = (result) => editorStore.actions.setSearchResults(result);
 export const searchWorkspace = (...args) => editorStore.actions.searchWorkspace(...args);
+
+export const gotoDefinition = (...args) => editorStore.actions.gotoDefinition(...args);
+export const findReferences = (...args) => editorStore.actions.findReferences(...args);
+export const showCalls = (...args) => editorStore.actions.showCalls(...args);
+export const showRightInspector = (tab) => editorStore.actions.showRightInspector(tab);
+export const hideRightInspector = () => editorStore.actions.hideRightInspector();
+export const openLspMenu = () => editorStore.actions.openLspMenu();
+export const startAllLsp = () => editorStore.actions.startAllLsp();
+export const stopAllLsp = () => editorStore.actions.stopAllLsp();

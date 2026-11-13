@@ -199,7 +199,7 @@ export function Viewport() {
         editor.actions.setNavigation({ at: word, lastWord: word?.word || '' });
         if ((event.metaKey || event.ctrlKey) && word) {
           event.preventDefault();
-          editor.services.definition?.(word, { view: event.altKey ? 'diff' : undefined });
+          editor.actions.gotoDefinition(word, { view: event.altKey ? 'diff' : undefined });
         }
         if (event.shiftKey) editor.actions.syncSelection();
       }}

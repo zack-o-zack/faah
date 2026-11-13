@@ -24,7 +24,7 @@ export function createHoverActions(editor) {
         { signal: request.signal },
       );
       if (mine !== hoverGeneration || active()?.path !== at.path) return;
-      services.lspState?.(data);
+      editor.actions.acceptLspReply(data);
       const diagnostics = active().diagnostics?.filter((item) => item.line === at.line) || [];
       if ((data.empty || (!data.signature && !data.doc)) && !diagnostics.length) {
         if (options.focus) toast('info', 'No documentation for this symbol');

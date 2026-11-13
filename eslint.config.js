@@ -5,12 +5,10 @@ import prettier from 'eslint-config-prettier';
 
 // Legacy modules leave this list as they are migrated.
 const legacy = [
-  'web/src/outline-pane.js', // Phase B replaces the right-pane UI.
   'web/src/agent-picker.js',
   'web/src/agent-picker.test.js',
   'web/src/agent.js',
   'web/src/bus.js',
-  'web/src/calls.js',
   'web/src/cardkeep.js',
   'web/src/cardkeep.test.js',
   'web/src/contrast.test.js',
@@ -19,10 +17,7 @@ const legacy = [
   'web/src/errors.js',
   'web/src/errors.test.js',
   'web/src/forgeconnect.js',
-  'web/src/inspector.js',
   'web/src/linecomment.js',
-  'web/src/lsp.js',
-  'web/src/lspsetup.js',
   'web/src/main.js',
   'web/src/metricsview.js',
   'web/src/overlays.js',

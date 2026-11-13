@@ -1,3 +1,4 @@
+import { createLanguageStore } from '../lsp/store.js';
 import { createSearchStore } from '../search/store.js';
 import { createPaletteStore } from '../palette/store.js';
 import { createGitStore } from '../git/store.js';
@@ -249,5 +250,7 @@ export function createEditorStore(store, options = {}) {
   Object.assign(actions, editor.search.actions);
   editor.palette = createPaletteStore(editor, options);
   Object.assign(actions, editor.palette.actions);
+  editor.language = createLanguageStore(editor, options.language);
+  Object.assign(actions, editor.language.actions);
   return editor;
 }

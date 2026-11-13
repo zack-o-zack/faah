@@ -58,7 +58,7 @@ export function EditorShortcuts() {
     available,
     true,
   );
-  register('Alt+Shift+H', () => editor.services.calls?.());
+  register('Alt+Shift+H', () => editor.actions.showCalls());
   register(
     'Alt+Shift+T',
     () => void editor.actions.reopenDocument()?.then(editor.actions.activateView),
@@ -159,8 +159,8 @@ export function EditorShortcuts() {
       ),
     () => available() && !!editor.ui.selection && !editor.active().isEditing,
   );
-  register('F12', () => editor.services.definition?.());
-  register('Shift+F12', () => editor.services.references?.());
+  register('F12', () => editor.actions.gotoDefinition());
+  register('Shift+F12', () => editor.actions.findReferences());
   if (isMac) {
     register('Alt+ArrowLeft', () => editor.actions.move(-1, false, 'word'), source);
     register('Alt+ArrowRight', () => editor.actions.move(1, false, 'word'), source);

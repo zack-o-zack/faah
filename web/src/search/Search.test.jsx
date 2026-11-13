@@ -57,7 +57,13 @@ test('renders results and sends case/word/regex/glob through named actions', asy
   render(() => {
     search = createSearchStore({ request });
     return (
-      <EditorProvider value={{ search, actions: search.actions }}>
+      <EditorProvider
+        value={{
+          search,
+          actions: search.actions,
+          store: { state: { layout: { right: false, inspector: 'search' } } },
+        }}
+      >
         <Search />
       </EditorProvider>
     );
