@@ -1,4 +1,13 @@
-export function MermaidControls(props) {
+interface MermaidControlsProps {
+  zoom: number;
+  fullscreen: boolean;
+  step: (direction: number) => void;
+  fit: () => void;
+  toggleZoom: () => void;
+  toggleFullscreen: () => void;
+}
+import type { JSX } from 'solid-js';
+export function MermaidControls(props: MermaidControlsProps): JSX.Element {
   return (
     <>
       <div class="md-mermaid-controls" role="group" aria-label="Diagram zoom controls">
@@ -58,7 +67,13 @@ export function MermaidControls(props) {
     </>
   );
 }
-function DiagramButton(props) {
+function DiagramButton(props: {
+  label: string;
+  icon: string;
+  class?: string;
+  disabled?: boolean;
+  onClick: () => void;
+}): JSX.Element {
   return (
     <button
       type="button"

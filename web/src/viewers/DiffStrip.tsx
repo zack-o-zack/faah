@@ -1,21 +1,29 @@
+import { decodeCommitFiles } from '../git/decode.ts';
+import type { DocTab } from '../editor/types.ts';
+
+interface DiffStripProps {
+  document: DocTab;
+  stepHunk: (direction: number) => void;
+}
+import type { JSX } from 'solid-js';
 import { createMemo, createResource, onCleanup, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { api } from '../lib/api.ts';
 import { commitStepTarget } from './diff-rows.ts';
 
-export function DiffStrip(props) {
+export function DiffStrip(props: DiffStripProps): JSX.Element {
   const editor = useEditor();
-  let request;
+  let request: AbortController | undefined;
   onCleanup(() => request?.abort());
   const [commit] = createResource(
     () => (props.document.diffRef && !props.document.turnFiles ? props.document.diffRef : false),
     (sha) => {
       request?.abort();
       request = new AbortController();
-      return api('api/commitfiles', { sha }, { signal: request.signal });
+      return api('api/commitfiles', { sha }, { signal: request.signal }).then(decodeCommitFiles);
     },
   );
-  const files = createMemo(() => {
+  const files = createMemo<{ path: string; binary?: boolean }[]>(() => {
     if (props.document.turnFiles)
       return props.document.turnFiles.map((file) =>
         typeof file === 'string' ? { path: file } : file,
@@ -24,7 +32,7 @@ export function DiffStrip(props) {
     return (editor.store.state.workspace.meta?.gitFiles || []).map((path) => ({ path }));
   });
   const index = () => files().findIndex((file) => file.path === props.document.path);
-  function step(direction) {
+  function step(direction: number) {
     const next = files()[commitStepTarget(files(), index(), direction)];
     if (next) editor.actions.stepDiffFile(props.document, next);
   }

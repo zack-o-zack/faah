@@ -1,7 +1,12 @@
+interface LightboxProps {
+  image: { src: string; path: string; alt: string };
+  close: () => void;
+}
+import type { JSX } from 'solid-js';
 import { createSignal, Show } from 'solid-js';
 import { Dialog } from '../lib/Dialog.tsx';
 import { useEditor } from '../editor/context.tsx';
-export function Lightbox(props) {
+export function Lightbox(props: LightboxProps): JSX.Element {
   const editor = useEditor();
   const [size, setSize] = createSignal('');
   return (

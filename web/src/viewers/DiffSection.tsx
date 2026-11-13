@@ -1,11 +1,17 @@
+import type { DiffSectionProps } from './diff-view.ts';
+import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
-import { DiffRows } from './DiffRows.jsx';
+import { DiffRows } from './DiffRows.tsx';
 
-export function DiffSection(props) {
+export function DiffSection(props: DiffSectionProps): JSX.Element {
   const editor = useEditor();
-  const collapsed = () =>
-    props.document[props.kind + 'Collapsed'] ?? props.defaultCollapsed ?? false;
+  const collapsedKey = (): 'prCollapsed' | 'youCollapsed' | 'commitCollapsed' => {
+    if (props.kind === 'pr') return 'prCollapsed';
+    return props.kind === 'you' ? 'youCollapsed' : 'commitCollapsed';
+  };
+  const hunkActions: ('stage' | 'unstage' | 'discard')[] = ['stage', 'unstage', 'discard'];
+  const collapsed = () => props.document[collapsedKey()] ?? props.defaultCollapsed ?? false;
   return (
     <section
       class={`diff-section diff-section-${props.kind}`}
@@ -73,7 +79,7 @@ export function DiffSection(props) {
                       Expand
                     </button>
                     <Show when={props.canAct}>
-                      <For each={['stage', 'unstage', 'discard']}>
+                      <For each={hunkActions}>
                         {(action) => (
                           <button
                             class="btn"
@@ -83,7 +89,7 @@ export function DiffSection(props) {
                             data-variant="outline"
                             onClick={() => props.actions.apply(hunk(), action)}
                           >
-                            {action[0].toUpperCase() + action.slice(1)}
+                            {action.charAt(0).toUpperCase() + action.slice(1)}
                           </button>
                         )}
                       </For>

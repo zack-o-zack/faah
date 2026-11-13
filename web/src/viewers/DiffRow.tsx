@@ -1,16 +1,35 @@
+import type { DocTab } from '../editor/types.ts';
+import type { Diagnostic } from '../editor/decode.ts';
+import type { PaintedRow } from './diff-rows.ts';
+interface DiffRowProps {
+  row?: PaintedRow | null;
+  side?: string;
+  document: DocTab;
+  reviewable?: boolean;
+  jump: (line: number) => void;
+  diagnostics: Map<number, Diagnostic>;
+}
+interface GutterProps extends Omit<DiffRowProps, 'diagnostics'> {
+  number?: number;
+  line?: number;
+}
+const markers: Record<string, string> = { add: '+', del: '−' };
+import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { gutterAnchor, gutterSelection } from './diff-rows.ts';
 import { CommentMarker } from '../pr/RowComments.jsx';
 
-function Gutter(props) {
+function Gutter(props: GutterProps): JSX.Element {
   const editor = useEditor();
   return (
     <div
       class="diff-ln"
       classList={{ 'diff-ln-nav': props.number !== undefined }}
       title={`Open in file view at line ${props.number}`}
-      onClick={() => props.jump(props.line)}
+      onClick={() => {
+        if (props.line !== undefined) props.jump(props.line);
+      }}
     >
       <Show when={props.number !== undefined}>
         <button
@@ -22,11 +41,9 @@ function Gutter(props) {
           onMouseDown={(event) => event.preventDefault()}
           onClick={(event) => {
             event.stopPropagation();
-            editor.actions.openLineActions(
-              gutterSelection(props.row, props.document.path, props.reviewable),
-              event.clientX,
-              event.clientY,
-            );
+            const selection = gutterSelection(props.row, props.document.path, props.reviewable);
+            if (!selection) return;
+            editor.actions.openLineActions(selection, event.clientX, event.clientY);
           }}
         >
           Edit
@@ -36,7 +53,7 @@ function Gutter(props) {
     </div>
   );
 }
-function Code(props) {
+function Code(props: { row?: PaintedRow | null; diagnostic?: Diagnostic }): JSX.Element {
   return (
     <div
       class="diff-code"
@@ -49,7 +66,7 @@ function Code(props) {
     </div>
   );
 }
-export function DiffSide(props) {
+export function DiffSide(props: DiffRowProps): JSX.Element {
   const editor = useEditor();
   const anchor = () => gutterAnchor(props.row);
   const ranges = () =>
@@ -57,10 +74,10 @@ export function DiffSide(props) {
   const number = () => (props.side === 'left' ? props.row?.oldLine : props.row?.newLine);
   return (
     <div
-      class={`group/line diff-side diff-side-${props.side} ${props.row ? 'diff-' + props.row.type : 'diff-blank'}`}
+      class={`group/line diff-side diff-side-${props.side} ${props.row ? 'diff-' + props.row?.type : 'diff-blank'}`}
       onClick={(event) => {
-        if (!event.target.closest('button'))
-          editor.actions.focusAgentAt(props.document.path, anchor().line ?? anchor().at);
+        if (event.target instanceof Element && !event.target.closest('button'))
+          editor.actions.focusAgentAt(props.document.path, anchor().line ?? anchor().at ?? 0);
       }}
       data-l={anchor().line}
       data-at={anchor().at}
@@ -68,7 +85,7 @@ export function DiffSide(props) {
       data-reviewable={props.reviewable ? undefined : '0'}
       classList={{
         'agent-sel': ranges().some(
-          (range) => anchor().line >= range.l1 && anchor().line <= range.l2,
+          (range) => (anchor().line ?? -1) >= range.l1 && (anchor().line ?? -1) <= range.l2,
         ),
         'agent-anchor': ranges().some((range) => anchor().line === range.l1),
       }}
@@ -82,32 +99,32 @@ export function DiffSide(props) {
         reviewable={props.reviewable}
         jump={props.jump}
       />
-      <div class="diff-mk">{{ add: '+', del: '−' }[props.row?.type] || ' '}</div>
+      <div class="diff-mk">{markers[props.row?.type || ''] || ' '}</div>
       <CommentMarker row={props.row} path={props.document.path} reviewable={props.reviewable} />
       <Code
         row={props.row}
-        diagnostic={props.side === 'right' ? props.diagnostics.get(anchor().line) : undefined}
+        diagnostic={props.side === 'right' ? props.diagnostics.get(anchor().line ?? -1) : undefined}
       />
     </div>
   );
 }
-export function UnifiedRow(props) {
+export function UnifiedRow(props: DiffRowProps): JSX.Element {
   const editor = useEditor();
   const ranges = () =>
     editor.agents.targets().filter((range) => range.path === props.document.path);
   const anchor = () => gutterAnchor(props.row);
   return (
     <div
-      class={`group/line diff-row diff-${props.row.type}`}
+      class={`group/line diff-row diff-${props.row?.type}`}
       classList={{
         'agent-sel': ranges().some(
-          (range) => anchor().line >= range.l1 && anchor().line <= range.l2,
+          (range) => (anchor().line ?? -1) >= range.l1 && (anchor().line ?? -1) <= range.l2,
         ),
         'agent-anchor': ranges().some((range) => anchor().line === range.l1),
       }}
       onClick={(event) => {
-        if (!event.target.closest('button'))
-          editor.actions.focusAgentAt(props.document.path, anchor().line ?? anchor().at);
+        if (event.target instanceof Element && !event.target.closest('button'))
+          editor.actions.focusAgentAt(props.document.path, anchor().line ?? anchor().at ?? 0);
       }}
       data-l={anchor().line}
       data-at={anchor().at}
@@ -115,7 +132,7 @@ export function UnifiedRow(props) {
       data-reviewable={props.reviewable ? undefined : '0'}
     >
       <Gutter
-        number={props.row.oldLine}
+        number={props.row?.oldLine}
         line={anchor().line ?? anchor().at}
         row={props.row}
         side="LEFT"
@@ -124,7 +141,7 @@ export function UnifiedRow(props) {
         jump={props.jump}
       />
       <Gutter
-        number={props.row.newLine}
+        number={props.row?.newLine}
         line={anchor().line ?? anchor().at}
         row={props.row}
         side="RIGHT"
@@ -132,9 +149,9 @@ export function UnifiedRow(props) {
         reviewable={props.reviewable}
         jump={props.jump}
       />
-      <div class="diff-mk">{{ add: '+', del: '−' }[props.row.type] || ' '}</div>
+      <div class="diff-mk">{markers[props.row?.type || ''] || ' '}</div>
       <CommentMarker row={props.row} path={props.document.path} reviewable={props.reviewable} />
-      <Code row={props.row} diagnostic={props.diagnostics.get(anchor().line)} />
+      <Code row={props.row} diagnostic={props.diagnostics.get(anchor().line ?? -1)} />
     </div>
   );
 }

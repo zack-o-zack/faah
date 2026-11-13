@@ -4,10 +4,10 @@ interface RowPair {
   left: DiffRow | null;
   right: DiffRow | null;
 }
-interface PaintedRow extends DiffRow {
+export interface PaintedRow extends DiffRow {
   parts: SyntaxPart[];
 }
-interface PaintedPair {
+export interface PaintedPair {
   left: PaintedRow | null;
   right: PaintedRow | null;
 }
@@ -83,7 +83,7 @@ export function gutterAnchor(row: DiffRow | null | undefined): {
       }
     : {};
 }
-export function diagnosticMap<T extends { line: number; severity: number }>(
+export function diagnosticMap<T extends { line: number; severity?: number }>(
   diagnostics: T[] = [],
 ): Map<number, T> {
   const map = new Map<number, T>();

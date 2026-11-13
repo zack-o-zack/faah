@@ -1,8 +1,17 @@
+import type { DocTab } from '../editor/types.ts';
+import type { TableReply } from './decode.ts';
+
+interface TableViewerProps {
+  data: TableReply;
+  document: DocTab;
+  jump: (line: number) => void;
+}
+import type { JSX } from 'solid-js';
 import { createMemo, For, Index, Show } from 'solid-js';
-export function TableViewer(props) {
+export function TableViewer(props: TableViewerProps): JSX.Element {
   const columns = createMemo(() => Array.from({ length: props.data.cols }, (_, i) => i));
   const rows = () => props.data.rows.slice(0, 1000);
-  function jumpKey(event, line) {
+  function jumpKey(event: KeyboardEvent, line: number) {
     if (event.key !== 'Enter' && event.key !== ' ') return;
     event.preventDefault();
     props.jump(line);

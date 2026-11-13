@@ -16,8 +16,8 @@ import { EditView } from '../editor/EditView.tsx';
 import { FindBar } from '../editor/FindBar.tsx';
 import { HoverCard } from '../editor/HoverCard.tsx';
 import { Minimap } from '../editor/Minimap.tsx';
-import { Viewers } from '../viewers/Viewers.jsx';
-import { ExplainOrb } from '../viewers/ExplainOrb.jsx';
+import { Viewers } from '../viewers/Viewers.tsx';
+import { ExplainOrb } from '../viewers/ExplainOrb.tsx';
 import { Welcome } from './Welcome.tsx';
 import type { WorkspaceMeta } from './types.ts';
 

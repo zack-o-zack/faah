@@ -82,7 +82,7 @@ function buildViewerActions(store: ViewerStore) {
     },
     toggleSection(
       document: DocTab,
-      kind: 'pr' | 'you',
+      kind: 'pr' | 'you' | 'commit',
       collapsed = kind === 'pr' ? document.prCollapsed : document.youCollapsed,
     ): void {
       patch(document, { [kind + 'Collapsed']: !collapsed });

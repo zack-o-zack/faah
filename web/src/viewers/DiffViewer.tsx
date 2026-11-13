@@ -1,17 +1,25 @@
+import type { DiffScrollProps, RowLocator } from './diff-view.ts';
+import { decodeDiff } from './decode.ts';
+import type { JSX } from 'solid-js';
 import { createSignal, onCleanup, onMount, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { createViewerResource } from './resource.ts';
 import { diffSelection } from './diff-selection.ts';
-import { DiffContent } from './DiffContent.jsx';
+import { DiffContent } from './DiffContent.tsx';
 import { viewMode } from './view.ts';
 import { createSourceDOM } from '../editor/source-dom.ts';
 import { isMac } from '../lib/keyboard.ts';
 
 const modifier = isMac ? 'metaKey' : 'ctrlKey';
 
-function DiffDocument(props) {
+function DiffDocument(props: DiffScrollProps): JSX.Element {
   const editor = useEditor();
-  const [data, { refetch }] = createViewerResource(editor, () => props.document, 'api/diff');
+  const [data, { refetch }] = createViewerResource(
+    editor,
+    () => props.document,
+    'api/diff',
+    decodeDiff,
+  );
   return (
     <Show
       when={!data.loading}
@@ -47,21 +55,22 @@ function DiffDocument(props) {
     </Show>
   );
 }
-export function DiffViewer() {
+export function DiffViewer(): JSX.Element {
   const editor = useEditor();
-  let viewport;
-  const rowLocations = new Set();
-  function registerRows(locate) {
+  let viewport: HTMLDivElement | undefined;
+  const rowLocations = new Set<RowLocator>();
+  function registerRows(locate: RowLocator) {
     rowLocations.add(locate);
     return () => rowLocations.delete(locate);
   }
-  let frame;
-  let flashTimer;
+  let frame = 0;
+  let flashTimer: ReturnType<typeof setTimeout> | undefined;
   const [top, setTop] = createSignal(0);
   const [height, setHeight] = createSignal(900);
   const visible = () => viewMode(editor.active()) === 'diff';
   // A modified click on a word goes to its definition; a plain click shows its hover card.
-  function wordAt(event, definition) {
+  function wordAt(event: MouseEvent, definition: boolean) {
+    if (!viewport) return;
     const word = createSourceDOM(viewport, editor.active).wordAtPoint(event.clientX, event.clientY);
     if (!word) return;
     editor.actions.setNavigation({ at: word, lastWord: word.word });
@@ -71,13 +80,15 @@ export function DiffViewer() {
     } else editor.actions.showHover(word, event.clientX, event.clientY);
   }
   function currentLine() {
+    if (!viewport) return editor.active()?.cur || 1;
     const top = viewport.getBoundingClientRect().top;
-    for (const row of viewport.querySelectorAll('[data-l], [data-at]'))
-      if (row.getBoundingClientRect().bottom > top) return +(row.dataset.l || row.dataset.at);
+    for (const row of viewport.querySelectorAll<HTMLElement>('[data-l], [data-at]'))
+      if (row.getBoundingClientRect().bottom > top) return +(row.dataset.l || row.dataset.at || 1);
     return editor.active()?.cur || 1;
   }
-  function scrollLine(line) {
-    let row = viewport.querySelector(
+  function scrollLine(line: number) {
+    if (!viewport) return;
+    let row = viewport.querySelector<HTMLElement>(
       `[data-l="${line}"], [data-at="${line}"], [data-old-l="${line}"]`,
     );
     if (!row) {
@@ -86,28 +97,29 @@ export function DiffViewer() {
         .find((value) => value !== null);
       if (location !== undefined) {
         viewport.scrollTop = Math.max(0, location - viewport.clientHeight / 2);
-        setTop(viewport.scrollTop);
-        row = viewport.querySelector(`[data-l="${line}"], [data-at="${line}"]`);
+        setTop(viewport?.scrollTop || 0);
+        row = viewport.querySelector<HTMLElement>(`[data-l="${line}"], [data-at="${line}"]`);
       }
     }
     if (!row && !rowLocations.size) {
-      const header = [...viewport.querySelectorAll('[data-new-start]')]
+      const header = [...viewport.querySelectorAll<HTMLElement>('[data-new-start]')]
         .reverse()
-        .find((head) => +head.dataset.newStart <= line);
+        .find((head) => +(head.dataset.newStart || 1) <= line);
       if (header) {
-        viewport.scrollTop = header.offsetTop + (line - +header.dataset.newStart) * 20;
-        setTop(viewport.scrollTop);
-        row = viewport.querySelector(`[data-l="${line}"], [data-at="${line}"]`);
+        viewport.scrollTop = header.offsetTop + (line - +(header.dataset.newStart || 1)) * 20;
+        setTop(viewport?.scrollTop || 0);
+        row = viewport.querySelector<HTMLElement>(`[data-l="${line}"], [data-at="${line}"]`);
       }
     }
     if (row) {
       row.scrollIntoView({ block: 'center' });
       row.classList.add('diff-row-flash');
       clearTimeout(flashTimer);
-      flashTimer = setTimeout(() => row.classList.remove('diff-row-flash'), 1200);
+      flashTimer = setTimeout(() => row?.classList.remove('diff-row-flash'), 1200);
     }
   }
-  function stepHunk(direction) {
+  function stepHunk(direction: number) {
+    if (!viewport) return;
     const heads = [...viewport.querySelectorAll('[data-ui~=diff-hunk-head]')].filter(
       (head) => head.getClientRects().length,
     );
@@ -120,15 +132,19 @@ export function DiffViewer() {
     target?.scrollIntoView({ block: 'start' });
   }
   onMount(() => {
-    const observer = new ResizeObserver(() => setHeight(viewport.clientHeight || 900));
-    observer.observe(viewport);
+    const host = viewport;
+    if (!host) return;
+    const observer = new ResizeObserver(() => setHeight(host.clientHeight || 900));
+    observer.observe(host);
     const selection = () => {
       const selected = window.getSelection();
       if (!visible() || !selected?.rangeCount || selected.isCollapsed) return;
-      const info = diffSelection(viewport, selected.getRangeAt(0), editor.active());
+      const active = editor.active();
+      if (!active) return;
+      const info = diffSelection(host, selected.getRangeAt(0), active);
       if (info) editor.actions.setSelection(info);
     };
-    const service = { currentLine, scrollLine, stepHunk, scrollTop: () => viewport.scrollTop };
+    const service = { currentLine, scrollLine, stepHunk, scrollTop: () => host.scrollTop };
     editor.services.diff = service;
     document.addEventListener('selectionchange', selection);
     onCleanup(() => {
@@ -146,15 +162,27 @@ export function DiffViewer() {
       class="absolute inset-0 overflow-auto bg-background"
       hidden={!visible()}
       onScroll={() => {
-        editor.actions.rememberDiff(editor.active(), viewport.scrollTop);
+        if (!viewport) return;
+        const active = editor.active();
+        if (active) editor.actions.rememberDiff(active, viewport.scrollTop);
         cancelAnimationFrame(frame);
-        frame = requestAnimationFrame(() => setTop(viewport.scrollTop));
+        frame = requestAnimationFrame(() => setTop(viewport?.scrollTop || 0));
       }}
       onMouseDown={(event) => {
-        if (event.target.closest('.diff-code') && event[modifier]) wordAt(event, true);
+        if (
+          event.target instanceof Element &&
+          event.target.closest('.diff-code') &&
+          event[modifier]
+        )
+          wordAt(event, true);
       }}
       onClick={(event) => {
-        if (event.target.closest('.diff-code') && !event[modifier]) wordAt(event, false);
+        if (
+          event.target instanceof Element &&
+          event.target.closest('.diff-code') &&
+          !event[modifier]
+        )
+          wordAt(event, false);
       }}
     >
       <Show when={visible() && editor.active()} keyed>
@@ -165,7 +193,7 @@ export function DiffViewer() {
             top={top()}
             height={height()}
             scrollTo={(value) => {
-              viewport.scrollTop = value;
+              if (viewport) viewport.scrollTop = value;
             }}
             scrollLine={scrollLine}
             stepHunk={stepHunk}

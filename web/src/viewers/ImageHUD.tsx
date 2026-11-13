@@ -1,7 +1,15 @@
+import type { DocTab } from '../editor/types.ts';
+
+interface ImageHUDProps {
+  document: DocTab;
+  scale: number;
+  zoom: (direction: number) => void;
+}
+import type { JSX } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { fmtBytes } from '../status/logic.ts';
 
-export function ImageHUD(props) {
+export function ImageHUD(props: ImageHUDProps): JSX.Element {
   const actions = useEditor().actions;
   const view = () => props.document.image;
   return (
@@ -80,7 +88,7 @@ export function ImageHUD(props) {
           data-variant="ghost"
           data-control="iv-btn"
         >
-          {view().bg[0].toUpperCase() + view().bg.slice(1)}
+          {view().bg.charAt(0).toUpperCase() + view().bg.slice(1)}
         </button>
         <button
           id="iv-pixel"

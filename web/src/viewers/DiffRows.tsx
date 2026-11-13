@@ -1,13 +1,29 @@
+import type { DiffRowsProps } from './diff-view.ts';
+import type { PaintedRow, PaintedPair } from './diff-rows.ts';
+interface DiffSlotProps extends Pick<
+  DiffRowsProps,
+  'document' | 'diagnostics' | 'reviewable' | 'jump' | 'mode'
+> {
+  row: PaintedRow | PaintedPair | undefined;
+  index: number;
+  observer: ResizeObserver;
+}
+import type { JSX } from 'solid-js';
 import { createMemo, createSignal, Index, onCleanup, onMount, Show } from 'solid-js';
 import { splitRows, unifiedRows, rowOffsets, measuredWindow } from './diff-rows.ts';
-import { DiffSide, UnifiedRow } from './DiffRow.jsx';
+import { DiffSide, UnifiedRow } from './DiffRow.tsx';
 import { RowComposers } from '../pr/RowComments.jsx';
 
-function DiffSlot(props) {
-  let row;
+function DiffSlot(props: DiffSlotProps): JSX.Element {
+  let row: HTMLDivElement | undefined;
+  const left = () => (props.row && 'left' in props.row ? props.row.left : undefined);
+  const right = () => (props.row && 'right' in props.row ? props.row.right : undefined);
+  const unified = () => (props.row && 'type' in props.row ? props.row : undefined);
   onMount(() => {
-    props.observer.observe(row);
-    onCleanup(() => props.observer.unobserve(row));
+    const element = row;
+    if (!element) return;
+    props.observer.observe(element);
+    onCleanup(() => props.observer.unobserve(element));
   });
   return (
     <div ref={row} data-slot={props.index}>
@@ -16,7 +32,7 @@ function DiffSlot(props) {
         fallback={
           <div class="diff-row-pair">
             <DiffSide
-              row={props.row.left}
+              row={left()}
               side="left"
               document={props.document}
               diagnostics={props.diagnostics}
@@ -24,7 +40,7 @@ function DiffSlot(props) {
               jump={props.jump}
             />
             <DiffSide
-              row={props.row.right}
+              row={right()}
               side="right"
               document={props.document}
               diagnostics={props.diagnostics}
@@ -35,7 +51,7 @@ function DiffSlot(props) {
         }
       >
         <UnifiedRow
-          row={props.row}
+          row={unified()}
           document={props.document}
           diagnostics={props.diagnostics}
           reviewable={props.reviewable}
@@ -45,15 +61,15 @@ function DiffSlot(props) {
       <Show when={props.reviewable}>
         <RowComposers
           path={props.document.path}
-          rows={props.mode === 'unified' ? [props.row] : [props.row.left, props.row.right]}
+          rows={props.mode === 'unified' ? [unified()] : [left(), right()]}
         />
       </Show>
     </div>
   );
 }
-export function DiffRows(props) {
-  let table;
-  const heights = new Map();
+export function DiffRows(props: DiffRowsProps): JSX.Element {
+  let table: HTMLDivElement | undefined;
+  const heights = new Map<number, number>();
   const [revision, updateHeights] = createSignal(0);
   const [origin, setOrigin] = createSignal(0);
   const rows = createMemo(() =>
@@ -71,7 +87,7 @@ export function DiffRows(props) {
   const observer = new ResizeObserver((entries) => {
     let changed = false;
     for (const entry of entries) {
-      const index = +entry.target.dataset.slot;
+      const index = +(entry.target.getAttribute('data-slot') || 0);
       const height = entry.borderBoxSize?.[0]?.blockSize || entry.contentRect.height;
       if (height && heights.get(index) !== height) {
         heights.set(index, height);
@@ -82,15 +98,17 @@ export function DiffRows(props) {
   });
   onCleanup(() => observer.disconnect());
   onMount(() => {
-    const position = new ResizeObserver(() => setOrigin(table.offsetTop));
-    position.observe(table.parentElement);
-    setOrigin(table.offsetTop);
-    const locate = (line) => {
+    const element = table;
+    if (!element) return;
+    const position = new ResizeObserver(() => setOrigin(element.offsetTop));
+    if (element.parentElement) position.observe(element.parentElement);
+    setOrigin(element.offsetTop);
+    const locate = (line: number) => {
       const index = rows().findIndex((row) => {
-        const candidates = props.mode === 'unified' ? [row] : [row.right, row.left];
+        const candidates = 'type' in row ? [row] : [row.right, row.left];
         return candidates.some((row) => row && (row.newLine === line || row.at === line));
       });
-      return index >= 0 ? table.offsetTop + offsets()[index] : null;
+      return index >= 0 ? element.offsetTop + (offsets()[index] || 0) : null;
     };
     const release = props.registerRows?.(locate);
     onCleanup(() => {

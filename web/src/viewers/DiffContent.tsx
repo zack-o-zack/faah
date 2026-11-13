@@ -1,14 +1,21 @@
+import type { DiffScrollProps } from './diff-view.ts';
+import type { DiffReply } from './decode.ts';
+import type { DiffHunk } from './diff-parse.ts';
+interface DiffContentProps extends DiffScrollProps {
+  data: DiffReply;
+}
+import type { JSX } from 'solid-js';
 import { createMemo, createSignal, onCleanup, onMount, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { parseDiff } from './diff-parse.ts';
 import { diagnosticMap } from './diff-rows.ts';
 import { createDiffActions } from './diff-actions.ts';
-import { DiffSection } from './DiffSection.jsx';
-import { DiffStrip } from './DiffStrip.jsx';
+import { DiffSection } from './DiffSection.tsx';
+import { DiffStrip } from './DiffStrip.tsx';
 
-export function DiffContent(props) {
+export function DiffContent(props: DiffContentProps): JSX.Element {
   const editor = useEditor();
-  const [expanded, setExpanded] = createSignal(new Map());
+  const [expanded, setExpanded] = createSignal(new Map<DiffHunk, DiffHunk>());
   const hunks = createMemo(() => props.data.hunks || parseDiff(props.data.diff || ''));
   const prHunks = createMemo(() => props.data.prHunks || parseDiff(props.data.prDiff || ''));
   const yourHunks = createMemo(() => props.data.yourHunks || parseDiff(props.data.yourDiff || ''));
@@ -29,7 +36,7 @@ export function DiffContent(props) {
   const isPR = () =>
     !props.document.diffRef &&
     (props.data.prHunks !== undefined || props.data.prDiff !== undefined);
-  function jump(line) {
+  function jump(line: number) {
     editor.actions.setDiffMode(props.document, 'source');
     editor.actions.setView(props.document, 'source');
     editor.actions.patch({ cur: line });

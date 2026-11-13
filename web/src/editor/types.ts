@@ -33,6 +33,7 @@ export interface DocTab {
   mdAnchor?: string;
   diffScroll?: number;
   prCollapsed?: boolean;
+  commitCollapsed?: boolean;
   youCollapsed?: boolean;
   diffScope?: string;
   viewerRevision: number;
