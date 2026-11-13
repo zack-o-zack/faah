@@ -14,7 +14,9 @@ func TestAgentModelsBrowsesWithoutSelecting(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "claude"), []byte("#!/bin/sh\necho 'Available: sonnet, opus, haiku, fable, best, or default.'\n"), 0755); err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("PATH", dir+":"+os.Getenv("PATH"))
+	// Both agents must come from fixtures, even when no harness is installed.
+	t.Setenv("PATH", dir)
+	fakeCLI(t, "codex")
 	s := agentServer(t, t.TempDir(), "codex")
 	beforeName, beforeModel := s.agent.Name(), s.agent.Model()
 	w := httptest.NewRecorder()
