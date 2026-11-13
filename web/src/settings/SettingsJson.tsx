@@ -1,5 +1,4 @@
 import { onMount, Show, type Component } from 'solid-js';
-import { withKeys } from '../lib/keyboard.ts';
 import { useSettings } from './context.ts';
 
 export const SettingsJson: Component = () => {
@@ -25,16 +24,6 @@ export const SettingsJson: Component = () => {
             onClick={settings.actions.discardRawSettings}
           >
             Discard
-          </button>
-          <button
-            type="button"
-            title={withKeys('Save changes to settings.json ({Mod+S})')}
-            class="btn"
-            data-variant="primary"
-            data-size="xs"
-            onClick={() => void settings.actions.saveRawSettings()}
-          >
-            Save
           </button>
         </div>
       </div>

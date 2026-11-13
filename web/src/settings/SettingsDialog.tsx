@@ -24,7 +24,7 @@ export const SettingsDialog: Component<SettingsDialogProps> = (props) => {
         onClose={settings.actions.closeSettings}
       >
         <div
-          class="sm:max-w-[1180px] h-[min(840px,92vh)] overflow-hidden gap-0"
+          class="sm:max-w-[1180px] h-[min(840px,92vh)] overflow-hidden"
           onKeyDown={(event) => {
             if (event.key.toLowerCase() !== 's' || !(event.metaKey || event.ctrlKey)) return;
             event.preventDefault();
@@ -44,7 +44,10 @@ export const SettingsDialog: Component<SettingsDialogProps> = (props) => {
               </div>
             </Show>
           </section>
-          <footer id="settings-footer" class="flex-row! items-center justify-between shrink-0">
+          <footer
+            id="settings-footer"
+            class="flex-row! min-h-8 items-center justify-between gap-4 shrink-0"
+          >
             <SettingsFooter />
           </footer>
         </div>

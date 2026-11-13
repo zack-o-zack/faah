@@ -62,11 +62,15 @@ test('opening on a category lists its settings and saves a segment choice', asyn
   const { settings, post } = mount();
   settings.actions.openSettings('ui', 'Text Editor');
   await screen.findByText('Tab Size');
+  expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+  expect(screen.getByRole('status').textContent).toBe('Saved');
   fireEvent.click(screen.getByRole('button', { name: '8' }));
+  expect(screen.getByRole('status').textContent).toBe('Saving…');
   await waitFor(() =>
     expect(post).toHaveBeenCalledWith('api/settings', { 'editor.tabSize': 8 }, expect.anything()),
   );
   expect(screen.getByText('Modified')).toBeTruthy();
+  await waitFor(() => expect(screen.getByRole('status').textContent).toBe('Saved'));
 });
 
 test('search spans categories and the vim card links its cheat sheet', async () => {
@@ -98,4 +102,14 @@ test('a switch saves its boolean and the JSON view shows the file', async () => 
   );
   fireEvent.click(screen.getByRole('button', { name: 'JSON' }));
   expect(screen.getByRole('textbox', { name: 'Settings JSON' })).toHaveProperty('value', '{}');
+  expect(screen.getByRole('button', { name: 'Save' })).toBeTruthy();
+  const writes = post.mock.calls.length;
+  fireEvent.input(screen.getByRole('textbox', { name: 'Settings JSON' }), {
+    target: { value: '{"editor.tabSize":2}' },
+  });
+  expect(post).toHaveBeenCalledTimes(writes);
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  await waitFor(() => expect(post).toHaveBeenCalledTimes(writes + 1));
+  fireEvent.click(screen.getByRole('button', { name: 'UI' }));
+  expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
 });
