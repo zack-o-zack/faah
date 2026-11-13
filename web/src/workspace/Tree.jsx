@@ -30,11 +30,12 @@ export function Tree() {
   function schedule() {
     if (!frame) frame = requestAnimationFrame(update);
   }
-  function scrollPath(path) {
+  function scrollPath(path, center = false) {
     const index = rows().findIndex((row) => row.path === path);
     if (index < 0) return;
     const rowTop = index * 24;
-    if (rowTop < viewport.scrollTop) viewport.scrollTop = rowTop;
+    if (center) viewport.scrollTop = rowTop + 12 - viewport.clientHeight / 2;
+    else if (rowTop < viewport.scrollTop) viewport.scrollTop = rowTop;
     else if (rowTop + 24 > viewport.scrollTop + viewport.clientHeight)
       viewport.scrollTop = rowTop + 24 - viewport.clientHeight;
     update();
@@ -42,7 +43,7 @@ export function Tree() {
   createEffect(
     on(
       () => tree.state.reveal.sequence,
-      () => scrollPath(tree.state.reveal.path),
+      () => scrollPath(tree.state.reveal.path, true),
       { defer: true },
     ),
   );
