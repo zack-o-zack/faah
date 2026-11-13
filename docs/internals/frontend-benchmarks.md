@@ -310,3 +310,116 @@ smoke covers 29 cases with zero console errors; the explain request is mocked an
 the known failing remote tips feed is disabled. The editor smoke passes 38 additional cases with no console errors; its
 results are recorded separately in the local diagnostic output. Phase B benchmarks and migration are
 not included in these A2 results.
+
+## B — 13 November 2026
+
+Five runs of all nine scenarios (45 successful pages, zero failures), using the
+same M4, Chrome 157.0.8103.51, React revision and synthetic fixture hashes as the
+vanilla/A1/A2 baselines. Frontend checks/build use Node 24.15.0 through nvm;
+the harness uses Node v26.3.0. Go is 1.27.3. Frontend source is
+`0a25f01`. The harness ran against a freshly built binary.
+Values below are medians under the existing pooled-sample contract; raw samples,
+p95s and binary/fixture hashes are in ignored `bench-out/b.json`.
+
+| Metric | Unit | Vanilla | A1 | A2 | B |
+|---|---|---:|---:|---:|---:|
+| cold.real.tree | ms | 526.80 | 495.90 | 573.10 | 564.70 |
+| cold.real.idle | ms | 1047.70 | 1013.00 | 1087.80 | 1077.40 |
+| cold.real.js_transfer | bytes | 160765.00 | 166781.00 | 169373.00 | 168112.00 |
+| cold.real.heap | bytes | 3126872.00 | 3601100.00 | 3499356.00 | 4506068.00 |
+| cold.real.dom_nodes | nodes | 4064.00 | 4133.00 | 4000.00 | 3880.00 |
+| cold.synthetic.tree | ms | 509.30 | 506.90 | 534.20 | 596.30 |
+| cold.synthetic.idle | ms | 1033.90 | 1019.40 | 1050.10 | 1110.80 |
+| cold.synthetic.js_transfer | bytes | 160765.00 | 166781.00 | 169373.00 | 168112.00 |
+| cold.synthetic.heap | bytes | 3107440.00 | 3563904.00 | 3489852.00 | 4374640.00 |
+| cold.synthetic.dom_nodes | nodes | 4060.00 | 4059.00 | 3926.00 | 3770.00 |
+| finder.keystroke | ms | 64.20 | 77.30 | 76.80 | 45.20 |
+| file.open_50k | ms | 43.90 | 45.90 | 45.60 | 41.90 |
+| scroll.frame | ms | 16.70 | 16.70 | 16.70 | 16.70 |
+| scroll.frames_over_16_7 | frames | 17.00 | 13.00 | 11.00 | 10.00 |
+| scroll.long_tasks | tasks | 0.00 | 0.00 | 0.00 | 0.00 |
+| scroll.long_task_total | ms | 0.00 | 0.00 | 0.00 | 0.00 |
+| scroll.geometry_misses | checkpoints | 0.00 | 0.00 | 0.00 | 0.00 |
+| scroll.content_misses | checkpoints | 0.00 | 0.00 | 0.00 | 0.00 |
+| cursor.interaction | ms | 24.00 | 24.00 | 24.00 | 32.00 |
+| cursor.interactions_ge_16 | interactions | 300.00 | 300.00 | 300.00 | 300.00 |
+| edit.enter_50k | ms | 1647.20 | 529.30 | 536.00 | 526.10 |
+| edit.keystroke | ms | 103.90 | 36.50 | 36.50 | 35.90 |
+| edit.interaction | ms | 88.00 | 40.00 | 40.00 | 40.00 |
+| edit.interactions_ge_16 | interactions | 200.00 | 200.00 | 200.00 | 200.00 |
+| tabs.switch | ms | 31.45 | 30.65 | 30.60 | 30.05 |
+| tree.expand_20k | ms | 1224.50 | 1128.10 | 1143.70 | 79.20 |
+| tree.reveal_deep | ms | 140.80 | 114.40 | 182.10 | 44.80 |
+| search.results | ms | 895.60 | 874.50 | 906.60 | 875.50 |
+| preview.markdown_5k | ms | 194.20 | 119.60 | 111.60 | 102.80 |
+| preview.csv_20k | ms | 118.70 | 103.90 | 98.50 | 92.50 |
+| memory.heap_delta | bytes | 409988.00 | 602756.00 | 602836.00 | 584628.00 |
+| memory.dom_delta | nodes | 20.00 | 20.00 | 20.00 | 0.00 |
+| memory.attached_delta | elements | 0.00 | 0.00 | 0.00 | 0.00 |
+
+- The tree now renders a bounded window over a plain cache rather than creating
+  20,000 file rows. Expansion is 79.2ms versus A2's 1,143.7ms.
+  Three alternating A2/B runs measured 1,149.8 / 80.6ms for expansion and
+  99.3 / 52.0ms for deep reveal. The older A1/A2 paired reveal result was
+  187.8 / 186.9ms; the new paired run demonstrates improvement without relying
+  on that historical timing boundary. Individual A2 reveal samples were
+  97.1, 99.3 and 179.4ms; B samples were 54.8, 52.0 and 43.6ms.
+- Finder keystrokes are 45.2ms, down from A2's 76.8ms.
+  The 40ms debounce and per-result `scrollIntoView` are gone. Queries start
+  immediately; keyboard navigation adjusts owned list scrollTop only when the
+  selected row is clipped. Workspace search is 875.5ms versus
+  A1's 874.5ms and A2's 906.6ms, including debounce and backend scanning.
+- Full-run cold synthetic tree readiness is 11.6% above the historical A2 table.
+  A fresh three-run alternating comparison of the final binaries measured
+  556.1 / 518.7ms for the real tree and 551.4 / 486.6ms for the synthetic tree
+  (A2/B). Synthetic individual samples were 452.3, 574.8, 551.4ms for A2 and
+  519.9, 462.1, 486.6ms for B. The paired result does not reproduce a B
+  regression; cold readiness includes external font CSS and startup variation.
+  Resource timings are preserved in b-paired-cold-final.json.
+- Cursor Event Timing is 32ms versus the historical A2 24ms. Fresh alternating
+  300-keydown passes measured pooled medians 40 / 24ms (A2/B, 900 reported
+  interactions each). Dispatch-loop wall medians were 401.1 / 389.2ms.
+  Event Timing includes scheduling through the next paint and is quantized to
+  8ms; the paired run does not reproduce a B cursor slowdown. Raw events are
+  preserved in b-paired-cursor.json.
+- **Cold JavaScript heap increases and is retained as an explicit tradeoff.**
+  The paired synthetic uncollected heap was 3,489,952 / 4,377,836 bytes (A2/B).
+  After forced GC it was 2,424,564 / 3,178,328 bytes: +753,764 bytes, so the
+  increase is not just delayed garbage collection. Heap snapshots attribute
+  +251,696 bytes to code, +183,908 to objects, +136,960 to arrays and +104,860
+  to closures. These account for about 90% of the added JS heap and reflect
+  the mounted Solid controls and feature-store/resource graph. There are no
+  file-sized startup buffers. Snapshot native self-size fell 1,001,036 bytes;
+  CDP embedder heap fell from 5,002,976 to 3,886,248 bytes. These are separate
+  measurements, not an RSS total or a claim that the JS increase disappeared.
+  The bounded tree avoids full-tree DOM retention; the warmed tab-cycle JS
+  delta is 584,628 bytes versus A2's 602,836 bytes. One cycle
+  does not establish leak freedom.
+- No scroll geometry/content checks failed and no scroll long tasks were recorded.
+  CSV retains its existing 1,000-row display cap. The known remote Tips 404 is
+  unchanged; smoke runs disable that feed.
+
+Raw evidence remains in ignored `bench-out/`: `b.json`,
+`b-status-profiles/` (five CPU profiles, editor/tree timeline traces and a sampled
+allocation profile), `b-paired.json`, `b-paired-*-cold.heapsnapshot`,
+`b-paired-cold-final.json`, `b-paired-cursor.json` and the smoke/check logs.
+Earlier B diagnostic builds are retained separately.
+
+Validation: `npm run check` passes formatting, ESLint, 258 passing tests in 52 files
+(plus one existing optional Tips-file skip), and the three production builds.
+All six benchmark harness tests pass. `go build ./...` and
+`go test -short ./...` pass across 23 packages: 366 passing top-level tests
+and 102 passing subtests, with 49 skip events.
+
+Six headless Playwright smoke suites pass 46 UI checks and four single-stream
+assertions with zero console/page errors. Coverage includes tree expansion,
+collapse and reveal, new file/folder, context menus, PR scope switching, real
+commit and push to a temporary local bare remote, unpushed/commit-file lists,
+sync menu, case/word/regex/glob search, both palettes, real TypeScript references,
+symbols, calls and definitions, LSP management UI, status metrics, all three
+panel widths and visibility across reload, editing/discard, Markdown/image/diff
+viewers, PR markers/comments, review navigation, settings and explanation/thread
+handoff. PR data/scope and explanation completion are mocked; no external PR or
+coding-harness action is performed. Git mutations stay in the throwaway fixture.
+The repo smoke also uses the fresh binary against this checkout. Evidence is in
+`b-smoke-{tree,git,search,lsp,repo,pr}.log` and `b-smoke-summary.json`.
