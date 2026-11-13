@@ -1,6 +1,7 @@
 import { test, expect } from 'vitest';
 import { normalizeURL } from './markdown-logic.js';
 import {
+  brokenImageCard,
   sanitizeDocument,
   syncMarkdownPictures,
   domToMarkdown,
@@ -51,4 +52,13 @@ test('selection serialization preserves source code, links and tables but exclud
   expect(raw).toContain('| Name |');
   expect(getFragmentPlainText(fragment)).toContain('bold next');
   expect(getFragmentHtml(fragment)).toContain('<strong>bold</strong>');
+});
+
+test('a missing Markdown image becomes a card naming its path', () => {
+  const img = document.createElement('img');
+  img.dataset.rawPath = 'docs/missing.png';
+  const card = brokenImageCard(img);
+  expect(card.className).toBe('md-img-broken');
+  expect(card.textContent).toBe('Image not found: docs/missing.png');
+  expect(card.firstElementChild.getAttribute('aria-hidden')).toBe('true');
 });

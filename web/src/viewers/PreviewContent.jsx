@@ -11,7 +11,12 @@ import {
 import { Portal } from 'solid-js/web';
 import { useEditor } from '../editor/context.jsx';
 import { useTheme } from '../lib/theme-context.jsx';
-import { sanitizeHTML, enhanceMarkdown, syncMarkdownPictures } from './markdown-dom.js';
+import {
+  brokenImageCard,
+  sanitizeHTML,
+  enhanceMarkdown,
+  syncMarkdownPictures,
+} from './markdown-dom.js';
 import { createPreviewDOM } from './preview-dom.js';
 import { MermaidDiagram } from './MermaidDiagram.jsx';
 import { TableViewer } from './TableViewer.jsx';
@@ -98,7 +103,13 @@ export function PreviewContent(props) {
     actions.clearPreviewTarget(props.document);
     if (editor.ui.findOpen) void editor.actions.executeFind();
     document.addEventListener('selectionchange', selection);
+    // Image errors do not bubble, so the article listens in the capture phase.
+    const broken = (event) => {
+      if (event.target.localName === 'img') event.target.replaceWith(brokenImageCard(event.target));
+    };
+    article.addEventListener('error', broken, true);
     onCleanup(() => {
+      article.removeEventListener('error', broken, true);
       document.removeEventListener('selectionchange', selection);
       if (editor.services.preview === service) delete editor.services.preview;
     });

@@ -469,3 +469,17 @@ function innerDomToMarkdown(node) {
   }
   return s;
 }
+
+/** Stands in for a Markdown image that failed to load, naming what was missing. */
+export function brokenImageCard(img) {
+  const card = document.createElement('div');
+  card.className = 'md-img-broken';
+  const icon = document.createElement('span');
+  icon.className = 'icon-[lucide--image-off] size-4 shrink-0';
+  icon.setAttribute('aria-hidden', 'true');
+  const text = document.createElement('span');
+  const path = img.dataset.rawPath || img.dataset.origSrc || img.getAttribute('src') || 'image';
+  text.textContent = 'Image not found: ' + path;
+  card.append(icon, text);
+  return card;
+}
