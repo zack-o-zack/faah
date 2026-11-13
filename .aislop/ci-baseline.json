@@ -373,27 +373,6 @@
       "count": 1
     },
     {
-      "rule": "complexity/deep-nesting",
-      "engine": "code-quality",
-      "file": "scripts/bench-web/run.js",
-      "fingerprint": "d965148d7013f98a",
-      "count": 1
-    },
-    {
-      "rule": "complexity/function-too-long",
-      "engine": "code-quality",
-      "file": "scripts/bench-web/run.js",
-      "fingerprint": "00d60f105d9de0c0",
-      "count": 1
-    },
-    {
-      "rule": "complexity/function-too-long",
-      "engine": "code-quality",
-      "file": "scripts/bench-web/run.js",
-      "fingerprint": "d965148d7013f98a",
-      "count": 1
-    },
-    {
       "rule": "complexity/function-too-long",
       "engine": "code-quality",
       "file": "search.go",

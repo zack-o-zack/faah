@@ -28,7 +28,7 @@ func fixtures(t *testing.T) []string {
 		if de.IsDir() {
 			name := de.Name()
 			// Scanner reports and benchmark output are generated metadata, not source fixtures.
-			if name == ".git" || name == ".aislop" || name == "bench-out" || name == "bench-repos" || name == "node_modules" || name == "dist" {
+			if name == ".git" || name == ".aislop" || name == "bench-repos" || name == "node_modules" || name == "dist" {
 				return filepath.SkipDir
 			}
 			return nil

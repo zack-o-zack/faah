@@ -13,6 +13,23 @@ Node 22.22.2+, 24.15.0+, or 26+ as required by jsdom. npm owns
 package-lock.json; refresh the tracked pnpm lock with
 `pnpm install --lockfile-only --ignore-scripts` too.
 
+## Performance notes
+
+Measurements on an Apple M4 with Chrome 157 at default editor settings:
+
+- JetBrains Mono WOFF2 fonts are embedded, so startup does not wait for a remote
+  stylesheet. Character width is 8.1 px and line height is 21 px.
+- Entering edit mode on a 50,000-line file takes about 549 ms. Profiling attributed
+  roughly 438 ms to laying out the full native textarea. The gutter is virtualized;
+  the native editing surface is not. Incremental line starts reduce input CPU work.
+- Workspace search takes about 892 ms, including a 160 ms input debounce. A profiled
+  request spent about 681 ms awaiting the server, which opens and reads candidate
+  files.
+- Cold retained JavaScript heap is about 3.4 MB with inspector instrumentation,
+  mostly compiled code and the reactive/component graph. Opening and closing 20
+  tabs retained about 552 KB after GC, with no net DOM-node growth. Code warming
+  contributes to that difference; stable DOM counts alone do not prove leak freedom.
+
 ## Pages and mount points
 
 Each page is a mount point plus fonts and stylesheets; JSX renders everything

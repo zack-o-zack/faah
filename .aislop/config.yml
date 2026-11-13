@@ -3,7 +3,6 @@ exclude:
   - web/dist
   - web/vendor
   - node_modules
-  - bench-out
   - bench-repos
   - desktop/node_modules
   - dist

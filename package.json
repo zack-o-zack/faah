@@ -18,8 +18,6 @@
     "test": "vitest run",
     "lint": "eslint web/src vite.config.ts eslint.config.js scripts/build-web.js scripts/check-web.js scripts/eslint-typescript/index.js",
     "format": "prettier --write web/src vite.config.ts eslint.config.js scripts/build-web.js scripts/check-web.js scripts/eslint-typescript/index.js",
-    "bench:web": "node scripts/bench-web/run.js",
-    "test:bench-web": "node --test scripts/bench-web/*.test.js",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json"
   },
   "devDependencies": {
@@ -38,7 +36,6 @@
     "eslint-typescript": "file:scripts/eslint-typescript",
     "globals": "17.14.0",
     "jsdom": "31.0.0",
-    "playwright-core": "1.65.0",
     "prettier": "3.10.1",
     "solid-js": "1.9.19",
     "tailwindcss": "4.3.5",
