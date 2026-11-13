@@ -41,9 +41,10 @@ export function ReviewPanel() {
             aria-label="Review summary"
             rows="4"
             placeholder="Overall feedback. It shows above your line comments on the pull request."
-            class="textarea max-h-72 min-h-24 resize-y"
+            class="textarea min-h-24 max-h-72 resize-y"
             value={pr().review.body}
             onInput={(event) => editor.actions.setReviewBody(event.currentTarget.value)}
+            data-control="pr-review-body"
           />
         </label>
         <p class="text-xs text-muted-foreground">{draftsNote(pr().drafts.length)}</p>
@@ -62,6 +63,7 @@ export function ReviewPanel() {
                 ? `No ${forgeInfo(editor.store.state.workspace.meta).label} token configured -- click to connect and submit`
                 : 'Submit review with drafts, without approval or change requests')
             }
+            class="flex w-full items-start gap-2.5 rounded-md border px-3 py-2 text-left hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50"
           />
           <Show when={verdicts()}>
             <Verdict
@@ -72,6 +74,7 @@ export function ReviewPanel() {
               hint={gate().approveNote || 'Submit feedback and approve merging these changes'}
               disabled={gate().all || gate().approve}
               title={gate().all || gate().approve || gate().approveNote || 'Approve this PR'}
+              class="flex w-full items-start gap-2.5 rounded-md border px-3 py-2 text-left hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50"
             />
             <Verdict
               id="pr-submit-request-changes"
@@ -81,6 +84,7 @@ export function ReviewPanel() {
               hint="Submit feedback that must be addressed before merging"
               disabled={gate().all}
               title={gate().all || 'Request changes on this PR'}
+              class="flex w-full items-start gap-2.5 rounded-md border px-3 py-2 text-left hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50"
             />
           </Show>
         </div>

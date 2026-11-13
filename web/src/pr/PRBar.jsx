@@ -16,23 +16,31 @@ export function PRBar() {
     onCleanup(() => window.removeEventListener('focus', focus));
   });
   return (
-    <div id="pr-bar" class="flex flex-none flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2">
+    <div
+      id="pr-bar"
+      class="[body:not(.in-review-mode)_&]:hidden! flex flex-none flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2"
+    >
       <div class="flex min-w-0 flex-1 basis-80 flex-col gap-0.5">
         <div class="flex min-w-0 items-center gap-2">
           <a
             id="pr-link"
-            class="group -mx-1.5 flex min-w-40 items-center gap-2 rounded-md px-1.5 py-1 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            class="group flex items-center min-w-40 gap-2 rounded-md -mx-1.5 px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             href={pr().url || '#'}
             title={'Open on ' + forge().label}
             target="_blank"
             rel="noopener noreferrer"
           >
-            <span id="pr-badge" class="badge shrink-0 tabular-nums" data-variant="secondary">
+            <span
+              id="pr-badge"
+              class="badge shrink-0 tabular-nums"
+              data-variant="secondary"
+              data-control="pr-badge"
+            >
               #{pr().number}
             </span>
             <span
               id="pr-title"
-              class="min-w-0 truncate text-sm font-medium underline-offset-4 group-hover:underline"
+              class="min-w-0 truncate text-sm font-medium underline-offset-4 group-hover:underline group-focus-visible:underline"
               title={pr().title}
             >
               {pr().title}
@@ -78,6 +86,7 @@ export function PRBar() {
                 ' -- or click to connect'
               }
               onClick={() => editor.actions.openForgeConnect()}
+              data-control="pr-readonly-note"
             >
               No {forge().label} token — click to connect
             </button>
@@ -139,6 +148,7 @@ function BatchApply() {
         data-size="sm"
         disabled={batch().pending || !editor.pr.applicable().length}
         onClick={() => void editor.actions.applyDrafts()}
+        data-control="bar-action pr-btn-batch-apply"
       >
         <span class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true" />
         <span>{batch().pending ? `Applying… ${batch().seconds}s` : 'Apply drafts'}</span>

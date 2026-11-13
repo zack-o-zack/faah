@@ -16,7 +16,7 @@ export function CommentsPanel() {
   return (
     <div
       id="pr-comments-panel"
-      class="relative flex max-h-[80vh] shrink-0 flex-col border-t"
+      class="[body:not(.in-review-mode)_&]:hidden! group/comments relative flex h-72 max-h-[80vh] shrink-0 flex-col border-t [&.collapsed]:h-auto! collapsed"
       style={{ height: panel().collapsed ? 'auto' : panel().height + 'px' }}
     >
       <div class="absolute inset-x-0 -top-1">
@@ -30,29 +30,45 @@ export function CommentsPanel() {
           onChange={editor.actions.setPRPanelHeight}
         />
       </div>
-      <button
-        type="button"
-        class="flex shrink-0 items-center gap-2 p-3 text-left select-none"
+      <div
+        data-ui="pr-comments-panel-head"
+        class="flex flex-wrap items-center shrink-0 select-none gap-2 p-3"
         aria-expanded={!panel().collapsed}
         onClick={editor.actions.togglePRPanel}
       >
         <span class="label">Comments</span>
         <Show when={pr.commentCount()}>
-          <span id="pr-comments-count" class="badge" data-variant="secondary">
+          <span
+            id="pr-comments-count"
+            class="badge"
+            data-variant="secondary"
+            data-control="pr-comments-count"
+          >
             {pr.commentCount()}
           </span>
         </Show>
         <span class="min-w-0 flex-1" />
-        <span
-          class={`${panel().collapsed ? 'icon-[lucide--chevron-up]' : 'icon-[lucide--chevron-down]'} size-3.5 text-muted-foreground`}
-          aria-hidden="true"
-        />
-      </button>
+        <button
+          type="button"
+          id="pr-comments-collapse"
+          title="Expand/collapse comments panel"
+          aria-label="Expand/collapse comments panel"
+          class="btn"
+          data-control="pr-comments-collapse"
+          data-variant="ghost"
+          data-size="icon-xs"
+        >
+          <span
+            class={`${panel().collapsed ? 'icon-[lucide--chevron-up]' : 'icon-[lucide--chevron-down]'} size-3.5 text-muted-foreground`}
+            aria-hidden="true"
+          />
+        </button>
+      </div>
       <Show when={!panel().collapsed}>
         <div class="flex min-h-0 flex-1 flex-col">
           <div
             id="pr-comments-list"
-            class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-3 *:shrink-0"
+            class="[&>*]:shrink-0 flex flex-col flex-1 min-h-0 overflow-y-auto gap-2 p-3"
           >
             <ErrorNotice error={pr.state.loadError} />
             <Show when={both()}>
@@ -99,6 +115,7 @@ export function CommentsPanel() {
                   event.preventDefault();
                   void editor.actions.sendIssueComment();
                 }}
+                data-control="pr-review-body"
               />
               <footer data-align="block-end" class="gap-1">
                 <span class="text-xs text-muted-foreground">Markdown supported</span>

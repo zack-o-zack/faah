@@ -23,6 +23,7 @@ export function ReviewCompose() {
             event.preventDefault();
             void editor.actions.sendReviewFollowup();
           }}
+          data-control="agent-input review-input"
         />
         <footer data-align="block-end" class="gap-1">
           <span class="text-xs text-muted-foreground">

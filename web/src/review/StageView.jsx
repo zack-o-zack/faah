@@ -24,19 +24,29 @@ export function StageView() {
           <div class="flex-1" />
         </Match>
         <Match when={!stage().threadId}>
-          <div class="empty flex flex-1 flex-col items-center justify-center gap-3 text-center text-sm text-muted-foreground">
-            <p>Your coding harness hasn't answered this one yet.</p>
-            <button
-              id="btn-start-single-stage"
-              class="btn"
-              data-variant="special"
-              data-size="sm"
-              disabled={review.running() || review.state.pending === 'run'}
-              onClick={() => void editor.actions.runReview(review.state.active)}
+          <div
+            id="review-thread-msgs"
+            data-ui="review-thread-msgs thr-msgs"
+            class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4"
+          >
+            <div
+              data-ui="review-thread-placeholder"
+              class="empty flex h-full flex-col items-center justify-center gap-3 text-center text-sm text-muted-foreground"
             >
-              <span class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true" />
-              Run this stage
-            </button>
+              <p>Your coding harness hasn't answered this one yet.</p>
+              <button
+                id="btn-start-single-stage"
+                class="btn"
+                data-variant="special"
+                data-size="sm"
+                data-control="bar-action"
+                disabled={review.running() || review.state.pending === 'run'}
+                onClick={() => void editor.actions.runReview(review.state.active)}
+              >
+                <span class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true" />
+                Run this stage
+              </button>
+            </div>
           </div>
         </Match>
         <Match when={!thread() && review.state.loadingThread === stage().threadId}>
