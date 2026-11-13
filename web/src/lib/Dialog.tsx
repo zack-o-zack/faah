@@ -5,6 +5,7 @@ interface DialogProps {
   title: string;
   subtitle?: string;
   onClose: () => void;
+  onKeyDown?: JSX.EventHandler<HTMLDialogElement, KeyboardEvent>;
   id?: string;
   dialogClass?: string;
   class?: string;
@@ -43,6 +44,7 @@ export function Dialog(props: DialogProps): JSX.Element {
         class={props.dialogClass || 'dialog'}
         aria-labelledby={props.bare ? undefined : title}
         aria-label={props.bare ? props.title : undefined}
+        onKeyDown={(event) => props.onKeyDown?.(event)}
         onCancel={(e) => {
           e.preventDefault();
           props.onClose();

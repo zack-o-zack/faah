@@ -14,10 +14,32 @@ export function AgentPicker(props: AgentPickerProps): JSX.Element {
   const editor = useEditor();
   const agents = editor.agents;
   const [open, setOpen] = createSignal(false);
+  const [panelHeight, setPanelHeight] = createSignal(360);
+  let root: HTMLDivElement | undefined;
+  function place(trigger: DOMRect, panel: DOMRect): JSX.CSSProperties {
+    const host = root?.closest('aside, dialog')?.getBoundingClientRect();
+    const left = Math.max(12, host ? host.left + 12 : 12);
+    const right = Math.min(innerWidth - 12, host ? host.right - 12 : innerWidth - 12);
+    const top = Math.max(12, host ? host.top + 12 : 12);
+    const bottom = Math.min(innerHeight - 12, host ? host.bottom - 12 : innerHeight - 12);
+    const above = trigger.top - top;
+    const below = bottom - trigger.bottom;
+    const up = above > below;
+    const available = Math.max(0, (up ? above : below) - 6);
+    const width = Math.max(0, Math.min(576, right - left));
+    setPanelHeight(Math.max(0, Math.min(360, available - 2)));
+    return {
+      width: `${width}px`,
+      'max-height': `${available}px`,
+      left: `${Math.max(left, Math.min(trigger.left, right - width))}px`,
+      top: `${up ? Math.max(top, trigger.top - panel.height - 6) : trigger.bottom + 6}px`,
+    };
+  }
   const selected = () =>
     agents.state.selected || agents.state.harnesses.find((agent) => agent.installed)?.name || '';
   return (
     <div
+      ref={root}
       id={props.id}
       class={props.compact ? 'inline-flex min-w-0 flex-1' : 'inline-flex min-w-0 max-w-full'}
       data-control="agent-picker"
@@ -45,18 +67,19 @@ export function AgentPicker(props: AgentPickerProps): JSX.Element {
             />
           </>
         }
-        panelClass="fixed m-0 overflow-hidden rounded-lg border bg-popover p-0 text-popover-foreground shadow-lg z-[70] w-[min(576px,calc(100vw-24px))]"
+        panelClass="fixed m-0 overflow-hidden rounded-lg border bg-popover p-0 text-popover-foreground shadow-lg z-[70]"
+        placement={place}
         accessibleLabel="Coding harness and model"
         disabled={props.disabled || !agents.state.harnesses.some((agent) => agent.installed)}
         open={open()}
         onOpenChange={setOpen}
       >
-        <PickerPanel close={() => setOpen(false)} />
+        <PickerPanel height={panelHeight()} close={() => setOpen(false)} />
       </Popover>
     </div>
   );
 }
-function PickerPanel(props: { close: () => void }): JSX.Element {
+function PickerPanel(props: { height: number; close: () => void }): JSX.Element {
   const editor = useEditor();
   const agents = editor.agents;
   const [query, setQuery] = createSignal('');
@@ -93,7 +116,8 @@ function PickerPanel(props: { close: () => void }): JSX.Element {
   }
   return (
     <div
-      class="grid h-[360px] max-h-[calc(100vh-24px)] grid-cols-[minmax(0,1fr)_minmax(0,2fr)]"
+      class="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)]"
+      style={{ height: `${props.height}px` }}
       aria-label="Choose agent and model"
     >
       <nav
@@ -122,32 +146,41 @@ function PickerPanel(props: { close: () => void }): JSX.Element {
           )}
         </For>
       </nav>
-      <section class="min-h-0 overflow-auto p-2">
-        <input
-          ref={input}
-          class="input"
-          type="search"
-          aria-label="Search models"
-          value={query()}
-          onInput={(event) => {
-            setQuery(event.currentTarget.value);
-            setSelected(0);
-          }}
-          onKeyDown={(event) => {
-            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-              event.preventDefault();
-              move(event.key === 'ArrowDown' ? 1 : -1);
-            }
-            if (event.key === 'Enter' && models()[selected()]) {
-              event.preventDefault();
-              const model = models()[selected()];
-              if (model) void choose(model.value);
-            }
-          }}
-        />
-        <p class="p-1 text-xs text-muted-foreground">
+      <section class="flex min-h-0 min-w-0 flex-col">
+        <header class="mx-3 flex shrink-0 items-center gap-2 border-b py-3 focus-within:border-primary">
+          <span
+            class="icon-[lucide--search] size-4 shrink-0 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <input
+            ref={input}
+            class="min-w-0 w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+            placeholder="Search models…"
+            autocomplete="off"
+            spellcheck={false}
+            type="search"
+            aria-label="Search models"
+            value={query()}
+            onInput={(event) => {
+              setQuery(event.currentTarget.value);
+              setSelected(0);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                event.preventDefault();
+                move(event.key === 'ArrowDown' ? 1 : -1);
+              }
+              if (event.key === 'Enter' && models()[selected()]) {
+                event.preventDefault();
+                const model = models()[selected()];
+                if (model) void choose(model.value);
+              }
+            }}
+          />
+        </header>
+        <h2 class="shrink-0 truncate px-3 py-2 text-xs text-muted-foreground">
           {active()?.harness} models {agents.state.pinned ? '· Harness fixed' : ''}
-        </p>
+        </h2>
         <Show when={discovered.loading}>
           <p>Loading models…</p>
         </Show>
@@ -156,7 +189,13 @@ function PickerPanel(props: { close: () => void }): JSX.Element {
             Retry
           </button>
         </ErrorNotice>
-        <div ref={list} role="listbox" aria-label="Models">
+        <div
+          ref={list}
+          // aislop-ignore-next-line jsx-a11y/prefer-tag-over-role -- The custom model list contains async rows and selected icons.
+          role="listbox"
+          aria-label="Models"
+          class="min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-py-2 px-1.5 pb-2"
+        >
           <For each={models()}>
             {(model, index) => (
               <button

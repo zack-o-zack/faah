@@ -14,6 +14,7 @@ export interface PopoverProps {
   disabled?: boolean;
   triggerClass?: string;
   panelClass?: string;
+  placement?: (trigger: DOMRect, panel: DOMRect) => JSX.CSSProperties;
   control?: string;
   variant?: string;
   size?: string;
@@ -37,10 +38,14 @@ export function Popover(props: PopoverProps): JSX.Element {
   let panel: HTMLDivElement | undefined;
   let resize: ResizeObserver | undefined;
   onCleanup(() => resize?.disconnect());
-  const [position, setPosition] = createSignal({ left: '8px', top: '8px' });
+  const [position, setPosition] = createSignal<JSX.CSSProperties>({ left: '8px', top: '8px' });
   function place() {
     if (!open() || !trigger || !panel) return;
     const rect = trigger.getBoundingClientRect();
+    if (props.placement) {
+      setPosition(props.placement(rect, panel.getBoundingClientRect()));
+      return;
+    }
     const left = Math.max(
       8,
       Math.min(innerWidth - panel.offsetWidth - 8, rect.right - panel.offsetWidth),
