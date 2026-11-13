@@ -1,3 +1,5 @@
+import { ThreadsPanel, ThreadsToggle } from './threads/ThreadsPanel.jsx';
+import { Portal } from 'solid-js/web';
 import { LayoutShell } from './layout/LayoutShell.jsx';
 import { Palette } from './palette/Palette.jsx';
 import { getOwner, onMount, runWithOwner } from 'solid-js';
@@ -25,6 +27,22 @@ function App() {
     <EditorProvider value={editorStore}>
       <Palette />
       <LayoutShell />
+      <Portal
+        ref={(element) => {
+          element.style.display = 'contents';
+        }}
+        mount={document.getElementById('threads-root')}
+      >
+        <ThreadsPanel />
+      </Portal>
+      <Portal
+        ref={(element) => {
+          element.style.display = 'contents';
+        }}
+        mount={document.getElementById('threads-toggle-root')}
+      >
+        <ThreadsToggle />
+      </Portal>
       <EditorShell />
       <ViewerShell />
       <Toaster />

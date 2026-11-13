@@ -15,7 +15,7 @@ import { $, S, esc } from './state.js';
 
 import { showError } from './errors.js';
 import { on, emit } from './bus.js';
-import { registerAgentPicker } from './agent.js';
+import { registerAgentPicker } from './app/legacy-bridge.js';
 import { openSettings } from './settings.js';
 
 const METHODS = {

@@ -36,6 +36,12 @@ export function createSelectionActions(editor) {
     selectRange,
     setSelection,
     openSelectionMenu: (info, x, y) => setUI('menu', { info, x, y }),
+    openLineActions(info, x, y) {
+      const selected = ui.selection;
+      const covers =
+        selected?.path === info.path && info.l1 >= selected.l1 && info.l1 <= selected.l2;
+      setUI('menu', { info: covers ? selected : info, x, y });
+    },
     closeSelectionMenu: () => setUI('menu', null),
     runSelectionAction: (action, trigger, override) =>
       services.selectionAction?.(action, override || ui.selection, trigger) || false,

@@ -1,13 +1,13 @@
 import { measure, layout, render, updateEditorOptionControls, openFile, switchTab, configureLegacyServices, api, applyKeyLabels, initGitStream, triggerRefresh } from './app/legacy-bridge.js';
 import { emit, on } from './bus.js';
 import { refreshPRMeta, nudgeForgeToken } from './pr.js';
-import { newThread, deleteCurrentThread, showThreadsSidebar } from './thread.js';
+import { newThread, deleteCurrentThread, showThreadsSidebar } from './app/legacy-bridge.js';
 import { navigateToTips, showTipWidget } from './tips.js';
 import { launchPR } from './pr.js';
 
 import { openSettings } from './settings.js';
 
-import { selectAgent, loadPickerModels } from './agent.js';
+import { selectAgent, loadPickerModels } from './app/legacy-bridge.js';
 
 import { copyToClipboard, copyRichToClipboard, initErrorCopy } from './ui.js';
 
@@ -16,13 +16,13 @@ import { showHelp, initShortcuts } from './shortcuts.js';
 import { $, S } from './state.js';
 import { revealFile, refreshTree, collapseAllDirs, expandDirtyDirs, inGitMode, setAutoRevealSuppressed, setSidebarMode, hasGitView } from './app/legacy-bridge.js';
 
-import { initAgent, applyAgentMeta, loadAgentAsync } from './agent.js';
-import { initThreads } from './thread.js';
+import { applyAgentMeta, loadAgentAsync } from './app/legacy-bridge.js';
+import { initThreads } from './app/legacy-bridge.js';
 import { initSettings } from './settings.js';
 
 import { syncGitPanelMeta } from './app/legacy-bridge.js';
 import { initPR } from './pr.js';
-import { initLineComment } from './linecomment.js';
+
 import { refreshUnpushed } from './app/legacy-bridge.js';
 import { initTips, startTipsAsync } from './tips.js';
 import { initReviewFlow, setMode } from './reviewflow.js';
@@ -41,11 +41,11 @@ initTips();
 initReviewFlow();
 
 initShortcuts();
-initAgent();
-initThreads();
+
+
 
 initSettings();
-initLineComment();
+
 initErrorCopy();
 
 // Bootstrap application lifecycle
@@ -74,6 +74,7 @@ initErrorCopy();
 
   measure();
   S.meta = await api('/api/meta');
+  initThreads();
 
   syncGitPanelMeta();
   applyAgentMeta();

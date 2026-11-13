@@ -18,9 +18,10 @@ function Gutter(props) {
           data-control="line-btn"
           data-variant="ghost"
           data-size="xs"
+          onMouseDown={(event) => event.preventDefault()}
           onClick={(event) => {
             event.stopPropagation();
-            editor.actions.openSelectionMenu(
+            editor.actions.openLineActions(
               gutterSelection(props.row, props.document.path, props.reviewable),
               event.clientX,
               event.clientY,
@@ -51,11 +52,15 @@ export function DiffSide(props) {
   const editor = useEditor();
   const anchor = () => gutterAnchor(props.row);
   const ranges = () =>
-    editor.store.state.agents.targets.filter((range) => range.path === props.document.path);
+    editor.agents.targets().filter((range) => range.path === props.document.path);
   const number = () => (props.side === 'left' ? props.row?.oldLine : props.row?.newLine);
   return (
     <div
       class={`group/line diff-side diff-side-${props.side} ${props.row ? 'diff-' + props.row.type : 'diff-blank'}`}
+      onClick={(event) => {
+        if (!event.target.closest('button'))
+          editor.actions.focusAgentAt(props.document.path, anchor().line ?? anchor().at);
+      }}
       data-l={anchor().line}
       data-at={anchor().at}
       data-old-l={anchor().oldLine}
@@ -87,7 +92,7 @@ export function DiffSide(props) {
 export function UnifiedRow(props) {
   const editor = useEditor();
   const ranges = () =>
-    editor.store.state.agents.targets.filter((range) => range.path === props.document.path);
+    editor.agents.targets().filter((range) => range.path === props.document.path);
   const anchor = () => gutterAnchor(props.row);
   return (
     <div
@@ -97,6 +102,10 @@ export function UnifiedRow(props) {
           (range) => anchor().line >= range.l1 && anchor().line <= range.l2,
         ),
         'agent-anchor': ranges().some((range) => anchor().line === range.l1),
+      }}
+      onClick={(event) => {
+        if (!event.target.closest('button'))
+          editor.actions.focusAgentAt(props.document.path, anchor().line ?? anchor().at);
       }}
       data-l={anchor().line}
       data-at={anchor().at}

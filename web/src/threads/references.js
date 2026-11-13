@@ -17,14 +17,24 @@ const count = (n, one, many) => n + ' ' + (n === 1 ? one : many);
 export function explainEvidenceLine(ev) {
   if (!ev) return '';
   if (ev.source === 'text') {
-    return ev.refs ? 'text match · ' + count(ev.refs, 'occurrence', 'occurrences') + ' in ' + count(ev.refFiles, 'file', 'files') : 'text match';
+    return ev.refs
+      ? 'text match · ' +
+          count(ev.refs, 'occurrence', 'occurrences') +
+          ' in ' +
+          count(ev.refFiles, 'file', 'files')
+      : 'text match';
   }
   const parts = [ev.source];
   if (ev.definition) parts.push('definition');
-  if (ev.refs) parts.push(count(ev.refs, 'reference', 'references') + ' in ' + count(ev.refFiles, 'file', 'files'));
+  if (ev.refs)
+    parts.push(
+      count(ev.refs, 'reference', 'references') + ' in ' + count(ev.refFiles, 'file', 'files'),
+    );
   if (ev.callers) parts.push(count(ev.callers, 'caller', 'callers'));
   if (ev.identifiers) parts.push(count(ev.identifiers, 'symbol', 'symbols') + ' resolved');
   return parts.join(' · ');
 }
 
-export const explainStaleLabel = reason => ({ reader: 'Written for a different reader', callers: 'Callers changed' })[reason] || 'References changed';
+export const explainStaleLabel = (reason) =>
+  ({ reader: 'Written for a different reader', callers: 'Callers changed' })[reason] ||
+  'References changed';

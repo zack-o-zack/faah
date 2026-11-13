@@ -48,7 +48,7 @@ export function ContextMenu(props) {
               panel = el;
               queueMicrotask(() => el.querySelector('button')?.focus());
             }}
-            class="dropdown-menu fixed z-50 border bg-popover p-1"
+            class="dropdown-menu fixed z-50 flex min-w-48 flex-col border bg-popover p-1"
             role="menu"
             aria-label={props.label}
             style={{ left: `${point().x}px`, top: `${point().y}px` }}

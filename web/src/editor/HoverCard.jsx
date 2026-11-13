@@ -30,11 +30,13 @@ export function HoverCard() {
         document.addEventListener('mousemove', track, true);
         document.addEventListener('pointerdown', outside);
         window.addEventListener('blur', blur);
+        card.addEventListener('focusout', blur);
         onCleanup(() => {
           clearTimeout(timer);
           document.removeEventListener('mousemove', track, true);
           document.removeEventListener('pointerdown', outside);
           window.removeEventListener('blur', blur);
+          card.removeEventListener('focusout', blur);
         });
       },
     ),

@@ -1,3 +1,4 @@
+import { Portal } from 'solid-js/web';
 import { For, Show } from 'solid-js';
 import { useEditor } from './context.jsx';
 import { SEL_MENU_ITEMS } from './selection.js';
@@ -46,29 +47,31 @@ export function SelectionBar() {
         </Show>
       </div>
       <Show when={editor.ui.menu}>
-        <div
-          id="sel-menu"
-          ref={(element) => {
-            panel = element;
-          }}
-          role="menu"
-          class="dropdown-menu fixed z-[70] border bg-popover p-1"
-          style={{ left: `${editor.ui.menu.x}px`, top: `${editor.ui.menu.y}px` }}
-          onMouseDown={(event) => event.preventDefault()}
-        >
-          <For each={items(editor.ui.menu?.info)}>
-            {(item) => (
-              <button
-                class="btn w-full"
-                role="menuitem"
-                data-sel={item.sel}
-                onClick={(event) => run(item.sel, event)}
-              >
-                {item.label}
-              </button>
-            )}
-          </For>
-        </div>
+        <Portal>
+          <div
+            id="sel-menu"
+            ref={(element) => {
+              panel = element;
+            }}
+            role="menu"
+            class="dropdown-menu fixed z-[70] flex w-56 flex-col border bg-popover p-1"
+            style={{ left: `${editor.ui.menu.x}px`, top: `${editor.ui.menu.y}px` }}
+            onMouseDown={(event) => event.preventDefault()}
+          >
+            <For each={items(editor.ui.menu?.info)}>
+              {(item) => (
+                <button
+                  class="btn w-full"
+                  role="menuitem"
+                  data-sel={item.sel}
+                  onClick={(event) => run(item.sel, event)}
+                >
+                  {item.label}
+                </button>
+              )}
+            </For>
+          </div>
+        </Portal>
       </Show>
     </>
   );

@@ -1,9 +1,14 @@
+import { render as renderSolid } from 'solid-js/web';
+import { createComponent } from 'solid-js';
+import { EditorProvider } from '../editor/context.jsx';
+import { AgentPicker } from '../agents/AgentPicker.jsx';
 import { apiText } from '../lib/api.js';
 import { previewKind as documentPreviewKind, viewMode, canDiff } from '../viewers/view.js';
 import { sanitizeMarkdown as cleanMarkdown } from '../viewers/markdown-dom.js';
 // Removed when the last legacy module is migrated.
 import { createSourceDOM } from '../editor/source-dom.js';
 import { createEffect, createMemo, on, onCleanup } from 'solid-js';
+import { linkTarget } from '../threads/references.js';
 import { S, $, $$, esc } from '../state.js';
 import { api, apiPost, apiPostJson } from '../lib/api.js';
 export { api, apiPost, apiPostJson };
@@ -50,7 +55,17 @@ export function bindLegacyEditor(value, theme) {
   const metadata = new Proxy(
     {},
     {
-      get: (_, key) => value.store.state.workspace.meta?.[key],
+      get: (_, key) => {
+        const names = {
+          agents: 'harnesses',
+          agent: 'selected',
+          agentModel: 'model',
+          agentPinned: 'pinned',
+        };
+        return names[key]
+          ? value.agents.state[names[key]]
+          : value.store.state.workspace.meta?.[key];
+      },
       set: (_, key, next) => {
         value.store.actions.patchWorkspace(key, next);
         return true;
@@ -106,7 +121,6 @@ export function bindLegacyEditor(value, theme) {
     at: ['navigation', 'at'],
     lastWord: ['navigation', 'lastWord'],
     link: ['navigation', 'link'],
-    agentTargets: ['agents', 'targets'],
   };
   for (const [name, [slice, key]] of Object.entries(mappings)) {
     Object.defineProperty(S, name, {
@@ -116,7 +130,6 @@ export function bindLegacyEditor(value, theme) {
         if (slice === 'editor') value.store.actions.setGeometry({ [key]: next });
         else if (slice === 'navigation') value.store.actions.setNavigation({ [key]: next });
         else if (name === 'active') value.store.actions.activateDocument(next, { push: false });
-        else if (name === 'agentTargets') value.store.actions.setAgentTargets(next);
       },
     });
   }
@@ -310,7 +323,7 @@ export function configureLegacyServices(value) {
         document.body.classList.toggle('side-hidden', !left);
         document.body.classList.toggle('right-hidden', !right);
         document.body.classList.toggle('threads-hidden', !threads);
-        $('#threads-side').style.width = width + 'px';
+        void width;
         $('#btn-top-threads')?.setAttribute('aria-pressed', String(threads));
       },
     ),
@@ -331,36 +344,12 @@ export function configureLegacyServices(value) {
     openLegacyHelp: value.showHelp,
     openLegacyTips: value.navigateToTips,
     nudgeLegacyForgeToken: value.nudgeForgeToken,
-    selectLegacyAgent: value.selectAgent,
-    legacyAgentModels: value.loadPickerModels,
-    cancelLegacyAgentJob: (id) => apiPostJson('api/agent/cancel', { id }),
+    selectLegacyAgent: editorStore.actions.selectAgent,
+    legacyAgentModels: editorStore.actions.loadAgentModels,
     async legacyHistoryChanged() {
       await editorStore.actions.reindexWorkspace();
       if (S.meta?.pr) await value.refreshPRMeta();
       await reloadOpenTabs();
-    },
-    async runLegacyAgentJob(endpoint, params, { signal, progress }) {
-      const job = await apiPostJson(endpoint, params, { signal });
-      while (!signal.aborted) {
-        await new Promise((resolve, reject) => {
-          const abort = () => {
-            clearTimeout(timer);
-            reject(new DOMException('Cancelled', 'AbortError'));
-          };
-          const timer = setTimeout(() => {
-            signal.removeEventListener('abort', abort);
-            resolve();
-          }, 600);
-          signal.addEventListener('abort', abort, { once: true });
-          if (signal.aborted) abort();
-        });
-        const result = await api('api/agent/job', { id: job.id }, { signal });
-        progress?.({ ...result, id: job.id });
-        if (result.running) continue;
-        if (result.error && !endpoint.endsWith('sync-agent')) throw new Error(result.error);
-        return result;
-      }
-      throw new DOMException('Cancelled', 'AbortError');
     },
   });
   const releases = [
@@ -729,3 +718,420 @@ export const reindexWorkspace = () => editorStore.actions.reindexWorkspace();
 export const toggleSidebar = () => editorStore.actions.togglePanel('left');
 export const setThreadsPanelVisible = (visible) =>
   editorStore.actions.setPanelVisible('threads', visible);
+
+const COPY_ICON = '<span aria-hidden="true">Copy</span>';
+function thrSafeUrl(u) {
+  u = u.trim();
+  if (/^(?:https?|mailto):/i.test(u)) return esc(u);
+  if (/^[a-zA-Z0-9_\-./]+(?::\d+(?:-\d+)?)?(?:#.*)?$/.test(u)) return esc(u);
+  if (u.startsWith('#')) return esc(u);
+  return '';
+}
+
+/* Set while rendering a finished explanation: only citations the server checked
+   become links. Null everywhere else, which links anything path-shaped. */
+let thrRefs = null;
+
+function thrLinkAttrs(target, path, line, end) {
+  const r = linkTarget(thrRefs, target, path, line, end);
+  if (!r) return '';
+  return (
+    `data-path="${esc(r.path)}"` +
+    (r.line ? ` data-line="${r.line}"` : '') +
+    (r.end ? ` data-end="${r.end}"` : '')
+  );
+}
+
+function thrInline(src) {
+  if (!src) return '';
+  const codes = [];
+  // 1. Extract inline code spans first so nothing inside is formatted
+  let s = src.replace(/(`+)([\s\S]*?[^`])\1(?!`)/g, (_, q, code) => {
+    const trimmed = code.trim();
+    const m = /^([a-zA-Z0-9_.\-/]+\.[a-zA-Z0-9]+)(?::(\d+)(?:-(\d+))?)?$/.exec(trimmed);
+    const attrs = m ? thrLinkAttrs(trimmed, m[1], m[2], m[3]) : '';
+    if (attrs) {
+      codes.push(
+        `<code class="font-medium"><a href="#" class="thr-link cursor-pointer text-primary-text underline underline-offset-2 hover:text-primary" ${attrs}>${esc(trimmed)}</a></code>`,
+      );
+    } else {
+      codes.push('<code>' + esc(trimmed) + '</code>');
+    }
+    return '%%PXCODE' + (codes.length - 1) + '%%';
+  });
+
+  // Escape HTML in the remaining text
+  s = esc(s);
+
+  // 2. Bold, italic, strikethrough
+  s = s.replace(/(\*\*\*|___)([^\n]+?)\1/g, '<strong><em>$2</em></strong>');
+  s = s.replace(/\*\*([^*\n]+?)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/(^|[^a-zA-Z0-9])__([^\n]+?)__(?![a-zA-Z0-9])/g, '$1<strong>$2</strong>');
+  s = s.replace(/\*([^*\n]+?)\*/g, '<em>$1</em>');
+  s = s.replace(/(^|[^a-zA-Z0-9])_([^\n]+?)_(?![a-zA-Z0-9])/g, '$1<em>$2</em>');
+  s = s.replace(/~~(.+?)~~/g, '<del>$1</del>');
+
+  // 3. Links & images (use placeholders so bare autolinks do not match inside href/src attributes)
+  const links = [];
+  const pushLink = (html) => {
+    links.push(html);
+    return '%%PXLINK' + (links.length - 1) + '%%';
+  };
+
+  // Images: ![alt](url)
+  s = s.replace(/!\[([^\]]*)\]\(((?:[^()]|\([^()]*\))*)\)/g, (_, alt, url) => {
+    const u = thrSafeUrl(url);
+    return u ? pushLink(`<img src="${u}" alt="${esc(alt)}" class="thr-img" />`) : esc(alt);
+  });
+
+  // Links: [text](url)
+  s = s.replace(/\[([^\]]+)\]\(((?:[^()]|\([^()]*\))*)\)/g, (_, text, url) => {
+    const u = thrSafeUrl(url);
+    if (!u) return text;
+    const m = /^([a-zA-Z0-9_.\-/]+\.[a-zA-Z0-9]+)(?::(\d+)(?:-(\d+))?)?$/.exec(url.trim());
+    if (m && !url.includes('://')) {
+      const attrs = thrLinkAttrs(url.trim(), m[1], m[2], m[3]);
+      return attrs
+        ? pushLink(
+            `<a href="#" class="thr-link cursor-pointer text-primary-text underline underline-offset-2 hover:text-primary" ${attrs}>${text}</a>`,
+          )
+        : text;
+    }
+    return pushLink(`<a href="${u}" target="_blank" rel="noopener noreferrer">${text}</a>`);
+  });
+
+  // Bare file:line in prose: e.g. "at agent.go:120"
+  s = s.replace(
+    /(^|[\s(])([a-zA-Z0-9_.\-/]+\.[a-zA-Z0-9]+):(\d+)(?:-(\d+))?(?=[\s),.;:!?]|$)/g,
+    (_, prefix, path, line, end) => {
+      const shown = path + ':' + line + (end ? '-' + end : '');
+      const attrs = thrLinkAttrs(shown, path, line, end);
+      return (
+        prefix +
+        (attrs
+          ? pushLink(
+              `<a href="#" class="thr-link cursor-pointer text-primary-text underline underline-offset-2 hover:text-primary" ${attrs}>${esc(shown)}</a>`,
+            )
+          : esc(shown))
+      );
+    },
+  );
+
+  // 4. Bracketed autolinks: <https://...>
+  s = s.replace(/&lt;(https?:\/\/[^&>]+)&gt;/g, (_, url) => {
+    const u = thrSafeUrl(url);
+    return u ? pushLink(`<a href="${u}" target="_blank" rel="noopener noreferrer">${u}</a>`) : url;
+  });
+
+  // 5. Bare autolinks
+  s = s.replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g, (_, prefix, url) => {
+    let trailing = '';
+    const m = /[.,:;?!]+$/.exec(url);
+    if (m) {
+      trailing = m[0];
+      url = url.slice(0, -trailing.length);
+    }
+    const u = thrSafeUrl(url);
+    return u
+      ? `${prefix}` +
+          pushLink(`<a href="${u}" target="_blank" rel="noopener noreferrer">${u}</a>`) +
+          trailing
+      : prefix + url + trailing;
+  });
+
+  // 6. Restore links & codes
+  s = s.replace(/%%PXLINK(\d+)%%/g, (_, idx) => links[+idx]);
+  s = s.replace(/%%PXCODE(\d+)%%/g, (_, idx) => codes[+idx]);
+
+  return s;
+}
+
+export function thrMd(src) {
+  if (!src) return '';
+  const lines = src.replace(/\r\n?/g, '\n').split('\n');
+  let html = '';
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+    if (!line.trim()) {
+      i++;
+      continue;
+    }
+
+    // Fenced code block: ``` or ~~~
+    const fenceMatch = /^( {0,3})(`{3,}|~{3,})(.*)$/.exec(line);
+    if (fenceMatch) {
+      const marker = fenceMatch[2][0];
+      const markerLen = fenceMatch[2].length;
+      const rawLang = fenceMatch[3].trim().split(/\s+/)[0] || '';
+      const lang = /^[\w+#.-]+$/.test(rawLang) ? rawLang : '';
+      const codeLines = [];
+      i++;
+      while (i < lines.length) {
+        const endMatch = new RegExp('^( {0,3})' + marker + '{' + markerLen + ',}\\s*$').exec(
+          lines[i],
+        );
+        if (endMatch) {
+          i++;
+          break;
+        }
+        codeLines.push(lines[i]);
+        i++;
+      }
+      const code = esc(codeLines.join('\n'));
+      html +=
+        `<div class="thr-pre"` +
+        (lang ? ` data-lang="${esc(lang)}"` : '') +
+        `><pre><code>` +
+        code +
+        `</code></pre><button title="Copy code" aria-label="Copy code" class="btn absolute top-2 right-2" data-control="thr-copy" data-variant="ghost" data-size="icon-xs">` +
+        COPY_ICON +
+        `</button></div>`;
+      continue;
+    }
+
+    // Heading: #{1,6}
+    const hMatch = /^(#{1,6})\s+(.*)$/.exec(line);
+    if (hMatch) {
+      const level = hMatch[1].length;
+      html += `<h${level}>` + thrInline(hMatch[2]) + `</h${level}>`;
+      i++;
+      continue;
+    }
+
+    // Horizontal rule: ---, ***, ___
+    if (/^( {0,3})([-*_])(?:\s*\2){2,}\s*$/.test(line)) {
+      html += '<hr>';
+      i++;
+      continue;
+    }
+
+    // Blockquote: >
+    if (/^( {0,3})>(?: (.*)|(.*))$/.test(line)) {
+      const qLines = [];
+      while (i < lines.length) {
+        const qm = /^( {0,3})>(?: (.*)|(.*))$/.exec(lines[i]);
+        if (qm) {
+          qLines.push(qm[2] !== undefined ? qm[2] : qm[3] || '');
+          i++;
+        } else if (lines[i].trim() && !/^( {0,3})([#`~*-]|\d+\.)/.test(lines[i])) {
+          qLines.push(lines[i]);
+          i++;
+        } else {
+          break;
+        }
+      }
+      let alertClass = '';
+      let alertTitle = '';
+      if (qLines.length > 0) {
+        const am = /^\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*$/i.exec(qLines[0]);
+        if (am) {
+          const kind = am[1].toLowerCase();
+          const titles = {
+            note: 'Note',
+            tip: 'Tip',
+            important: 'Important',
+            warning: 'Warning',
+            caution: 'Caution',
+          };
+          const alertClasses = {
+            note: 'thr-alert thr-alert-note',
+            tip: 'thr-alert thr-alert-tip',
+            important: 'thr-alert thr-alert-important',
+            warning: 'thr-alert thr-alert-warning',
+            caution: 'thr-alert thr-alert-caution',
+          };
+          alertClass = alertClasses[kind];
+          alertTitle = `<p class="thr-alert-title">${titles[kind]}</p>`;
+          qLines.shift();
+        }
+      }
+      const inner = thrMd(qLines.join('\n'));
+      html += `<blockquote class="${alertClass}">${alertTitle}${inner}</blockquote>`;
+      continue;
+    }
+
+    // Table
+    if (line.includes('|') && i + 1 < lines.length) {
+      const nextLine = lines[i + 1];
+      const isDelim = /^\s*\|?(\s*:?-+:?\s*\|)+\s*:?-+:?\s*\|?\s*$/.test(nextLine);
+      if (isDelim) {
+        const splitRow = (r) => {
+          let s = r.trim();
+          if (s.startsWith('|')) s = s.slice(1);
+          if (s.endsWith('|')) s = s.slice(0, -1);
+          return s.split('|').map((c) => c.trim());
+        };
+        const headers = splitRow(line);
+        const delims = splitRow(nextLine);
+        const aligns = delims.map((d) => {
+          const left = d.startsWith(':');
+          const right = d.endsWith(':');
+          if (left && right) return 'center';
+          if (right) return 'right';
+          if (left) return 'left';
+          return '';
+        });
+        i += 2;
+        const rows = [];
+        while (i < lines.length && lines[i].includes('|') && lines[i].trim()) {
+          rows.push(splitRow(lines[i]));
+          i++;
+        }
+        let tbl = '<table><thead><tr>';
+        headers.forEach((h, col) => {
+          const align = aligns[col] ? ` style="text-align:${aligns[col]}"` : '';
+          tbl += `<th${align}>${thrInline(h)}</th>`;
+        });
+        tbl += '</tr></thead><tbody>';
+        rows.forEach((r) => {
+          tbl += '<tr>';
+          headers.forEach((_, col) => {
+            const val = r[col] || '';
+            const align = aligns[col] ? ` style="text-align:${aligns[col]}"` : '';
+            tbl += `<td${align}>${thrInline(val)}</td>`;
+          });
+          tbl += '</tr>';
+        });
+        tbl += '</tbody></table>';
+        html += tbl;
+        continue;
+      }
+    }
+
+    // List: unordered (*, -, +) or ordered (1.)
+    const listMatch = /^( *)([-*+]|\d+[.)]) +(.*)$/.exec(line);
+    if (listMatch) {
+      const listStack = [];
+      while (i < lines.length) {
+        const l = lines[i];
+        if (!l.trim()) {
+          let j = i + 1;
+          while (j < lines.length && !lines[j].trim()) j++;
+          if (j < lines.length && /^( *)([-*+]|\d+[.)]) +(.*)$/.test(lines[j])) {
+            i++;
+            continue;
+          }
+          break;
+        }
+
+        const itemMatch = /^( *)([-*+]|\d+[.)]) +(.*)$/.exec(l);
+        if (itemMatch) {
+          const indent = itemMatch[1].length;
+          const marker = itemMatch[2];
+          const isOrdered = /^\d/.test(marker);
+          const type = isOrdered ? 'ol' : 'ul';
+          let itemText = itemMatch[3];
+
+          let taskInput = '';
+          const taskMatch = /^\[([ xX])\] +(.*)$/.exec(itemText);
+          if (taskMatch) {
+            const checked = taskMatch[1].toLowerCase() === 'x';
+            taskInput = `<input type="checkbox" disabled${checked ? ' checked' : ''} class="input"> `;
+            itemText = taskMatch[2];
+          }
+
+          while (listStack.length && indent < listStack[listStack.length - 1].indent) {
+            const popped = listStack.pop();
+            html += `</li></${popped.type}>`;
+          }
+
+          if (!listStack.length || indent > listStack[listStack.length - 1].indent) {
+            html +=
+              `<${type}><li class="${taskInput ? 'thr-task-item' : ''}">` +
+              taskInput +
+              thrInline(itemText);
+            listStack.push({ type, indent });
+          } else {
+            if (listStack[listStack.length - 1].type !== type) {
+              const popped = listStack.pop();
+              html += `</li></${popped.type}><${type}>`;
+              listStack.push({ type, indent });
+            } else {
+              html +=
+                `</li><li class="${taskInput ? 'thr-task-item' : ''}">` +
+                taskInput +
+                thrInline(itemText);
+            }
+          }
+          i++;
+        } else {
+          const indentMatch = /^( *)/.exec(l);
+          const isIndented = indentMatch[1].length > listStack[listStack.length - 1].indent;
+          if (isIndented && !/^( {0,3})([`~]{3,}|#{1,6}\s|>)/.test(l)) {
+            html += '<br>' + thrInline(l.trim());
+            i++;
+          } else if (!isIndented && !/^( {0,3})([#`~>]|[-*_]{3,})/.test(l) && !l.includes('|')) {
+            html += '<br>' + thrInline(l.trim());
+            i++;
+          } else {
+            break;
+          }
+        }
+      }
+
+      while (listStack.length) {
+        const popped = listStack.pop();
+        html += `</li></${popped.type}>`;
+      }
+      continue;
+    }
+
+    // Paragraph: collect lines until blank line or block start
+    const pLines = [];
+    while (i < lines.length) {
+      const l = lines[i];
+      if (!l.trim()) break;
+      if (/^( {0,3})(`{3,}|~{3,})/.test(l)) break;
+      if (/^#{1,6}\s+/.test(l)) break;
+      if (/^( {0,3})([-*_])(?:\s*\2){2,}\s*$/.test(l)) break;
+      if (/^( {0,3})>/.test(l)) break;
+      if (/^( *)([-*+]|\d+[.)]) +/.test(l)) break;
+      if (
+        l.includes('|') &&
+        i + 1 < lines.length &&
+        /^\s*\|?(\s*:?-+:?\s*\|)+\s*:?-+:?\s*\|?\s*$/.test(lines[i + 1])
+      )
+        break;
+
+      pLines.push(l);
+      i++;
+    }
+    if (pLines.length) {
+      html += '<p>' + pLines.map(thrInline).join('<br>') + '</p>';
+    }
+  }
+  return html;
+}
+
+export const newThread = (...args) => editorStore.actions.newThread(...args);
+export const openThread = (id) => editorStore.actions.openThread(id);
+export const deleteCurrentThread = () => editorStore.actions.deleteThread();
+export const showThreadsSidebar = () => editorStore.actions.showThreads();
+export const hideThreadsSidebar = () => editorStore.actions.hideThreads();
+export const initThreads = () => editorStore.actions.initializeThreads();
+export const applyAgentMeta = () =>
+  editorStore.actions.acceptAgentMeta(editorStore.store.state.workspace.meta);
+export const loadAgentAsync = () => editorStore.actions.initializeAgents();
+export const selectAgent = (...args) => editorStore.actions.selectAgent(...args);
+export const loadPickerModels = (name) => editorStore.actions.loadAgentModels(name);
+export const reloadWorkspace = (...args) => editorStore.actions.reloadWorkspace(...args);
+export const submitBatch = () => editorStore.actions.applyAgentBatch();
+const pickers = new WeakSet();
+export function registerAgentPicker(root) {
+  if (!root || pickers.has(root)) return;
+  pickers.add(root);
+  root.replaceChildren();
+  const dispose = renderSolid(
+    () =>
+      createComponent(EditorProvider, {
+        value: editorStore,
+        get children() {
+          return createComponent(AgentPicker, {});
+        },
+      }),
+    root,
+  );
+  onCleanup(dispose);
+}

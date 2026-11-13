@@ -8,7 +8,12 @@ export function ExplainOrb() {
   const view = createMemo(() => (state.model ? orbView(state.model) : null));
   return (
     <>
-      <Show when={state.model && !state.shown}>
+      <Show
+        when={
+          state.model &&
+          !(editor.threads.showing() && editor.threads.state.current === state.model.id)
+        }
+      >
         <div
           id="explain-orb"
           data-ui="explain-orb"
@@ -25,7 +30,7 @@ export function ExplainOrb() {
             onClick={() => {
               const id = state.model.id;
               if (!view().busy) actions.dismissOrb();
-              if (id) editor.services.openExplanation?.(id);
+              if (id) void editor.actions.openThread(id);
             }}
           >
             <Show when={view().busy}>

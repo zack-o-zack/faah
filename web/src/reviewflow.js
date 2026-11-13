@@ -5,7 +5,7 @@ import { on } from './bus.js';
 // web/src/reviewflow.js
 import { $, $$, S, esc } from './state.js';
 
-import { thrMd } from './thread.js';
+import { thrMd } from './app/legacy-bridge.js';
 
 import { initReviewWalkthrough, loadReviewWalkthrough, getWalkthroughSubTab, setWalkthroughSubTab } from './reviewwalkthrough.js';
 

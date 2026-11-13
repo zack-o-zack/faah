@@ -139,3 +139,10 @@ export function createWorkspaceStream(options = {}) {
     },
   };
 }
+
+/** Bind a topic callback to the current feature owner without owning another connection. */
+export function createWorkspaceSubscription(app, name, listener) {
+  const release = app.actions.subscribeWorkspaceEvent(name, listener);
+  onCleanup(release);
+  return release;
+}

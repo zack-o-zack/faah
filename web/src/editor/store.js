@@ -1,3 +1,5 @@
+import { createAgentStore } from '../agents/store.js';
+import { createThreadStore } from '../threads/store.js';
 import { registerFeatureCommands } from '../palette/features.js';
 import { createDocumentGitActions } from '../git/documents.js';
 import { createLanguageStore } from '../lsp/store.js';
@@ -246,6 +248,14 @@ export function createEditorStore(store, options = {}) {
     createHoverActions(editor),
     createVimActions(editor),
   );
+  editor.agents = createAgentStore(editor, options.agents);
+  Object.assign(actions, editor.agents.actions);
+  editor.threads = createThreadStore(editor, options.threads);
+  Object.assign(actions, editor.threads.actions);
+  handlers.agent = actions.openAgentEdit;
+  handlers.thread = actions.newThread;
+  handlers.explain = actions.explainSelection;
+  handlers.prepare = actions.prepareExplanation;
   editor.tree = createTreeStore(store, {
     openFile,
     enterEditMode: () => editor.actions.enterEditMode(),
@@ -253,8 +263,8 @@ export function createEditorStore(store, options = {}) {
   Object.assign(actions, editor.tree.actions);
   editor.git = createGitStore(store, {
     openFile,
-    runAgent: (...args) => actions.runLegacyAgentJob(...args),
-    cancelAgent: (id) => actions.cancelLegacyAgentJob(id),
+    runAgent: (...args) => actions.runAgentJob(...args),
+    cancelAgent: (id) => actions.cancelAgentJob(id),
     historyChanged: () => actions.legacyHistoryChanged(),
   });
   Object.assign(actions, editor.git.actions);

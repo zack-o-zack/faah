@@ -10,7 +10,7 @@ import { setReviewHandler, openFile, layout, render, doc_, api, apiPostJson, key
 import { $, $$, S, esc } from './state.js';
 
 import { diffview, setPRSyncHandler } from './app/legacy-bridge.js';
-import { reloadWorkspace } from './agent.js';
+import { reloadWorkspace } from './app/legacy-bridge.js';
 
 import { refreshTree } from './app/legacy-bridge.js';
 
@@ -18,7 +18,7 @@ import { initPRMerge, refreshMergeStatus, reviewGate } from './prmerge.js';
 import { openForgeConnect } from './forgeconnect.js';
 import { on } from './bus.js';
 import { sanitizeMarkdown } from './app/legacy-bridge.js';
-import { thrMd } from './thread.js';
+import { thrMd } from './app/legacy-bridge.js';
 
 let meta = null;      // this session's PR info: {number, title, base, head, writeAccess, readOnly}
 let comments = [];    // draft comments known to the server

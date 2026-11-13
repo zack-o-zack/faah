@@ -63,7 +63,6 @@ function initialState() {
     },
     lsp: { servers: [], state: 'off', server: '' },
     settings: {},
-    agents: { targets: [] },
     git: { unpushedCount: 0, snapshot: null, revision: 0 },
     viewers: { viewed: {} },
     explanation: { model: null, shown: false },
@@ -85,7 +84,6 @@ export function createAppStore(options = {}) {
       setViewed: (path, value) => set('viewers', 'viewed', path, value),
       setExplanation: (model) => set('explanation', 'model', reconcile(model)),
       setExplanationShown: (shown) => set('explanation', 'shown', shown),
-      setAgentTargets: (targets) => set('agents', 'targets', targets),
       setNavigation: (patch) => set('navigation', patch),
       setGeometry: (patch) => set('editor', patch),
       setWorkspace: (meta) =>

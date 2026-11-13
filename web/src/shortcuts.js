@@ -6,7 +6,7 @@ import { $, esc, S } from './state.js';
 
 
 import { showRightInspector, hideRightInspector } from './app/legacy-bridge.js';
-import { hideThreadsSidebar } from './thread.js';
+import { hideThreadsSidebar } from './app/legacy-bridge.js';
 import { toggleSidebar, isPaletteOpen, openPalette, closePalette } from './app/legacy-bridge.js';
 
 import { previewing, togglePreview, previewKey } from './app/legacy-bridge.js';
@@ -15,7 +15,7 @@ import { toggleDiff, stepDiffHunk, stepChangedFile } from './app/legacy-bridge.j
 import { openSettings, closeSettings, isSettingsOpen } from './settings.js';
 
 import { handleImageKey } from './app/legacy-bridge.js';
-import { submitBatch } from './agent.js';
+import { submitBatch } from './app/legacy-bridge.js';
 import { reindexWorkspace } from './app/legacy-bridge.js';
 
 import { navigateToTips } from './tips.js';

@@ -21,10 +21,12 @@ export function EditorRow(props) {
   });
   const current = createMemo(() => editor.active()?.cur === line());
   const agent = createMemo(() =>
-    editor.store.state.agents.targets.some(
-      (target) =>
-        target.path === editor.active()?.path && line() >= target.l1 && line() <= target.l2,
-    ),
+    editor.agents
+      .targets()
+      .some(
+        (target) =>
+          target.path === editor.active()?.path && line() >= target.l1 && line() <= target.l2,
+      ),
   );
   const reference = createMemo(() => {
     const range = editor.store.state.navigation.reference;
@@ -72,6 +74,10 @@ export function EditorRow(props) {
       ref={row}
       class={`row group/line flex min-h-[var(--lh)] font-mono text-[length:var(--fs)]
         leading-[var(--lh)]`}
+      onClick={(event) => {
+        if (!event.target.closest('button'))
+          editor.actions.focusAgentAt(editor.active().path, line());
+      }}
       data-l={line()}
       classList={{
         cur: current(),
@@ -94,7 +100,7 @@ export function EditorRow(props) {
           data-control="line-btn"
           onMouseDown={(event) => event.preventDefault()}
           onClick={(event) =>
-            editor.actions.openSelectionMenu(
+            editor.actions.openLineActions(
               {
                 path: editor.active().path,
                 l1: line(),

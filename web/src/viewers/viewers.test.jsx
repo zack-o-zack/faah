@@ -200,7 +200,11 @@ test('explain orb renders progress, completion, sidebar suppression and dismissa
   const open = vi.fn();
   render(() => (
     <EditorProvider
-      value={{ store: app, actions: app.actions, services: { openExplanation: open } }}
+      value={{
+        store: app,
+        actions: { ...app.actions, openThread: open },
+        threads: { showing: () => false, state: { current: '' } },
+      }}
     >
       <ExplainOrb />
     </EditorProvider>
@@ -226,7 +230,7 @@ test('long diff mounts only visible slots and releases recycled line numbers', a
     const [top, setTop] = createSignal(0);
     scroll = setTop;
     return (
-      <EditorProvider value={{ store: app, actions: app.actions }}>
+      <EditorProvider value={{ store: app, actions: app.actions, agents: { targets: () => [] } }}>
         <DiffRows
           hunk={{
             rows: Array.from({ length: 20000 }, (_, i) => ({
