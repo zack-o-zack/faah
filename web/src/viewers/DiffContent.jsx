@@ -1,5 +1,5 @@
 import { createMemo, createSignal, onCleanup, onMount, Show } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { parseDiff } from './diff-parse.ts';
 import { diagnosticMap } from './diff-rows.ts';
 import { createDiffActions } from './diff-actions.ts';

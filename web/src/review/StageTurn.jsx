@@ -1,5 +1,5 @@
 import { For, Show } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { Markdown } from '../lib/Markdown.tsx';
 // The first turn holds the stage's own instructions, folded away; follow-ups read like a chat.
 export function StageTurn(props) {

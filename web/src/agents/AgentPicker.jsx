@@ -1,5 +1,5 @@
 import { createMemo, createResource, createSignal, For, Show } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { Popover } from '../lib/Popover.tsx';
 import { ErrorNotice } from '../lib/ErrorNotice.tsx';
 import { filterAgentModels, groupAgentModels } from './logic.ts';

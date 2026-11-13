@@ -1,5 +1,5 @@
 import { createSignal, For, Show } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { ErrorNotice } from '../lib/ErrorNotice.tsx';
 import { StageCard } from './StageCard.jsx';
 export function StageList() {

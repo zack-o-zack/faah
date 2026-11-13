@@ -1,6 +1,6 @@
 import { Show } from 'solid-js';
 import { VimHelp } from './VimHelp.jsx';
-import { useEditor } from './context.jsx';
+import { useEditor } from './context.tsx';
 export function VimStatus() {
   const editor = useEditor();
   return (

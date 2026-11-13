@@ -1,5 +1,5 @@
 import { For, Show, type Component } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { Dialog } from '../lib/Dialog.tsx';
 import { keyCaps } from '../lib/keyboard.ts';
 import type { ShortcutRegistry } from './registry.ts';

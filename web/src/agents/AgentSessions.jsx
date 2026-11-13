@@ -1,5 +1,5 @@
 import { For, Show, onMount, onCleanup } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { AgentSession } from './AgentSession.jsx';
 import { AgentPicker } from './AgentPicker.jsx';
 import { ErrorNotice } from '../lib/ErrorNotice.tsx';

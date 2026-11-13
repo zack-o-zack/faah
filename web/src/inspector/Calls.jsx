@@ -1,5 +1,5 @@
 import { For, Show } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { CallNode } from './CallNode.jsx';
 import { LspSetup } from '../lsp/LspSetup.jsx';
 import { keyLabel } from '../lib/keyboard.ts';

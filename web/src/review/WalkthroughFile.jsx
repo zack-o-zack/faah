@@ -1,5 +1,5 @@
 import { createEffect, For, on } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { rowLine } from './logic.ts';
 import { LineStats } from './LineStats.jsx';
 const ROW_TYPE = { add: 'diff-type-add', del: 'diff-type-del' };

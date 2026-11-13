@@ -1,5 +1,5 @@
 import { createEffect, createMemo, onCleanup } from 'solid-js';
-import { useEditor } from './context.jsx';
+import { useEditor } from './context.tsx';
 import { markFind, markOccurrences, textRanges } from './highlights.ts';
 
 export function EditorRow(props) {

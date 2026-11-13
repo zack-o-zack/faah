@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@solidjs/testing-library';
 import { expect, test, vi } from 'vitest';
 import { createAppStore } from '../app/store.ts';
-import { EditorProvider } from '../editor/context.jsx';
+import { EditorProvider } from '../editor/context.tsx';
 import { createGitStore } from './store.ts';
 import { GitPanel } from './GitPanel.jsx';
 test('a fresh Git provider submits a typed message and shows server errors', async () => {

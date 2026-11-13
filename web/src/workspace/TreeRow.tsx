@@ -1,8 +1,13 @@
+import type { TreeRow as Row } from './decode.ts';
+interface TreeRowProps {
+  row: Row;
+}
+import type { JSX } from 'solid-js';
 import { createMemo, Show } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { ContextMenu } from '../lib/ContextMenu.tsx';
 import { fileKind } from './tree-logic.ts';
-export function TreeRow(props) {
+export function TreeRow(props: TreeRowProps): JSX.Element {
   const editor = useEditor();
   const decoration = createMemo(() => editor.tree.decoration(props.row));
   const open = () =>

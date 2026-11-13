@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from '@solidjs/testing-library';
 import { createSignal } from 'solid-js';
 import { expect, test, vi } from 'vitest';
 import { createAppStore } from '../app/store.ts';
-import { EditorProvider } from '../editor/context.jsx';
+import { EditorProvider } from '../editor/context.tsx';
 import { InspectorToolbar } from './InspectorToolbar.jsx';
 import { Symbols } from './Symbols.jsx';
 import { LspSetup } from '../lsp/LspSetup.jsx';

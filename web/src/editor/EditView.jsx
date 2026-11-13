@@ -1,5 +1,5 @@
 import { createEffect, createMemo, createSignal, Index, on, onCleanup, onMount } from 'solid-js';
-import { useEditor } from './context.jsx';
+import { useEditor } from './context.tsx';
 import { indentEdit } from './edit.ts';
 import { visibleRange, lineOffsets } from './layout.ts';
 

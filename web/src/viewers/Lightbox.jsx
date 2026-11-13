@@ -1,6 +1,6 @@
 import { createSignal, Show } from 'solid-js';
 import { Dialog } from '../lib/Dialog.tsx';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 export function Lightbox(props) {
   const editor = useEditor();
   const [size, setSize] = createSignal('');

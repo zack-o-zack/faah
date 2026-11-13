@@ -1,5 +1,5 @@
 import { For, Show } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { DiffRows } from './DiffRows.jsx';
 
 export function DiffSection(props) {

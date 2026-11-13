@@ -1,5 +1,5 @@
 import { For, Show } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { installLog } from './logic.ts';
 export function LspSetup() {
   const editor = useEditor();

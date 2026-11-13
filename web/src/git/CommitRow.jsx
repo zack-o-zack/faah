@@ -1,5 +1,5 @@
 import { createSignal, Show } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { copyText } from '../lib/clipboard.ts';
 import { CommitFiles } from './CommitFiles.jsx';
 import { CommitDetails } from './CommitDetails.jsx';

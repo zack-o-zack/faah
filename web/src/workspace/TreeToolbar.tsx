@@ -1,5 +1,6 @@
-import { useEditor } from '../editor/context.jsx';
-export function TreeToolbar() {
+import type { JSX } from 'solid-js';
+import { useEditor } from '../editor/context.tsx';
+export function TreeToolbar(): JSX.Element {
   const editor = useEditor();
   const tree = editor.tree;
   return (

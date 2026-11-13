@@ -1,11 +1,12 @@
-import { useEditor } from '../editor/context.jsx';
-import { TreeToolbar } from '../workspace/TreeToolbar.jsx';
-import { TreeScope } from '../workspace/TreeScope.jsx';
-import { Tree } from '../workspace/Tree.jsx';
+import type { JSX } from 'solid-js';
+import { useEditor } from '../editor/context.tsx';
+import { TreeToolbar } from '../workspace/TreeToolbar.tsx';
+import { TreeScope } from '../workspace/TreeScope.tsx';
+import { Tree } from '../workspace/Tree.tsx';
 import { GitPanel } from '../git/GitPanel.jsx';
 import { Unpushed } from '../git/Unpushed.jsx';
-import { SidebarFooter } from './SidebarFooter.jsx';
-export function Sidebar() {
+import { SidebarFooter } from './SidebarFooter.tsx';
+export function Sidebar(): JSX.Element {
   const editor = useEditor();
   return (
     <aside

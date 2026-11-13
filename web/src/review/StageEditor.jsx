@@ -1,5 +1,5 @@
 import { onMount, Show } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { Dialog } from '../lib/Dialog.tsx';
 export function StageEditor() {
   const editor = useEditor();

@@ -2,7 +2,7 @@ import { createRoot, createSignal, Show } from 'solid-js';
 import { render, screen, fireEvent, waitFor } from '@solidjs/testing-library';
 import { afterEach, test, expect, vi } from 'vitest';
 import { createAppStore } from '../app/store.ts';
-import { EditorProvider } from '../editor/context.jsx';
+import { EditorProvider } from '../editor/context.tsx';
 import { ThemeProvider } from '../lib/theme-context.tsx';
 import { createViewerResource } from './resource.ts';
 import { viewMode, previewKind, blockIndex } from './view.ts';

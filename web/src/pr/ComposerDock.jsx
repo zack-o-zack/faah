@@ -1,5 +1,5 @@
 import { For } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { PRComposer } from './PRComposer.jsx';
 // Composers for a line that is not on screen dock in the corner until you jump back.
 export function ComposerDock() {

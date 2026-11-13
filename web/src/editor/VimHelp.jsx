@@ -1,5 +1,5 @@
 import { For, Index } from 'solid-js';
-import { useEditor } from './context.jsx';
+import { useEditor } from './context.tsx';
 import { Dialog } from '../lib/Dialog.tsx';
 import { Kbd } from '../lib/shortcuts.tsx';
 import { VIM_SHORTCUT_SECTIONS } from './vim-help.ts';

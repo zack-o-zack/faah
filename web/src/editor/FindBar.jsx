@@ -1,5 +1,5 @@
 import { onMount, onCleanup, Show } from 'solid-js';
-import { useEditor } from './context.jsx';
+import { useEditor } from './context.tsx';
 export function FindBar() {
   const editor = useEditor();
   let input;

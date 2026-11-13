@@ -1,13 +1,15 @@
-import { useEditor } from '../editor/context.jsx';
+import type { JSX } from 'solid-js';
+import { useEditor } from '../editor/context.tsx';
 import { useTheme } from '../lib/theme-context.tsx';
 import { listThemes } from '../lib/theme.ts';
-export function SidebarFooter() {
+export function SidebarFooter(): JSX.Element {
   const editor = useEditor();
   const theme = useTheme();
   function cycle() {
     const themes = listThemes();
     const index = themes.findIndex((item) => item.id === theme.current());
-    theme.setTheme(themes[(index + 1) % themes.length].id);
+    const next = themes[(index + 1) % themes.length];
+    if (next) theme.setTheme(next.id);
   }
   return (
     <footer class="side-foot flex shrink-0 items-center justify-end gap-2 border-t px-2 py-1 desktop:hidden">

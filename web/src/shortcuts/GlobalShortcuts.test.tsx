@@ -1,17 +1,15 @@
 import { fireEvent, render, screen } from '@solidjs/testing-library';
-import { createStore } from 'solid-js/store';
+import { createAppStore } from '../app/store.ts';
+import { createEditorStore } from '../editor/store.ts';
+import { testDocument } from '../editor/test-document.ts';
 import { expect, test, vi } from 'vitest';
-import { EditorProvider } from '../editor/context.jsx';
+import { EditorProvider } from '../editor/context.tsx';
 import { isMac } from '../lib/keyboard.ts';
 import { GlobalShortcuts } from './GlobalShortcuts.tsx';
 import { HelpSheet } from './HelpSheet.tsx';
 import { createShortcutRegistry } from './registry.ts';
 
 function mount({ git = true, right = false, threads = false } = {}) {
-  const [state] = createStore({
-    workspace: { meta: { git, version: '1.2.3' } },
-    layout: { right, threads },
-  });
   const shortcuts = createShortcutRegistry();
   const actions = {
     openSettings: vi.fn(),
@@ -20,7 +18,7 @@ function mount({ git = true, right = false, threads = false } = {}) {
     hideRightInspector: vi.fn(),
     hideThreads: vi.fn(),
     togglePanel: vi.fn(),
-    reindexWorkspace: vi.fn(async () => {}),
+    reindexWorkspace: vi.fn(async () => undefined),
     toggleActiveDiff: vi.fn(),
     toggleActivePreview: vi.fn(),
     stepDiffHunk: vi.fn(),
@@ -29,20 +27,30 @@ function mount({ git = true, right = false, threads = false } = {}) {
     showVimHelp: vi.fn(),
   };
   const imageKey = vi.fn(() => true);
-  const editor = {
-    shortcuts,
-    store: { state },
-    active: () => ({ isImage: true }),
-    services: { imageKey },
-    actions,
-  };
-  render(() => (
-    <EditorProvider value={editor}>
-      <GlobalShortcuts />
-      <HelpSheet />
-    </EditorProvider>
-  ));
-  return { actions, imageKey };
+  const services = { imageKey, diagramFullscreens: new Set<() => boolean>() };
+  render(() => {
+    const app = createAppStore();
+    app.actions.setWorkspace({ git, version: '1.2.3' });
+    app.actions.setPanelVisible('right', right);
+    app.actions.setPanelVisible('threads', threads);
+    // Exercise Escape priority even if both panes are temporarily visible.
+    const base = createEditorStore(app);
+    const editor = {
+      ...base,
+      shortcuts,
+      store: { ...app, state: { ...app.state, layout: { ...app.state.layout, right, threads } } },
+      active: () => testDocument({ isImage: true }),
+      services,
+      actions: { ...base.actions, ...actions },
+    };
+    return (
+      <EditorProvider value={editor}>
+        <GlobalShortcuts />
+        <HelpSheet />
+      </EditorProvider>
+    );
+  });
+  return { actions, imageKey, services };
 }
 const mod: KeyboardEventInit = isMac ? { metaKey: true } : { ctrlKey: true };
 const key = (key: string, init: KeyboardEventInit = {}, target: Element = document.body) =>
@@ -110,4 +118,13 @@ test('? shows the help sheet listing the bound shortcuts', () => {
   fireEvent.click(screen.getByRole('button', { name: 'View Vim Keybindings' }));
   expect(actions.showVimHelp).toHaveBeenCalled();
   expect(screen.queryByText('Keyboard Shortcuts')).toBe(null);
+});
+
+test('Escape exits the component-owned fullscreen set before closing panels', () => {
+  const { actions, services } = mount({ right: true });
+  const exit = vi.fn(() => true);
+  services.diagramFullscreens.add(exit);
+  key('Escape');
+  expect(exit).toHaveBeenCalledOnce();
+  expect(actions.hideRightInspector).not.toHaveBeenCalled();
 });

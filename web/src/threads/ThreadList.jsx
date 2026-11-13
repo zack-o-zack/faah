@@ -1,5 +1,5 @@
 import { For, Show } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { targetRef } from '../agents/logic.ts';
 import { relativeTime } from './logic.ts';
 import { keyLabel } from '../lib/keyboard.ts';

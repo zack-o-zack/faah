@@ -1,5 +1,5 @@
 import { For, Show } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { ResultGroup } from '../search/ResultGroup.jsx';
 export function References() {
   const editor = useEditor();

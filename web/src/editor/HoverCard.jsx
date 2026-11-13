@@ -1,5 +1,5 @@
 import { createEffect, createSignal, For, on, onCleanup, Show } from 'solid-js';
-import { useEditor } from './context.jsx';
+import { useEditor } from './context.tsx';
 import { nearCard, placeCard } from './hover.ts';
 import { copyText } from '../lib/clipboard.ts';
 

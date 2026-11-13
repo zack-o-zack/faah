@@ -1,3 +1,4 @@
+import type { JSX } from 'solid-js';
 import {
   createEffect,
   createMemo,
@@ -8,14 +9,14 @@ import {
   onMount,
   Show,
 } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { rowWindow } from './tree-model.ts';
-import { TreeRow } from './TreeRow.jsx';
-export function Tree() {
+import { TreeRow } from './TreeRow.tsx';
+export function Tree(): JSX.Element {
   const editor = useEditor();
   const tree = editor.tree;
-  let viewport;
-  let frame;
+  let viewport: HTMLDivElement | undefined;
+  let frame = 0;
   const [top, setTop] = createSignal(0);
   const [height, setHeight] = createSignal(600);
   const [focused, setFocused] = createSignal('');
@@ -23,6 +24,7 @@ export function Tree() {
   const window = createMemo(() => rowWindow(rows().length, top(), height()));
   const visible = createMemo(() => rows().slice(window().first, window().last));
   function update() {
+    if (!viewport) return;
     frame = 0;
     setTop(viewport.scrollTop);
     setHeight(viewport.clientHeight);
@@ -30,7 +32,8 @@ export function Tree() {
   function schedule() {
     if (!frame) frame = requestAnimationFrame(update);
   }
-  function scrollPath(path, center = false) {
+  function scrollPath(path: string, center = false) {
+    if (!viewport) return;
     const index = rows().findIndex((row) => row.path === path);
     if (index < 0) return;
     const rowTop = index * 24;
@@ -49,15 +52,15 @@ export function Tree() {
   );
   onMount(() => {
     const observer = new ResizeObserver(schedule);
-    observer.observe(viewport);
+    if (viewport) observer.observe(viewport);
     update();
     onCleanup(() => {
       observer.disconnect();
       cancelAnimationFrame(frame);
     });
   });
-  function navigate(event) {
-    if (event.target.closest('input,[role=menu]')) return;
+  function navigate(event: KeyboardEvent) {
+    if (event.target instanceof Element && event.target.closest('input,[role=menu]')) return;
     const index = Math.max(
       0,
       rows().findIndex((row) => row.path === focused()),
@@ -80,8 +83,10 @@ export function Tree() {
     event.preventDefault();
     event.stopPropagation();
     if (next !== undefined) {
-      setFocused(rows()[next].path);
-      scrollPath(rows()[next].path);
+      const row = rows()[next];
+      if (!row) return;
+      setFocused(row.path);
+      scrollPath(row.path);
     }
   }
   return (

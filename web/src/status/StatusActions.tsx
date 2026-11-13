@@ -1,9 +1,10 @@
+import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { previewKind, viewMode } from '../viewers/view.ts';
 import { Kbd } from '../lib/shortcuts.tsx';
 
-export function StatusActions() {
+export function StatusActions(): JSX.Element {
   const editor = useEditor();
   const actions = [
     {
@@ -27,7 +28,7 @@ export function StatusActions() {
       label: 'Preview',
       keys: 'Alt+M',
       visible: () => previewKind(editor.active()) && !editor.active()?.isEditing,
-      run: () => editor.actions.togglePreview(editor.active(), editor.active().cur),
+      run: () => editor.actions.togglePreview(editor.active(), editor.active()?.cur),
     },
     { name: 'wrap', label: 'Wrap', keys: 'Alt+Z', run: () => editor.actions.toggleWrap() },
     {
@@ -39,7 +40,7 @@ export function StatusActions() {
     },
     { name: 'help', label: 'Help', keys: '?', run: () => editor.actions.showHelp() },
   ];
-  function pressed(action) {
+  function pressed(action: { name: string }): boolean {
     if (action.name === 'wrap') return editor.settings.preferences().wrap;
     return (
       action.name === 'md-preview' && ['markdown', 'table'].includes(viewMode(editor.active()))

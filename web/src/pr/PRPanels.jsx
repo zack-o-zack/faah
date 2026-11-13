@@ -1,5 +1,5 @@
 import { Show } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { PRBar } from './PRBar.jsx';
 import { CommentsPanel } from './CommentsPanel.jsx';
 // A PR session's footer and comments show with the overview.

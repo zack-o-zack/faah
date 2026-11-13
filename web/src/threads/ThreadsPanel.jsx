@@ -1,6 +1,6 @@
 import { withKeys } from '../lib/keyboard.ts';
 import { Show } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { AgentSessions } from '../agents/AgentSessions.jsx';
 import { ErrorNotice } from '../lib/ErrorNotice.tsx';
 import { ThreadList } from './ThreadList.jsx';

@@ -1,5 +1,5 @@
 import { Show } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { AgentChoice } from './AgentChoice.jsx';
 export function CommitForm() {
   const editor = useEditor();

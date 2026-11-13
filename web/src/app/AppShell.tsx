@@ -1,10 +1,10 @@
 import { Show, type Component } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { withKeys } from '../lib/keyboard.ts';
-import { Sidebar } from '../layout/Sidebar.jsx';
-import { RightSidebar } from '../layout/RightSidebar.jsx';
-import { PanelHandle } from '../layout/PanelHandle.jsx';
-import { StatusBar } from '../status/StatusBar.jsx';
+import { Sidebar } from '../layout/Sidebar.tsx';
+import { RightSidebar } from '../layout/RightSidebar.tsx';
+import { PanelHandle } from '../layout/PanelHandle.tsx';
+import { StatusBar } from '../status/StatusBar.tsx';
 import { ThreadsPanel, ThreadsToggle } from '../threads/ThreadsPanel.jsx';
 import { ReviewToggle } from '../review/ReviewToggle.jsx';
 import { ReviewView } from '../review/ReviewView.jsx';

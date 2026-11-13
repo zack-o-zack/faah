@@ -1,5 +1,5 @@
 import { createMemo, Show } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { orbView } from './orb-model.ts';
 export function ExplainOrb() {
   const editor = useEditor();

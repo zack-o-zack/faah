@@ -55,6 +55,8 @@ export interface EditorUI {
   vim: VimState;
 }
 export interface Services {
+  imageKey?: (event: KeyboardEvent) => boolean;
+  diagramFullscreens?: Set<() => boolean>;
   selection?: { copied: (action: string) => void };
   source?: {
     scrollTo: (top: number) => void;
@@ -71,13 +73,19 @@ export interface Services {
   };
   find?: { focus: () => void };
   preview?: {
+    key: (event: KeyboardEvent) => boolean;
+    select: () => void;
     find: (query: string, caseSensitive: boolean) => FindHit[];
     showHit: (index: number) => void;
     clearMarks: () => void;
     line: (line: number) => void;
     topLine: () => number;
   };
-  diff?: { scrollLine: (line: number) => void; stepHunk: (direction: number) => void };
+  diff?: {
+    currentLine: () => number;
+    scrollLine: (line: number) => void;
+    stepHunk: (direction: number) => void;
+  };
 }
 export interface CoreActions {
   setPanelVisible: (name: PanelName, visible: boolean) => void;

@@ -1,4 +1,4 @@
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 // Follow-up questions about a stage go to that stage's thread.
 export function ReviewCompose() {
   const editor = useEditor();

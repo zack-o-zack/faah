@@ -1,5 +1,5 @@
 import { createMemo, Index } from 'solid-js';
-import { useEditor } from './context.jsx';
+import { useEditor } from './context.tsx';
 export function Minimap() {
   const editor = useEditor();
   const positions = createMemo(() => {

@@ -1,10 +1,11 @@
-import { useEditor } from '../editor/context.jsx';
+import type { JSX } from 'solid-js';
+import { useEditor } from '../editor/context.tsx';
 import { InspectorToolbar } from '../inspector/InspectorToolbar.jsx';
 import { References } from '../inspector/References.jsx';
 import { Symbols } from '../inspector/Symbols.jsx';
 import { Calls } from '../inspector/Calls.jsx';
 import { Search } from '../search/Search.jsx';
-export function RightSidebar() {
+export function RightSidebar(): JSX.Element {
   const editor = useEditor();
   const layout = () => editor.store.state.layout;
   return (

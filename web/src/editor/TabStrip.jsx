@@ -1,6 +1,6 @@
 import { Portal } from 'solid-js/web';
 import { createEffect, createSignal, For, Index, onCleanup, Show } from 'solid-js';
-import { useEditor } from './context.jsx';
+import { useEditor } from './context.tsx';
 import { createMenuEvents } from '../lib/menu-events.ts';
 
 export function TabStrip(props) {

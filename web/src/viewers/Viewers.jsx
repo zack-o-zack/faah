@@ -1,5 +1,5 @@
 import { Match, Show, Switch } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { viewMode } from './view.ts';
 import { ImageViewer } from './ImageViewer.jsx';
 import { PreviewViewer } from './PreviewViewer.jsx';

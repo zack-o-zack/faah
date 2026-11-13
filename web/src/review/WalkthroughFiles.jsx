@@ -1,5 +1,5 @@
 import { For, Show } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { fileInsights, shortRef, visibleFiles } from './logic.ts';
 import { LineStats } from './LineStats.jsx';
 // The left pane lists files; insights stay hidden until a filter asks for one kind.

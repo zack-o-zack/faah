@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@solidjs/testing-library';
 import { expect, test, vi } from 'vitest';
 import { createStore } from 'solid-js/store';
-import { EditorProvider } from './context.jsx';
+import { EditorProvider } from './context.tsx';
 import { HoverCard } from './HoverCard.jsx';
 test('keyboard focus keeps a card open after pointer departure and focusout releases it', async () => {
   vi.useFakeTimers();

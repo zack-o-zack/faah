@@ -1,20 +1,25 @@
+import type { JSX } from 'solid-js';
 import { onCleanup, onMount } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { SelectionBar } from '../editor/SelectionBar.jsx';
 import { VimStatus } from '../editor/VimStatus.jsx';
 import { LspMenu } from '../lsp/LspMenu.jsx';
-import { Metrics } from './Metrics.jsx';
-import { StatusActions } from './StatusActions.jsx';
+import { Metrics } from './Metrics.tsx';
+import { StatusActions } from './StatusActions.tsx';
 import { fmtBytes, statusMessage } from './logic.ts';
-export function StatusBar() {
+export function StatusBar(): JSX.Element {
   const editor = useEditor();
-  let status, spacer;
+  let status: HTMLElement | undefined;
+  let spacer: HTMLSpanElement | undefined;
   onMount(() => {
+    const bar = status;
+    const space = spacer;
+    if (!bar || !space) return;
     let level = 0;
-    let frame;
-    const apply = (value) => {
-      for (let step = 1; step <= 6; step++) status.classList.toggle('fit-' + step, step <= value);
-      return spacer.offsetWidth - (status.scrollWidth - status.clientWidth);
+    let frame = 0;
+    const apply = (value: number) => {
+      for (let step = 1; step <= 6; step++) bar.classList.toggle('fit-' + step, step <= value);
+      return space.offsetWidth - (bar.scrollWidth - bar.clientWidth);
     };
     const fit = () => {
       let room = apply(level);
@@ -33,8 +38,8 @@ export function StatusBar() {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(fit);
     });
-    resize.observe(status);
-    mutation.observe(status, { childList: true, subtree: true, characterData: true });
+    resize.observe(bar);
+    mutation.observe(bar, { childList: true, subtree: true, characterData: true });
     document.fonts?.ready.then(fit);
     onCleanup(() => {
       resize.disconnect();
@@ -56,7 +61,7 @@ export function StatusBar() {
         <VimStatus />
       </span>
       <span id="st-size" class="[#status.selecting_&]:hidden">
-        {editor.active() ? fmtBytes(editor.active().size) : ''}
+        {editor.active() ? fmtBytes(editor.active()?.size) : ''}
       </span>
       <span
         id="st-pos"
@@ -71,7 +76,7 @@ export function StatusBar() {
       <LspMenu />
       <span id="sel-stats" class="hidden [#status.selecting_&]:inline-flex">
         {editor.ui.selection
-          ? `${editor.ui.selection.l2 - editor.ui.selection.l1 + 1} ${editor.ui.selection.l1 === editor.ui.selection.l2 ? 'line' : 'lines'} · ${editor.ui.selection.text.length} ${editor.ui.selection.text.length === 1 ? 'char' : 'chars'}`
+          ? `${editor.ui.selection?.l2 - editor.ui.selection?.l1 + 1} ${editor.ui.selection?.l1 === editor.ui.selection?.l2 ? 'line' : 'lines'} · ${editor.ui.selection?.text.length} ${editor.ui.selection?.text.length === 1 ? 'char' : 'chars'}`
           : ''}
       </span>
       <span class="status-sep h-3 w-px shrink-0 bg-border [#status.selecting_#footer-actions+&]:hidden" />

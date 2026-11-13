@@ -1,5 +1,5 @@
 import { For, onMount, Show } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { AgentPicker } from '../agents/AgentPicker.jsx';
 import { targetRef } from '../agents/logic.ts';
 import { ThreadTranscript } from './ThreadTranscript.jsx';

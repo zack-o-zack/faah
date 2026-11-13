@@ -1,5 +1,5 @@
 import { createEffect, on, onCleanup, onMount, Show } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { createShortcut } from '../lib/shortcuts.tsx';
 import { ErrorNotice } from '../lib/ErrorNotice.tsx';
 import { AgentPicker } from './AgentPicker.jsx';

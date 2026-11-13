@@ -1,4 +1,4 @@
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { commentPreview, formatTime } from './logic.ts';
 import { CommentBody } from './CommentBody.jsx';
 export function IssueComment(props) {

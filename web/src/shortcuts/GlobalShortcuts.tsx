@@ -1,5 +1,5 @@
 import { onCleanup, type Component } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { createShortcut } from '../lib/shortcuts.tsx';
 import { chordStep, type Chord, type ShortcutHelp, type ShortcutRegistry } from './registry.ts';
 
@@ -14,7 +14,7 @@ interface ShortcutEditor {
   services: {
     imageKey?: (event: KeyboardEvent) => boolean;
     preview?: { key: (event: KeyboardEvent) => boolean };
-    diagramFullscreens?: (() => boolean)[];
+    diagramFullscreens?: Iterable<() => boolean>;
   };
   actions: {
     openSettings: (mode: 'ui' | 'json') => void;
@@ -98,7 +98,8 @@ export const GlobalShortcuts: Component = () => {
     'Escape',
     (event: KeyboardEvent) => {
       if (event.defaultPrevented || inDialog(event.target)) return;
-      if (editor.services.diagramFullscreens?.some((exit) => exit())) event.preventDefault();
+      if (Array.from(editor.services.diagramFullscreens || []).some((exit) => exit()))
+        event.preventDefault();
       else if (editor.store.state.layout.threads) actions.hideThreads();
       else if (editor.store.state.layout.right) actions.hideRightInspector();
       else if (inField(event.target)) event.target.blur();

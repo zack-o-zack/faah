@@ -8,7 +8,7 @@ import {
   onCleanup,
   onMount,
 } from 'solid-js';
-import { useEditor } from './context.jsx';
+import { useEditor } from './context.tsx';
 import { viewMode } from '../viewers/view.ts';
 import { visibleRange } from './layout.ts';
 import { createHighlights } from './highlights.ts';

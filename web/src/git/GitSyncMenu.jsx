@@ -1,5 +1,5 @@
 import { For } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { DropdownMenu } from '../lib/DropdownMenu.tsx';
 export function GitSyncMenu() {
   const editor = useEditor();

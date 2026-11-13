@@ -22,7 +22,7 @@ export interface BootEditor {
     loadSettings: () => Promise<void>;
     initializeThreads: () => Promise<void>;
     initializeGit: () => Promise<void>;
-    acceptAgentMeta: (meta: WorkspaceMeta | null) => void;
+    acceptAgentMeta: (meta: WorkspaceMeta) => void;
     initializePR: () => void;
     initializeAgents: () => Promise<void>;
     setAutoRevealSuppressed: (suppressed: boolean) => void;
@@ -121,7 +121,8 @@ export function bootWorkspace(editor: BootEditor): () => void {
     if (disposed) return;
     void actions.initializeThreads();
     const gitReady = actions.initializeGit();
-    actions.acceptAgentMeta(meta());
+    const loaded = meta();
+    if (loaded) actions.acceptAgentMeta(loaded);
     actions.initializePR();
     actions.setAutoRevealSuppressed(true);
     await actions.refreshTree();

@@ -1,6 +1,6 @@
 import { diffLayout } from '../settings/logic.ts';
 import { Show } from 'solid-js';
-import { useEditor } from './context.jsx';
+import { useEditor } from './context.tsx';
 import { EditControls } from './EditControls.jsx';
 import { canDiff, previewKind, viewMode } from '../viewers/view.ts';
 import { withKeys } from '../lib/keyboard.ts';

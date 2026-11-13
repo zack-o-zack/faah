@@ -1,5 +1,5 @@
 import { For, Show } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { Dialog } from '../lib/Dialog.tsx';
 import { ErrorNotice } from '../lib/ErrorNotice.tsx';
 import { keyLabel } from '../lib/keyboard.ts';

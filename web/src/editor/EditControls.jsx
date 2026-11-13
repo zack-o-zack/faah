@@ -1,4 +1,4 @@
-import { useEditor } from './context.jsx';
+import { useEditor } from './context.tsx';
 export function EditControls() {
   const editor = useEditor();
   const unavailable = () =>

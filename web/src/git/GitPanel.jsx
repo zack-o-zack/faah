@@ -1,5 +1,5 @@
 import { For, Show } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { SplitHandle } from '../lib/SplitHandle.tsx';
 import { CommitRow } from './CommitRow.jsx';
 import { CommitForm } from './CommitForm.jsx';

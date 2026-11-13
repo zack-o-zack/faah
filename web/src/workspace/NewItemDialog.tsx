@@ -1,7 +1,8 @@
+import type { JSX } from 'solid-js';
 import { Show } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { Dialog } from '../lib/Dialog.tsx';
-export function NewItemDialog() {
+export function NewItemDialog(): JSX.Element {
   const editor = useEditor();
   return (
     <Show when={editor.tree.state.newItem}>

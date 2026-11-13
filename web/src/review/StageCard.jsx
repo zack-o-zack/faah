@@ -1,5 +1,5 @@
 import { Show } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { ContextMenu } from '../lib/ContextMenu.tsx';
 import { DropdownMenu } from '../lib/DropdownMenu.tsx';
 import { MenuItem } from '../lib/MenuItem.tsx';

@@ -1,6 +1,6 @@
 import { Portal } from 'solid-js/web';
 import { createSignal, For, onCleanup, onMount, Show } from 'solid-js';
-import { useEditor } from './context.jsx';
+import { useEditor } from './context.tsx';
 import { SEL_MENU_ITEMS } from './selection.ts';
 import { Kbd } from '../lib/shortcuts.tsx';
 import { createMenuEvents } from '../lib/menu-events.ts';

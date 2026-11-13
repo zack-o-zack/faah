@@ -1,4 +1,4 @@
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { fmtBytes } from '../status/logic.ts';
 
 export function ImageHUD(props) {

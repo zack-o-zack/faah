@@ -1,5 +1,5 @@
 import { Match, Show, Switch } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { WalkthroughFiles } from './WalkthroughFiles.jsx';
 import { WalkthroughDiff } from './WalkthroughDiff.jsx';
 export function Walkthrough() {

@@ -1,5 +1,5 @@
 import { Show } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { createViewerResource } from './resource.ts';
 import { PreviewContent } from './PreviewContent.jsx';
 export function PreviewViewer(props) {

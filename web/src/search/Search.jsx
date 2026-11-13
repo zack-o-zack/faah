@@ -1,6 +1,6 @@
 import { createEffect, on } from 'solid-js';
 import { For, Show } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { ResultGroup } from './ResultGroup.jsx';
 import { resultHeading } from './logic.ts';
 export function Search() {

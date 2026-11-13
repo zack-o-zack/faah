@@ -1,13 +1,18 @@
+import type { Metrics } from '../workspace/decode.ts';
+export interface MetricsProps {
+  metrics?: (Metrics & { parts?: { name: string; rssBytes: number; cpuUsage: number }[] }) | null;
+}
+import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { Popover } from '../lib/Popover.tsx';
-import { MetricsSummary } from './MetricsSummary.jsx';
+import { MetricsSummary } from './MetricsSummary.tsx';
 import { fmtBytes, fmtCpu } from './logic.ts';
-export function Metrics() {
+export function Metrics(): JSX.Element {
   const editor = useEditor();
   return <MetricsPopover metrics={editor.store.state.workspace.metrics} />;
 }
-export function MetricsPopover(props) {
+export function MetricsPopover(props: MetricsProps): JSX.Element {
   const metrics = () => props.metrics;
   return (
     <Popover
@@ -65,7 +70,7 @@ export function MetricsPopover(props) {
           {metrics()?.goroutines || 0}
         </span>
       </div>
-      <Show when={metrics()?.parts?.length > 1}>
+      <Show when={(metrics()?.parts?.length || 0) > 1}>
         <hr class="border-border" />
         <div
           data-ui="metrics-grid"

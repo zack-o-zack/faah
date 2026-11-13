@@ -1,6 +1,11 @@
+import type { Metrics } from '../workspace/decode.ts';
+export interface MetricsProps {
+  metrics?: (Metrics & { parts?: { name: string; rssBytes: number; cpuUsage: number }[] }) | null;
+}
+import type { JSX } from 'solid-js';
 import { Show } from 'solid-js';
 import { fmtBytes, fmtCpu } from './logic.ts';
-export function MetricsSummary(props) {
+export function MetricsSummary(props: MetricsProps): JSX.Element {
   return (
     <>
       <span
@@ -20,7 +25,7 @@ export function MetricsSummary(props) {
           <span class="metric-divider text-muted-foreground">·</span>
           <span class="metric">
             <span class="metric-label">LSP</span>{' '}
-            <span id="st-lspmem">{fmtBytes(props.metrics.lspMemBytes)}</span>
+            <span id="st-lspmem">{fmtBytes(props.metrics?.lspMemBytes)}</span>
           </span>
         </span>
       </Show>

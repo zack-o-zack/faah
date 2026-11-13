@@ -4,7 +4,7 @@ import { createRoot } from 'solid-js';
 import { createSearchStore } from './store.ts';
 import { searchRequest, groupHits } from './logic.ts';
 import { Search } from './Search.jsx';
-import { EditorProvider } from '../editor/context.jsx';
+import { EditorProvider } from '../editor/context.tsx';
 afterEach(() => vi.useRealTimers());
 test('query options shape requests and references group by file', () => {
   expect(searchRequest({ query: 'a', glob: '*.go', word: true })).toEqual({

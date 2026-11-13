@@ -1,5 +1,5 @@
 import { For } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 export function InspectorToolbar() {
   const editor = useEditor();
   const tabs = [

@@ -1,5 +1,5 @@
 import { onCleanup, Show } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { createShortcut } from '../lib/shortcuts.tsx';
 import { withKeys } from '../lib/keyboard.ts';
 import { REVIEW_HELP } from '../shortcuts/help.ts';

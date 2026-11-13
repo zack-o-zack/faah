@@ -1,5 +1,5 @@
 import { createMemo, createResource, onCleanup, Show } from 'solid-js';
-import { useEditor } from '../editor/context.jsx';
+import { useEditor } from '../editor/context.tsx';
 import { api } from '../lib/api.ts';
 import { commitStepTarget } from './diff-rows.ts';
 

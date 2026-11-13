@@ -1,5 +1,6 @@
-import { useEditor } from '../editor/context.jsx';
-export function TreeScope() {
+import type { JSX } from 'solid-js';
+import { useEditor } from '../editor/context.tsx';
+export function TreeScope(): JSX.Element {
   const editor = useEditor();
   return (
     <div
