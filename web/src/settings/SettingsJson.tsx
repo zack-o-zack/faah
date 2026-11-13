@@ -8,7 +8,11 @@ export const SettingsJson: Component = () => {
   let editor: HTMLTextAreaElement | undefined;
   onMount(() => editor?.focus());
   return (
-    <div class="flex min-h-0 flex-1 flex-col overflow-hidden border-t">
+    <div
+      id="settings-json-container"
+      data-ui="settings-json-body"
+      class="flex flex-1 min-h-0 flex-col overflow-hidden"
+    >
       <div class="flex items-center justify-between gap-2 p-3 text-muted-foreground">
         <span>Edit settings.json directly. Changes apply immediately upon saving.</span>
         <div class="flex items-center gap-2">

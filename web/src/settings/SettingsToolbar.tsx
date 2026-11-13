@@ -5,26 +5,27 @@ export const SettingsToolbar: Component = () => {
   const settings = useSettings();
   const dialog = () => settings.state.dialog;
   let search: HTMLInputElement | undefined;
-  // Opening on a category or a setting puts focus there instead.
   onMount(() => {
     if (dialog().mode === 'ui' && !dialog().focus) search?.focus();
   });
   return (
-    <div class="flex flex-wrap items-center gap-3 pb-3">
-      <button
-        type="button"
-        id="settings-path"
-        class="min-w-0 truncate font-mono text-xs text-muted-foreground hover:text-foreground"
-        title={'Click to copy path: ' + settings.state.path}
-        onClick={() => void settings.actions.copySettingsPath()}
-      >
-        {settings.state.path}
-      </button>
-      <span class="flex-1" />
+    <header class="flex-row! items-center gap-4 shrink-0">
+      <div class="flex min-w-0 flex-1 flex-col gap-0.5">
+        <h2 id="settings-title">Settings</h2>
+        <button
+          type="button"
+          id="settings-path"
+          class="self-start truncate font-mono text-xs text-muted-foreground hover:text-foreground"
+          title={'Click to copy path: ' + settings.state.path}
+          onClick={() => void settings.actions.copySettingsPath()}
+        >
+          {settings.state.path}
+        </button>
+      </div>
       <Show when={dialog().mode === 'ui'}>
-        <div class="relative w-72">
+        <div id="settings-search-bar" data-ui="settings-search-bar" class="relative w-72">
           <span
-            class="icon-[lucide--search] pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
+            class="icon-[lucide--search] size-3.5 shrink-0 pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
             aria-hidden="true"
           />
           <input
@@ -35,16 +36,35 @@ export const SettingsToolbar: Component = () => {
             placeholder="Search settings"
             autocomplete="off"
             spellcheck={false}
-            class="input w-full pl-8"
+            class="input w-full pl-8 pr-8"
             value={dialog().query}
             onInput={(event) => settings.actions.setSettingsQuery(event.currentTarget.value)}
           />
+          <Show when={dialog().query}>
+            <button
+              id="settings-search-clear"
+              type="button"
+              title="Clear search"
+              aria-label="Clear search"
+              class="btn absolute right-1 top-1/2 -translate-y-1/2"
+              data-control="icon-action"
+              data-variant="ghost"
+              data-size="icon-xs"
+              onClick={() => {
+                settings.actions.setSettingsQuery('');
+                search?.focus();
+              }}
+            >
+              <span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true" />
+            </button>
+          </Show>
         </div>
       </Show>
       <div class="button-group" role="group" aria-label="Settings view">
         <button
           type="button"
           id="settings-mode-ui"
+          title="Settings UI"
           class="btn"
           data-size="sm"
           aria-pressed={dialog().mode === 'ui'}
@@ -66,6 +86,19 @@ export const SettingsToolbar: Component = () => {
           JSON
         </button>
       </div>
-    </div>
+      <button
+        id="settings-close"
+        type="button"
+        title="Close (Esc)"
+        aria-label="Close settings"
+        class="btn"
+        data-control="mini settings-close-btn"
+        data-variant="ghost"
+        data-size="icon-sm"
+        onClick={settings.actions.closeSettings}
+      >
+        <span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true" />
+      </button>
+    </header>
   );
 };

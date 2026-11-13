@@ -1,4 +1,4 @@
-import type { Component } from 'solid-js';
+import { createEffect, createSignal, onCleanup, type Component } from 'solid-js';
 import { withKeys } from '../lib/keyboard.ts';
 import { useSettings } from './context.ts';
 import type { SaveStatus } from './store.ts';
@@ -30,11 +30,22 @@ function statusText(save: SaveStatus): string {
 export const SettingsFooter: Component = () => {
   const settings = useSettings();
   const save = () => settings.state.save;
+  const [savedFlash, setSavedFlash] = createSignal(false);
+  createEffect(() => {
+    setSavedFlash(save().status === 'saved');
+    const timer = setTimeout(() => setSavedFlash(false), 2000);
+    onCleanup(() => clearTimeout(timer));
+  });
   return (
     <>
-      <div role="status" class={`flex flex-1 items-center gap-2 ${STATUS_COLORS[save().status]}`}>
+      <div
+        id="settings-footer-status"
+        role="status"
+        data-ui="settings-footer-status"
+        class={`flex items-center gap-2 ${STATUS_COLORS[save().status]}`}
+      >
         <span class={`${STATUS_ICONS[save().status]} size-3.5 shrink-0`} aria-hidden="true" />
-        {statusText(save())}
+        <span id="settings-status-text">{statusText(save())}</span>
       </div>
       <button
         type="button"
@@ -45,9 +56,19 @@ export const SettingsFooter: Component = () => {
         data-size="xs"
         disabled={save().status === 'saving' || save().status === 'saved'}
         onClick={() => void settings.actions.saveSettings()}
+        data-control="settings-btn-save"
       >
-        <span class="icon-[lucide--save] size-3.5 shrink-0" aria-hidden="true" />
-        {save().status === 'error' ? 'Retry Save' : 'Save'}
+        <span
+          class={`${savedFlash() ? 'icon-[lucide--check]' : 'icon-[lucide--save]'} size-3.5 shrink-0 settings-btn-save-icon`}
+          aria-hidden="true"
+        />
+        <span id="settings-btn-save-label">
+          {savedFlash()
+            ? 'Saved'
+            : { error: 'Retry Save', saved: 'Save', saving: 'Saving...', unsaved: 'Save' }[
+                save().status
+              ]}
+        </span>
       </button>
     </>
   );

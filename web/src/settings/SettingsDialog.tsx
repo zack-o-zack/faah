@@ -1,6 +1,5 @@
 import { Show, type Component } from 'solid-js';
 import { Dialog } from '../lib/Dialog.jsx';
-import { withKeys } from '../lib/keyboard.ts';
 import { useSettings } from './context.ts';
 import { SettingsNav } from './SettingsNav.tsx';
 import { SettingsList } from './SettingsList.tsx';
@@ -12,35 +11,42 @@ interface SettingsDialogProps {
   onVimHelp: () => void;
 }
 
-/** Settings as a form over the schema, or the raw settings.json. */
 export const SettingsDialog: Component<SettingsDialogProps> = (props) => {
   const settings = useSettings();
   const dialog = () => settings.state.dialog;
   return (
     <Show when={dialog().open}>
       <Dialog
-        open={true}
+        open
+        bare
+        id="settings-modal"
         title="Settings"
-        class="h-[min(840px,92vh)] gap-0 overflow-hidden sm:max-w-[1180px]"
         onClose={settings.actions.closeSettings}
-        footer={<SettingsFooter />}
       >
         <div
-          class="flex min-h-0 flex-1 flex-col"
+          class="sm:max-w-[1180px] h-[min(840px,92vh)] overflow-hidden gap-0"
           onKeyDown={(event) => {
             if (event.key.toLowerCase() !== 's' || !(event.metaKey || event.ctrlKey)) return;
             event.preventDefault();
             void settings.actions.saveSettings();
           }}
-          title={withKeys('Save with {Mod+S}')}
         >
           <SettingsToolbar />
-          <Show when={dialog().mode === 'ui'} fallback={<SettingsJson />}>
-            <div class="flex min-h-0 flex-1 overflow-hidden border-t">
-              <SettingsNav />
-              <SettingsList onVimHelp={props.onVimHelp} />
-            </div>
-          </Show>
+          <section class="-mx-6 flex min-h-0 flex-1 flex-col overflow-hidden border-y border-border">
+            <Show when={dialog().mode === 'ui'} fallback={<SettingsJson />}>
+              <div
+                id="settings-ui-container"
+                data-ui="settings-body"
+                class="flex flex-1 min-h-0 overflow-hidden"
+              >
+                <SettingsNav />
+                <SettingsList onVimHelp={props.onVimHelp} />
+              </div>
+            </Show>
+          </section>
+          <footer id="settings-footer" class="flex-row! items-center justify-between shrink-0">
+            <SettingsFooter />
+          </footer>
         </div>
       </Dialog>
     </Show>

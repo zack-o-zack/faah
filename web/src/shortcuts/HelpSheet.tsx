@@ -3,23 +3,54 @@ import { useEditor } from '../editor/context.jsx';
 import { Dialog } from '../lib/Dialog.jsx';
 import { keyCaps } from '../lib/keyboard.ts';
 import type { ShortcutRegistry } from './registry.ts';
-
 interface HelpEditor {
   shortcuts: ShortcutRegistry;
   store: { state: { workspace: { meta: { version?: string } | null } } };
   actions: { showVimHelp: () => void };
 }
-
-const KeyCaps: Component<{ combo: string }> = (props) => {
-  const caps = (): string[] => keyCaps(props.combo);
-  return (
-    <span class="inline-flex gap-1">
-      <For each={caps()}>{(key) => <kbd class="kbd">{key}</kbd>}</For>
-    </span>
-  );
-};
-
-/** Every shortcut bound right now, grouped by what it acts on. */
+const ENTRIES: [string[], string][] = [
+  [['Mod+,'], 'Open settings'],
+  [['Mod+K'], 'Quick search / palette'],
+  [['Mod+P'], 'Go to file'],
+  [['Mod+Shift+P'], 'Command palette'],
+  [['Mod+Shift+O'], 'Go to symbol'],
+  [['Mod+Shift+F'], 'Search in files'],
+  [['Mod+Shift+R'], 'Refresh workspace'],
+  [['Mod+F'], 'Find in file'],
+  [['Mod+E'], 'Toggle edit mode'],
+  [['Mod+S'], 'Save file (in edit mode)'],
+  [['Mod+G'], 'Go to line'],
+  [['Mod+D'], 'Toggle diff view (git)'],
+  [['Alt+Z'], 'Toggle word wrap'],
+  [['[c', ']c'], 'Previous / next diff hunk'],
+  [['[f', ']f'], 'Previous / next changed file'],
+  [['Alt+M'], 'Toggle Markdown / table preview'],
+  [['Shift+F1'], 'Show symbol documentation'],
+  [['Enter', 'Shift+Enter'], 'Next / previous match'],
+  [['F12', 'Mod+Click'], 'Go to definition'],
+  [['Shift+F12'], 'Find all references'],
+  [['Alt+Shift+H'], 'Call trail (callers / callees)'],
+  [['Mod+J'], 'Toggle right sidebar / inspector'],
+  [['Alt+Left', 'Alt+Right'], 'Navigate back / forward'],
+  [['Mod+B'], 'Toggle sidebar'],
+  [['Alt+W'], 'Close tab'],
+  [['Alt+Shift+T'], 'Reopen closed tab'],
+  [['Ctrl+Tab'], 'Next tab'],
+  [['Alt+1…9'], 'Select tab'],
+  [['Double click'], 'Highlight all occurrences'],
+  [['Mod+A'], 'Select whole file'],
+  [['Mod+C'], 'Copy selection (source / formatted text)'],
+  [['Alt+C', 'Alt+A'], 'Copy selection ref / with context'],
+  [['Alt+U'], 'Find usages of selection'],
+  [['Alt+E'], 'Edit selection inline'],
+  [['Alt+T'], 'Start a thread on the selection'],
+  [['Alt+X'], 'Explain the selection'],
+  [['Right click'], 'Selection actions at the pointer'],
+  [['Mod+Home|Mod+Up', 'Mod+End|Mod+Down'], 'Top / bottom of file'],
+  [['Home|Mod+Left', 'End|Mod+Right'], 'Start / end of line'],
+  [['Left', 'Right'], 'Move caret along the line'],
+  [['Esc'], 'Dismiss'],
+];
 export const HelpSheet: Component = () => {
   const editor: HelpEditor = useEditor();
   const shortcuts = editor.shortcuts;
@@ -27,55 +58,71 @@ export const HelpSheet: Component = () => {
   return (
     <Show when={shortcuts.helpOpen()}>
       <Dialog
-        open={true}
+        open
+        bare
+        id="helpsheet"
         title="Keyboard Shortcuts"
-        subtitle={version() ? 'v' + version() : ''}
-        class="overflow-auto sm:max-w-4xl"
         onClose={shortcuts.actions.hideHelp}
-        footer={
-          <button
-            type="button"
-            class="btn"
-            data-variant="link"
-            data-size="xs"
-            onClick={() => {
-              shortcuts.actions.hideHelp();
-              editor.actions.showVimHelp();
-            }}
-          >
-            View Vim Keybindings
-          </button>
-        }
       >
-        <div class="grid gap-6 sm:grid-cols-2">
-          <For each={shortcuts.groups()}>
-            {(group) => (
-              <section class="flex flex-col gap-2" aria-label={group.section}>
-                <h3 class="text-xs font-medium text-muted-foreground">{group.section}</h3>
-                <dl class="grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-2">
-                  <For each={group.entries}>
-                    {(entry) => (
-                      <>
-                        <dt class="flex justify-end gap-1">
-                          <For each={entry.keys}>
-                            {(combo, index) => (
-                              <>
-                                <Show when={index() > 0}>
-                                  <span class="text-muted-foreground">/</span>
-                                </Show>
-                                <KeyCaps combo={combo} />
-                              </>
-                            )}
-                          </For>
-                        </dt>
-                        <dd class="text-muted-foreground">{entry.label}</dd>
-                      </>
-                    )}
-                  </For>
-                </dl>
-              </section>
-            )}
-          </For>
+        <div class="sm:max-w-4xl overflow-auto">
+          <header class="flex-row! items-center gap-2">
+            <h2>Keyboard Shortcuts</h2>
+            <Show when={version()}>
+              <span data-ui="help-version" class="p-3 font-mono text-primary-text">
+                v{version()}
+              </span>
+            </Show>
+            <div
+              style={{
+                'margin-left': 'auto',
+                display: 'flex',
+                gap: '12px',
+                'align-items': 'center',
+              }}
+            >
+              <button
+                id="btn-switch-to-vim-help"
+                style={{ 'font-size': '12px', cursor: 'pointer' }}
+                title="View Vim Keybindings"
+                class="btn"
+                data-control="settings-btn-link"
+                data-variant="link"
+                data-size="xs"
+                onClick={() => {
+                  shortcuts.actions.hideHelp();
+                  editor.actions.showVimHelp();
+                }}
+              >
+                View Vim Keybindings
+              </button>
+            </div>
+          </header>
+          <dl
+            data-ui="help-grid"
+            class="grid grid-cols-[auto_1fr_auto_1fr] gap-3 items-center [&_dt]:flex [&_dt]:gap-1 [&_dt]:justify-end [&_dd]:text-muted-foreground"
+          >
+            <For each={ENTRIES}>
+              {(entry) => (
+                <>
+                  <dt>
+                    <For each={entry[0]}>
+                      {(combo, index) => (
+                        <>
+                          <Show when={index() > 0}>
+                            <span data-ui="key-or" class="text-muted-foreground">
+                              /
+                            </span>
+                          </Show>
+                          <For each={keyCaps(combo)}>{(key) => <kbd class="kbd">{key}</kbd>}</For>
+                        </>
+                      )}
+                    </For>
+                  </dt>
+                  <dd>{entry[1]}</dd>
+                </>
+              )}
+            </For>
+          </dl>
         </div>
       </Dialog>
     </Show>

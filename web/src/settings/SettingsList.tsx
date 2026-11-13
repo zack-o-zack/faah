@@ -12,7 +12,7 @@ export const SettingsList: Component<SettingsListProps> = (props) => {
   return (
     <section
       id="settings-list"
-      class="flex min-w-0 flex-1 flex-col overflow-y-auto px-6 py-2"
+      class="flex flex-1 min-w-0 flex-col overflow-y-auto px-6 py-2"
       aria-label="Settings list"
     >
       <Show when={settings.state.loadError}>

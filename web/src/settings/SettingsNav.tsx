@@ -8,7 +8,7 @@ export const SettingsNav: Component = () => {
   return (
     <nav
       id="settings-nav"
-      class="flex w-52 max-w-1/3 shrink-0 flex-col gap-0.5 overflow-y-auto border-r p-3"
+      class="flex w-52 max-w-1/3 shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-border p-3"
       aria-label="Settings categories"
     >
       <For each={settings.categories()}>
