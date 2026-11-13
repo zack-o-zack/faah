@@ -29,13 +29,13 @@ export function Unpushed() {
           max={-60}
           onChange={(value) => editor.actions.setUnpushedHeight(-value)}
         />
-        <div class="unpushed-head flex shrink-0 items-center gap-2 px-3 py-2">
+        <div class="unpushed-head flex shrink-0 items-center gap-2 border-b px-3 py-2 text-xs font-medium">
           <span
-            class="icon-[lucide--git-commit-vertical] size-3.5 shrink-0 text-primary"
+            class="icon-[lucide--arrow-up] size-3.5 shrink-0 unpushed-icon text-primary"
             aria-hidden="true"
           />
           <span class="unpushed-title shrink-0 text-xs font-medium text-muted-foreground">
-            Unpushed
+            {editor.store.state.workspace.meta?.pr ? 'Your commits' : 'Unpushed'}
           </span>
           <span
             id="unpushed-count"
