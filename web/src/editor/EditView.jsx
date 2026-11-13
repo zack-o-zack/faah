@@ -86,10 +86,7 @@ export function EditView() {
           width: `${Math.max(45, String(starts().length).length * editor.geometry.charWidth + 26)}px`,
         }}
       >
-        <div
-          class="absolute left-0 w-full text-right"
-          style={{ transform: `translateY(${(offsets()[range().first] || 0) - top()}px)` }}
-        >
+        <div style={{ transform: `translateY(${(offsets()[range().first] || 0) - top()}px)` }}>
           <Index each={slots()}>
             {(index) => (
               <div style={{ height: `${offsets()[index() + 1] - offsets()[index()]}px` }}>
