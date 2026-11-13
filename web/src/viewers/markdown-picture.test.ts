@@ -1,5 +1,5 @@
 import { test, expect } from 'vitest';
-import { pictureSource } from './markdown-picture.js';
+import { pictureSource } from './markdown-picture.ts';
 
 test('picture sources accept safe single image references and explicit color schemes', () => {
   expect(pictureSource('web/logo-light.svg', '(prefers-color-scheme: light)')).toEqual({

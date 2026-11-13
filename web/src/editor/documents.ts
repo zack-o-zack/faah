@@ -5,7 +5,7 @@ import type { Request } from '../lib/api.ts';
 import type { DocumentBuffer } from './buffer.ts';
 import type { DocTab, OpenOptions } from './types.ts';
 export type { DocTab } from './types.ts';
-import { initialImage, previewKind } from '../viewers/view.js';
+import { initialImage, previewKind } from '../viewers/view.ts';
 import { batch, createSignal } from 'solid-js';
 import { reconcile } from 'solid-js/store';
 import { createDocumentBuffer } from './buffer.ts';

@@ -19,6 +19,7 @@ export interface FileWindow {
   maxCols: number;
   start: number;
   lines: string[];
+  raw: string[];
   size: number;
   exact: boolean;
   refine: boolean;
@@ -63,6 +64,7 @@ export function decodeFileWindow(value: unknown): FileWindow {
     maxCols: number(row.maxCols),
     start: number(row.start),
     lines: strings(row.lines),
+    raw: strings(row.raw),
     size: number(row.size),
     exact: boolean(row.exact),
     refine: boolean(row.refine),

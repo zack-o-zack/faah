@@ -1,7 +1,33 @@
-/** @typedef {{id: string|null, phase: 'running'|'done'|'failed', step: string, notes: number, walkthrough: boolean, error: string, reply: string}} OrbModel */
+export interface OrbModel {
+  id: string | null;
+  phase: 'running' | 'done' | 'failed';
+  step: string;
+  notes: number;
+  walkthrough: boolean;
+  error: string;
+  reply: string;
+}
+export interface OrbThread {
+  id: string;
+  turns?: {
+    tools?: string[];
+    notes?: unknown[];
+    walkthroughs?: unknown[];
+    error?: string;
+    running?: boolean;
+    reply?: string;
+  }[];
+}
+interface OrbView {
+  text: string;
+  shown: string;
+  label: string;
+  snippet: string;
+  announce: string;
+  busy: boolean;
+}
 
-/** @returns {OrbModel} */
-export function orbStart() {
+export function orbStart(): OrbModel {
   return {
     id: null,
     phase: 'running',
@@ -13,19 +39,17 @@ export function orbStart() {
   };
 }
 
-/** Folds a full thread snapshot into the model; its last turn is the explanation's.
-    @param {OrbModel} m @param {any} thread @returns {OrbModel} */
-export function orbFromThread(m, thread) {
+export function orbFromThread(m: OrbModel, thread: OrbThread): OrbModel {
   const turn = thread.turns?.[thread.turns.length - 1];
   if (!turn) return { ...m, id: thread.id };
   const tools = turn.tools || [];
-  let phase = turn.error ? 'failed' : 'done';
+  let phase: OrbModel['phase'] = turn.error ? 'failed' : 'done';
   if (turn.running) phase = 'running';
   return {
     ...m,
     id: thread.id,
     phase,
-    step: tools.length ? tools[tools.length - 1] : m.step,
+    step: tools.length ? tools[tools.length - 1] || m.step : m.step,
     notes: (turn.notes || []).length,
     walkthrough: (turn.walkthroughs || []).length > 0,
     error: turn.error || '',
@@ -33,22 +57,21 @@ export function orbFromThread(m, thread) {
   };
 }
 
-/** @param {OrbModel} m @param {string} text @returns {OrbModel} */
-export function orbFromStep(m, text) {
+export function orbFromStep(m: OrbModel, text: string): OrbModel {
   return m.phase === 'running' ? { ...m, step: text } : m;
 }
 
 /* The list summary only says whether the last turn failed. It ends the orb
    when the thread's own events are no longer followed, for example after the
    reader opened another thread. */
-/** @param {OrbModel} m @param {{running: boolean, failed?: boolean}} sm @returns {OrbModel} */
-export function orbFromSummary(m, sm) {
+
+export function orbFromSummary(m: OrbModel, sm: { running: boolean; failed?: boolean }): OrbModel {
   return m.phase === 'running' && !sm.running ? { ...m, phase: sm.failed ? 'failed' : 'done' } : m;
 }
 
 /* The last paragraph of the answer, as plain text: usually its conclusion. */
-/** @param {string} reply */
-export function orbSnippet(reply) {
+
+export function orbSnippet(reply: string): string {
   const blocks = reply
     .replace(/```[\s\S]*?```/g, '')
     .split(/\n\s*\n/)
@@ -63,9 +86,7 @@ export function orbSnippet(reply) {
     .trim();
 }
 
-/** What the orb shows: its text, its accessible name, and what a state change announces.
-    @param {OrbModel} m */
-export function orbView(m) {
+export function orbView(m: OrbModel): OrbView {
   const notes = m.notes ? m.notes + (m.notes === 1 ? ' note' : ' notes') : '';
   const walk = m.walkthrough ? 'walkthrough' : '';
   let parts = ['Explanation failed'];

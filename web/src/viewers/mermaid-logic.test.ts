@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { diagramDimensions, diagramFit, diagramZoom } from './mermaid-logic.js';
+import { diagramDimensions, diagramFit, diagramZoom } from './mermaid-logic.ts';
 
 test('diagram sizing uses the SVG viewBox and safe fallbacks', () => {
   expect(diagramDimensions('<svg width="100%" viewBox="-8 -8 1200 600"><g/></svg>')).toEqual({

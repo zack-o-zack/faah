@@ -4,7 +4,7 @@ import { isMac } from '../lib/keyboard.ts';
 import { useEditor } from './context.jsx';
 import { SEL_KEYS } from './selection.ts';
 import { EDITOR_HELP } from '../shortcuts/help.ts';
-import { isPreview } from '../viewers/view.js';
+import { isPreview } from '../viewers/view.ts';
 
 // A modal dialog takes the keyboard; editor keys wait until it closes.
 const inDialog = (event) => !!event.target?.closest?.('dialog');

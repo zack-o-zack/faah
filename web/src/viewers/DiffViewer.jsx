@@ -1,9 +1,9 @@
 import { createSignal, onCleanup, onMount, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { createViewerResource } from './resource.js';
-import { diffSelection } from './diff-selection.js';
+import { createViewerResource } from './resource.ts';
+import { diffSelection } from './diff-selection.ts';
 import { DiffContent } from './DiffContent.jsx';
-import { viewMode } from './view.js';
+import { viewMode } from './view.ts';
 import { createSourceDOM } from '../editor/source-dom.ts';
 import { isMac } from '../lib/keyboard.ts';
 

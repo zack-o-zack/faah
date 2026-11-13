@@ -1,6 +1,6 @@
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { gutterAnchor, gutterSelection } from './diff-rows.js';
+import { gutterAnchor, gutterSelection } from './diff-rows.ts';
 import { CommentMarker } from '../pr/RowComments.jsx';
 
 function Gutter(props) {

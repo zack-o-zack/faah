@@ -1,5 +1,5 @@
 /** Match the URL parser's handling of embedded tab/newline and edge control bytes. */
-export function normalizeURL(reference) {
+export function normalizeURL(reference: string): string {
   const value = reference.replace(/[\t\r\n]/g, '');
   let start = 0;
   let end = value.length;

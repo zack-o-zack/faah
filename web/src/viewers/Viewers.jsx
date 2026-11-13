@@ -1,6 +1,6 @@
 import { Match, Show, Switch } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { viewMode } from './view.js';
+import { viewMode } from './view.ts';
 import { ImageViewer } from './ImageViewer.jsx';
 import { PreviewViewer } from './PreviewViewer.jsx';
 import { DiffViewer } from './DiffViewer.jsx';

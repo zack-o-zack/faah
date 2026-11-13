@@ -10,8 +10,8 @@ import {
 } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
 import { useTheme } from '../lib/theme-context.jsx';
-import { renderDiagram } from './mermaid-runtime.js';
-import { diagramDimensions, diagramFit, diagramZoom } from './mermaid-logic.js';
+import { renderDiagram } from './mermaid-runtime.ts';
+import { diagramDimensions, diagramFit, diagramZoom } from './mermaid-logic.ts';
 import { MermaidControls } from './MermaidControls.jsx';
 
 export function MermaidDiagram(props) {

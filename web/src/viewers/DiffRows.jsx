@@ -1,5 +1,5 @@
 import { createMemo, createSignal, Index, onCleanup, onMount, Show } from 'solid-js';
-import { splitRows, unifiedRows, rowOffsets, measuredWindow } from './diff-rows.js';
+import { splitRows, unifiedRows, rowOffsets, measuredWindow } from './diff-rows.ts';
 import { DiffSide, UnifiedRow } from './DiffRow.jsx';
 import { RowComposers } from '../pr/RowComments.jsx';
 

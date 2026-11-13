@@ -1,4 +1,4 @@
-function clippedText(element, range) {
+function clippedText(element: Element, range: Range): string {
   const clipped = document.createRange();
   clipped.selectNodeContents(element);
   if (range.compareBoundaryPoints(Range.START_TO_START, clipped) > 0)
@@ -7,14 +7,18 @@ function clippedText(element, range) {
     clipped.setEnd(range.endContainer, range.endOffset);
   return clipped.toString();
 }
-export function diffSelection(root, range, document) {
+export function diffSelection(
+  root: HTMLElement,
+  range: Range,
+  document: { total: number; path: string },
+) {
   if (!root.contains(range.commonAncestorContainer)) return null;
   const lines = [];
   const deleted = [];
   const anchors = [];
   const text = [];
   const seen = new Set();
-  for (const row of root.querySelectorAll('[data-l], [data-at], [data-old-l]')) {
+  for (const row of root.querySelectorAll<HTMLElement>('[data-l], [data-at], [data-old-l]')) {
     if (!range.intersectsNode(row)) continue;
     if (row.dataset.l !== undefined) {
       const line = +row.dataset.l;

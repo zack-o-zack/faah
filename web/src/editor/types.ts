@@ -27,6 +27,13 @@ export interface DocTab {
   view: string;
   image: ImageState;
   imageMeta?: { width: number; height: number };
+  mdLine?: number;
+  mdScroll?: number;
+  mdAnchor?: string;
+  diffScroll?: number;
+  prCollapsed?: boolean;
+  youCollapsed?: boolean;
+  diffScope?: string;
   viewerRevision: number;
   diffMode: string | null;
   diffAvailable: boolean;

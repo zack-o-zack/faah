@@ -1,3 +1,11 @@
+interface Mermaid {
+  initialize: (config: unknown) => void;
+  render: (id: string, source: string) => Promise<{ svg: string }>;
+}
+declare global {
+  var mermaid: Mermaid | undefined;
+  var __esbuild_esm_mermaid_nm: { mermaid?: { default?: Mermaid } } | undefined;
+}
 // Lazy, same-origin Mermaid rendering for fenced blocks in the Markdown preview.
 // Repository Markdown is untrusted: only sanitized text reaches this module, and
 // Mermaid's security-sensitive configuration cannot be changed by directives.
@@ -13,10 +21,10 @@ const MERMAID_SECURE_KEYS = [
   'htmlLabels',
 ];
 
-let mermaidRuntimePromise = null;
+let mermaidRuntimePromise: Promise<Mermaid> | null = null;
 let mermaidRenderID = 0;
 
-function getMermaidGlobal() {
+function getMermaidGlobal(): Mermaid | null | undefined {
   return (
     globalThis.mermaid ||
     (typeof window !== 'undefined' ? window.mermaid : null) ||
@@ -24,7 +32,7 @@ function getMermaidGlobal() {
   );
 }
 
-function loadMermaidRuntime() {
+function loadMermaidRuntime(): Promise<Mermaid> {
   const existing = getMermaidGlobal();
   if (existing) {
     globalThis.mermaid = existing;
@@ -32,7 +40,7 @@ function loadMermaidRuntime() {
   }
   if (mermaidRuntimePromise) return mermaidRuntimePromise;
 
-  mermaidRuntimePromise = new Promise((resolve, reject) => {
+  mermaidRuntimePromise = new Promise<Mermaid>((resolve, reject) => {
     const script = document.createElement('script');
     script.src = new URL(MERMAID_ASSET, document.baseURI || location.href).href;
     script.async = true;
@@ -65,7 +73,7 @@ function loadMermaidRuntime() {
   return mermaidRuntimePromise;
 }
 
-function mermaidColor(styles, name) {
+function mermaidColor(styles: CSSStyleDeclaration, name: string): string {
   return styles.getPropertyValue(name).trim();
 }
 
@@ -103,11 +111,12 @@ function mermaidConfig() {
   };
 }
 
-const cache = new Map();
+const cache = new Map<string, string>();
 let queue = Promise.resolve();
-export async function renderDiagram(source, theme) {
+export async function renderDiagram(source: string, theme: string): Promise<string> {
   const key = theme + ':' + source;
-  if (cache.has(key)) return cache.get(key);
+  const cached = cache.get(key);
+  if (cached !== undefined) return cached;
   const task = queue
     .catch(() => {})
     .then(async () => {
@@ -116,7 +125,8 @@ export async function renderDiagram(source, theme) {
       const id = 'faah-mermaid-' + ++mermaidRenderID;
       try {
         const result = await runtime.render(id, source);
-        if (cache.size >= 50) cache.delete(cache.keys().next().value);
+        const oldest = cache.keys().next().value;
+        if (cache.size >= 50 && oldest !== undefined) cache.delete(oldest);
         cache.set(key, result.svg);
         return result.svg;
       } finally {

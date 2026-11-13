@@ -1,5 +1,8 @@
-import { normalizeURL } from './markdown-logic.js';
-import { pictureSource } from './markdown-picture.js';
+function queryable(node: Node): ParentNode | null {
+  return node instanceof Element || node instanceof DocumentFragment ? node : null;
+}
+import { normalizeURL } from './markdown-logic.ts';
+import { pictureSource } from './markdown-picture.ts';
 const HTML_NS = 'http://www.w3.org/1999/xhtml';
 // Removed along with everything inside them.
 const MD_DROP = new Set(
@@ -37,11 +40,11 @@ const mdURL = normalizeURL;
 
 /* Parsing into a DOMParser document runs no script and loads nothing, so the
    markup can be cleaned there and only the survivors adopted into the page. */
-function sanitizeBody(html, docPath) {
+function sanitizeBody(html: string, docPath: string): HTMLElement {
   const body = new DOMParser().parseFromString(html, 'text/html').body;
   const dir = docPath.slice(0, docPath.lastIndexOf('/') + 1);
   const base = MD_ORIGIN + '/' + dir.split('/').map(encodeURIComponent).join('/');
-  for (const el of [...body.querySelectorAll('*')]) {
+  for (const el of [...body.querySelectorAll<HTMLElement>('*')]) {
     if (!body.contains(el)) continue; // inside something already removed
     const tag = el.localName;
     if (el.namespaceURI !== HTML_NS || MD_DROP.has(tag)) {
@@ -52,12 +55,12 @@ function sanitizeBody(html, docPath) {
       el.replaceWith(...el.childNodes);
       continue;
     }
-    const attrs = {};
+    const attrs: Record<string, string> = {};
     for (const a of [...el.attributes]) {
       attrs[a.name] = a.value;
       el.removeAttribute(a.name);
     }
-    for (const name in attrs) if (MD_ATTRS.has(name)) el.setAttribute(name, attrs[name]);
+    for (const name in attrs) if (MD_ATTRS.has(name)) el.setAttribute(name, attrs[name] ?? '');
     // Prefixed so a heading called "status" cannot shadow the status bar's id.
     const id = attrs.id || (tag === 'a' && attrs.name);
     if (id) el.id = 'md-' + id;
@@ -71,7 +74,7 @@ function sanitizeBody(html, docPath) {
     }
     if (tag === 'input') el.className = 'input mr-2';
     if (tag === 'kbd') el.className = 'kbd';
-    if (tag === 'input') /** @type {HTMLInputElement} */ (el).disabled = true;
+    if (el instanceof HTMLInputElement) el.disabled = true;
     if (tag === 'source') {
       const candidate =
         el.parentElement?.localName === 'picture' &&
@@ -86,7 +89,7 @@ function sanitizeBody(html, docPath) {
         el.remove();
         continue;
       }
-      el.setAttribute('srcset', image.getAttribute('src'));
+      el.setAttribute('srcset', image.getAttribute('src') || '');
       el.dataset.mdScheme = candidate.scheme;
       el.dataset.origSrc = candidate.src;
       if (image.dataset.rawPath) el.dataset.rawPath = image.dataset.rawPath;
@@ -96,10 +99,10 @@ function sanitizeBody(html, docPath) {
   }
   return body;
 }
-export function sanitizeHTML(html, path) {
+export function sanitizeHTML(html: string, path: string): string {
   return sanitizeBody(html, path).innerHTML;
 }
-export function sanitizeDocument(html, path) {
+export function sanitizeDocument(html: string, path: string): DocumentFragment {
   const body = sanitizeBody(html, path);
   const frag = document.createDocumentFragment();
   while (body.firstChild) frag.appendChild(document.adoptNode(body.firstChild));
@@ -109,14 +112,14 @@ export function sanitizeDocument(html, path) {
 
 // Server-rendered Markdown from anywhere but a workspace file (a PR comment),
 // cleaned the same way as the preview.
-export function sanitizeMarkdown(html) {
+export function sanitizeMarkdown(html: string): DocumentFragment {
   return sanitizeDocument(html, '');
 }
 
 /* Native media queries follow the OS; pictures in the preview follow the app theme. */
-export function syncMarkdownPictures(root, scheme) {
+export function syncMarkdownPictures(root: ParentNode, scheme: string): void {
   for (const picture of root.querySelectorAll('picture')) {
-    const sources = [...picture.querySelectorAll('source[data-md-scheme]')];
+    const sources = [...picture.querySelectorAll<HTMLElement>('source[data-md-scheme]')];
     const selected = sources.find((source) => source.dataset.mdScheme === scheme);
     const img = picture.querySelector('img');
     if (img)
@@ -135,7 +138,7 @@ export function syncMarkdownPictures(root, scheme) {
 /* A reference without a scheme names a file in the workspace, relative to the
    Markdown file's directory, or to the root when it starts with /, as on GitHub.
    Returns null for anything that does not resolve that way. */
-function mdLocal(ref, base) {
+function mdLocal(ref: string, base: string): { path: string; hash: string } | null {
   let u;
   try {
     u = new URL(ref, base);
@@ -152,13 +155,13 @@ function mdLocal(ref, base) {
   return { path: path.slice(1), hash: u.hash.slice(1) };
 }
 
-function mdSetImage(img, src, base) {
+function mdSetImage(img: HTMLElement, src: string, base: string): void {
   img.setAttribute('loading', 'lazy');
   img.setAttribute('decoding', 'async');
   img.classList.add('md-zoomable');
   const m = MD_SCHEME.exec(src);
   if (m) {
-    if (/^https?$/i.test(m[1]) || /^data:image\//i.test(src)) {
+    if (/^https?$/i.test(m[1] || '') || /^data:image\//i.test(src)) {
       img.setAttribute('src', src);
       img.dataset.origSrc = src;
     }
@@ -181,7 +184,7 @@ function mdSetImage(img, src, base) {
 
 /* Links within the file scroll the preview, links to workspace files open them
    in faah, web links open a new browser tab, and any other scheme loses its href. */
-function mdSetLink(a, href, base) {
+function mdSetLink(a: HTMLElement, href: string, base: string): void {
   if (href.startsWith('#')) {
     a.setAttribute('href', href);
     a.dataset.anchor = href.slice(1);
@@ -189,10 +192,10 @@ function mdSetLink(a, href, base) {
   }
   const m = MD_SCHEME.exec(href);
   if (m || href.startsWith('//')) {
-    if (m && !/^(https?|mailto)$/i.test(m[1])) return;
+    if (m && !/^(https?|mailto)$/i.test(m[1] || '')) return;
     a.setAttribute('href', href);
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
+    a.setAttribute('target', '_blank');
+    a.setAttribute('rel', 'noopener noreferrer');
     return;
   }
   const t = mdLocal(href, base);
@@ -208,14 +211,14 @@ function mdSetLink(a, href, base) {
 
 /* ---------- presentation ---------- */
 
-const MD_ALERTS = {
+const MD_ALERTS: Record<string, string> = {
   note: 'Note',
   tip: 'Tip',
   important: 'Important',
   warning: 'Warning',
   caution: 'Caution',
 };
-const MD_ALERT_CLASSES = {
+const MD_ALERT_CLASSES: Record<string, string> = {
   note: 'md-alert-note',
   tip: 'md-alert-tip',
   important: 'md-alert-important',
@@ -223,7 +226,7 @@ const MD_ALERT_CLASSES = {
   caution: 'md-alert-caution',
 };
 
-export function enhanceMarkdown(mdArticle) {
+export function enhanceMarkdown(mdArticle: HTMLElement): void {
   for (const q of mdArticle.querySelectorAll('blockquote')) mdAlert(q);
   for (const pre of mdArticle.querySelectorAll('pre')) {
     const wrap = document.createElement('div');
@@ -254,32 +257,34 @@ export function enhanceMarkdown(mdArticle) {
 
 /* GitHub alerts: a blockquote opening with [!NOTE], [!TIP], [!IMPORTANT],
    [!WARNING] or [!CAUTION]. */
-function mdAlert(q) {
+function mdAlert(q: HTMLElement): void {
   const p = q.firstElementChild;
   const t = p && p.localName === 'p' && p.firstChild;
-  if (!t || t.nodeType !== 3) return;
-  const m = /^\s*\[!(\w+)\][ \t]*\n?/.exec(t.nodeValue);
-  const kind = m && m[1].toLowerCase();
-  if (!kind || !MD_ALERTS[kind]) return;
-  t.nodeValue = t.nodeValue.slice(m[0].length);
+  if (!t || !(t instanceof Text) || !p) return;
+  const m = /^\s*\[!(\w+)\][ \t]*\n?/.exec(t.nodeValue || '');
+  const kind = m?.[1]?.toLowerCase();
+  if (!m || !kind || !MD_ALERTS[kind]) return;
+  t.nodeValue = (t.nodeValue || '').slice(m[0].length);
   if (!t.nodeValue) t.remove();
-  if (p.firstChild && p.firstChild.localName === 'br') p.firstChild.remove();
-  if (!p.textContent.trim() && !p.children.length) p.remove();
+  if (p.firstChild && (p.firstChild instanceof Element && p.firstChild.localName) === 'br')
+    p.firstChild.remove();
+  if (!(p.textContent || '').trim() && !p.children.length) p.remove();
   const title = document.createElement('p');
   title.className = 'md-alert-title';
   title.textContent = MD_ALERTS[kind];
   q.prepend(title);
-  q.classList.add('md-alert', MD_ALERT_CLASSES[kind]);
+  q.classList.add('md-alert', MD_ALERT_CLASSES[kind] || '');
 }
 
-export function getFragmentPlainText(frag) {
+export function getFragmentPlainText(frag: Node): string {
   const clone = frag.cloneNode(true);
-  for (const wrap of clone.querySelectorAll?.('.md-pre.md-mermaid-ready') || []) {
+  for (const wrap of queryable(clone)?.querySelectorAll<HTMLElement>('.md-pre.md-mermaid-ready') ||
+    []) {
     const source = wrap.querySelector('pre');
     const diagram = wrap.querySelector('.md-mermaid');
     if (source && diagram) diagram.replaceWith(document.createTextNode(source.textContent || ''));
   }
-  const bad = clone.querySelectorAll?.(
+  const bad = queryable(clone)?.querySelectorAll<HTMLElement>(
     '[data-control~=md-copy], [data-control~=line-btn], [hidden], svg, style, script',
   );
   if (bad) {
@@ -288,9 +293,10 @@ export function getFragmentPlainText(frag) {
   return (clone.textContent || '').replace(/\r\n/g, '\n');
 }
 
-export function getFragmentHtml(frag) {
+export function getFragmentHtml(frag: Node): string {
   const clone = frag.cloneNode(true);
-  for (const wrap of clone.querySelectorAll?.('.md-pre.md-mermaid-ready') || []) {
+  for (const wrap of queryable(clone)?.querySelectorAll<HTMLElement>('.md-pre.md-mermaid-ready') ||
+    []) {
     const source = wrap.querySelector('pre');
     const diagram = wrap.querySelector('.md-mermaid');
     if (source && diagram) {
@@ -298,7 +304,7 @@ export function getFragmentHtml(frag) {
       diagram.remove();
     }
   }
-  const bad = clone.querySelectorAll?.(
+  const bad = queryable(clone)?.querySelectorAll<HTMLElement>(
     '[data-control~=md-copy], [data-control~=line-btn], [hidden]',
   );
   if (bad) {
@@ -309,13 +315,16 @@ export function getFragmentHtml(frag) {
   return div.innerHTML;
 }
 
-export function getMarkdownRangeLines(range, mdArticle) {
+export function getMarkdownRangeLines(
+  range: Range,
+  mdArticle: HTMLElement,
+): { l1: number; l2: number } {
   let l1 = 0,
     l2 = 0;
-  const blocks = mdArticle.querySelectorAll('[data-line]');
+  const blocks = mdArticle.querySelectorAll<HTMLElement>('[data-line]');
   for (const b of blocks) {
     if (range.intersectsNode(b)) {
-      const line = +b.dataset.line;
+      const line = Number(b.dataset.line);
       if (!l1 || line < l1) l1 = line;
       if (line > l2) l2 = line;
     }
@@ -323,10 +332,11 @@ export function getMarkdownRangeLines(range, mdArticle) {
   return { l1: l1 || 1, l2: l2 || l1 || 1 };
 }
 
-export function domToMarkdown(node) {
+export function domToMarkdown(node: Node | null): string {
   if (!node) return '';
-  if (node.nodeType === 3) return node.nodeValue;
-  if (node.nodeType !== 1 && node.nodeType !== 11) return '';
+  if (node.nodeType === 3) return node.nodeValue || '';
+  if (node instanceof DocumentFragment) return innerDomToMarkdown(node);
+  if (!(node instanceof HTMLElement)) return '';
 
   if (
     node.matches &&
@@ -346,13 +356,13 @@ export function domToMarkdown(node) {
   }
 
   if (tag === 'pre') {
-    const lang = node.dataset.lang || node.closest('.md-pre')?.dataset.lang || '';
+    const lang = node.dataset.lang || node.closest<HTMLElement>('.md-pre')?.dataset.lang || '';
     const code = (node.querySelector('code') || node).textContent || '';
     return '\n```' + lang + '\n' + code.replace(/\r\n/g, '\n').trimEnd() + '\n```\n\n';
   }
 
   if (/^h[1-6]$/.test(tag)) {
-    const level = parseInt(tag[1], 10);
+    const level = parseInt(tag[1] || '1', 10);
     const hashes = '#'.repeat(level);
     return '\n' + hashes + ' ' + innerDomToMarkdown(node).trim() + '\n\n';
   }
@@ -398,7 +408,7 @@ export function domToMarkdown(node) {
 
   if (tag === 'li') {
     let check = '';
-    const cb = node.querySelector('input[type="checkbox"]');
+    const cb = node.querySelector<HTMLInputElement>('input[type="checkbox"]');
     if (cb) check = cb.checked ? '[x] ' : '[ ] ';
     return check + innerDomToMarkdown(node).trim();
   }
@@ -431,7 +441,7 @@ export function domToMarkdown(node) {
     return txt ? '**' + txt + '**' : '';
   }
   if (tag === 'em' || tag === 'i') {
-    if (node.closest('pre, code')) return node.textContent;
+    if (node.closest('pre, code')) return node.textContent || '';
     const txt = innerDomToMarkdown(node);
     return txt ? '*' + txt + '*' : '';
   }
@@ -440,7 +450,7 @@ export function domToMarkdown(node) {
     return txt ? '~~' + txt + '~~' : '';
   }
   if (tag === 'code') {
-    if (node.closest('pre')) return node.textContent;
+    if (node.closest('pre')) return node.textContent || '';
     return '`' + node.textContent + '`';
   }
   if (tag === 'a') {
@@ -456,13 +466,13 @@ export function domToMarkdown(node) {
   if (tag === 'hr') return '\n---\n\n';
   if (tag === 'br') return '\n';
   if (tag === 'input' && node.getAttribute('type') === 'checkbox') {
-    return node.checked ? '[x] ' : '[ ] ';
+    return node instanceof HTMLInputElement && node.checked ? '[x] ' : '[ ] ';
   }
 
   return innerDomToMarkdown(node);
 }
 
-function innerDomToMarkdown(node) {
+function innerDomToMarkdown(node: Node): string {
   let s = '';
   for (const c of node.childNodes) {
     s += domToMarkdown(c);
@@ -471,7 +481,7 @@ function innerDomToMarkdown(node) {
 }
 
 /** Stands in for a Markdown image that failed to load, naming what was missing. */
-export function brokenImageCard(img) {
+export function brokenImageCard(img: HTMLElement): HTMLDivElement {
   const card = document.createElement('div');
   card.className = 'md-img-broken';
   const icon = document.createElement('span');

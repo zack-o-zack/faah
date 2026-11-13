@@ -9,7 +9,7 @@ import {
   onMount,
 } from 'solid-js';
 import { useEditor } from './context.jsx';
-import { viewMode } from '../viewers/view.js';
+import { viewMode } from '../viewers/view.ts';
 import { visibleRange } from './layout.ts';
 import { createHighlights } from './highlights.ts';
 import { EditorRow } from './EditorRow.jsx';

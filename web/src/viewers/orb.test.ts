@@ -1,3 +1,4 @@
+import type { OrbModel, OrbThread } from './orb-model.ts';
 import { test, expect } from 'vitest';
 import {
   orbStart,
@@ -6,9 +7,12 @@ import {
   orbFromSummary,
   orbView,
   orbSnippet,
-} from './orb-model.js';
+} from './orb-model.ts';
 
-const thread = (turn) => ({ id: 't1', turns: [{ id: 1, ...turn }] });
+const thread = (turn: NonNullable<OrbThread['turns']>[number]) => ({
+  id: 't1',
+  turns: [{ ...turn }],
+});
 
 test('orb shows the latest step and notes while an explanation runs', () => {
   let m = orbStart();
@@ -45,9 +49,9 @@ test('the list summary ends a running orb', () => {
 });
 
 test('a failure before the thread exists has no link to open', () => {
-  const m = {
+  const m: OrbModel = {
     ...orbStart(),
-    phase: /** @type {const} */ ('failed'),
+    phase: 'failed',
     error: 'no agent\nstack trace',
   };
   expect(orbView(m).label).toBe('Explanation failed: no agent');

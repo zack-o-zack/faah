@@ -1,8 +1,8 @@
 import { createMemo, createSignal, onCleanup, onMount, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { parseDiff } from './diff-parse.js';
-import { diagnosticMap } from './diff-rows.js';
-import { createDiffActions } from './diff-actions.js';
+import { parseDiff } from './diff-parse.ts';
+import { diagnosticMap } from './diff-rows.ts';
+import { createDiffActions } from './diff-actions.ts';
 import { DiffSection } from './DiffSection.jsx';
 import { DiffStrip } from './DiffStrip.jsx';
 

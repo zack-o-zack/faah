@@ -1,8 +1,11 @@
 /** Only single image URLs and explicit light/dark sources enter Markdown pictures. */
-export function pictureSource(srcset, media) {
+export function pictureSource(
+  srcset: string,
+  media: string,
+): { src: string; scheme: string } | null {
   const scheme = /^\(prefers-color-scheme:\s*(dark|light)\)$/i
     .exec(media.trim())?.[1]
-    .toLowerCase();
+    ?.toLowerCase();
   const src = srcset.trim();
   // Multiple candidates, descriptors, controls and data URLs require a srcset parser.
   if (

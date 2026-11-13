@@ -1,4 +1,4 @@
-import { sanitizeMarkdown } from '../viewers/markdown-dom.js';
+import { sanitizeMarkdown } from '../viewers/markdown-dom.ts';
 
 const ALERT_KINDS = ['note', 'tip', 'important', 'warning', 'caution'];
 

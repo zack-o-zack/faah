@@ -2,7 +2,7 @@ import { diffLayout } from '../settings/logic.ts';
 import { onCleanup } from 'solid-js';
 import { api } from '../lib/api.ts';
 import { documentGitPlan } from './document-logic.js';
-import { canDiff } from '../viewers/view.js';
+import { canDiff } from '../viewers/view.ts';
 export function createDocumentGitActions(editor, options = {}) {
   const app = editor.store;
   const request = options.request || api;

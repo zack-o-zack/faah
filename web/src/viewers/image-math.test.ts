@@ -1,5 +1,5 @@
 import { test, expect } from 'vitest';
-import { fitScale, zoomScale, panFrom, imageTransform } from './image-math.js';
+import { fitScale, zoomScale, panFrom, imageTransform } from './image-math.ts';
 test('fit respects padding, aspect ratio, missing metadata and small images', () => {
   expect(fitScale(2000, 1000, 1080, 900)).toBe(0.5);
   expect(fitScale(32, 32, 1080, 900)).toBe(1);

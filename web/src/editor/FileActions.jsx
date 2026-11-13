@@ -2,7 +2,7 @@ import { diffLayout } from '../settings/logic.ts';
 import { Show } from 'solid-js';
 import { useEditor } from './context.jsx';
 import { EditControls } from './EditControls.jsx';
-import { canDiff, previewKind, viewMode } from '../viewers/view.js';
+import { canDiff, previewKind, viewMode } from '../viewers/view.ts';
 import { withKeys } from '../lib/keyboard.ts';
 
 export function FileActions() {

@@ -1,6 +1,6 @@
 import { createMemo, createSignal, onCleanup, onMount, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { fitScale, imageTransform, panFrom } from './image-math.js';
+import { fitScale, imageTransform, panFrom } from './image-math.ts';
 import { ImageHUD } from './ImageHUD.jsx';
 
 export function ImageViewer(props) {

@@ -18,7 +18,7 @@ interface EditorOptions {
   forge?: FeatureOptions;
   language?: FeatureOptions;
 }
-import { isPreview, previewKind } from '../viewers/view.js';
+import { isPreview, previewKind } from '../viewers/view.ts';
 import { createAgentStore } from '../agents/store.js';
 import { createThreadStore } from '../threads/store.js';
 import { createReviewStore } from '../review/store.js';

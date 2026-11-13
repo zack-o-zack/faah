@@ -16,8 +16,8 @@ import {
   sanitizeHTML,
   enhanceMarkdown,
   syncMarkdownPictures,
-} from './markdown-dom.js';
-import { createPreviewDOM } from './preview-dom.js';
+} from './markdown-dom.ts';
+import { createPreviewDOM } from './preview-dom.ts';
 import { MermaidDiagram } from './MermaidDiagram.jsx';
 import { TableViewer } from './TableViewer.jsx';
 import { Lightbox } from './Lightbox.jsx';

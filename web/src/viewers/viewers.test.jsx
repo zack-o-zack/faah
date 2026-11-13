@@ -4,23 +4,23 @@ import { afterEach, test, expect, vi } from 'vitest';
 import { createAppStore } from '../app/store.ts';
 import { EditorProvider } from '../editor/context.jsx';
 import { ThemeProvider } from '../lib/theme-context.jsx';
-import { createViewerResource } from './resource.js';
-import { viewMode, previewKind, blockIndex } from './view.js';
+import { createViewerResource } from './resource.ts';
+import { viewMode, previewKind, blockIndex } from './view.ts';
 import { TableViewer } from './TableViewer.jsx';
 import { PreviewContent } from './PreviewContent.jsx';
 import { ImageViewer } from './ImageViewer.jsx';
 import { ExplainOrb } from './ExplainOrb.jsx';
 import { MermaidDiagram } from './MermaidDiagram.jsx';
-import { renderDiagram } from './mermaid-runtime.js';
+import { renderDiagram } from './mermaid-runtime.ts';
 import { DiffRows } from './DiffRows.jsx';
-import { diffSelection } from './diff-selection.js';
+import { diffSelection } from './diff-selection.ts';
 import { api } from '../lib/api.ts';
-import { sanitizeHTML } from './markdown-dom.js';
-vi.mock('./markdown-dom.js', async (original) => {
+import { sanitizeHTML } from './markdown-dom.ts';
+vi.mock('./markdown-dom.ts', async (original) => {
   const actual = await original();
   return { ...actual, sanitizeHTML: vi.fn(actual.sanitizeHTML) };
 });
-vi.mock('./mermaid-runtime.js', () => ({
+vi.mock('./mermaid-runtime.ts', () => ({
   renderDiagram: vi.fn(
     async () => '<svg xmlns="http://www.w3.org/2000/svg"><text>Diagram</text></svg>',
   ),
