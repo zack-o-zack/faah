@@ -5,7 +5,9 @@ export function LspSetup() {
   const editor = useEditor();
   const language = editor.language;
   return (
-    <div class="flex flex-col gap-2 p-3 text-xs">
+    <div
+      class={language.setup()?.enabled === false ? 'contents' : 'flex flex-col gap-2 p-3 text-xs'}
+    >
       <Show when={language.setup.error}>
         <p role="alert">{language.setup.error.message}</p>
       </Show>
@@ -15,10 +17,10 @@ export function LspSetup() {
             <Show
               when={setup().enabled}
               fallback={
-                <p>
-                  Language servers are turned off. Restart without -no-lsp for call trails, hover
-                  and precise references.
-                </p>
+                <div data-ui="hint" class="empty text-muted-foreground">
+                  Language servers are turned off: faah was started with <b>-no-lsp</b>. Restart it
+                  without that flag for call trails, hover and precise references.
+                </div>
               }
             >
               <p>

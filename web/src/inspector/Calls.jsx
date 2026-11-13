@@ -39,9 +39,7 @@ export function Calls() {
       </div>
       <div class="panel-body min-h-0 flex-1 overflow-auto pb-4" id="right-calls-list">
         <Show
-          when={
-            language.state.calls && ['off', 'failed'].includes(editor.active()?.lsp?.state || 'off')
-          }
+          when={['off', 'failed'].includes(editor.active()?.lsp?.state || 'off')}
           fallback={
             <>
               <Show when={!language.state.calls}>

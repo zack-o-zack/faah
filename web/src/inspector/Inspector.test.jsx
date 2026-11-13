@@ -50,6 +50,6 @@ test('setup explains a disabled language service without offering installation',
       <LspSetup />
     </EditorProvider>
   ));
-  expect(screen.getByText(/Restart without -no-lsp/)).toBeTruthy();
+  expect(screen.getByText(/Restart it without that flag/)).toBeTruthy();
   expect(screen.queryByRole('button', { name: 'Install' })).toBeNull();
 });
