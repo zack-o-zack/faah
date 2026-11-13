@@ -160,8 +160,10 @@ export function syntaxParts(
   const tokens = [];
   let token = '';
   for (const part of html.match(/<[^>]*>|[^<]+/g) || []) {
-    if (part[0] === '<') token = /^<i\s+class=["']([\w -]+)["']\s*>$/i.exec(part)?.[1] || '';
-    else tokens.push({ text: decode(part), token });
+    if (part[0] === '<') {
+      const match = /^<i\s+class=(?:"([\w -]+)"|'([\w -]+)'|([\w-]+))\s*>$/i.exec(part);
+      token = match?.[1] || match?.[2] || match?.[3] || '';
+    } else tokens.push({ text: decode(part), token });
   }
   if (tokens.map((part) => part.text).join('') !== text)
     tokens.splice(0, tokens.length, { text, token: '' });

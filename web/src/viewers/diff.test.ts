@@ -85,6 +85,11 @@ describe('bounded intraline changes', () => {
     expect([...ranges.old].some(Boolean) || [...ranges.next].some(Boolean)).toBe(old !== next);
   });
   test('keeps syntax tokens and decoded entities while highlighting only changes', () => {
+    expect(syntaxParts('func greet', '<i class=k>func</i> <i class=nf>greet</i>')).toEqual([
+      { text: 'func', className: 'k' },
+      { text: ' ', className: '' },
+      { text: 'greet', className: 'nf' },
+    ]);
     const ranges = changedRanges('const x = "<&"', 'const x = "<>"');
     const parts = syntaxParts(
       'const x = "<&"',
