@@ -1,11 +1,15 @@
+import { required } from '../lib/test-values.ts';
+import { record } from '../lib/decode.ts';
+import { createEditorStore } from '../editor/store.ts';
+import type { Request } from '../lib/api.ts';
 import { fireEvent, render, screen, waitFor } from '@solidjs/testing-library';
 import { expect, test, vi } from 'vitest';
 import { EditorProvider } from '../editor/context.tsx';
 import { createPREditor, routes } from './test-editor.ts';
-import { PRBar } from './PRBar.jsx';
-import { CommentsPanel } from './CommentsPanel.jsx';
-import { MergeDialog } from './MergeDialog.jsx';
-import { RowComposers } from './RowComments.jsx';
+import { PRBar } from './PRBar.tsx';
+import { CommentsPanel } from './CommentsPanel.tsx';
+import { MergeDialog } from './MergeDialog.tsx';
+import { RowComposers } from './RowComments.tsx';
 
 vi.mock('../lib/toast.tsx', () => ({ toast: vi.fn() }));
 
@@ -35,12 +39,25 @@ const replies = {
     },
   },
 };
-function mount(post = vi.fn(async () => ({}))) {
-  let editor;
+function mount(post: Request = vi.fn(async () => ({}))) {
+  let editor: ReturnType<typeof createPREditor> | undefined;
   render(() => {
     editor = createPREditor({ request: routes(replies), post });
+    const base = createEditorStore(editor.store);
+    const view = {
+      ...base,
+      pr: editor.pr,
+      merge: editor.merge,
+      forge: editor.forge,
+      actions: {
+        ...base.actions,
+        ...editor.pr.actions,
+        ...editor.merge.actions,
+        ...editor.forge.actions,
+      },
+    };
     return (
-      <EditorProvider value={editor}>
+      <EditorProvider value={view}>
         <PRBar />
         <CommentsPanel />
         <MergeDialog />
@@ -48,8 +65,8 @@ function mount(post = vi.fn(async () => ({}))) {
       </EditorProvider>
     );
   });
-  editor.actions.initializePR();
-  return editor;
+  required(editor).actions.initializePR();
+  return required(editor);
 }
 
 test('the bar shows the PR, its merge state and the review verdicts', async () => {
@@ -57,11 +74,11 @@ test('the bar shows the PR, its merge state and the review verdicts', async () =
   const editor = mount(post);
   expect(screen.getByText('Fix the parser')).toBeTruthy();
   await screen.findByText('Ready to merge');
-  fireEvent.click(document.getElementById('pr-review-toggle'));
+  fireEvent.click(required(document.getElementById('pr-review-toggle')));
   fireEvent.input(screen.getByRole('textbox', { name: 'Review summary' }), {
     target: { value: 'LGTM' },
   });
-  fireEvent.click(document.getElementById('pr-submit-approve'));
+  fireEvent.click(required(document.getElementById('pr-submit-approve')));
   await waitFor(() =>
     expect(post).toHaveBeenCalledWith(
       'api/pr/submit',
@@ -78,21 +95,27 @@ test('the merge caret lists the allowed methods and opens the dialog for one', a
   fireEvent.click(screen.getByRole('button', { name: 'Choose how to merge' }));
   const items = screen.getAllByRole('menuitemradio');
   expect(items.map((item) => item.getAttribute('aria-checked'))).toEqual(['false', 'true']);
-  fireEvent.click(items[0]);
+  fireEvent.click(required(items[0]));
   const dialog = await screen.findByRole('dialog');
   await waitFor(() => expect(dialog.textContent).toMatch(/Confirm merge/));
 });
 
 test('the comments panel lists the conversation and code threads and posts a comment', async () => {
-  const post = vi.fn(async (path, body) => ({ id: 2, author: 'me', ...body }));
+  const post = vi.fn(async (_path: string, body?: unknown) => ({
+    id: 2,
+    author: 'me',
+    ...record(body),
+  }));
   const editor = mount(post);
-  const panel = document.getElementById('pr-comments-panel');
+  const panel = required(document.getElementById('pr-comments-panel'));
   expect(panel.classList.contains('collapsed')).toBe(true);
   fireEvent.click(screen.getByRole('button', { name: 'Expand/collapse comments panel' }));
   expect(panel.classList.contains('collapsed')).toBe(false);
   await screen.findByText('a.go:3');
-  expect(document.getElementById('pr-comments-count').textContent).toBe('3');
-  expect(document.querySelector('.thr-alert-title').textContent).toBe('Note');
+  expect(required(document.getElementById('pr-comments-count')).textContent).toBe('3');
+  expect(required(document.querySelector<HTMLElement>('.thr-alert-title')).textContent).toBe(
+    'Note',
+  );
   fireEvent.input(screen.getByRole('textbox', { name: 'Pull request comment' }), {
     target: { value: 'Thanks' },
   });

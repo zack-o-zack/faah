@@ -1,7 +1,14 @@
+import type { PRComment } from './types.ts';
+
+interface IssueCommentProps {
+  comment: PRComment;
+  onReply: (author: string) => void;
+}
+import type { JSX } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { commentPreview, formatTime } from './logic.ts';
-import { CommentBody } from './CommentBody.jsx';
-export function IssueComment(props) {
+import { CommentBody } from './CommentBody.tsx';
+export function IssueComment(props: IssueCommentProps): JSX.Element {
   const editor = useEditor();
   const key = () => 'issue:' + props.comment.id;
   return (

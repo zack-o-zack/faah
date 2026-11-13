@@ -1,3 +1,5 @@
+import type { ForgeMeta } from './types.ts';
+import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { Dialog } from '../lib/Dialog.tsx';
@@ -5,17 +7,17 @@ import { ErrorNotice } from '../lib/ErrorNotice.tsx';
 import { keyLabel } from '../lib/keyboard.ts';
 import { FORGE_SOURCES } from './logic.ts';
 // Everything forge-specific comes from the server's token setup for this host.
-export function ForgeConnectDialog() {
+export function ForgeConnectDialog(): JSX.Element {
   const editor = useEditor();
   const connect = editor.forge.state;
   const forge = () => editor.forge.forge();
-  const setup = () => forge().setup || { steps: [] };
+  const setup = (): Partial<NonNullable<ForgeMeta['setup']>> => forge()?.setup || { steps: [] };
   return (
     <Show when={connect.open && forge()}>
       <Dialog
         open={true}
-        title={`Connect ${forge().info.label}`}
-        subtitle={forge().host || ''}
+        title={`Connect ${forge()?.info.label}`}
+        subtitle={forge()?.host || ''}
         class="max-w-lg"
         onClose={editor.actions.closeForgeConnect}
         footer={
@@ -29,8 +31,8 @@ export function ForgeConnectDialog() {
                 editor.actions.closeForgeConnect();
                 editor.actions.openSettings(
                   'ui',
-                  forge().info.tokenCategory,
-                  forge().info.tokenKey,
+                  forge()?.info.tokenCategory,
+                  forge()?.info.tokenKey,
                 );
               }}
             >
@@ -72,18 +74,18 @@ export function ForgeConnectDialog() {
         >
           <p class="text-muted-foreground">
             <Show
-              when={forge().hasToken}
+              when={forge()?.hasToken}
               fallback={
                 <>
                   <Show when={connect.reason}>
-                    A {forge().info.label} token is needed {connect.reason}.{' '}
+                    A {forge()?.info.label} token is needed {connect.reason}.{' '}
                   </Show>
                   {setup().readonly || ''}
                 </>
               }
             >
-              faah is using {FORGE_SOURCES[forge().source] || 'a token'} for {forge().host}. Paste a
-              new one to replace it.
+              faah is using {FORGE_SOURCES[forge()?.source || ''] || 'a token'} for {forge()?.host}.
+              Paste a new one to replace it.
             </Show>
           </p>
           <ol class="flex list-decimal flex-col gap-2 pl-6">
@@ -95,7 +97,7 @@ export function ForgeConnectDialog() {
                 rel="noopener noreferrer"
                 class="text-primary-text"
               >
-                {forge().info.label}'s token page on {forge().host}
+                {forge()?.info.label}'s token page on {forge()?.host}
               </a>
               .
             </li>
@@ -118,19 +120,19 @@ export function ForgeConnectDialog() {
           />
           <Show when={setup().extra}>
             <label class="label text-muted-foreground" for="forge-connect-extra">
-              {setup().extra.label}
+              {setup().extra?.label}
             </label>
             <input
               id="forge-connect-extra"
               type="text"
               spellcheck={false}
               autocomplete="off"
-              placeholder={setup().extra.placeholder}
+              placeholder={setup().extra?.placeholder}
               class="input h-8!"
               value={connect.extra}
               onInput={(event) => editor.actions.setForgeExtra(event.currentTarget.value)}
             />
-            <span class="text-xs text-muted-foreground">{setup().extra.hint}</span>
+            <span class="text-xs text-muted-foreground">{setup().extra?.hint}</span>
           </Show>
           <ErrorNotice error={connect.error} />
           <span class="text-xs text-muted-foreground">
@@ -145,7 +147,7 @@ export function ForgeConnectDialog() {
               or run <code>{setup().cli}</code>
             </Show>{' '}
             in your shell, then restart faah.
-            <Show when={setup().hostKey}> faah sends the token only to {forge().host}.</Show>
+            <Show when={setup().hostKey}> faah sends the token only to {forge()?.host}.</Show>
           </span>
         </form>
       </Dialog>

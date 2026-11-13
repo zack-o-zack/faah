@@ -1,13 +1,26 @@
+interface RowComposersProps {
+  rows: Parameters<typeof rowTarget>[0][];
+  path: string;
+}
+
+interface CommentMarkerProps {
+  row: Parameters<typeof rowTarget>[0];
+  path: string;
+  reviewable?: boolean;
+}
+import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { rowTarget, threadKey } from './logic.ts';
-import { PRComposer } from './PRComposer.jsx';
+import { PRComposer } from './PRComposer.tsx';
 /** A diff line's comment marker; it opens the line's thread in the comments panel. */
-export function CommentMarker(props) {
+export function CommentMarker(props: CommentMarkerProps): JSX.Element {
   const editor = useEditor();
   const target = () => rowTarget(props.row);
   const count = () =>
-    target() && editor.pr ? editor.pr.marker(props.path, target().side, target().line) : 0;
+    target() && editor.pr
+      ? editor.pr.marker(props.path, target()?.side || '', target()?.line || 0)
+      : 0;
   return (
     <Show when={props.reviewable && count()}>
       <button
@@ -18,7 +31,7 @@ export function CommentMarker(props) {
         onClick={(event) => {
           event.stopPropagation();
           editor.actions.revealPRThread(
-            'thread:' + threadKey(props.path, target().side, target().line),
+            'thread:' + threadKey(props.path, target()?.side || '', target()?.line || 0),
           );
         }}
       >
@@ -28,7 +41,7 @@ export function CommentMarker(props) {
   );
 }
 /** Open draft composers for the given diff rows render beneath them. */
-export function RowComposers(props) {
+export function RowComposers(props: RowComposersProps): JSX.Element {
   const editor = useEditor();
   // Both halves of a context row target the same line: list its composers once.
   const composers = () => [

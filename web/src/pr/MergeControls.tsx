@@ -1,12 +1,13 @@
+import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { DropdownMenu } from '../lib/DropdownMenu.tsx';
-import { MERGE_METHODS } from './logic.ts';
+import { mergeMethodInfo } from './logic.ts';
 // A split button: the last-used method, and a caret to pick another.
-export function MergeControls() {
+export function MergeControls(): JSX.Element {
   const editor = useEditor();
   const merge = editor.merge;
-  const method = () => MERGE_METHODS[merge.method()];
+  const method = () => mergeMethodInfo(merge.method());
   return (
     <div id="pr-merge-group" class="relative flex flex-none gap-px">
       <button
@@ -47,9 +48,9 @@ export function MergeControls() {
                   </Show>
                 </span>
                 <span class="flex min-w-0 flex-col gap-0.5">
-                  <span class="text-sm font-medium">{MERGE_METHODS[value].label}</span>
+                  <span class="text-sm font-medium">{mergeMethodInfo(value).label}</span>
                   <span class="text-xs text-muted-foreground">
-                    {MERGE_METHODS[value].explain(merge.commitCount(), merge.base())}
+                    {mergeMethodInfo(value).explain(merge.commitCount(), merge.base())}
                   </span>
                 </span>
               </button>

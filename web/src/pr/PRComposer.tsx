@@ -1,15 +1,21 @@
+import type { Composer } from './types.ts';
+
+interface PRComposerProps {
+  composer: Composer;
+}
+import type { JSX } from 'solid-js';
 import { onMount, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { keyLabel } from '../lib/keyboard.ts';
 // A draft review comment on one diff line.
-export function PRComposer(props) {
+export function PRComposer(props: PRComposerProps): JSX.Element {
   const editor = useEditor();
   const modEnter = keyLabel('Mod+Enter');
-  let input;
+  let input: HTMLTextAreaElement | undefined;
   // Only a newly opened composer takes focus, not one scrolled back into view.
   onMount(() => {
     if (editor.pr.state.focus !== props.composer.id) return;
-    input.focus();
+    input?.focus();
     editor.actions.composerFocused();
   });
   return (

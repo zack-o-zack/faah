@@ -9,9 +9,9 @@ import { EditorMeasure, type EditorGeometry } from '../editor/EditorMeasure.tsx'
 import { Palette } from '../palette/Palette.tsx';
 import { NewItemDialog } from '../workspace/NewItemDialog.tsx';
 import { ReturnPill } from '../review/ReturnPill.tsx';
-import { MergeDialog } from '../pr/MergeDialog.jsx';
-import { ForgeConnectDialog } from '../pr/ForgeConnectDialog.jsx';
-import { ComposerDock } from '../pr/ComposerDock.jsx';
+import { MergeDialog } from '../pr/MergeDialog.tsx';
+import { ForgeConnectDialog } from '../pr/ForgeConnectDialog.tsx';
+import { ComposerDock } from '../pr/ComposerDock.tsx';
 import { SettingsProvider } from '../settings/context.ts';
 import { SettingsDialog } from '../settings/SettingsDialog.tsx';
 import { PreferenceStyles } from '../settings/PreferenceStyles.tsx';

@@ -1,8 +1,14 @@
+import type { PRComment } from './types.ts';
+
+interface CommentBodyProps {
+  comment: Pick<PRComment, 'body' | 'bodyHtml'>;
+}
+import type { JSX } from 'solid-js';
 import { createMemo, Show } from 'solid-js';
 import { Markdown } from '../lib/Markdown.tsx';
 import { commentFragment } from './comment-dom.ts';
 // Posted comments use the forge's rendered Markdown, sanitized; drafts use the thread renderer.
-export function CommentBody(props) {
+export function CommentBody(props: CommentBodyProps): JSX.Element {
   const fragment = createMemo(() =>
     props.comment.bodyHtml ? commentFragment(props.comment.bodyHtml) : null,
   );

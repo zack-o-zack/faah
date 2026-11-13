@@ -18,7 +18,7 @@ import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { gutterAnchor, gutterSelection } from './diff-rows.ts';
-import { CommentMarker } from '../pr/RowComments.jsx';
+import { CommentMarker } from '../pr/RowComments.tsx';
 
 function Gutter(props: GutterProps): JSX.Element {
   const editor = useEditor();

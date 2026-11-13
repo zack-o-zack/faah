@@ -1,21 +1,34 @@
+interface ReplyRowProps {
+  rootId: number;
+}
+
+interface DraftCardProps {
+  draft: Partial<Draft>;
+}
+import type { CommentThread as Thread, Draft } from './types.ts';
+
+interface CommentThreadProps {
+  thread: Thread;
+}
+import type { JSX } from 'solid-js';
 import { createEffect, For, on, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { ErrorNotice } from '../lib/ErrorNotice.tsx';
 import { formatTime } from './logic.ts';
-import { CommentBody } from './CommentBody.jsx';
-export function CommentThread(props) {
+import { CommentBody } from './CommentBody.tsx';
+export function CommentThread(props: CommentThreadProps): JSX.Element {
   const editor = useEditor();
   const pr = editor.pr;
   const key = () => 'thread:' + props.thread.key;
   const total = () => props.thread.existing.length + props.thread.drafts.length;
   const revealed = () => pr.state.reveal.key === key();
-  let item;
+  let item: HTMLDetailsElement | undefined;
   // Native scroll for a gutter marker's request to show this thread.
   createEffect(
     on(
       () => pr.state.reveal.sequence,
       () => {
-        if (revealed()) item.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        if (revealed()) item?.scrollIntoView({ block: 'center', behavior: 'smooth' });
       },
       { defer: true },
     ),
@@ -69,13 +82,13 @@ export function CommentThread(props) {
         </For>
         <For each={props.thread.drafts}>{(draft) => <DraftCard draft={draft} />}</For>
         <Show when={props.thread.root}>
-          <ReplyRow rootId={props.thread.root.id} />
+          <ReplyRow rootId={props.thread.root?.id || 0} />
         </Show>
       </div>
     </details>
   );
 }
-function DraftCard(props) {
+function DraftCard(props: DraftCardProps): JSX.Element {
   const editor = useEditor();
   return (
     <div class="card flex flex-col gap-2! border-dashed p-3!">
@@ -91,8 +104,10 @@ function DraftCard(props) {
           data-size="icon-xs"
           title="Delete draft"
           aria-label="Delete draft"
-          disabled={!!editor.pr.state.deleting[props.draft.id]}
-          onClick={() => void editor.actions.deleteDraft(props.draft.id)}
+          disabled={!!editor.pr.state.deleting[props.draft.id || 0]}
+          onClick={() => {
+            if (props.draft.id !== undefined) void editor.actions.deleteDraft(props.draft.id);
+          }}
         >
           <span class="icon-[lucide--trash-2] size-3.5 shrink-0" aria-hidden="true" />
         </button>
@@ -100,7 +115,7 @@ function DraftCard(props) {
     </div>
   );
 }
-function ReplyRow(props) {
+function ReplyRow(props: ReplyRowProps): JSX.Element {
   const editor = useEditor();
   const reply = () =>
     editor.pr.state.replies[props.rootId] || { body: '', pending: false, error: '' };

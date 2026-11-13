@@ -8,7 +8,7 @@ import { StatusBar } from '../status/StatusBar.tsx';
 import { ThreadsPanel, ThreadsToggle } from '../threads/ThreadsPanel.tsx';
 import { ReviewToggle } from '../review/ReviewToggle.tsx';
 import { ReviewView } from '../review/ReviewView.tsx';
-import { PRPanels } from '../pr/PRPanels.jsx';
+import { PRPanels } from '../pr/PRPanels.tsx';
 import { TabStrip } from '../editor/TabStrip.tsx';
 import { FileActions } from '../editor/FileActions.tsx';
 import { Viewport } from '../editor/Viewport.tsx';

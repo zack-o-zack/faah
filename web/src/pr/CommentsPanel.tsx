@@ -1,17 +1,18 @@
+import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { SplitHandle } from '../lib/SplitHandle.tsx';
 import { ErrorNotice } from '../lib/ErrorNotice.tsx';
 import { withKeys } from '../lib/keyboard.ts';
 import { sortedByTime } from './logic.ts';
-import { IssueComment } from './IssueComment.jsx';
-import { CommentThread } from './CommentThread.jsx';
+import { IssueComment } from './IssueComment.tsx';
+import { CommentThread } from './CommentThread.tsx';
 // Posted comments (conversation and inline) plus your drafts, for the life of the session.
-export function CommentsPanel() {
+export function CommentsPanel(): JSX.Element {
   const editor = useEditor();
   const pr = editor.pr;
   const panel = () => pr.state.panel;
-  let compose;
+  let compose: HTMLTextAreaElement | undefined;
   const both = () => pr.state.issueComments.length && pr.threads().length;
   return (
     <div
@@ -81,8 +82,9 @@ export function CommentsPanel() {
                   comment={comment}
                   onReply={(author) => {
                     editor.actions.replyToAuthor(author);
-                    compose.focus();
-                    compose.setSelectionRange(compose.value.length, compose.value.length);
+                    compose?.focus();
+                    if (compose)
+                      compose.setSelectionRange(compose.value.length, compose.value.length);
                   }}
                 />
               )}

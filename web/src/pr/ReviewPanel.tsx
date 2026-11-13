@@ -1,15 +1,26 @@
+interface VerdictProps {
+  class?: string;
+  id: string;
+  event: 'COMMENT' | 'APPROVE' | 'REQUEST_CHANGES';
+  title?: string;
+  disabled?: boolean | string;
+  icon: string;
+  label: string;
+  hint: string;
+}
+import type { JSX } from 'solid-js';
 import { Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { Popover } from '../lib/Popover.tsx';
 import { ErrorNotice } from '../lib/ErrorNotice.tsx';
 import { draftsNote, forgeInfo, prEnded } from './logic.ts';
 // One panel holds the summary and the verdict that sends it.
-export function ReviewPanel() {
+export function ReviewPanel(): JSX.Element {
   const editor = useEditor();
   const pr = () => editor.pr.state;
-  const meta = () => editor.pr.meta();
+  const meta = () => editor.pr.meta() || {};
   const gate = () => editor.merge.gate();
-  const verdicts = () => meta().writeAccess && !prEnded(meta());
+  const verdicts = () => meta()?.writeAccess && !prEnded(meta());
   return (
     <Popover
       triggerId="pr-review-toggle"
@@ -92,7 +103,7 @@ export function ReviewPanel() {
     </Popover>
   );
 }
-function Verdict(props) {
+function Verdict(props: VerdictProps): JSX.Element {
   const editor = useEditor();
   const pending = () => editor.pr.state.review.pending;
   return (

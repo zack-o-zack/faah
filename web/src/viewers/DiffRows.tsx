@@ -12,7 +12,7 @@ import type { JSX } from 'solid-js';
 import { createMemo, createSignal, Index, onCleanup, onMount, Show } from 'solid-js';
 import { splitRows, unifiedRows, rowOffsets, measuredWindow } from './diff-rows.ts';
 import { DiffSide, UnifiedRow } from './DiffRow.tsx';
-import { RowComposers } from '../pr/RowComments.jsx';
+import { RowComposers } from '../pr/RowComments.tsx';
 
 function DiffSlot(props: DiffSlotProps): JSX.Element {
   let row: HTMLDivElement | undefined;

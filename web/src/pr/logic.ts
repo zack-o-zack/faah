@@ -43,7 +43,7 @@ export const PR_STATES = {
   },
 };
 
-export function prState(meta: PRMeta): string {
+export function prState(meta: PRMeta): keyof typeof PR_STATES {
   if (meta.merged) return 'merged';
   if (meta.state === 'closed') return 'closed';
   return meta.draft ? 'draft' : 'open';
@@ -277,7 +277,7 @@ export function mergePill(
   return pills[status.state] || null;
 }
 
-export const PILL_ICONS = {
+export const PILL_ICONS: Record<string, string> & { muted: string } = {
   err: 'icon-[lucide--triangle-alert]',
   warn: 'icon-[lucide--circle-alert]',
   busy: 'icon-[lucide--loader-circle] animate-spin',
@@ -285,16 +285,14 @@ export const PILL_ICONS = {
   muted: 'icon-[lucide--circle-dashed]',
 };
 
-export const MERGE_METHODS: Record<
-  string,
-  {
-    label: string;
-    button: string;
-    confirm: string;
-    done: string;
-    explain: (count: number, base: string) => string;
-  }
-> = {
+export interface MergeMethod {
+  label: string;
+  button: string;
+  confirm: string;
+  done: string;
+  explain: (count: number, base: string) => string;
+}
+export const MERGE_METHODS: Record<string, MergeMethod> = {
   merge: {
     label: 'Create a merge commit',
     button: 'Merge',
@@ -369,7 +367,7 @@ export function splitMessage(text: string): { title: string; message: string } {
   return { title: (title || '').trim(), message: rest.join('\n').trim() };
 }
 
-export const FORGE_SOURCES = {
+export const FORGE_SOURCES: Record<string, string> = {
   settings: 'a token saved in faah Settings',
   env: 'an environment variable',
   gh: 'the GitHub CLI (gh)',
@@ -384,4 +382,10 @@ export function connectedMessage(label: string, reply: Partial<ForgeReply>): str
   if (reply.validated && !reply.writeAccess)
     message += '. Read access only: Approve and Merge need push access to this repository';
   return message;
+}
+
+export function mergeMethodInfo(method: string): MergeMethod {
+  const info = MERGE_METHODS[method];
+  if (!info) throw new Error('Unknown merge method: ' + method);
+  return info;
 }

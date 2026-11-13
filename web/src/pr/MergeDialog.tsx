@@ -1,16 +1,22 @@
+import type { MergeMessage } from './types.ts';
+
+interface CommitFieldsProps {
+  draft: MergeMessage;
+}
+import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { Dialog } from '../lib/Dialog.tsx';
 import { ErrorNotice } from '../lib/ErrorNotice.tsx';
 import { keyLabel } from '../lib/keyboard.ts';
 import { AgentPicker } from '../agents/AgentPicker.tsx';
-import { MERGE_METHODS } from './logic.ts';
+import { mergeMethodInfo } from './logic.ts';
 // Shows exactly what lands on the base: method, commit title and message, and what blocks it.
-export function MergeDialog() {
+export function MergeDialog(): JSX.Element {
   const editor = useEditor();
   const merge = editor.merge;
   const dialog = () => merge.state.dialog;
-  const method = () => MERGE_METHODS[dialog().method];
+  const method = () => mergeMethodInfo(dialog().method);
   const draft = () => dialog().drafts[dialog().method] || { title: '', message: '' };
   const blocked = () => merge.warnings()?.block || '';
   return (
@@ -71,7 +77,7 @@ export function MergeDialog() {
                   data-size="xs"
                   onClick={() => editor.actions.setMergeMethod(value)}
                 >
-                  {MERGE_METHODS[value].label}
+                  {mergeMethodInfo(value).label}
                 </button>
               )}
             </For>
@@ -94,7 +100,7 @@ export function MergeDialog() {
     </Show>
   );
 }
-function CommitFields(props) {
+function CommitFields(props: CommitFieldsProps): JSX.Element {
   const editor = useEditor();
   const dialog = () => editor.merge.state.dialog;
   const hasHarness = () =>
@@ -206,7 +212,7 @@ function CommitFields(props) {
     </div>
   );
 }
-function CommitList() {
+function CommitList(): JSX.Element {
   const editor = useEditor();
   const commits = () => (editor.merge.state.info?.commits || []).slice().reverse();
   return (

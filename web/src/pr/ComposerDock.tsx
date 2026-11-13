@@ -1,8 +1,9 @@
+import type { JSX } from 'solid-js';
 import { For } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
-import { PRComposer } from './PRComposer.jsx';
+import { PRComposer } from './PRComposer.tsx';
 // Composers for a line that is not on screen dock in the corner until you jump back.
-export function ComposerDock() {
+export function ComposerDock(): JSX.Element {
   const editor = useEditor();
   const docked = () => {
     const document = editor.active();
