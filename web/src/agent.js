@@ -41,7 +41,6 @@ const batchApply = $('#agent-batch-apply');
 const batchCancel = $('#agent-batch-cancel');
 const batchOpen = $('#agent-batch-open');
 const batchErr = $('#agent-batch-err');
-const gitPicker = $('#git-agent');
 
 const sessions = new Map(); // local session id -> in-progress compose/edit
 let agentSeq = 0;
@@ -74,12 +73,11 @@ export function applyAgentMeta() {
   }
   for (const picker of extraPickers) renderAgentPicker(picker);
   renderAgentPicker(batchPicker, !!batchJobId);
-  renderAgentPicker(gitPicker);
 }
 
 // Model discovery is shared across composers, and browsing never saves a choice.
 const discoveredAgentModels = new Map();
-async function loadPickerModels(name) {
+export async function loadPickerModels(name) {
   if (discoveredAgentModels.has(name)) return discoveredAgentModels.get(name);
   const pending = api('/api/agent/models', { name }).then(j => j.models || []);
   discoveredAgentModels.set(name, pending);
@@ -107,7 +105,7 @@ function wireAgentPicker(picker, onError, after) {
   picker?.addEventListener('change', async () => {
     const [harness, model] = JSON.parse(picker.value || '[""]');
     if (!harness) return;
-    await select(harness, model, onError);
+    await selectAgent(harness, model, onError);
     after?.();
   });
 }
@@ -501,11 +499,11 @@ function optionsHtml(ready, settingsPath) {
 }
 
 async function pick(session, name) {
-  if (await select(name, msg => showErr(session, msg))) showCompose(session);
+  if (await selectAgent(name, '', msg => showErr(session, msg))) showCompose(session);
 }
 
 // Makes name the harness for every later edit. Returns whether it took.
-async function select(name, model, onError) {
+export async function selectAgent(name, model, onError = (message) => showToast('error', message)) {
   if (typeof model === 'function') {
     onError = model;
     model = '';
@@ -874,7 +872,6 @@ export function initAgent() {
   if (batchOpen) batchOpen.addEventListener('click', () => emit('threads:open', batchThreadId));
   if (batchClear) batchClear.addEventListener('click', () => clearAllEdits());
   wireAgentPicker(batchPicker, msg => showBatchErr(msg));
-  wireAgentPicker(gitPicker, msg => showToast('error', msg));
 
   document.addEventListener('click', e => {
     const target = /** @type {HTMLElement|null} */ (e.target);

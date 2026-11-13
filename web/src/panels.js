@@ -6,7 +6,7 @@ import { updateStatus } from './status.js';
 
 import { refreshTree, setSidebarMode, hasGitView } from './app/legacy-bridge.js';
 
-import { refreshUnpushed } from './unpushed.js';
+import { refreshUnpushed } from './app/legacy-bridge.js';
 
 export async function showPanel(name) {
   document.body.classList.remove('side-hidden');

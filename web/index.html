@@ -20,82 +20,7 @@
     <div id="tree-toolbar-root" class="contents"></div>
     <div id="tree-scope-root" class="contents"></div>
     <div id="tree-root" class="contents"></div>
-    <!-- Unpushed commits: the local commits ahead of the tracking branch,
-         listed beside the tree while the "changed files only" filter is on.
-         web/src/unpushed.js owns it. -->
-    <div id="unpushed" class="unpushed relative flex min-h-8 max-h-[45vh] flex-col border-t bg-sidebar [&.collapsed]:flex-none [&.collapsed_.unpushed-body]:hidden" hidden>
-      <div id="unpushed-resizer" class="unpushed-resizer absolute -top-1 inset-x-0 z-10 h-2 cursor-row-resize hover:bg-primary [&.drag]:bg-primary" title="Drag to resize"></div>
-      <div class="unpushed-head flex shrink-0 items-center gap-2 border-b px-3 py-2 text-xs font-medium">
-        <span class="icon-[lucide--arrow-up] size-3.5 shrink-0 unpushed-icon text-primary" aria-hidden="true"></span>
-        <span class="unpushed-title shrink-0 text-xs font-medium text-muted-foreground">Unpushed</span>
-        <span id="unpushed-count" class="badge empty:hidden" data-variant="secondary" data-control="unpushed-count"></span>
-        <span class="flex-1 min-w-0"></span>
-        <span id="unpushed-upstream" class="unpushed-upstream max-w-[45%] truncate font-mono text-xs text-muted-foreground"></span>
-        <button id="unpushed-collapse" title="Collapse/expand unpushed commits" class="btn" data-control="pr-comments-collapse" data-variant="ghost" data-size="icon-xs" aria-label="Collapse/expand unpushed commits"><span class="icon-[lucide--chevron-down] size-3.5 shrink-0" aria-hidden="true"></span></button>
-      </div>
-      <div id="unpushed-body" class="unpushed-body min-h-0 flex-1 overflow-y-auto py-2"></div>
-    </div>
-    <div id="git-panel" class="git-panel relative flex h-96 min-h-8 max-h-[80vh] shrink-0 flex-col border-t bg-sidebar [&.collapsed]:h-auto! [&.collapsed_.git-panel-body]:hidden" hidden>
-      <div id="git-panel-resizer" class="git-panel-resizer absolute -top-1 inset-x-0 z-10 h-2 cursor-row-resize hover:bg-primary [&.drag]:bg-primary" title="Drag to resize"></div>
-      <div class="git-panel-head flex shrink-0 items-center gap-2 border-b px-3 py-2 text-xs font-medium">
-        <span class="icon-[lucide--git-branch] size-3.5 shrink-0 git-panel-icon text-primary" title="Git Panel" aria-hidden="true"></span>
-        <span id="git-branch" class="git-branch truncate font-medium"></span>
-        <span id="git-counts" class="git-counts shrink-0 font-mono text-xs text-muted-foreground"></span>
-        <span class="flex-1 min-w-0"></span>
-        <button id="git-panel-collapse" title="Collapse" class="btn" data-control="pr-comments-collapse" data-variant="ghost" data-size="icon-xs" aria-label="Collapse"><span class="icon-[lucide--chevron-down] size-3.5 shrink-0" aria-hidden="true"></span></button>
-      </div>
-      <div id="git-panel-body" class="git-panel-body flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-3">
-        <button id="git-token-nudge" type="button" hidden title="Set GITHUB_TOKEN, set GH_TOKEN, or run 'gh auth login' -- or add one below" class="btn" data-control="git-token-nudge" data-variant="outline" data-size="xs">
-          <span class="icon-[lucide--circle-alert] size-3 shrink-0" aria-hidden="true"></span>
-          <span>No GitHub token configured &mdash; add one</span>
-        </button>
-        <div id="git-notice" class="git-notice alert flex! flex-col gap-2 [&[data-tone=warn]]:border-warn [&[data-tone=busy]]:border-primary [&[data-tone=ok]]:border-gi" role="status" aria-live="polite" hidden>
-          <div class="git-notice-head flex items-center gap-2">
-            <span id="git-notice-title" class="git-notice-title min-w-0 flex-1 font-semibold wrap-anywhere"></span>
-            <button id="git-notice-close" type="button" title="Dismiss" class="btn" data-control="git-notice-close" data-variant="ghost" data-size="icon-xs" aria-label="Dismiss"><span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true"></span></button>
-          </div>
-          <div id="git-notice-text" data-ui="hint" class="git-notice-text max-h-40 overflow-y-auto whitespace-pre-wrap wrap-anywhere empty:hidden [&_code]:font-mono [&_[data-ui~=hint]]:block [&_[data-ui~=hint]]:text-muted-foreground"></div>
-          <div id="git-notice-agent" class="git-agent-picker flex flex-col gap-2" hidden>
-            <div id="git-sync-agent" class="inline-flex min-w-0 max-w-full" data-control="agent-picker" data-placeholder="No harness"><button class="btn max-w-full" data-variant="outline" type="button" data-size="sm" aria-haspopup="dialog" aria-expanded="false" aria-label="Coding harness and model" title="Coding harness and model"><span class="truncate"></span><i class="icon-[lucide--chevrons-up-down] size-3.5 shrink-0 text-muted-foreground" aria-hidden="true"></i></button></div>
-          </div>
-          <div id="git-notice-actions" class="git-notice-actions flex flex-wrap gap-2 empty:hidden"></div>
-          <details id="git-notice-log" class="git-notice-log [&_summary]:cursor-pointer [&_summary]:text-muted-foreground [&_pre]:mt-2 [&_pre]:max-h-40 [&_pre]:overflow-auto [&_pre]:whitespace-pre-wrap [&_pre]:wrap-anywhere [&_pre]:font-mono [&_pre]:text-xs" hidden><summary>Agent output</summary><pre></pre></details>
-        </div>
-        <div id="git-commit-section" class="git-commit-section flex flex-col gap-2">
-          <div class="input-group border-border bg-background shadow-none dark:bg-background focus-within:border-ring focus-within:ring-1 focus-within:ring-ring/40" data-orientation="vertical">
-            <textarea id="git-commit-msg" aria-label="Commit message" rows="1" spellcheck="false" autocomplete="off" placeholder="Message (optional)" class="max-h-40 min-h-9 text-sm" data-control="git-commit-msg"></textarea>
-            <footer data-align="block-end" class="gap-1">
-              <div id="git-agent" class="inline-flex min-w-0 flex-1" data-control="agent-picker" data-placeholder="No harness"><button type="button" data-variant="ghost" data-size="sm" class="btn max-w-full h-7! text-muted-foreground! border-transparent! bg-transparent! px-2! text-xs! shadow-none! hover:bg-accent! hover:text-foreground!" aria-haspopup="dialog" aria-expanded="false" aria-label="Coding harness and model" title="Coding harness and model"><span class="truncate"></span><i class="icon-[lucide--chevrons-up-down] size-3.5 shrink-0" aria-hidden="true"></i></button></div>
-              <button id="git-instructions-link" type="button" title="Message instructions" aria-label="Message instructions" class="btn" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--sliders-horizontal] size-3.5 shrink-0" aria-hidden="true"></span></button>
-              <button id="git-generate-msg" type="button" title="Write a message for these changes" aria-label="Write a message for these changes" class="btn" data-variant="special" data-size="icon-xs"><span data-ui="icon" class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true"></span></button>
-            </footer>
-          </div>
-        </div>
-        <div id="git-action-row" class="flex items-stretch gap-2">
-          <button id="git-commit" type="button" disabled class="btn min-w-0 flex-1" data-variant="primary" data-size="sm"><span data-ui="icon" class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true"></span><span data-ui="label">Commit</span></button>
-          <div id="git-clean-state" class="git-clean-state flex min-w-0 flex-1 items-center justify-center gap-2 rounded border border-dashed px-3 py-1.5 text-xs text-muted-foreground [&_svg]:shrink-0 [&_svg]:text-primary" hidden>
-            <span class="icon-[lucide--check] size-3.5 shrink-0" aria-hidden="true"></span>
-            <span>Working tree clean</span>
-          </div>
-          <div id="git-sync-group" class="button-group" role="group" aria-label="Sync with remote">
-            <button id="git-sync" type="button" title="git sync: pull, then push" aria-label="git sync" class="btn gap-1 px-2!" data-variant="secondary" data-size="sm"><span data-ui="icon" class="icon-[lucide--refresh-cw] size-3.5 shrink-0" aria-hidden="true"></span><span id="git-sync-counts" class="font-mono tabular-nums text-muted-foreground empty:hidden"></span></button>
-            <button id="git-sync-caret" type="button" title="git sync, git pull or git push" aria-label="Sync actions" aria-haspopup="menu" aria-expanded="false" class="btn border-l border-background" data-variant="secondary" data-size="icon-sm"><span class="icon-[lucide--chevron-down] size-3.5 shrink-0" aria-hidden="true"></span></button>
-          </div>
-          <div id="git-sync-menu" role="menu" aria-label="Sync actions" hidden>
-            <button id="git-sync-item" type="button" title="Pull, then push" class="flex w-full items-start gap-2 text-left"><span data-ui="icon" class="icon-[lucide--refresh-cw] mt-0.5 size-3.5 shrink-0" aria-hidden="true"></span><span class="flex min-w-0 flex-col items-start"><span>git sync</span><span class="text-xs text-muted-foreground">Pull new commits, then push yours</span></span><span data-ui="label" class="ml-auto font-mono tabular-nums text-muted-foreground empty:hidden"></span></button>
-            <button id="git-pull" type="button" title="Pull changes from remote" class="flex w-full items-start gap-2 text-left"><span data-ui="icon" class="icon-[lucide--arrow-down] mt-0.5 size-3.5 shrink-0" aria-hidden="true"></span><span class="flex min-w-0 flex-col items-start"><span>git pull</span><span class="text-xs text-muted-foreground">Bring in new commits from the remote</span></span><span data-ui="label" class="ml-auto font-mono tabular-nums text-muted-foreground empty:hidden"></span></button>
-            <button id="git-push" type="button" title="No unpushed commits to push" disabled class="flex w-full items-start gap-2 text-left"><span data-ui="icon" class="icon-[lucide--arrow-up] mt-0.5 size-3.5 shrink-0" aria-hidden="true"></span><span class="flex min-w-0 flex-col items-start"><span>git push</span><span class="text-xs text-muted-foreground">Send your commits to the remote</span></span><span data-ui="label" class="ml-auto font-mono tabular-nums text-muted-foreground empty:hidden"></span></button>
-          </div>
-        </div>
-        <div id="git-recent-commits" class="git-recent-commits mt-1 flex flex-col gap-1 border-t pt-2">
-          <div class="git-recent-head flex items-center justify-between">
-            <span class="git-recent-title shrink-0 text-xs font-medium text-muted-foreground">Recent Commits</span>
-            <a id="git-see-all-commits" class="btn" data-variant="ghost" data-size="icon-xs" href="#" target="_blank" rel="noopener" title="See all commits" aria-label="See all commits"><span class="icon-[lucide--external-link] size-3.5 shrink-0" aria-hidden="true"></span></a>
-          </div>
-          <div id="git-commits-list" class="git-commits-list flex flex-col gap-1"></div>
-        </div>
-      </div>
-    </div>
+    <div id="git-root" class="contents"></div>
     <footer class="side-foot flex shrink-0 items-center justify-end gap-2 border-t px-2 py-1 desktop:hidden">
       <span class="side-actions flex shrink-0 items-center gap-1 desktop:hidden">
       <a class="btn" data-variant="ghost" data-size="icon-xs" href="https://github.com/zack-o-zack/faah" target="_blank" rel="noopener" title="faah on GitHub" aria-label="faah on GitHub">
@@ -483,7 +408,6 @@
 
 
     <!-- Commit card: author, message and diffstat for a hovered unpushed commit -->
-    <div id="commitcard" class="card fixed z-[60] max-w-[480px] max-h-[70vh] overflow-auto" hidden></div>
 
     <!-- Metrics menu, opened from CPU/RAM status bar -->
     <div id="metrics-menu" role="menu" hidden></div>

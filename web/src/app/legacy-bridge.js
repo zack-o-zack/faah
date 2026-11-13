@@ -272,10 +272,60 @@ export function configureLegacyServices(value) {
       },
     ),
   );
+  Object.assign(editorStore.actions, {
+    openLegacySettings: value.openSettings,
+    nudgeLegacyForgeToken: value.nudgeForgeToken,
+    selectLegacyAgent: value.selectAgent,
+    legacyAgentModels: value.loadPickerModels,
+    cancelLegacyAgentJob: (id) => apiPostJson('api/agent/cancel', { id }),
+    async legacyHistoryChanged() {
+      await value.reindexWorkspace();
+      if (S.meta?.pr) await value.refreshPRMeta();
+      await reloadOpenTabs();
+    },
+    async runLegacyAgentJob(endpoint, params, { signal, progress }) {
+      const job = await apiPostJson(endpoint, params, { signal });
+      while (!signal.aborted) {
+        await new Promise((resolve, reject) => {
+          const abort = () => {
+            clearTimeout(timer);
+            reject(new DOMException('Cancelled', 'AbortError'));
+          };
+          const timer = setTimeout(() => {
+            signal.removeEventListener('abort', abort);
+            resolve();
+          }, 600);
+          signal.addEventListener('abort', abort, { once: true });
+          if (signal.aborted) abort();
+        });
+        const result = await api('api/agent/job', { id: job.id }, { signal });
+        progress?.({ ...result, id: job.id });
+        if (result.running) continue;
+        if (result.error && !endpoint.endsWith('sync-agent')) throw new Error(result.error);
+        return result;
+      }
+      throw new DOMException('Cancelled', 'AbortError');
+    },
+  });
+  const releases = [
+    value.on('pr:resolve', () => void editorStore.actions.resolvePRBase()),
+    value.on('pr:force-push', editorStore.actions.confirmForcePush),
+    value.on('pr:pull', () => void editorStore.actions.pullGit()),
+  ];
+  onCleanup(() => releases.forEach((release) => release?.()));
   createEffect(
     on(
-      () => editorStore.tree.mode(),
-      (mode) => value.emit('sidebar:mode', { mode }),
+      () => [
+        editorStore.git.state.pending,
+        editorStore.git.state.sync.inProgress,
+        editorStore.git.state.sync.rewritten,
+      ],
+      () =>
+        value.emit('git:sync', {
+          running: !!editorStore.git.state.pending,
+          inProgress: editorStore.git.state.sync.inProgress || '',
+          rewritten: !!editorStore.git.state.sync.rewritten,
+        }),
     ),
   );
   editorStore.actions.openLink = async (path, options) => {
@@ -770,15 +820,9 @@ async function paintLegacyGitSnapshot(data) {
   // Unpushed section, and pushing empties that in turn, so whether Git view
   // still has anything to show depends on a fresh unpushed count.
   // Cheap: only re-reads git log when the ahead count or head commit moved.
-  await services.refreshUnpushed(data);
 
   await editorStore.actions.reconcileTreeSnapshot();
   const statuses = data.statuses || {};
-  try {
-    services.updateGitPanel(data);
-  } catch (err) {
-    console.error('Failed to update git panel', err);
-  }
 
   // Close tabs that were opened in git diff view or currently in diff view if their changes are gone.
   // In PR review mode, tabs should remain open even if clean relative to HEAD.
@@ -853,3 +897,6 @@ export const inGitMode = () => editorStore.tree.mode() === 'git';
 export const setAutoRevealSuppressed = (value) =>
   editorStore.actions.setAutoRevealSuppressed(value);
 export const promptNewItem = (...args) => editorStore.actions.openNewItem(...args);
+
+export const refreshUnpushed = (...args) => editorStore.actions.refreshUnpushed(...args);
+export const syncGitPanelMeta = () => editorStore.actions.initializeGit();

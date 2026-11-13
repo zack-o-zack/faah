@@ -1,3 +1,4 @@
+import { createGitStore } from '../git/store.js';
 import { createTreeStore } from '../workspace/tree-store.js';
 import { createSelectionActions } from './selection-actions.js';
 import { createFindActions } from './find-actions.js';
@@ -235,5 +236,12 @@ export function createEditorStore(store) {
     enterEditMode: () => editor.actions.enterEditMode(),
   });
   Object.assign(actions, editor.tree.actions);
+  editor.git = createGitStore(store, {
+    openFile,
+    runAgent: (...args) => actions.runLegacyAgentJob(...args),
+    cancelAgent: (id) => actions.cancelLegacyAgentJob(id),
+    historyChanged: () => actions.legacyHistoryChanged(),
+  });
+  Object.assign(actions, editor.git.actions);
   return editor;
 }

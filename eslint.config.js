@@ -13,14 +13,12 @@ const legacy = [
   'web/src/calls.js',
   'web/src/cardkeep.js',
   'web/src/cardkeep.test.js',
-  'web/src/commitfiles.js',
   'web/src/contrast.test.js',
   'web/src/controls.js',
   'web/src/controls.test.js',
   'web/src/errors.js',
   'web/src/errors.test.js',
   'web/src/forgeconnect.js',
-  'web/src/gitpanel.js',
   'web/src/inspector.js',
   'web/src/linecomment.js',
   'web/src/lsp.js',
@@ -52,7 +50,6 @@ const legacy = [
   'web/src/toast.test.js',
   'web/src/typescale.test.js',
   'web/src/ui.js',
-  'web/src/unpushed.js',
 ];
 const frontend = ['web/src/**/*.{js,jsx}'];
 const tooling = [

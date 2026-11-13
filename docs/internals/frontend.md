@@ -375,3 +375,20 @@ The bridge adapts remaining legacy refresh/reveal/mode/new-item calls and settin
 writes. Its temporary sidebar-mode notification exists only for the legacy unpushed
 view. The viewer's manual tree-badge callback is deleted; viewed flags are reactive.
 `tree.js`, `newitem.js` and the obsolete `prscope.js` are deleted.
+
+## Git (phase B checkpoint 3)
+
+`git/store.js` owns commit/sync transitions, pending/errors, guarded unpushed
+requests and a bounded immutable commit-file cache. `git/logic.js` shapes counts,
+messages, sync plans and notice choices without UI dependencies. Git snapshots
+notify this store directly; components derive from the shared snapshot and Git
+state, without a second event stream or heartbeat poll. Explicit agent jobs are
+cancellable and enter through the bridge until phase C.
+
+`GitPanel`, `CommitForm`, `GitSyncMenu`, `GitNotice`, `Unpushed`, `CommitRow`,
+`CommitFiles`, `CommitDetails` and `AgentChoice` own their JSX. Native buttons
+provide keyboard activation. File lists page at 100 entries. Panel resizers use
+`SplitHandle`; commit details use `Popover`. No Git component adds an effect.
+The bridge retains one effect to notify the phase-C PR bar of sync state, plus
+PR/agent/settings actions. The old sidebar-mode notification and Git panel DOM
+adapter are gone. `gitpanel.js`, `unpushed.js` and `commitfiles.js` are deleted.

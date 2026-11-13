@@ -5,6 +5,7 @@ import { createWorkspaceStream } from './stream.js';
 import { workspacePatch } from './snapshot.js';
 
 export function createWorkspaceActions(store, set, { request = api, post = apiPost } = {}) {
+  const observers = new Set();
   let refreshing;
   let requestController;
   let disposed = false;
@@ -15,6 +16,7 @@ export function createWorkspaceActions(store, set, { request = api, post = apiPo
       if (store.state.workspace.meta) set('workspace', 'meta', workspacePatch(snapshot));
       set('git', 'revision', (revision) => revision + 1);
     });
+    for (const observer of observers) observer(snapshot);
   }
   function acceptMetrics(metrics) {
     if (!disposed) set('workspace', 'metrics', reconcile(metrics));
@@ -54,6 +56,10 @@ export function createWorkspaceActions(store, set, { request = api, post = apiPo
     requestController?.abort();
   });
   return {
+    observeGitSnapshots: (observer) => {
+      observers.add(observer);
+      return () => observers.delete(observer);
+    },
     acceptGitSnapshot,
     acceptMetrics,
     refreshWorkspace,

@@ -1,3 +1,4 @@
+import { GitShell } from './git/GitShell.jsx';
 import { getOwner, onMount, runWithOwner } from 'solid-js';
 import { render } from 'solid-js/web';
 import { AppProvider, useApp } from './app/context.jsx';
@@ -22,6 +23,7 @@ function App() {
   return (
     <EditorProvider value={editorStore}>
       <TreeShell />
+      <GitShell />
       <EditorShell />
       <ViewerShell />
       <Toaster />

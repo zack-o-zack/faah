@@ -1,6 +1,10 @@
 import { measure, layout, render, updateEditorOptionControls, openFile, switchTab, configureLegacyServices, api, applyKeyLabels, initGitStream, triggerRefresh } from './app/legacy-bridge.js';
 import { initOutline, drawOutline } from './outline-pane.js';
-import { emit } from './bus.js';
+import { emit, on } from './bus.js';
+import { refreshPRMeta, nudgeForgeToken } from './pr.js';
+import { openSettings } from './settings.js';
+import { reindexWorkspace } from './panels.js';
+import { selectAgent, loadPickerModels } from './agent.js';
 import { warmLSP, gotoDefinition, findReferences } from './lsp.js';
 import { showCalls, initCalls } from './calls.js';
 import { copyToClipboard, copyRichToClipboard, initErrorCopy } from './ui.js';
@@ -17,10 +21,10 @@ import { initAgent, applyAgentMeta, loadAgentAsync } from './agent.js';
 import { initThreads } from './thread.js';
 import { initSettings } from './settings.js';
 
-import { initGitPanel, updateGitPanel, syncGitPanelMeta } from './gitpanel.js';
+import { syncGitPanelMeta } from './app/legacy-bridge.js';
 import { initPR } from './pr.js';
 import { initLineComment } from './linecomment.js';
-import { initUnpushed, refreshUnpushed } from './unpushed.js';
+import { refreshUnpushed } from './app/legacy-bridge.js';
 import { initTips, startTipsAsync } from './tips.js';
 import { initReviewFlow, setMode } from './reviewflow.js';
 
@@ -28,7 +32,7 @@ import { initReviewFlow, setMode } from './reviewflow.js';
 
 export function initLegacy() {
 configureLegacyServices({
- emit, setSidebarMode, hasGitView, updateGitPanel, refreshUnpushed, updateMetricsDisplay, showPanel, revealDir, warmLSP, updateStatus, setLspState, gotoDefinition, findReferences, showCalls,
+ emit, on, refreshPRMeta, nudgeForgeToken, openSettings, reindexWorkspace, selectAgent, loadPickerModels, setSidebarMode, hasGitView, refreshUnpushed, updateMetricsDisplay, showPanel, revealDir, warmLSP, updateStatus, setLspState, gotoDefinition, findReferences, showCalls,
  copyToClipboard, copyRichToClipboard, openPalette, showHelp, triggerRefresh, drawOutline,
 });
 initOutline();
@@ -37,7 +41,7 @@ initOutline();
 initTips();
 initReviewFlow();
 
-initGitPanel();
+
 initSearch();
 initPanels();
 initInspector();
@@ -52,7 +56,7 @@ initStatusFit();
 initSettings();
 initLineComment();
 initErrorCopy();
-initUnpushed();
+
 
 
 // Bootstrap application lifecycle
