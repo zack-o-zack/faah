@@ -4,20 +4,18 @@ import { refreshPRMeta, nudgeForgeToken } from './pr.js';
 import { newThread, deleteCurrentThread, showThreadsSidebar } from './thread.js';
 import { navigateToTips, showTipWidget } from './tips.js';
 import { launchPR } from './pr.js';
-import { showRightInspector, hideRightInspector } from './app/legacy-bridge.js';
-import { openLspMenu, startAllLsp, stopAllLsp } from './app/legacy-bridge.js';
+
 import { openSettings } from './settings.js';
-import { reindexWorkspace } from './app/legacy-bridge.js';
+
 import { selectAgent, loadPickerModels } from './agent.js';
-import { gotoDefinition, findReferences } from './app/legacy-bridge.js';
-import { showCalls } from './app/legacy-bridge.js';
+
 import { copyToClipboard, copyRichToClipboard, initErrorCopy } from './ui.js';
-import { openPalette } from './app/legacy-bridge.js';
+
 import { showHelp, initShortcuts } from './shortcuts.js';
 
 import { $, S } from './state.js';
-import { revealDir, revealFile, refreshTree, collapseAllDirs, expandDirtyDirs, inGitMode, setAutoRevealSuppressed, setSidebarMode, hasGitView } from './app/legacy-bridge.js';
-import { showPanel } from './app/legacy-bridge.js';
+import { revealFile, refreshTree, collapseAllDirs, expandDirtyDirs, inGitMode, setAutoRevealSuppressed, setSidebarMode, hasGitView } from './app/legacy-bridge.js';
+
 import { initAgent, applyAgentMeta, loadAgentAsync } from './agent.js';
 import { initThreads } from './thread.js';
 import { initSettings } from './settings.js';
@@ -33,8 +31,8 @@ import { initReviewFlow, setMode } from './reviewflow.js';
 
 export function initLegacy() {
 configureLegacyServices({
- emit, on, launchPR, newThread, deleteCurrentThread, showThreadsSidebar, navigateToTips, showTipWidget, showRightInspector, hideRightInspector, openLspMenu, startAllLsp, stopAllLsp, refreshPRMeta, nudgeForgeToken, openSettings, reindexWorkspace, selectAgent, loadPickerModels, setSidebarMode, hasGitView, refreshUnpushed, showPanel, revealDir, gotoDefinition, findReferences, showCalls,
- copyToClipboard, copyRichToClipboard, openPalette, showHelp, triggerRefresh,
+ emit, on, launchPR, newThread, deleteCurrentThread, showThreadsSidebar, navigateToTips, showTipWidget, refreshPRMeta, nudgeForgeToken, openSettings, selectAgent, loadPickerModels,
+ copyToClipboard, copyRichToClipboard, showHelp,
 });
 
 // Initialize all subsystems
@@ -42,23 +40,13 @@ configureLegacyServices({
 initTips();
 initReviewFlow();
 
-
-
-
-
-
-
 initShortcuts();
 initAgent();
 initThreads();
 
-
-
 initSettings();
 initLineComment();
 initErrorCopy();
-
-
 
 // Bootstrap application lifecycle
 (async function boot() {
@@ -86,7 +74,6 @@ initErrorCopy();
 
   measure();
   S.meta = await api('/api/meta');
-
 
   syncGitPanelMeta();
   applyAgentMeta();
@@ -181,9 +168,9 @@ initErrorCopy();
         if (m.ready) {
           clearInterval(timer);
           S.meta = m;
-        
+
           syncGitPanelMeta();
-                  setAutoRevealSuppressed(true);
+          setAutoRevealSuppressed(true);
           await refreshTree();
           await triggerRefresh();
           if (!initialPath) {

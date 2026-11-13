@@ -108,6 +108,8 @@ export function createEditorStore(store, options = {}) {
     store.actions.setNavigation({ at: null, link: null });
     services.activate?.(active());
     const document = active();
+    if (document && editor.tree.autoReveal() && store.state.layout.left)
+      void actions.revealFile(document.path);
     if (document && !document.gutterLoaded) void editor.actions.loadGutter(document.path);
     services.source?.scrollTo(document?.scrollTop || 0);
   }
@@ -152,6 +154,7 @@ export function createEditorStore(store, options = {}) {
     const removed = store.actions.closeDocuments(indices);
     for (const document of removed) {
       void apiPostJson('api/close', { path: document.path }).catch(() => {});
+      editor.actions.cancelSymbols(document.path);
       services.closed?.(document);
     }
     activateView();
@@ -216,6 +219,12 @@ export function createEditorStore(store, options = {}) {
     patch,
     openFile,
     switchTab,
+    async stepDiffFile(from, file) {
+      const { diffRef: ref, diffBase: base, turnFiles, turnLabel } = from;
+      await openFile(file.path, { ref, base, turnFiles, turnLabel, view: 'diff' });
+      const index = store.state.documents.tabs.findIndex((tab) => tab.path === from.path);
+      if (index >= 0 && active()?.path !== from.path && from.diffRef === ref) closeTabs([index]);
+    },
     closeTabs,
     activateView,
     centerLine,

@@ -32,6 +32,7 @@ export function createTreeStore(app, options = {}) {
   const model = createTreeModel();
   const [state, set] = createStore(initialState());
   const pending = new Map();
+  const stagingRequests = new Map();
   let generation = 0;
   let intent = 0;
   let disposed = false;
@@ -212,20 +213,32 @@ export function createTreeStore(app, options = {}) {
     focusScope(app.activeDocument());
   }
   async function stageTreeFile(path, staged) {
+    stagingRequests.get(path)?.abort();
+    const controller = new AbortController();
+    stagingRequests.set(path, controller);
     set('staging', path, { staged });
     try {
-      const snapshot = await post(staged ? 'api/git/stage' : 'api/git/unstage', { path });
+      const snapshot = await post(
+        staged ? 'api/git/stage' : 'api/git/unstage',
+        { path },
+        { signal: controller.signal },
+      );
+      if (disposed || controller.signal.aborted) return;
       if (snapshot.git !== undefined) app.actions.acceptGitSnapshot(snapshot);
       else await app.actions.refreshWorkspace();
     } catch (error) {
+      if (disposed || controller.signal.aborted) return;
       set('error', error.message);
       toast('error', error.message);
     } finally {
-      set(
-        produce((draft) => {
-          delete draft.staging[path];
-        }),
-      );
+      if (stagingRequests.get(path) === controller && !disposed) {
+        stagingRequests.delete(path);
+        set(
+          produce((draft) => {
+            delete draft.staging[path];
+          }),
+        );
+      }
     }
   }
   function closeNewItem() {
@@ -259,6 +272,8 @@ export function createTreeStore(app, options = {}) {
     disposed = true;
     cancel();
     itemRequest?.abort();
+    for (const controller of stagingRequests.values()) controller.abort();
+    stagingRequests.clear();
     model.clear();
   });
   return {
@@ -284,6 +299,22 @@ export function createTreeStore(app, options = {}) {
     autoReveal: () => !state.suppressed && autoRevealEnabled(app.state.settings),
     actions: {
       refreshTree,
+      async openLink(path, openOptions) {
+        try {
+          const clean = path.replace(/\/+$/, '');
+          const result = await request('api/tree', { dir: parentPath(clean) });
+          if (disposed) return;
+          if (!clean || result.children.some((entry) => entry.path === clean && entry.dir)) {
+            app.actions.setPanelVisible('left', true);
+            await setTreeMode('files');
+            await revealDirectory(clean);
+            return;
+          }
+        } catch {
+          // The document action reports a missing path or closing workspace.
+        }
+        if (!disposed) return options.openFile(path, openOptions);
+      },
       revealFile,
       revealDirectory,
       expandTree,

@@ -1,8 +1,8 @@
-import { layout, render, toggleWordWrap, openFind, cycleTheme, isVimEnabled, showVimHelp, doc_, vp, sizer, MOD, keyCaps } from './app/legacy-bridge.js';
+import { layout, render, toggleWordWrap, openFind, showVimHelp, doc_, MOD, keyCaps } from './app/legacy-bridge.js';
 
 import { ownsNavigationKey } from './controls.js';
 // web/src/shortcuts.js
-import { $, $$, esc, S } from './state.js';
+import { $, esc, S } from './state.js';
 
 
 import { showRightInspector, hideRightInspector } from './app/legacy-bridge.js';

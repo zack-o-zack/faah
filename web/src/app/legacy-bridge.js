@@ -8,7 +8,7 @@ import { S, $, $$, esc } from '../state.js';
 import { api, apiPost, apiPostJson } from '../lib/api.js';
 export { api, apiPost, apiPostJson };
 import { isMac, keyLabel, keyParts, withKeys } from '../lib/keyboard.js';
-export { isMac, keyLabel, withKeys };
+export { keyLabel, withKeys };
 export const MOD = isMac ? 'metaKey' : 'ctrlKey';
 
 // Removed when the last legacy module is migrated.
@@ -33,28 +33,17 @@ export function applyKeyLabels(root = document) {
 
 export const showToast = (kind, text, duration) => toast(kind, text, duration);
 import { toast } from '../lib/toast.jsx';
-import { listThemes, getStoredTheme, DEFAULT_THEME, chooseThemePreference } from '../lib/theme.js';
-import { lineText, LH, CHUNK, OVERSCAN } from '../editor/layout.js';
-import { SEL_KEYS, SEL_MENU_ITEMS, selectionRef, contextSnippet } from '../editor/selection.js';
-export {
-  LH,
-  CHUNK,
-  OVERSCAN,
-  SEL_KEYS,
-  SEL_MENU_ITEMS,
-  listThemes,
-  getStoredTheme,
-  DEFAULT_THEME,
-  chooseThemePreference,
-};
+import { listThemes } from '../lib/theme.js';
+import { lineText, LH } from '../editor/layout.js';
+import { selectionRef, contextSnippet } from '../editor/selection.js';
+export { listThemes };
 let editorStore;
 let themeStore;
 let sourceDOM;
-let hoverTimer;
 const services = {};
 const facades = new Map();
 const extras = new Map();
-export let vp, sizer, rowsEl, editor, editTextarea;
+let rowsEl;
 export function bindLegacyEditor(value, theme) {
   editorStore = value;
   themeStore = theme;
@@ -183,14 +172,9 @@ export function bindLegacyEditor(value, theme) {
   });
 }
 export function attachLegacyDOM() {
-  vp = $('#viewport');
-  sizer = $('#sizer');
   rowsEl = $('#rows');
-  editor = $('#editor');
-  editTextarea = $('#editview-textarea');
   sourceDOM = createSourceDOM(rowsEl, doc_);
   diffview = $('#diffview');
-  onCleanup(() => clearTimeout(hoverTimer));
 }
 
 function legacyDocument(path) {
@@ -400,27 +384,6 @@ export function configureLegacyServices(value) {
         }),
     ),
   );
-  editorStore.actions.openLink = async (path, options) => {
-    try {
-      const clean = path.replace(/\/+$/, '');
-      const parent = clean.slice(0, Math.max(0, clean.lastIndexOf('/')));
-      const result = await api('api/tree', { dir: parent });
-      if (!clean || result.children.some((entry) => entry.path === clean && entry.dir)) {
-        await editorStore.actions.showFilesPanel();
-        await value.revealDir(clean);
-        return;
-      }
-    } catch {
-      // The document action reports missing paths or a closing workspace.
-    }
-    return editorStore.actions.openFile(path, options);
-  };
-  editorStore.services.stepDiffFile = async (from, file) => {
-    const { diffRef: ref, diffBase: base, turnFiles, turnLabel } = from;
-    await openFile(file.path, { ref, base, turnFiles, turnLabel, view: 'diff' });
-    const index = S.tabs.findIndex((tab) => tab.path === from.path);
-    if (index >= 0 && from.path !== doc_()?.path && from.diffRef === ref) closeTab(index);
-  };
   Object.assign(editorStore.services, {
     activate() {
       const document = doc_();
@@ -432,22 +395,14 @@ export function configureLegacyServices(value) {
       $('#empty').hidden = true;
       syncViewers();
       value.emit('tab:activated', { doc: document });
-      if (
-        editorStore.tree.autoReveal() &&
-        !globalThis.document.body.classList.contains('side-hidden')
-      ) {
-        void editorStore.actions.revealFile(document.path);
-      }
     },
     closed(document) {
-      editorStore.actions.cancelSymbols(document.path);
       facades.delete(document.path);
       extras.delete(document.path);
       value.emit('tab:closed', { doc: document });
       if (!S.tabs.length) value.emit('tabs:cleared');
     },
     syncViewers,
-    getDocRaw,
     modKey: MOD,
     viewerWord(event, definition) {
       const word = wordAtPoint(event.clientX, event.clientY);
@@ -459,7 +414,6 @@ export function configureLegacyServices(value) {
         editorStore.actions.gotoDefinition(word, { view: event.altKey ? 'source' : 'diff' });
       } else hoverAt(event.clientX, event.clientY);
     },
-    saved: value.triggerRefresh,
     previewing,
     previewLine,
     findPreview(query, cs) {
@@ -475,12 +429,9 @@ export function configureLegacyServices(value) {
     vimPreference: (enabled) => {
       S.settings['editor.vimMode'] = enabled;
     },
-    previewTopLine,
     selectAll,
     selectPreview,
     copy: value.copyToClipboard,
-    palette: () => value.openPalette('command'),
-    beforeUnload: value.beforeUnload,
     blocked: () => !!$('dialog[open]') || !!$('#overlay')?.open,
     selectionAction,
   });
@@ -493,23 +444,8 @@ export const openFile = (path, options) =>
     ...options,
   });
 export const switchTab = (index) => editorStore.actions.switchTab(index);
-export const closeTab = (index) => editorStore.actions.closeTabs([index]);
-export const closeAllTabs = () => editorStore.actions.closeTabs(S.tabs.map((_, index) => index));
-export const reopenClosedTab = () =>
-  editorStore.store.actions.reopenDocument()?.then(editorStore.actions.activateView);
+
 export const reloadOpenTabs = () => editorStore.actions.reloadOpenTabs();
-export const centerLine = (line) => editorStore.actions.centerLine(line);
-export const jumpToSourceLine = (line) => {
-  const document = activeDocument();
-  if (document) viewerActions().setView(document, 'source');
-  editorStore.actions.patch({ cur: line });
-  editorStore.actions.centerLine(line);
-  syncViewers();
-};
-export const pushHistory = (path, line) => editorStore.store.actions.pushHistory(path, line);
-export const go = (delta) =>
-  editorStore.store.actions.historyGo(delta).then(editorStore.actions.activateView);
-export const drawTabs = () => editorStore.actions.refresh();
 
 export function measure() {
   const marker = $('#measure');
@@ -524,7 +460,6 @@ export function measure() {
 }
 export const layout = () => editorStore?.actions.refresh();
 export const render = layout;
-export const paint = layout;
 
 export const toggleWordWrap = (forced) => editorStore.actions.toggleWrap(forced);
 export function toggleLineNumbers(forced) {
@@ -547,56 +482,20 @@ export function updateEditorOptionControls() {
 export const highlightRange = (path, l1, l2) =>
   editorStore.store.actions.setNavigation({ reference: { path, l1, l2 } });
 
-export const wordAtPoint = (x, y) => sourceDOM.wordAtPoint(x, y);
-
-export const updateDomSelection = () => editorStore.actions.syncSelection();
+const wordAtPoint = (x, y) => sourceDOM.wordAtPoint(x, y);
 
 export const openFind = (seed) => editorStore.actions.openFind(seed);
-export const clearFind = () => editorStore.actions.clearFind();
-export const executeFind = (delta) => editorStore.actions.executeFind(delta);
-export const runFind = () => editorStore.actions.executeFind();
 
-export const jumpToHit = (index) => editorStore.actions.jumpToHit(index);
-
-export function onMove({ x, y, mod }) {
-  clearTimeout(hoverTimer);
-  if (mod) {
-    hideHover();
-    editorStore.store.actions.setNavigation({ link: wordAtPoint(x, y) });
-    return;
-  }
-  editorStore.store.actions.setNavigation({ link: null });
-  if (editorStore.ui.hover || editorStore.services.hoverAllowed?.() === false) return;
-  hoverTimer = setTimeout(() => hoverAt(x, y), 380);
-}
-export const hoverAt = (x, y) => showHover(wordAtPoint(x, y), x, y);
-export const showHover = (...args) => editorStore.actions.showHover(...args);
-export const showHoverAtCaret = () => editorStore.actions.showHoverAtCaret();
-export const hideHover = () => editorStore.actions.hideHover();
-
-export const enterEditMode = (line) => editorStore.actions.enterEditMode(line);
-export const exitEditMode = (force) => editorStore.actions.exitEditMode(force);
-export const saveActiveFile = () => editorStore.actions.saveActiveFile();
-export const centerEditLine = (...args) => editorStore.actions.centerEditLine(...args);
-
-export const isVimEnabled = () => editorStore.ui.vimEnabled;
+const hoverAt = (x, y) => showHover(wordAtPoint(x, y), x, y);
+const showHover = (...args) => editorStore.actions.showHover(...args);
 
 export const setVimModeEnabled = (value, persist = true) =>
   editorStore.actions.setVimEnabled(value, persist);
-export const handleVimKeyDown = (event) => editorStore.actions.handleVimKeyDown(event);
+
 export const showVimHelp = () => editorStore.actions.showVimHelp();
 
-export const currentTheme = () => themeStore.current();
 export const setTheme = (id, persist) => themeStore.setTheme(id, persist);
-export function cycleTheme() {
-  const all = listThemes();
-  const next = all[(all.findIndex((theme) => theme.id === currentTheme()) + 1) % all.length];
-  if (next) {
-    setTheme(next.id);
-    toast('Theme', next.name);
-  }
-}
-export const onThemeChanged = (fn) => createEffect(on(themeStore.current, fn, { defer: true }));
+
 export const setAgentHandler = (fn) => {
   editorStore.handlers.agent = fn;
 };
@@ -617,12 +516,9 @@ export const getReviewHandler = () => editorStore.handlers.review;
 export const getSelectedRangeInfo = () => editorStore.ui.selection;
 export const hideSelectionBar = () => editorStore.actions.setSelection(null);
 
-export const closeSelMenu = () => editorStore.actions.closeSelectionMenu();
 export const openLineMenu = (info, x, y) => editorStore.actions.openSelectionMenu(info, x, y);
-export const runSelectionAction = (action, trigger, override) =>
-  editorStore.actions.runSelectionAction(action, trigger, override);
 
-export async function selectAll() {
+async function selectAll() {
   const document = doc_();
   if (!document) return;
   const target = activeDocument();
@@ -665,7 +561,7 @@ function selectionAction(action, info, trigger) {
     return true;
   }
   if (action === 'usages') {
-    services.findReferences(info.text.split(/\s+/)[0]);
+    editorStore.actions.findReferences(info.text.split(/\s+/)[0]);
     return true;
   }
   if (action === 'copy-preview-text') {
@@ -697,24 +593,22 @@ function selectionAction(action, info, trigger) {
   services.copyToClipboard(values[action], 'Copied', trigger);
   return true;
 }
-export const loadOutline = () => editorStore.actions.loadSymbols();
 
-// Phase B/C consumers keep their imperative calls at this boundary.
+// Phase-C consumers keep their imperative calls at this boundary.
 const activeDocument = () => editorStore?.active();
 const viewerActions = () => editorStore.actions;
-export const previewKind = (document = activeDocument()) => documentPreviewKind(document);
+const previewKind = (document = activeDocument()) => documentPreviewKind(document);
 export const previewing = (document = activeDocument()) =>
   ['markdown', 'table'].includes(viewMode(document));
-export const previewLine = (line) => {
+const previewLine = (line) => {
   viewerActions().requestPreviewLine(activeDocument(), line);
   editorStore.services.preview?.line(line);
 };
-export const previewTopLine = () => editorStore.services.preview?.topLine() || 1;
-export const findInPreview = (query, sensitive) =>
-  (editorStore.services.preview?.find(query, sensitive) || []).length;
-export const showPreviewHit = (index) => editorStore.services.preview?.showHit(index);
-export const clearPreviewMarks = () => editorStore.services.preview?.clearMarks();
-export const selectPreview = () => editorStore.services.preview?.select();
+const previewTopLine = () => editorStore.services.preview?.topLine() || 1;
+
+const showPreviewHit = (index) => editorStore.services.preview?.showHit(index);
+const clearPreviewMarks = () => editorStore.services.preview?.clearMarks();
+const selectPreview = () => editorStore.services.preview?.select();
 export const previewKey = (event) => editorStore.services.preview?.key(event) || false;
 export function togglePreview() {
   const document = activeDocument();
@@ -731,7 +625,7 @@ export const exitMermaidFullscreen = () => {
   for (const exit of editorStore.services.diagramFullscreens || []) if (exit()) return true;
   return false;
 };
-export const getDocRaw = (document) =>
+const getDocRaw = (document) =>
   document
     ? apiText('api/raw', { path: document.path, ref: document.diffRef || '' })
     : Promise.resolve('');
@@ -740,11 +634,8 @@ export let diffview;
 export const setPRSyncHandler = (handler) => {
   editorStore.services.diffRendered = handler;
 };
-export const syncViewers = () => editorStore.services.diffRendered?.();
-export function syncDiffView(force = false) {
-  if (force || activeDocument()?.diffMode) viewerActions().invalidate(activeDocument());
-  editorStore.services.diffRendered?.();
-}
+const syncViewers = () => editorStore.services.diffRendered?.();
+
 export const setLayoutPref = (mode) => localStorage.setItem('faah.diffLayout', mode);
 export const toggleDiff = () => {
   const document = activeDocument();
@@ -767,14 +658,9 @@ export const stepChangedFile = async (direction) => {
     .filter((file) => !file.binary);
   const index = files.findIndex((file) => file.path === document.path);
   const next = files[index + direction];
-  if (next) editorStore.services.stepDiffFile?.(document, next);
+  if (next) await editorStore.actions.stepDiffFile(document, next);
 };
-export const isFileViewed = (path) => !!editorStore.store.state.viewers.viewed[path];
-export function focusDiffScope(document) {
-  const actual = editorStore.store.state.documents.tabs.find((tab) => tab.path === document?.path);
-  if (!actual || !editorStore.store.state.workspace.meta?.pr) return;
-  editorStore.actions.focusTreeScope(actual);
-}
+
 let orbHooks;
 export function initOrb(hooks) {
   orbHooks = hooks;
@@ -817,7 +703,7 @@ export const setStreamTopic = (name, enabled) =>
   editorStore.actions.setWorkspaceTopic(name, enabled);
 export const watchThread = (id) => editorStore.actions.watchWorkspaceThread(id);
 export const refreshTree = () => editorStore.actions.refreshTree();
-export const revealDir = (path) => editorStore.actions.revealDirectory(path);
+
 export const revealFile = (path) => editorStore.actions.revealFile(path);
 export const collapseAllDirs = () => editorStore.actions.collapseTree();
 export const expandDirtyDirs = () => editorStore.actions.expandTree(true);
@@ -826,7 +712,6 @@ export const hasGitView = () => editorStore.tree.hasGitView();
 export const inGitMode = () => editorStore.tree.mode() === 'git';
 export const setAutoRevealSuppressed = (value) =>
   editorStore.actions.setAutoRevealSuppressed(value);
-export const promptNewItem = (...args) => editorStore.actions.openNewItem(...args);
 
 export const refreshUnpushed = (...args) => editorStore.actions.refreshUnpushed(...args);
 export const syncGitPanelMeta = () => editorStore.actions.initializeGit();
@@ -834,23 +719,13 @@ export const syncGitPanelMeta = () => editorStore.actions.initializeGit();
 export const openPalette = (...args) => editorStore.actions.openPalette(...args);
 export const closePalette = () => editorStore.actions.closePalette();
 export const isPaletteOpen = () => !!editorStore?.palette.state.open;
-export const runSearch = () => editorStore.actions.runSearch();
-export const cancelSearch = () => editorStore.actions.cancelSearch();
-export const renderResults = (result) => editorStore.actions.setSearchResults(result);
-export const searchWorkspace = (...args) => editorStore.actions.searchWorkspace(...args);
 
-export const gotoDefinition = (...args) => editorStore.actions.gotoDefinition(...args);
-export const findReferences = (...args) => editorStore.actions.findReferences(...args);
-export const showCalls = (...args) => editorStore.actions.showCalls(...args);
 export const showRightInspector = (tab) => editorStore.actions.showRightInspector(tab);
 export const hideRightInspector = () => editorStore.actions.hideRightInspector();
-export const openLspMenu = () => editorStore.actions.openLspMenu();
-export const startAllLsp = () => editorStore.actions.startAllLsp();
-export const stopAllLsp = () => editorStore.actions.stopAllLsp();
 
 export const setStatusNote = (...args) => editorStore.actions.setStatusNote(...args);
 export const reindexWorkspace = () => editorStore.actions.reindexWorkspace();
-export const showPanel = () => editorStore.actions.showFilesPanel();
+
 export const toggleSidebar = () => editorStore.actions.togglePanel('left');
 export const setThreadsPanelVisible = (visible) =>
   editorStore.actions.setPanelVisible('threads', visible);

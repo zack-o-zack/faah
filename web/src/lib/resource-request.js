@@ -7,6 +7,10 @@ export function createResourceRequest(request = api) {
   return (path, params) => {
     controller?.abort();
     controller = new AbortController();
-    return request(path, params, { signal: controller.signal });
+    const mine = controller;
+    return Promise.resolve(request(path, params, { signal: mine.signal })).then((result) => {
+      if (mine.signal.aborted) throw new DOMException('Cancelled', 'AbortError');
+      return result;
+    });
   };
 }

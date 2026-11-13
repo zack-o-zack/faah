@@ -74,7 +74,7 @@ export function createVimActions(editor) {
           (store.state.documents.active + command.value + store.state.documents.tabs.length) %
             store.state.documents.tabs.length,
         );
-      if (command.type === 'palette') services.palette?.();
+      if (command.type === 'palette') editor.actions.openPalette('command');
       if (command.type === 'scroll') {
         const y = offsets()[document.cur - 1];
         const alignment = {

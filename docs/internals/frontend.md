@@ -150,31 +150,33 @@ callbacks stay in props; reactive data props are passed as values.
 
 ## Temporary main-app bridge
 
-`main.jsx` mounts providers, `EditorShell`, `ViewerShell` and the toaster, then starts `initLegacy()`.
-Only `app/legacy-bridge.js` adapts migrated APIs for legacy consumers. It carries the
-removal marker and replaces the previous theme bridge. Its adapters cover:
+`main.jsx` mounts providers, `LayoutShell`, `Palette`, `EditorShell`, `ViewerShell`
+and the toaster, then starts `initLegacy()`. Only `app/legacy-bridge.js` adapts
+migrated APIs for phase-C consumers. Its removal marker also applies to
+`app/LegacyTips.jsx`, which contains only the static Tips mount markup. Tips
+behavior and rendering still belong to `tips.js`; this checkpoint does not migrate them.
 
-- `S.tabs`, active tab, history, workspace metadata, editor preferences, cursor/navigation
-  and LSP state. Legacy metadata field writes enter named store actions.
-- Legacy document facades over metadata and plain buffers, with Git gutter data outside
-  proxies and guards against writing through a disposed or replaced document. Viewer
-  HTML, parsed tables, diff rows and full-file expansion buffers belong to mounted resources.
-- File open/switch/close/reopen, history, line jumps, layout notifications, find,
-  selection, hover, edit and Vim actions; theme observation and theme changes.
-- Narrow preview navigation/find/selection, image-key and Mermaid fullscreen operations;
-  diff refresh, scope, file/hunk stepping, viewed flags and layout preference.
-- The stable diff root used by legacy PR comment placement, its repaint notification,
-  server-Markdown sanitization for PR comments, and explain-thread events.
-- Remaining source DOM handles, Git gutters, outline notifications and
-  agent/thread/review/explain selection callbacks.
+The bridge retains:
 
-Remaining tree, palette, search, Git/PR/review, agent and status modules import
-these APIs directly from this one bridge. `state.js` and `ui.js` do not re-export migrated
-editor or viewer APIs. Markdown, Mermaid, tables, images, diffs and the explain orb
-are Solid components in `viewers/`. `outline-pane.js` keeps only the existing right-pane rendering and events;
-it remains in both explicit legacy lists until phase B replaces that UI. Editor-side
-symbol fetching and state are already migrated. Delete the bridge, legacy boot/state
-helpers and static shell when the final legacy consumer is migrated.
+- Legacy `S` metadata, settings, document/buffer facades, navigation, preferences
+  and LSP field adapters; writes enter named store actions.
+- The file open/switch/reload, layout/typography, find, hover, Vim and selection
+  operations still called by phase-C modules, plus their clipboard callbacks.
+- Preview/image/Mermaid keyboard operations, diff file/hunk stepping and layout
+  preference; the stable diff root and repaint callback for PR annotations.
+- Agent/thread/review/explanation callbacks and commands, PR sync notifications,
+  forge/settings/help adapters, and the shared stream's phase-C topic subscriptions.
+- Body classes, width and pressed state required by the legacy Threads pane,
+  plus the Tips visibility notification and owned input focus.
+
+Remaining legacy modules are `agent`, `agent-picker`, `thread`, `threadrefs`,
+`reviewflow`, `reviewwalkthrough`, `pr`, `prmerge`, `forgeconnect`, `linecomment`,
+`cardkeep`, `settings`, `tips`, `tips-util`, `shortcuts`, `errors`, `overlays`,
+`controls`, `ui`, `state`, `bus` and `main.js`. The old `prscope.js` was already
+removed in checkpoint 2; its scope behavior belongs to the tree/viewer actions.
+`state.js` and `ui.js` do not re-export migrated APIs. No phase-B module imports
+the bridge. Delete it, `LegacyTips`, the legacy boot/state helpers and remaining
+static shell when the final phase-C consumer is migrated.
 
 ## Component tests
 
@@ -314,9 +316,9 @@ actions. Components read app state through `editor.store.state`; they do not sel
 between different action registries. Feature action factories still own their logic;
 composition does not move their implementations into a controller. Names must be unique.
 
-`openLink` opens a document in isolated editor mounts. The temporary bridge adapts this
-action to reveal directory links through the legacy tree; there is no optional directory
-hook in editor services. Owned view operations remain narrow injected services.
+`workspace/tree-store.js` owns `openLink`: directory links reveal the Solid tree;
+file links enter the document action. Diff file stepping belongs to named editor
+actions. Owned view operations remain narrow injected services.
 
 The A2 wrap-up memoizes sanitized content and adds no effects.
 
@@ -325,15 +327,14 @@ viewer. Switching back mounts source rows from the same buffer. Keeping hidden r
 mounted spends layout and reactive work on an invisible duplicate view. No effect
 synchronizes this visibility; it derives from the document view mode.
 
-## Phase B foundation (not mounted)
+## Tree model (phase B foundation)
 
 `workspace/tree-model.js` is the pure tree-cache model for the sidebar migration.
 It holds lazy children and expanded paths, flattens visible rows in server order,
 filters Git scopes and calculates bounded row windows. Compacted directory paths
 retain their identity; ancestor lookup uses cached directory paths. Tests include
-20,000 files. It has no DOM or Solid dependencies and is not connected to the
-application yet. Sidebar, Git, search, palette, inspectors, streams, status and
-panel layout still use their legacy implementations pending phase B.
+20,000 files. It has no DOM or Solid dependencies. `tree-store.js` owns it and publishes
+revisions; components render only the bounded visible window.
 
 ## Workspace snapshots and stream (phase B checkpoint 1)
 
@@ -349,10 +350,9 @@ EventSource reconnect remains enabled. Focus, visibility and sleep/stale-traffic
 recovery share one owned watchdog; disposal releases listeners, requests and timers.
 The transport starts only when the application boot action requests it.
 
-Until their checkpoints replace the imperative views, two effects in the temporary
-bridge notify their Git and metrics DOM adapters. These are outside-world effects,
-not state derivations. Phase-C thread/review event subscriptions also enter through
-that bridge; new consumers read the store instead of subscribing to events.
+Phase-C thread/review event subscriptions enter through the temporary bridge;
+new consumers read the store instead of subscribing to events. The old Git and
+metrics DOM notification effects were removed at their checkpoints.
 `gitstream.js` and `stream.js` are deleted.
 
 A component may register a narrow imperative handle for an operation that belongs
@@ -371,9 +371,9 @@ and uses one effect to apply a requested native scroll. `TreeRow` derives decora
 from Git snapshots and viewed state; `TreeToolbar`, `TreeScope` and `NewItemDialog`
 own their controls. Context menus use the shared primitive, including keyboard dismissal.
 
-The bridge adapts remaining legacy refresh/reveal/mode/new-item calls and settings
-writes. Its temporary sidebar-mode notification exists only for the legacy unpushed
-view. The viewer's manual tree-badge callback is deleted; viewed flags are reactive.
+The bridge adapts remaining phase-C refresh/reveal/mode calls and settings writes.
+The sidebar-mode notification and new-item adapter are gone. The viewer's manual
+tree-badge callback is deleted; viewed flags are reactive.
 `tree.js`, `newitem.js` and the obsolete `prscope.js` are deleted.
 
 ## Git (phase B checkpoint 3)
@@ -398,7 +398,7 @@ adapter are gone. `gitpanel.js`, `unpushed.js` and `commitfiles.js` are deleted.
 `search/store.js` owns query/options and a resource keyed by the debounced request.
 Replacing a key cancels its request; Solid rejects late publications. Search JSX
 renders grouped results with `For`. `search/logic.js` owns request shaping and
-reference grouping. The temporary bridge adapts external legacy LSP results.
+reference grouping. Language services publish external results through named actions.
 
 `palette/store.js` owns a guarded resource and the palette session. File queries
 start immediately, without the old 40ms debounce. `palette/commands.js` provides
@@ -427,9 +427,64 @@ not separate polling loops. The layout slice owns inspector selection/visibility
 its final DOM/layout owner follows in checkpoint 6.
 
 Search and Symbols each retain one effect to focus their own input when the pane
-opens. The bridge temporarily applies pane visibility/width to the static shell,
-and separately notifies the remaining imperative Tips pane. LSP and inspector
+opens. Solid owns inspector visibility/width. The bridge only notifies the remaining
+imperative Tips pane. LSP and inspector
 stores add no effects. Popover panels now portal outside clipping containers;
 owned scroll/resize listeners position them. Editor definition/reference/call
 and LSP-state service hooks are deleted: these are named actions, not DOM handles.
 `calls.js`, `inspector.js`, `outline-pane.js`, `lsp.js` and `lspsetup.js` are deleted.
+
+
+## Status and layout (phase B checkpoint 6)
+
+`layout/` owns sidebar, inspector, status mounting and the three panel resizers.
+`layout/actions.js` persists visibility, inspector selection and bounded widths in
+`faah.layout`. Showing Threads hides the inspector and vice versa; saved layouts
+normalize the same invariant. All resizers use `SplitHandle`, including the Git
+and unpushed sections. Sidebar/inspector/status markup has left `index.html`;
+its remaining mounts and Threads contents belong to phase C.
+
+`status/StatusBar`, `StatusActions`, `Metrics` and `MetricsSummary` derive document,
+note and process data from the app store. Metrics arrive through the one workspace
+stream, and their details use `Popover`. Container queries reduce footer actions
+as available width shrinks, replacing the old mutation/resize fitting controller.
+`status.js`, `metricsview.js` and `panels.js` are deleted. Every phase-B legacy
+module has left both explicit lint/format ignore lists.
+
+`git/documents.js` owns guarded gutter requests and coalesces snapshot work;
+`git/document-logic.js` calculates which live diff tabs close after changes disappear.
+PR tabs, commit-pinned tabs and unsaved edits survive working-tree changes. Unchanged
+refreshes compare the current source chunk before publishing; only changed content
+invalidates other cached windows. Frozen revisions and editing documents are skipped.
+
+## Phase B effect and ownership audit
+
+All production `createEffect` calls introduced or retained for B are:
+
+- `workspace/Tree.jsx`: applies reveal intent to its owned native scroll viewport.
+- `search/Search.jsx`: focuses its owned search input when the pane becomes visible.
+- `inspector/Symbols.jsx`: focuses its owned symbol filter when the pane becomes visible.
+- `app/legacy-bridge.js` (layout): applies body classes and Threads width/pressed state
+  required by the static phase-C shell.
+- `app/legacy-bridge.js` (Tips): notifies legacy Tips rendering and focuses its input.
+- `app/legacy-bridge.js` (Git sync): notifies the imperative phase-C PR bar.
+
+These six effects drive external DOM/event APIs. There are no state-sync effects
+or async effect callbacks in B. Git, layout, status, palette, LSP stores and other
+inspector components add none. Derived counts, tree rows, decorations, search
+requests, palette items, symbols and pane state use selectors/memos/resources.
+Refs remain inside their owning components; shell portals only target static mounts.
+Requests use abort signals and identity/generation guards. Staging aborts superseded
+requests, commit details cancel on close and show errors, and resource request wrappers
+reject late replies even when a transport ignores cancellation. No mounted component
+hands another component an element through context.
+
+`editor.services` retains mounted source/edit/find/preview/diff operations, image
+keys and diagram fullscreen exits, plus still-used phase-C clipboard, selection,
+activation/close, help, hover and PR/explanation callbacks. The PR `diffRendered`
+notification remains necessary until `pr.js` migrates. Gutter loading, LSP/inspector
+operations, diff file stepping, directory navigation, palette commands and workspace
+refresh are named actions. Unused raw-text, preview-top-line and before-unload registry
+entries were removed; `EditorShell` owns its actual unload listener. Existing source,
+preview and diff handles unregister on component cleanup. A narrow handle serves an
+owned DOM operation; durable data and user intent belong to the store, as described above.

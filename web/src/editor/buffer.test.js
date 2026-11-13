@@ -111,3 +111,32 @@ test('a late old request cannot delete a new request for the same chunk', async 
   expect(model.pending.size).toBe(0);
   model.dispose();
 });
+
+test('unchanged refresh preserves published windows; changed refresh invalidates stale windows', async () => {
+  const fetcher = vi.fn().mockResolvedValue(chunk(0, ['hello'], 2000));
+  const model = createDocumentBuffer('live.js', { fetcher });
+  model.apply(chunk(1000, ['other window'], 2000));
+  await model.loadChunk(0);
+  const revision = model.revision();
+  const same = await model.loadChunk(0, { force: true, onlyIfChanged: true });
+  expect(same.unchanged).toBe(true);
+  expect(model.revision()).toBe(revision);
+  expect(model.chunks.has(1)).toBe(true);
+  fetcher.mockResolvedValue(chunk(0, ['changed'], 2000));
+  await model.loadChunk(0, { force: true, onlyIfChanged: true });
+  expect(model.text(0)).toBe('changed');
+  expect(model.chunks.has(1)).toBe(false);
+  expect(model.lines[1000]).toBeUndefined();
+  model.dispose();
+});
+
+test('unchanged refresh still accepts new language-service metadata', async () => {
+  const onMetadata = vi.fn();
+  const fetcher = vi.fn().mockResolvedValue({ ...chunk(0, ['same'], 1), lsp: { state: 'ready' } });
+  const model = createDocumentBuffer('same.js', { fetcher, onMetadata });
+  model.apply(chunk(0, ['same'], 1));
+  await model.loadChunk(0, { force: true, onlyIfChanged: true });
+  expect(onMetadata).toHaveBeenLastCalledWith(expect.objectContaining({ lsp: { state: 'ready' } }));
+  expect(model.revision()).toBe(1);
+  model.dispose();
+});

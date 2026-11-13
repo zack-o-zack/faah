@@ -64,18 +64,22 @@ export function createEditActions(editor) {
       if (store.buffers.get(path) !== model) return;
       if (model.editContent === content) store.actions.patchDocument(path, { dirty: false });
       toast('success', 'Saved ' + path);
-      services.saved?.();
+      void editor.actions.refreshWorkspace();
     } catch (error) {
       toast('error', error.message);
     }
   }
-  async function reloadOpenTabs() {
+  async function reloadOpenTabs({ onlyIfChanged = false } = {}) {
     await Promise.allSettled(
       store.state.documents.tabs.map(async (document) => {
+        if (document.diffRef || document.dirty || document.isEditing || document.isImage) return;
         const model = store.buffers.get(document.path);
-        model.reset();
-        const result = await model.loadChunk(Math.floor((document.cur - 1) / 1000));
-        if (store.buffers.get(document.path) !== model) return;
+        if (!onlyIfChanged) model.reset();
+        const result = await model.loadChunk(Math.floor((document.cur - 1) / 1000), {
+          force: onlyIfChanged,
+          onlyIfChanged,
+        });
+        if (store.buffers.get(document.path) !== model || result?.unchanged) return;
         store.actions.patchDocument(document.path, {
           cur: Math.max(1, Math.min(result?.total || 1, document.cur)),
           outline: null,

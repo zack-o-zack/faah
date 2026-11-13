@@ -10,6 +10,7 @@ export function documentGitPlan(documents, snapshot, reviewing) {
     if (
       !reviewing &&
       !document.dirty &&
+      !document.isEditing &&
       (document.diffMode || document.openedInDiffView) &&
       (document.diffAvailable || document.diffMode) &&
       !available

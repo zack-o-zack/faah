@@ -26,7 +26,7 @@ export function DiffStrip(props) {
   const index = () => files().findIndex((file) => file.path === props.document.path);
   function step(direction) {
     const next = files()[commitStepTarget(files(), index(), direction)];
-    if (next) editor.services.stepDiffFile?.(props.document, next);
+    if (next) editor.actions.stepDiffFile(props.document, next);
   }
   function viewed() {
     editor.actions.toggleViewed(props.document.path);
@@ -35,7 +35,7 @@ export function DiffStrip(props) {
     const next = after.find(
       (file) => !file.binary && !editor.store.state.viewers.viewed[file.path],
     );
-    if (next) editor.services.stepDiffFile?.(props.document, next);
+    if (next) editor.actions.stepDiffFile(props.document, next);
   }
   return (
     <div

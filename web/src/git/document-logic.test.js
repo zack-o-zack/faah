@@ -19,3 +19,13 @@ test('clean worktree closes only clean live diff tabs outside PR review', () => 
   expect(documentGitPlan(tabs, { statuses: {} }, true).close).toEqual([]);
   expect(documentGitPlan(tabs, { statuses: { live: 'M' } }, false).reload).toBe(true);
 });
+
+test('clean editing tabs stay open when a working-tree diff disappears', () => {
+  expect(
+    documentGitPlan(
+      [{ path: 'editing', openedInDiffView: true, diffAvailable: true, isEditing: true }],
+      { statuses: {} },
+      false,
+    ).close,
+  ).toEqual([]);
+});

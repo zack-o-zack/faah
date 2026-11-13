@@ -52,7 +52,7 @@ export function createDocumentBuffer(
     pending.clear();
     refining.clear();
   }
-  async function loadChunk(chunk, { force = false, refine = false } = {}) {
+  async function loadChunk(chunk, { force = false, refine = false, onlyIfChanged = false } = {}) {
     if (disposed || (!force && chunks.has(chunk))) return;
     if (pending.has(chunk)) return pending.get(chunk).promise;
     const controller = new AbortController();
@@ -66,6 +66,23 @@ export function createDocumentBuffer(
           { signal: controller.signal },
         );
         if (disposed || mine !== generation) return;
+        if (onlyIfChanged) {
+          const same =
+            result.total === lines.length &&
+            (result.lines || []).every(
+              (line, index) => lines[(result.start || 0) + index] === line,
+            );
+          if (same) {
+            onMetadata(result);
+            return { ...result, unchanged: true };
+          }
+          // Invalidate other windows only after a changed response is ready to publish.
+          cancel();
+          chunks.clear();
+          heights.clear();
+          lines.fill(undefined);
+          columns.fill(-1);
+        }
         apply(result);
         if (result.refine && !refine) scheduleRefine(chunk);
         return result;
