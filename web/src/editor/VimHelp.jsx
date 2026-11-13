@@ -2,7 +2,7 @@ import { For, Index } from 'solid-js';
 import { useEditor } from './context.jsx';
 import { Dialog } from '../lib/Dialog.jsx';
 import { Kbd } from '../lib/shortcuts.jsx';
-import { VIM_SHORTCUT_SECTIONS } from './vim-help.js';
+import { VIM_SHORTCUT_SECTIONS } from './vim-help.ts';
 export function VimHelp() {
   const editor = useEditor();
   return (

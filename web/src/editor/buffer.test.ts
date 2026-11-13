@@ -1,17 +1,20 @@
+import { decodeFileWindow } from './decode.ts';
+import type { RequestOptions } from '../lib/api.ts';
 import { test, expect, vi } from 'vitest';
-import { createDocumentBuffer } from './buffer.js';
-const chunk = (start = 0, lines = ['<b>hello</b>'], total = 50000) => ({
-  start,
-  lines,
-  total,
-  exact: true,
-});
+import { createDocumentBuffer } from './buffer.ts';
+const chunk = (start = 0, lines = ['<b>hello</b>'], total = 50000) =>
+  decodeFileWindow({
+    start,
+    lines,
+    total,
+    exact: true,
+  });
 
 test('deduplicates chunk requests and keeps fifty thousand lines outside proxies', async () => {
-  let resolve;
+  let resolve: ((value: unknown) => void) | undefined;
   const fetcher = vi.fn(
-    () =>
-      new Promise((done) => {
+    (_path: string, _params?: unknown) =>
+      new Promise<unknown>((done) => {
         resolve = done;
       }),
   );
@@ -19,7 +22,8 @@ test('deduplicates chunk requests and keeps fifty thousand lines outside proxies
   const first = model.loadChunk(0);
   const second = model.loadChunk(0);
   expect(fetcher).toHaveBeenCalledOnce();
-  expect(fetcher.mock.calls[0][1]).toMatchObject({ ref: 'commit', count: 1000 });
+  expect(fetcher.mock.calls[0]?.[1]).toMatchObject({ ref: 'commit', count: 1000 });
+  if (!resolve) throw new Error('Request did not start');
   resolve(chunk());
   await Promise.all([first, second]);
   expect(model.lines).toHaveLength(50000);
@@ -31,18 +35,19 @@ test('deduplicates chunk requests and keeps fifty thousand lines outside proxies
   model.dispose();
 });
 test('reset aborts pending requests and ignores late responses', async () => {
-  let resolve;
-  let signal;
-  const fetcher = vi.fn((_, params, options) => {
-    signal = options.signal;
-    return new Promise((done) => {
+  let resolve: ((value: unknown) => void) | undefined;
+  let signal: AbortSignal | undefined;
+  const fetcher = vi.fn((_path: string, _params?: unknown, options?: RequestOptions) => {
+    signal = options?.signal || undefined;
+    return new Promise<unknown>((done) => {
       resolve = done;
     });
   });
   const model = createDocumentBuffer('late.js', { fetcher });
   const pending = model.loadChunk(0);
   model.reset();
-  expect(signal.aborted).toBe(true);
+  expect(signal?.aborted).toBe(true);
+  if (!resolve) throw new Error('Request did not start');
   resolve(chunk());
   await pending;
   expect(model.lines).toHaveLength(0);
@@ -95,17 +100,17 @@ test('refinement retries inexact results and stops once exact', async () => {
 });
 
 test('a late old request cannot delete a new request for the same chunk', async () => {
-  const pending = [];
+  const pending: ((value: unknown) => void)[] = [];
   const model = createDocumentBuffer('generation.js', {
     fetcher: () => new Promise((resolve) => pending.push(resolve)),
   });
   const old = model.loadChunk(0);
   model.reset();
   const next = model.loadChunk(0);
-  pending[0](chunk(0, ['stale']));
+  pending[0]?.(chunk(0, ['stale']));
   await old;
   expect(model.pending.size).toBe(1);
-  pending[1](chunk(0, ['current']));
+  pending[1]?.(chunk(0, ['current']));
   await next;
   expect(model.text(0)).toBe('current');
   expect(model.pending.size).toBe(0);
@@ -119,7 +124,7 @@ test('unchanged refresh preserves published windows; changed refresh invalidates
   await model.loadChunk(0);
   const revision = model.revision();
   const same = await model.loadChunk(0, { force: true, onlyIfChanged: true });
-  expect(same.unchanged).toBe(true);
+  expect(same?.unchanged).toBe(true);
   expect(model.revision()).toBe(revision);
   expect(model.chunks.has(1)).toBe(true);
   fetcher.mockResolvedValue(chunk(0, ['changed'], 2000));
@@ -136,7 +141,9 @@ test('unchanged refresh still accepts new language-service metadata', async () =
   const model = createDocumentBuffer('same.js', { fetcher, onMetadata });
   model.apply(chunk(0, ['same'], 1));
   await model.loadChunk(0, { force: true, onlyIfChanged: true });
-  expect(onMetadata).toHaveBeenLastCalledWith(expect.objectContaining({ lsp: { state: 'ready' } }));
+  expect(onMetadata).toHaveBeenLastCalledWith(
+    expect.objectContaining({ lsp: expect.objectContaining({ state: 'ready' }) }),
+  );
   expect(model.revision()).toBe(1);
   model.dispose();
 });

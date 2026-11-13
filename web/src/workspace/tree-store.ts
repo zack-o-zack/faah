@@ -1,5 +1,6 @@
+import type { OpenOptions } from '../editor/types.ts';
 import type { AppState } from '../app/store.ts';
-import type { DocTab } from '../editor/documents.js';
+import type { DocTab } from '../editor/documents.ts';
 import type { Request } from '../lib/api.ts';
 import type { TreeEntry } from './decode.ts';
 import { decodeTree, decodeNewItem } from './decode.ts';
@@ -29,7 +30,7 @@ interface TreeHost {
 interface TreeOptions {
   request?: Request;
   post?: Request;
-  openFile?: (path: string, options?: unknown) => Promise<unknown>;
+  openFile?: (path: string, options?: OpenOptions) => Promise<unknown>;
   enterEditMode?: () => void | Promise<unknown>;
 }
 import { batch, createMemo, onCleanup } from 'solid-js';
@@ -329,7 +330,7 @@ export function createTreeStore(app: TreeHost, options: TreeOptions = {}) {
     autoReveal: () => !state.suppressed && app.settings.preferences().autoReveal,
     actions: {
       refreshTree,
-      async openLink(path: string, openOptions?: unknown) {
+      async openLink(path: string, openOptions?: OpenOptions) {
         try {
           const clean = path.replace(/\/+$/, '');
           const result = decodeTree(await request('api/tree', { dir: parentPath(clean) }));

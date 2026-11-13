@@ -1,4 +1,11 @@
-export function findMatches(text, query, caseSensitive = false) {
+export interface FindHit {
+  line: number;
+  col?: number;
+  start?: number;
+  end?: number;
+  n?: number;
+}
+export function findMatches(text: string, query: string, caseSensitive = false): FindHit[] {
   if (!query) return [];
   const haystack = caseSensitive ? text : text.toLowerCase();
   const needle = caseSensitive ? query : query.toLowerCase();
@@ -18,5 +25,5 @@ export function findMatches(text, query, caseSensitive = false) {
   }
   return hits;
 }
-export const hitIndex = (index, delta, total) =>
+export const hitIndex = (index: number, delta: number, total: number): number =>
   total ? (((index + delta) % total) + total) % total : -1;

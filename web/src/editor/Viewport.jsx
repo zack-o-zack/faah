@@ -10,11 +10,11 @@ import {
 } from 'solid-js';
 import { useEditor } from './context.jsx';
 import { viewMode } from '../viewers/view.js';
-import { visibleRange } from './layout.js';
-import { createHighlights } from './highlights.js';
+import { visibleRange } from './layout.ts';
+import { createHighlights } from './highlights.ts';
 import { EditorRow } from './EditorRow.jsx';
 import { Caret } from './Caret.jsx';
-import { createSourceDOM } from './source-dom.js';
+import { createSourceDOM } from './source-dom.ts';
 
 export function Viewport() {
   const editor = useEditor();

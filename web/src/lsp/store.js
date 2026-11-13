@@ -2,7 +2,7 @@ import { createMemo, createResource, createSignal, onCleanup } from 'solid-js';
 import { createStore } from 'solid-js/store';
 import { api, apiPost } from '../lib/api.ts';
 import { createResourceRequest } from '../lib/resource-request.ts';
-import { createSymbolActions } from '../editor/symbols.js';
+import { createSymbolActions } from '../editor/symbols.ts';
 import { groupHits } from '../search/logic.js';
 import { positionNow, canAskServer } from './logic.js';
 /** @returns {{menuOpen:boolean,pending:string,error:string,refs:object|null,calls:object|null,direction:string}} */

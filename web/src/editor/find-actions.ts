@@ -1,14 +1,18 @@
+import { decodeFind } from './decode.ts';
+import type { FindHit } from './find.ts';
+import type { EditorHost } from './contracts.ts';
+import { errorMessage, isAbort } from '../lib/decode.ts';
 import { onCleanup } from 'solid-js';
 import { api } from '../lib/api.ts';
 import { toast } from '../lib/toast.jsx';
 import { isPreview } from '../viewers/view.js';
-import { findMatches, hitIndex } from './find.js';
+import { findMatches, hitIndex } from './find.ts';
 
-export function createFindActions(editor) {
+export function createFindActions(editor: EditorHost) {
   const { active, buffer, ui, setUI, services } = editor;
   const { patch, centerLine } = editor.actions;
-  let findTimer;
-  let findRequest;
+  let findTimer: ReturnType<typeof setTimeout> | undefined;
+  let findRequest: AbortController | undefined;
   let sequence = 0;
   onCleanup(() => {
     clearTimeout(findTimer);
@@ -20,29 +24,31 @@ export function createFindActions(editor) {
     const mine = ++sequence;
     findRequest?.abort();
     const query = ui.query;
-    let hits = [];
+    let hits: FindHit[] = [];
     if (isPreview(document)) {
       hits = services.preview?.find(query, ui.caseSensitive) || [];
     } else if (document.isEditing) {
-      hits = findMatches(buffer().editContent || '', query, ui.caseSensitive);
+      hits = findMatches(buffer()?.editContent || '', query, ui.caseSensitive);
     } else if (query) {
       setUI({ findLoading: true, findError: '' });
       findRequest = new AbortController();
-      let result;
+      let result: ReturnType<typeof decodeFind>;
       try {
-        result = await api(
-          'api/search',
-          {
-            q: query,
-            glob: document.path,
-            case: ui.caseSensitive ? 1 : '',
-          },
-          { signal: findRequest.signal },
+        result = decodeFind(
+          await api(
+            'api/search',
+            {
+              q: query,
+              glob: document.path,
+              case: ui.caseSensitive ? 1 : '',
+            },
+            { signal: findRequest.signal },
+          ),
         );
       } catch (error) {
-        if (mine === sequence && error.name !== 'AbortError') {
-          setUI('findError', error.message);
-          toast('error', error.message);
+        if (mine === sequence && !isAbort(error)) {
+          setUI('findError', errorMessage(error));
+          toast('error', errorMessage(error));
         }
         return;
       } finally {
@@ -61,12 +67,13 @@ export function createFindActions(editor) {
     setUI({ hits, activeHit: hits.length ? hitIndex(0, delta, hits.length) : -1 });
     jumpToHit(ui.activeHit);
   }
-  function jumpToHit(index) {
+  function jumpToHit(index: number) {
     if (!ui.hits.length) return;
     const next = hitIndex(0, index, ui.hits.length);
     setUI('activeHit', next);
     if (isPreview(active())) return services.preview?.showHit(next);
     const hit = ui.hits[next];
+    if (!hit) return;
     patch({ cur: hit.line });
     if (active()?.isEditing) editor.actions.centerEditLine(hit.line, hit.start, hit.end);
     else centerLine(hit.line);
@@ -104,8 +111,8 @@ export function createFindActions(editor) {
       setUI('caseSensitive', !ui.caseSensitive);
       void executeFind();
     },
-    nextMatch: (delta) => editor.actions.jumpToHit(ui.activeHit + delta),
-    query(value) {
+    nextMatch: (delta: number) => editor.actions.jumpToHit(ui.activeHit + delta),
+    query(value: string) {
       sequence++;
       findRequest?.abort();
       setUI({ query: value, findLoading: false, findError: '' });

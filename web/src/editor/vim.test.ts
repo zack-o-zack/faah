@@ -1,13 +1,18 @@
+import type { VimDocument, VimState, VimResult } from './vim.ts';
 import { expect, test } from 'vitest';
-import { initialVimState, vimKey } from './vim.js';
+import { initialVimState, vimKey } from './vim.ts';
 
 const lines = ['  first second', '', 'third fourth', 'last'];
-function run(keys, patch = {}, previous = initialVimState()) {
-  let document = {
+function run(
+  keys: (string | { key: string; ctrlKey?: boolean; metaKey?: boolean; altKey?: boolean })[],
+  patch: Partial<VimDocument> = {},
+  previous: VimState = initialVimState(),
+): VimResult {
+  let document: VimDocument = {
     line: 1,
     col: 2,
     total: lines.length,
-    textAt: (index) => lines[index] || '',
+    textAt: (index: number) => lines[index] || '',
     anchor: null,
     pageLines: 6,
     topLine: 1,
@@ -23,6 +28,7 @@ function run(keys, patch = {}, previous = initialVimState()) {
     previous = result.state;
     document = { ...document, ...result.cursor, anchor: result.anchor };
   }
+  if (!result) throw new Error('No keys supplied');
   return result;
 }
 

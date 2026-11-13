@@ -1,6 +1,6 @@
 import { createEffect, createMemo, onCleanup } from 'solid-js';
 import { useEditor } from './context.jsx';
-import { textRanges } from './highlights.js';
+import { textRanges } from './highlights.ts';
 
 export function EditorRow(props) {
   const editor = useEditor();

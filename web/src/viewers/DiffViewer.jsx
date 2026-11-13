@@ -4,7 +4,7 @@ import { createViewerResource } from './resource.js';
 import { diffSelection } from './diff-selection.js';
 import { DiffContent } from './DiffContent.jsx';
 import { viewMode } from './view.js';
-import { createSourceDOM } from '../editor/source-dom.js';
+import { createSourceDOM } from '../editor/source-dom.ts';
 import { isMac } from '../lib/keyboard.ts';
 
 const modifier = isMac ? 'metaKey' : 'ctrlKey';

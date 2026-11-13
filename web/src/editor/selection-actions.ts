@@ -1,20 +1,59 @@
+interface SelectionSetter {
+  (patch: Partial<SelectionState>): void;
+  (key: 'selection', value: SelectionInfo | null): void;
+  (key: 'menu', value: { info: SelectionInfo; x: number; y: number } | null): void;
+}
+import type { Accessor } from 'solid-js';
+interface SelectionDocument {
+  path: string;
+  cur: number;
+  col?: number;
+  total: number;
+  name: string;
+  diffRef: string;
+  selAnchor: Position | null;
+}
+interface SelectionState {
+  selection: SelectionInfo | null;
+  menu: { info: SelectionInfo; x: number; y: number } | null;
+}
+interface SelectionHost {
+  ui: SelectionState;
+  setUI: SelectionSetter;
+  active: Accessor<SelectionDocument | null>;
+  buffer: Accessor<{ text: (index: number) => string } | undefined>;
+  services: Services;
+  handlers: {
+    prepare?: (info: SelectionInfo) => void;
+    thread?: (info: SelectionInfo) => void;
+    agent?: (info: SelectionInfo) => void;
+    explain?: (info: SelectionInfo) => void;
+    review?: (info: SelectionInfo) => void;
+  };
+  actions: { patch: (patch: Partial<DocTab>) => void; findReferences: (word?: string) => void };
+}
+import type { Services } from './contracts.ts';
+import type { DocTab } from './types.ts';
+import type { Position } from './cursor.ts';
+import type { SelectionInfo } from './selection.ts';
+import { errorMessage } from '../lib/decode.ts';
 import { onCleanup } from 'solid-js';
 import { apiText } from '../lib/api.ts';
 import { copyRich, copyText } from '../lib/clipboard.ts';
 import { toast } from '../lib/toast.jsx';
-import { selectedText } from './cursor.js';
-import { contextSnippet, selectionRef } from './selection.js';
+import { selectedText } from './cursor.ts';
+import { contextSnippet, selectionRef } from './selection.ts';
 
 // The file as it is on disk, or at the ref its diff compares against.
-const rawText = (document) =>
+const rawText = (document: SelectionDocument) =>
   apiText('api/raw', { path: document.path, ref: document.diffRef || '' });
 
-export function createSelectionActions(editor) {
+export function createSelectionActions(editor: SelectionHost) {
   const { active, buffer, ui, setUI, services } = editor;
   const { patch } = editor.actions;
-  let prepareTimer;
+  let prepareTimer: ReturnType<typeof setTimeout> | undefined;
   onCleanup(() => clearTimeout(prepareTimer));
-  function setSelection(info) {
+  function setSelection(info: SelectionInfo | null) {
     setUI('selection', info);
     clearTimeout(prepareTimer);
     if (info && !info.isMarkdownPreview && info.text.length <= 12000)
@@ -29,14 +68,18 @@ export function createSelectionActions(editor) {
     const document = active();
     if (!document?.selAnchor) return clearSelection();
     const head = { line: document.cur, col: document.col || 0 };
-    const info = selectedText(document.selAnchor, head, buffer().text);
+    const info = selectedText(
+      document.selAnchor,
+      head,
+      (index: number) => buffer()?.text(index) || '',
+    );
     setSelection(info?.text ? { ...info, path: document.path, isEditor: true } : null);
     services.source?.select(document.selAnchor, head);
   }
-  function selectRange(anchor, head) {
+  function selectRange(anchor: Position | null, head: Position) {
     patch({ cur: head.line, col: head.col, selAnchor: anchor });
-    const info = selectedText(anchor, head, buffer().text);
-    setSelection(info?.text ? { ...info, path: active().path, isEditor: true } : null);
+    const info = selectedText(anchor, head, (index: number) => buffer()?.text(index) || '');
+    setSelection(info?.text ? { ...info, path: active()?.path || '', isEditor: true } : null);
   }
   async function selectAll() {
     const document = active();
@@ -46,26 +89,28 @@ export function createSelectionActions(editor) {
     try {
       text = await rawText(document);
     } catch (error) {
-      toast('error', error.message);
+      toast('error', errorMessage(error));
       return;
     }
     if (active() !== document || buffer() !== model) return;
     setUI('selection', { text, path: document.path, l1: 1, l2: document.total, all: true });
   }
   // Copies the whole active file; message names what was copied.
-  async function copyFile(message) {
+  async function copyFile(message: (document: SelectionDocument) => string) {
     const document = active();
     if (!document) return;
     try {
       await copyText(await rawText(document), message(document));
     } catch (error) {
-      toast('error', error.message);
+      toast('error', errorMessage(error));
     }
   }
-  async function copyMarkdown(info) {
+  async function copyMarkdown(info: SelectionInfo) {
     if (info.rawMarkdown) return copyText(info.rawMarkdown, 'Copied raw Markdown');
     try {
-      const text = await rawText(active());
+      const document = active();
+      if (!document) return;
+      const text = await rawText(document);
       const lines = text
         .split(/\r?\n/)
         .slice(info.l1 - 1, info.l2)
@@ -76,7 +121,7 @@ export function createSelectionActions(editor) {
     }
   }
   // Runs a selection action on the selection, or on the caret line for thread and agent edits.
-  function runSelectionAction(action, override) {
+  function runSelectionAction(action: string, override?: SelectionInfo | null) {
     let info = override || ui.selection;
     if (!info) {
       const document = active();
@@ -89,15 +134,16 @@ export function createSelectionActions(editor) {
       };
     }
     const handlers = editor.handlers;
-    const direct = {
+    const direct: Record<string, ((info: SelectionInfo) => void) | undefined> = {
       thread: handlers.thread,
       'agent-edit': handlers.agent,
       explain: handlers.explain,
       'review-comment': handlers.review,
     };
     if (action === 'explain' && (info.isMarkdownPreview || info.text.length > 12000)) return false;
-    if (direct[action]) {
-      direct[action](info);
+    const handler = direct[action];
+    if (handler) {
+      handler(info);
       return true;
     }
     if (action === 'usages') {
@@ -112,13 +158,14 @@ export function createSelectionActions(editor) {
       void copyMarkdown(info);
       return true;
     }
-    const values = {
+    const values: Record<string, string> = {
       'copy-ref': selectionRef(info),
       'copy-source': info.text,
       'copy-agent': contextSnippet(info),
     };
-    if (values[action] === undefined) return false;
-    void copyText(values[action]);
+    const value = values[action];
+    if (value === undefined) return false;
+    void copyText(value);
     return true;
   }
   return {
@@ -126,11 +173,11 @@ export function createSelectionActions(editor) {
     syncSelection,
     selectRange,
     setSelection,
-    openSelectionMenu: (info, x, y) => setUI('menu', { info, x, y }),
-    openLineActions(info, x, y) {
+    openSelectionMenu: (info: SelectionInfo, x: number, y: number) => setUI('menu', { info, x, y }),
+    openLineActions(info: SelectionInfo, x: number, y: number) {
       const selected = ui.selection;
       const covers =
-        selected?.path === info.path && info.l1 >= selected.l1 && info.l1 <= selected.l2;
+        selected && selected.path === info.path && info.l1 >= selected.l1 && info.l1 <= selected.l2;
       setUI('menu', { info: covers ? selected : info, x, y });
     },
     closeSelectionMenu: () => setUI('menu', null),

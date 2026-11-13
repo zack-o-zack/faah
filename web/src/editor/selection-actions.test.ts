@@ -1,21 +1,32 @@
+import type { SelectionInfo } from './selection.ts';
 import { createRoot } from 'solid-js';
 import { createStore } from 'solid-js/store';
 import { expect, test, vi } from 'vitest';
 import { apiText } from '../lib/api.ts';
 import { copyText } from '../lib/clipboard.ts';
-import { createSelectionActions } from './selection-actions.js';
+import { createSelectionActions } from './selection-actions.ts';
 
 vi.mock('../lib/api.ts', () => ({ apiText: vi.fn() }));
 vi.mock('../lib/clipboard.ts', () => ({ copyText: vi.fn(async () => true), copyRich: vi.fn() }));
 
 function setup() {
   return createRoot((dispose) => {
-    const [ui, setUI] = createStore<{ selection: object | null; menu: object | null }>({
+    const [ui, setUI] = createStore<{
+      selection: SelectionInfo | null;
+      menu: { info: SelectionInfo; x: number; y: number } | null;
+    }>({
       selection: null,
       menu: null,
     });
-    const document = { path: 'main.go', cur: 3, total: 9, diffRef: 'HEAD~1' };
-    const model = { text: (index: number) => ['a', 'b', 'third line'][index] };
+    const document = {
+      path: 'main.go',
+      cur: 3,
+      total: 9,
+      diffRef: 'HEAD~1',
+      name: 'main.go',
+      selAnchor: null,
+    };
+    const model = { text: (index: number) => ['a', 'b', 'third line'][index] || '' };
     const editor = {
       ui,
       setUI,
@@ -52,7 +63,14 @@ test('a thread without a selection starts from the caret line; usages search the
   });
   actions.runSelectionAction('usages', { path: 'main.go', l1: 1, l2: 1, text: 'Open file' });
   expect(editor.actions.findReferences).toHaveBeenCalledWith('Open');
-  expect(actions.runSelectionAction('explain', { text: 'x'.repeat(12001) })).toBe(false);
+  expect(
+    actions.runSelectionAction('explain', {
+      path: 'main.go',
+      l1: 1,
+      l2: 1,
+      text: 'x'.repeat(12001),
+    }),
+  ).toBe(false);
   dispose();
 });
 

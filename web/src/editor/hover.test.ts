@@ -1,5 +1,5 @@
 import { test, expect } from 'vitest';
-import { nearCard, placeCard } from './hover.js';
+import { nearCard, placeCard } from './hover.ts';
 test('hover placement stays inside the host and flips above the anchor', () => {
   expect(
     placeCard(

@@ -7,7 +7,7 @@ import {
   visibleRange,
   codeWidth,
   visualColumn,
-} from './layout.js';
+} from './layout.ts';
 
 test('highlighted text preserves UTF-16 columns, entities and tab stops', () => {
   expect(lineText('<span class="k">a&lt;b &amp; &#x1F600;</span>')).toBe('a<b & 😀');

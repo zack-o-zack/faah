@@ -1,6 +1,6 @@
 import { createMemo } from 'solid-js';
 import { useEditor } from './context.jsx';
-import { codeWidth, visualColumn } from './layout.js';
+import { codeWidth, visualColumn } from './layout.ts';
 
 export function Caret(props) {
   const editor = useEditor();

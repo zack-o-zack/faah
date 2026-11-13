@@ -1,7 +1,7 @@
 import { beforeEach, afterEach, expect, test, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@solidjs/testing-library';
 import { createAppStore } from '../app/store.ts';
-import { createEditorStore } from './store.js';
+import { createEditorStore } from './store.ts';
 import { EditorProvider } from './context.jsx';
 import { Viewport } from './Viewport.jsx';
 import { EditView } from './EditView.jsx';

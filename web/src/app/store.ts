@@ -4,12 +4,12 @@ import { createLayoutActions } from '../layout/actions.ts';
 import { readLayout } from '../layout/logic.ts';
 import { createWorkspaceActions } from '../workspace/actions.ts';
 import { createViewerActions } from '../viewers/actions.js';
-import { createDocuments } from '../editor/documents.js';
+import { createDocuments } from '../editor/documents.ts';
 import { createSettingsStore } from '../settings/store.ts';
 import { batch, createMemo } from 'solid-js';
 import { createStore, reconcile } from 'solid-js/store';
 
-import type { DocTab } from '../editor/documents.js';
+import type { DocTab } from '../editor/documents.ts';
 import type { OrbModel } from '../viewers/orb-model.js';
 import type { WorkspaceMeta } from './types.ts';
 import type { SettingsOptions } from '../settings/store.ts';

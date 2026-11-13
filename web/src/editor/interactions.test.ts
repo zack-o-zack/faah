@@ -1,11 +1,12 @@
+import type { VimDocument } from './vim.ts';
 import { test, expect } from 'vitest';
-import { movePosition, selectedText, wordAtColumn } from './cursor.js';
-import { findMatches, hitIndex } from './find.js';
-import { textChange, indentEdit, textOffsets } from './edit.js';
-import { initialVimState, vimKey } from './vim.js';
+import { movePosition, selectedText, wordAtColumn } from './cursor.ts';
+import { findMatches, hitIndex } from './find.ts';
+import { textChange, indentEdit, textOffsets } from './edit.ts';
+import { initialVimState, vimKey } from './vim.ts';
 const lines = ['first second', '', '  third fourth', 'last'];
-const textAt = (at) => lines[at] || '';
-const doc = {
+const textAt = (at: number) => lines[at] || '';
+const doc: VimDocument = {
   line: 1,
   col: 0,
   total: 4,
@@ -25,7 +26,7 @@ test('cursor crosses empty lines and clamps file boundaries', () => {
   expect(wordAtColumn('😀 review', 6)).toEqual({ word: 'review', col: 3 });
 });
 test('selection is direction independent and excludes gutter text', () => {
-  expect(selectedText({ line: 3, col: 4 }, { line: 1, col: 6 }, textAt).text).toBe(
+  expect(selectedText({ line: 3, col: 4 }, { line: 1, col: 6 }, textAt)?.text).toBe(
     'second\n\n  th',
   );
 });
@@ -44,7 +45,7 @@ test('edit changes isolate inserted text and indentation keeps line boundaries',
   expect(textOffsets('a\n\nb')).toEqual([0, 2, 3]);
   expect(indentEdit('a\nb', 0, 3).replacement).toBe('    a\n    b');
 });
-function keys(sequence, current = doc) {
+function keys(sequence: string[], current = doc) {
   let state = initialVimState();
   let result;
   for (const key of sequence) {
@@ -52,6 +53,7 @@ function keys(sequence, current = doc) {
     state = result.state;
     current = { ...current, ...result.cursor, anchor: result.anchor };
   }
+  if (!result) throw new Error('No keys supplied');
   return result;
 }
 test('Vim counts, gg/G, word motions and file boundaries', () => {
@@ -83,7 +85,7 @@ test('Vim viewport motions, numbered tabs and navigation commands remain pure', 
   expect(keys(['L']).cursor.line).toBe(4);
   expect(keys(['2', 'g', 't']).commands).toEqual([{ type: 'tabIndex', value: 1 }]);
   expect(keys(['g', 'd']).commands).toEqual([{ type: 'definition', value: undefined }]);
-  expect(keys(['g', 'r']).commands[0].type).toBe('references');
+  expect(keys(['g', 'r']).commands[0]?.type).toBe('references');
   expect(keys(['z', 'z']).commands).toEqual([{ type: 'scroll', value: 'z' }]);
   expect(vimKey(initialVimState(), { key: 'u', ctrlKey: true }, doc).cursor.line).toBe(1);
 });

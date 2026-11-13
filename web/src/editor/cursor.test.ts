@@ -1,4 +1,4 @@
-import { wordAtColumn } from './cursor.js';
+import { wordAtColumn } from './cursor.ts';
 import { test, expect } from 'vitest';
 
 test('documentation requests identify the whole symbol at the caret', () => {

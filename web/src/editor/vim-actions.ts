@@ -1,17 +1,19 @@
+import type { EditorHost } from './contracts.ts';
 import { onCleanup } from 'solid-js';
-import { initialVimState, vimKey } from './vim.js';
-import { lineIndexAtY } from './layout.js';
+import { initialVimState, vimKey } from './vim.ts';
+import { lineIndexAtY } from './layout.ts';
 import { copyText } from '../lib/clipboard.ts';
 
-export function createVimActions(editor) {
+export function createVimActions(editor: EditorHost) {
   const { active, buffer, store, ui, setUI, geometry, offsets, services } = editor;
   const { patch, revealLine, activateView } = editor.actions;
-  let pendingTimer;
+  let pendingTimer: ReturnType<typeof setTimeout> | undefined;
   onCleanup(() => clearTimeout(pendingTimer));
-  function handleVimKeyDown(event) {
+  function handleVimKeyDown(event: KeyboardEvent) {
     const document = active();
     if (!editor.settings.preferences().vim || !document) return false;
     const model = buffer();
+    if (!model) return;
     const selection = ui.selection;
     const result = vimKey(
       ui.vim,
@@ -46,7 +48,7 @@ export function createVimActions(editor) {
     editor.actions.syncSelection();
     if (jumped) {
       services.source?.scrollTo(
-        Math.max(0, offsets()[result.cursor.line - 1] - geometry.lineHeight * 3),
+        Math.max(0, (offsets()[result.cursor.line - 1] || 0) - geometry.lineHeight * 3),
       );
     } else if (moved) revealLine(result.cursor.line);
     for (const command of result.commands) {
@@ -76,13 +78,13 @@ export function createVimActions(editor) {
         );
       if (command.type === 'palette') editor.actions.openPalette('command');
       if (command.type === 'scroll') {
-        const y = offsets()[document.cur - 1];
-        const alignment = {
+        const y = offsets()[document.cur - 1] || 0;
+        const alignment: Record<string, number> = {
           z: geometry.height / 2,
           t: 0,
           b: geometry.height - geometry.lineHeight * 2,
         };
-        services.source?.scrollTo(Math.max(0, y - alignment[command.value]));
+        services.source?.scrollTo(Math.max(0, y - (alignment[command.value] || 0)));
       }
     }
     return true;
@@ -91,7 +93,7 @@ export function createVimActions(editor) {
     handleVimKeyDown,
     showVimHelp: () => setUI('vimHelp', true),
     hideVimHelp: () => setUI('vimHelp', false),
-    setVimEnabled(enabled) {
+    setVimEnabled(enabled: boolean) {
       if (!enabled) {
         clearTimeout(pendingTimer);
         setUI('vim', initialVimState());

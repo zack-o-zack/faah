@@ -1,6 +1,6 @@
 import { render } from '@solidjs/testing-library';
 import { expect, test } from 'vitest';
-import { createSourceDOM } from './source-dom.js';
+import { createSourceDOM } from './source-dom.ts';
 
 test('DOM positions span highlighted nodes and exclude the gutter', () => {
   const view = render(() => (

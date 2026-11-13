@@ -1,9 +1,9 @@
 import { onCleanup } from 'solid-js';
 
 export function createHighlights() {
-  const groups = new Map();
-  const owners = new Map();
-  function remove(owner) {
+  const groups = new Map<string, Highlight>();
+  const owners = new Map<unknown, [string, Range[]][]>();
+  function remove(owner: unknown): void {
     for (const [name, ranges] of owners.get(owner) || []) {
       for (const range of ranges) groups.get(name)?.delete(range);
     }
@@ -14,7 +14,7 @@ export function createHighlights() {
   });
   return {
     remove,
-    update(owner, marks) {
+    update(owner: unknown, marks: [string, Range[]][]) {
       remove(owner);
       if (!globalThis.Highlight || !globalThis.CSS?.highlights) return;
       owners.set(owner, marks);
@@ -24,20 +24,25 @@ export function createHighlights() {
           groups.set(name, group);
           CSS.highlights.set(name, group);
         }
-        for (const range of ranges) groups.get(name).add(range);
+        for (const range of ranges) groups.get(name)?.add(range);
       }
     },
   };
 }
-export function textRanges(element, query, caseSensitive = true) {
+export function textRanges(
+  element: Element,
+  query: string | null | undefined,
+  caseSensitive = true,
+): Range[] {
   if (!query) return [];
   const text = element.textContent;
   const haystack = caseSensitive ? text : text.toLowerCase();
   const needle = caseSensitive ? query : query.toLowerCase();
-  const nodes = [];
+  const nodes: Text[] = [];
   const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
-  for (let node = walker.nextNode(); node; node = walker.nextNode()) nodes.push(node);
-  function point(offset) {
+  for (let node = walker.nextNode(); node; node = walker.nextNode())
+    if (node instanceof Text) nodes.push(node);
+  function point(offset: number): [Node, number] {
     for (const node of nodes) {
       if (offset <= node.length) return [node, offset];
       offset -= node.length;

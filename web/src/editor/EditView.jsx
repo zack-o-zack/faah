@@ -1,7 +1,7 @@
 import { createEffect, createMemo, createSignal, Index, on, onCleanup, onMount } from 'solid-js';
 import { useEditor } from './context.jsx';
-import { indentEdit } from './edit.js';
-import { visibleRange, lineOffsets } from './layout.js';
+import { indentEdit } from './edit.ts';
+import { visibleRange, lineOffsets } from './layout.ts';
 
 export function EditView() {
   const editor = useEditor();

@@ -1,5 +1,37 @@
-import { movePosition, selectedText, wordAtColumn } from './cursor.js';
-export const initialVimState = () => ({
+import type { Position } from './cursor.ts';
+export interface VimState {
+  mode: string;
+  count: string;
+  pending: string;
+  pendingAt: number;
+  register: string;
+}
+export interface VimDocument {
+  line: number;
+  col: number;
+  anchor: Position | null;
+  textAt: (index: number) => string;
+  total: number;
+  tabCount?: number;
+  pageLines: number;
+  topLine: number;
+  middleLine: number;
+  bottomLine: number;
+}
+export type VimCommand =
+  | { type: 'yank' | 'selection' | 'scroll'; value: string }
+  | { type: 'history' | 'tabIndex' | 'tab' | 'find' | 'next'; value: number }
+  | { type: 'findWord'; value: { word: string; col: number; direction: number } }
+  | { type: 'definition' | 'references' | 'calls' | 'hover' | 'palette' };
+export interface VimResult {
+  state: VimState;
+  cursor: Position;
+  anchor: Position | null;
+  commands: VimCommand[];
+  handled: boolean;
+}
+import { movePosition, selectedText, wordAtColumn } from './cursor.ts';
+export const initialVimState = (): VimState => ({
   mode: 'NORMAL',
   count: '',
   pending: '',
@@ -8,12 +40,17 @@ export const initialVimState = () => ({
 });
 
 /** The reader's Vim dialect emits commands; it never touches the DOM or services. */
-export function vimKey(previous, event, document, now = 0) {
+export function vimKey(
+  previous: VimState,
+  event: { key: string; metaKey?: boolean; altKey?: boolean; ctrlKey?: boolean },
+  document: VimDocument,
+  now = 0,
+): VimResult {
   const state = { ...previous };
   const cursor = { line: document.line, col: document.col };
   let anchor = document.anchor;
-  const commands = [];
-  const result = (handled) => {
+  const commands: VimCommand[] = [];
+  const result = (handled: boolean): VimResult => {
     cursor.line = Math.max(1, Math.min(document.total || 1, cursor.line));
     if (state.mode === 'VISUAL_LINE' && anchor) {
       const reverse = cursor.line < anchor.line;
@@ -32,12 +69,11 @@ export function vimKey(previous, event, document, now = 0) {
     reset();
   };
   const visual = () => state.mode !== 'NORMAL';
-  const move = (amount, axis = 'line') => {
+  const move = (amount: number, axis = 'line') => {
     if (visual() && !anchor) anchor = { ...cursor };
     Object.assign(cursor, movePosition(cursor, amount, document.textAt, document.total, axis));
     if (state.mode === 'VISUAL_LINE') cursor.col = document.textAt(cursor.line - 1).length;
   };
-  const action = (type, value) => commands.push({ type, value });
   if (state.pending && now - state.pendingAt > 1400) reset();
   if (event.key === 'Escape') {
     const handled = visual() || !!state.count || !!state.pending;
@@ -47,15 +83,14 @@ export function vimKey(previous, event, document, now = 0) {
   if (event.metaKey || event.altKey) return result(false);
   const count = Math.max(1, parseInt(state.count, 10) || 1);
   if (event.ctrlKey) {
-    const pages = { d: 0.5, u: -0.5, f: 1, b: -1 };
-    if (pages[event.key]) {
+    const pages: Record<string, number> = { d: 0.5, u: -0.5, f: 1, b: -1 };
+    const page = pages[event.key];
+    if (page) {
       const size =
-        Math.abs(pages[event.key]) === 1
-          ? document.pageLines - 2
-          : Math.floor(document.pageLines / 2);
-      move(Math.sign(pages[event.key]) * Math.max(1, size) * count);
+        Math.abs(page) === 1 ? document.pageLines - 2 : Math.floor(document.pageLines / 2);
+      move(Math.sign(page) * Math.max(1, size) * count);
     } else if (event.key === 'o' || event.key === 'i')
-      action('history', (event.key === 'o' ? -1 : 1) * count);
+      commands.push({ type: 'history', value: (event.key === 'o' ? -1 : 1) * count });
     else return result(false);
     reset();
     return result(true);
@@ -75,16 +110,24 @@ export function vimKey(previous, event, document, now = 0) {
         state.mode === 'VISUAL_LINE'
           ? {
               ...cursor,
-              col: cursor.line < anchor.line ? 0 : document.textAt(cursor.line - 1).length,
+              col:
+                cursor.line < (anchor?.line ?? cursor.line)
+                  ? 0
+                  : document.textAt(cursor.line - 1).length,
             }
           : cursor;
       const info = selectedText(anchor, head, document.textAt);
       if (event.key === 'y') {
         state.register = info?.text || '';
-        action('yank', state.register);
+        commands.push({ type: 'yank', value: state.register });
       } else {
-        const actions = { Y: 'copy-ref', e: 'agent-edit', c: 'agent-edit', u: 'usages' };
-        action('selection', actions[event.key]);
+        const actions: Record<string, string> = {
+          Y: 'copy-ref',
+          e: 'agent-edit',
+          c: 'agent-edit',
+          u: 'usages',
+        };
+        commands.push({ type: 'selection', value: actions[event.key] || '' });
       }
       normal();
       return result(true);
@@ -101,17 +144,17 @@ export function vimKey(previous, event, document, now = 0) {
     }
     if (event.key === 't') {
       const indexed = state.count && count <= (document.tabCount ?? Infinity);
-      action(indexed ? 'tabIndex' : 'tab', indexed ? count - 1 : 1);
+      commands.push({ type: indexed ? 'tabIndex' : 'tab', value: indexed ? count - 1 : 1 });
     }
-    if (event.key === 'T') action('tab', -1);
-    if (event.key === 'd') action('definition');
-    if (event.key === 'r') action('references');
-    if (event.key === 'h') action('calls');
+    if (event.key === 'T') commands.push({ type: 'tab', value: -1 });
+    if (event.key === 'd') commands.push({ type: 'definition' });
+    if (event.key === 'r') commands.push({ type: 'references' });
+    if (event.key === 'h') commands.push({ type: 'calls' });
     reset();
     return result(true);
   }
   if (state.pending === 'z') {
-    if (['z', 't', 'b'].includes(event.key)) action('scroll', event.key);
+    if (['z', 't', 'b'].includes(event.key)) commands.push({ type: 'scroll', value: event.key });
     reset();
     return result(true);
   }
@@ -128,11 +171,11 @@ export function vimKey(previous, event, document, now = 0) {
       state.register = selectedText(start, cursor, document.textAt)?.text || '';
       Object.assign(cursor, start);
     }
-    action('yank', state.register);
+    commands.push({ type: 'yank', value: state.register });
     reset();
     return result(true);
   }
-  const motions = {
+  const motions: Record<string, [number, string]> = {
     h: [-count, 'column'],
     l: [count, 'column'],
     j: [count, 'line'],
@@ -140,7 +183,8 @@ export function vimKey(previous, event, document, now = 0) {
     w: [count, 'word'],
     b: [-count, 'word'],
   };
-  if (motions[event.key]) move(...motions[event.key]);
+  const motion = motions[event.key];
+  if (motion) move(...motion);
   else if (event.key === '0' || event.key === '$')
     cursor.col = event.key === '0' ? 0 : document.textAt(cursor.line - 1).length;
   else if (event.key === '^')
@@ -149,8 +193,12 @@ export function vimKey(previous, event, document, now = 0) {
     cursor.line = state.count ? Math.min(document.total, count) : document.total;
     cursor.col = 0;
   } else if (['H', 'M', 'L'].includes(event.key)) {
-    const positions = { H: document.topLine, M: document.middleLine, L: document.bottomLine };
-    cursor.line = Math.max(1, Math.min(document.total, positions[event.key]));
+    const positions: Record<string, number> = {
+      H: document.topLine,
+      M: document.middleLine,
+      L: document.bottomLine,
+    };
+    cursor.line = Math.max(1, Math.min(document.total, positions[event.key] || cursor.line));
   } else if (event.key === 'v' || event.key === 'V') {
     state.mode = event.key === 'v' ? 'VISUAL' : 'VISUAL_LINE';
     anchor = { ...cursor, col: state.mode === 'VISUAL_LINE' ? 0 : cursor.col };
@@ -159,13 +207,19 @@ export function vimKey(previous, event, document, now = 0) {
     state.pending = event.key;
     state.pendingAt = now;
     return result(true);
-  } else if (event.key === 'K') action('hover');
-  else if (event.key === '/' || event.key === '?') action('find', event.key === '?' ? -1 : 1);
-  else if (event.key === 'n' || event.key === 'N') action('next', event.key === 'n' ? 1 : -1);
+  } else if (event.key === 'K') commands.push({ type: 'hover' });
+  else if (event.key === '/' || event.key === '?')
+    commands.push({ type: 'find', value: event.key === '?' ? -1 : 1 });
+  else if (event.key === 'n' || event.key === 'N')
+    commands.push({ type: 'next', value: event.key === 'n' ? 1 : -1 });
   else if (event.key === '*' || event.key === '#') {
     const word = wordAtColumn(document.textAt(cursor.line - 1), cursor.col);
-    if (word) action('findWord', { ...word, direction: event.key === '*' ? 1 : -1 });
-  } else if (event.key === ':') action('palette');
+    if (word)
+      commands.push({
+        type: 'findWord',
+        value: { ...word, direction: event.key === '*' ? 1 : -1 },
+      });
+  } else if (event.key === ':') commands.push({ type: 'palette' });
   else return result(false);
   reset();
   return result(true);

@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { selectionRef, contextSnippet } from './selection.js';
+import { selectionRef, contextSnippet } from './selection.ts';
 
 test('references and context snippets preserve single lines and ranges', () => {
   const info = { path: 'src/file.go', l1: 2, l2: 2, text: 'source' };

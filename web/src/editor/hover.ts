@@ -1,4 +1,18 @@
-export function placeCard(point, host, card) {
+export interface Point {
+  x: number;
+  y: number;
+}
+export interface Rect {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+}
+export function placeCard(
+  point: Point,
+  host: { left: number; top: number; width: number; height: number },
+  card: { width: number; height: number },
+): { left: number; top: number } {
   let left = point.x - host.left + 6;
   let top = point.y - host.top + 20;
   if (left + card.width > host.width - 12) left = Math.max(8, host.width - card.width - 12);
@@ -9,7 +23,13 @@ export function placeCard(point, host, card) {
   return { left, top };
 }
 
-export function nearCard(point, anchor, rect, pad = 16, corridor = 52) {
+export function nearCard(
+  point: Point | null,
+  anchor: Point | null,
+  rect: Rect,
+  pad = 16,
+  corridor = 52,
+): boolean {
   if (!point) return false;
   if (
     point.x >= rect.left - pad &&

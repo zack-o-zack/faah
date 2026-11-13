@@ -1,34 +1,45 @@
+import type { Request } from '../lib/api.ts';
+import type { LayoutOptions } from './layout.ts';
+import { decodeFileWindow } from './decode.ts';
+import type { FileWindow } from './decode.ts';
 import { createSignal } from 'solid-js';
-import { textOffsets } from './edit.js';
+import { textOffsets } from './edit.ts';
 import { api } from '../lib/api.ts';
-import { CHUNK, htmlTextLen, lineText, lineOffsets } from './layout.js';
+import { CHUNK, htmlTextLen, lineText, lineOffsets } from './layout.ts';
 
 /** Large arrays live here, outside the metadata store's deep proxy. */
 export function createDocumentBuffer(
-  path,
-  { fetcher = api, ref = '', onMetadata = () => {} } = {},
+  path: string,
+  {
+    fetcher = api,
+    ref = '',
+    onMetadata = () => {},
+  }: { fetcher?: Request; ref?: string; onMetadata?: (result: FileWindow) => void } = {},
 ) {
   const [revision, setRevision] = createSignal(0);
   const [editRevision, editChanged] = createSignal(0);
-  let editContent = null;
+  let editContent: string | null = null;
   let editStarts = [0];
-  const lines = [];
-  const chunks = new Set();
-  const pending = new Map();
-  const refining = new Map();
+  const lines: (string | undefined)[] = [];
+  const chunks = new Set<number>();
+  const pending = new Map<
+    number,
+    { controller: AbortController; promise: Promise<FileWindow | undefined> | null }
+  >();
+  const refining = new Map<number, ReturnType<typeof setTimeout>>();
   let columns = new Int32Array(0);
   let generation = 0;
   let disposed = false;
   let layoutKey = '';
   let measureKey = '';
   let wrapping = false;
-  const heights = new Map();
-  let offsets = new Float64Array(1);
+  const heights = new Map<number, number>();
+  let offsets: Float64Array = new Float64Array(1);
   const changed = () => {
     layoutKey = '';
     setRevision((value) => value + 1);
   };
-  function apply(result) {
+  function apply(result: FileWindow): void {
     if ((result.total || 0) !== lines.length) {
       lines.length = result.total || 0;
       columns = new Int32Array(result.total || 0);
@@ -45,25 +56,33 @@ export function createDocumentBuffer(
     onMetadata(result);
     changed();
   }
-  function cancel() {
+  function cancel(): void {
     generation++;
     for (const request of pending.values()) request.controller.abort();
     for (const timer of refining.values()) clearTimeout(timer);
     pending.clear();
     refining.clear();
   }
-  async function loadChunk(chunk, { force = false, refine = false, onlyIfChanged = false } = {}) {
+  async function loadChunk(
+    chunk: number,
+    { force = false, refine = false, onlyIfChanged = false } = {},
+  ): Promise<FileWindow | undefined> {
     if (disposed || (!force && chunks.has(chunk))) return;
-    if (pending.has(chunk)) return pending.get(chunk).promise;
+    if (pending.has(chunk)) return pending.get(chunk)?.promise || undefined;
     const controller = new AbortController();
     const mine = generation;
-    const request = { controller, promise: null };
+    const request: {
+      controller: AbortController;
+      promise: Promise<FileWindow | undefined> | null;
+    } = { controller, promise: null };
     const load = async () => {
       try {
-        const result = await fetcher(
-          'api/file',
-          { path, start: chunk * CHUNK, count: CHUNK, ref },
-          { signal: controller.signal },
+        const result = decodeFileWindow(
+          await fetcher(
+            'api/file',
+            { path, start: chunk * CHUNK, count: CHUNK, ref },
+            { signal: controller.signal },
+          ),
         );
         if (disposed || mine !== generation) return;
         if (onlyIfChanged) {
@@ -94,7 +113,7 @@ export function createDocumentBuffer(
     request.promise = load();
     return request.promise;
   }
-  function scheduleRefine(chunk, tries = 0) {
+  function scheduleRefine(chunk: number, tries = 0): void {
     if (disposed || refining.has(chunk) || tries > 6) return;
     const mine = generation;
     const timer = setTimeout(
@@ -121,7 +140,7 @@ export function createDocumentBuffer(
     get editStarts() {
       return editStarts;
     },
-    setEditContent(content) {
+    setEditContent(content: string | null) {
       editContent = content;
       editStarts = content == null ? [0] : textOffsets(content);
       editChanged((value) => value + 1);
@@ -136,11 +155,11 @@ export function createDocumentBuffer(
     get generation() {
       return generation;
     },
-    text: (index) => lineText(lines[index]),
+    text: (index: number) => lineText(lines[index]),
     apply,
     loadChunk,
     refine: scheduleRefine,
-    ensure(first, last) {
+    ensure(first: number, last: number) {
       const work = [];
       for (
         let chunk = Math.floor(first / CHUNK);
@@ -151,20 +170,20 @@ export function createDocumentBuffer(
       }
       return Promise.all(work);
     },
-    measureHeights(entries) {
+    measureHeights(entries: Iterable<[number, number]>) {
       if (!wrapping) return;
       let dirty = false;
       for (const [index, height] of entries) {
         if (index < 0 || index >= lines.length || height <= 0) continue;
-        if (Math.abs(height - (offsets[index + 1] - offsets[index])) < 0.5) continue;
+        if (Math.abs(height - ((offsets[index + 1] || 0) - (offsets[index] || 0))) < 0.5) continue;
         heights.set(index, height);
         dirty = true;
       }
       if (dirty) changed();
     },
-    layout(options) {
+    layout(options: LayoutOptions) {
       const key = JSON.stringify(options);
-      wrapping = options.wrap;
+      wrapping = !!options.wrap;
       if (measureKey !== key) {
         heights.clear();
         measureKey = key;
@@ -196,3 +215,5 @@ export function createDocumentBuffer(
     },
   };
 }
+
+export type DocumentBuffer = ReturnType<typeof createDocumentBuffer>;
