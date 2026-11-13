@@ -296,7 +296,7 @@ test('Mermaid follows theme resources and exposes an owned exit operation withou
   }
   const mounted = render(() => <Harness />);
   await waitFor(() => expect(document.querySelector('.md-mermaid svg')).toBeTruthy());
-  await fireEvent.click(screen.getByRole('button', { name: 'Toggle diagram fullscreen' }));
+  await fireEvent.click(screen.getByRole('button', { name: 'Full screen', exact: true }));
   const exit = [...editor.services.diagramFullscreens][0];
   expect(exit()).toBe(true);
   expect(exit()).toBe(false);

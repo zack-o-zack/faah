@@ -1,65 +1,77 @@
-import { Show } from 'solid-js';
-
 export function MermaidControls(props) {
   return (
-    <div
-      class="md-mermaid-controls flex items-center gap-1"
-      role="group"
-      aria-label="Diagram zoom controls"
-    >
+    <>
+      <div class="md-mermaid-controls" role="group" aria-label="Diagram zoom controls">
+        <DiagramButton
+          label="Zoom out diagram (or Ctrl+Scroll)"
+          icon="icon-[lucide--minus]"
+          disabled={props.zoom <= 0.25}
+          onClick={() => props.step(-1)}
+        />
+        <button
+          type="button"
+          class="btn"
+          data-control="md-mermaid-zoom md-mermaid-zoom-label"
+          data-variant="ghost"
+          data-size="xs"
+          aria-label="Toggle zoom"
+          title="Click to toggle 100% / Fit"
+          onClick={() => props.toggleZoom()}
+        >
+          {Math.round(props.zoom * 100)}%
+        </button>
+        <DiagramButton
+          label="Zoom in diagram (or Ctrl+Scroll)"
+          icon="icon-[lucide--plus]"
+          disabled={props.zoom >= 4}
+          onClick={() => props.step(1)}
+        />
+        <DiagramButton
+          label="Fit diagram to view"
+          icon="icon-[lucide--scan]"
+          onClick={() => props.fit()}
+        />
+        <DiagramButton
+          label={props.fullscreen ? 'Exit full screen (Esc)' : 'Full screen'}
+          icon={props.fullscreen ? 'icon-[lucide--minimize-2]' : 'icon-[lucide--maximize-2]'}
+          onClick={() => props.toggleFullscreen()}
+        />
+        <DiagramButton
+          label="Close full screen (Esc)"
+          icon="icon-[lucide--x]"
+          class="btn md-mermaid-fs-only"
+          onClick={() => props.toggleFullscreen()}
+        />
+      </div>
       <button
-        class="btn"
-        data-size="xs"
-        aria-label="Zoom out diagram"
-        disabled={props.zoom <= 0.25}
-        onClick={() => props.step(-1)}
-      >
-        −
-      </button>
-      <button
-        class="btn"
-        data-size="xs"
-        aria-label="Toggle diagram zoom"
-        title="Toggle 100% / Fit"
-        onClick={() => props.toggleZoom()}
-      >
-        {Math.round(props.zoom * 100)}%
-      </button>
-      <button
-        class="btn"
-        data-size="xs"
-        aria-label="Zoom in diagram"
-        disabled={props.zoom >= 4}
-        onClick={() => props.step(1)}
-      >
-        +
-      </button>
-      <button
-        class="btn"
-        data-size="xs"
-        aria-label="Fit diagram to view"
-        onClick={() => props.fit()}
-      >
-        Fit
-      </button>
-      <button
-        class="btn"
-        data-size="xs"
-        aria-label="Toggle diagram fullscreen"
+        type="button"
+        class="btn hidden [.is-fullscreen_&]:inline-flex fixed top-3 right-3 z-[1001]"
+        data-control="md-mermaid-fs-close"
+        data-variant="ghost"
+        data-size="icon-xs"
+        title="Close full screen (Esc)"
+        aria-label="Close full screen"
         onClick={() => props.toggleFullscreen()}
       >
-        {props.fullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+        <span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true" />
       </button>
-      <Show when={props.fullscreen}>
-        <button
-          class="btn"
-          data-size="xs"
-          aria-label="Close diagram fullscreen"
-          onClick={() => props.toggleFullscreen()}
-        >
-          Close
-        </button>
-      </Show>
-    </div>
+    </>
+  );
+}
+function DiagramButton(props) {
+  return (
+    <button
+      type="button"
+      class={props.class || 'btn'}
+      data-control="md-mermaid-zoom"
+      data-variant="ghost"
+      data-size="icon-xs"
+      title={props.label}
+      aria-label={props.label}
+      disabled={props.disabled}
+      onClick={() => props.onClick()}
+    >
+      <span class={`${props.icon} size-3.5`} aria-hidden="true" />
+    </button>
   );
 }
