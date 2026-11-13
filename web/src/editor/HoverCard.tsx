@@ -1,5 +1,6 @@
 import type { JSX } from 'solid-js';
 import { createEffect, createSignal, For, on, onCleanup, Show } from 'solid-js';
+import { HoverDiagnostic } from './HoverDiagnostic.tsx';
 import { HoverAction } from './HoverAction.tsx';
 import { useEditor } from './context.tsx';
 import { nearCard, placeCard } from './hover.ts';
@@ -50,7 +51,9 @@ export function HoverCard(): JSX.Element {
   createEffect(() => {
     const hover = editor.ui.hover;
     if (!hover || !card || !editor.ui.hoverPosition) return;
-    const host = { left: 0, top: 0, width: innerWidth, height: innerHeight };
+    const parent = card.offsetParent;
+    if (!(parent instanceof HTMLElement)) return;
+    const host = parent.getBoundingClientRect();
     setPosition(placeCard(editor.ui.hoverPosition, host, card.getBoundingClientRect()));
     if (hover.focus) card.focus();
   });
@@ -63,16 +66,14 @@ export function HoverCard(): JSX.Element {
       aria-label="Symbol documentation"
       tabindex="-1"
       hidden={!editor.ui.hover}
-      class="card fixed z-[60] max-w-[560px] max-h-[70vh] overflow-auto gap-0 py-0"
+      class="card absolute z-[60] w-[calc(100%_-_24px)] max-w-[560px] max-h-[min(70vh,calc(100%_-_16px))] overflow-auto gap-0 py-0"
       style={{ left: `${position().left}px`, top: `${position().top}px` }}
     >
       <Show when={editor.ui.hover}>
         {(hover) => (
           <>
             <For each={hover().diagnostics}>
-              {(diagnostic) => (
-                <p class="border-b p-3 text-sm text-destructive">{diagnostic.message}</p>
-              )}
+              {(diagnostic) => <HoverDiagnostic diagnostic={diagnostic} />}
             </For>
             <Show when={hover().data.signature}>
               <div

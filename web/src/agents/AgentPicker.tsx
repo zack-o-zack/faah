@@ -5,7 +5,7 @@ interface AgentPickerProps {
   disabled?: boolean;
 }
 import type { JSX } from 'solid-js';
-import { createMemo, createResource, createSignal, For, Show } from 'solid-js';
+import { createMemo, createResource, createSignal, For, Show, onMount } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { Popover } from '../lib/Popover.tsx';
 import { ErrorNotice } from '../lib/ErrorNotice.tsx';
@@ -74,7 +74,7 @@ export function AgentPicker(props: AgentPickerProps): JSX.Element {
         open={open()}
         onOpenChange={setOpen}
       >
-        <PickerPanel height={panelHeight()} close={() => setOpen(false)} />
+        {(close) => <PickerPanel height={panelHeight()} close={() => close('select')} />}
       </Popover>
     </div>
   );
@@ -87,6 +87,7 @@ function PickerPanel(props: { height: number; close: () => void }): JSX.Element 
   const [selected, setSelected] = createSignal(0);
   let input: HTMLInputElement | undefined;
   let list: HTMLDivElement | undefined;
+  onMount(() => input?.focus());
   const groups = createMemo(() => groupAgentModels(agents.state.harnesses));
   const active = () =>
     groups().find((group) => group.harness === (chosen() || agents.state.selected)) || groups()[0];

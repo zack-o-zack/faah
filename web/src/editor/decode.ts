@@ -10,6 +10,8 @@ export interface Diagnostic {
   endLine?: number;
   endCol?: number;
   severity?: number;
+  source?: string;
+  code?: string | number;
   message: string;
 }
 export interface FileWindow {
@@ -52,6 +54,8 @@ export function decodeDiagnostic(value: unknown): Diagnostic {
     endLine: number(row.endLine),
     endCol: number(row.endCol),
     severity: number(row.severity),
+    source: text(row.source),
+    code: typeof row.code === 'number' ? row.code : text(row.code),
     message: text(row.message),
   };
 }

@@ -72,14 +72,20 @@ export function MergeDialog(): JSX.Element {
             <p id="pr-merge-explain" data-ui="pr-merge-explain" class="text-muted-foreground">
               {method().explain(merge.commitCount(), merge.base())}
             </p>
-            <Show when={blocked()}>
-              <div class="alert p-3" data-variant="destructive">
-                {blocked()}
-              </div>
-            </Show>
-            <For each={merge.warnings()?.notes || []}>
-              {(note) => <div class="alert p-3">{note}</div>}
-            </For>
+            <div id="pr-merge-warnings" data-ui="pr-merge-warnings" class="flex flex-col gap-2">
+              <Show when={blocked()}>
+                <div data-ui="pr-merge-warn" class="alert p-3 block">
+                  {blocked()}
+                </div>
+              </Show>
+              <For each={merge.warnings()?.notes || []}>
+                {(note) => (
+                  <div data-ui="pr-merge-warn" class="alert p-3">
+                    {note}
+                  </div>
+                )}
+              </For>
+            </div>
             <Show when={dialog().method !== 'rebase'} fallback={<CommitList />}>
               <CommitFields draft={draft()} />
             </Show>
@@ -231,7 +237,7 @@ function CommitFields(props: CommitFieldsProps): JSX.Element {
           >
             commit message instructions
           </button>{' '}
-          from Settings apply to rewrites.
+          from Settings apply too.
         </span>
       </Show>
     </div>
