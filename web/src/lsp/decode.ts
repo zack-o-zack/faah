@@ -21,6 +21,7 @@ export interface ServerInfo {
   name: string;
   lang: string;
   fullLang: string;
+  memBytes?: number;
   exts: string[];
   installed: boolean;
   running: boolean;
@@ -85,6 +86,7 @@ export function decodeServers(value: unknown): ServersReply {
         name: text(s.name),
         lang: text(s.lang),
         fullLang: text(s.fullLang),
+        memBytes: number(s.memBytes),
         exts: strings(s.exts),
         installed: boolean(s.installed),
         running: boolean(s.running),

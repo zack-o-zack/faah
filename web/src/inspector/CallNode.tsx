@@ -33,25 +33,49 @@ export function CallNode(props: CallNodeProps): JSX.Element {
     editor.actions.flashFind(props.node.name);
   }
   return (
-    <div class="ml-3 border-l pl-1">
-      <div class="flex items-center gap-1" data-ui="cnode sym">
+    <div>
+      <div
+        class="flex min-w-0 items-center gap-2 p-2 cursor-pointer hover:bg-accent [&.sel]:bg-accent"
+        data-ui="cnode sym"
+        style={{ 'padding-left': `${6 + props.ancestors.length * 14}px` }}
+        // aislop-ignore-next-line jsx-a11y/prefer-tag-over-role -- The navigable row contains a separate expand button.
+        role="button"
+        tabindex="0"
+        title={`${target().path}:${target().line}${props.node.detail ? '\n' + props.node.detail : ''}`}
+        onClick={() => void jump()}
+        onKeyDown={(event) => {
+          if (event.target === event.currentTarget && ['Enter', ' '].includes(event.key)) {
+            event.preventDefault();
+            void jump();
+          }
+        }}
+      >
         <button
-          class="btn"
+          class="w-4 shrink-0 cursor-pointer text-muted-foreground"
+          data-ui="car"
           aria-label={`Expand ${props.node.name}`}
           aria-expanded={expanded()}
           disabled={cycle()}
-          onClick={() => setToggled(!expanded())}
+          onClick={(event) => {
+            event.stopPropagation();
+            setToggled(!expanded());
+          }}
         >
-          {cycle() ? '↻' : '›'}
+          <span
+            class={arrowIcon(cycle(), children.loading, !!expanded()) + ' size-3'}
+            aria-hidden="true"
+          />
         </button>
-        <button
-          class="btn min-w-0 flex-1 justify-start text-xs"
-          title={`${target().path}:${target().line}`}
-          onClick={() => void jump()}
-        >
-          {props.node.name} · {target().line}
+        <span class="badge" data-variant="secondary" data-k={props.node.kind}>
+          {props.node.kind}
+        </span>
+        <span data-ui="sn" class="truncate">
+          {props.node.name}
+        </span>
+        <span data-ui="sl" class="ml-auto font-mono text-muted-foreground">
+          {target().path.split('/').pop()}:{target().line}
           <Show when={(props.node.sites?.length || 0) > 1}> ×{props.node.sites?.length}</Show>
-        </button>
+        </span>
       </div>
       <Show when={expanded()}>
         <Show when={children.loading}>
@@ -69,9 +93,13 @@ export function CallNode(props: CallNodeProps): JSX.Element {
                 )}
               </For>
               <Show when={!data().nodes?.length}>
-                <p class="p-2 text-xs text-muted-foreground">
+                <p
+                  data-ui="cnone"
+                  class="p-3 text-muted-foreground"
+                  style={{ 'padding-left': `${26 + (props.ancestors.length + 1) * 14}px` }}
+                >
                   {editor.language.state.direction === 'in'
-                    ? 'No callers found'
+                    ? 'no callers found'
                     : 'Calls nothing traceable'}
                 </p>
               </Show>
@@ -81,4 +109,10 @@ export function CallNode(props: CallNodeProps): JSX.Element {
       </Show>
     </div>
   );
+}
+
+function arrowIcon(cycle: boolean, loading: boolean, expanded: boolean): string {
+  if (cycle) return 'icon-[lucide--repeat]';
+  if (loading) return 'icon-[lucide--loader-circle] animate-spin';
+  return expanded ? 'icon-[lucide--chevron-down]' : 'icon-[lucide--chevron-right]';
 }

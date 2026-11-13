@@ -1,4 +1,4 @@
-import type { CallNode } from './decode.ts';
+import type { CallNode, ServerInfo } from './decode.ts';
 import type { WordPosition } from '../editor/contracts.ts';
 export interface Target {
   word: string;
@@ -60,3 +60,47 @@ export function shortKind(kind = 'sym'): string {
 }
 export const installLog = (job: { log?: string } | null | undefined): string =>
   (job?.log || '').trimEnd().split('\n').slice(-12).join('\n');
+
+export function shortLanguage(lang: string): string {
+  const names: Record<string, string> = {
+    'TypeScript and JavaScript': 'TS / JS',
+    TypeScript: 'TS',
+    JavaScript: 'JS',
+    'C and C++': 'C / C++',
+  };
+  return names[lang] || lang;
+}
+export function serverPresentation(server: ServerInfo): {
+  busy: boolean;
+  dot: string;
+  note: string;
+  action: string;
+  label: string;
+} {
+  if (server.state === 'installing' || server.job?.running)
+    return { busy: true, dot: '', note: '', action: '', label: '' };
+  if (server.state === 'starting')
+    return { busy: true, dot: '', note: '', action: 'stop', label: 'Stop' };
+  if (server.running)
+    return {
+      busy: false,
+      dot: server.state === 'indexing' ? 'bg-warn' : 'bg-gi',
+      note: '',
+      action: 'stop',
+      label: 'Stop',
+    };
+  if (server.state === 'failed')
+    return { busy: false, dot: 'bg-gd', note: 'Failed', action: 'start', label: 'Restart' };
+  if (server.installed)
+    return { busy: false, dot: 'bg-faint', note: '', action: 'start', label: 'Start' };
+  let action = '';
+  if (server.autoOpt >= 0) action = 'install';
+  else if (server.options.length) action = 'copy';
+  return {
+    busy: false,
+    dot: 'bg-faint',
+    note: server.error ? 'Install failed' : 'Not installed',
+    action,
+    label: '',
+  };
+}

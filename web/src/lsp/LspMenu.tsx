@@ -1,6 +1,7 @@
 import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
+import { LspServerRow } from './LspServerRow.tsx';
 import { Popover } from '../lib/Popover.tsx';
 export function LspMenu(): JSX.Element {
   const editor = useEditor();
@@ -39,56 +40,11 @@ export function LspMenu(): JSX.Element {
           </Show>
           <For each={editor.store.state.lsp.servers}>
             {(server) => (
-              <section class="flex items-center gap-2">
-                <span class="min-w-0 flex-1 truncate" title={server.error}>
-                  {server.name} · {server.state || 'off'}
-                </span>
-                <Show
-                  when={server.installed}
-                  fallback={
-                    <Show
-                      when={server.autoOpt >= 0}
-                      fallback={
-                        <Show when={server.options?.[0]}>
-                          <button
-                            class="btn"
-                            onClick={() =>
-                              void navigator.clipboard.writeText(server.options[0]?.cmd || '')
-                            }
-                          >
-                            Copy command
-                          </button>
-                        </Show>
-                      }
-                    >
-                      <button
-                        class="btn"
-                        disabled={!!language.state.pending}
-                        onClick={() =>
-                          void editor.actions.runLspAction('install', {
-                            server: server.name,
-                            option: server.autoOpt,
-                          })
-                        }
-                      >
-                        Install
-                      </button>
-                    </Show>
-                  }
-                >
-                  <button
-                    class="btn"
-                    disabled={!!language.state.pending}
-                    onClick={() =>
-                      void editor.actions.runLspAction(server.running ? 'stop' : 'start', {
-                        server: server.name,
-                      })
-                    }
-                  >
-                    {server.running ? 'Stop' : 'Start'}
-                  </button>
-                </Show>
-              </section>
+              <LspServerRow
+                server={server}
+                pending={!!language.state.pending}
+                onAction={(kind, params) => void editor.actions.runLspAction(kind, params)}
+              />
             )}
           </For>
           <Show when={!editor.store.state.lsp.servers.length}>
