@@ -44,9 +44,9 @@ test('copy actions put the reference, source or agent context on the clipboard',
   const { actions, dispose } = setup();
   const info = { path: 'main.go', l1: 2, l2: 4, text: 'code' };
   expect(actions.runSelectionAction('copy-ref', info)).toBe(true);
-  expect(copyText).toHaveBeenLastCalledWith('main.go:2-4');
+  expect(copyText).toHaveBeenLastCalledWith('main.go:2-4', 'Copied');
   actions.runSelectionAction('copy-source', info);
-  expect(copyText).toHaveBeenLastCalledWith('code');
+  expect(copyText).toHaveBeenLastCalledWith('code', 'Copied 3 lines');
   expect(actions.runSelectionAction('unknown', info)).toBe(false);
   dispose();
 });

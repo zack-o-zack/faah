@@ -1,6 +1,6 @@
 import { createEffect, createMemo, onCleanup } from 'solid-js';
 import { useEditor } from './context.jsx';
-import { textRanges } from './highlights.ts';
+import { markOccurrences, textRanges } from './highlights.ts';
 
 export function EditorRow(props) {
   const editor = useEditor();
@@ -37,17 +37,11 @@ export function EditorRow(props) {
   );
   const deleted = createMemo(() => editor.active()?.gutter?.dels?.has(line()));
   const gutter = createMemo(() => editor.active()?.gutter?.marks?.get(line()));
-  const selected = createMemo(() => {
-    const selection = editor.ui.selection;
-    return (
-      selection?.path === editor.active()?.path && line() >= selection.l1 && line() <= selection.l2
-    );
-  });
   createEffect(() => {
     html();
     const navigation = editor.store.state.navigation;
+    markOccurrences(code, navigation.occurrence);
     props.highlights.update(code, [
-      ['editor-occ', textRanges(code, navigation.occurrence)],
       [
         'editor-find',
         textRanges(code, editor.ui.findOpen ? editor.ui.query : '', editor.ui.caseSensitive),
@@ -72,8 +66,7 @@ export function EditorRow(props) {
   return (
     <div
       ref={row}
-      class={`row group/line flex min-h-[var(--lh)] font-mono text-[length:var(--fs)]
-        leading-[var(--lh)]`}
+      class="row group/line flex h-[var(--lh)] [body.word-wrap_&]:h-auto [body.word-wrap_&]:min-h-[var(--lh)] font-mono text-[length:var(--fs)] leading-[var(--lh)] [font-feature-settings:normal]"
       onClick={(event) => {
         if (!event.target.closest('button'))
           editor.actions.focusAgentAt(editor.active().path, line());
@@ -82,7 +75,6 @@ export function EditorRow(props) {
       classList={{
         cur: current(),
         'agent-sel': agent(),
-        'selection-line': selected(),
         'ref-range': reference(),
         'gut-del': deleted(),
         'row-has-err': !!diagnostic() && (diagnostic().severity || 1) === 1,
@@ -90,13 +82,14 @@ export function EditorRow(props) {
       }}
     >
       <div
-        class={`g sticky left-0 z-[2] shrink-0 bg-background pl-4 pr-3.5 text-right text-faint
-          select-none tabular-nums`}
+        class="g sticky left-0 z-[2] shrink-0 pl-4 pr-3.5 text-right text-faint bg-background group-[.cur]/line:bg-cur group-[.cur]/line:text-foreground group-[.ref-range]/line:bg-sel group-[.agent-sel]/line:text-primary group-[.agent-sel]/line:font-semibold group-[.agent-anchor]/line:relative select-none cursor-pointer tabular-nums"
         classList={{ 'gut-add': gutter() === 'add', 'gut-mod': gutter() === 'mod' }}
         style={{ width: `calc(${String(editor.active()?.total || 1).length}ch + 30px)` }}
       >
         <button
-          class="btn absolute left-0 opacity-0 group-hover/line:opacity-100"
+          class="btn absolute left-0 top-1/2 -translate-y-1/2 max-w-full truncate h-4! px-1! text-9! opacity-0 pointer-events-none group-hover/line:opacity-100 group-hover/line:pointer-events-auto group-[.agent-anchor]/line:opacity-100 group-[.agent-anchor]/line:pointer-events-auto"
+          data-variant="ghost"
+          data-size="xs"
           data-control="line-btn"
           onMouseDown={(event) => event.preventDefault()}
           onClick={(event) =>

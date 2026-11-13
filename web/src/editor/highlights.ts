@@ -63,3 +63,54 @@ export function textRanges(
   }
   return ranges;
 }
+
+export function markOccurrences(element: HTMLElement, query = ''): void {
+  const selection = document.getSelection();
+  const offset = (node: Node | null | undefined, at: number | undefined): number | null => {
+    if (!node || at === undefined || !element.contains(node)) return null;
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    range.setEnd(node, at);
+    return range.toString().length;
+  };
+  const anchor = offset(selection?.anchorNode, selection?.anchorOffset);
+  const focus = offset(selection?.focusNode, selection?.focusOffset);
+  for (const mark of element.querySelectorAll('.occ')) mark.replaceWith(...mark.childNodes);
+  element.normalize();
+  if (query) {
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+    const nodes: Text[] = [];
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) if (node instanceof Text) nodes.push(node);
+    for (const node of nodes) {
+      const raw = node.data;
+      if (!raw.includes(query)) continue;
+      const fragment = document.createDocumentFragment();
+      let at = 0,
+        found;
+      while ((found = raw.indexOf(query, at)) >= 0) {
+        fragment.append(document.createTextNode(raw.slice(at, found)));
+        const mark = document.createElement('span');
+        mark.className = 'occ';
+        mark.textContent = query;
+        fragment.append(mark);
+        at = found + query.length;
+      }
+      fragment.append(document.createTextNode(raw.slice(at)));
+      node.replaceWith(fragment);
+    }
+  }
+  function point(at: number): [Node, number] {
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      if (!(node instanceof Text)) continue;
+      if (at <= node.length) return [node, at];
+      at -= node.length;
+    }
+    return [element, element.childNodes.length];
+  }
+  if (selection && (anchor !== null || focus !== null)) {
+    const start: [Node | null, number] = anchor === null ? [selection.anchorNode, selection.anchorOffset] : point(anchor);
+    const end: [Node | null, number] = focus === null ? [selection.focusNode, selection.focusOffset] : point(focus);
+    if (start[0] && end[0]) selection.setBaseAndExtent(start[0], start[1], end[0], end[1]);
+  }
+}

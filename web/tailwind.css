@@ -105,8 +105,7 @@
   @keyframes caret-blink { 50% { opacity: 0; } }
   @media (prefers-reduced-motion: reduce) { #caret.blink { animation: none; } }
 
-  .row.cur, .row.cur .g { background: var(--cur); }
-  .selection-line .c { background: color-mix(in srgb, var(--primary) 12%, transparent); }
+  .row.cur { background: var(--cur); }
   .row.ref-range, .row.ref-range .g, [data-l].ref-range .diff-code { background: var(--sel); }
 
   #rows.all .c { background: var(--sel); }
@@ -582,7 +581,6 @@
 
 /* Global highlight rules make every explorer node compute highlight inheritance. */
 #rows ::highlight(editor-find) { background: var(--mark); color: inherit; }
-#rows ::highlight(editor-occ) { background: var(--accent); color: inherit; }
 #rows ::highlight(editor-link) { text-decoration: underline; color: var(--primary-text); }
 #rows ::highlight(editor-active) { background: var(--mark-active); color: var(--on-mark-active); }
 
