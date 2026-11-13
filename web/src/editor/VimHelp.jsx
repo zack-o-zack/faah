@@ -39,7 +39,7 @@ export function VimHelp() {
         class="btn"
         onClick={() => {
           editor.actions.hideVimHelp();
-          editor.services.showHelp?.();
+          editor.actions.showHelp();
         }}
       >
         View Standard Shortcuts

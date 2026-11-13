@@ -1,7 +1,9 @@
+import { previewKind, viewMode } from '../viewers/view.js';
 import { createAgentStore } from '../agents/store.js';
 import { createThreadStore } from '../threads/store.js';
 import { createReviewStore } from '../review/store.js';
 import { createPRStore } from '../pr/store.js';
+import { createShortcutRegistry } from '../shortcuts/registry.ts';
 import { createMergeStore } from '../pr/merge-store.js';
 import { createForgeStore } from '../pr/forge-store.js';
 import { registerFeatureCommands } from '../palette/features.js';
@@ -207,6 +209,7 @@ export function createEditorStore(store, options = {}) {
   const editor = {
     store,
     settings: store.settings,
+    shortcuts: createShortcutRegistry(),
     ui,
     setUI,
     services,
@@ -221,6 +224,7 @@ export function createEditorStore(store, options = {}) {
   const actions = {
     ...store.actions,
     ...store.settings.actions,
+    ...editor.shortcuts.actions,
     openLink: openFile,
     refresh,
     patch,
@@ -238,6 +242,21 @@ export function createEditorStore(store, options = {}) {
     revealLine,
     move,
     edge,
+    /** Alt+M: the Markdown or table preview of the active file, kept at the same line. */
+    toggleActivePreview() {
+      const document = active();
+      if (!previewKind(document)) {
+        toast('error', 'Preview works on Markdown, CSV and TSV files');
+        return;
+      }
+      const shown = ['markdown', 'table'].includes(viewMode(document));
+      const line = shown
+        ? services.preview?.topLine() || 1
+        : services.source?.topLine?.() || document.cur;
+      store.actions.togglePreview(document, line);
+      if (shown) centerLine(line);
+      if (ui.findOpen) void actions.executeFind();
+    },
     toggleWrap(forced) {
       const wrap = typeof forced === 'boolean' ? forced : !store.settings.preferences().wrap;
       void store.settings.actions.setSetting('editor.wordWrap', wrap ? 'on' : 'off');

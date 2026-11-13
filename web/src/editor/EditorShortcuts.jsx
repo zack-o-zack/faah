@@ -3,6 +3,7 @@ import { createShortcut } from '../lib/shortcuts.jsx';
 import { isMac } from '../lib/keyboard.js';
 import { useEditor } from './context.jsx';
 import { SEL_KEYS } from './selection.js';
+import { EDITOR_HELP } from '../shortcuts/help.ts';
 
 export function EditorShortcuts() {
   const editor = useEditor();
@@ -21,6 +22,7 @@ export function EditorShortcuts() {
     }
   };
   createShortcut(null, vim, { target: window, capture: true, preventDefault: false });
+  onCleanup(editor.shortcuts.describe(EDITOR_HELP));
   const register = (combo, action, when = available, inputs = false) =>
     createShortcut(combo, action, {
       target: window,

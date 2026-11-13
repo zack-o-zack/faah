@@ -1,6 +1,5 @@
-import { diffLayout } from '../settings/logic.ts';
 import { apiText } from '../lib/api.js';
-import { previewKind as documentPreviewKind, viewMode, canDiff } from '../viewers/view.js';
+import { viewMode } from '../viewers/view.js';
 // Removed when the last legacy module is migrated.
 import { createSourceDOM } from '../editor/source-dom.js';
 import { createEffect, createMemo, on, onCleanup } from 'solid-js';
@@ -210,7 +209,6 @@ function legacyDocument(path) {
 export function configureLegacyServices(value) {
   Object.assign(services, value);
   const {
-    showHelp,
     newThread,
     deleteCurrentThread,
     showThreadsSidebar,
@@ -277,7 +275,7 @@ export function configureLegacyServices(value) {
     },
     { name: 'Threads: Delete Current Thread', run: deleteCurrentThread },
     { name: 'Git: Open Pull Request…', run: () => openPalette('openpr', '') },
-    { name: 'Keyboard Shortcuts', run: showHelp },
+    { name: 'Keyboard Shortcuts', run: () => editorStore.actions.showHelp() },
   ]);
   onCleanup(releaseCommands);
   createEffect(
@@ -298,7 +296,6 @@ export function configureLegacyServices(value) {
     ),
   );
   Object.assign(editorStore.actions, {
-    openLegacyHelp: value.showHelp,
     selectLegacyAgent: editorStore.actions.selectAgent,
     legacyAgentModels: editorStore.actions.loadAgentModels,
   });
@@ -336,7 +333,6 @@ export function configureLegacyServices(value) {
     },
     showPreviewHit,
     clearPreviewMarks,
-    showHelp: value.showHelp,
     selectAll,
     selectPreview,
     copy: value.copyToClipboard,
@@ -463,62 +459,20 @@ function selectionAction(action, info, trigger) {
 // Phase-C consumers keep their imperative calls at this boundary.
 const activeDocument = () => editorStore?.active();
 const viewerActions = () => editorStore.actions;
-const previewKind = (document = activeDocument()) => documentPreviewKind(document);
 export const previewing = (document = activeDocument()) =>
   ['markdown', 'table'].includes(viewMode(document));
 const previewLine = (line) => {
   viewerActions().requestPreviewLine(activeDocument(), line);
   editorStore.services.preview?.line(line);
 };
-const previewTopLine = () => editorStore.services.preview?.topLine() || 1;
 
 const showPreviewHit = (index) => editorStore.services.preview?.showHit(index);
 const clearPreviewMarks = () => editorStore.services.preview?.clearMarks();
 const selectPreview = () => editorStore.services.preview?.select();
-export const previewKey = (event) => editorStore.services.preview?.key(event) || false;
-export function togglePreview() {
-  const document = activeDocument();
-  if (!previewKind(document))
-    return showToast('error', 'Preview works on Markdown, CSV and TSV files');
-  const shown = previewing();
-  const line = shown ? previewTopLine() : editorStore.services.source?.topLine?.() || document.cur;
-  viewerActions().togglePreview(document, line);
-  if (shown) editorStore.actions.centerLine(line);
-  if (editorStore.ui.findOpen) void editorStore.actions.executeFind();
-}
-export const handleImageKey = (event) => editorStore.services.imageKey?.(event) || false;
-export const exitMermaidFullscreen = () => {
-  for (const exit of editorStore.services.diagramFullscreens || []) if (exit()) return true;
-  return false;
-};
 const getDocRaw = (document) =>
   document
     ? apiText('api/raw', { path: document.path, ref: document.diffRef || '' })
     : Promise.resolve('');
-
-export const toggleDiff = () => {
-  const document = activeDocument();
-  if (!canDiff(document, editorStore.store.state.workspace.meta)) return;
-  viewerActions().setDiffMode(
-    document,
-    document.diffMode ? 'source' : diffLayout(editorStore.settings.preferences()),
-  );
-};
-export const stepDiffHunk = (direction) => editorStore.services.diff?.stepHunk(direction);
-export const stepChangedFile = async (direction) => {
-  const document = activeDocument();
-  if (!document) return;
-  let files = document.turnFiles;
-  if (!files && document.diffRef)
-    files = (await api('api/commitfiles', { sha: document.diffRef })).files;
-  files ||= (editorStore.store.state.workspace.meta?.gitFiles || []).map((path) => ({ path }));
-  files = files
-    .map((file) => (typeof file === 'string' ? { path: file } : file))
-    .filter((file) => !file.binary);
-  const index = files.findIndex((file) => file.path === document.path);
-  const next = files[index + direction];
-  if (next) await editorStore.actions.stepDiffFile(document, next);
-};
 
 let orbHooks;
 export function initOrb(hooks) {

@@ -39,7 +39,7 @@ export function StatusActions() {
       >
         Wrap
       </button>
-      <button class="btn hidden @3xl:inline-flex" onClick={() => editor.actions.openLegacyHelp()}>
+      <button class="btn hidden @3xl:inline-flex" onClick={() => editor.actions.showHelp()}>
         Help
       </button>
     </div>

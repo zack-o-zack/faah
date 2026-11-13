@@ -2,6 +2,7 @@ import { diffLayout } from '../settings/logic.ts';
 import { onCleanup } from 'solid-js';
 import { api } from '../lib/api.js';
 import { documentGitPlan } from './document-logic.js';
+import { canDiff } from '../viewers/view.js';
 export function createDocumentGitActions(editor, options = {}) {
   const app = editor.store;
   const request = options.request || api;
@@ -91,5 +92,33 @@ export function createDocumentGitActions(editor, options = {}) {
     for (const controller of pending.values()) controller.abort();
     pending.clear();
   });
-  return { loadGutter };
+  /** Mod+D: the active file's changes, or back to its source. */
+  function toggleActiveDiff() {
+    const document = editor.active();
+    if (!canDiff(document, app.state.workspace.meta)) return;
+    editor.actions.setDiffMode(
+      document,
+      document.diffMode ? 'source' : diffLayout(app.settings.preferences()),
+    );
+  }
+  /** [f and ]f: the previous or next file in the same change set. */
+  async function stepChangedFile(direction) {
+    const document = editor.active();
+    if (!document) return;
+    let files = document.turnFiles;
+    if (!files && document.diffRef)
+      files = (await request('api/commitfiles', { sha: document.diffRef })).files;
+    files ||= (app.state.workspace.meta?.gitFiles || []).map((path) => ({ path }));
+    files = files
+      .map((file) => (typeof file === 'string' ? { path: file } : file))
+      .filter((file) => !file.binary);
+    const next = files[files.findIndex((file) => file.path === document.path) + direction];
+    if (next) await editor.actions.stepDiffFile(document, next);
+  }
+  return {
+    loadGutter,
+    toggleActiveDiff,
+    stepChangedFile,
+    stepDiffHunk: (direction) => editor.services.diff?.stepHunk(direction),
+  };
 }

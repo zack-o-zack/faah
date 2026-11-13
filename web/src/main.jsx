@@ -22,6 +22,8 @@ import { ComposerDock } from './pr/ComposerDock.jsx';
 import { SettingsProvider } from './settings/context.ts';
 import { SettingsDialog } from './settings/SettingsDialog.tsx';
 import { PreferenceStyles } from './settings/PreferenceStyles.tsx';
+import { GlobalShortcuts } from './shortcuts/GlobalShortcuts.tsx';
+import { HelpSheet } from './shortcuts/HelpSheet.tsx';
 
 function App() {
   const theme = useTheme();
@@ -45,6 +47,8 @@ function App() {
         <PreferenceStyles />
         <SettingsDialog onVimHelp={editorStore.actions.showVimHelp} />
       </SettingsProvider>
+      <GlobalShortcuts />
+      <HelpSheet />
       <Palette />
       <LayoutShell />
       <Portal

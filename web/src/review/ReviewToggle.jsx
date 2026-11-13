@@ -1,13 +1,15 @@
-import { Show } from 'solid-js';
+import { onCleanup, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
 import { createShortcut } from '../lib/shortcuts.jsx';
 import { withKeys } from '../lib/keyboard.js';
+import { REVIEW_HELP } from '../shortcuts/help.ts';
 // The top bar's way into the overview, and back to the editor while it shows.
 export function ReviewToggle() {
   const editor = useEditor();
   const review = editor.review;
   const pr = () => editor.store.state.workspace.meta?.pr;
   createShortcut('Mod+Shift+V', () => editor.actions.toggleReviewMode(), { inputs: true });
+  onCleanup(editor.shortcuts.describe(REVIEW_HELP));
   return (
     <Show
       when={review.state.mode === 'review'}

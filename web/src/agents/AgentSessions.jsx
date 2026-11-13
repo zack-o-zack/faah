@@ -4,6 +4,7 @@ import { AgentSession } from './AgentSession.jsx';
 import { AgentPicker } from './AgentPicker.jsx';
 import { ErrorNotice } from '../lib/ErrorNotice.jsx';
 import { createShortcut, Kbd } from '../lib/shortcuts.jsx';
+import { AGENT_HELP } from '../shortcuts/help.ts';
 export function AgentSessions() {
   const editor = useEditor();
   const agents = editor.agents;
@@ -23,6 +24,7 @@ export function AgentSessions() {
     capture: true,
     stopPropagation: true,
   });
+  onCleanup(editor.shortcuts.describe(AGENT_HELP));
   return (
     <Show when={agents.state.sessions.length || agents.state.batch.pending}>
       <section

@@ -24,7 +24,7 @@ export function SidebarFooter() {
         id="btn-help"
         class="btn"
         aria-label="Keyboard shortcuts"
-        onClick={() => editor.actions.openLegacyHelp()}
+        onClick={() => editor.actions.showHelp()}
       >
         Help
       </button>

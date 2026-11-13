@@ -7,7 +7,6 @@ import { selectAgent, loadPickerModels } from './app/legacy-bridge.js';
 
 import { copyToClipboard, copyRichToClipboard, initErrorCopy } from './ui.js';
 
-import { showHelp, initShortcuts } from './shortcuts.js';
 
 import { $, S } from './state.js';
 import { revealFile, refreshTree, collapseAllDirs, expandDirtyDirs, inGitMode, setAutoRevealSuppressed, setSidebarMode, hasGitView } from './app/legacy-bridge.js';
@@ -24,13 +23,12 @@ import { refreshUnpushed } from './app/legacy-bridge.js';
 export function initLegacy() {
 configureLegacyServices({
  emit, on, newThread, deleteCurrentThread, showThreadsSidebar, selectAgent, loadPickerModels,
- copyToClipboard, copyRichToClipboard, showHelp,
+ copyToClipboard, copyRichToClipboard,
 });
 
 // Initialize all subsystems
 
 
-initShortcuts();
 
 
 
