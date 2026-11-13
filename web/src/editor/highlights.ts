@@ -65,6 +65,23 @@ export function textRanges(
 }
 
 export function markOccurrences(element: HTMLElement, query = ''): void {
+  markSourceText(element, query, 'occ');
+}
+export function markFind(
+  element: HTMLElement,
+  query: string,
+  caseSensitive: boolean,
+  active = -1,
+): void {
+  markSourceText(element, query, 'find', caseSensitive, active);
+}
+function markSourceText(
+  element: HTMLElement,
+  query: string,
+  kind: 'occ' | 'find',
+  caseSensitive = true,
+  active = -1,
+): void {
   const selection = document.getSelection();
   const offset = (node: Node | null | undefined, at: number | undefined): number | null => {
     if (!node || at === undefined || !element.contains(node)) return null;
@@ -75,24 +92,30 @@ export function markOccurrences(element: HTMLElement, query = ''): void {
   };
   const anchor = offset(selection?.anchorNode, selection?.anchorOffset);
   const focus = offset(selection?.focusNode, selection?.focusOffset);
-  for (const mark of element.querySelectorAll('.occ')) mark.replaceWith(...mark.childNodes);
+  for (const mark of element.querySelectorAll(kind === 'occ' ? '.occ' : 'mark'))
+    mark.replaceWith(...mark.childNodes);
   element.normalize();
   if (query) {
+    let index = 0;
+    const needle = caseSensitive ? query : query.toLowerCase();
     const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
     const nodes: Text[] = [];
     for (let node = walker.nextNode(); node; node = walker.nextNode())
       if (node instanceof Text) nodes.push(node);
     for (const node of nodes) {
       const raw = node.data;
-      if (!raw.includes(query)) continue;
+      const haystack = caseSensitive ? raw : raw.toLowerCase();
+      if (!haystack.includes(needle)) continue;
       const fragment = document.createDocumentFragment();
       let at = 0,
         found;
-      while ((found = raw.indexOf(query, at)) >= 0) {
+      while ((found = haystack.indexOf(needle, at)) >= 0) {
         fragment.append(document.createTextNode(raw.slice(at, found)));
-        const mark = document.createElement('span');
-        mark.className = 'occ';
-        mark.textContent = query;
+        const mark = document.createElement(kind === 'occ' ? 'span' : 'mark');
+        if (kind === 'occ') mark.className = 'occ';
+        else if (index === active) mark.className = 'on';
+        index++;
+        mark.textContent = raw.slice(found, found + query.length);
         fragment.append(mark);
         at = found + query.length;
       }

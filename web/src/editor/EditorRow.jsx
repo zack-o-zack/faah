@@ -1,6 +1,6 @@
 import { createEffect, createMemo, onCleanup } from 'solid-js';
 import { useEditor } from './context.jsx';
-import { markOccurrences, textRanges } from './highlights.ts';
+import { markFind, markOccurrences, textRanges } from './highlights.ts';
 
 export function EditorRow(props) {
   const editor = useEditor();
@@ -41,23 +41,17 @@ export function EditorRow(props) {
     html();
     const navigation = editor.store.state.navigation;
     markOccurrences(code, navigation.occurrence);
+    const hit = editor.ui.hits[editor.ui.activeHit];
+    markFind(
+      code,
+      editor.ui.findOpen ? editor.ui.query : '',
+      editor.ui.caseSensitive,
+      hit?.line === line() ? hit.n || 0 : -1,
+    );
     props.highlights.update(code, [
-      [
-        'editor-find',
-        textRanges(code, editor.ui.findOpen ? editor.ui.query : '', editor.ui.caseSensitive),
-      ],
       [
         'editor-link',
         textRanges(code, navigation.link?.line === line() ? navigation.link.word : ''),
-      ],
-      [
-        'editor-active',
-        editor.ui.hits[editor.ui.activeHit]?.line === line()
-          ? textRanges(code, editor.ui.query, editor.ui.caseSensitive).slice(
-              editor.ui.hits[editor.ui.activeHit].n || 0,
-              (editor.ui.hits[editor.ui.activeHit].n || 0) + 1,
-            )
-          : [],
       ],
     ]);
   });
