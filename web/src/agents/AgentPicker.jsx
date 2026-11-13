@@ -7,6 +7,8 @@ export function AgentPicker(props) {
   const editor = useEditor();
   const agents = editor.agents;
   const [open, setOpen] = createSignal(false);
+  const selected = () =>
+    agents.state.selected || agents.state.harnesses.find((agent) => agent.installed)?.name || '';
   return (
     <div
       id={props.id}
@@ -25,8 +27,8 @@ export function AgentPicker(props) {
         label={
           <>
             <span class="truncate">
-              {agents.state.selected
-                ? agents.state.selected + (agents.state.model ? ' · ' + agents.state.model : '')
+              {selected()
+                ? selected() + (agents.state.model ? ' · ' + agents.state.model : '')
                 : 'No harness'}
             </span>
             <i class="icon-[lucide--chevrons-up-down] size-3.5 shrink-0" aria-hidden="true" />

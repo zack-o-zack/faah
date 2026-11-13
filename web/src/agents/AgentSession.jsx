@@ -27,13 +27,16 @@ export function AgentSession(props) {
   });
   return (
     <article
-      class="card gap-2 p-3"
+      class="card flex flex-col gap-2 p-4 [&.shake]:animate-pulse"
       data-ui="agent-box"
       classList={{ busy: props.session.pending, queued: props.session.queued }}
     >
-      <header class="flex items-center gap-2">
+      <div data-ui="agent-head" class="flex items-center gap-2 font-mono">
+        <span class="sel-chip badge">Comment</span>
         <button
-          class="btn min-w-0 flex-1 truncate font-mono text-xs"
+          class="btn"
+          data-variant="ghost"
+          data-size="xs"
           data-control="agent-ref"
           onClick={() =>
             editor.actions.openFile(props.session.target.path, { line: props.session.target.l1 })
@@ -41,93 +44,125 @@ export function AgentSession(props) {
         >
           {targetRef(props.session.target)}
         </button>
+        <span class="flex-1 min-w-0" />
         <button
           class="btn"
+          data-variant="ghost"
+          data-size="icon-xs"
           aria-label="Close edit"
           data-control="agent-close"
           onClick={() => editor.actions.closeAgentEdit(props.session.id)}
         >
-          ×
+          <span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true" />
         </button>
-      </header>
+      </div>
       <Show
         when={props.session.queued && !props.session.pending}
         fallback={
           <>
-            <AgentPicker disabled={props.session.pending} />
-            <textarea
-              ref={input}
-              aria-label="Edit instruction"
-              data-control="agent-input"
-              class="textarea"
-              value={props.session.instruction}
-              disabled={props.session.pending}
-              onInput={(event) =>
-                editor.actions.setAgentInstruction(props.session.id, event.currentTarget.value)
-              }
-              onKeyDown={(event) => {
-                event.stopPropagation();
-                if (
-                  event.key === 'Enter' &&
-                  !event.shiftKey &&
-                  !event.ctrlKey &&
-                  !event.metaKey &&
-                  !event.isComposing
-                ) {
-                  event.preventDefault();
-                  editor.actions.queueAgentEdit(props.session.id);
+            <div
+              data-ui="agent-meta"
+              class="flex flex-wrap items-center gap-2 in-[.queued]:hidden in-[.has-batch]:hidden"
+            >
+              <span data-ui="agent-meta-label" class="label flex-none text-muted-foreground">
+                Model
+              </span>
+              <AgentPicker disabled={props.session.pending} />
+            </div>
+            <div data-ui="agent-compose" class="flex flex-col gap-2 in-[.queued]:hidden">
+              <textarea
+                ref={input}
+                aria-label="Comment about selected code"
+                rows="3"
+                spellcheck={false}
+                autocomplete="off"
+                placeholder="Describe the change. Add it as a comment to batch with others, or apply it right away."
+                data-control="agent-input"
+                class="textarea resize-y"
+                value={props.session.instruction}
+                disabled={props.session.pending}
+                onInput={(event) =>
+                  editor.actions.setAgentInstruction(props.session.id, event.currentTarget.value)
                 }
-                if (event.key === 'Escape') {
-                  event.preventDefault();
-                  if (props.session.pending) void editor.actions.cancelAgentEdit(props.session.id);
-                  else editor.actions.closeAgentEdit(props.session.id);
-                }
-              }}
-            />
-            <div class="flex flex-wrap gap-1">
-              <Show
-                when={!props.session.pending}
-                fallback={
+                onKeyDown={(event) => {
+                  event.stopPropagation();
+                  if (
+                    event.key === 'Enter' &&
+                    !event.shiftKey &&
+                    !event.ctrlKey &&
+                    !event.metaKey &&
+                    !event.isComposing
+                  ) {
+                    event.preventDefault();
+                    editor.actions.queueAgentEdit(props.session.id);
+                  }
+                  if (event.key === 'Escape') {
+                    event.preventDefault();
+                    if (props.session.pending)
+                      void editor.actions.cancelAgentEdit(props.session.id);
+                    else editor.actions.closeAgentEdit(props.session.id);
+                  }
+                }}
+              />
+              <div
+                data-ui="agent-foot"
+                class="flex items-center gap-2 font-mono text-muted-foreground"
+              >
+                <span data-ui="agent-hint" class="flex-1">
+                  Enter to send, Esc to cancel
+                </span>
+                <Show
+                  when={!props.session.pending}
+                  fallback={
+                    <button
+                      class="btn"
+                      data-variant="outline"
+                      data-size="xs"
+                      data-control="agent-cancel"
+                      onClick={() => void editor.actions.cancelAgentEdit(props.session.id)}
+                    >
+                      Cancel
+                    </button>
+                  }
+                >
                   <button
                     class="btn"
-                    data-control="agent-cancel"
-                    onClick={() => void editor.actions.cancelAgentEdit(props.session.id)}
+                    data-variant="outline"
+                    data-size="xs"
+                    data-control="agent-now"
+                    disabled={!props.session.instruction.trim()}
+                    onClick={() => void editor.actions.applyAgentEdit(props.session.id)}
                   >
-                    Cancel
+                    Apply now
                   </button>
-                }
-              >
-                <button
-                  class="btn"
-                  data-control="agent-send"
-                  disabled={!props.session.instruction.trim()}
-                  onClick={() => editor.actions.queueAgentEdit(props.session.id)}
-                >
-                  Add comment
-                </button>
-                <button
-                  class="btn"
-                  data-control="agent-now"
-                  disabled={!props.session.instruction.trim()}
-                  onClick={() => void editor.actions.applyAgentEdit(props.session.id)}
-                >
-                  Apply now
-                </button>
-              </Show>
-              <Show when={props.session.threadId}>
-                <button
-                  class="btn"
-                  onClick={() => void editor.actions.openThread(props.session.threadId)}
-                >
-                  View thread
-                </button>
-              </Show>
+                  <button
+                    class="btn"
+                    data-control="agent-send"
+                    data-variant="primary"
+                    data-size="xs"
+                    disabled={!props.session.instruction.trim()}
+                    onClick={() => editor.actions.queueAgentEdit(props.session.id)}
+                  >
+                    Add comment
+                  </button>
+                </Show>
+                <Show when={props.session.threadId}>
+                  <button
+                    class="btn"
+                    onClick={() => void editor.actions.openThread(props.session.threadId)}
+                  >
+                    View thread
+                  </button>
+                </Show>
+              </div>
             </div>
           </>
         }
       >
         <button
-          class="btn justify-start whitespace-pre-wrap"
+          class="btn"
+          data-variant="outline"
+          data-size="xs"
           data-control="agent-queued"
           onClick={() => editor.actions.queueAgentEdit(props.session.id, false)}
         >

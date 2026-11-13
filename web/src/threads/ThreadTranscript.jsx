@@ -1,4 +1,4 @@
-import { createEffect, For, onCleanup } from 'solid-js';
+import { createEffect, For, onCleanup, Show } from 'solid-js';
 import { ThreadTurn } from './ThreadTurn.jsx';
 export function ThreadTranscript(props) {
   let viewport, frame;
@@ -34,6 +34,11 @@ export function ThreadTranscript(props) {
           )
         }
       </For>
+      <Show when={props.empty && !props.thread?.turns?.length}>
+        <div data-ui="hint" class="empty text-muted-foreground">
+          {props.empty}
+        </div>
+      </Show>
     </div>
   );
 }

@@ -12,18 +12,26 @@ export function ThreadsPanel() {
       id="threads-side"
       hidden={!editor.store.state.layout.threads}
       style={{ width: editor.store.state.layout.threadsWidth + 'px' }}
-      class="flex shrink-0 flex-col overflow-hidden border-l bg-sidebar"
+      class="flex w-96 shrink-0 flex-col overflow-hidden border-l bg-sidebar [body.threads-hidden_&]:hidden"
     >
-      <header class="flex items-center justify-between border-b p-2">
-        <strong>Threads</strong>
-        <button
-          id="btn-close-threads"
-          class="btn"
-          aria-label="Close threads"
-          onClick={editor.actions.hideThreads}
-        >
-          ×
-        </button>
+      <header class="inspector-head desktop:min-h-[var(--titlebar-h,2.5rem)] desktop:[-webkit-app-region:drag] desktop:[&_button]:[-webkit-app-region:no-drag] desktop:[&_a]:[-webkit-app-region:no-drag] desktop:[&_[role=group]]:[-webkit-app-region:no-drag] desktop:[&_[role=tab]]:[-webkit-app-region:no-drag] flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2 threads-head">
+        <div class="threads-head-title flex items-center gap-2 font-medium [&_svg]:shrink-0 [&_svg]:text-primary">
+          <span class="icon-[lucide--message-square] size-3.5 shrink-0" aria-hidden="true" />
+          <span class="threads-head-label text-xs font-medium">Threads</span>
+        </div>
+        <div class="inspector-head-actions flex items-center">
+          <button
+            id="btn-close-threads"
+            class="btn"
+            aria-label="Close threads"
+            onClick={editor.actions.hideThreads}
+            data-variant="ghost"
+            data-size="icon-xs"
+            data-control="icon-action"
+          >
+            <span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true" />
+          </button>
+        </div>
       </header>
       <AgentSessions />
       <ErrorNotice error={editor.threads.state.error || editor.agents.state.error} />
