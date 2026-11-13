@@ -1,5 +1,6 @@
 import { createAgentStore } from '../agents/store.js';
 import { createThreadStore } from '../threads/store.js';
+import { createReviewStore } from '../review/store.js';
 import { registerFeatureCommands } from '../palette/features.js';
 import { createDocumentGitActions } from '../git/documents.js';
 import { createLanguageStore } from '../lsp/store.js';
@@ -126,7 +127,11 @@ export function createEditorStore(store, options = {}) {
         { push: false },
       );
       if (options?.push !== false) store.actions.pushHistory(path, document.cur);
-      batch(activateView);
+      batch(() => {
+        activateView();
+        // Opening a file leaves the overview; closing a tab behind it does not.
+        actions.setReviewMode('code');
+      });
       if (options?.line) centerLine(options.line);
     } catch (error) {
       if (sequence === openSequence) {
@@ -252,6 +257,8 @@ export function createEditorStore(store, options = {}) {
   Object.assign(actions, editor.agents.actions);
   editor.threads = createThreadStore(editor, options.threads);
   Object.assign(actions, editor.threads.actions);
+  editor.review = createReviewStore(editor, options.review);
+  Object.assign(actions, editor.review.actions);
   handlers.agent = actions.openAgentEdit;
   handlers.thread = actions.newThread;
   handlers.explain = actions.explainSelection;

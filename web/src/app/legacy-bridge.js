@@ -1089,6 +1089,7 @@ export function thrMd(src) {
   return html;
 }
 
+export const setReviewMode = (mode) => editorStore.actions.setReviewMode(mode);
 export const newThread = (...args) => editorStore.actions.newThread(...args);
 export const openThread = (id) => editorStore.actions.openThread(id);
 export const deleteCurrentThread = () => editorStore.actions.deleteThread();

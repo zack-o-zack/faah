@@ -26,16 +26,7 @@
       <button data-desktop-menu title="Menu" aria-label="Application menu" class="btn desktop-menu-btn hidden! win-linux:inline-flex!" data-control="header-action" data-variant="ghost" data-size="xs">
         <span class="icon-[lucide--menu] size-3 shrink-0" aria-hidden="true"></span>
       </button>
-      <!-- Opens the pull request (or, outside a PR session, the local changes): files, review pipeline, PR footer and comments -->
-      <button type="button" id="btn-pr-toggle" title="Changed files, review pipeline and PR comments ({Mod+Shift+V})" class="btn [body.in-review-mode_&]:hidden desktop:[-webkit-app-region:no-drag]" data-variant="primary" data-size="xs">
-        <svg class="size-3.5 shrink-0 [body:not(.pr-mode)_&]:hidden" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg>
-        <span class="icon-[lucide--list-checks] size-3.5 shrink-0 [body.pr-mode_&]:hidden!" aria-hidden="true"></span>
-        <span class="[body:not(.pr-mode)_&]:hidden">PR <span data-ui="pr-num" class="tabular-nums"></span></span>
-        <span class="[body.pr-mode_&]:hidden">Overview</span>
-        <span data-ui="review-status-dot" class="size-1.5 shrink-0 rounded-full bg-warn animate-pulse" title="Review pipeline running" hidden></span>
-      </button>
-      <!-- Takes the PR button's place while the PR view is open -->
-      <button type="button" id="btn-pr-close" title="Back to the editor ({Mod+Shift+V})" class="btn [body:not(.in-review-mode)_&]:hidden desktop:[-webkit-app-region:no-drag]" data-variant="primary" data-size="xs"><span class="icon-[lucide--arrow-left] size-3.5 shrink-0" aria-hidden="true"></span><span>Back to editor</span></button>
+      <span id="review-toggle-root" class="contents"></span>
       <div class="main-top-bar-spacer flex-1"></div>
       <!-- Project name, centred on the bar -->
       <!-- Sized to the name alone, so it never sits over the bar's buttons -->
@@ -106,163 +97,7 @@
       <div id="pr-comment-list" data-ui="pr-comment-list" class="absolute inset-0 z-30 pointer-events-none [&>[data-ui~=agent-box]]:absolute [&>[data-ui~=agent-box]]:w-96 [&>[data-ui~=agent-box]]:max-w-full [&>[data-ui~=agent-box]]:pointer-events-auto" hidden></div>
     </div>
 
-    <!-- Review Mode Workflow View -->
-    <div id="review-view" data-ui="review-view" class="group/review relative flex flex-1 min-h-0 flex-col overflow-hidden layout-vertical" hidden>
-      <!-- Review Sub-Navbar: Walkthrough & Diff vs Review pipeline -->
-      <div id="review-sub-bar" data-ui="review-sub-bar" class="flex flex-wrap items-center shrink-0 select-none gap-2 p-3">
-        <div data-ui="review-sub-tabs" class="flex items-center gap-2" role="tablist">
-          <button id="btn-review-tab-walkthrough" role="tab" aria-selected="true" title="Scrollytelling code diff and guardrail understanding" class="btn" data-control="review-sub-tab" data-variant="secondary" data-size="xs" aria-pressed="true">
-            <span class="icon-[lucide--zap] size-3.5 shrink-0" aria-hidden="true"></span>
-            <span>Diff & Understanding</span>
-            <span id="review-walkthrough-files-badge" class="badge" data-variant="secondary">0</span>
-          </button>
-          <button id="btn-review-tab-stages" role="tab" aria-selected="false" title="Your coding harness answers each review question in turn" class="btn" data-control="review-sub-tab" data-variant="ghost" data-size="xs">
-            <span class="icon-[lucide--sparkle] size-3.5 shrink-0 text-special" aria-hidden="true"></span>
-            <span>Review pipeline</span>
-            <span id="review-stages-count-badge" class="badge gap-1 tabular-nums" data-variant="secondary"></span>
-          </button>
-        </div>
-
-        <div data-ui="review-sub-bar-spacer" class="flex-1"></div>
-
-        <div id="review-walkthrough-toolbar" data-ui="review-walkthrough-toolbar" class="flex items-center gap-2">
-          <div data-ui="review-filter-chips" class="flex flex-wrap items-center gap-1" role="group" aria-label="Filter insights">
-            <button data-filter="all" title="Show all insights" class="btn" data-control="review-chip" data-variant="secondary" data-size="xs" aria-pressed="true">All</button>
-            <button data-filter="fastReturns" title="Fast returns & guardrails" class="btn" data-control="review-chip" data-variant="ghost" data-size="xs"><span class="icon-[lucide--zap] size-3 shrink-0" aria-hidden="true"></span>Returns <span id="wt-count-returns" class="tabular-nums opacity-70">0</span></button>
-            <button data-filter="edgeCases" title="Error & edge case exits" class="btn" data-control="review-chip" data-variant="ghost" data-size="xs"><span class="icon-[lucide--triangle-alert] size-3 shrink-0" aria-hidden="true"></span>Edge cases <span id="wt-count-edge" class="tabular-nums opacity-70">0</span></button>
-            <button data-filter="coreLogic" title="Core happy-path modifications" class="btn" data-control="review-chip" data-variant="ghost" data-size="xs"><span class="icon-[lucide--target] size-3 shrink-0" aria-hidden="true"></span>Core <span id="wt-count-core" class="tabular-nums opacity-70">0</span></button>
-          </div>
-          <button id="btn-refresh-walkthrough" title="Refresh walkthrough and diff" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Refresh walkthrough and diff">
-            <span class="icon-[lucide--rotate-cw] size-3.5 shrink-0" aria-hidden="true"></span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Diff Walkthrough & Understanding View (Default in Review Mode) -->
-      <div id="review-walkthrough-view" data-ui="review-walkthrough-view" class="flex flex-row flex-1 min-h-0 overflow-hidden h-full">
-        <!-- Left: Understanding Pane -->
-        <aside id="review-understanding-pane" data-ui="review-understanding-pane" class="flex w-80 max-w-1/2 min-h-0 shrink-0 flex-col overflow-hidden border-r">
-          <div data-ui="review-pane-header" class="flex flex-col gap-1 px-3 pt-3">
-            <span data-ui="review-pane-heading" class="text-sm font-semibold">Changed files</span>
-            <span id="review-understanding-stat" data-ui="review-pane-sub" class="text-xs text-muted-foreground">Fast returns, edge cases & core logic</span>
-          </div>
-          <div id="review-understanding-content" data-ui="review-understanding-content" class="flex flex-col flex-1 min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain gap-px px-1.5 py-2">
-            <div data-ui="review-empty-state" class="empty flex flex-col items-center justify-center text-center h-full p-3 text-muted-foreground"><div data-ui="review-spinner" class="size-6 rounded-full border-2 border-border border-t-primary animate-spin"></div><p>Analyzing code changes...</p></div>
-          </div>
-        </aside>
-
-        <!-- Right: Synchronized Diff Pane with Sticky Headers -->
-        <section id="review-diff-pane" data-ui="review-diff-pane" class="flex-1 min-w-0 min-h-0 overflow-x-auto overflow-y-auto relative h-full overscroll-contain">
-          <div id="review-diff-content" data-ui="review-diff-content" class="p-3">
-            <div data-ui="review-empty-state" class="empty flex flex-col items-center justify-center text-center h-full p-3 text-muted-foreground"><div data-ui="review-spinner" class="size-6 rounded-full border-2 border-border border-t-primary animate-spin"></div><p>Loading diff...</p></div>
-          </div>
-        </section>
-      </div>
-
-      <!-- Review pipeline: the coding harness answers each stage's question in turn -->
-      <div id="review-stages-view" data-ui="review-stages-view" class="flex flex-1 min-h-0 overflow-hidden group-[.layout-horizontal]/review:flex-col" hidden>
-        <aside id="review-pipeline" data-ui="review-pipeline" class="flex w-72 max-w-1/2 shrink-0 flex-col overflow-hidden border-r group-[.layout-horizontal]/review:w-full group-[.layout-horizontal]/review:max-w-none group-[.layout-horizontal]/review:max-h-64 group-[.layout-horizontal]/review:border-r-0 group-[.layout-horizontal]/review:border-b">
-          <div data-ui="review-pipeline-head" class="flex flex-col gap-0.5 px-3 pt-3 pb-2">
-            <div data-ui="review-workflow-info" class="flex min-w-0 items-center gap-1.5">
-              <span class="icon-[lucide--sparkle] size-3.5 shrink-0 text-special" aria-hidden="true"></span>
-              <button type="button" id="review-workflow-name" data-ui="review-workflow-name" class="min-w-0 flex-1 truncate text-left text-sm font-semibold">Review pipeline</button>
-              <div data-ui="review-pipeline-head-actions" class="-my-1 flex shrink-0 items-center">
-                <button id="btn-toggle-review-layout" title="Stages beside or above the answer" aria-label="Toggle layout" class="btn" data-variant="ghost" data-size="icon-xs">
-                  <span id="icon-layout-vert" class="icon-[lucide--columns-2] size-3.5 shrink-0" aria-hidden="true"></span>
-                  <span id="icon-layout-horiz" class="icon-[lucide--rows-2] size-3.5 shrink-0" aria-hidden="true"></span>
-                </button>
-                <button id="btn-add-review-stage" title="Add a stage" aria-label="Add a stage" class="btn" data-variant="ghost" data-size="icon-xs">
-                  <span class="icon-[lucide--plus] size-3.5 shrink-0" aria-hidden="true"></span>
-                </button>
-              </div>
-            </div>
-            <span class="truncate text-xs text-muted-foreground">Answered by your coding harness, in order.</span>
-          </div>
-          <ol id="review-stages-container" data-ui="review-stages-container" class="flex flex-1 flex-col overflow-y-auto px-1.5 pb-2" aria-label="Stages"></ol>
-          <div id="review-stage-menu" role="menu" aria-label="Stage actions" hidden></div>
-          <div data-ui="review-pipeline-actions" class="border-t p-3">
-            <button id="btn-run-review-flow" title="Run every stage in order" class="btn w-full" data-variant="special" data-size="sm">
-              <span class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true"></span>
-              <span id="btn-run-review-label">Run pipeline</span>
-            </button>
-            <button id="btn-stop-review-flow" title="Stop after the current answer" hidden class="btn w-full" data-variant="outline" data-size="sm">
-              <span class="size-2.5 shrink-0 rounded-[2px] bg-current" aria-hidden="true"></span>
-              <span>Stop</span>
-            </button>
-          </div>
-        </aside>
-
-        <section id="review-stage-main" data-ui="review-stage-main" class="flex flex-1 min-w-0 min-h-0 flex-col overflow-hidden">
-          <header data-ui="review-stage-header" class="flex items-start gap-3 border-b px-4 py-3">
-            <div data-ui="review-stage-header-info" class="flex min-w-0 flex-1 flex-col gap-1">
-              <span class="flex items-center gap-2 text-xs text-muted-foreground">
-                <span id="review-stage-badge">Stage 1 of 4</span>
-                <span aria-hidden="true">·</span>
-                <span id="review-stage-status-tag" class="inline-flex items-center gap-1.5"></span>
-              </span>
-              <h2 id="review-stage-title" data-ui="review-stage-title" class="min-w-0 truncate text-base font-semibold"></h2>
-              <div id="review-question-banner" data-ui="review-question-banner" class="flex min-w-0 items-start gap-1">
-                <span id="review-question-text" data-ui="review-question-text" class="min-w-0 text-sm text-muted-foreground"></span>
-                <button id="btn-quick-edit-q" hidden title="Edit the question" aria-label="Edit the question" class="btn" data-variant="ghost" data-size="icon-xs"><span class="icon-[lucide--square-pen] size-3 shrink-0" aria-hidden="true"></span></button>
-              </div>
-            </div>
-            <div data-ui="review-stage-header-actions" class="flex shrink-0 items-center">
-              <button id="btn-edit-stage-inline" title="Edit this stage's title, question and instructions" aria-label="Edit this stage" class="btn" data-variant="ghost" data-size="icon-sm">
-                <span class="icon-[lucide--square-pen] size-3.5 shrink-0" aria-hidden="true"></span>
-              </button>
-              <button id="btn-rerun-stage" title="Run this stage again" aria-label="Run this stage again" class="btn" data-variant="ghost" data-size="icon-sm">
-                <span class="icon-[lucide--rotate-cw] size-3.5 shrink-0" aria-hidden="true"></span>
-              </button>
-            </div>
-          </header>
-
-        <!-- Inline Stage Editor (Right inside the Review View) -->
-        <div id="review-stage-inline-editor" data-ui="review-stage-inline-editor" class="flex flex-col gap-3 border-b px-4 py-3" hidden>
-          <div data-ui="review-inline-edit-row" class="field flex flex-col gap-2">
-            <label class="label">Stage Title</label>
-            <input type="text" id="inline-edit-stage-title" aria-label="Stage title" placeholder="e.g. Performance Impact" class="input h-8!" data-control="review-inline-input">
-          </div>
-          <div data-ui="review-inline-edit-row" class="field flex flex-col gap-2">
-            <label class="label">Review Question</label>
-            <textarea id="inline-edit-stage-q" aria-label="Stage question" rows="2" placeholder="e.g. Are there any performance bottlenecks or lock contentions?" class="textarea resize-y" data-control="review-inline-textarea"></textarea>
-          </div>
-          <div data-ui="review-inline-edit-row" class="field flex flex-col gap-2">
-            <label class="label">Instructions for the harness</label>
-            <textarea id="inline-edit-stage-prompt" aria-label="Stage instructions" rows="3" placeholder="What the harness should look at and how to answer" class="textarea resize-y" data-control="review-inline-textarea"></textarea>
-          </div>
-          <div data-ui="review-inline-edit-actions" class="flex gap-2">
-            <button id="btn-save-stage-inline" class="btn" data-control="bar-action" data-variant="primary" data-size="xs">Save Changes</button>
-            <button id="btn-cancel-stage-inline" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs">Cancel</button>
-          </div>
-        </div>
-
-        <!-- Transcript of this stage's thread -->
-        <div id="review-thread-msgs" data-ui="review-thread-msgs thr-msgs" class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4"></div>
-
-        <!-- Follow-up questions on this stage go to the same thread -->
-        <div data-ui="review-compose-wrap" class="px-4 pb-3">
-          <div class="input-group" data-orientation="vertical">
-            <textarea id="review-compose-input" aria-label="Follow-up about this stage" rows="1" spellcheck="false" autocomplete="off" placeholder="Ask a follow-up about this stage" class="max-h-40 min-h-9" data-control="agent-input review-input"></textarea>
-            <footer data-align="block-end" class="gap-1">
-              <span data-ui="agent-hint" class="text-xs text-muted-foreground">Enter to send · Shift+Enter for a new line</span>
-              <span class="flex-1"></span>
-              <button id="review-compose-send" type="button" disabled title="Send (Enter)" aria-label="Send" class="btn rounded-full" data-variant="primary" data-size="icon-sm"><span class="icon-[lucide--arrow-up] size-4" aria-hidden="true"></span></button>
-            </footer>
-          </div>
-        </div>
-      </section>
-      </div>
-    </div>
-
-    <!-- Floating Jump Return Pill (shown in Code Mode when jumped from a review link) -->
-    <div id="review-return-pill" data-ui="review-return-pill" class="card fixed bottom-12 right-6 z-50 flex flex-row items-center gap-2 p-3" hidden>
-      <span data-ui="review-return-icon" class="inline-flex text-primary-text"><span class="icon-[lucide--corner-up-left] size-3.5 shrink-0" aria-hidden="true"></span></span>
-      <span id="review-return-label">Viewing from Review</span>
-      <button id="btn-return-to-review" title="Back to the overview ({Mod+Shift+V})" class="btn" data-control="review-return-btn" data-variant="outline" data-size="xs">
-        Back to overview
-      </button>
-      <button id="btn-dismiss-review-return" title="Dismiss" class="btn" data-control="review-return-close" data-variant="ghost" data-size="icon-xs" aria-label="Dismiss"><span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true"></span></button>
-    </div>
+    <div id="review-root" class="contents"></div>
 
     <!-- PR footer: a `faah pr ...` session only (web/src/pr.js), shown with the overview -->
     <div id="pr-bar" data-ui="pr-bar" class="[body:not(.in-review-mode)_&]:hidden! flex flex-none flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2" hidden>
@@ -506,35 +341,6 @@
 
 
 
-<!-- Modal Dialog for Adding a New Review Stage -->
-<dialog id="review-add-stage-modal" class="dialog">
-  <div class="overflow-auto" role="dialog" aria-modal="true" aria-labelledby="add-stage-title">
-    <header class="flex-row! items-center justify-between shrink-0">
-      <h2 id="add-stage-title">Add Review Stage</h2>
-      <div class="flex items-center gap-3">
-        <button id="add-stage-close" title="Close (Esc)" class="btn" data-control="mini settings-close-btn" data-variant="ghost" data-size="icon-xs" aria-label="Close (Esc)"><span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true"></span></button>
-      </div>
-    </header>
-    <section data-ui="review-config-body" class="flex flex-col overflow-y-auto gap-2 p-3">
-      <div data-ui="review-config-field" class="field flex flex-col gap-2">
-        <label class="label">Stage Title</label>
-        <input type="text" id="add-stage-title-input" placeholder="e.g. Security & Permissions" class="input h-8!">
-      </div>
-      <div data-ui="review-config-field" class="field flex flex-col gap-2">
-        <label class="label">Review Question</label>
-        <input type="text" id="add-stage-q-input" placeholder="e.g. Does this PR introduce any auth or injection risks?" class="input h-8!">
-      </div>
-      <div data-ui="review-config-field" class="field flex flex-col gap-2">
-        <label class="label">Detailed AI Prompt</label>
-        <textarea rows="3" id="add-stage-prompt-input" placeholder="What the harness should look at and how to answer" class="textarea resize-y"></textarea>
-      </div>
-    </section>
-    <footer class="">
-      <button id="add-stage-cancel" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs">Cancel</button>
-      <button id="add-stage-submit" class="btn" data-control="bar-action pr-btn-merge" data-variant="primary" data-size="xs">Add Stage</button>
-    </footer>
-  </div>
-</dialog>
 
 
 

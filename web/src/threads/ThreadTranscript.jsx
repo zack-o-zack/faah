@@ -18,13 +18,21 @@ export function ThreadTranscript(props) {
     <div
       id={props.id}
       ref={viewport}
-      class="flex min-h-0 flex-1 flex-col gap-4 overflow-auto p-4"
+      class={props.class || 'flex min-h-0 flex-1 flex-col gap-4 overflow-auto p-4'}
       onScroll={() => {
         following = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight < 60;
       }}
     >
       <For each={props.thread?.turns}>
-        {(turn) => <ThreadTurn turn={turn} thread={props.thread} />}
+        {(turn, index) =>
+          props.children ? (
+            // The index accessor passes through to the caller's render function unread.
+            // eslint-disable-next-line solid/reactivity
+            props.children(turn, index)
+          ) : (
+            <ThreadTurn turn={turn} thread={props.thread} />
+          )
+        }
       </For>
     </div>
   );

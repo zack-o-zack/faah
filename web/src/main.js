@@ -16,14 +16,13 @@ import { $, S } from './state.js';
 import { revealFile, refreshTree, collapseAllDirs, expandDirtyDirs, inGitMode, setAutoRevealSuppressed, setSidebarMode, hasGitView } from './app/legacy-bridge.js';
 
 import { applyAgentMeta, loadAgentAsync } from './app/legacy-bridge.js';
-import { initThreads } from './app/legacy-bridge.js';
+import { initThreads, setReviewMode } from './app/legacy-bridge.js';
 import { initSettings } from './settings.js';
 
 import { syncGitPanelMeta } from './app/legacy-bridge.js';
 import { initPR } from './pr.js';
 
 import { refreshUnpushed } from './app/legacy-bridge.js';
-import { initReviewFlow, setMode } from './reviewflow.js';
 
 // web/src/main.js
 
@@ -35,7 +34,6 @@ configureLegacyServices({
 
 // Initialize all subsystems
 
-initReviewFlow();
 
 initShortcuts();
 
@@ -151,7 +149,7 @@ initErrorCopy();
   }
   setAutoRevealSuppressed(false);
   // A PR session opens on the pull request itself.
-  if (S.meta?.pr) setMode('review');
+  if (S.meta?.pr) setReviewMode('review');
 
   if (document.fonts && document.fonts.ready) {
     document.fonts.ready.then(() => { measure(); layout(); render(); });
