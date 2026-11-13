@@ -1,0 +1,22 @@
+[
+  {
+    "name": "flask",
+    "url": "https://github.com/pallets/flask",
+    "sha": "49943b5a94413a530761350f04e896f76e8d620e"
+  },
+  {
+    "name": "redis",
+    "url": "https://github.com/redis/redis",
+    "sha": "ee8e7f70152404649ac947157fd662d11b4a00d5"
+  },
+  {
+    "name": "react",
+    "url": "https://github.com/facebook/react",
+    "sha": "df6aa4ec76cff5b3adde531c6fe8c36099e0469b"
+  },
+  {
+    "name": "kubernetes",
+    "url": "https://github.com/kubernetes/kubernetes",
+    "sha": "29bcddace9e25a67edfb1024645e48a3eeedc5c8"
+  }
+]
