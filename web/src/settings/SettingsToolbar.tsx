@@ -6,7 +6,9 @@ export const SettingsToolbar: Component = () => {
   const dialog = () => settings.state.dialog;
   let search: HTMLInputElement | undefined;
   onMount(() => {
-    if (dialog().mode === 'ui' && !dialog().focus) search?.focus();
+    queueMicrotask(() => {
+      if (dialog().mode === 'ui' && !dialog().focus && search?.isConnected) search.focus();
+    });
   });
   return (
     <header class="flex-row! items-center gap-4 shrink-0">
@@ -40,24 +42,22 @@ export const SettingsToolbar: Component = () => {
             value={dialog().query}
             onInput={(event) => settings.actions.setSettingsQuery(event.currentTarget.value)}
           />
-          <Show when={dialog().query}>
-            <button
-              id="settings-search-clear"
-              type="button"
-              title="Clear search"
-              aria-label="Clear search"
-              class="btn absolute right-1 top-1/2 -translate-y-1/2"
-              data-control="icon-action"
-              data-variant="ghost"
-              data-size="icon-xs"
-              onClick={() => {
-                settings.actions.setSettingsQuery('');
-                search?.focus();
-              }}
-            >
-              <span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true" />
-            </button>
-          </Show>
+          <button
+            id="settings-search-clear"
+            type="button"
+            title="Clear search"
+            aria-label="Clear search"
+            class="btn absolute right-1 top-1/2 -translate-y-1/2"
+            data-control="icon-action"
+            data-variant="ghost"
+            data-size="icon-xs"
+            onClick={() => {
+              settings.actions.setSettingsQuery('');
+              search?.focus();
+            }}
+          >
+            <span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true" />
+          </button>
         </div>
       </Show>
       <div class="button-group" role="group" aria-label="Settings view">
