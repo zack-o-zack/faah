@@ -1,3 +1,4 @@
+import { Portal } from 'solid-js/web';
 import { createEffect, createSignal, For, Index, onCleanup, Show } from 'solid-js';
 import { useEditor } from './context.jsx';
 import { createMenuEvents } from '../lib/menu-events.ts';
@@ -111,7 +112,7 @@ export function TabStrip(props) {
       </div>
       {props.children}
       <Show when={menu()}>
-        <div class="dropdown-menu contents">
+        <Portal>
           <div
             id="tab-menu"
             role="menu"
@@ -151,7 +152,7 @@ export function TabStrip(props) {
               )}
             </Index>
           </div>
-        </div>
+        </Portal>
       </Show>
     </div>
   );
