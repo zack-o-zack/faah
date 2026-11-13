@@ -60,3 +60,20 @@ export function formatTable(summary) {
     ...Object.entries(summary).map(([name, stat]) =>
       `| ${name} | ${stat.unit} | ${stat.count} | ${stat.median?.toFixed(2) ?? 'n/a'} | ${stat.p95?.toFixed(2) ?? 'n/a'} |`)].join('\n');
 }
+
+export function compareSummaries(current, baseline) {
+  if (!baseline || typeof baseline !== 'object' || Array.isArray(baseline))
+    throw new TypeError('Invalid baseline summary');
+  for (const stat of Object.values(baseline)) {
+    if (!stat || typeof stat !== 'object' || typeof stat.unit !== 'string' ||
+        (stat.median !== null && !Number.isFinite(stat.median)))
+      throw new TypeError('Invalid baseline metric');
+  }
+  return Object.fromEntries(Object.entries(current).flatMap(([name, stat]) => {
+    const prior = baseline[name];
+    if (!prior || prior.unit !== stat.unit || stat.median === null || prior.median === null) return [];
+    const delta = stat.median - prior.median;
+    return [[name, { unit: stat.unit, baseline: prior.median, current: stat.median, delta,
+      percent: prior.median === 0 ? null : delta / prior.median * 100 }]];
+  }));
+}

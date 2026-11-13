@@ -33,7 +33,7 @@ Under `web/src`:
 
 | Directory | Owns |
 |---|---|
-| `app/` | Composition: `App.tsx` (editor store, page-wide effects, dialogs), `AppShell.tsx` (page layout and top bar), `Welcome.tsx` (empty editor), `boot.ts` (workspace start-up), `store.js` (app store), `context.jsx`, `types.ts` (workspace metadata) |
+| `app/` | Composition: `App.tsx` (editor store, page-wide effects, dialogs), `AppShell.tsx` (page layout and top bar), `Welcome.tsx` (empty editor), `boot.ts` (workspace start-up), `store.ts` (app store), `context.jsx`, `types.ts` (workspace metadata) |
 | `editor/` | Documents, buffers, the virtualized source view, editing, find, hover, selection, Vim, tabs and the editor store that composes every slice |
 | `viewers/` | Markdown/table preview, image, diff and Mermaid views, the explanation orb, and viewer actions |
 | `workspace/` | File tree model and store, workspace snapshots, the event stream, new items |
@@ -50,7 +50,7 @@ Under `web/src`:
 | `workbench/`, `holding/` | The other two pages |
 
 Pure parsing, formatting, ranking, keymaps, layout math and request shaping live
-in `logic` modules (`*/logic.js`, `settings/logic.ts`, `editor/cursor.ts` and
+in `logic` modules (`*/logic.ts`, `settings/logic.ts`, `editor/cursor.ts` and
 similar) with no DOM or Solid imports, and have unit tests. Components take
 props and read shared state from context, never another component's DOM.
 Dependencies point one way: components → store actions → pure logic.
@@ -175,7 +175,7 @@ modules own request lifetimes and state transitions; pure `layout`, `cursor`,
 `Viewport` renders `Index` slots with one scroll/resize update per frame and a
 resource for the visible windows. `EditorRow` decorates rows with the CSS
 Highlight API without rewriting source HTML. `EditView` keeps its gutter
-virtualized. `source-dom.js` holds DOM position adapters that the source and
+virtualized. `source-dom.ts` holds DOM position adapters that the source and
 diff views create over their own elements.
 
 Documents own the chosen view (source, preview, diff), diff layout, ref and
@@ -222,9 +222,7 @@ rejects:
 - async effect callbacks, destructured props, and `.map()` or `&&` in render expressions;
 - `innerHTML` in JSX and HTML written with `innerHTML`, `outerHTML` or
   `insertAdjacentHTML` (`no-restricted-syntax`), except at the sites above;
-- imports of the removed global-state modules (`state.js`, `bus.js`, `ui.js`,
-  `errors.js`, `overlays.js`, `controls.js`, `main.js`, `app/legacy-bridge.js`)
-  (`no-restricted-imports`).
+
 
 Browser globals apply to frontend files, Node globals to tooling and Vitest
 globals to tests. Lint errors are never disabled inline without a one-line
@@ -234,15 +232,10 @@ single quotes, two-space indentation and semicolons, and checks every frontend f
 
 ## TypeScript
 
-All plain modules and their unit tests under `web/src` use `.ts`. Components
-remain `.jsx` until their separate conversion; changes to those files during D1
-are limited to imports that follow module renames. The filesystem contrast and
+Frontend logic and its unit tests use `.ts`; components use `.tsx`.
+Imports name the real file extension (`./Foo.tsx`). The filesystem contrast and
 type-scale tests use `tsconfig.node.json`, keeping Node globals out of the browser
 configuration.
-
-New frontend modules are `.ts`/`.tsx`. The remaining `.js`/`.jsx` modules stay
-until they are converted, which also drops `allowJs`. Imports name the real file
-extension (`./Foo.tsx`).
 
 - Type checking is `tsc --noEmit` from TypeScript 7, the native compiler, over
   `tsconfig.json` (browser code and tests) and `tsconfig.node.json`
@@ -263,7 +256,7 @@ Conventions:
   because scattered casts hide the one place a shape can be wrong.
 - A TypeScript module reads the editor composite through `useEditor()` into a
   narrow interface of what it uses (`const editor: ShellEditor = useEditor()`).
-  That assignment narrows the still-untyped JSX context; the stores themselves are typed.
+  Prefer the existing store and model types to duplicated shapes.
 - No type gymnastics. Plain interfaces and type aliases, unions for states
   (`{ status: 'idle' } | { status: 'loading' } | …`), and simple generics only
   where they remove real duplication. Conditional, mapped, recursive or
@@ -275,7 +268,7 @@ Conventions:
   `Component`/`ParentComponent`/`JSX.Element`.
 - Store state has an explicit interface, and actions take and return concrete types.
 - Let locals infer. Annotate exported function signatures.
-- `@ts-expect-error` needs a description; `@ts-ignore` and `@ts-nocheck` are banned.
+- Type-error suppression comments are banned.
 
 ## Solid practices
 
@@ -328,7 +321,7 @@ Every production `createEffect` touches something outside Solid:
 Mount with a fresh store through its provider; never share stores between
 tests. Assert visible behavior, keyboard interaction, focus and disposal.
 Inject request and navigation functions at the store boundary, or mock
-`lib/api.ts` for modules that call it directly. Shared setup cleans mounted
+`lib/api.ts` for modules that call it directly. Vitest uses isolated VM workers. Shared setup cleans mounted
 components after each test and polyfills the native dialog methods jsdom lacks.
 Abridged from `settings/SettingsDialog.test.tsx`, where `reply` and `post` are
 its request fixtures:
@@ -360,5 +353,5 @@ test('opening on a category lists its settings', async () => {
 Pure modules have plain unit tests beside them. Store tests drive actions with
 injected requests (`settings/store.test.ts`, `pr/test-editor.ts`). Component
 examples: `lib/primitives.test.jsx`, `shortcuts/GlobalShortcuts.test.tsx`,
-`workbench/Workbench.test.jsx`. `contrast.test.js` and `typescale.test.js`
+`workbench/Workbench.test.jsx`. `contrast.test.ts` and `typescale.test.ts`
 check every theme's contrast and every used type-scale token.

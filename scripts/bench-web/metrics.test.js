@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { median, percentile, summarize, frameStats, aggregate, profileSelfTime, interactionDurations } from './metrics.js';
+import { compareSummaries, median, percentile, summarize, frameStats, aggregate, profileSelfTime, interactionDurations } from './metrics.js';
 
 test('median interpolates, ignores nonfinite samples, and does not mutate inputs', () => {
   const samples = [9, 1, 3, 5, NaN, Infinity];
@@ -43,4 +43,19 @@ test('CPU profile uses sample time deltas and aggregates identical call frames',
   assert.equal(top[0].selfMs, 9);
   assert.equal(top[0].percent, 90);
   assert.equal(top[1].selfMs, 1);
+});
+
+test('optional comparison matches units and handles zero, empty and missing medians', () => {
+  const current = { time: { unit: 'ms', median: 8 }, zero: { unit: 'bytes', median: 3 },
+    missing: { unit: 'ms', median: 2 }, empty: { unit: 'ms', median: null },
+    units: { unit: 'ms', median: 1 } };
+  assert.deepEqual(compareSummaries(current, { time: { unit: 'ms', median: 10 },
+    zero: { unit: 'bytes', median: 0 }, empty: { unit: 'ms', median: 1 },
+    units: { unit: 'bytes', median: 1 } }), {
+    time: { unit: 'ms', baseline: 10, current: 8, delta: -2, percent: -20 },
+    zero: { unit: 'bytes', baseline: 0, current: 3, delta: 3, percent: null },
+  });
+  assert.deepEqual(compareSummaries({}, {}), {});
+  assert.throws(() => compareSummaries({}, null), /Invalid baseline/);
+  assert.throws(() => compareSummaries({}, { broken: { unit: 'ms', median: 'bad' } }), /Invalid baseline/);
 });

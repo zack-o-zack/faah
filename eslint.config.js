@@ -72,18 +72,6 @@ export default [
           message: 'Render JSX instead of writing HTML strings into the DOM.',
         },
       ],
-      // The global-state shell these replaced is gone; state lives in stores, events in actions.
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              regex: '(^|/)(state|bus|ui|errors|overlays|controls|main|app/legacy-bridge)\\.js$',
-              message: 'Removed module: use the stores, actions and lib/ components instead.',
-            },
-          ],
-        },
-      ],
       'max-statements-per-line': ['error', { max: 1 }],
     },
   },

@@ -23,11 +23,11 @@ The harness **never builds** the frontend or binary. Google Chrome is launched
 headlessly with `channel: 'chrome'`. Only if Chrome is absent does it try the
 Playwright-managed Chromium revision. Install that fallback explicitly with
 `npx playwright-core install chromium`. JSON records which browser and version ran;
-use the same version when comparing frontend implementations.
+use the same version for comparisons.
 
 ```sh
 npm run bench:web -- --binary /path/to/faah --workspace /path/to/large/repo \
-  --runs 5 --json bench-out/solid.json --out bench-out/solid
+  --runs 5 --json bench-out/frontend.json --out bench-out/frontend
 ```
 
 `--workspace` defaults to a shallow React clone in `bench-repos/react`, matching
@@ -47,8 +47,10 @@ The deterministic synthetic corpus contains:
 
 The generator refuses to overwrite a nonempty unrecognized directory. Primary
 fixture sizes and hashes are recorded; edit tests type unsaved text and discard it.
-Generated corpora and diagnostics are gitignored. The committed vanilla baseline
-is [baseline-vanilla.json](baseline-vanilla.json).
+Generated corpora and diagnostics are gitignored. To compare with a previous run, pass its
+JSON explicitly: `--baseline bench-out/previous.json`. The output includes absolute and
+percentage median changes for common metrics with matching units. A zero reference median
+has no percentage change; missing metrics are omitted. No baseline is loaded by default.
 
 ## Measurement contract
 

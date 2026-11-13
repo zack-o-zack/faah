@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { launchBrowser, freshPage, load } from './browser.js';
 import { startServer, serverFlags } from './server.js';
 import { realWorkspace, syntheticWorkspace } from './workspace.js';
-import { aggregate, formatTable, profileSelfTime } from './metrics.js';
+import { aggregate, compareSummaries, formatTable, profileSelfTime } from './metrics.js';
 import { cold } from './scenarios/cold.js';
 import { finder } from './scenarios/finder.js';
 import { scroll } from './scenarios/scroll.js';
@@ -20,6 +20,7 @@ import { previews } from './scenarios/previews.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const { values } = parseArgs({ options: {
+  baseline: { type: 'string' },
   binary: { type: 'string', default: './faah' }, workspace: { type: 'string' },
   runs: { type: 'string', default: '5' }, json: { type: 'string', default: 'bench-out/frontend.json' },
   synthetic: { type: 'string', default: path.join(root, 'bench-repos/web-synthetic-v1') },
@@ -31,6 +32,7 @@ if (values.help) {
   console.log(`Usage: npm run bench:web -- [--binary ./faah] [--workspace PATH] [--runs 5] [--json out.json]
   --workspace PATH  Real repository for cold-load tests (default: clone/reuse bench-repos/react).
   --synthetic PATH  Generated stress corpus (default: bench-repos/web-synthetic-v1).
+  --baseline PATH   Compare medians with a previous harness JSON (optional).
   --out PATH        CPU profiles and diagnostics (default: bench-out).
   --diagnostics-only  Run untimed profiles without collecting timing samples.
 No builds are performed. Requires Chrome, or npx playwright-core install chromium.
@@ -42,6 +44,8 @@ Failures are written to JSON; any failed scenario causes exit status 1.`);
 }
 
 async function main(count) {
+  const baseline = values.baseline ? JSON.parse(await readFile(values.baseline, 'utf8')) : null;
+  if (baseline) compareSummaries({}, baseline.summary);
   const binary = path.resolve(values.binary);
   const output = path.resolve(values.out);
   await mkdir(output, { recursive: true });
@@ -104,6 +108,7 @@ async function main(count) {
     process.removeListener('SIGINT', onInterrupt);
     process.removeListener('SIGTERM', onTerminate);
     report.summary = aggregate(report.runs.filter(run => run.status === 'passed'));
+    if (baseline) report.comparison = { baseline: path.resolve(values.baseline), metrics: compareSummaries(report.summary, baseline.summary) };
     report.completedAt = new Date().toISOString();
     await mkdir(path.dirname(path.resolve(values.json)), { recursive: true });
     // Raw event/frame samples are compact; stdout and the docs provide the readable table.

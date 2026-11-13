@@ -1,6 +1,6 @@
 # Styling and themes
 
-Frontend migration conventions and build commands: [Frontend implementation](frontend.md).
+Frontend architecture and build commands: [Frontend implementation](frontend.md).
 
 
 faah uses Tailwind CSS 4.3.5 and Basecoat 1.1.0 (Vega). Basecoat supplies the
@@ -10,7 +10,7 @@ loaded. There are no separate browser, workbench or desktop component sheets.
 ## Build and entry point
 
 `web/tailwind.css` is the only stylesheet source outside the theme directory.
-`node scripts/build-web.js` compiles it to the gitignored `web/app.css`, then
+`node scripts/build-web.js` compiles it to the gitignored `web/dist/app.css`, then
 bundles the editor, workbench and holding-page JavaScript. The Go server embeds
 the generated assets, not the Tailwind source or npm dependencies. Pages load
 `static/app.css` followed by `static/themes.css`.
@@ -190,7 +190,7 @@ shorter, not to hide a second component system.
   between full strings; never construct utilities such as `'text-' + size`.
 - Use theme tokens only. Do not add colour literals outside `web/themes/`.
 - Preserve behaviour and accessibility hooks; do not load Basecoat JavaScript.
-- Keep generated `web/app.css` out of commits. Add no stylesheet imports for a
+- Keep generated `web/dist/app.css` out of commits. Add no stylesheet imports for a
   single feature and no npm dependency for prose styling.
 - Run `npm run check`, `go test ./...` and `npm test --prefix desktop`. Inspect
   both a dark and a light theme, including desktop shell layout, when changing

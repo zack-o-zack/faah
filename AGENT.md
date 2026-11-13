@@ -14,8 +14,8 @@ To keep iteration fast and avoid unnecessary delays:
 | Task | Command | Typical Time | Notes |
 | :--- | :--- | :--- | :--- |
 | **Frontend Check** | `make web-check` or `npm run check` | **~10s** | Checks formatting, ESLint, the native TypeScript type check and frontend tests, then builds. |
-| **Frontend Bundle** | `make web` or `node scripts/build-web.js` | **<50ms** | Run whenever modifying files under `web/src/`. |
-| **Build Binary** | `make build` | **~2s** | Bundles frontend (`web/app.js`) and compiles local `./faah` binary. |
+| **Frontend Bundle** | `make web` or `node scripts/build-web.js` | **~2s** | Run whenever modifying files under `web/src/`. |
+| **Build Binary** | `make build` | **~2s** | Bundles frontend (`web/dist/app.js`) and compiles local `./faah` binary. |
 | **Fast Verification** | `make check` or `go test -short ./...` | **~7s** | Runs frontend validation, asset bundling, and fast Go unit tests. |
 | **Full Test Suite** | `make test` or `go test ./...` | **~20s** | Run once all changes are done; iterate until all tests pass before concluding. |
 | **Subsystem Verification** | `make verify` or `./scripts/test-bench.sh --fast` | **~15s** | Verifies 100% package test/benchmark coverage + statement coverage. |
@@ -67,7 +67,7 @@ Whenever introducing a new Go package or subsystem, you must add both a `*_test.
   - [`internal/ui/`](internal/ui/): Terminal styling, ANSI status logging, spinners, and OS-specific TTY detection
   - [`internal/update/`](internal/update/): Self-update version checking, binary download, and atomic replacement
   Assets are statically embedded via `//go:embed` in `server.go`.
-- **Frontend Architecture**: Modular ES modules reside in [`web/src/`](web/src/) and are bundled into [`web/app.js`](web/app.js) via [`scripts/build-web.js`](scripts/build-web.js). Checked via [`scripts/check-web.js`](scripts/check-web.js).
+- **Frontend Architecture**: Modular ES modules reside in [`web/src/`](web/src/) and are bundled into [`web/dist/app.js`](web/dist/app.js) via [`scripts/build-web.js`](scripts/build-web.js). Checked via [`scripts/check-web.js`](scripts/check-web.js).
 - **Benchmark Corpus**: Heavy repositories for benchmarking live in `../bench-repos` (outside the project root) to keep workspace searches and indexers fast.
 - **Detailed Map**: For a complete file catalog and UI element mapping, see [`docs/agents/README.md`](docs/agents/README.md).
 
