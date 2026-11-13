@@ -1,4 +1,4 @@
-import { createEffect, on, onMount, Show } from 'solid-js';
+import { createEffect, on, onCleanup, onMount, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
 import { createShortcut } from '../lib/shortcuts.jsx';
 import { ErrorNotice } from '../lib/ErrorNotice.jsx';
@@ -9,8 +9,9 @@ export function AgentSession(props) {
   const editor = useEditor();
   let input;
   onMount(() => {
-    input?.focus();
     editor.actions.clearSelection?.();
+    const frame = requestAnimationFrame(() => input?.focus());
+    onCleanup(() => cancelAnimationFrame(frame));
   });
   createEffect(
     on(
@@ -134,7 +135,6 @@ export function AgentSession(props) {
                     data-variant="outline"
                     data-size="xs"
                     data-control="agent-now"
-                    disabled={!props.session.instruction.trim()}
                     onClick={() => void editor.actions.applyAgentEdit(props.session.id)}
                   >
                     Apply now
@@ -144,7 +144,6 @@ export function AgentSession(props) {
                     data-control="agent-send"
                     data-variant="primary"
                     data-size="xs"
-                    disabled={!props.session.instruction.trim()}
                     onClick={() => editor.actions.queueAgentEdit(props.session.id)}
                   >
                     Add comment
