@@ -7,7 +7,10 @@ export function ThemeMenu() {
   const [before, setBefore] = createSignal(null);
   return (
     <DropdownMenu
-      label="Select theme"
+      triggerId="btn-theme"
+      accessibleLabel="Select theme"
+      size="icon-xs"
+      label={<span class="icon-[lucide--palette] size-3.5 shrink-0" aria-hidden="true" />}
       onOpen={() => setBefore(theme.preference())}
       onClose={(reason) => {
         if (reason !== 'select' && before()) theme.setTheme(before(), false);

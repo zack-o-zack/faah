@@ -35,19 +35,21 @@ export function Workbench() {
       >
         <span class="icon-[lucide--menu] size-4" />
       </button>
-      <main class="mx-auto flex min-h-0 w-full max-w-[720px] flex-1 flex-col gap-4 px-4 pt-14 pb-6">
-        <WorkbenchHeader />
-        <OpenWorkspaceForm />
-        <Show when={state.error}>
-          <p role="alert" class="text-sm text-destructive">
-            {state.error}
-          </p>
-        </Show>
-        <Show when={state.clone}>
-          <Clone />
-        </Show>
-        <WorkbenchTabs />
-      </main>
+      <div class="flex min-h-0 flex-1 flex-col">
+        <main class="mx-auto flex min-h-0 w-full max-w-[720px] flex-1 flex-col px-4 pt-14">
+          <WorkbenchHeader />
+          <OpenWorkspaceForm />
+          <Show when={state.error}>
+            <p role="alert" class="text-sm text-destructive">
+              {state.error}
+            </p>
+          </Show>
+          <Show when={state.clone}>
+            <Clone />
+          </Show>
+          <WorkbenchTabs />
+        </main>
+      </div>
       <WorkbenchFooter metrics={metrics()} />
     </div>
   );

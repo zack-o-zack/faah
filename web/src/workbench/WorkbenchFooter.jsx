@@ -1,25 +1,33 @@
 import { useWorkbench } from './context.jsx';
 import { MetricsMenu } from './MetricsMenu.jsx';
 import { ThemeMenu } from './ThemeMenu.jsx';
+import { Show } from 'solid-js';
 export function WorkbenchFooter(props) {
   const { state } = useWorkbench();
   return (
     <footer
-      class={`flex shrink-0 items-center gap-2 border-t bg-sidebar px-2 py-1
-        text-xs text-muted-foreground`}
+      id="status"
+      class="flex shrink-0 items-center gap-2 overflow-hidden whitespace-nowrap border-t bg-sidebar px-2 py-1 font-mono text-xs text-muted-foreground select-none [&>*]:shrink-0 [&_.metric-label]:max-[560px]:hidden"
     >
-      <span>{state.items.filter((item) => item.state === 'running').length} running</span>
+      <span id="st-running" class="inline-flex items-center gap-1.5 empty:hidden">
+        <Show when={state.items.some((item) => item.state === 'running')}>
+          <span class="size-1.5 rounded-full bg-gi" />
+          {state.items.filter((item) => item.state === 'running').length} running
+        </Show>
+      </span>
       <span class="flex-1" />
       <MetricsMenu metrics={props.metrics} />
+      <span class="h-3 w-px bg-border" />
       <a
         class="btn"
         data-variant="ghost"
+        data-size="icon-xs"
         href="https://github.com/zack-o-zack/faah"
         target="_blank"
         rel="noopener"
         aria-label="faah on GitHub"
       >
-        <span class="icon-[lucide--github] size-4" />
+        <span class="icon-[lucide--github] size-3.5 shrink-0" aria-hidden="true" />
       </a>
       <ThemeMenu />
     </footer>

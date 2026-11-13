@@ -5,7 +5,10 @@ import { MetricsSummary } from './MetricsSummary.jsx';
 import { fmtBytes, fmtCpu } from './logic.ts';
 export function Metrics() {
   const editor = useEditor();
-  const metrics = () => editor.store.state.workspace.metrics;
+  return <MetricsPopover metrics={editor.store.state.workspace.metrics} />;
+}
+export function MetricsPopover(props) {
+  const metrics = () => props.metrics;
   return (
     <Popover
       triggerId="st-metrics"

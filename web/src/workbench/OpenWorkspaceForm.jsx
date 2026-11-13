@@ -21,7 +21,9 @@ export function OpenWorkspaceForm() {
   });
   return (
     <form
-      class="flex gap-2"
+      id="wb-open"
+      class="dropdown-menu relative block shrink-0"
+      autocomplete="off"
       onSubmit={(e) => {
         e.preventDefault();
         actions.cancelClone();
@@ -29,6 +31,34 @@ export function OpenWorkspaceForm() {
       }}
     >
       <PathInput
+        group
+        leading={
+          <span data-align="inline-start">
+            <span id="wb-kind" class="icon-[lucide--search] size-4" aria-hidden="true" />
+          </span>
+        }
+        trailing={
+          <button
+            id="wb-go"
+            type="submit"
+            data-align="inline-end"
+            class="btn me-1.5! gap-2 pe-1.5"
+            data-variant="primary"
+            data-size="sm"
+            aria-label={label()}
+            disabled={!['pr', 'dir'].includes(kind())}
+          >
+            <span id="wb-go-label" class="max-sm:hidden">
+              {label()}
+            </span>
+            <kbd
+              class="kbd h-5 min-w-5 bg-primary-foreground/15 px-1 text-current"
+              aria-hidden="true"
+            >
+              <span class="icon-[lucide--corner-down-left] size-3" />
+            </kbd>
+          </button>
+        }
         value={target()}
         onInput={(value) => {
           setTarget(value);
@@ -42,9 +72,6 @@ export function OpenWorkspaceForm() {
         label="Folder path or pull request URL"
         placeholder="Folder path or pull request URL"
       />
-      <button class="btn" data-variant="primary" disabled={!['pr', 'dir'].includes(kind())}>
-        {label()}
-      </button>
     </form>
   );
 }

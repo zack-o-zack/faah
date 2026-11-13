@@ -6,11 +6,12 @@ import { Browse } from './Browse.jsx';
 export function WorkbenchTabs() {
   const { state, actions } = useWorkbench();
   return (
-    <div class="tabs min-h-0 flex-1">
+    <div id="wb-tabs" class="tabs mt-5 min-h-0 flex-1 gap-2">
       <nav
         role="tablist"
         aria-label="Workspaces"
         data-variant="line"
+        class="w-full justify-start border-b [&>[role=tab]]:flex-none"
         onKeyDown={(e) => {
           if (['ArrowLeft', 'ArrowRight'].includes(e.key)) {
             e.preventDefault();
@@ -40,7 +41,11 @@ export function WorkbenchTabs() {
         role="tabpanel"
         id={`panel-${state.tab}`}
         aria-labelledby={`tab-${state.tab}`}
-        class="flex min-h-0 flex-1 flex-col overflow-auto"
+        class={
+          state.tab === 'recent'
+            ? '-mx-2 min-h-0 overflow-y-auto px-2 pb-6'
+            : 'flex min-h-0 flex-col pb-4'
+        }
       >
         <Show when={state.tab === 'recent'} fallback={<Browse />}>
           <Recent />

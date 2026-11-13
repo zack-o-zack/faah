@@ -6,7 +6,7 @@ export function Recent() {
   const { state, groups, actions } = useWorkbench();
   return (
     <>
-      <ul class="item-group">
+      <ul id="wb-recent" class="item-group gap-0.5">
         <Show when={groups().pinned.length}>
           <li class="text-xs text-muted-foreground">Pinned</li>
         </Show>
@@ -24,11 +24,19 @@ export function Recent() {
       <Show when={!state.items.length}>
         <div class="empty py-12">
           <header>
+            <figure class="flex size-10 items-center justify-center rounded-lg bg-muted">
+              <span class="icon-[lucide--folder-open] size-5" aria-hidden="true" />
+            </figure>
             <h2>Nothing opened yet</h2>
             <p>Paste a pull request URL or a folder path above, or find the folder in Browse.</p>
           </header>
           <footer>
-            <button class="btn" data-variant="outline" onClick={() => actions.selectTab('browse')}>
+            <button
+              class="btn"
+              data-variant="outline"
+              data-size="sm"
+              onClick={() => actions.selectTab('browse')}
+            >
               Browse folders
             </button>
           </footer>
