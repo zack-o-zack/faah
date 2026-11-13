@@ -751,13 +751,6 @@
       "count": 1
     },
     {
-      "rule": "code-quality/duplicate-block",
-      "engine": "code-quality",
-      "file": "web/src/layout/SidebarFooter.tsx",
-      "fingerprint": "f855bb452ba7aa69",
-      "count": 1
-    },
-    {
       "rule": "jsx-a11y/click-events-have-key-events",
       "engine": "lint",
       "file": "web/src/lib/ContextMenu.tsx",

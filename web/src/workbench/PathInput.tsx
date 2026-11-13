@@ -26,18 +26,18 @@ export function PathInput(props: PathInputProps): JSX.Element {
     if (props.autofocus) input?.focus();
     props.onReady?.(() => input?.focus());
   });
-  const [entries] = createResource(
-    () => (focused() && props.value.trim() && !looksLikeURL(props.value) ? props.value : false),
-    async (q) => {
-      try {
-        return decodeCompletion(await api('api/wb/complete', { q })).entries || [];
-      } catch {
-        return [];
-      }
-    },
-  );
+  const query = () =>
+    focused() && props.value.trim() && !looksLikeURL(props.value) ? props.value : false;
+  const [entries] = createResource(query, async (q) => {
+    try {
+      return decodeCompletion(await api('api/wb/complete', { q })).entries || [];
+    } catch {
+      return [];
+    }
+  });
+  const suggestions = () => (query() ? entries() || [] : []);
   const accept = (index: number) => {
-    const item = entries()?.[index];
+    const item = suggestions()[index];
     if (!item) return;
     props.onInput(item.path);
     props.onFolder?.(item.path);
@@ -62,7 +62,7 @@ export function PathInput(props: PathInputProps): JSX.Element {
           role="combobox"
           aria-autocomplete="list"
           aria-controls={id}
-          aria-expanded={focused() && !!entries()?.length}
+          aria-expanded={!!suggestions().length}
           aria-activedescendant={selected() >= 0 ? `${id}-${selected()}` : undefined}
           onInput={(e) => {
             props.onInput(e.currentTarget.value);
@@ -71,7 +71,7 @@ export function PathInput(props: PathInputProps): JSX.Element {
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           onKeyDown={(e) => {
-            const items = entries() || [];
+            const items = suggestions();
             if (!focused() || !items.length) return;
             if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
               e.preventDefault();
@@ -95,8 +95,8 @@ export function PathInput(props: PathInputProps): JSX.Element {
         />
         {props.trailing}
       </div>
-      <Show when={focused() && entries()?.length}>
-        <PathSuggestions id={id} entries={entries()} selected={selected()} onAccept={accept} />
+      <Show when={suggestions().length}>
+        <PathSuggestions id={id} entries={suggestions()} selected={selected()} onAccept={accept} />
       </Show>
     </div>
   );

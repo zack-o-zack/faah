@@ -68,12 +68,12 @@ export function Search(): JSX.Element {
         />
       </div>
       <div id="results" class="panel-body min-h-0 flex-1 overflow-auto pb-4">
-        <Show when={search.results.loading && !search.state.external}>
+        <Show when={search.state.query.trim() && search.results.loading && !search.state.external}>
           <div data-ui="hint" class="empty text-muted-foreground">
             searching…
           </div>
         </Show>
-        <Show when={search.results.error && !search.state.external}>
+        <Show when={search.state.query.trim() && search.results.error && !search.state.external}>
           <p role="alert">{search.results.error.message}</p>
         </Show>
         <Show when={search.data()}>

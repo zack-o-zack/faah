@@ -53,7 +53,7 @@ function buildSearchStore(options: { request?: Request } = {}) {
   return {
     state,
     results,
-    data: () => state.external || (!results.error && results()),
+    data: () => state.external || (state.query.trim() ? !results.error && results() : undefined),
     actions: {
       setSearchField,
       runSearch,

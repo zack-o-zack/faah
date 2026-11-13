@@ -90,4 +90,9 @@ test('renders results and sends case/word/regex/glob through named actions', asy
     word: 1,
     re: 1,
   });
+  fireEvent.input(screen.getByRole('textbox', { name: 'Search in files' }), {
+    target: { value: '' },
+  });
+  expect(document.querySelector('[data-ui=rline]')).toBeNull();
+  expect(screen.getByText('Search text across every indexed file.')).toBeTruthy();
 });
