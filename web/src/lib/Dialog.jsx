@@ -1,4 +1,4 @@
-import { createEffect, createUniqueId, onCleanup } from 'solid-js';
+import { createEffect, createUniqueId, onCleanup, Show } from 'solid-js';
 import { Portal } from 'solid-js/web';
 
 export function Dialog(props) {
@@ -33,14 +33,39 @@ export function Dialog(props) {
           if (e.target === dialog) props.onClose();
         }}
       >
-        <section>
-          <header>
-            <h2 id={title}>{props.title}</h2>
+        <section class={props.class}>
+          <header class="flex-row! items-start justify-between gap-2">
+            <div class="flex min-w-0 flex-col gap-0.5">
+              <h2 id={title}>{props.title}</h2>
+              <Show when={props.subtitle}>
+                <span class="text-sm text-muted-foreground">{props.subtitle}</span>
+              </Show>
+            </div>
+            <Show when={props.footer}>
+              <button
+                type="button"
+                class="btn"
+                data-variant="ghost"
+                data-size="icon-xs"
+                aria-label="Close (Esc)"
+                title="Close (Esc)"
+                onClick={() => props.onClose()}
+              >
+                <span class="icon-[lucide--x] size-3.5" aria-hidden="true" />
+              </button>
+            </Show>
           </header>
           {props.children}
-          <button type="button" class="btn" onClick={() => props.onClose()}>
-            Close
-          </button>
+          <Show
+            when={props.footer}
+            fallback={
+              <button type="button" class="btn" onClick={() => props.onClose()}>
+                Close
+              </button>
+            }
+          >
+            <footer class="flex-row! items-center gap-2">{props.footer}</footer>
+          </Show>
         </section>
       </dialog>
     </Portal>

@@ -380,9 +380,6 @@
   .md-img-broken svg { color: var(--destructive); width: 16px; height: 16px; flex-shrink: 0; }
 
   /* Runtime feedback and editor settings. */
-  .diff-row.pr-line-flash .diff-code, .diff-side.pr-line-flash .diff-code {
-    outline: 2px solid var(--ring); outline-offset: -2px; border-radius: var(--radius-sm);
-  }
 
     @keyframes shake {
     0%, 100% { transform: translateX(0); }

@@ -91,91 +91,11 @@
 
 
 
-      <!-- Draft review comment composers: one [data-ui~=agent-box] per open composer,
-           each pinned beside the diff line it's on (or docked bottom-right
-           when that file isn't the one on screen). web/src/pr.js owns it. -->
-      <div id="pr-comment-list" data-ui="pr-comment-list" class="absolute inset-0 z-30 pointer-events-none [&>[data-ui~=agent-box]]:absolute [&>[data-ui~=agent-box]]:w-96 [&>[data-ui~=agent-box]]:max-w-full [&>[data-ui~=agent-box]]:pointer-events-auto" hidden></div>
     </div>
 
     <div id="review-root" class="contents"></div>
 
-    <!-- PR footer: a `faah pr ...` session only (web/src/pr.js), shown with the overview -->
-    <div id="pr-bar" data-ui="pr-bar" class="[body:not(.in-review-mode)_&]:hidden! flex flex-none flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2" hidden>
-      <div data-ui="pr-bar-row" class="flex min-w-0 flex-1 basis-80 flex-col gap-0.5">
-        <div class="flex min-w-0 items-center gap-2">
-        <a id="pr-link" data-ui="pr-link" class="group flex items-center min-w-40 gap-2 rounded-md -mx-1.5 px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" target="_blank" rel="noopener noreferrer" >
-          <span id="pr-badge" class="badge shrink-0 tabular-nums" data-variant="secondary" data-control="pr-badge"></span>
-          <span id="pr-title" data-ui="pr-title" class="min-w-0 truncate text-sm font-medium underline-offset-4 group-hover:underline group-focus-visible:underline"></span>
-          <span class="icon-[lucide--external-link] size-3.5 shrink-0 text-muted-foreground group-hover:text-foreground group-focus-visible:text-foreground" aria-hidden="true"></span>
-        </a>
-          <span id="pr-state-badge" class="badge gap-1 border-current/30 bg-current/10" data-variant="outline" hidden><span data-ui="icon" class="size-3 shrink-0" aria-hidden="true"></span><span data-ui="label" class="text-foreground"></span></span>
-        </div>
-        <div class="flex min-w-0 items-center gap-3 pl-px text-xs text-muted-foreground">
-          <span id="pr-refs" data-ui="pr-refs" class="min-w-0 shrink-[4] truncate font-mono"></span>
-          <span id="pr-merge-state" role="status" hidden class="inline-flex shrink-0 items-center gap-1 data-[tone=err]:text-destructive data-[tone=warn]:text-warn data-[tone=ok]:text-gi"></span>
-          <span id="pr-diff-warning" data-ui="pr-diff-warning" class="inline-flex shrink-0 items-center gap-1 text-destructive" hidden><span class="icon-[lucide--triangle-alert] size-3.5 shrink-0" aria-hidden="true"></span> diff base unresolved</span>
-          <button id="pr-readonly-note" type="button" hidden  class="btn" data-control="pr-readonly-note" data-variant="outline" data-size="xs">No token &mdash; click to connect</button>
-        </div>
-      </div>
-      <div id="pr-review-row" data-ui="pr-bar-row pr-review-row" class="ml-auto flex shrink-0 items-center gap-2">
-        <button id="pr-merge-fix" type="button" hidden class="btn" data-variant="outline" data-size="sm"></button>
-        <button id="pr-batch-apply" hidden title="Have the harness apply your draft comments to the code" class="btn" data-control="bar-action pr-btn-batch-apply" data-variant="special" data-size="sm">
-          <span class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true"></span>
-          <span class="bar-action-label">Apply drafts</span>
-        </button>
-        <!-- Review: one panel holds the summary and the verdict that sends it (web/src/pr.js) -->
-        <div id="pr-review-group" class="relative flex-none">
-          <button id="pr-review-toggle" type="button" class="btn" data-variant="outline" data-size="sm" aria-haspopup="dialog" aria-expanded="false" aria-controls="pr-review-panel" title="Write a summary and send your review">
-            <span class="icon-[lucide--message-square-text] size-3.5 shrink-0" aria-hidden="true"></span>Review<span id="pr-review-drafts" class="badge tabular-nums empty:hidden" data-variant="secondary"></span><span class="icon-[lucide--chevron-down] size-3.5 shrink-0 text-muted-foreground" aria-hidden="true"></span>
-          </button>
-          <div id="pr-review-panel" role="dialog" aria-label="Send a review" hidden class="fixed z-[70] flex w-[min(28rem,90vw)] flex-col gap-3 rounded-lg border bg-popover p-3 text-popover-foreground shadow-lg">
-            <label class="flex flex-col gap-1.5">
-              <span class="text-xs font-medium">Summary <span class="font-normal text-muted-foreground">(optional)</span></span>
-              <textarea id="pr-review-body" aria-label="Review summary" rows="4" spellcheck="true" autocomplete="off" placeholder="Overall feedback. It shows above your line comments on the pull request." class="textarea min-h-24 max-h-72 resize-y" data-control="pr-review-body"></textarea>
-            </label>
-            <p id="pr-review-drafts-note" class="text-xs text-muted-foreground"></p>
-            <div class="flex flex-col gap-1.5" role="group" aria-label="Send as">
-              <button id="pr-submit-comment" type="button" class="flex w-full items-start gap-2.5 rounded-md border px-3 py-2 text-left hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50"><span class="icon-[lucide--message-square] mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true"></span><span class="flex flex-col"><span class="text-sm font-medium">Comment</span><span class="text-xs text-muted-foreground">Send your feedback without a verdict.</span></span></button>
-              <button id="pr-submit-approve" type="button" hidden class="flex w-full items-start gap-2.5 rounded-md border px-3 py-2 text-left hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50"><span class="icon-[lucide--circle-check] mt-0.5 size-4 shrink-0 text-gi" aria-hidden="true"></span><span class="flex flex-col"><span class="text-sm font-medium">Approve</span><span class="text-xs text-muted-foreground">Good to merge.</span></span></button>
-              <button id="pr-submit-request-changes" type="button" hidden class="flex w-full items-start gap-2.5 rounded-md border px-3 py-2 text-left hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50"><span class="icon-[lucide--circle-x] mt-0.5 size-4 shrink-0 text-destructive" aria-hidden="true"></span><span class="flex flex-col"><span class="text-sm font-medium">Request changes</span><span class="text-xs text-muted-foreground">Must be addressed before merging.</span></span></button>
-            </div>
-          </div>
-        </div>
-        <span id="pr-review-sep" class="h-5 w-px shrink-0 bg-border" aria-hidden="true"></span>
-        <!-- Merge: split button -- the last-used method, and a caret to pick another (web/src/prmerge.js) -->
-        <div id="pr-merge-group" data-ui="pr-merge-group" class="relative flex flex-none gap-px" hidden>
-          <button id="pr-merge" type="button" class="btn" data-control="bar-action pr-btn-merge" data-variant="primary" data-size="sm">Squash and merge</button>
-          <button id="pr-merge-caret" type="button" aria-haspopup="menu" title="Choose how to merge" class="btn" data-control="bar-action pr-btn-merge pr-merge-caret" data-variant="primary" data-size="icon-sm" aria-label="Choose how to merge"><span class="icon-[lucide--chevron-down] size-3.5 shrink-0" aria-hidden="true"></span></button>
-          <div id="pr-merge-menu"  role="menu" hidden></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- PR comments bottom panel: existing GitHub comments (top-level and
-         inline) plus your own draft review comments, open by default for the
-         life of a PR review session. web/src/pr.js owns everything in it. -->
-    <div id="pr-comments-panel" data-ui="pr-comments-panel" class="[body:not(.in-review-mode)_&]:hidden! group/comments relative flex h-72 max-h-[80vh] shrink-0 flex-col border-t [&.collapsed]:h-auto! collapsed" hidden>
-      <div id="pr-comments-resizer" data-ui="pr-comments-resizer" class="absolute -top-1 inset-x-0 h-2 cursor-row-resize hover:bg-primary" title="Drag to resize"></div>
-      <div data-ui="pr-comments-panel-head" class="flex flex-wrap items-center shrink-0 select-none gap-2 p-3">
-        <span data-ui="pr-comments-panel-title" class="label">Comments</span>
-        <span id="pr-comments-count" class="badge" data-variant="secondary" data-control="pr-comments-count"></span>
-        <span class="flex-1 min-w-0"></span>
-        <button id="pr-comments-collapse" title="Expand/collapse comments panel" class="btn" data-control="pr-comments-collapse" data-variant="ghost" data-size="icon-xs" aria-label="Expand/collapse comments panel"><span class="icon-[lucide--chevron-down] size-3.5 shrink-0" aria-hidden="true"></span></button>
-      </div>
-      <div id="pr-comments-body" data-ui="pr-comments-body" class="flex flex-1 min-h-0 flex-col group-[.collapsed]/comments:hidden">
-        <div id="pr-comments-list" data-ui="pr-comments-list" class="[&>*]:shrink-0 flex flex-col flex-1 min-h-0 overflow-y-auto gap-2 p-3"></div>
-        <div id="pr-issue-compose" data-ui="pr-issue-compose" class="flex-none p-3 pt-0">
-          <div class="input-group" data-orientation="vertical">
-            <textarea id="pr-issue-compose-body" aria-label="Pull request comment" rows="1" spellcheck="false" autocomplete="off" placeholder="Comment on this pull request" class="max-h-40 min-h-9" data-control="pr-review-body"></textarea>
-            <footer data-align="block-end" class="gap-1">
-              <span class="text-xs text-muted-foreground">Markdown supported</span>
-              <span class="flex-1"></span>
-              <button id="pr-issue-compose-send" type="button" disabled title="Post comment (Mod+Enter)" aria-label="Post comment" class="btn rounded-full" data-variant="primary" data-size="icon-sm"><span class="icon-[lucide--arrow-up] size-4" aria-hidden="true"></span></button>
-            </footer>
-          </div>
-        </div>
-      </div>
-    </div>
+    <div id="pr-root" class="contents"></div>
 
     <!-- Floating Copy Toast Notification -->
     <div id="solid-root"></div>
@@ -210,78 +130,7 @@
 <dialog id="helpsheet" class="dialog"></dialog>
 
 <!-- SECTION: Settings Modal (Cmd+, / Ctrl+,) -->
-<!-- PR merge dialog: method, commit title/message (rewritable by the harness), and what blocks merging now (web/src/prmerge.js) -->
-<dialog id="pr-merge-modal" class="dialog">
-  <div class="overflow-auto" role="dialog" aria-modal="true" aria-labelledby="pr-merge-title">
-    <header class="flex-row! items-start justify-between">
-      <h2 id="pr-merge-title">Merge pull request</h2>
-        <span id="pr-merge-refs" data-ui="pr-merge-refs" class="text-muted-foreground"></span>
-      <button id="pr-merge-close" type="button" title="Close (Esc)" class="btn" data-control="git-notice-close" data-variant="ghost" data-size="icon-xs" aria-label="Close (Esc)"><span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true"></span></button>
-    </header><section class="flex flex-col gap-3 overflow-auto">
-    <div id="pr-merge-methods" class="button-group" role="radiogroup" aria-label="Merge method"></div>
-    <p id="pr-merge-explain" data-ui="pr-merge-explain" class="text-muted-foreground"></p>
-    <div id="pr-merge-warnings" data-ui="pr-merge-warnings" class="flex flex-col gap-2"></div>
-    <div id="pr-merge-commit" data-ui="pr-merge-commit" class="field flex flex-col gap-2">
-      <div id="pr-merge-ai-checkbox-wrap" data-ui="pr-merge-ai-checkbox-wrap" class="flex items-center gap-2" hidden>
-        <label for="pr-merge-ai-checkbox" data-ui="pr-merge-checkbox-label" class="label label inline-flex items-center cursor-pointer select-none gap-2">
-          <input type="checkbox" id="pr-merge-ai-checkbox" class="input">
-          <span data-ui="pr-merge-checkbox-text" class="">Rewrite commit message with AI</span>
-        </label>
-      </div>
-      <label for="pr-merge-commit-title" data-ui="pr-merge-label" class="label label text-muted-foreground">Commit title</label>
-      <input id="pr-merge-commit-title" type="text" spellcheck="false" autocomplete="off" class="input h-8!" data-control="pr-merge-input">
-      <div data-ui="pr-merge-label-row" class="flex items-baseline justify-between">
-        <label for="pr-merge-commit-body" data-ui="pr-merge-label" class="label label text-muted-foreground">Commit message</label>
-        <a id="pr-merge-reset" href="#" data-ui="pr-merge-link" class="text-primary-text">Reset to default</a>
-      </div>
-      <textarea id="pr-merge-commit-body" rows="8" spellcheck="false" autocomplete="off" class="textarea resize-y" data-control="pr-merge-input pr-merge-body"></textarea>
-      <div id="pr-merge-ai-row" data-ui="pr-merge-ai" class="flex items-center gap-2">
-        <input id="pr-merge-ai-instruction" aria-label="Rewrite instructions" type="text" spellcheck="false" autocomplete="off" placeholder="Instructions for this rewrite (optional), e.g. Conventional Commits, mention the ticket" class="input h-8!" data-control="pr-merge-input">
-        <div class="git-agent-picker flex flex-col gap-2">
-          <div id="pr-merge-agent" class="inline-flex min-w-0 max-w-full" data-control="agent-picker" data-placeholder="No harness"><button class="btn max-w-full" data-variant="outline" type="button" data-size="sm" aria-haspopup="dialog" aria-expanded="false" aria-label="Coding harness and model" title="Coding harness and model"><span class="truncate"></span><i class="icon-[lucide--chevrons-up-down] size-3.5 shrink-0 text-muted-foreground" aria-hidden="true"></i></button></div>
-        </div>
-        <button id="pr-merge-ai" type="button" title="Have the harness rewrite the title and message from the PR's commits and diff" class="btn" data-control="bar-action" data-variant="special" data-size="xs"><span class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true"></span>Rewrite</button>
-      </div>
-      <span id="pr-merge-instructions-note" data-ui="pr-merge-note" class="text-muted-foreground" hidden>Your <a id="pr-merge-instructions-link" href="#" data-ui="pr-merge-link" class="text-primary-text">commit message instructions</a> from Settings apply too.</span>
-    </div>
-    <ol id="pr-merge-commit-list" data-ui="pr-merge-commit-list" class="overflow-y-auto p-3" hidden></ol>
-    <div id="pr-merge-err" data-ui="agent-err" hidden></div>
-    </section><footer class="flex-row! items-center gap-2">
-      <span id="pr-merge-hint" data-ui="agent-hint" class="flex-1"></span>
-      <button id="pr-merge-cancel" type="button" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs">Cancel</button>
-      <button id="pr-merge-confirm" type="button" class="btn" data-control="bar-action pr-btn-merge" data-variant="primary" data-size="xs">Confirm merge</button>
-    </footer>
-  </div>
-</dialog>
 
-<!-- Connect dialog: create, paste and check a forge token without a restart (web/src/forgeconnect.js) -->
-<dialog id="forge-connect-modal" class="dialog">
-  <div class="overflow-auto" role="dialog" aria-modal="true" aria-labelledby="forge-connect-title">
-    <header class="flex-row! items-start justify-between">
-      <h2 id="forge-connect-title">Connect</h2>
-        <span id="forge-connect-host" data-ui="pr-merge-refs" class="text-muted-foreground"></span>
-      <button id="forge-connect-close" type="button" title="Close (Esc)" class="btn" data-control="git-notice-close" data-variant="ghost" data-size="icon-xs" aria-label="Close (Esc)"><span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true"></span></button>
-    </header><section class="flex flex-col gap-3 overflow-auto">
-    <p id="forge-connect-why" data-ui="pr-merge-explain" class="text-muted-foreground"></p>
-    <ol id="forge-connect-steps" data-ui="forge-connect-steps" class="list-decimal pl-6 flex flex-col gap-2"></ol>
-    <label for="forge-connect-token" data-ui="pr-merge-label" class="label label text-muted-foreground">Token</label>
-    <input id="forge-connect-token" type="password" spellcheck="false" autocomplete="off" placeholder="Paste the token" class="input h-8!" data-control="pr-merge-input">
-    <div id="forge-connect-extra" data-ui="forge-connect-extra" class="flex flex-col gap-2" hidden>
-      <label id="forge-connect-extra-label" for="forge-connect-extra-input" data-ui="pr-merge-label" class="label label text-muted-foreground"></label>
-      <input id="forge-connect-extra-input" type="text" spellcheck="false" autocomplete="off" class="input h-8!" data-control="pr-merge-input">
-      <span id="forge-connect-extra-hint" data-ui="pr-merge-note" class="text-muted-foreground"></span>
-    </div>
-    <div id="forge-connect-err" data-ui="agent-err" hidden></div>
-    <span id="forge-connect-check" data-ui="pr-merge-note" class="text-muted-foreground"></span>
-    <span id="forge-connect-alt" data-ui="pr-merge-note" class="text-muted-foreground"></span>
-    </section><footer class="flex-row! items-center gap-2">
-      <a id="forge-connect-settings" href="#" data-ui="pr-merge-link" class="text-primary-text">Open Settings</a>
-      <span id="forge-connect-hint" data-ui="agent-hint" class="flex-1"></span>
-      <button id="forge-connect-cancel" type="button" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs">Cancel</button>
-      <button id="forge-connect-submit" type="button" class="btn" data-control="bar-action pr-btn-merge" data-variant="primary" data-size="xs">Connect</button>
-    </footer>
-  </div>
-</dialog>
 
 <dialog id="settings-modal" class="dialog">
   <div class="sm:max-w-[1180px] h-[min(840px,92vh)] overflow-hidden gap-0" role="dialog" aria-modal="true" aria-labelledby="settings-title">

@@ -133,12 +133,6 @@ test('polling stops after disposal even with a request in flight', async () => {
 });
 test('dialog requests close on Escape and releases its modal on disposal', () => {
   const close = vi.fn();
-  HTMLDialogElement.prototype.showModal = function () {
-    this.open = true;
-  };
-  HTMLDialogElement.prototype.close = function () {
-    this.open = false;
-  };
   const view = render(() => (
     <Dialog open={true} title="Confirm" onClose={close}>
       <p>Continue?</p>

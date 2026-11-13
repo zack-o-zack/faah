@@ -3,8 +3,14 @@ import { onCleanup } from 'solid-js';
 export function SplitHandle(props) {
   let release = () => {};
   onCleanup(() => release());
+  // A reversed handle sits on the far edge of what it sizes: dragging toward it shrinks it.
   const change = (delta) =>
-    props.onChange(Math.max(props.min ?? 0, Math.min(props.max ?? Infinity, props.value + delta)));
+    props.onChange(
+      Math.max(
+        props.min ?? 0,
+        Math.min(props.max ?? Infinity, props.value + (props.reverse ? -delta : delta)),
+      ),
+    );
   return (
     <div
       role="separator"

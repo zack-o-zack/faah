@@ -8,12 +8,9 @@ web/src/controls.js
 web/src/controls.test.js
 web/src/errors.js
 web/src/errors.test.js
-web/src/forgeconnect.js
 web/src/main.js
 web/src/overlays.js
 web/src/overlays.test.js
-web/src/pr.js
-web/src/prmerge.js
 web/src/settings.js
 web/src/shortcuts.js
 web/src/state.js

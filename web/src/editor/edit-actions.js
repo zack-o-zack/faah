@@ -40,7 +40,6 @@ export function createEditActions(editor) {
     }
     store.actions.patchDocument(document.path, { isEditing: true, diffMode: null });
     if (active()?.path !== document.path) return;
-    services.syncViewers?.();
     queueMicrotask(() => centerEditLine(line || document.cur));
   }
   function centerEditLine(line, start, end) {
@@ -51,7 +50,6 @@ export function createEditActions(editor) {
     if (active().dirty && !force && !confirm('You have unsaved changes. Discard changes?')) return;
     buffer().setEditContent(null);
     patch({ isEditing: false, dirty: false });
-    services.syncViewers?.();
     await reloadOpenTabs();
   }
   async function saveActiveFile() {
@@ -88,7 +86,6 @@ export function createEditActions(editor) {
       }),
     );
     refresh();
-    services.syncViewers?.();
   }
   return {
     enterEditMode,

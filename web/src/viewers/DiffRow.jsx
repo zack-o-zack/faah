@@ -1,6 +1,7 @@
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
 import { gutterAnchor, gutterSelection } from './diff-rows.js';
+import { CommentMarker } from '../pr/RowComments.jsx';
 
 function Gutter(props) {
   const editor = useEditor();
@@ -82,6 +83,7 @@ export function DiffSide(props) {
         jump={props.jump}
       />
       <div class="diff-mk">{{ add: '+', del: '−' }[props.row?.type] || ' '}</div>
+      <CommentMarker row={props.row} path={props.document.path} reviewable={props.reviewable} />
       <Code
         row={props.row}
         diagnostic={props.side === 'right' ? props.diagnostics.get(anchor().line) : undefined}
@@ -131,6 +133,7 @@ export function UnifiedRow(props) {
         jump={props.jump}
       />
       <div class="diff-mk">{{ add: '+', del: '−' }[props.row.type] || ' '}</div>
+      <CommentMarker row={props.row} path={props.document.path} reviewable={props.reviewable} />
       <Code row={props.row} diagnostic={props.diagnostics.get(anchor().line)} />
     </div>
   );

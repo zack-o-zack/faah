@@ -1,6 +1,7 @@
 import { createMemo, createSignal, Index, onCleanup, onMount, Show } from 'solid-js';
 import { splitRows, unifiedRows, rowOffsets, measuredWindow } from './diff-rows.js';
 import { DiffSide, UnifiedRow } from './DiffRow.jsx';
+import { RowComposers } from '../pr/RowComments.jsx';
 
 function DiffSlot(props) {
   let row;
@@ -39,6 +40,12 @@ function DiffSlot(props) {
           diagnostics={props.diagnostics}
           reviewable={props.reviewable}
           jump={props.jump}
+        />
+      </Show>
+      <Show when={props.reviewable}>
+        <RowComposers
+          path={props.document.path}
+          rows={props.mode === 'unified' ? [props.row] : [props.row.left, props.row.right]}
         />
       </Show>
     </div>

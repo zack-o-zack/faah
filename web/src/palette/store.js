@@ -117,7 +117,7 @@ export function createPaletteStore(editor, options = {}) {
       editor.actions.pushHistory(editor.active().path, item.line);
     } else if (item.kind === 'command') item.command.run();
     else if (item.kind === 'theme') options.theme?.setTheme(item.id);
-    else if (item.kind === 'openpr') editor.actions.openLegacyPR(item.target);
+    else if (item.kind === 'openpr') editor.actions.launchPR(item.target);
   }
   onCleanup(() => {
     generation++;

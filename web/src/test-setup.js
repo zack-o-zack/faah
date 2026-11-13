@@ -21,3 +21,12 @@ if (!window.matchMedia)
     addEventListener() {},
     removeEventListener() {},
   });
+// jsdom has no modal dialogs.
+if (globalThis.HTMLDialogElement && !HTMLDialogElement.prototype.showModal) {
+  HTMLDialogElement.prototype.showModal = function () {
+    this.open = true;
+  };
+  HTMLDialogElement.prototype.close = function () {
+    this.open = false;
+  };
+}

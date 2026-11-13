@@ -1,6 +1,9 @@
 import { createAgentStore } from '../agents/store.js';
 import { createThreadStore } from '../threads/store.js';
 import { createReviewStore } from '../review/store.js';
+import { createPRStore } from '../pr/store.js';
+import { createMergeStore } from '../pr/merge-store.js';
+import { createForgeStore } from '../pr/forge-store.js';
 import { registerFeatureCommands } from '../palette/features.js';
 import { createDocumentGitActions } from '../git/documents.js';
 import { createLanguageStore } from '../lsp/store.js';
@@ -43,7 +46,6 @@ function initialState(vimEnabled) {
     hoverPosition: null,
     vimEnabled,
     vimHelp: false,
-    reviewAvailable: false,
     vim: initialVimState(),
   };
 }
@@ -259,6 +261,13 @@ export function createEditorStore(store, options = {}) {
   Object.assign(actions, editor.threads.actions);
   editor.review = createReviewStore(editor, options.review);
   Object.assign(actions, editor.review.actions);
+  editor.pr = createPRStore(editor, options.pr);
+  Object.assign(actions, editor.pr.actions);
+  editor.merge = createMergeStore(editor, options.merge);
+  Object.assign(actions, editor.merge.actions);
+  editor.forge = createForgeStore(editor, options.forge);
+  Object.assign(actions, editor.forge.actions);
+  handlers.review = actions.openPRComposer;
   handlers.agent = actions.openAgentEdit;
   handlers.thread = actions.newThread;
   handlers.explain = actions.explainSelection;
@@ -272,7 +281,7 @@ export function createEditorStore(store, options = {}) {
     openFile,
     runAgent: (...args) => actions.runAgentJob(...args),
     cancelAgent: (id) => actions.cancelAgentJob(id),
-    historyChanged: () => actions.legacyHistoryChanged(),
+    historyChanged: () => actions.historyChanged(),
   });
   Object.assign(actions, editor.git.actions);
   editor.search = createSearchStore();
@@ -293,6 +302,12 @@ export function createEditorStore(store, options = {}) {
     await actions.refreshTree();
     await actions.reloadOpenTabs();
     toast('success', 'Workspace refreshed');
+  };
+  // A rewritten history (reset, rebase, checkout) changes every file and maybe the PR.
+  actions.historyChanged = async () => {
+    await actions.reindexWorkspace();
+    if (editor.pr.available()) await actions.refreshPRMeta();
+    await actions.reloadOpenTabs();
   };
   onCleanup(registerFeatureCommands(editor, options.theme));
   return editor;

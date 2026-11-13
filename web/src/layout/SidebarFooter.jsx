@@ -35,7 +35,7 @@ export function SidebarFooter() {
         id="btn-settings"
         class="btn"
         aria-label="Settings"
-        onClick={() => editor.actions.openLegacySettings('ui')}
+        onClick={() => editor.actions.openSettings('ui')}
       >
         Settings
       </button>

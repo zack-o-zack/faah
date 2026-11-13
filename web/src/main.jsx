@@ -15,6 +15,10 @@ import { EditorShell } from './editor/EditorShell.jsx';
 import { ReviewView } from './review/ReviewView.jsx';
 import { ReviewToggle } from './review/ReviewToggle.jsx';
 import { ReturnPill } from './review/ReturnPill.jsx';
+import { PRPanels } from './pr/PRPanels.jsx';
+import { MergeDialog } from './pr/MergeDialog.jsx';
+import { ForgeConnectDialog } from './pr/ForgeConnectDialog.jsx';
+import { ComposerDock } from './pr/ComposerDock.jsx';
 
 function App() {
   const theme = useTheme();
@@ -68,6 +72,17 @@ function App() {
       >
         <ReviewView />
       </Portal>
+      <Portal
+        ref={(element) => {
+          element.style.display = 'contents';
+        }}
+        mount={document.getElementById('pr-root')}
+      >
+        <PRPanels />
+      </Portal>
+      <ComposerDock />
+      <MergeDialog />
+      <ForgeConnectDialog />
       <ReturnPill />
       <EditorShell />
       <ViewerShell />

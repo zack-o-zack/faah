@@ -17,7 +17,7 @@ export function SelectionBar() {
   });
   function items(info) {
     return SEL_MENU_ITEMS.filter((item) => {
-      if (item.sel === 'review-comment' && !editor.ui.reviewAvailable) return false;
+      if (item.sel === 'review-comment' && !editor.pr.available()) return false;
       return info?.isMarkdownPreview ? !item.forCode : !item.forPreview;
     });
   }

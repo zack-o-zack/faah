@@ -134,10 +134,7 @@ export function DiffViewer() {
       onScroll={() => {
         editor.actions.rememberDiff(editor.active(), viewport.scrollTop);
         cancelAnimationFrame(frame);
-        frame = requestAnimationFrame(() => {
-          setTop(viewport.scrollTop);
-          editor.services.diffRendered?.();
-        });
+        frame = requestAnimationFrame(() => setTop(viewport.scrollTop));
       }}
       onMouseDown={(event) => {
         if (!event.target.closest('.diff-code') || !event[editor.services.modKey || 'metaKey'])

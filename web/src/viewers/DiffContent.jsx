@@ -1,4 +1,4 @@
-import { createEffect, createMemo, createSignal, on, onCleanup, onMount, Show } from 'solid-js';
+import { createMemo, createSignal, onCleanup, onMount, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
 import { parseDiff } from './diff-parse.js';
 import { diagnosticMap } from './diff-rows.js';
@@ -23,7 +23,6 @@ export function DiffContent(props) {
         entries.set(original, next);
         return entries;
       });
-      editor.services.diffRendered?.();
     },
     () => editor.actions.invalidate(props.document),
   );
@@ -40,25 +39,9 @@ export function DiffContent(props) {
     const frame = requestAnimationFrame(() => {
       if (props.document.diffScroll) props.scrollTo(props.document.diffScroll);
       else if (props.document.cur) props.scrollLine(props.document.cur);
-      editor.services.diffRendered?.();
     });
     onCleanup(() => cancelAnimationFrame(frame));
   });
-  createEffect(
-    on(
-      () => [
-        props.document.diffMode,
-        props.document.prCollapsed,
-        props.document.youCollapsed,
-        props.document.commitCollapsed,
-        expanded(),
-      ],
-      () => {
-        const frame = requestAnimationFrame(() => editor.services.diffRendered?.());
-        onCleanup(() => cancelAnimationFrame(frame));
-      },
-    ),
-  );
   return (
     <div id="diffcontent">
       <DiffStrip document={props.document} stepHunk={props.stepHunk} />

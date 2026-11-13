@@ -34,7 +34,7 @@ export function CommitForm() {
             class="btn"
             type="button"
             onClick={() =>
-              editor.actions.openLegacySettings('ui', 'Git & Diff', 'git.commitMessageInstruction')
+              editor.actions.openSettings('ui', 'Git & Diff', 'git.commitMessageInstruction')
             }
           >
             Message instructions

@@ -1,8 +1,6 @@
 import { measure, layout, render, updateEditorOptionControls, openFile, switchTab, configureLegacyServices, api, applyKeyLabels, initGitStream, triggerRefresh } from './app/legacy-bridge.js';
 import { emit, on } from './bus.js';
-import { refreshPRMeta, nudgeForgeToken } from './pr.js';
 import { newThread, deleteCurrentThread, showThreadsSidebar } from './app/legacy-bridge.js';
-import { launchPR } from './pr.js';
 
 import { openSettings } from './settings.js';
 
@@ -16,11 +14,10 @@ import { $, S } from './state.js';
 import { revealFile, refreshTree, collapseAllDirs, expandDirtyDirs, inGitMode, setAutoRevealSuppressed, setSidebarMode, hasGitView } from './app/legacy-bridge.js';
 
 import { applyAgentMeta, loadAgentAsync } from './app/legacy-bridge.js';
-import { initThreads, setReviewMode } from './app/legacy-bridge.js';
+import { initThreads, setReviewMode, initializePR } from './app/legacy-bridge.js';
 import { initSettings } from './settings.js';
 
 import { syncGitPanelMeta } from './app/legacy-bridge.js';
-import { initPR } from './pr.js';
 
 import { refreshUnpushed } from './app/legacy-bridge.js';
 
@@ -28,7 +25,7 @@ import { refreshUnpushed } from './app/legacy-bridge.js';
 
 export function initLegacy() {
 configureLegacyServices({
- emit, on, launchPR, newThread, deleteCurrentThread, showThreadsSidebar, refreshPRMeta, nudgeForgeToken, openSettings, selectAgent, loadPickerModels,
+ emit, on, newThread, deleteCurrentThread, showThreadsSidebar, openSettings, selectAgent, loadPickerModels,
  copyToClipboard, copyRichToClipboard, showHelp,
 });
 
@@ -73,7 +70,7 @@ initErrorCopy();
 
   syncGitPanelMeta();
   applyAgentMeta();
-  initPR();
+  initializePR();
   document.title = S.meta.name + ' - faah';
   $('#root-name').textContent = S.meta.name;
   $('#root-name').title = S.meta.root;
