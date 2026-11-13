@@ -68,8 +68,8 @@ export function bootWorkspace(editor: BootEditor): () => void {
 
   // The unpushed list decides this too: a clean tree with local commits still belongs in Git
   // view, which is the only place they are listed.
-  async function applyGitSidebarState(): Promise<boolean> {
-    await actions.refreshUnpushed();
+  async function applyGitSidebarState(gitReady: Promise<void>): Promise<boolean> {
+    await gitReady;
     const showGit = editor.tree.hasGitView();
     await actions.setTreeMode(showGit ? 'git' : 'files', { expandDirty: showGit });
     return !!(meta()?.git && ((meta()?.gitChanges || 0) > 0 || meta()?.pr));
@@ -94,12 +94,12 @@ export function bootWorkspace(editor: BootEditor): () => void {
     if (disposed) return true;
     if (!(next && typeof next === 'object' && 'ready' in next && next.ready)) return false;
     editor.store.actions.setWorkspace(next);
-    void actions.initializeGit();
+    const gitReady = actions.initializeGit();
     actions.setAutoRevealSuppressed(true);
     await actions.refreshTree();
     await actions.refreshWorkspace();
     if (follow) {
-      if (await applyGitSidebarState()) await selectChangedFile();
+      if (await applyGitSidebarState(gitReady)) await selectChangedFile();
       await revealActive();
     }
     actions.setAutoRevealSuppressed(false);
@@ -120,13 +120,13 @@ export function bootWorkspace(editor: BootEditor): () => void {
     editor.store.actions.setWorkspace(await api('api/meta'));
     if (disposed) return;
     void actions.initializeThreads();
-    void actions.initializeGit();
+    const gitReady = actions.initializeGit();
     actions.acceptAgentMeta(meta());
     actions.initializePR();
     actions.setAutoRevealSuppressed(true);
     await actions.refreshTree();
     actions.startWorkspaceStream();
-    const hasChanges = await applyGitSidebarState();
+    const hasChanges = await applyGitSidebarState(gitReady);
     const initial = takeInitialLocation();
     if (initial) await actions.openFile(initial.path, { line: initial.line });
     else if (hasChanges) await selectChangedFile();

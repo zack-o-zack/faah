@@ -77,3 +77,21 @@ test('commit files deduplicate, retry failures, and unpushed follows snapshots',
   app.actions.acceptGitSnapshot({ git: true, ahead: 1, recentCommits: [{ hash: 'abc' }] });
   expect(request).toHaveBeenCalledTimes(2);
 });
+
+test('boot shares initialization and the first snapshot; later history still refreshes', async () => {
+  const request = vi.fn(async (path: string) => {
+    if (path === 'api/git/log') return { commits: [{ hash: 'abc', full: 'abc' }] };
+    if (path === 'api/git/sync-state') return { ahead: 1 };
+    return { commits: [{ hash: 'abc' }], upstream: 'origin/main' };
+  });
+  const { git, app } = fixture({ request });
+  const initial = git.actions.initializeGit();
+  expect(git.actions.initializeGit()).toBe(initial);
+  app.actions.acceptGitSnapshot({ git: true, ahead: 1, recentCommits: [{ hash: 'abc' }] });
+  await initial;
+  await Promise.resolve();
+  expect(request.mock.calls.filter(([path]) => path === 'api/unpushed')).toHaveLength(1);
+  app.actions.acceptGitSnapshot({ git: true, ahead: 2, recentCommits: [{ hash: 'def' }] });
+  await vi.waitFor(() => expect(git.state.unpushed).toHaveLength(1));
+  expect(request.mock.calls.filter(([path]) => path === 'api/unpushed')).toHaveLength(2);
+});

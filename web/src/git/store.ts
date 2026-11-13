@@ -86,6 +86,7 @@ function buildGitStore(app: AppStore, options: GitOptions = {}) {
   let disposed = false;
   let listGeneration = 0;
   let signature = '';
+  let initialization: Promise<void> | undefined;
   const counts = createMemo(() =>
     gitCounts(app.state.git.snapshot || { gitChanges: app.state.workspace.meta?.gitChanges || 0 }),
   );
@@ -225,17 +226,28 @@ function buildGitStore(app: AppStore, options: GitOptions = {}) {
     set('notice', null);
     await refreshHistory();
   }
-  async function initializeGit() {
-    if (!app.state.workspace.meta?.git) return;
-    try {
-      await Promise.all([fetchRecentCommits(), refreshUnpushed()]);
-      const sync = decodeSync(await get('api/git/sync-state'));
-      if (disposed) return;
-      set('sync', reconcile(sync));
-      if (sync.inProgress) notice(syncNotice(sync));
-    } catch (error) {
-      if (!disposed && !isAbort(error)) set('error', errorMessage(error));
-    }
+  function initializeGit(): Promise<void> {
+    if (initialization) return initialization;
+    if (!app.state.workspace.meta?.git) return Promise.resolve();
+    initialization = (async () => {
+      try {
+        const [, , sync] = await Promise.all([
+          fetchRecentCommits(),
+          refreshUnpushed(),
+          get('api/git/sync-state').then(decodeSync),
+        ]);
+        if (disposed) return;
+        // The stream's initial snapshot describes the history we just fetched.
+        signature = `${sync.ahead || 0}:${state.recent[0]?.hash || ''}`;
+        set('sync', reconcile(sync));
+        if (sync.inProgress) notice(syncNotice(sync));
+      } catch (error) {
+        if (!disposed && !isAbort(error)) set('error', errorMessage(error));
+      } finally {
+        initialization = undefined;
+      }
+    })();
+    return initialization;
   }
   async function startSync(strategy: string): Promise<boolean> {
     return run(strategy, async (signal) => {
@@ -276,7 +288,9 @@ function buildGitStore(app: AppStore, options: GitOptions = {}) {
   }
   const release = app.actions.observeGitSnapshots((snapshot) => {
     if (snapshot.rewritten !== undefined) set('sync', 'rewritten', !!snapshot.rewritten);
-    void refreshUnpushed(snapshot);
+    // Wait for boot history before deciding whether the snapshot changes it.
+    if (initialization) void initialization.then(() => refreshUnpushed(snapshot));
+    else void refreshUnpushed(snapshot);
   });
   onCleanup(() => {
     disposed = true;

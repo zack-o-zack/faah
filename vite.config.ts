@@ -20,6 +20,8 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    pool: 'vmThreads',
+    isolate: true,
     setupFiles: ['./web/src/test-setup.ts'],
     include: ['web/src/**/*.test.{js,jsx,ts,tsx}'],
     restoreMocks: true,

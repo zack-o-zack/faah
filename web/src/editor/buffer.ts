@@ -3,7 +3,7 @@ import type { LayoutOptions } from './layout.ts';
 import { decodeFileWindow } from './decode.ts';
 import type { FileWindow } from './decode.ts';
 import { createSignal } from 'solid-js';
-import { textOffsets } from './edit.ts';
+import { textChange, textOffsets, updateTextOffsets } from './edit.ts';
 import { api } from '../lib/api.ts';
 import { CHUNK, htmlTextLen, lineText, lineOffsets } from './layout.ts';
 
@@ -146,8 +146,10 @@ function buildDocumentBuffer(
       return editStarts;
     },
     setEditContent(content: string | null) {
+      if (content == null) editStarts = [0];
+      else if (editContent == null) editStarts = textOffsets(content);
+      else editStarts = updateTextOffsets(editStarts, textChange(editContent, content));
       editContent = content;
-      editStarts = content == null ? [0] : textOffsets(content);
       editChanged((value) => value + 1);
     },
     chunks,
