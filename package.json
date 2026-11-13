@@ -46,5 +46,13 @@
   },
   "engines": {
     "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
+  },
+  "overrides": {
+    "minimatch": "11.0.8"
+  },
+  "pnpm": {
+    "overrides": {
+      "minimatch": "11.0.8"
+    }
   }
 }
