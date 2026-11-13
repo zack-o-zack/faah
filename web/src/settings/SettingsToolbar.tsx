@@ -1,4 +1,4 @@
-import { onMount, Show, type Component } from 'solid-js';
+import { onCleanup, onMount, Show, type Component } from 'solid-js';
 import { useSettings } from './context.ts';
 
 export const SettingsToolbar: Component = () => {
@@ -6,9 +6,10 @@ export const SettingsToolbar: Component = () => {
   const dialog = () => settings.state.dialog;
   let search: HTMLInputElement | undefined;
   onMount(() => {
-    queueMicrotask(() => {
+    const timer = setTimeout(() => {
       if (dialog().mode === 'ui' && !dialog().focus && search?.isConnected) search.focus();
-    });
+    }, 50);
+    onCleanup(() => clearTimeout(timer));
   });
   return (
     <header class="flex-row! items-center gap-4 shrink-0">
