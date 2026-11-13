@@ -4,19 +4,23 @@ import { isMac } from '../lib/keyboard.js';
 import { useEditor } from './context.jsx';
 import { SEL_KEYS } from './selection.js';
 import { EDITOR_HELP } from '../shortcuts/help.ts';
+import { isPreview } from '../viewers/view.js';
+
+// A modal dialog takes the keyboard; editor keys wait until it closes.
+const inDialog = (event) => !!event.target?.closest?.('dialog');
 
 export function EditorShortcuts() {
   const editor = useEditor();
-  const present = () => !!editor.active() && !editor.services.blocked?.();
+  const present = () => !!editor.active();
   const available = () => present() && !editor.ui.menu;
   const source = () =>
     available() &&
     !editor.active().isEditing &&
     !editor.active().isImage &&
     !editor.active().diffMode &&
-    !editor.services.previewing?.();
+    !isPreview(editor.active());
   const vim = (event) => {
-    if (available() && source() && editor.actions.handleVimKeyDown(event)) {
+    if (!inDialog(event) && source() && editor.actions.handleVimKeyDown(event)) {
       event.preventDefault();
       event.stopImmediatePropagation();
     }
@@ -26,7 +30,7 @@ export function EditorShortcuts() {
   const register = (combo, action, when = available, inputs = false) =>
     createShortcut(combo, action, {
       target: window,
-      when,
+      when: (event) => !inDialog(event) && when(),
       inputs,
       capture: true,
       stopPropagation: true,
@@ -148,8 +152,8 @@ export function EditorShortcuts() {
   register(
     'Mod+A',
     () => {
-      if (editor.services.previewing?.()) editor.services.selectPreview?.();
-      else void editor.services.selectAll?.();
+      if (isPreview(editor.active())) editor.services.preview?.select();
+      else void editor.actions.selectAll();
     },
     () => available() && !editor.active().isEditing && !editor.active().isImage,
   );

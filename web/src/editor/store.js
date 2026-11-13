@@ -1,4 +1,4 @@
-import { previewKind, viewMode } from '../viewers/view.js';
+import { isPreview, previewKind } from '../viewers/view.js';
 import { createAgentStore } from '../agents/store.js';
 import { createThreadStore } from '../threads/store.js';
 import { createReviewStore } from '../review/store.js';
@@ -109,7 +109,6 @@ export function createEditorStore(store, options = {}) {
     editor.actions.hideHover();
     setUI({ selection: null });
     store.actions.setNavigation({ at: null, link: null });
-    services.activate?.(active());
     const document = active();
     if (document && editor.tree.autoReveal() && store.state.layout.left)
       void actions.revealFile(document.path);
@@ -162,14 +161,16 @@ export function createEditorStore(store, options = {}) {
     for (const document of removed) {
       void apiPostJson('api/close', { path: document.path }).catch(() => {});
       editor.actions.cancelSymbols(document.path);
-      services.closed?.(document);
     }
     activateView();
   }
   function centerLine(line) {
     if (active()?.isEditing) return editor.actions.centerEditLine(line);
     if (active()?.diffMode) return services.diff?.scrollLine(line);
-    if (services.previewing?.()) return services.previewLine?.(line);
+    if (isPreview(active())) {
+      editor.actions.requestPreviewLine(active(), line);
+      return services.preview?.line(line);
+    }
     const y = offsets()[Math.max(0, Math.min((active()?.total || 1) - 1, line - 1))] || 0;
     services.source?.scrollTo(Math.max(0, y - geometry.height / 2 + geometry.lineHeight * 2));
   }
@@ -249,7 +250,7 @@ export function createEditorStore(store, options = {}) {
         toast('error', 'Preview works on Markdown, CSV and TSV files');
         return;
       }
-      const shown = ['markdown', 'table'].includes(viewMode(document));
+      const shown = isPreview(document);
       const line = shown
         ? services.preview?.topLine() || 1
         : services.source?.topLine?.() || document.cur;

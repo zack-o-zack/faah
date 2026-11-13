@@ -1,6 +1,7 @@
 import { onCleanup } from 'solid-js';
 import { initialVimState, vimKey } from './vim.js';
 import { lineIndexAtY } from './layout.js';
+import { copyText } from '../lib/clipboard.js';
 
 export function createVimActions(editor) {
   const { active, buffer, store, ui, setUI, geometry, offsets, services } = editor;
@@ -49,9 +50,8 @@ export function createVimActions(editor) {
       );
     } else if (moved) revealLine(result.cursor.line);
     for (const command of result.commands) {
-      if (command.type === 'yank') services.copy?.(command.value);
-      if (command.type === 'selection')
-        editor.actions.runSelectionAction(command.value, null, selection);
+      if (command.type === 'yank') void copyText(command.value);
+      if (command.type === 'selection') editor.actions.runSelectionAction(command.value, selection);
       if (command.type === 'tabIndex') editor.actions.switchTab(command.value);
       if (command.type === 'definition') editor.actions.gotoDefinition();
       if (command.type === 'references') editor.actions.findReferences();

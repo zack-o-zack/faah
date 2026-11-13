@@ -1,3 +1,4 @@
+import { withKeys } from '../lib/keyboard.js';
 import { Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
 import { AgentSessions } from '../agents/AgentSessions.jsx';
@@ -41,20 +42,36 @@ export function ThreadsPanel() {
 }
 export function ThreadsToggle() {
   const editor = useEditor();
+  const shown = () => editor.store.state.layout.threads;
+  const waiting = () => editor.agents.state.sessions.length;
   return (
     <button
       id="btn-top-threads"
+      title={withKeys('Agent Threads ({Alt+T})')}
       class="btn"
-      aria-pressed={editor.store.state.layout.threads}
+      data-control="header-action btn-top-threads"
+      data-variant={shown() ? 'secondary' : 'special'}
+      data-size="xs"
+      aria-pressed={shown()}
+      hidden={editor.store.state.workspace.meta?.threadsEnabled === false}
       onClick={editor.actions.toggleThreads}
     >
-      Threads{' '}
-      <Show when={editor.agents.state.sessions.length}>
-        <span class="badge">{editor.agents.state.sessions.length}</span>
-      </Show>
-      <Show when={editor.threads.state.list.some((thread) => thread.running)}>
-        <span aria-label="Agent running">◌</span>
-      </Show>
+      <span class="icon-[lucide--message-square] size-3 shrink-0" aria-hidden="true" />
+      <span>Threads</span>
+      <span
+        class="badge"
+        data-variant="secondary"
+        data-control="thr-tab-count"
+        title={`${waiting()} ${waiting() === 1 ? 'comment' : 'comments'} waiting to be applied`}
+        hidden={!waiting()}
+      >
+        {waiting()}
+      </span>
+      <span
+        data-ui="thr-tab-dot"
+        class="inline-block"
+        hidden={!editor.threads.state.list.some((thread) => thread.running)}
+      />
     </button>
   );
 }

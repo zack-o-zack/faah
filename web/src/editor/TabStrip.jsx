@@ -43,7 +43,7 @@ export function TabStrip(props) {
     >
       <div
         id="tabs"
-        class="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto overflow-y-hidden p-1"
+        class="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto overflow-y-hidden p-1 [scrollbar-width:none]"
       >
         <For each={editor.store.state.documents.tabs}>
           {(tab, index) => (

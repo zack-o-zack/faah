@@ -11,7 +11,7 @@ export function TreeToolbar() {
           id="st-ver"
           class="btn font-mono text-xs"
           title="Keyboard shortcuts"
-          onClick={() => editor.actions.openLegacyHelp()}
+          onClick={() => editor.actions.showHelp()}
         >
           {editor.store.state.workspace.meta?.version
             ? 'v' + editor.store.state.workspace.meta.version

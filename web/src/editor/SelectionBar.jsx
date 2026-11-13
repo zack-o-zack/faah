@@ -21,10 +21,10 @@ export function SelectionBar() {
       return info?.isMarkdownPreview ? !item.forCode : !item.forPreview;
     });
   }
-  function run(action, event) {
+  function run(action) {
     const info = editor.ui.menu?.info || editor.ui.selection;
     editor.actions.closeSelectionMenu();
-    editor.actions.runSelectionAction(action, event.currentTarget, info);
+    editor.actions.runSelectionAction(action, info);
   }
   return (
     <>
@@ -37,7 +37,7 @@ export function SelectionBar() {
         <Show when={editor.ui.selection}>
           <For each={items(editor.ui.selection)}>
             {(item) => (
-              <button class="btn" data-sel={item.sel} onClick={(event) => run(item.sel, event)}>
+              <button class="btn" data-sel={item.sel} onClick={() => run(item.sel)}>
                 {item.label}
                 <Kbd combo={item.keys} />
               </button>
@@ -64,7 +64,7 @@ export function SelectionBar() {
                   class="btn w-full"
                   role="menuitem"
                   data-sel={item.sel}
-                  onClick={(event) => run(item.sel, event)}
+                  onClick={() => run(item.sel)}
                 >
                   {item.label}
                 </button>

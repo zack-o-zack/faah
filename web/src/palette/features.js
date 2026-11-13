@@ -1,8 +1,12 @@
 import { listThemes } from '../lib/theme.js';
+import { withKeys } from '../lib/keyboard.js';
+import { copyRich, copyText } from '../lib/clipboard.js';
 export function registerFeatureCommands(editor, theme) {
   const actions = editor.actions;
   const document = editor.active;
   const command = (name, run) => ({ name, run });
+  const selection = () => editor.ui.selection;
+  const wholeFile = (document) => `Copied ${document.name} (${document.total} lines)`;
   const commands = [
     command('File: New File…', () => actions.openNewItem('file')),
     command('File: New Folder…', () => actions.openNewItem('dir')),
@@ -55,6 +59,33 @@ export function registerFeatureCommands(editor, theme) {
       actions.setVimEnabled(!editor.settings.preferences().vim),
     ),
     command('Help: Vim Keybindings Cheat Sheet', () => actions.showVimHelp()),
+    command(withKeys('File: Copy Source Code ({Mod+C})'), () => {
+      if (selection()?.text) void copyText(selection().text, 'Copied source code');
+      else void actions.copyFile(wholeFile);
+    }),
+    command('File: Copy Raw Markdown', () => {
+      if (selection()?.rawMarkdown) void copyText(selection().rawMarkdown, 'Copied raw Markdown');
+      else void actions.copyFile(wholeFile);
+    }),
+    command('File: Copy Formatted Text (Markdown Preview)', () => {
+      if (selection()?.isMarkdownPreview)
+        void copyRich(selection().text, selection().html, 'Copied formatted text');
+      else void actions.copyFile((document) => `Copied ${document.name}`);
+    }),
+    command('File: Copy Relative Path', () => {
+      if (document()) void copyText(document().path, `Copied ${document().path}`);
+    }),
+    command(withKeys('Preferences: Open Settings (UI) ({Mod+,})'), () =>
+      actions.openSettings('ui'),
+    ),
+    command('Preferences: Open Settings (JSON)', () => actions.openSettings('json')),
+    command('Threads: Show All', () => actions.showThreads()),
+    command(withKeys('Threads: Start New Thread ({Alt+T} on a selection)'), () =>
+      actions.newThread(null),
+    ),
+    command('Threads: Delete Current Thread', () => actions.deleteThread()),
+    command('Git: Open Pull Request…', () => actions.openPalette('openpr', '')),
+    command('Keyboard Shortcuts', () => actions.showHelp()),
   ];
   return editor.palette.commands.register(commands);
 }

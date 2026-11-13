@@ -121,7 +121,7 @@ export function EditorRow(props) {
         class={`c min-w-0 flex-1 whitespace-pre pr-10 [body.word-wrap_&]:whitespace-pre-wrap
           [body.word-wrap_&]:break-words [body.word-wrap_&]:[overflow-wrap:anywhere]`}
         data-diag={diagnostic()?.message?.split('\n')[0]}
-        // eslint-disable-next-line solid/no-innerhtml -- Server-highlighted source.
+        // eslint-disable-next-line solid/no-innerhtml, no-restricted-syntax -- Server-highlighted source.
         innerHTML={html()}
       />
     </div>

@@ -1,6 +1,7 @@
 import { createEffect, createSignal, For, on, onCleanup, Show } from 'solid-js';
 import { useEditor } from './context.jsx';
 import { nearCard, placeCard } from './hover.js';
+import { copyText } from '../lib/clipboard.js';
 
 export function HoverCard() {
   const editor = useEditor();
@@ -71,7 +72,7 @@ export function HoverCard() {
             </For>
             <div
               class="whitespace-pre-wrap p-3 font-mono text-xs"
-              // eslint-disable-next-line solid/no-innerhtml -- Server-highlighted signature.
+              // eslint-disable-next-line solid/no-innerhtml, no-restricted-syntax -- Server-highlighted signature.
               innerHTML={hover().data.signature || ''}
             />
             <p class="whitespace-pre-wrap px-3 pb-2 text-sm">{hover().data.doc}</p>
@@ -103,7 +104,7 @@ export function HoverCard() {
               <button
                 class="btn"
                 onClick={() =>
-                  editor.actions.runSelectionAction('copy-agent', null, {
+                  editor.actions.runSelectionAction('copy-agent', {
                     path: hover().at.path,
                     l1: hover().at.line,
                     l2: hover().at.line,
@@ -115,7 +116,7 @@ export function HoverCard() {
               </button>
               <button
                 class="btn"
-                onClick={() => editor.services.copy?.(`${hover().at.path}:${hover().at.line}`)}
+                onClick={() => void copyText(`${hover().at.path}:${hover().at.line}`)}
               >
                 Copy Ref
               </button>

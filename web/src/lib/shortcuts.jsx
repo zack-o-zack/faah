@@ -22,7 +22,10 @@ export function createShortcut(combo, action, options = {}) {
       event.target?.closest?.('input, textarea, select, [contenteditable="true"], [role="menu"]')
     )
       return;
-    if ((combo === null || matchesShortcut(event, combo)) && (!options.when || options.when())) {
+    if (
+      (combo === null || matchesShortcut(event, combo)) &&
+      (!options.when || options.when(event))
+    ) {
       if (options.preventDefault !== false) event.preventDefault();
       if (options.stopPropagation) event.stopImmediatePropagation();
       action(event);

@@ -8,7 +8,7 @@ import { batch, createMemo } from 'solid-js';
 import { createStore, reconcile } from 'solid-js/store';
 
 /** @typedef {import('../editor/documents.js').DocTab} DocTab */
-/** @typedef {import('../state.js').WorkspaceMeta} WorkspaceMeta */
+/** @typedef {import('./types.ts').WorkspaceMeta} WorkspaceMeta */
 /**
  * @typedef {Object} EditorPreferences
  * @property {number} charWidth
@@ -19,7 +19,7 @@ import { createStore, reconcile } from 'solid-js/store';
  * @property {{tabs: DocTab[], active: number, history: object[], historyIndex: number}} documents
  * @property {EditorPreferences} editor
  * @property {Object} navigation
- * @property {import('../state.js').LSPState} lsp
+ * @property {import('./types.ts').LSPState} lsp
  * @property {{targets: object[]}} agents
  * @property {{unpushedCount: number, snapshot: object|null, revision: number}} git
  * @property {{viewed: Object<string, boolean>}} viewers
@@ -58,7 +58,7 @@ function initialState() {
   };
 }
 
-/** A fresh store belongs to one mounted app. Legacy S remains confined to the bridge. */
+/** A fresh store belongs to one mounted app. */
 export function createAppStore(options = {}) {
   const [state, set] = createStore(initialState());
   // Settings are app-wide: editor preferences, theme and document defaults derive from them.

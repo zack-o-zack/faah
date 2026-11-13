@@ -5,23 +5,6 @@ import prettier from 'eslint-config-prettier';
 // typescript-eslint parses with the TypeScript 6 JS API from scripts/eslint-typescript; tsc itself is the native TypeScript 7.
 import tseslint from 'eslint-typescript';
 
-// Legacy modules leave this list as they are migrated.
-const legacy = [
-  'web/src/bus.js',
-  'web/src/contrast.test.js',
-  'web/src/controls.js',
-  'web/src/controls.test.js',
-  'web/src/errors.js',
-  'web/src/errors.test.js',
-  'web/src/main.js',
-  'web/src/overlays.js',
-  'web/src/overlays.test.js',
-  'web/src/state.js',
-  'web/src/theme.test.js',
-  'web/src/toast.test.js',
-  'web/src/typescale.test.js',
-  'web/src/ui.js',
-];
 const frontend = ['web/src/**/*.{js,jsx,ts,tsx}'];
 const typescript = ['web/src/**/*.{ts,tsx}', 'vite.config.ts'];
 const tooling = [
@@ -41,7 +24,7 @@ const solidRules = Object.fromEntries(
 );
 
 export default [
-  { ignores: [...legacy, 'node_modules/**', 'web/dist/**'] },
+  { ignores: ['node_modules/**', 'web/dist/**'] },
   {
     files: [...frontend, ...tooling],
     ...js.configs.recommended,
@@ -77,6 +60,28 @@ export default [
         {
           selector: "JSXExpressionContainer > CallExpression[callee.property.name='map']",
           message: 'Use For or Index for list rendering.',
+        },
+        // Markup is JSX. The few sites that show server or sanitized HTML disable this with a reason.
+        {
+          selector: "JSXAttribute[name.name='innerHTML']",
+          message: 'Render JSX; only server-highlighted or sanitized HTML may use innerHTML.',
+        },
+        {
+          selector:
+            "AssignmentExpression > MemberExpression.left[property.name=/^(inner|outer)HTML$/], CallExpression[callee.property.name='insertAdjacentHTML']",
+          message: 'Render JSX instead of writing HTML strings into the DOM.',
+        },
+      ],
+      // The global-state shell these replaced is gone; state lives in stores, events in actions.
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: '(^|/)(state|bus|ui|errors|overlays|controls|main|app/legacy-bridge)\\.js$',
+              message: 'Removed module: use the stores, actions and lib/ components instead.',
+            },
+          ],
         },
       ],
       'max-statements-per-line': ['error', { max: 1 }],

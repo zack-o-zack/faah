@@ -134,8 +134,7 @@ export function PreviewContent(props) {
             </article>
           }
         >
-          {/* Goldmark HTML is allowlist-sanitized before it enters the preview. */}
-          {/* eslint-disable-next-line solid/no-innerhtml -- Goldmark HTML passes the allowlist sanitizer. */}
+          {/* eslint-disable-next-line solid/no-innerhtml, no-restricted-syntax -- Goldmark HTML passes the allowlist sanitizer. */}
           <article id="md" ref={article} class="md" innerHTML={html()} />
         </Show>
       </div>

@@ -167,8 +167,7 @@ Five runs on the same M4, Chrome 157.0.8103.51, React revision and synthetic
 fixture hashes as the vanilla baseline. Harness: Node 24.12.0; frontend build:
 Vite 8.3.8 under Node 24.15.0; Go 1.27.3; implementation `d2ad991`.
 Values use the existing pooled-sample
-contract. Raw samples: [a1-solid.json](../../scripts/bench-web/a1-solid.json);
-paired trace and heap summaries: [a1-profile-evidence.json](../../scripts/bench-web/a1-profile-evidence.json).
+contract. Raw samples and paired trace and heap summaries stay in the ignored `bench-out/`.
 
 | Metric | Unit | Vanilla median / p95 | A1 median / p95 | Median change |
 |---|---|---:|---:|---:|

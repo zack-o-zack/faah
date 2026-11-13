@@ -12,6 +12,8 @@ export function viewMode(document) {
   return document.view === previewKind(document) ? document.view : 'source';
 }
 
+export const isPreview = (document) => ['markdown', 'table'].includes(viewMode(document));
+
 export function canDiff(document, meta) {
   return !!(
     document &&

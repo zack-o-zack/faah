@@ -82,6 +82,18 @@ test('chords step hunks and files; other keys go to the image viewer', () => {
   expect(imageKey).toHaveBeenCalled();
 });
 
+test('a focused control keeps its navigation keys from the viewer', () => {
+  const { imageKey } = mount();
+  const button = document.body.appendChild(document.createElement('button'));
+  for (const name of ['ArrowDown', 'ArrowLeft', 'Home', 'End', 'PageUp', 'PageDown', ' ', 'Enter'])
+    key(name, {}, button);
+  expect(imageKey).not.toHaveBeenCalled();
+  key('Escape', {}, button);
+  key('ArrowDown');
+  expect(imageKey).toHaveBeenCalledTimes(2);
+  button.remove();
+});
+
 test('Escape closes the threads panel before the inspector', () => {
   const { actions } = mount({ right: true, threads: true });
   key('Escape');

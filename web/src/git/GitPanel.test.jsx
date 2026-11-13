@@ -16,7 +16,7 @@ test('a fresh Git provider submits a typed message and shows server errors', asy
       store: app,
       git,
       agents: { state: { selected: '', harnesses: [] } },
-      actions: { ...git.actions, legacyAgentModels: vi.fn() },
+      actions: git.actions,
       active: () => null,
     };
     return (

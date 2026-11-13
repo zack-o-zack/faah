@@ -4,6 +4,10 @@ import { createViewerResource } from './resource.js';
 import { diffSelection } from './diff-selection.js';
 import { DiffContent } from './DiffContent.jsx';
 import { viewMode } from './view.js';
+import { createSourceDOM } from '../editor/source-dom.js';
+import { isMac } from '../lib/keyboard.js';
+
+const modifier = isMac ? 'metaKey' : 'ctrlKey';
 
 function DiffDocument(props) {
   const editor = useEditor();
@@ -56,6 +60,16 @@ export function DiffViewer() {
   const [top, setTop] = createSignal(0);
   const [height, setHeight] = createSignal(900);
   const visible = () => viewMode(editor.active()) === 'diff';
+  // A modified click on a word goes to its definition; a plain click shows its hover card.
+  function wordAt(event, definition) {
+    const word = createSourceDOM(viewport, editor.active).wordAtPoint(event.clientX, event.clientY);
+    if (!word) return;
+    editor.actions.setNavigation({ at: word, lastWord: word.word });
+    if (definition) {
+      event.preventDefault();
+      editor.actions.gotoDefinition(word, { view: event.altKey ? 'source' : 'diff' });
+    } else editor.actions.showHover(word, event.clientX, event.clientY);
+  }
   function currentLine() {
     const top = viewport.getBoundingClientRect().top;
     for (const row of viewport.querySelectorAll('[data-l], [data-at]'))
@@ -137,13 +151,10 @@ export function DiffViewer() {
         frame = requestAnimationFrame(() => setTop(viewport.scrollTop));
       }}
       onMouseDown={(event) => {
-        if (!event.target.closest('.diff-code') || !event[editor.services.modKey || 'metaKey'])
-          return;
-        editor.services.viewerWord?.(event, true);
+        if (event.target.closest('.diff-code') && event[modifier]) wordAt(event, true);
       }}
       onClick={(event) => {
-        if (event.target.closest('.diff-code') && !event[editor.services.modKey || 'metaKey'])
-          editor.services.viewerWord?.(event, false);
+        if (event.target.closest('.diff-code') && !event[modifier]) wordAt(event, false);
       }}
     >
       <Show when={visible() && editor.active()} keyed>

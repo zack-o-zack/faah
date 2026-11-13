@@ -1,18 +1,3 @@
 node_modules/
 web/dist/
 
-# Legacy modules leave this list as they are migrated.
-web/src/bus.js
-web/src/contrast.test.js
-web/src/controls.js
-web/src/controls.test.js
-web/src/errors.js
-web/src/errors.test.js
-web/src/main.js
-web/src/overlays.js
-web/src/overlays.test.js
-web/src/state.js
-web/src/theme.test.js
-web/src/toast.test.js
-web/src/typescale.test.js
-web/src/ui.js

@@ -1,6 +1,7 @@
 import { onCleanup } from 'solid-js';
 import { api } from '../lib/api.js';
 import { toast } from '../lib/toast.jsx';
+import { isPreview } from '../viewers/view.js';
 import { findMatches, hitIndex } from './find.js';
 
 export function createFindActions(editor) {
@@ -20,8 +21,8 @@ export function createFindActions(editor) {
     findRequest?.abort();
     const query = ui.query;
     let hits = [];
-    if (services.previewing?.()) {
-      hits = services.findPreview?.(query, ui.caseSensitive) || [];
+    if (isPreview(document)) {
+      hits = services.preview?.find(query, ui.caseSensitive) || [];
     } else if (document.isEditing) {
       hits = findMatches(buffer().editContent || '', query, ui.caseSensitive);
     } else if (query) {
@@ -64,7 +65,7 @@ export function createFindActions(editor) {
     if (!ui.hits.length) return;
     const next = hitIndex(0, index, ui.hits.length);
     setUI('activeHit', next);
-    if (services.previewing?.()) return services.showPreviewHit?.(next);
+    if (isPreview(active())) return services.preview?.showHit(next);
     const hit = ui.hits[next];
     patch({ cur: hit.line });
     if (active()?.isEditing) editor.actions.centerEditLine(hit.line, hit.start, hit.end);
@@ -90,7 +91,7 @@ export function createFindActions(editor) {
     clearTimeout(findTimer);
     findRequest?.abort();
     setUI({ findOpen: false, findLoading: false, findError: '', hits: [], activeHit: -1 });
-    services.clearPreviewMarks?.();
+    services.preview?.clearMarks();
     if (active()?.isEditing) services.edit?.focus();
     else services.source?.focus();
   }

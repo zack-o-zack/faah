@@ -1,5 +1,5 @@
-import { test, expect } from 'vitest';
-import { toastConfig } from './lib/toast-model.js';
+import { expect, test } from 'vitest';
+import { toastConfig } from './toast-model.js';
 
 test('toast kinds pick an icon and show the text as the title', () => {
   const config = toastConfig('success', 'Saved');
@@ -10,6 +10,10 @@ test('toast kinds pick an icon and show the text as the title', () => {
 });
 
 test('any other first argument becomes a heading over the text', () => {
-  expect(toastConfig('Pushed', 'main is up to date')).toEqual({ category: '', title: 'Pushed', description: 'main is up to date' });
+  expect(toastConfig('Pushed', 'main is up to date')).toEqual({
+    category: '',
+    title: 'Pushed',
+    description: 'main is up to date',
+  });
   expect(toastConfig('', 'Ready', 1000)).toEqual({ category: '', title: 'Ready', duration: 1000 });
 });

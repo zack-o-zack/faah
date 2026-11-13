@@ -256,7 +256,7 @@ test('long diff mounts only visible slots and releases recycled line numbers', a
 });
 test('diff selections exclude gutters, deduplicate split context and anchor deletions', () => {
   const root = document.createElement('div');
-  // A server-independent DOM fixture exercises the browser Range contract.
+  // eslint-disable-next-line no-restricted-syntax -- A static DOM fixture exercises the browser Range contract.
   root.innerHTML =
     '<div data-l="4"><div class="diff-ln">4</div><div class="diff-code">context</div></div><div data-l="4"><div class="diff-code">context</div></div><div data-at="5" data-old-l="6"><div class="diff-code">deleted</div></div>';
   document.body.append(root);
