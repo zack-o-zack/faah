@@ -17,7 +17,7 @@ export function ThreadList() {
                 data-size="xs"
                 data-variant={editor.threads.state.filter === filter ? 'secondary' : 'outline'}
                 data-thr-filter={filter}
-                aria-pressed={editor.threads.state.filter === filter}
+                aria-pressed={editor.threads.state.filter === filter ? true : undefined}
                 onClick={() => editor.actions.setThreadFilter(filter)}
               >
                 {filter === 'all' ? 'All' : 'This file'}

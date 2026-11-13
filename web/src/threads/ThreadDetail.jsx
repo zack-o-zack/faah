@@ -135,7 +135,12 @@ export function ThreadDetail() {
               data-ui="agent-meta"
               class="flex min-w-0 items-center gap-1 in-[.queued]:hidden in-[.has-batch]:hidden"
             >
-              <AgentPicker id="thr-agent" compact disabled={editor.threads.running()} />
+              <AgentPicker
+                id="thr-agent"
+                compact
+                triggerClass="btn max-w-full h-7! text-foreground! border-transparent! bg-transparent! px-2! text-xs! shadow-none! hover:bg-accent!"
+                disabled={editor.threads.running()}
+              />
             </div>
             <span class="flex-1" />
             <button

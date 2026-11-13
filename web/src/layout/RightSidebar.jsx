@@ -17,28 +17,28 @@ export function RightSidebar() {
       <InspectorToolbar />
       <section
         id="pane-right-refs"
-        class="flex min-h-0 flex-1 flex-col"
+        class="flex min-h-0 flex-1 flex-col overflow-hidden"
         hidden={layout().inspector !== 'refs'}
       >
         <References />
       </section>
       <section
         id="pane-right-symbols"
-        class="flex min-h-0 flex-1 flex-col"
+        class="flex min-h-0 flex-1 flex-col overflow-hidden"
         hidden={layout().inspector !== 'symbols'}
       >
         <Symbols />
       </section>
       <section
         id="pane-right-calls"
-        class="flex min-h-0 flex-1 flex-col"
+        class="flex min-h-0 flex-1 flex-col overflow-hidden"
         hidden={layout().inspector !== 'calls'}
       >
         <Calls />
       </section>
       <section
         id="pane-right-search"
-        class="flex min-h-0 flex-1 flex-col"
+        class="flex min-h-0 flex-1 flex-col overflow-hidden"
         hidden={layout().inspector !== 'search'}
       >
         <Search />

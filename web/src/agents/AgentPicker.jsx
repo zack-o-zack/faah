@@ -18,9 +18,10 @@ export function AgentPicker(props) {
     >
       <Popover
         triggerClass={
-          props.compact
+          props.triggerClass ||
+          (props.compact
             ? 'btn max-w-full h-7! text-muted-foreground! border-transparent! bg-transparent! px-2! text-xs! shadow-none! hover:bg-accent! hover:text-foreground!'
-            : 'btn max-w-full'
+            : 'btn max-w-full')
         }
         variant={props.compact ? 'ghost' : 'outline'}
         size="sm"
@@ -31,7 +32,10 @@ export function AgentPicker(props) {
                 ? selected() + (agents.state.model ? ' · ' + agents.state.model : '')
                 : 'No harness'}
             </span>
-            <i class="icon-[lucide--chevrons-up-down] size-3.5 shrink-0" aria-hidden="true" />
+            <i
+              class="icon-[lucide--chevrons-up-down] size-3.5 shrink-0 text-muted-foreground"
+              aria-hidden="true"
+            />
           </>
         }
         accessibleLabel="Coding harness and model"

@@ -19,7 +19,7 @@ export function Calls() {
             data-control="opt"
             data-size="xs"
             data-variant={language.state.direction === 'in' ? 'secondary' : 'outline'}
-            aria-pressed={language.state.direction === 'in'}
+            aria-pressed={language.state.direction === 'in' ? true : undefined}
             onClick={() => editor.actions.setCallDirection('in')}
           >
             Callers
@@ -30,7 +30,7 @@ export function Calls() {
             data-control="opt"
             data-size="xs"
             data-variant={language.state.direction === 'out' ? 'secondary' : 'outline'}
-            aria-pressed={language.state.direction === 'out'}
+            aria-pressed={language.state.direction === 'out' ? true : undefined}
             onClick={() => editor.actions.setCallDirection('out')}
           >
             Callees
