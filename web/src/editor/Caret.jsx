@@ -11,14 +11,14 @@ export function Caret(props) {
     const geometry = editor.geometry;
     const offsets = editor.offsets();
     if (
-      editor.store.state.editor.wrap &&
+      editor.settings.preferences().wrap &&
       offsets[document.cur] - offsets[document.cur - 1] > geometry.lineHeight
     ) {
       const measured = props.measurePosition({ line: document.cur, col: document.col || 0 });
       if (measured) return measured;
     }
     const column = visualColumn(editor.buffer().text(document.cur - 1), document.col || 0);
-    const gutter = editor.store.state.editor.lineNumbers
+    const gutter = editor.settings.preferences().lineNumbers
       ? String(document.total || 1).length * geometry.charWidth + 30
       : 0;
     const capacity = Math.max(
@@ -28,11 +28,11 @@ export function Caret(props) {
           geometry.width,
           document.total,
           geometry.charWidth,
-          editor.store.state.editor.lineNumbers,
+          editor.settings.preferences().lineNumbers,
         ) / geometry.charWidth,
       ),
     );
-    const wrapped = editor.store.state.editor.wrap;
+    const wrapped = editor.settings.preferences().wrap;
     const x = gutter + (wrapped ? column % capacity : column) * geometry.charWidth;
     const y =
       (editor.offsets()[document.cur - 1] || 0) +

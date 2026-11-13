@@ -18,16 +18,16 @@ test('mounts a component with isolated app state', () => {
   const other = createAppStore();
   function Pref() {
     const { state } = useApp();
-    return <span>{String(state.editor.wrap)}</span>;
+    return <span>{String(state.editor.charWidth)}</span>;
   }
   render(() => (
     <AppProvider store={store}>
       <Pref />
     </AppProvider>
   ));
-  store.actions.setEditorPreference('wrap', false);
-  expect(screen.getByText('false')).toBeTruthy();
-  expect(other.state.editor.wrap).toBe(true);
+  store.actions.setGeometry({ charWidth: 9 });
+  expect(screen.getByText('9')).toBeTruthy();
+  expect(other.state.editor.charWidth).toBe(7.8);
 });
 test('menu supports Escape and restores trigger focus', async () => {
   const user = userEvent.setup();

@@ -2,7 +2,7 @@ import { createRoot } from 'solid-js';
 import { afterEach, expect, test, vi } from 'vitest';
 import { createAppStore } from '../app/store.js';
 import { createTreeStore } from './tree-store.js';
-import { autoRevealEnabled, newItemRequest, treeDecoration, copyPath } from './tree-logic.js';
+import { newItemRequest, treeDecoration, copyPath } from './tree-logic.js';
 const disposers = [];
 afterEach(() => disposers.splice(0).forEach((dispose) => dispose()));
 function fixture(request, post = vi.fn()) {
@@ -15,10 +15,9 @@ function fixture(request, post = vi.fn()) {
     return { app, tree, openFile };
   });
 }
-test('path shaping, preference aliases and snapshot decorations are pure', () => {
+test('path shaping and snapshot decorations are pure', () => {
   expect(newItemRequest(' /src/new.js/ ', 'file')).toEqual({ path: 'src/new.js', type: 'file' });
   expect(() => newItemRequest(' / ', 'dir')).toThrow('empty');
-  expect(autoRevealEnabled({ 'explorer.autoRelveal': 'false' })).toBe(false);
   expect(copyPath('src/a.js', 'absolute', '/tmp/')).toBe('/tmp/src/a.js');
   const row = { path: 'a', status: 'M' };
   expect(treeDecoration(row, { statuses: {}, staged: {} }, null, 'all', false).dirty).toBe(false);

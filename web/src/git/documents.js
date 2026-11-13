@@ -1,3 +1,4 @@
+import { diffLayout } from '../settings/logic.ts';
 import { onCleanup } from 'solid-js';
 import { api } from '../lib/api.js';
 import { documentGitPlan } from './document-logic.js';
@@ -36,7 +37,7 @@ export function createDocumentGitActions(editor, options = {}) {
         gutter: result.available ? { marks, dels: new Set(result.deleted || []) } : null,
       };
       if (available && !document.diffMode && !document.diffDismissed && document.openedInDiffView)
-        patch.diffMode = localStorage.getItem('faah.diffLayout') || 'split';
+        patch.diffMode = diffLayout(app.settings.preferences());
       app.actions.patchDocument(path, patch);
     } catch (error) {
       if (error.name !== 'AbortError' && !disposed) app.actions.setWorkspaceError(error.message);

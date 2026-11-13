@@ -1,8 +1,7 @@
-import { measure, layout, render, updateEditorOptionControls, openFile, switchTab, configureLegacyServices, api, applyKeyLabels, initGitStream, triggerRefresh } from './app/legacy-bridge.js';
+import { layout, render, loadSettings, openFile, switchTab, configureLegacyServices, api, applyKeyLabels, initGitStream, triggerRefresh } from './app/legacy-bridge.js';
 import { emit, on } from './bus.js';
 import { newThread, deleteCurrentThread, showThreadsSidebar } from './app/legacy-bridge.js';
 
-import { openSettings } from './settings.js';
 
 import { selectAgent, loadPickerModels } from './app/legacy-bridge.js';
 
@@ -15,7 +14,6 @@ import { revealFile, refreshTree, collapseAllDirs, expandDirtyDirs, inGitMode, s
 
 import { applyAgentMeta, loadAgentAsync } from './app/legacy-bridge.js';
 import { initThreads, setReviewMode, initializePR } from './app/legacy-bridge.js';
-import { initSettings } from './settings.js';
 
 import { syncGitPanelMeta } from './app/legacy-bridge.js';
 
@@ -25,7 +23,7 @@ import { refreshUnpushed } from './app/legacy-bridge.js';
 
 export function initLegacy() {
 configureLegacyServices({
- emit, on, newThread, deleteCurrentThread, showThreadsSidebar, openSettings, selectAgent, loadPickerModels,
+ emit, on, newThread, deleteCurrentThread, showThreadsSidebar, selectAgent, loadPickerModels,
  copyToClipboard, copyRichToClipboard, showHelp,
 });
 
@@ -36,35 +34,14 @@ initShortcuts();
 
 
 
-initSettings();
 
 initErrorCopy();
 
 // Bootstrap application lifecycle
 (async function boot() {
-  try {
-
-    // Restore word wrap (default ON)
-    const wrapPref = localStorage.getItem('faah.wrap');
-    S.wrap = wrapPref !== null ? wrapPref === 'true' : true;
-    document.body.classList.toggle('word-wrap', S.wrap);
-
-    // Line numbers are always ON
-    S.lineNumbers = true;
-    document.body.classList.remove('hide-lines');
-
-    // Restore Markdown preview (default ON)
-    const mdPref = localStorage.getItem('faah.mdPreview');
-    S.mdPreview = mdPref !== null ? mdPref === 'true' : true;
-    const tablePref = localStorage.getItem('faah.tablePreview');
-    S.tablePreview = tablePref !== null ? tablePref === 'true' : true;
-
-    updateEditorOptionControls();
-  } catch {}
-
   applyKeyLabels();
+  void loadSettings();
 
-  measure();
   S.meta = await api('/api/meta');
   initThreads();
 
@@ -148,9 +125,6 @@ initErrorCopy();
   // A PR session opens on the pull request itself.
   if (S.meta?.pr) setReviewMode('review');
 
-  if (document.fonts && document.fonts.ready) {
-    document.fonts.ready.then(() => { measure(); layout(); render(); });
-  }
 
   // If the background indexer was still running when the UI loaded, poll briefly
   // until complete to update the total file count and index time in the status bar.

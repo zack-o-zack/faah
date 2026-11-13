@@ -1,3 +1,4 @@
+import { diffLayout } from '../settings/logic.ts';
 import { apiText } from '../lib/api.js';
 import { previewKind as documentPreviewKind, viewMode, canDiff } from '../viewers/view.js';
 // Removed when the last legacy module is migrated.
@@ -33,19 +34,17 @@ export function applyKeyLabels(root = document) {
 export const showToast = (kind, text, duration) => toast(kind, text, duration);
 import { toast } from '../lib/toast.jsx';
 import { listThemes } from '../lib/theme.js';
-import { lineText, LH } from '../editor/layout.js';
+import { lineText } from '../editor/layout.js';
 import { selectionRef, contextSnippet } from '../editor/selection.js';
 export { listThemes };
 let editorStore;
-let themeStore;
 let sourceDOM;
 const services = {};
 const facades = new Map();
 const extras = new Map();
 let rowsEl;
-export function bindLegacyEditor(value, theme) {
+export function bindLegacyEditor(value) {
   editorStore = value;
-  themeStore = theme;
   const metadata = new Proxy(
     {},
     {
@@ -75,25 +74,6 @@ export function bindLegacyEditor(value, theme) {
       value.store.actions.setWorkspace(next);
     },
   });
-  const settings = new Proxy(
-    {},
-    {
-      get: (_, key) => value.store.state.settings[key],
-      set: (_, key, next) => {
-        value.store.actions.setSetting(key, next);
-        return true;
-      },
-      ownKeys: () => Object.keys(value.store.state.settings),
-      getOwnPropertyDescriptor: () => ({ enumerable: true, configurable: true }),
-    },
-  );
-  Object.defineProperty(S, 'settings', {
-    configurable: true,
-    get: () => settings,
-    set: (next) => {
-      value.store.actions.setSettings(next);
-    },
-  });
   Object.defineProperty(S, 'unpushedCount', {
     configurable: true,
     get: () => value.store.state.git.unpushedCount,
@@ -105,10 +85,6 @@ export function bindLegacyEditor(value, theme) {
     active: ['documents', 'active'],
     hist: ['documents', 'history'],
     histIdx: ['documents', 'historyIndex'],
-    wrap: ['editor', 'wrap'],
-    lineNumbers: ['editor', 'lineNumbers'],
-    mdPreview: ['editor', 'mdPreview'],
-    tablePreview: ['editor', 'tablePreview'],
     chW: ['editor', 'charWidth'],
     lh: ['editor', 'lineHeight'],
     occ: ['navigation', 'occurrence'],
@@ -234,7 +210,6 @@ function legacyDocument(path) {
 export function configureLegacyServices(value) {
   Object.assign(services, value);
   const {
-    openSettings,
     showHelp,
     newThread,
     deleteCurrentThread,
@@ -287,8 +262,14 @@ export function configureLegacyServices(value) {
         if (d) copyToClipboard(d.path, `Copied ${d.path}`);
       },
     },
-    { name: withKeys('Preferences: Open Settings (UI) ({Mod+,})'), run: () => openSettings('ui') },
-    { name: 'Preferences: Open Settings (JSON)', run: () => openSettings('json') },
+    {
+      name: withKeys('Preferences: Open Settings (UI) ({Mod+,})'),
+      run: () => editorStore.actions.openSettings('ui'),
+    },
+    {
+      name: 'Preferences: Open Settings (JSON)',
+      run: () => editorStore.actions.openSettings('json'),
+    },
     { name: 'Threads: Show All', run: () => showThreadsSidebar() },
     {
       name: withKeys('Threads: Start New Thread ({Alt+T} on a selection)'),
@@ -317,7 +298,6 @@ export function configureLegacyServices(value) {
     ),
   );
   Object.assign(editorStore.actions, {
-    openSettings: value.openSettings,
     openLegacyHelp: value.showHelp,
     selectLegacyAgent: editorStore.actions.selectAgent,
     legacyAgentModels: editorStore.actions.loadAgentModels,
@@ -356,14 +336,7 @@ export function configureLegacyServices(value) {
     },
     showPreviewHit,
     clearPreviewMarks,
-    hoverAllowed: () =>
-      S.settings?.['lsp.hover.enabled'] !== false &&
-      S.settings?.['lsp.enabled'] !== false &&
-      ['ready', 'indexing'].includes(S.lsp.state),
     showHelp: value.showHelp,
-    vimPreference: (enabled) => {
-      S.settings['editor.vimMode'] = enabled;
-    },
     selectAll,
     selectPreview,
     copy: value.copyToClipboard,
@@ -373,47 +346,15 @@ export function configureLegacyServices(value) {
 }
 export const doc_ = () =>
   editorStore?.active() ? legacyDocument(editorStore.active().path) : null;
-export const openFile = (path, options) =>
-  editorStore.actions.openFile(path, {
-    layout: localStorage.getItem('faah.diffLayout') || 'split',
-    ...options,
-  });
+export const openFile = (path, options) => editorStore.actions.openFile(path, options);
 export const switchTab = (index) => editorStore.actions.switchTab(index);
 
 export const reloadOpenTabs = () => editorStore.actions.reloadOpenTabs();
 
-export function measure() {
-  const marker = $('#measure');
-  if (!marker) return;
-  marker.textContent = 'x'.repeat(100);
-  const rect = marker.getBoundingClientRect();
-  const lineHeight =
-    parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--lh')) || LH;
-  const charWidth = rect.width / 100 || 7.8;
-  editorStore.setGeometry({ lineHeight, charWidth });
-  editorStore.store.actions.setGeometry({ lineHeight, charWidth });
-}
 export const layout = () => editorStore?.actions.refresh();
 export const render = layout;
 
 export const toggleWordWrap = (forced) => editorStore.actions.toggleWrap(forced);
-export function toggleLineNumbers(forced) {
-  const value = typeof forced === 'boolean' ? forced : !S.lineNumbers;
-  editorStore.store.actions.setEditorPreference('lineNumbers', value);
-  document.body.classList.toggle('hide-lines', !value);
-}
-export function applyEditorTypography(fontSize, fontFamily, lineHeight, tabSize) {
-  const style = document.documentElement.style;
-  if (fontSize) style.setProperty('--fs', fontSize + 'px');
-  if (fontFamily) style.setProperty('--mono', fontFamily);
-  if (lineHeight || fontSize)
-    style.setProperty('--lh', (lineHeight || Math.round(fontSize * 1.5)) + 'px');
-  if (tabSize) style.setProperty('--tab-size', tabSize);
-  measure();
-}
-export function updateEditorOptionControls() {
-  $('[data-action="wrap"]')?.setAttribute('aria-pressed', String(S.wrap));
-}
 export const highlightRange = (path, l1, l2) =>
   editorStore.store.actions.setNavigation({ reference: { path, l1, l2 } });
 
@@ -424,12 +365,7 @@ export const openFind = (seed) => editorStore.actions.openFind(seed);
 const hoverAt = (x, y) => showHover(wordAtPoint(x, y), x, y);
 const showHover = (...args) => editorStore.actions.showHover(...args);
 
-export const setVimModeEnabled = (value, persist = true) =>
-  editorStore.actions.setVimEnabled(value, persist);
-
 export const showVimHelp = () => editorStore.actions.showVimHelp();
-
-export const setTheme = (id, persist) => themeStore.setTheme(id, persist);
 
 export const setAgentHandler = (fn) => {
   editorStore.handlers.agent = fn;
@@ -560,13 +496,12 @@ const getDocRaw = (document) =>
     ? apiText('api/raw', { path: document.path, ref: document.diffRef || '' })
     : Promise.resolve('');
 
-export const setLayoutPref = (mode) => localStorage.setItem('faah.diffLayout', mode);
 export const toggleDiff = () => {
   const document = activeDocument();
   if (!canDiff(document, editorStore.store.state.workspace.meta)) return;
   viewerActions().setDiffMode(
     document,
-    document.diffMode ? 'source' : localStorage.getItem('faah.diffLayout') || 'split',
+    document.diffMode ? 'source' : diffLayout(editorStore.settings.preferences()),
   );
 };
 export const stepDiffHunk = (direction) => editorStore.services.diff?.stepHunk(direction);
@@ -656,6 +591,10 @@ export const setThreadsPanelVisible = (visible) =>
 
 export const setReviewMode = (mode) => editorStore.actions.setReviewMode(mode);
 export const initializePR = () => editorStore.actions.initializePR();
+export const loadSettings = () => editorStore.actions.loadSettings();
+export const openSettings = (...args) => editorStore.actions.openSettings(...args);
+export const closeSettings = () => editorStore.actions.closeSettings();
+export const isSettingsOpen = () => editorStore.settings.state.dialog.open;
 export const newThread = (...args) => editorStore.actions.newThread(...args);
 export const openThread = (id) => editorStore.actions.openThread(id);
 export const deleteCurrentThread = () => editorStore.actions.deleteThread();

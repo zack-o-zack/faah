@@ -56,10 +56,18 @@ function listThemes() {
 }
 
 export { listThemes, getStoredTheme };
-export function createThemeStore() {
-  const [preference, setPreference] = createSignal(
-    chooseThemePreference(getStoredTheme(), document.documentElement.dataset.theme),
-  );
+/**
+ * The theme follows the configured setting (options.configured) unless this browser picked
+ * another; a preview (setTheme with persist false) shows over both until it is cleared.
+ * options.save persists a pick as the setting; without it the pick goes to /api/settings.
+ */
+export function createThemeStore(options = {}) {
+  const [stored, setStored] = createSignal(getStoredTheme());
+  const initial = document.documentElement.dataset.theme;
+  const [preview, setPreview] = createSignal(null);
+  const chosen = () =>
+    chooseThemePreference(stored(), options.configured ? options.configured() : initial);
+  const preference = () => preview() ?? chosen();
   const media = window.matchMedia('(prefers-color-scheme: dark)');
   const [dark, setDark] = createSignal(media.matches);
   const changed = (event) => setDark(event.matches);
@@ -88,15 +96,19 @@ export function createThemeStore() {
     setTheme(id, persist = true) {
       if (!['system', 'light', 'dark'].includes(id) && !listThemes().some((t) => t.id === id))
         return false;
-      setPreference(id);
-      if (persist) {
-        try {
-          localStorage.setItem(KEY, id);
-        } catch {
-          // Storage can be unavailable in restricted browser profiles.
-        }
-        void apiPostJson('api/settings', { 'workbench.colorTheme': id }).catch(() => {});
+      if (!persist) {
+        setPreview(id === chosen() ? null : id);
+        return true;
       }
+      setPreview(null);
+      setStored(id);
+      try {
+        localStorage.setItem(KEY, id);
+      } catch {
+        // Storage can be unavailable in restricted browser profiles.
+      }
+      if (options.save) options.save(id);
+      else void apiPostJson('api/settings', { 'workbench.colorTheme': id }).catch(() => {});
       return true;
     },
   };

@@ -3,6 +3,7 @@ import { readLayout } from '../layout/logic.js';
 import { createWorkspaceActions } from '../workspace/actions.js';
 import { createViewerActions } from '../viewers/actions.js';
 import { createDocuments } from '../editor/documents.js';
+import { createSettingsStore } from '../settings/store.ts';
 import { batch, createMemo } from 'solid-js';
 import { createStore, reconcile } from 'solid-js/store';
 
@@ -10,10 +11,6 @@ import { createStore, reconcile } from 'solid-js/store';
 /** @typedef {import('../state.js').WorkspaceMeta} WorkspaceMeta */
 /**
  * @typedef {Object} EditorPreferences
- * @property {boolean} wrap
- * @property {boolean} lineNumbers
- * @property {boolean} mdPreview
- * @property {boolean} tablePreview
  * @property {number} charWidth
  */
 /**
@@ -23,7 +20,6 @@ import { createStore, reconcile } from 'solid-js/store';
  * @property {EditorPreferences} editor
  * @property {Object} navigation
  * @property {import('../state.js').LSPState} lsp
- * @property {Object<string, unknown>} settings
  * @property {{targets: object[]}} agents
  * @property {{unpushedCount: number, snapshot: object|null, revision: number}} git
  * @property {{viewed: Object<string, boolean>}} viewers
@@ -44,13 +40,7 @@ function initialState() {
       error: '',
     },
     documents: { tabs: /** @type {DocTab[]} */ ([]), active: -1, history: [], historyIndex: -1 },
-    editor: /** @type {EditorPreferences} */ ({
-      wrap: true,
-      lineNumbers: true,
-      mdPreview: true,
-      tablePreview: true,
-      charWidth: 7.8,
-    }),
+    editor: /** @type {EditorPreferences} */ ({ charWidth: 7.8 }),
     navigation: {
       find: null,
       occurrence: null,
@@ -62,7 +52,6 @@ function initialState() {
       lastWord: '',
     },
     lsp: { servers: [], state: 'off', server: '' },
-    settings: {},
     git: { unpushedCount: 0, snapshot: null, revision: 0 },
     viewers: { viewed: {} },
     explanation: { model: null, shown: false },
@@ -72,10 +61,13 @@ function initialState() {
 /** A fresh store belongs to one mounted app. Legacy S remains confined to the bridge. */
 export function createAppStore(options = {}) {
   const [state, set] = createStore(initialState());
-  const documents = createDocuments(state, set, options);
+  // Settings are app-wide: editor preferences, theme and document defaults derive from them.
+  const settings = createSettingsStore(options.settings);
+  const documents = createDocuments(state, set, { ...options, preferences: settings.preferences });
   const activeDocument = createMemo(() => state.documents.tabs[state.documents.active] || null);
   const store = {
     state,
+    settings,
     activeDocument,
     buffers: documents.buffers,
     bufferRevision: documents.bufferRevision,
@@ -92,14 +84,7 @@ export function createAppStore(options = {}) {
           if (meta?.metrics) set('workspace', 'metrics', reconcile(meta.metrics));
         }),
       patchWorkspace: (name, value) => set('workspace', 'meta', name, value),
-      setEditorPreference: (name, value) => {
-        if (!['wrap', 'lineNumbers', 'mdPreview', 'tablePreview'].includes(name))
-          throw new Error('Unknown editor preference');
-        set('editor', name, value);
-      },
-      setSetting: (name, value) => set('settings', name, value),
       setUnpushedCount: (count) => set('git', 'unpushedCount', count),
-      setSettings: (settings) => set('settings', reconcile(settings)),
       acceptLspServers: (result) =>
         batch(() => {
           set('lsp', 'servers', reconcile(result.servers || [], { key: 'name' }));

@@ -3,7 +3,7 @@ import { createThemeStore } from './theme.js';
 const ThemeContext = createContext();
 export function ThemeProvider(props) {
   // Store injection is fixed for the lifetime of this provider.
-  const store = untrack(() => props.store) || createThemeStore();
+  const store = untrack(() => props.store) || createThemeStore(untrack(() => props.options));
   return <ThemeContext.Provider value={store}>{props.children}</ThemeContext.Provider>;
 }
 export const useTheme = () => {

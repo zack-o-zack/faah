@@ -4,12 +4,6 @@ export function newItemRequest(path, type) {
   if (!clean) throw new Error('Path cannot be empty');
   return { path: clean, type: type === 'dir' ? 'dir' : 'file' };
 }
-export function autoRevealEnabled(settings) {
-  for (const name of ['explorer.autoReveal', 'explorer.autoRelveal', 'autoReveal', 'autoRelveal']) {
-    if (settings[name] !== undefined) return settings[name] === true || settings[name] === 'true';
-  }
-  return true;
-}
 export function treeDecoration(row, snapshot, pr, scope, viewed, optimistic) {
   const status = snapshot ? snapshot.statuses?.[row.path] || '' : row.status || '';
   const yours = snapshot ? snapshot.yourStatuses?.[row.path] || '' : row.yourStatus || '';

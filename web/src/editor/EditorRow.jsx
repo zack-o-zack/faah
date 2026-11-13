@@ -8,7 +8,7 @@ export function EditorRow(props) {
   let row;
   createEffect(() => {
     props.index;
-    if (editor.store.state.editor.wrap) {
+    if (editor.settings.preferences().wrap) {
       props.observer.unobserve(row);
       props.observer.observe(row);
     } else props.observer.unobserve(row);

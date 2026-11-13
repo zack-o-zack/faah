@@ -394,7 +394,6 @@
     opacity: 0.65;
   }
 
-  #measure { position: absolute; visibility: hidden; font: var(--fs)/var(--lh) var(--mono); white-space: pre; top: -999px; }
 
   ::-webkit-scrollbar { width: 11px; height: 11px; }
   ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: var(--radius-md); border: 3px solid var(--background); }

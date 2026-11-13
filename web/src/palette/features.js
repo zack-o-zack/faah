@@ -52,7 +52,7 @@ export function registerFeatureCommands(editor, theme) {
       actions.activateView();
     }),
     command('Preferences: Toggle Vim Keybindings', () =>
-      actions.setVimEnabled(!editor.ui.vimEnabled),
+      actions.setVimEnabled(!editor.settings.preferences().vim),
     ),
     command('Help: Vim Keybindings Cheat Sheet', () => actions.showVimHelp()),
   ];

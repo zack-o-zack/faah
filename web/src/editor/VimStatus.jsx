@@ -8,7 +8,7 @@ export function VimStatus() {
       <button
         id="st-vim"
         class="btn font-mono"
-        hidden={!editor.ui.vimEnabled}
+        hidden={!editor.settings.preferences().vim}
         onClick={editor.actions.showVimHelp}
       >
         {editor.ui.vim.mode === 'VISUAL_LINE' ? 'V-LINE' : editor.ui.vim.mode} {editor.ui.vim.count}

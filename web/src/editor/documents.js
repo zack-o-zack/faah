@@ -25,7 +25,7 @@ import { CHUNK } from './layout.js';
 export function createDocuments(
   state,
   set,
-  { fetcher, onActivate = () => {}, onClose = () => {} } = {},
+  { fetcher, onActivate = () => {}, onClose = () => {}, preferences } = {},
 ) {
   const buffers = new Map();
   const [bufferRevision, bumpBuffers] = createSignal(0);
@@ -84,7 +84,7 @@ export function createDocuments(
       }
       if (!result) return;
       const hasDiff = !result.image && (result.diffAvailable || options.base);
-      const layout = options.layout || 'split';
+      const layout = options.layout || (preferences().splitDiff ? 'split' : 'unified');
       const diffMode = hasDiff && (options.view !== 'source' || result.deleted) ? layout : null;
       const document = {
         path,
@@ -120,8 +120,8 @@ export function createDocuments(
       if (options.view === 'source') document.view = 'source';
       const kind = previewKind(document);
       if (
-        (kind === 'markdown' && !state.editor.mdPreview) ||
-        (kind === 'table' && !state.editor.tablePreview)
+        (kind === 'markdown' && !preferences().markdownPreview) ||
+        (kind === 'table' && !preferences().tablePreview)
       )
         document.view = 'source';
       batch(() => {

@@ -9,7 +9,7 @@ export function createVimActions(editor) {
   onCleanup(() => clearTimeout(pendingTimer));
   function handleVimKeyDown(event) {
     const document = active();
-    if (!ui.vimEnabled || !document) return false;
+    if (!editor.settings.preferences().vim || !document) return false;
     const model = buffer();
     const selection = ui.selection;
     const result = vimKey(
@@ -91,17 +91,13 @@ export function createVimActions(editor) {
     handleVimKeyDown,
     showVimHelp: () => setUI('vimHelp', true),
     hideVimHelp: () => setUI('vimHelp', false),
-    setVimEnabled(enabled, persist = true) {
-      setUI('vimEnabled', !!enabled);
+    setVimEnabled(enabled) {
       if (!enabled) {
         clearTimeout(pendingTimer);
         setUI('vim', initialVimState());
         editor.actions.clearSelection();
       }
-      if (persist) {
-        localStorage.setItem('faah.editor.vimMode', String(!!enabled));
-        services.vimPreference?.(!!enabled);
-      }
+      void editor.settings.actions.setSetting('editor.vimMode', !!enabled);
     },
   };
 }

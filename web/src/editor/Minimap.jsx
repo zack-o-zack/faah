@@ -14,6 +14,7 @@ export function Minimap() {
     <div
       id="minimap-hits"
       class="absolute inset-y-0 right-0 z-[6] w-3 empty:pointer-events-none"
+      hidden={!editor.settings.preferences().minimap}
       onClick={(event) => {
         const rect = event.currentTarget.getBoundingClientRect();
         editor.actions.centerLine(

@@ -21,7 +21,7 @@ export function EditView() {
       (start, index) => (positions[index + 1] || text.length + 1) - start - 1,
     );
     return lineOffsets(columns, {
-      wrap: editor.store.state.editor.wrap,
+      wrap: editor.settings.preferences().wrap,
       width: editor.geometry.width - 80,
       charWidth: editor.geometry.charWidth,
       lineHeight: editor.geometry.lineHeight,

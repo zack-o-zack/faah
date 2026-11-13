@@ -116,7 +116,9 @@ export function Viewport() {
       return;
     }
     editor.actions.setNavigation({ link: null });
-    if (editor.ui.hover || editor.services.hoverAllowed?.() === false) return;
+    const lsp = editor.store.state.lsp.state;
+    if (editor.ui.hover || !editor.settings.preferences().hover) return;
+    if (lsp !== 'ready' && lsp !== 'indexing') return;
     hoverTimer = setTimeout(() => editor.actions.showHover(dom.wordAtPoint(x, y), x, y), 380);
   }
   createEffect(
@@ -220,7 +222,7 @@ export function Viewport() {
         class="relative"
         style={{
           height: `${offsets().at(-1) + Math.max(120, editor.geometry.height / 2)}px`,
-          width: editor.store.state.editor.wrap ? '100%' : `${contentWidth()}px`,
+          width: editor.settings.preferences().wrap ? '100%' : `${contentWidth()}px`,
         }}
       >
         <div

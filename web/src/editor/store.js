@@ -25,7 +25,7 @@ import { movePosition } from './cursor.js';
 import { initialVimState } from './vim.js';
 
 /** @returns {EditorUI} */
-function initialState(vimEnabled) {
+function initialState() {
   return {
     opening: '',
     error: '',
@@ -44,7 +44,6 @@ function initialState(vimEnabled) {
     menu: null,
     hover: null,
     hoverPosition: null,
-    vimEnabled,
     vimHelp: false,
     vim: initialVimState(),
   };
@@ -60,14 +59,11 @@ function initialState(vimEnabled) {
  * @property {object|null} menu
  * @property {object|null} hover
  * @property {object|null} hoverPosition
- * @property {boolean} vimEnabled
  * @property {boolean} vimHelp
  * @property {ReturnType<typeof initialVimState>} vim
  */
 export function createEditorStore(store, options = {}) {
-  const [ui, setUI] = createStore(
-    initialState(localStorage.getItem('faah.editor.vimMode') === 'true'),
-  );
+  const [ui, setUI] = createStore(initialState());
   const [revision, bump] = createSignal(0);
   const [geometry, setGeometry] = createStore({
     width: 800,
@@ -93,12 +89,12 @@ export function createEditorStore(store, options = {}) {
     buffer()?.revision();
     return (
       buffer()?.layout({
-        wrap: store.state.editor.wrap,
+        wrap: store.settings.preferences().wrap,
         width: codeWidth(
           geometry.width,
           active()?.total,
           geometry.charWidth,
-          store.state.editor.lineNumbers,
+          store.settings.preferences().lineNumbers,
         ),
         charWidth: geometry.charWidth,
         lineHeight: geometry.lineHeight,
@@ -210,6 +206,7 @@ export function createEditorStore(store, options = {}) {
   }
   const editor = {
     store,
+    settings: store.settings,
     ui,
     setUI,
     services,
@@ -223,6 +220,7 @@ export function createEditorStore(store, options = {}) {
   };
   const actions = {
     ...store.actions,
+    ...store.settings.actions,
     openLink: openFile,
     refresh,
     patch,
@@ -241,9 +239,8 @@ export function createEditorStore(store, options = {}) {
     move,
     edge,
     toggleWrap(forced) {
-      const wrap = typeof forced === 'boolean' ? forced : !store.state.editor.wrap;
-      store.actions.setEditorPreference('wrap', wrap);
-      localStorage.setItem('faah.wrap', String(wrap));
+      const wrap = typeof forced === 'boolean' ? forced : !store.settings.preferences().wrap;
+      void store.settings.actions.setSetting('editor.wordWrap', wrap ? 'on' : 'off');
     },
   };
   editor.actions = actions;
@@ -303,6 +300,12 @@ export function createEditorStore(store, options = {}) {
     await actions.reloadOpenTabs();
     toast('success', 'Workspace refreshed');
   };
+  // The server switches harness when the setting changes; re-read what it offers.
+  onCleanup(
+    store.settings.onSaved((keys) => {
+      if (keys.includes('agent.harness')) void actions.initializeAgents();
+    }),
+  );
   // A rewritten history (reset, rebase, checkout) changes every file and maybe the PR.
   actions.historyChanged = async () => {
     await actions.reindexWorkspace();

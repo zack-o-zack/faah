@@ -9,6 +9,7 @@ import { FindBar } from './FindBar.jsx';
 import { TabStrip } from './TabStrip.jsx';
 import { FileActions } from './FileActions.jsx';
 import { EditorShortcuts } from './EditorShortcuts.jsx';
+import { EditorMeasure } from './EditorMeasure.tsx';
 
 export function EditorShell() {
   const editor = useEditor();
@@ -16,17 +17,17 @@ export function EditorShell() {
     on(
       () => [
         editor.active()?.isEditing,
-        editor.ui.vimEnabled,
+        editor.settings.preferences().vim,
         editor.ui.vim.mode,
-        editor.store.state.editor.wrap,
+        editor.settings.preferences().wrap,
       ],
       () => {
-        document.body.classList.toggle('word-wrap', editor.store.state.editor.wrap);
+        document.body.classList.toggle('word-wrap', editor.settings.preferences().wrap);
         document.body.classList.toggle('editing-file', !!editor.active()?.isEditing);
-        document.body.classList.toggle('vim-mode-enabled', editor.ui.vimEnabled);
+        document.body.classList.toggle('vim-mode-enabled', editor.settings.preferences().vim);
         document.body.classList.toggle(
           'vim-normal-caret',
-          editor.ui.vimEnabled && editor.ui.vim.mode === 'NORMAL',
+          editor.settings.preferences().vim && editor.ui.vim.mode === 'NORMAL',
         );
       },
     ),
@@ -57,6 +58,15 @@ export function EditorShell() {
         <Minimap />
       </Portal>
       <EditorShortcuts />
+      <EditorMeasure
+        fontSize={editor.settings.preferences().fontSize}
+        fontFamily={editor.settings.preferences().fontFamily}
+        lineHeight={editor.settings.preferences().lineHeight}
+        onMeasure={(geometry) => {
+          editor.setGeometry(geometry);
+          editor.store.actions.setGeometry(geometry);
+        }}
+      />
     </>
   );
 }

@@ -19,12 +19,15 @@ import { PRPanels } from './pr/PRPanels.jsx';
 import { MergeDialog } from './pr/MergeDialog.jsx';
 import { ForgeConnectDialog } from './pr/ForgeConnectDialog.jsx';
 import { ComposerDock } from './pr/ComposerDock.jsx';
+import { SettingsProvider } from './settings/context.ts';
+import { SettingsDialog } from './settings/SettingsDialog.tsx';
+import { PreferenceStyles } from './settings/PreferenceStyles.tsx';
 
 function App() {
   const theme = useTheme();
   const editorStore = createEditorStore(useApp(), { theme });
   const owner = getOwner();
-  bindLegacyEditor(editorStore, useTheme());
+  bindLegacyEditor(editorStore);
   // The static shell still holds the editor area; the overview replaces it.
   createEffect(() => {
     const reviewing = editorStore.review.state.mode === 'review';
@@ -38,6 +41,10 @@ function App() {
   });
   return (
     <EditorProvider value={editorStore}>
+      <SettingsProvider value={editorStore.settings}>
+        <PreferenceStyles />
+        <SettingsDialog onVimHelp={editorStore.actions.showVimHelp} />
+      </SettingsProvider>
       <Palette />
       <LayoutShell />
       <Portal
@@ -90,12 +97,26 @@ function App() {
     </EditorProvider>
   );
 }
+// The theme follows the color theme setting; picking one saves it.
+function SettingsThemeProvider(props) {
+  const app = useApp();
+  return (
+    <ThemeProvider
+      options={{
+        configured: () => app.settings.preferences().colorTheme,
+        save: (id) => void app.settings.actions.setSetting('workbench.colorTheme', id),
+      }}
+    >
+      {props.children}
+    </ThemeProvider>
+  );
+}
 render(
   () => (
     <AppProvider>
-      <ThemeProvider>
+      <SettingsThemeProvider>
         <App />
-      </ThemeProvider>
+      </SettingsThemeProvider>
     </AppProvider>
   ),
   document.getElementById('solid-root'),

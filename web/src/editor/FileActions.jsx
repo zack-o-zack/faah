@@ -1,3 +1,4 @@
+import { diffLayout } from '../settings/logic.ts';
 import { Show } from 'solid-js';
 import { useEditor } from './context.jsx';
 import { EditControls } from './EditControls.jsx';
@@ -68,7 +69,7 @@ export function FileActions() {
             data-size="xs"
             aria-pressed={!!document().diffMode}
             onClick={() =>
-              actions.setDiffMode(document(), localStorage.getItem('faah.diffLayout') || 'split')
+              actions.setDiffMode(document(), diffLayout(editor.settings.preferences()))
             }
           >
             Changes

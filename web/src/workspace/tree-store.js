@@ -3,13 +3,7 @@ import { createStore, produce } from 'solid-js/store';
 import { api, apiPostJson } from '../lib/api.js';
 import { toast } from '../lib/toast.jsx';
 import { createTreeModel } from './tree-model.js';
-import {
-  autoRevealEnabled,
-  copyPath,
-  newItemRequest,
-  parentPath,
-  treeDecoration,
-} from './tree-logic.js';
+import { copyPath, newItemRequest, parentPath, treeDecoration } from './tree-logic.js';
 
 /** @returns {{mode:string, scope:string, revision:number, busy:boolean, error:string,
  * suppressed:boolean, reveal:{path:string, sequence:number}, staging:Object, newItem:Object|null}} */
@@ -296,7 +290,7 @@ export function createTreeStore(app, options = {}) {
         !!app.state.viewers.viewed[row.path],
         state.staging[row.path],
       ),
-    autoReveal: () => !state.suppressed && autoRevealEnabled(app.state.settings),
+    autoReveal: () => !state.suppressed && app.settings.preferences().autoReveal,
     actions: {
       refreshTree,
       async openLink(path, openOptions) {

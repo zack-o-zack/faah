@@ -1,4 +1,5 @@
 import { canDiff, previewKind, viewMode } from './view.js';
+import { diffLayout } from '../settings/logic.ts';
 import { zoomScale } from './image-math.js';
 import { orbStart, orbFromThread, orbFromStep, orbFromSummary } from './orb-model.js';
 
@@ -18,7 +19,9 @@ export function createViewerActions(store) {
       diffDismissed: mode === 'source',
       openedInDiffView: mode !== 'source',
     });
-    if (mode !== 'source') localStorage.setItem('faah.diffLayout', mode);
+    // The last layout chosen is the default for the next diff.
+    if (mode !== 'source' && mode !== diffLayout(store.settings.preferences()))
+      void store.settings.actions.setSetting('diffEditor.renderSideBySide', mode === 'split');
   }
   function updateImage(document, update) {
     patch(document, { image: { ...document.image, ...update } });
@@ -34,13 +37,10 @@ export function createViewerActions(store) {
       const view = viewMode(document) === kind ? 'source' : kind;
       patch(document, { mdLine: line });
       setView(document, view);
-      store.actions.setEditorPreference(
-        kind === 'table' ? 'tablePreview' : 'mdPreview',
+      // Whether the next file of this kind opens previewed.
+      void store.settings.actions.setSetting(
+        kind === 'table' ? 'table.preview.open' : 'markdown.preview.open',
         view !== 'source',
-      );
-      localStorage.setItem(
-        kind === 'table' ? 'faah.tablePreview' : 'faah.mdPreview',
-        String(view !== 'source'),
       );
     },
     invalidate(document) {

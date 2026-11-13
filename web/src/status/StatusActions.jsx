@@ -34,7 +34,7 @@ export function StatusActions() {
       </Show>
       <button
         class="btn hidden @3xl:inline-flex"
-        aria-pressed={editor.store.state.editor.wrap}
+        aria-pressed={editor.settings.preferences().wrap}
         onClick={() => editor.actions.toggleWrap()}
       >
         Wrap

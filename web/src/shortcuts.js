@@ -12,7 +12,7 @@ import { toggleSidebar, isPaletteOpen, openPalette, closePalette } from './app/l
 import { previewing, togglePreview, previewKey } from './app/legacy-bridge.js';
 import { exitMermaidFullscreen } from './app/legacy-bridge.js';
 import { toggleDiff, stepDiffHunk, stepChangedFile } from './app/legacy-bridge.js';
-import { openSettings, closeSettings, isSettingsOpen } from './settings.js';
+import { openSettings, closeSettings, isSettingsOpen } from './app/legacy-bridge.js';
 
 import { handleImageKey } from './app/legacy-bridge.js';
 import { submitBatch } from './app/legacy-bridge.js';

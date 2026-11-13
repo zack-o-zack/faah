@@ -16,7 +16,6 @@ const legacy = [
   'web/src/main.js',
   'web/src/overlays.js',
   'web/src/overlays.test.js',
-  'web/src/settings.js',
   'web/src/shortcuts.js',
   'web/src/state.js',
   'web/src/theme.test.js',

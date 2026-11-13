@@ -11,7 +11,7 @@ export function VimHelp() {
         <input
           type="checkbox"
           class="input"
-          checked={editor.ui.vimEnabled}
+          checked={editor.settings.preferences().vim}
           onChange={(event) => editor.actions.setVimEnabled(event.currentTarget.checked)}
         />
         Enable Vim navigation
