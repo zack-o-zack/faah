@@ -1,0 +1,699 @@
+{
+  "schemaVersion": 1,
+  "environment": {
+    "label": "Go microbenchmarks",
+    "binary": "/private/tmp/claude-501/-Users-zackozack--t3-worktrees-faah-t3-cefcea1c-4c11e72aa90bee1c/0ae3e6df-8da0-4dcc-9037-24eb43d92380/scratchpad/bun-migration/bin/faah-go",
+    "binaryBytes": 16914978,
+    "gitCommit": "c32fe4e85b985c20d41560ab7c659e4868646e21",
+    "os": "darwin 25.2.0",
+    "cpu": "Apple M4",
+    "cores": 10,
+    "bun": "1.4.4",
+    "go": "go version go1.27.3 darwin/arm64",
+    "timestamp": "2026-11-13T23:18:49.886Z",
+    "corpus": [
+      {
+        "name": "flask",
+        "url": "https://github.com/pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e"
+      },
+      {
+        "name": "redis",
+        "url": "https://github.com/redis/redis",
+        "sha": "ee8e7f70152404649ac947157fd662d11b4a00d5"
+      },
+      {
+        "name": "react",
+        "url": "https://github.com/facebook/react",
+        "sha": "df6aa4ec76cff5b3adde531c6fe8c36099e0469b"
+      },
+      {
+        "name": "kubernetes",
+        "url": "https://github.com/kubernetes/kubernetes",
+        "sha": "29bcddace9e25a67edfb1024645e48a3eeedc5c8"
+      }
+    ],
+    "flags": [
+      "-host",
+      "127.0.0.1",
+      "-port",
+      "0",
+      "-no-open",
+      "-no-update",
+      "-no-color",
+      "-no-lsp",
+      "-no-agent",
+      "-no-telemetry"
+    ],
+    "commands": [
+      "go test -run=^$ -bench=. -benchmem -count=3 ./internal/fuzzy ./internal/ignore ./internal/render ./internal/symbols ./internal/table",
+      "go test -run=^$ -bench=Search|Snip|HandleFile|SortNodes|GitStatus -benchmem -count=3 ."
+    ]
+  },
+  "benchmarks": [
+    {
+      "name": "faah/internal/fuzzy/BenchmarkFuzzyFind",
+      "nsPerOp": 1070,
+      "bytesPerOp": 1776,
+      "allocsPerOp": 11,
+      "samples": {
+        "ns": [
+          1068,
+          1071,
+          1070
+        ],
+        "bytes": [
+          1776,
+          1776,
+          1776
+        ],
+        "allocs": [
+          11,
+          11,
+          11
+        ]
+      }
+    },
+    {
+      "name": "faah/internal/fuzzy/BenchmarkScore",
+      "nsPerOp": 51.62,
+      "bytesPerOp": 0,
+      "allocsPerOp": 0,
+      "samples": {
+        "ns": [
+          55.14,
+          51.62,
+          51.56
+        ],
+        "bytes": [
+          0,
+          0,
+          0
+        ],
+        "allocs": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "name": "faah/internal/fuzzy/BenchmarkFuzzyFind_1K",
+      "nsPerOp": 25811,
+      "bytesPerOp": 10832,
+      "allocsPerOp": 11,
+      "samples": {
+        "ns": [
+          25721,
+          25811,
+          25911
+        ],
+        "bytes": [
+          10832,
+          10832,
+          10832
+        ],
+        "allocs": [
+          11,
+          11,
+          11
+        ]
+      }
+    },
+    {
+      "name": "faah/internal/fuzzy/BenchmarkFuzzyFind_10K",
+      "nsPerOp": 117156,
+      "bytesPerOp": 105161,
+      "allocsPerOp": 56,
+      "samples": {
+        "ns": [
+          110348,
+          117156,
+          133483
+        ],
+        "bytes": [
+          105167,
+          105161,
+          105161
+        ],
+        "allocs": [
+          56,
+          56,
+          56
+        ]
+      }
+    },
+    {
+      "name": "faah/internal/fuzzy/BenchmarkFuzzyFind_50K",
+      "nsPerOp": 272046,
+      "bytesPerOp": 72280,
+      "allocsPerOp": 53,
+      "samples": {
+        "ns": [
+          266006,
+          272046,
+          284799
+        ],
+        "bytes": [
+          72280,
+          72280,
+          72280
+        ],
+        "allocs": [
+          53,
+          53,
+          53
+        ]
+      }
+    },
+    {
+      "name": "faah/internal/fuzzy/BenchmarkFuzzyFindShortQuery_50K",
+      "nsPerOp": 395115,
+      "bytesPerOp": 83400,
+      "allocsPerOp": 56,
+      "samples": {
+        "ns": [
+          393595,
+          398821,
+          395115
+        ],
+        "bytes": [
+          83400,
+          83400,
+          83400
+        ],
+        "allocs": [
+          56,
+          56,
+          56
+        ]
+      }
+    },
+    {
+      "name": "faah/internal/ignore/BenchmarkIgnoreMatch",
+      "nsPerOp": 166.3,
+      "bytesPerOp": 0,
+      "allocsPerOp": 0,
+      "samples": {
+        "ns": [
+          166.2,
+          166.3,
+          166.4
+        ],
+        "bytes": [
+          0,
+          0,
+          0
+        ],
+        "allocs": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "name": "faah/internal/ignore/BenchmarkCompilePattern",
+      "nsPerOp": 789.2,
+      "bytesPerOp": 3060,
+      "allocsPerOp": 25,
+      "samples": {
+        "ns": [
+          785.6,
+          790.5,
+          789.2
+        ],
+        "bytes": [
+          3060,
+          3060,
+          3060
+        ],
+        "allocs": [
+          25,
+          25,
+          25
+        ]
+      }
+    },
+    {
+      "name": "faah/internal/render/BenchmarkHighlightDiff",
+      "nsPerOp": 1355966,
+      "bytesPerOp": 29411,
+      "allocsPerOp": 415,
+      "samples": {
+        "ns": [
+          1418884,
+          1355966,
+          1351063
+        ],
+        "bytes": [
+          30078,
+          29388,
+          29411
+        ],
+        "allocs": [
+          416,
+          415,
+          414
+        ]
+      }
+    },
+    {
+      "name": "faah/internal/render/BenchmarkNewDoc",
+      "nsPerOp": 1383911,
+      "bytesPerOp": 344,
+      "allocsPerOp": 6,
+      "samples": {
+        "ns": [
+          1374189,
+          1383911,
+          1478168
+        ],
+        "bytes": [
+          344,
+          344,
+          344
+        ],
+        "allocs": [
+          6,
+          6,
+          6
+        ]
+      }
+    },
+    {
+      "name": "faah/internal/render/BenchmarkRenderMarkdown",
+      "nsPerOp": 37067,
+      "bytesPerOp": 41082,
+      "allocsPerOp": 450,
+      "samples": {
+        "ns": [
+          31909,
+          37871,
+          37067
+        ],
+        "bytes": [
+          41033,
+          41082,
+          41141
+        ],
+        "allocs": [
+          450,
+          450,
+          451
+        ]
+      }
+    },
+    {
+      "name": "faah/internal/render/BenchmarkHighlightLines_Go",
+      "nsPerOp": 118.6,
+      "bytesPerOp": 448,
+      "allocsPerOp": 1,
+      "samples": {
+        "ns": [
+          112,
+          118.6,
+          120
+        ],
+        "bytes": [
+          448,
+          448,
+          448
+        ],
+        "allocs": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "name": "faah/internal/render/BenchmarkHighlightLines_Python",
+      "nsPerOp": 78.84,
+      "bytesPerOp": 240,
+      "allocsPerOp": 1,
+      "samples": {
+        "ns": [
+          78.84,
+          79.41,
+          77.12
+        ],
+        "bytes": [
+          240,
+          240,
+          240
+        ],
+        "allocs": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "name": "faah/internal/render/BenchmarkDocCreation",
+      "nsPerOp": 2309524,
+      "bytesPerOp": 2056,
+      "allocsPerOp": 6,
+      "samples": {
+        "ns": [
+          2309524,
+          2355017,
+          2230401
+        ],
+        "bytes": [
+          2056,
+          2056,
+          2056
+        ],
+        "allocs": [
+          6,
+          6,
+          6
+        ]
+      }
+    },
+    {
+      "name": "faah/internal/render/BenchmarkColdHighlight_Go",
+      "nsPerOp": 14219431,
+      "bytesPerOp": 9159802,
+      "allocsPerOp": 129161,
+      "samples": {
+        "ns": [
+          14402382,
+          14173904,
+          14219431
+        ],
+        "bytes": [
+          9159802,
+          9137136,
+          9182647
+        ],
+        "allocs": [
+          129161,
+          129097,
+          129217
+        ]
+      }
+    },
+    {
+      "name": "faah/internal/symbols/BenchmarkFamilyFor",
+      "nsPerOp": 8.497,
+      "bytesPerOp": 0,
+      "allocsPerOp": 0,
+      "samples": {
+        "ns": [
+          8.505,
+          8.497,
+          8.391
+        ],
+        "bytes": [
+          0,
+          0,
+          0
+        ],
+        "allocs": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "name": "faah/internal/symbols/BenchmarkDeclPatterns",
+      "nsPerOp": 123750,
+      "bytesPerOp": 248448,
+      "allocsPerOp": 1533,
+      "samples": {
+        "ns": [
+          120165,
+          126012,
+          123750
+        ],
+        "bytes": [
+          248447,
+          248448,
+          248448
+        ],
+        "allocs": [
+          1533,
+          1533,
+          1533
+        ]
+      }
+    },
+    {
+      "name": "faah/internal/symbols/BenchmarkOutlineGo",
+      "nsPerOp": 11923,
+      "bytesPerOp": 1746,
+      "allocsPerOp": 18,
+      "samples": {
+        "ns": [
+          12505,
+          11901,
+          11923
+        ],
+        "bytes": [
+          1746,
+          1749,
+          1743
+        ],
+        "allocs": [
+          18,
+          18,
+          18
+        ]
+      }
+    },
+    {
+      "name": "faah/internal/symbols/BenchmarkOutlineMarkdown",
+      "nsPerOp": 12825,
+      "bytesPerOp": 1280,
+      "allocsPerOp": 19,
+      "samples": {
+        "ns": [
+          12664,
+          12825,
+          12895
+        ],
+        "bytes": [
+          1280,
+          1287,
+          1273
+        ],
+        "allocs": [
+          19,
+          19,
+          19
+        ]
+      }
+    },
+    {
+      "name": "faah/internal/symbols/BenchmarkIndentCols",
+      "nsPerOp": 2.539,
+      "bytesPerOp": 0,
+      "allocsPerOp": 0,
+      "samples": {
+        "ns": [
+          2.539,
+          2.487,
+          2.682
+        ],
+        "bytes": [
+          0,
+          0,
+          0
+        ],
+        "allocs": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "name": "faah/internal/table/BenchmarkRenderTable",
+      "nsPerOp": 4255,
+      "bytesPerOp": 67160,
+      "allocsPerOp": 31,
+      "samples": {
+        "ns": [
+          3570,
+          4255,
+          4436
+        ],
+        "bytes": [
+          67160,
+          67160,
+          67160
+        ],
+        "allocs": [
+          31,
+          31,
+          31
+        ]
+      }
+    },
+    {
+      "name": "faah/internal/table/BenchmarkSniffDelim",
+      "nsPerOp": 100.5,
+      "bytesPerOp": 96,
+      "allocsPerOp": 2,
+      "samples": {
+        "ns": [
+          109,
+          100.5,
+          99.93
+        ],
+        "bytes": [
+          96,
+          96,
+          96
+        ],
+        "allocs": [
+          2,
+          2,
+          2
+        ]
+      }
+    },
+    {
+      "name": "faah/BenchmarkGitStatus",
+      "nsPerOp": 9871991,
+      "bytesPerOp": 52124,
+      "allocsPerOp": 107,
+      "samples": {
+        "ns": [
+          9898296,
+          9870166,
+          9871991
+        ],
+        "bytes": [
+          52124,
+          52033,
+          52131
+        ],
+        "allocs": [
+          107,
+          106,
+          107
+        ]
+      }
+    },
+    {
+      "name": "faah/BenchmarkSnip",
+      "nsPerOp": 68.76,
+      "bytesPerOp": 109,
+      "allocsPerOp": 3,
+      "samples": {
+        "ns": [
+          57.28,
+          71.5,
+          68.76
+        ],
+        "bytes": [
+          109,
+          109,
+          109
+        ],
+        "allocs": [
+          3,
+          3,
+          3
+        ]
+      }
+    },
+    {
+      "name": "faah/BenchmarkSearchLiteralInMemory",
+      "nsPerOp": 255162,
+      "bytesPerOp": 23146,
+      "allocsPerOp": 281,
+      "samples": {
+        "ns": [
+          291771,
+          251306,
+          255162
+        ],
+        "bytes": [
+          23520,
+          23135,
+          23146
+        ],
+        "allocs": [
+          284,
+          280,
+          281
+        ]
+      }
+    },
+    {
+      "name": "faah/BenchmarkSearchDefWord",
+      "nsPerOp": 497597,
+      "bytesPerOp": 83512,
+      "allocsPerOp": 335,
+      "samples": {
+        "ns": [
+          472411,
+          497597,
+          526953
+        ],
+        "bytes": [
+          84221,
+          83512,
+          83203
+        ],
+        "allocs": [
+          335,
+          335,
+          335
+        ]
+      }
+    },
+    {
+      "name": "faah/BenchmarkSortNodes",
+      "nsPerOp": 5088,
+      "bytesPerOp": 184,
+      "allocsPerOp": 3,
+      "samples": {
+        "ns": [
+          5071,
+          5152,
+          5088
+        ],
+        "bytes": [
+          184,
+          184,
+          184
+        ],
+        "allocs": [
+          3,
+          3,
+          3
+        ]
+      }
+    },
+    {
+      "name": "faah/BenchmarkHandleFileScrollChunk",
+      "nsPerOp": 56241,
+      "bytesPerOp": 43136,
+      "allocsPerOp": 81,
+      "samples": {
+        "ns": [
+          56004,
+          67187,
+          56241
+        ],
+        "bytes": [
+          43268,
+          43136,
+          43130
+        ],
+        "allocs": [
+          81,
+          81,
+          81
+        ]
+      }
+    }
+  ]
+}

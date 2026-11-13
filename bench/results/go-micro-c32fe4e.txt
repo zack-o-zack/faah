@@ -1,0 +1,121 @@
+# Environment: {"label":"Go microbenchmarks","binary":"/private/tmp/claude-501/-Users-zackozack--t3-worktrees-faah-t3-cefcea1c-4c11e72aa90bee1c/0ae3e6df-8da0-4dcc-9037-24eb43d92380/scratchpad/bun-migration/bin/faah-go","binaryBytes":16914978,"gitCommit":"c32fe4e85b985c20d41560ab7c659e4868646e21","os":"darwin 25.2.0","cpu":"Apple M4","cores":10,"bun":"1.4.4","go":"go version go1.27.3 darwin/arm64","timestamp":"2026-11-13T23:18:49.886Z","corpus":[{"name":"flask","url":"https://github.com/pallets/flask","sha":"49943b5a94413a530761350f04e896f76e8d620e"},{"name":"redis","url":"https://github.com/redis/redis","sha":"ee8e7f70152404649ac947157fd662d11b4a00d5"},{"name":"react","url":"https://github.com/facebook/react","sha":"df6aa4ec76cff5b3adde531c6fe8c36099e0469b"},{"name":"kubernetes","url":"https://github.com/kubernetes/kubernetes","sha":"29bcddace9e25a67edfb1024645e48a3eeedc5c8"}],"flags":["-host","127.0.0.1","-port","0","-no-open","-no-update","-no-color","-no-lsp","-no-agent","-no-telemetry"],"commands":["go test -run=^$ -bench=. -benchmem -count=3 ./internal/fuzzy ./internal/ignore ./internal/render ./internal/symbols ./internal/table","go test -run=^$ -bench=Search|Snip|HandleFile|SortNodes|GitStatus -benchmem -count=3 ."]}
+goos: darwin
+goarch: arm64
+pkg: faah/internal/fuzzy
+cpu: Apple M4
+BenchmarkFuzzyFind-10                  	 1110110	      1068 ns/op	    1776 B/op	      11 allocs/op
+BenchmarkFuzzyFind-10                  	 1000000	      1071 ns/op	    1776 B/op	      11 allocs/op
+BenchmarkFuzzyFind-10                  	 1000000	      1070 ns/op	    1776 B/op	      11 allocs/op
+BenchmarkScore-10                      	22268270	        55.14 ns/op	       0 B/op	       0 allocs/op
+BenchmarkScore-10                      	23234500	        51.62 ns/op	       0 B/op	       0 allocs/op
+BenchmarkScore-10                      	22769984	        51.56 ns/op	       0 B/op	       0 allocs/op
+BenchmarkFuzzyFind_1K-10               	   46184	     25721 ns/op	   10832 B/op	      11 allocs/op
+BenchmarkFuzzyFind_1K-10               	   47613	     25811 ns/op	   10832 B/op	      11 allocs/op
+BenchmarkFuzzyFind_1K-10               	   46237	     25911 ns/op	   10832 B/op	      11 allocs/op
+BenchmarkFuzzyFind_10K-10              	   10000	    110348 ns/op	  105167 B/op	      56 allocs/op
+BenchmarkFuzzyFind_10K-10              	   10000	    117156 ns/op	  105161 B/op	      56 allocs/op
+BenchmarkFuzzyFind_10K-10              	    9780	    133483 ns/op	  105161 B/op	      56 allocs/op
+BenchmarkFuzzyFind_50K-10              	    5132	    266006 ns/op	   72280 B/op	      53 allocs/op
+BenchmarkFuzzyFind_50K-10              	    4755	    272046 ns/op	   72280 B/op	      53 allocs/op
+BenchmarkFuzzyFind_50K-10              	    4598	    284799 ns/op	   72280 B/op	      53 allocs/op
+BenchmarkFuzzyFindShortQuery_50K-10    	    2880	    393595 ns/op	   83400 B/op	      56 allocs/op
+BenchmarkFuzzyFindShortQuery_50K-10    	    3153	    398821 ns/op	   83400 B/op	      56 allocs/op
+BenchmarkFuzzyFindShortQuery_50K-10    	    3201	    395115 ns/op	   83400 B/op	      56 allocs/op
+PASS
+ok  	faah/internal/fuzzy	25.526s
+goos: darwin
+goarch: arm64
+pkg: faah/internal/ignore
+cpu: Apple M4
+BenchmarkIgnoreMatch-10       	 6460863	       166.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIgnoreMatch-10       	 7198244	       166.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIgnoreMatch-10       	 7189896	       166.4 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCompilePattern-10    	 1478169	       785.6 ns/op	    3060 B/op	      25 allocs/op
+BenchmarkCompilePattern-10    	 1521414	       790.5 ns/op	    3060 B/op	      25 allocs/op
+BenchmarkCompilePattern-10    	 1527180	       789.2 ns/op	    3060 B/op	      25 allocs/op
+PASS
+ok  	faah/internal/ignore	10.432s
+goos: darwin
+goarch: arm64
+pkg: faah/internal/render
+cpu: Apple M4
+BenchmarkHighlightDiff-10            	     860	   1418884 ns/op	   30078 B/op	     416 allocs/op
+BenchmarkHighlightDiff-10            	     889	   1355966 ns/op	   29388 B/op	     415 allocs/op
+BenchmarkHighlightDiff-10            	     855	   1351063 ns/op	   29411 B/op	     414 allocs/op
+BenchmarkNewDoc-10                   	    1009	   1374189 ns/op	     344 B/op	       6 allocs/op
+BenchmarkNewDoc-10                   	     896	   1383911 ns/op	     344 B/op	       6 allocs/op
+BenchmarkNewDoc-10                   	     830	   1478168 ns/op	     344 B/op	       6 allocs/op
+BenchmarkRenderMarkdown-10           	   42478	     31909 ns/op	   41033 B/op	     450 allocs/op
+BenchmarkRenderMarkdown-10           	   32602	     37871 ns/op	   41082 B/op	     450 allocs/op
+BenchmarkRenderMarkdown-10           	   32664	     37067 ns/op	   41141 B/op	     451 allocs/op
+BenchmarkHighlightLines_Go-10        	11179072	       112.0 ns/op	     448 B/op	       1 allocs/op
+BenchmarkHighlightLines_Go-10        	10803073	       118.6 ns/op	     448 B/op	       1 allocs/op
+BenchmarkHighlightLines_Go-10        	 9885892	       120.0 ns/op	     448 B/op	       1 allocs/op
+BenchmarkHighlightLines_Python-10    	15887805	        78.84 ns/op	     240 B/op	       1 allocs/op
+BenchmarkHighlightLines_Python-10    	15603438	        79.41 ns/op	     240 B/op	       1 allocs/op
+BenchmarkHighlightLines_Python-10    	14223528	        77.12 ns/op	     240 B/op	       1 allocs/op
+BenchmarkDocCreation-10              	     465	   2309524 ns/op	    2056 B/op	       6 allocs/op
+BenchmarkDocCreation-10              	     477	   2355017 ns/op	    2056 B/op	       6 allocs/op
+BenchmarkDocCreation-10              	     580	   2230401 ns/op	    2056 B/op	       6 allocs/op
+BenchmarkColdHighlight_Go-10         	      87	  14402382 ns/op	 9159802 B/op	  129161 allocs/op
+BenchmarkColdHighlight_Go-10         	      81	  14173904 ns/op	 9137136 B/op	  129097 allocs/op
+BenchmarkColdHighlight_Go-10         	      82	  14219431 ns/op	 9182647 B/op	  129217 allocs/op
+PASS
+ok  	faah/internal/render	30.495s
+goos: darwin
+goarch: arm64
+pkg: faah/internal/symbols
+cpu: Apple M4
+BenchmarkFamilyFor-10          	152719714	         8.505 ns/op	       0 B/op	       0 allocs/op
+BenchmarkFamilyFor-10          	139849572	         8.497 ns/op	       0 B/op	       0 allocs/op
+BenchmarkFamilyFor-10          	143334290	         8.391 ns/op	       0 B/op	       0 allocs/op
+BenchmarkDeclPatterns-10       	    9009	    120165 ns/op	  248447 B/op	    1533 allocs/op
+BenchmarkDeclPatterns-10       	    9856	    126012 ns/op	  248448 B/op	    1533 allocs/op
+BenchmarkDeclPatterns-10       	    9814	    123750 ns/op	  248448 B/op	    1533 allocs/op
+BenchmarkOutlineGo-10          	   87506	     12505 ns/op	    1746 B/op	      18 allocs/op
+BenchmarkOutlineGo-10          	   96976	     11901 ns/op	    1749 B/op	      18 allocs/op
+BenchmarkOutlineGo-10          	  100912	     11923 ns/op	    1743 B/op	      18 allocs/op
+BenchmarkOutlineMarkdown-10    	   96964	     12664 ns/op	    1280 B/op	      19 allocs/op
+BenchmarkOutlineMarkdown-10    	   96818	     12825 ns/op	    1287 B/op	      19 allocs/op
+BenchmarkOutlineMarkdown-10    	   93358	     12895 ns/op	    1273 B/op	      19 allocs/op
+BenchmarkIndentCols-10         	437597194	         2.539 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIndentCols-10         	484387093	         2.487 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIndentCols-10         	484248066	         2.682 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	faah/internal/symbols	23.511s
+goos: darwin
+goarch: arm64
+pkg: faah/internal/table
+cpu: Apple M4
+BenchmarkRenderTable-10    	  344636	      3570 ns/op	   67160 B/op	      31 allocs/op
+BenchmarkRenderTable-10    	  299900	      4255 ns/op	   67160 B/op	      31 allocs/op
+BenchmarkRenderTable-10    	  270064	      4436 ns/op	   67160 B/op	      31 allocs/op
+BenchmarkSniffDelim-10     	 9942814	       109.0 ns/op	      96 B/op	       2 allocs/op
+BenchmarkSniffDelim-10     	11521174	       100.5 ns/op	      96 B/op	       2 allocs/op
+BenchmarkSniffDelim-10     	11933998	        99.93 ns/op	      96 B/op	       2 allocs/op
+PASS
+ok  	faah/internal/table	8.907s
+goos: darwin
+goarch: arm64
+pkg: faah
+cpu: Apple M4
+BenchmarkGitStatus-10                	     118	   9898296 ns/op	   52124 B/op	     107 allocs/op
+BenchmarkGitStatus-10                	     115	   9870166 ns/op	   52033 B/op	     106 allocs/op
+BenchmarkGitStatus-10                	     117	   9871991 ns/op	   52131 B/op	     107 allocs/op
+BenchmarkSnip-10                     	25479307	        57.28 ns/op	     109 B/op	       3 allocs/op
+BenchmarkSnip-10                     	17630659	        71.50 ns/op	     109 B/op	       3 allocs/op
+BenchmarkSnip-10                     	17275249	        68.76 ns/op	     109 B/op	       3 allocs/op
+BenchmarkSearchLiteralInMemory-10    	    6174	    291771 ns/op	   23520 B/op	     284 allocs/op
+BenchmarkSearchLiteralInMemory-10    	    4803	    251306 ns/op	   23135 B/op	     280 allocs/op
+BenchmarkSearchLiteralInMemory-10    	    5422	    255162 ns/op	   23146 B/op	     281 allocs/op
+BenchmarkSearchDefWord-10            	    2437	    472411 ns/op	   84221 B/op	     335 allocs/op
+BenchmarkSearchDefWord-10            	    2484	    497597 ns/op	   83512 B/op	     335 allocs/op
+BenchmarkSearchDefWord-10            	    2486	    526953 ns/op	   83203 B/op	     335 allocs/op
+BenchmarkSortNodes-10                	  238144	      5071 ns/op	     184 B/op	       3 allocs/op
+BenchmarkSortNodes-10                	  239215	      5152 ns/op	     184 B/op	       3 allocs/op
+BenchmarkSortNodes-10                	  237082	      5088 ns/op	     184 B/op	       3 allocs/op
+BenchmarkHandleFileScrollChunk-10    	   21222	     56004 ns/op	   43268 B/op	      81 allocs/op
+BenchmarkHandleFileScrollChunk-10    	   21345	     67187 ns/op	   43136 B/op	      81 allocs/op
+BenchmarkHandleFileScrollChunk-10    	   19533	     56241 ns/op	   43130 B/op	      81 allocs/op
+PASS
+ok  	faah	28.653s
