@@ -27,7 +27,6 @@ Detailed walkthroughs of all faah features, capabilities, developer workflows, a
 - **[Rendered Markdown Preview](features/markdown-preview.md)**: GFM rendering, syntax-highlighted code fences with copy buttons, and synchronized scrolling (`Alt+M`).
 - **[CSV & TSV Table View](features/table-view.md)**: Pin headers, line numbering, and parse tabular data cleanly (`Alt+M`).
 - **[Image Viewer & Asset Inspection](features/image-viewer.md)**: First-class image tabs, zoom/pan transforms, alpha contrast modes, and markdown lightbox.
-- **[Tips & Tricks System](features/tips-system.md)**: Interactive floating tips widget, inspector tab, and offline fallbacks.
 - **[Settings & Preferences System](features/settings-and-configuration.md)**: Graphical form editor (`Cmd/Ctrl+,`), raw JSON synchronization, and live previews.
 - **[Syntax Highlighting & Language Support](features/syntax-highlighting.md)**: Windowed Chroma lexing for ~280 languages, rainbow brackets, and occurrence highlighting.
 - **[Themes & Visual Customization](features/themes-and-styling.md)**: 14 built-in dark and light themes powered by CSS variables.

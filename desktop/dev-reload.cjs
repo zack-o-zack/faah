@@ -3,13 +3,17 @@ const path = require('node:path');
 
 const DEBOUNCE_MS = 150;
 
+function sourceKind(file) {
+  return /\.tsx?$/.test(file) && !/\.test\.tsx?$/.test(file) && !file.endsWith('.d.ts') ? 'web' : null;
+}
+
 // Swaps stylesheets in place, which keeps scroll position and open panels.
 const SWAP_STYLES = `for (const link of document.querySelectorAll('link[rel="stylesheet"]')) {
   const url = new URL(link.href);
   if (url.origin === location.origin) { url.searchParams.set('dev', Date.now()); link.href = url; }
 }`;
 
-// web/src is only an input to web/app.js, which reports its own change.
+// web/src is only an input to web/dist/app.js, which reports its own change.
 function reloadKind(file) {
   const [top] = file.split(path.sep);
   if (top === 'src' || top === 'vendor') return null;
@@ -36,4 +40,4 @@ function watchAssets(root, getWindows) {
   });
 }
 
-module.exports = { reloadKind, watchAssets };
+module.exports = { sourceKind, reloadKind, watchAssets };

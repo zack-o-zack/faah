@@ -40,9 +40,8 @@ import (
 	"faah/internal/ui"
 )
 
-//go:embed web/index.html web/app.css web/themes web/vendor web/fonts
-//go:embed web/workbench.html web/workbench.js web/holding.js
-//go:embed web/app.js web/logo-dark.svg web/logo-light.svg web/favicon.svg
+//go:embed web/index.html web/workbench.html web/dist web/themes web/vendor
+//go:embed web/logo-dark.svg web/logo-light.svg web/favicon.svg
 var embedded embed.FS
 
 // devRoot is a source checkout whose web/ replaces the embedded assets, so
@@ -293,7 +292,7 @@ func (s *Server) scavenge() {
 	}
 }
 
-const contentSecurityPolicy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: http:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'none';"
+const contentSecurityPolicy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https: http:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'none';"
 
 // ServeHTTP delegates incoming HTTP requests to the configured ServeMux,
 // recording request timing and updating access timestamps.
@@ -904,6 +903,13 @@ func (s *Server) handleStatic(sub fs.FS, prefix string) http.Handler {
 			return
 		}
 
+		if info, err := fs.Stat(sub, "dist/"+rel); err == nil && !info.IsDir() {
+			r2 := r.Clone(r.Context())
+			r2.URL.Path = prefix + "dist/" + rel
+			fileServer.ServeHTTP(w, r2)
+			return
+		}
+
 		// Check if a pre-compressed .gz asset exists for this path.
 		gzPath := rel + ".gz"
 		gzFile, err := sub.Open(gzPath)
@@ -963,25 +969,27 @@ func (s *Server) handleMeta(w http.ResponseWriter, r *http.Request) {
 	}
 	gitCount, gitFiles := s.ix.GitChanges()
 	meta := map[string]any{
-		"root":        s.ix.Root(),
-		"name":        filepath.Base(s.ix.Root()),
-		"files":       n,
-		"indexMs":     ms,
-		"builtAt":     at,
-		"ready":       s.ix.Ready(),
-		"git":         inGit,
-		"gitChanges":  gitCount,
-		"gitFiles":    gitFiles,
-		"forge":       s.forgeMeta(),
-		"lspServers":  s.lsp.Available(),
-		"metrics":     getProcessMetrics(s.lsp),
-		"version":     version,
-		"basePath":    s.BasePath(),
-		"workbench":   s.workbenchURL,
-		"agent":       s.agent.Name(),
-		"agentModel":  s.agent.Model(),
-		"agentPinned": s.agent.Pinned(),
-		"agents":      []agentHarness{},
+		"root":           s.ix.Root(),
+		"name":           filepath.Base(s.ix.Root()),
+		"files":          n,
+		"indexMs":        ms,
+		"builtAt":        at,
+		"ready":          s.ix.Ready(),
+		"git":            inGit,
+		"gitChanges":     gitCount,
+		"gitFiles":       gitFiles,
+		"forge":          s.forgeMeta(),
+		"lspServers":     s.lsp.Available(),
+		"metrics":        getProcessMetrics(s.lsp),
+		"version":        version,
+		"basePath":       s.BasePath(),
+		"workbench":      s.workbenchURL,
+		"agentEnabled":   s.agent != nil,
+		"threadsEnabled": s.threads != nil,
+		"agent":          s.agent.Name(),
+		"agentModel":     s.agent.Model(),
+		"agentPinned":    s.agent.Pinned(),
+		"agents":         []agentHarness{},
 	}
 	if s.pr != nil {
 		meta["pr"] = s.pr.metaMap(s.ix.PRFiles())

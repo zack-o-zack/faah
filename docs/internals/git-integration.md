@@ -1,6 +1,6 @@
 # Git Awareness, Diffing & Stage/Commit/Push/Pull
 
-This document describes the design and implementation of faah's git integration engine ([`git.go`](../../git.go)), its diff-rendering frontend ([`web/src/diff.js`](../../web/src/diff.js)), and the sidebar git panel that stages, commits, pushes, and pulls ([`web/src/gitpanel.js`](../../web/src/gitpanel.js), [`web/src/tree.js`](../../web/src/tree.js)).
+This document describes the design and implementation of faah's git integration engine ([`git.go`](../../git.go)), its diff-rendering frontend ([`web/src/viewers/`](../../web/src/viewers/), `DiffViewer.tsx` and the `diff-*.js` modules), and the sidebar git panel that stages, commits, pushes, and pulls ([`web/src/git/`](../../web/src/git/), with the tree's stage ticks in [`web/src/workspace/`](../../web/src/workspace/)).
 
 ## 1. Zero-Dependency Shell-Out Architecture
 
@@ -94,29 +94,29 @@ When viewing a file, the editor displays green, blue, and red markers in the lin
 - `modified`: Lines replaced (a `-` run immediately followed by a `+` run).
 - `deleted`: One marker per pure-deletion run, placed at the new-file line the deletion sat before.
 
-`/api/gutter` returns these three arrays; `web/src/tabs.js` fetches them once per opened tab and `web/src/renderer.js` paints them as `box-shadow` bars (added/modified) or a small wedge (deleted) on the `.g` line-number cell — O(1) per visible row, no re-parsing on scroll.
+`/api/gutter` returns these three arrays; `loadGutter` in [`web/src/git/documents.js`](../../web/src/git/documents.js) fetches them once per opened tab (with a cancellable request) and `EditorRow` derives each visible row's mark from them, drawn as `box-shadow` bars (added/modified) or a small wedge (deleted) on the `.g` line-number cell — O(1) per visible row, no re-parsing on scroll.
 
 ### File Diff (`/api/diff?path=...`)
 
 `handleDiff` (`server.go`) returns `{ path, diff, available }` — the same raw text `gitDiff` produced, with `available` set whenever it's non-empty (clean or untracked files get `""`). No hunk parsing happens on the server for this endpoint; the client owns that, because it needs two different reshapes of the same hunks (split and unified) and re-parsing client-side avoids two server round trips or two response shapes for one diff.
 
-### Split & Unified Views (`web/src/diff.js`)
+### Split & Unified Views ([`web/src/viewers/DiffViewer.tsx`](../../web/src/viewers/DiffViewer.tsx))
 
-The active tab gets a `Source | Diff` switch next to the tab bar (`#diff-switch`, shown only when `d.diffAvailable`) whenever the open file is modified in a git repo. On initial file open (`start == 0` with no commit `ref`), `handleFile` derives `diffAvailable` in $O(1)$ from the in-memory index status maps (`ix.HasDiffAvailable(rel)`) without spawning `git diff`. `#diff-source` and `#diff-btn` each show their own view, and hovering the Diff half opens the Split/Unified menu; `Cmd/Ctrl+D` toggles the same thing, resuming whichever layout was used last (`localStorage['faah.diffLayout']`, default `split`). Diff view and the Markdown preview are mutually exclusive — entering one hides the other — and each tab remembers its own state on `d.diffMode` (`'split' | 'unified' | null`).
+The active tab gets a `File | Changes` switch next to the tab bar (`#diff-switch`, shown only when the document has `diffAvailable`) whenever the open file is modified in a git repo. On initial file open (`start == 0` with no commit `ref`), `handleFile` derives `diffAvailable` in $O(1)$ from the in-memory index status maps (`ix.HasDiffAvailable(rel)`) without spawning `git diff`. `Cmd/Ctrl+D` toggles the same thing. The layout button switches split and unified and saves the `diffEditor.renderSideBySide` setting, which the next diff uses. Each document remembers its own view on `diffMode` (`'split' | 'unified' | null`); the diff and the Markdown preview are different values of the same derived view, so showing one hides the other.
 
-Unlike the main code view, the diff is **not** rendered through the virtualized `#rows` viewport. A single file's diff is small (bounded by the size of that one file), so `diff.js` renders it as plain DOM into a dedicated `#diffview` overlay — the same overlay-over-`#viewport` pattern the Markdown preview uses (see [Markdown Preview](markdown.md)), just with its own content:
+The diff is **not** rendered through the source viewport's rows. `DiffViewer` renders `#diffview` over the source view, which renders no rows while it is covered. Its resource fetches `/api/diff` keyed by the path, buffer revision and diff ref, so a replaced request is aborted and a stale reply dropped. The pure modules hold the row logic:
 
-1. **Parse.** `parseDiff(text)` splits the raw diff on `@@ ... @@` hunk headers and walks each hunk's `+`/`-`/context lines once, tagging every row `add` / `del` / `ctx` and carrying its old-file and/or new-file line number. This runs once per file per session; the parsed hunks are cached on `d.diffHunks` so switching Split ↔ Unified re-renders from memory with no re-fetch.
-1. **Unified layout.** One row per parsed line: old-line column, new-line column (whichever side doesn't apply is blank), a `+`/`-` marker, and the code — a direct read of `d.diffHunks`, GitHub-"unified"-style.
-1. **Split layout.** `pairRows(hunk.rows)` walks each hunk and pairs a deletion run with the addition run immediately following it, index by index, padding the shorter side with a blank cell (`.diff-blank`) — the same replacement-block pairing GitHub's split view uses. Context lines pass straight across both columns unpaired. Each pair renders as one flex row with a left/right half, so the two columns stay vertically aligned for free — no synced-scroll JavaScript, because both halves of a pair are literally the same DOM row.
+1. **Parse.** `parseDiff(text)` in `diff-parse.js` splits the raw diff on `@@ ... @@` hunk headers and walks each hunk's `+`/`-`/context lines once, tagging every row `add` / `del` / `ctx` with its old-file and/or new-file line number. Switching Split ↔ Unified re-renders from the parsed data with no re-fetch.
+1. **Unified layout.** `unifiedRows` gives one row per parsed line: old-line column, new-line column (whichever side doesn't apply is blank), a `+`/`-` marker, and the code.
+1. **Split layout.** `pairRows` (in `diff-rows.js`) pairs a deletion run with the addition run immediately following it, index by index, padding the shorter side with a blank cell (`.diff-blank`). Context lines pass straight across both columns. Each pair renders as one flex row with a left and right half, so the two columns stay aligned with no synced-scroll code.
 
-Every rendered row that exists in the working tree carries its line in `data-l`, on both halves of a split context row; a deleted row carries `data-at`, the working-tree line it sat before. `selbar.js` reads these so a selection anywhere in the diff can drive the selection bar, the right-click menu and Edit with Agent (see [Harness Editing & Agent Dispatch](agent-editing.md)).
+`DiffContent`, `DiffSection`, `DiffRows` and `DiffRow` render the result. A hunk over 400 rows renders a bounded window of `Index` slots measured with `ResizeObserver`, so wrapped lines keep their heights. Context expansion (`expandContext`) loads more lines around a hunk on request.
 
-Both layouts share the same hunk-header, line-number, marker, and code-cell builders; only the row-shape (one column vs. two) differs, so a fix to how a line renders never needs to be made twice.
+Every rendered row that exists in the working tree carries its line in `data-l`, on both halves of a split context row; a deleted row carries `data-at`, the working-tree line it sat before. `diff-selection.js` reads these so a selection anywhere in the diff can drive the selection bar, the right-click menu and Edit with Agent (see [Harness Editing & Agent Dispatch](agent-editing.md)).
 
 ## 5. Real-Time Streaming & Adaptive Monitoring Engine
 
-To keep git statuses, sidebar badges, and editor gutter diff indicators in sync without requiring manual page reloads or full workspace re-indexing, faah uses a hybrid real-time monitoring engine (`git.go` and `web/src/gitstream.js`).
+To keep git statuses, sidebar badges, and editor gutter diff indicators in sync without requiring manual page reloads or full workspace re-indexing, faah uses a hybrid real-time monitoring engine (`git.go`, and in the browser [`web/src/workspace/`](../../web/src/workspace/) with [`web/src/git/documents.js`](../../web/src/git/documents.js)).
 
 ### Design Constraints: Small vs. Massive Repositories
 
@@ -157,10 +157,10 @@ To keep git statuses, sidebar badges, and editor gutter diff indicators in sync 
      ```
    - Sends `: ping\n\n` comments every 15 seconds to keep connections alive across reverse proxies.
 
-6. **In-Place DOM Patching (`web/src/tree.js`)**
-   - The frontend receives the delta payload and calls `patchTreeGitStatus(statuses, dirtyDirs)`.
-   - Rather than tearing down the sidebar file tree, it toggles `.dirty` on directory rows and updates badge elements (`.gs`) and `.git-*` status classes on affected file rows.
-   - Tab diff dots (`.tab-git-dot`), diff toggle buttons (`#diff-switch`), and active editor gutter lines are refreshed in-place without disturbing scroll position or editor state.
+6. **Reactive updates in the browser**
+   - The page's one event stream ([`workspace/stream.ts`](../../web/src/workspace/stream.js)) delivers `git-status`; `workspace/actions.ts` stores the snapshot in the app store with `reconcile`, so only changed fields notify.
+   - Tree rows, directory dirty marks, tab diff dots and the `#diff-switch` derive from that snapshot; nothing is patched by hand, and the tree keeps its scroll position.
+   - `git/documents.ts` reconciles open tabs (section 7) and reloads the active document's gutter when its file changed.
 
 ## 6. How Git Detects Changes Under the Hood
 
@@ -225,7 +225,7 @@ sequenceDiagram
     participant FS as Local Filesystem (.git/index)
     participant GW as faah GitWatcher (Go Backend)
     participant SSE as SSE Stream (/api/git/stream)
-    participant JS as Browser Frontend (gitstream.js)
+    participant JS as Browser (workspace/stream.ts, git/documents.ts)
     participant UI as DOM (Tree, Tabs, Diff Overlay)
 
     Dev->>FS: Run `git checkout -- file.go` or `git reset`
@@ -236,7 +236,7 @@ sequenceDiagram
     GW->>GW: UpdateGitStatus() runs concurrent `git status --porcelain=v2`
     GW->>SSE: Broadcast JSON payload {statuses, gitChanges, dirtyDirs}
     SSE-->>JS: EventSource receives `git-status` event
-    JS->>UI: patchTreeGitStatus(statuses, dirtyDirs) (removes .dirty badges)
+    JS->>UI: Store the snapshot; tree badges and dirty marks derive from it
     JS->>UI: Reconcile open tabs (auto-close discarded diff tabs)
     JS->>UI: If clean and in changed-only mode -> switch to files explorer
 ```
@@ -245,23 +245,9 @@ sequenceDiagram
 
 When developers use faah to inspect AI agent changes or review git branches, they frequently open modified files directly in git diff view (`diffMode: 'split' | 'unified'`). When changes to those files are subsequently discarded or checked out in the terminal (`git checkout -- file` or `git reset`):
 
-1. **Diff Tab Tracking**: Tabs opened with git changes or toggled into diff view are tagged with `openedInDiffView = true` alongside `diffMode` in [`web/src/tabs.js`](../../web/src/tabs.js).
-2. **Reverse-Order Reconciliation**: When `handleGitStatus(data)` receives an updated status payload where `statuses[t.path]` is clean (`!isDiff`):
-   ```javascript
-   for (let i = S.tabs.length - 1; i >= 0; i--) {
-     const t = S.tabs[i];
-     if (t.diffRef) continue; // pinned to a commit; see §10
-     const code = statuses[t.path];
-     const isDiff = !!code && code !== 'U';
-     const wasDiff = !!(t.diffMode || t.openedInDiffView);
-     if (wasDiff && (t.diffAvailable || t.diffMode) && !isDiff) {
-       closeTab(i);
-     }
-   }
-   ```
-   Iterating in reverse index order ensures index stability when removing multiple tabs simultaneously.
-3. **Active Pointer Stability**: In `closeTab(i)`, closing tabs to the left of the currently active tab decrements `S.active` (`S.active--`) rather than jumping the user to an unintended tab.
-4. **Empty State & Explorer Fallback**: If all git changes are discarded while the sidebar is in changed-only mode (`#tree.changed-only`), faah automatically toggles back to standard file explorer mode so the user is never left viewing an empty tree.
+1. **Diff tab tracking**: a document opened with git changes or toggled into the diff view has `openedInDiffView` alongside `diffMode` on its entry ([`web/src/editor/documents.js`](../../web/src/editor/documents.js)).
+2. **One plan per snapshot**: `documentGitPlan` in [`git/document-logic.ts`](../../web/src/git/document-logic.js), a unit-tested pure function, lists the tabs to close: diff tabs whose file is clean again, except commit-pinned tabs, unsaved or editing tabs, and every tab in a PR session. It also lists `diffAvailable` changes and whether any changed tab needs a reload. `git/documents.ts` applies it with one `closeTabs` call, so the active tab stays the one the reader was on.
+3. **Explorer fallback**: the tree's Git view exists only while `hasGitView()` (changes or unpushed commits); when everything is discarded, the tree's mode derives back to the file explorer, so the reader is never left with an empty tree.
 
 ## 8. Diffing Against an Arbitrary Base
 
@@ -269,7 +255,7 @@ When developers use faah to inspect AI agent changes or review git branches, the
 
 ## 9. Stage, Commit, Push, Pull
 
-The sidebar git panel (`web/src/gitpanel.js`) and the file tree's per-row stage tick (`web/src/tree.js`) are the write half of git integration. Every action is a single explicit HTTP call from a button or tick click; nothing here is triggered by the status watcher, a timer, or a file change.
+The sidebar git panel ([`web/src/git/`](../../web/src/git/): `GitPanel`, `CommitForm`, `GitSyncMenu`, with transitions in `git/store.ts`) and the file tree's per-row stage tick (`TreeRow`, staging actions in `workspace/tree-store.ts`) are the write half of git integration. Every action is a single explicit HTTP call from a button or tick click; nothing here is triggered by the status watcher, a timer, or a file change.
 
 ### Staged-Path Tracking
 
@@ -304,7 +290,7 @@ The frontend checks Git state after the agent turn finishes. When the job ends i
 
 ### Errors in the Panel, Not Toasts
 
-Git failures render in one inline card at the top of the git panel (`#git-notice`, `notice()`/`showGitError()` in `gitpanel.js`), never as a global toast. The card has a tone (`err`, `warn`, `busy`, `ok`), a title, text, optional actions, an optional harness picker (registered through `registerAgentPicker`, so it mirrors the global selection), and a collapsible harness output log. Showing it un-collapses the panel. It clears on the next successful git action, and while an agent rebase/merge runs, other errors don't replace it. The file tree's stage ticks report failures through the bus (`git:error`) to the same card. Success messages still use toasts.
+Git failures render in one inline card at the top of the git panel (`GitNotice.tsx`, from the `notice` state in `git/store.ts`), never as a global toast. The card has a tone (`err`, `warn`, `busy`, `ok`), a title, text, optional actions, an optional harness picker (`AgentChoice`, which reads and sets the agents store's one selection), and a collapsible harness output log. Showing it un-collapses the panel. It clears on the next successful git action, and while an agent rebase/merge runs, other errors don't replace it. The file tree's stage ticks report failures to the same card through the git store. Success messages still use toasts.
 
 In a PR review session, Pull instead re-syncs with the pull request's current head — see [Pull Request Review §7](github-pr-review.md).
 
@@ -384,31 +370,26 @@ Rather than add two more endpoints, the existing diff and gutter endpoints take 
 
 All six are GET reads with no `localPost` guard, because none of them changes anything.
 
-### Frontend (`web/src/unpushed.js`)
+### Frontend ([`web/src/git/Unpushed.tsx`](../../web/src/git/Unpushed.tsx))
 
-The section lives under the file tree in the sidebar, behind the same **changed files only** toggle as the dirty-file filter — it is a review view, not a home-screen fixture. That toggle's availability is now `hasGitView()` in `tree.js`, which is true when there are working-tree changes **or** unpushed commits: committing everything empties the tree, and without counting commits the toggle would disable itself exactly when the section it reveals became the only thing worth looking at. On a clean tree the tree stops claiming the sidebar's spare height (`#tree.changed-only.no-changes`) and says "Working tree clean", leaving the section the whole of the view.
+The section lives under the file tree in the sidebar, behind the same **changed files only** toggle as the dirty-file filter — it is a review view, not a home-screen fixture. That toggle's availability is `hasGitView()` in `workspace/tree-store.ts`, which is true when there are working-tree changes **or** unpushed commits: committing everything empties the tree, and without counting commits the toggle would disable itself exactly when the section it reveals became the only thing worth looking at. On a clean tree the tree stops claiming the sidebar's spare height (`#tree.changed-only.no-changes`) and says "Working tree clean", leaving the section the whole of the view.
 
 Clicking a commit expands it into its file list, badged with the same `git-M`/`git-A`/`git-D` classes the tree uses. Clicking a file opens it with `openFile(path, { ref, view: 'diff' })`. A tab carries that commit on `d.diffRef`, shows `@<short-sha>` in the tab strip, and renders its diff in a labelled `In commit <sha>` section. Opening the same path from anywhere else — tree, search, go-to-definition — passes no ref and puts the tab back on the working tree, which is what "open this file" means everywhere else in faah.
 
-A commit-pinned tab is deliberately invisible to the working-tree reconciliation in `gitstream.js`: it is skipped by the auto-close pass, by the `diffAvailable` sync, and by the reload trigger. The working tree going clean is precisely when you still want to be reading one. Tabs are not saved across reloads, so a commit-pinned tab closes with the page.
+A commit-pinned tab is deliberately invisible to the working-tree reconciliation (`documentGitPlan`) and to `reloadOpenTabs`: it is skipped by the auto-close pass, by the `diffAvailable` sync, and by the reload trigger. The working tree going clean is precisely when you still want to be reading one. Tabs are not saved across reloads, so a commit-pinned tab closes with the page.
 
-The list is refreshed from the `ahead` count and head SHA that already ride on every git-status SSE tick, so it re-reads `git log` only when one of them actually moved, and explicitly after a commit, push, pull or reindex. A commit that disappears (amend, rebase, push) drops its cached file list and detail with it. A commit's file rows are built `COMMIT_FILES_PAGE` (100) at a time behind a **Show 100 more** row (`web/src/commitfiles.js`), and only while that commit is open. A squash or a vendor bump can touch thousands of paths: building them all at once for a 20,000-file commit cost 224k DOM nodes and a 550 MB tab, where one page costs about 1,000 nodes.
+The list is refreshed from the `ahead` count and head SHA that already ride on every git-status SSE tick, so it re-reads `git log` only when one of them actually moved, and explicitly after a commit, push, pull or reindex. A commit that disappears (amend, rebase, push) drops its cached file list and detail with it. A commit's file rows are built `COMMIT_FILES_PAGE` (100) at a time behind a **Show 100 more** row (`git/CommitFiles.tsx`), and only while that commit is open. A squash or a vendor bump can touch thousands of paths: building them all at once for a 20,000-file commit cost 224k DOM nodes and a 550 MB tab, where one page costs about 1,000 nodes.
 
-### Recent Commits (`web/src/gitpanel.js`)
+### Recent Commits (`GitPanel.tsx`, `CommitRow.tsx`)
 
-The git panel's Recent Commits list uses the same reads and the same pinned tabs. `/api/git/log` now also returns each commit's full SHA (`full`), so a file opened from either list pins its tab to the same `diffRef`. Clicking a commit expands it into its files from `/api/commitfiles`, drawn with the same `commitfiles.js` rows and paging; collapsing deletes the rows rather than hiding them. The git-status stream re-sends the recent commits on every tick, so the list is rebuilt only when the commits themselves change, and open commits are re-expanded from cache. The short-hash chip copies the SHA; arrow keys, Enter and Space move through commits and files.
+The git panel's Recent Commits list uses the same reads and the same pinned tabs. `/api/git/log` now also returns each commit's full SHA (`full`), so a file opened from either list pins its tab to the same `diffRef`. Clicking a commit expands it into its files from `/api/commitfiles`, drawn with the same `CommitFiles` rows and paging; collapsing deletes the rows rather than hiding them. The git-status stream re-sends the recent commits on every tick, so the list is rebuilt only when the commits themselves change, and open commits are re-expanded from cache. The short-hash chip copies the SHA; arrow keys, Enter and Space move through commits and files.
 
-### Stepping Through a Commit (`web/src/diff.js`)
+### Stepping Through a Commit ([`web/src/viewers/DiffStrip.tsx`](../../web/src/viewers/DiffStrip.tsx))
 
-A pinned tab's diff view opens with a strip showing the file's status, path, line counts and place in the commit (`3 / 17`), with ‹ › to step to the neighbouring file. The file list comes from `/api/commitfiles` once per SHA through `loadCommitFiles` (`commitfiles.js`), cached and shared with the sidebar rows, since a commit's files never change. `stepCommitFile` (`tabs.js`) opens the next file pinned to the same commit and closes the tab stepped away from, so stepping swaps a tab in place rather than leaving one open per file. Binary files are passed over (`commitStepTarget`): they have no text diff, and `/api/file` refuses to open them.
+A pinned tab's diff view opens with a strip showing the file's status, path, line counts and place in the commit (`3 / 17`), with ‹ › to step to the neighbouring file. The file list comes from `/api/commitfiles` once per SHA through the git store's bounded commit-file cache, shared with the sidebar rows, since a commit's files never change. `stepDiffFile` (`editor/store.ts`) opens the next file pinned to the same commit and closes the tab stepped away from, so stepping swaps a tab in place rather than leaving one open per file. Binary files are passed over (`commitStepTarget`): they have no text diff, and `/api/file` refuses to open them.
 
-### Hover Cards That Stay Open (`web/src/cardkeep.js`)
+### Commit details and hover cards
 
-Hovering a commit opens a card with its author, full message and diffstat (insertions green, deletions red), a **Copy SHA** button, and a best-effort GitHub link on the author name: a `users.noreply.github.com` address carries the login outright and becomes a profile link, any other address can only support "this repository's commits by this address", and a non-GitHub remote gets no link at all.
+A commit row's details button opens a popover (`CommitDetails.tsx` on the shared `Popover`) with the author, full message and diffstat (insertions green, deletions red), a **Copy SHA** button, and a best-effort GitHub link on the author name: a `users.noreply.github.com` address carries the login outright and becomes a profile link, any other address can only support "this repository's commits by this address", and a non-GitHub remote gets no link at all. The popover is portalled outside the sidebar, so it is never clipped, and closes on Escape or an outside click.
 
-Both this card and the existing LSP hover card used to close before you could reach them. Two separate causes, both fixed in `cardkeep.js`, which now owns the lifetime of each:
-
-1. A card armed its hide from a `mouseleave` on whatever sat underneath it and gave the pointer a fixed window to arrive. Cross the gap slower than that — or pause on the way — and the card was gone before the pointer reached it, with nothing left listening to cancel the timer, because the pointer had already left every element that was.
-2. "Is the pointer still near the card" was measured from an anchor captured when the card was *requested*, not when it opened. A hover response can take seconds, so the card could appear anchored to where the pointer used to be, and the very next move read as "left the card".
-
-`makeCardKeeper(el, { hide })` replaces both with one document-level pointer track — so the pointer is never unobserved, wherever it goes — one timer per card, and every decision made against where the pointer is *now*: inside the card (plus slack), or anywhere in the rectangle spanned by the anchor and the card, which is the path a pointer travelling towards it takes. `reanchor()` moves that rectangle's origin when an awaited card finally renders, so a slow response can't strand it.
+The LSP hover card ([`HoverCard.tsx`](../../web/src/editor/HoverCard.tsx)) stays open while the pointer travels to it. `nearCard` in [`editor/hover.ts`](../../web/src/editor/hover.js) keeps it while the pointer is inside the card (plus slack) or anywhere in the rectangle between the hovered word and the card, judged against where the pointer is now and where the card actually rendered, so a slow hover reply cannot strand it.

@@ -473,3 +473,33 @@ func BenchmarkCompareSemver(b *testing.B) {
 		_ = compareSemver(p[0], p[1])
 	}
 }
+
+func TestAutoUpdateRefreshesCorruptCache(t *testing.T) {
+	t.Setenv("XDG_STATE_HOME", t.TempDir())
+	if err := os.MkdirAll(filepath.Dir(stateFilePath()), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(stateFilePath(), []byte("not json"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var hits atomic.Int32
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		if err := json.NewEncoder(w).Encode(githubRelease{TagName: "v0.1.0"}); err != nil {
+			t.Error(err)
+		}
+	}))
+	defer ts.Close()
+	t.Setenv("FAAH_UPDATE_URL", ts.URL)
+	previous := ui.Verbose
+	ui.Verbose = true
+	defer func() { ui.Verbose = previous }()
+	output := captureAutoUpdateStdout(t, func() { AutoUpdate("0.1.0") })
+	if !strings.Contains(output, "Could not read update cache") {
+		t.Fatalf("expected a cache diagnostic, got %q", output)
+	}
+	state, err := readUpdateState()
+	if err != nil || state == nil || state.LatestVer != "0.1.0" || hits.Load() != 1 {
+		t.Fatalf("cache was not refreshed: state=%+v err=%v hits=%d", state, err, hits.Load())
+	}
+}

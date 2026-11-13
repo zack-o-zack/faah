@@ -34,14 +34,12 @@
   --text-18: var(--t-18);
 }
 
-@font-face { font-family: "Inter"; font-style: normal; font-weight: 100 900; font-display: swap; src: url("fonts/inter-latin-ext-wght-normal.woff2") format("woff2-variations"); unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF; }
-@font-face { font-family: "Inter"; font-style: normal; font-weight: 100 900; font-display: swap; src: url("fonts/inter-latin-wght-normal.woff2") format("woff2-variations"); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
 
 @layer base {
   :root {
     --lh: 21px;
-    --mono: "JetBrains Mono", "Fira Code", "Cascadia Code", "SF Mono", Menlo, Consolas, ui-monospace, monospace;
-    --ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, monospace;
+    --ui: system-ui, sans-serif;
     --fs: 13.5px;
 
     --t-8-5: 8.5px; --t-9: 9px; --t-9-5: 9.5px; --t-10: 10px; --t-10-5: 10.5px; --t-11: 11px; --t-11-5: 11.5px; --t-12: 12px; --t-12-5: 12.5px; --t-13: 13px; --t-13-5: 13.5px; --t-14: 14px; --t-14-5: 14.5px; --t-15: 15px; --t-16: 16px; --t-18: 18px;
@@ -51,7 +49,6 @@
   }
 
   :root[data-shell] {
-    --ui: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     --t-8-5: 11px; --t-9: 11px; --t-9-5: 11px; --t-10: 11px; --t-10-5: 11px; --t-11: 11px;
     --t-11-5: 12px; --t-12: 12px; --t-12-5: 12px;
     --t-13: 13px; --t-13-5: 13px;
@@ -114,8 +111,6 @@
   .row.agent-sel.cur, .row.agent-sel.cur .c { background: var(--sel); }
 
   .diff-row.agent-anchor .diff-ln, .diff-side.agent-anchor .diff-ln { position: relative; }
-
-  .c i, .diff-code i { font-style: normal; }
 
   body.word-wrap .g { align-self: flex-start; height: var(--lh); }
 
@@ -295,7 +290,6 @@
   .md-mermaid-fs-only { display: none; }
   .md-mermaid.is-fullscreen .md-mermaid-fs-only { display: grid; }
 
-  body.mermaid-fs-active { overflow: hidden; }
   .md table { display: block; width: max-content; max-width: 100%; overflow: auto; border-collapse: collapse; font-size: .94em; }
   .md th, .md td { padding: 6px 13px; border: 1px solid var(--border); }
   .md th { font-weight: 600; background: var(--sidebar); }
@@ -372,13 +366,7 @@
   body.word-wrap #editview-textarea { white-space: pre-wrap; overflow-wrap: break-word; overflow-x: hidden; }
   body.word-wrap .editview-gutter { white-space: normal; }
   .editview-gutter > div { box-sizing: border-box; }
-  #editview-mirror {
-    @apply absolute top-0 left-0; visibility: hidden; pointer-events: none;
-    padding: 0 8px; margin: 0; box-sizing: border-box;
-    font: var(--fs)/var(--lh) var(--mono);
-    tab-size: var(--tab-size, 4); -moz-tab-size: var(--tab-size, 4);
-    white-space: pre-wrap; overflow-wrap: break-word;
-  }
+
 
   .md img.md-zoomable { cursor: zoom-in; transition: transform 0.15s ease, box-shadow 0.15s ease; border-radius: var(--radius-sm); max-width: 100%; }
   .md img.md-zoomable:hover { box-shadow: 0 0 0 2px var(--primary), var(--shadow); }
@@ -386,9 +374,6 @@
   .md-img-broken svg { color: var(--destructive); width: 16px; height: 16px; flex-shrink: 0; }
 
   /* Runtime feedback and editor settings. */
-  .diff-row.pr-line-flash .diff-code, .diff-side.pr-line-flash .diff-code {
-    outline: 2px solid var(--ring); outline-offset: -2px; border-radius: var(--radius-sm);
-  }
 
     @keyframes shake {
     0%, 100% { transform: translateX(0); }
@@ -403,7 +388,6 @@
     opacity: 0.65;
   }
 
-  #measure { position: absolute; visibility: hidden; font: var(--fs)/var(--lh) var(--mono); white-space: pre; top: -999px; }
 
   ::-webkit-scrollbar { width: 11px; height: 11px; }
   ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: var(--radius-md); border: 3px solid var(--background); }
@@ -588,4 +572,17 @@
     opacity: 0;
     transform: translateY(-100%);
   }
+}
+
+/* Global highlight rules make every explorer node compute highlight inheritance. */
+#rows ::highlight(editor-find) { background: var(--mark); color: inherit; }
+#rows ::highlight(editor-link) { text-decoration: underline; color: var(--primary-text); }
+#rows ::highlight(editor-active) { background: var(--mark-active); color: var(--on-mark-active); }
+
+@layer components {
+  #imgview-canvas.bg-checker { background: repeating-conic-gradient(var(--muted) 0 25%, var(--sidebar) 0 50%) 0 0 / 16px 16px; }
+  #imgview-canvas.bg-dark { background: var(--image-dark); }
+  #imgview-canvas.bg-light { background: var(--image-light); }
+  #imgview-img.render-pixelated { image-rendering: pixelated; }
+  #imgview-viewport.panning { cursor: grabbing; }
 }

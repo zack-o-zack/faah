@@ -1,0 +1,60 @@
+import type { JSX } from 'solid-js';
+import { Index, Show } from 'solid-js';
+import { useWorkbench } from './context.tsx';
+import { Recent } from './Recent.tsx';
+import { Browse } from './Browse.tsx';
+
+export function WorkbenchTabs(): JSX.Element {
+  const { state, actions } = useWorkbench();
+  return (
+    <div id="wb-tabs" class="tabs mt-5 min-h-0 flex-1 gap-2">
+      <nav
+        role="tablist"
+        aria-orientation="horizontal"
+        aria-label="Workspaces"
+        data-variant="line"
+        class="w-full justify-start border-b [&>[role=tab]]:flex-none"
+        onKeyDown={(e) => {
+          if (['ArrowLeft', 'ArrowRight'].includes(e.key)) {
+            e.preventDefault();
+            const tab = state.tab === 'recent' ? 'browse' : 'recent';
+            actions.selectTab(tab);
+            e.currentTarget
+              .querySelector<HTMLButtonElement>(`[aria-controls="wb-panel-${tab}"]`)
+              ?.focus();
+          }
+        }}
+      >
+        <Index each={['recent', 'browse']}>
+          {(tab) => (
+            <button
+              type="button"
+              id={`wb-tab-${tab()}`}
+              role="tab"
+              tabindex={state.tab === tab() ? 0 : -1}
+              aria-selected={state.tab === tab()}
+              aria-controls={`wb-panel-${tab()}`}
+              onClick={() => actions.selectTab(tab())}
+            >
+              {tab() === 'recent' ? 'Recent' : 'Browse'}
+            </button>
+          )}
+        </Index>
+      </nav>
+      <div
+        role="tabpanel"
+        id={`wb-panel-${state.tab}`}
+        aria-labelledby={`wb-tab-${state.tab}`}
+        class={
+          state.tab === 'recent'
+            ? '-mx-2 min-h-0 overflow-y-auto px-2 pb-6'
+            : 'flex min-h-0 flex-col pb-4'
+        }
+      >
+        <Show when={state.tab === 'recent'} fallback={<Browse />}>
+          <Recent />
+        </Show>
+      </div>
+    </div>
+  );
+}

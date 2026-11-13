@@ -1,0 +1,1545 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "rule": "complexity/file-too-large",
+      "engine": "code-quality",
+      "file": "agent.go",
+      "fingerprint": "message:acc412ddac35058f",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "agent.go",
+      "fingerprint": "be1e5d7379b1c624",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "agent.go",
+      "fingerprint": "f6001161473662a5",
+      "count": 1
+    },
+    {
+      "rule": "complexity/too-many-params",
+      "engine": "code-quality",
+      "file": "agent.go",
+      "fingerprint": "aaf581c530c63720",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/console-leftover",
+      "engine": "ai-slop",
+      "file": "desktop/smoke.cjs",
+      "fingerprint": "7e288b887965a560",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/console-leftover",
+      "engine": "ai-slop",
+      "file": "desktop/smoke.cjs",
+      "fingerprint": "c559b480abfdbb40",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/console-leftover",
+      "engine": "ai-slop",
+      "file": "desktop/smoke.cjs",
+      "fingerprint": "d29afdf4d141610e",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/hardcoded-url",
+      "engine": "ai-slop",
+      "file": "forge.go",
+      "fingerprint": "5ff29c6edf7a9e2a",
+      "count": 1
+    },
+    {
+      "rule": "complexity/file-too-large",
+      "engine": "code-quality",
+      "file": "forge.go",
+      "fingerprint": "message:acc412ddac35058f",
+      "count": 1
+    },
+    {
+      "rule": "complexity/too-many-params",
+      "engine": "code-quality",
+      "file": "forge.go",
+      "fingerprint": "0f86efcb977e3961",
+      "count": 1
+    },
+    {
+      "rule": "complexity/too-many-params",
+      "engine": "code-quality",
+      "file": "forge.go",
+      "fingerprint": "1d61f9ee6f32eabd",
+      "count": 1
+    },
+    {
+      "rule": "complexity/too-many-params",
+      "engine": "code-quality",
+      "file": "forge.go",
+      "fingerprint": "6e505aa9edf453c6",
+      "count": 1
+    },
+    {
+      "rule": "complexity/too-many-params",
+      "engine": "code-quality",
+      "file": "forge.go",
+      "fingerprint": "af5ab99882b2403e",
+      "count": 1
+    },
+    {
+      "rule": "complexity/too-many-params",
+      "engine": "code-quality",
+      "file": "forge.go",
+      "fingerprint": "b747b72eb19d0950",
+      "count": 1
+    },
+    {
+      "rule": "complexity/too-many-params",
+      "engine": "code-quality",
+      "file": "forge.go",
+      "fingerprint": "cb4c2208daba2b1b",
+      "count": 1
+    },
+    {
+      "rule": "complexity/too-many-params",
+      "engine": "code-quality",
+      "file": "forge.go",
+      "fingerprint": "fe2162bdaa1951d3",
+      "count": 1
+    },
+    {
+      "rule": "complexity/file-too-large",
+      "engine": "code-quality",
+      "file": "git.go",
+      "fingerprint": "message:acc412ddac35058f",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "git.go",
+      "fingerprint": "5825dc75b98a8055",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "git.go",
+      "fingerprint": "6c4fc4e4ed1a967d",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "git.go",
+      "fingerprint": "b58b72e2019b1415",
+      "count": 1
+    },
+    {
+      "rule": "complexity/file-too-large",
+      "engine": "code-quality",
+      "file": "index.go",
+      "fingerprint": "message:acc412ddac35058f",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "index.go",
+      "fingerprint": "b4c0b265dd3aebeb",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "index.go",
+      "fingerprint": "c22abb435dbe8b09",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "index.go",
+      "fingerprint": "ff3d834970680780",
+      "count": 1
+    },
+    {
+      "rule": "complexity/too-many-params",
+      "engine": "code-quality",
+      "file": "index.go",
+      "fingerprint": "13af7c913d5528e5",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "internal/agents/acp/acp.go",
+      "fingerprint": "5d7a674c745d9596",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "internal/agents/acp/acp.go",
+      "fingerprint": "a17f06272d7db54a",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "internal/agents/codex/codex.go",
+      "fingerprint": "5d7a674c745d9596",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "internal/agents/opencode/opencode.go",
+      "fingerprint": "5d7a674c745d9596",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "internal/fuzzy/fuzzy.go",
+      "fingerprint": "2946e5b0f49c70f0",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "internal/mcp/bridge.go",
+      "fingerprint": "79ff2e0cf8642bfe",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "internal/mcp/server.go",
+      "fingerprint": "e59c87f216bb135a",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/go-library-panic",
+      "engine": "ai-slop",
+      "file": "internal/mcp/tokens.go",
+      "fingerprint": "3538d3e3d96d3cd3",
+      "count": 1
+    },
+    {
+      "rule": "complexity/file-too-large",
+      "engine": "code-quality",
+      "file": "internal/render/render.go",
+      "fingerprint": "message:acc412ddac35058f",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "internal/render/render.go",
+      "fingerprint": "4409b5c5e29fd88d",
+      "count": 1
+    },
+    {
+      "rule": "complexity/file-too-large",
+      "engine": "code-quality",
+      "file": "internal/settings/settings.go",
+      "fingerprint": "message:acc412ddac35058f",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "internal/update/update.go",
+      "fingerprint": "99b90b7c0b38f460",
+      "count": 1
+    },
+    {
+      "rule": "complexity/file-too-large",
+      "engine": "code-quality",
+      "file": "lsp.go",
+      "fingerprint": "message:acc412ddac35058f",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "lsp.go",
+      "fingerprint": "2475901a98effd60",
+      "count": 1
+    },
+    {
+      "rule": "complexity/too-many-params",
+      "engine": "code-quality",
+      "file": "lsp.go",
+      "fingerprint": "5de7b8760d9d392f",
+      "count": 1
+    },
+    {
+      "rule": "complexity/file-too-large",
+      "engine": "code-quality",
+      "file": "main.go",
+      "fingerprint": "message:acc412ddac35058f",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "main.go",
+      "fingerprint": "b01204670e6c90ce",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "main.go",
+      "fingerprint": "e3bed7b24146388e",
+      "count": 1
+    },
+    {
+      "rule": "complexity/too-many-params",
+      "engine": "code-quality",
+      "file": "main.go",
+      "fingerprint": "b01204670e6c90ce",
+      "count": 1
+    },
+    {
+      "rule": "knip/skipped",
+      "engine": "code-quality",
+      "file": "package.json",
+      "fingerprint": "message:afa23e90d1b253b4",
+      "count": 1
+    },
+    {
+      "rule": "security/vulnerable-dependency",
+      "engine": "security",
+      "file": "package.json",
+      "fingerprint": "message:77a89a389f64ccdb",
+      "count": 1
+    },
+    {
+      "rule": "complexity/file-too-large",
+      "engine": "code-quality",
+      "file": "pr.go",
+      "fingerprint": "message:acc412ddac35058f",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "pr.go",
+      "fingerprint": "555b0c5cb4448d17",
+      "count": 1
+    },
+    {
+      "rule": "complexity/too-many-params",
+      "engine": "code-quality",
+      "file": "pr.go",
+      "fingerprint": "8b50ffdd85169ae4",
+      "count": 1
+    },
+    {
+      "rule": "complexity/file-too-large",
+      "engine": "code-quality",
+      "file": "review_workflow.go",
+      "fingerprint": "message:acc412ddac35058f",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "review_workflow.go",
+      "fingerprint": "1bfd8b0d8dc1143f",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "review_workflow.go",
+      "fingerprint": "c4b9b95fb4d3d821",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "review_workflow.go",
+      "fingerprint": "cd5fa10876d6ab56",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "search.go",
+      "fingerprint": "9730b7b9299d0fb9",
+      "count": 1
+    },
+    {
+      "rule": "complexity/file-too-large",
+      "engine": "code-quality",
+      "file": "server.go",
+      "fingerprint": "message:acc412ddac35058f",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "server.go",
+      "fingerprint": "351339bca6620d4c",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "server.go",
+      "fingerprint": "3f355513035be074",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "server.go",
+      "fingerprint": "5c5c07a6194ea288",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "server.go",
+      "fingerprint": "dcddd7b85d84815d",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/agents/AgentPicker.tsx",
+      "fingerprint": "11f4e64b1712fbf7",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/agents/AgentPicker.tsx",
+      "fingerprint": "7e55becffcdf1f76",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/agents/AgentSession.tsx",
+      "fingerprint": "281d7a7948099fdb",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/agents/AgentSession.tsx",
+      "fingerprint": "d2090c6365860806",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/agents/jobs.ts",
+      "fingerprint": "bd6db05b5bb7d53d",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/agents/store.ts",
+      "fingerprint": "1eec59e9d0189928",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/agents/store.ts",
+      "fingerprint": "0095c90dacf66666",
+      "count": 1
+    },
+    {
+      "rule": "unicorn/no-useless-spread",
+      "engine": "lint",
+      "file": "web/src/agents/store.ts",
+      "fingerprint": "c51ee24f41c1dc7e",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/app/boot.ts",
+      "fingerprint": "7ab6ddf6b57cf309",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/app/store.ts",
+      "fingerprint": "22ab7128fd5afbb1",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/editor/edit-actions.ts",
+      "fingerprint": "32df96ae8e23c7fa",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/editor/edit-actions.ts",
+      "fingerprint": "ca4e97524e7886da",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/editor/EditControls.tsx",
+      "fingerprint": "8011df4bd56840a7",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/click-events-have-key-events",
+      "engine": "lint",
+      "file": "web/src/editor/EditorRow.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/no-static-element-interactions",
+      "engine": "lint",
+      "file": "web/src/editor/EditorRow.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/editor/EditorShortcuts.tsx",
+      "fingerprint": "4f5c93b4fa63ecaf",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/editor/FileActions.tsx",
+      "fingerprint": "4d0abbe0893fd335",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/editor/FileActions.tsx",
+      "fingerprint": "a400e88b8dd22c90",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/editor/find-actions.ts",
+      "fingerprint": "20461f5116aff070",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/editor/find-actions.ts",
+      "fingerprint": "923ade8c056a15c3",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/editor/hover-actions.ts",
+      "fingerprint": "a5f6c13e670bc9fb",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/editor/HoverCard.tsx",
+      "fingerprint": "76ca64da3d8c9ba2",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/click-events-have-key-events",
+      "engine": "lint",
+      "file": "web/src/editor/Minimap.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/no-static-element-interactions",
+      "engine": "lint",
+      "file": "web/src/editor/Minimap.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/editor/selection-actions.ts",
+      "fingerprint": "6e074a5a96c85482",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/editor/selection-actions.ts",
+      "fingerprint": "29beed35a9ed6488",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/interactive-supports-focus",
+      "engine": "lint",
+      "file": "web/src/editor/SelectionBar.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/no-static-element-interactions",
+      "engine": "lint",
+      "file": "web/src/editor/SelectionBar.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/narrative-comment",
+      "engine": "ai-slop",
+      "file": "web/src/editor/source-dom.ts",
+      "fingerprint": "58ee22f26d5707e4",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/editor/store.ts",
+      "fingerprint": "c8e4c4a06c5558b1",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/editor/store.ts",
+      "fingerprint": "0d28a882e6c773a5",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/editor/Viewport.tsx",
+      "fingerprint": "a7510dc297eee43c",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/no-noninteractive-tabindex",
+      "engine": "lint",
+      "file": "web/src/editor/Viewport.tsx",
+      "fingerprint": "e53bf55df73d6cfc",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/no-static-element-interactions",
+      "engine": "lint",
+      "file": "web/src/editor/Viewport.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/editor/vim-actions.ts",
+      "fingerprint": "e8371703506b03eb",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/editor/vim-actions.ts",
+      "fingerprint": "327771f16d35d568",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/git/CommitFiles.tsx",
+      "fingerprint": "5ede61a62d336911",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/git/CommitRow.tsx",
+      "fingerprint": "5ede61a62d336911",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/git/documents.ts",
+      "fingerprint": "969ad33fb838188b",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/git/documents.ts",
+      "fingerprint": "1de538ef2c6d5144",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/git/GitNotice.tsx",
+      "fingerprint": "5eb5ce93f3546513",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/git/GitSyncMenu.tsx",
+      "fingerprint": "d3388f3ee8df7dd9",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/git/store.ts",
+      "fingerprint": "cdb81a1e5f91837e",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/git/store.ts",
+      "fingerprint": "56b14e28f29a9e5d",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/holding/Holding.tsx",
+      "fingerprint": "552e64958d446578",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/inspector/Calls.tsx",
+      "fingerprint": "8e856afda7045dd5",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/click-events-have-key-events",
+      "engine": "lint",
+      "file": "web/src/inspector/Symbols.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/inspector/Symbols.tsx",
+      "fingerprint": "5ede61a62d336911",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/click-events-have-key-events",
+      "engine": "lint",
+      "file": "web/src/lib/ContextMenu.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/interactive-supports-focus",
+      "engine": "lint",
+      "file": "web/src/lib/ContextMenu.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/no-static-element-interactions",
+      "engine": "lint",
+      "file": "web/src/lib/ContextMenu.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/click-events-have-key-events",
+      "engine": "lint",
+      "file": "web/src/lib/Dialog.tsx",
+      "fingerprint": "1917765aa77e9622",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/no-noninteractive-element-interactions",
+      "engine": "lint",
+      "file": "web/src/lib/Dialog.tsx",
+      "fingerprint": "1917765aa77e9622",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/click-events-have-key-events",
+      "engine": "lint",
+      "file": "web/src/lib/Popover.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/no-static-element-interactions",
+      "engine": "lint",
+      "file": "web/src/lib/Popover.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/empty-function",
+      "engine": "ai-slop",
+      "file": "web/src/lib/SplitHandle.tsx",
+      "fingerprint": "ba931ca0cddbc140",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/lib/SplitHandle.tsx",
+      "fingerprint": "56f8c37d4216c357",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/no-static-element-interactions",
+      "engine": "lint",
+      "file": "web/src/lib/Tooltip.tsx",
+      "fingerprint": "06f2bed01ae9f680",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/lsp/store.ts",
+      "fingerprint": "7f2d8bec9bf0d373",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/lsp/store.ts",
+      "fingerprint": "c2362040be261664",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/palette/features.ts",
+      "fingerprint": "c86211ee5bd77846",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/click-events-have-key-events",
+      "engine": "lint",
+      "file": "web/src/palette/PaletteItem.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/interactive-supports-focus",
+      "engine": "lint",
+      "file": "web/src/palette/PaletteItem.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/palette/store.ts",
+      "fingerprint": "9122dc69a161e420",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/palette/store.ts",
+      "fingerprint": "ad5716e6d23af209",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/click-events-have-key-events",
+      "engine": "lint",
+      "file": "web/src/pr/CommentsPanel.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/no-static-element-interactions",
+      "engine": "lint",
+      "file": "web/src/pr/CommentsPanel.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/pr/forge-store.ts",
+      "fingerprint": "255b04edbda29e1b",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/label-has-associated-control",
+      "engine": "lint",
+      "file": "web/src/pr/ForgeConnectDialog.tsx",
+      "fingerprint": "fcc6fa1813865abe",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/pr/merge-store.ts",
+      "fingerprint": "6d0f66b2b9789c34",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/pr/merge-store.ts",
+      "fingerprint": "ee83b1cf7a7a87f4",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/control-has-associated-label",
+      "engine": "lint",
+      "file": "web/src/pr/MergeControls.tsx",
+      "fingerprint": "596a703135d03aef",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/label-has-associated-control",
+      "engine": "lint",
+      "file": "web/src/pr/MergeDialog.tsx",
+      "fingerprint": "580bf8f3eb99317d",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/label-has-associated-control",
+      "engine": "lint",
+      "file": "web/src/pr/MergeDialog.tsx",
+      "fingerprint": "aad0987d76d09623",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/no-static-element-interactions",
+      "engine": "lint",
+      "file": "web/src/pr/MergeDialog.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/pr/MergeDialog.tsx",
+      "fingerprint": "856aaea8fa3c2694",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/role-supports-aria-props",
+      "engine": "lint",
+      "file": "web/src/pr/MergeDialog.tsx",
+      "fingerprint": "f98483597c85f5ed",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/pr/MergePill.tsx",
+      "fingerprint": "5eb5ce93f3546513",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/control-has-associated-label",
+      "engine": "lint",
+      "file": "web/src/pr/ReviewPanel.tsx",
+      "fingerprint": "596a703135d03aef",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/pr/ReviewPanel.tsx",
+      "fingerprint": "8a2ce7fe23265362",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/pr/store.ts",
+      "fingerprint": "6e333437f66ffde4",
+      "count": 1
+    },
+    {
+      "rule": "complexity/file-too-large",
+      "engine": "code-quality",
+      "file": "web/src/pr/store.ts",
+      "fingerprint": "message:96b0128c3491727f",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/pr/store.ts",
+      "fingerprint": "bf4ce9e2542c3d3b",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/pr/test-editor.ts",
+      "fingerprint": "95dde424c49edd95",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/review/ReviewTabs.tsx",
+      "fingerprint": "c255179a8345fcea",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/control-has-associated-label",
+      "engine": "lint",
+      "file": "web/src/review/ReviewToggle.tsx",
+      "fingerprint": "596a703135d03aef",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/control-has-associated-label",
+      "engine": "lint",
+      "file": "web/src/review/StageCard.tsx",
+      "fingerprint": "50ceb52c1592b636",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/no-noninteractive-element-to-interactive-role",
+      "engine": "lint",
+      "file": "web/src/review/StageCard.tsx",
+      "fingerprint": "50ceb52c1592b636",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/no-redundant-roles",
+      "engine": "lint",
+      "file": "web/src/review/StageCard.tsx",
+      "fingerprint": "50ceb52c1592b636",
+      "count": 1
+    },
+    {
+      "rule": "code-quality/duplicate-block",
+      "engine": "code-quality",
+      "file": "web/src/review/StageEditor.tsx",
+      "fingerprint": "596a703135d03aef",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/no-noninteractive-element-interactions",
+      "engine": "lint",
+      "file": "web/src/review/StageEditor.tsx",
+      "fingerprint": "c23058ed09bd4050",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/review/store.ts",
+      "fingerprint": "0331e118f08bbee7",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/review/store.ts",
+      "fingerprint": "a25d4b4de1626f38",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/search/ResultGroup.tsx",
+      "fingerprint": "5ede61a62d336911",
+      "count": 2
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/search/store.ts",
+      "fingerprint": "ac2c8b84922c455b",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/settings/SettingControl.tsx",
+      "fingerprint": "bdc8d591c7ee1fe6",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/no-static-element-interactions",
+      "engine": "lint",
+      "file": "web/src/settings/SettingsDialog.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/settings/SettingsFooter.tsx",
+      "fingerprint": "5eb5ce93f3546513",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/settings/SettingsJson.tsx",
+      "fingerprint": "a2f311c0b2faa223",
+      "count": 1
+    },
+    {
+      "rule": "code-quality/duplicate-block",
+      "engine": "code-quality",
+      "file": "web/src/settings/SettingsToolbar.tsx",
+      "fingerprint": "596a703135d03aef",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/settings/SettingsToolbar.tsx",
+      "fingerprint": "dc119c9d357cb4d1",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/settings/store.ts",
+      "fingerprint": "d684ae8ded3a9e2c",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/settings/store.ts",
+      "fingerprint": "dfae709408564228",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/status/StatusBar.tsx",
+      "fingerprint": "5eb5ce93f3546513",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/threads/store.ts",
+      "fingerprint": "ac20f944a32164d4",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/threads/store.ts",
+      "fingerprint": "97caf6400765efe4",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/threads/ThreadDetail.tsx",
+      "fingerprint": "504eb6f467d05959",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/threads/ThreadDetail.tsx",
+      "fingerprint": "8011df4bd56840a7",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/threads/ThreadDetail.tsx",
+      "fingerprint": "ab169fe2dce5d58a",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/threads/ThreadList.tsx",
+      "fingerprint": "f7635b382c37d9b1",
+      "count": 1
+    },
+    {
+      "rule": "import/no-duplicates",
+      "engine": "lint",
+      "file": "web/src/threads/ThreadTranscript.tsx",
+      "fingerprint": "8925c87d1e2eca81",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/threads/ThreadTurn.tsx",
+      "fingerprint": "2e28fcf3f6c24187",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/viewers/actions.ts",
+      "fingerprint": "d69eb1f52d995655",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/viewers/actions.ts",
+      "fingerprint": "24c041bdffc33e98",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/click-events-have-key-events",
+      "engine": "lint",
+      "file": "web/src/viewers/DiffRow.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 3
+    },
+    {
+      "rule": "jsx-a11y/no-static-element-interactions",
+      "engine": "lint",
+      "file": "web/src/viewers/DiffRow.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 3
+    },
+    {
+      "rule": "jsx-a11y/click-events-have-key-events",
+      "engine": "lint",
+      "file": "web/src/viewers/DiffSection.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/no-static-element-interactions",
+      "engine": "lint",
+      "file": "web/src/viewers/DiffSection.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/viewers/DiffStrip.tsx",
+      "fingerprint": "d8ee0c118033e9cd",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/click-events-have-key-events",
+      "engine": "lint",
+      "file": "web/src/viewers/DiffViewer.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/no-static-element-interactions",
+      "engine": "lint",
+      "file": "web/src/viewers/DiffViewer.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/viewers/DiffViewer.tsx",
+      "fingerprint": "2a746c08c7f91d85",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/viewers/ExplainOrb.tsx",
+      "fingerprint": "318b5d906e52f432",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/viewers/ImageViewer.tsx",
+      "fingerprint": "b65291c362cdcb88",
+      "count": 1
+    },
+    {
+      "rule": "complexity/file-too-large",
+      "engine": "code-quality",
+      "file": "web/src/viewers/markdown-dom.ts",
+      "fingerprint": "message:96b0128c3491727f",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/viewers/markdown-dom.ts",
+      "fingerprint": "2a8fc87e74b7c1f1",
+      "count": 1
+    },
+    {
+      "rule": "unicorn/no-useless-spread",
+      "engine": "lint",
+      "file": "web/src/viewers/markdown-dom.ts",
+      "fingerprint": "eadf233d7f299f94",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/viewers/MermaidControls.tsx",
+      "fingerprint": "16ae34a665ac7211",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/no-noninteractive-element-interactions",
+      "engine": "lint",
+      "file": "web/src/viewers/MermaidDiagram.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/viewers/MermaidDiagram.tsx",
+      "fingerprint": "24252993d1909a0a",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/viewers/MermaidDiagram.tsx",
+      "fingerprint": "44d3c5d602ac7c89",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/viewers/preview-dom.ts",
+      "fingerprint": "3fb01a8ba6e5a34f",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/viewers/preview-dom.ts",
+      "fingerprint": "e34f8e045d6f53c0",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/click-events-have-key-events",
+      "engine": "lint",
+      "file": "web/src/viewers/PreviewContent.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/no-static-element-interactions",
+      "engine": "lint",
+      "file": "web/src/viewers/PreviewContent.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/viewers/PreviewViewer.tsx",
+      "fingerprint": "d699dbfe3454649e",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/viewers/TableViewer.tsx",
+      "fingerprint": "5ede61a62d336911",
+      "count": 2
+    },
+    {
+      "rule": "jsx-a11y/click-events-have-key-events",
+      "engine": "lint",
+      "file": "web/src/workbench/DirectoryList.tsx",
+      "fingerprint": "08ee5f90dbbd9f49",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/no-noninteractive-element-to-interactive-role",
+      "engine": "lint",
+      "file": "web/src/workbench/DirectoryList.tsx",
+      "fingerprint": "11f4e64b1712fbf7",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/no-noninteractive-element-to-interactive-role",
+      "engine": "lint",
+      "file": "web/src/workbench/DirectoryList.tsx",
+      "fingerprint": "9648cda4adc234ce",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/workbench/DirectoryList.tsx",
+      "fingerprint": "11f4e64b1712fbf7",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/workbench/DirectoryList.tsx",
+      "fingerprint": "9648cda4adc234ce",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/no-noninteractive-element-to-interactive-role",
+      "engine": "lint",
+      "file": "web/src/workbench/PathSuggestions.tsx",
+      "fingerprint": "11f4e64b1712fbf7",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/no-noninteractive-element-to-interactive-role",
+      "engine": "lint",
+      "file": "web/src/workbench/PathSuggestions.tsx",
+      "fingerprint": "9648cda4adc234ce",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/workbench/PathSuggestions.tsx",
+      "fingerprint": "11f4e64b1712fbf7",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/workbench/PathSuggestions.tsx",
+      "fingerprint": "9648cda4adc234ce",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/no-noninteractive-element-to-interactive-role",
+      "engine": "lint",
+      "file": "web/src/workbench/WorkbenchTabs.tsx",
+      "fingerprint": "a8ee3127aa200569",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/empty-function",
+      "engine": "ai-slop",
+      "file": "web/src/workspace/stream.ts",
+      "fingerprint": "9a0d91b5b9df411c",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/workspace/stream.ts",
+      "fingerprint": "8e672256ea79f186",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/workspace/tree-store.ts",
+      "fingerprint": "23581b82a6ca95d4",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/workspace/tree-store.ts",
+      "fingerprint": "d9a843ac798b5a46",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/click-events-have-key-events",
+      "engine": "lint",
+      "file": "web/src/workspace/TreeRow.tsx",
+      "fingerprint": "54fce323234ef271",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/click-events-have-key-events",
+      "engine": "lint",
+      "file": "web/src/workspace/TreeRow.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/interactive-supports-focus",
+      "engine": "lint",
+      "file": "web/src/workspace/TreeRow.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/no-noninteractive-element-interactions",
+      "engine": "lint",
+      "file": "web/src/workspace/TreeRow.tsx",
+      "fingerprint": "54fce323234ef271",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/workspace/TreeScope.tsx",
+      "fingerprint": "9d77453b560c279f",
+      "count": 1
+    },
+    {
+      "rule": "code-quality/duplicate-block",
+      "engine": "code-quality",
+      "file": "web/src/workspace/TreeToolbar.tsx",
+      "fingerprint": "596a703135d03aef",
+      "count": 1
+    },
+    {
+      "rule": "code-quality/duplicate-block",
+      "engine": "code-quality",
+      "file": "web/src/workspace/TreeToolbar.tsx",
+      "fingerprint": "f855bb452ba7aa69",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/workspace/TreeToolbar.tsx",
+      "fingerprint": "93a3ccd325f1fe68",
+      "count": 1
+    },
+    {
+      "rule": "complexity/file-too-large",
+      "engine": "code-quality",
+      "file": "workbench.go",
+      "fingerprint": "message:acc412ddac35058f",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "workbench.go",
+      "fingerprint": "1cd3254ba4fcc6b1",
+      "count": 1
+    }
+  ]
+}

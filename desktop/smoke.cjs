@@ -60,7 +60,7 @@ void (async () => {
   assert.equal(preferences.sandbox, true);
   assert.equal(preferences.contextIsolation, true);
   assert.equal(preferences.nodeIntegration, false);
-  assert.equal(await initial.webContents.executeJavaScript('!!document.querySelector("#wb-target")'), true);
+  await waitFor(() => initial.webContents.executeJavaScript('!!document.querySelector("#wb-open input[role=combobox]")'));
 
   const workspaceWindow = nextWindow();
   const fileMenu = Menu.getApplicationMenu().items.find(item => item.label === 'File');
@@ -74,7 +74,7 @@ void (async () => {
   assert.equal(external[0], 'https://example.com/faah-smoke');
   assert.equal(new URL(window.webContents.getURL()).origin, origin);
 
-  // Holding pages have no app script, so their text must be themed by the server.
+  // Holding pages keep the selected theme and system fonts after rendering.
   const holding = new BrowserWindow({ show: false, webPreferences: {
     sandbox: true, contextIsolation: true, nodeIntegration: false,
     preload: path.join(__dirname, 'preload.cjs'),
@@ -88,13 +88,14 @@ void (async () => {
       assert.equal(response.status, 200);
       await response.text();
       await holding.loadURL(origin + '/w/smoke-missing/');
+      await waitFor(() => holding.webContents.executeJavaScript('!!document.querySelector("main [role=alert]")'));
       const colors = await holding.webContents.executeJavaScript(`(() => {
         const root = getComputedStyle(document.documentElement);
         const probe = document.createElement('span');
         document.body.append(probe);
         const text = [
-          ['.wb-holding-msg', '--fg'], ['.wb-faint', '--faint'],
-          ['.wb-error', '--err'], ['.wb-btn', '--fg'],
+          ['main h1', '--foreground'], ['main p.text-muted-foreground', '--muted-foreground'],
+          ['main [role=alert]', '--destructive'], ['main footer a[data-variant=ghost]', '--foreground'],
         ].filter(([selector]) => document.querySelector(selector)).map(([selector, token]) => {
           probe.style.color = 'var(' + token + ')';
           return {
@@ -108,7 +109,7 @@ void (async () => {
           font: getComputedStyle(document.body).fontFamily, text };
       })()`);
       assert.equal(colors.theme, ['faah', 'missing-theme'].includes(theme) ? 'catppuccin-mocha' : theme);
-      assert.match(colors.font, /Inter/);
+      assert.equal(colors.font, 'system-ui, sans-serif');
       assert.ok(colors.text.length >= 3);
       for (const text of colors.text) {
         assert.ok(text.token, `${theme}: ${text.selector} has no theme color`);
@@ -126,24 +127,26 @@ void (async () => {
           progress: 'Checking out repository',
         }] }) };
       };
-      window.smokeSpinner = document.createElement('span');
-      window.smokeSpinner.className = 'wb-spin';
-      document.querySelector('.wb-holding-msg').prepend(window.smokeSpinner);
-      const progress = document.createElement('p');
-      progress.id = 'wb-holding-progress';
-      document.querySelector('.wb-holding').append(progress);
-      window.smokeAnimation = window.smokeSpinner.getAnimations()[0];
+      const mount = document.getElementById('root');
+      mount.dataset.page = JSON.stringify({ ...JSON.parse(mount.dataset.page),
+        Starting: true, Error: '', Progress: '' });
+      mount.replaceChildren();
       const script = document.createElement('script');
       script.src = 'static/holding.js';
       document.head.append(script);
     `);
+    await waitFor(() => holding.webContents.executeJavaScript('!!document.querySelector("[role=status] .animate-spin")'));
+    await holding.webContents.executeJavaScript(`
+      window.smokeSpinner = document.querySelector('[role=status] .animate-spin');
+      window.smokeAnimation = window.smokeSpinner.getAnimations()[0];
+    `);
     await waitFor(() => holding.webContents.executeJavaScript('window.smokePolls >= 3'));
     const animation = await holding.webContents.executeJavaScript(`({
-      same: document.querySelector('.wb-spin') === window.smokeSpinner &&
+      same: document.querySelector('[role=status] .animate-spin') === window.smokeSpinner &&
         window.smokeSpinner.getAnimations()[0] === window.smokeAnimation,
       elapsed: window.smokeAnimation?.currentTime,
       reduced: matchMedia('(prefers-reduced-motion: reduce)').matches,
-      progress: document.querySelector('#wb-holding-progress').textContent,
+      progress: document.querySelector('[role=status]').textContent,
     })`);
     assert.equal(animation.same, true, 'polls must preserve the document and spinner animation');
     if (!animation.reduced) assert.ok(animation.elapsed >= 1000, 'spinner must run across polls');

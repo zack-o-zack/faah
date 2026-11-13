@@ -51,7 +51,10 @@ func ValidateRefs(root, reply string) map[string]Ref {
 		}
 		var lines []string
 		if abs, ok := Resolve(root, rel); ok {
-			lines, _ = ReadLines(abs)
+			loaded, err := ReadLines(abs)
+			if err == nil {
+				lines = loaded
+			}
 		}
 		files[rel] = lines
 		return lines

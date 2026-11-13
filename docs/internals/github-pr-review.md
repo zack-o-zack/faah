@@ -4,7 +4,7 @@ This document describes the design and implementation of faah's pull request rev
 - the `GitProvider` abstraction layer and its implementations for GitHub, GitLab, Gitea / Forgejo, and Bitbucket Cloud ([`forge.go`](../../forge.go));
 - connecting a forge token from the UI ([`forge.go`](../../forge.go), [`server.go`](../../server.go));
 - the checkout lifecycle, push/pull, merging and progress reporting ([`pr.go`](../../pr.go)), and merge-base diffing ([`git.go`](../../git.go));
-- the frontend: the review bar and comments ([`web/src/pr.js`](../../web/src/pr.js), [`web/src/linecomment.js`](../../web/src/linecomment.js)), merging ([`web/src/prmerge.js`](../../web/src/prmerge.js)), and the Connect dialog ([`web/src/forgeconnect.js`](../../web/src/forgeconnect.js)).
+- the frontend, in [`web/src/pr/`](../../web/src/pr/): the review bar, comments and drafts (`store.js`, `PRBar`, `CommentsPanel`, `RowComments`, `PRComposer`), merging (`merge-store.js`, `MergePill`, `MergeControls`, `MergeDialog`), and the Connect dialog (`forge-store.js`, `ForgeConnectDialog`).
 
 For the user-facing behaviour, see [Pull Request Review](../features/github-pr-review.md) and [Getting Started](../features/pr-review-getting-started.md).
 
@@ -145,7 +145,7 @@ Host scoping matters because a PR URL can name any host. Without it, a crafted l
 
 ### Connecting from the UI (`forge.go`, `server.go`)
 
-`/api/meta` carries `forge`, built by `forgeMeta()`: the provider's `Info`, the host, `hasToken` and `source`, and `TokenSetup(host)`. That is the token page URL, the steps to follow there, the environment variable and CLI alternatives, the `HostKey` setting for multi-host forges, and an optional `Extra` field (Bitbucket's email). In a PR session the forge is the PR's. In a plain workspace it is whichever forge `ForgeForRemote` recognizes from the branch's remote. `web/src/forgeconnect.js` renders it with no forge-specific code of its own.
+`/api/meta` carries `forge`, built by `forgeMeta()`: the provider's `Info`, the host, `hasToken` and `source`, and `TokenSetup(host)`. That is the token page URL, the steps to follow there, the environment variable and CLI alternatives, the `HostKey` setting for multi-host forges, and an optional `Extra` field (Bitbucket's email). In a PR session the forge is the PR's. In a plain workspace it is whichever forge `ForgeForRemote` recognizes from the branch's remote. `ForgeConnectDialog` (`web/src/pr/`) renders it with no forge-specific code of its own.
 
 `POST /api/forge/connect {token, extra}` (`handleForgeConnect`):
 1. Writes the token setting (plus `Extra.Key`, and `HostKey` = the target host) with `updateSettingsMap`. The exception: a token is already saved for this forge, `HostKey` is set, and `ResolveToken` doesn't return that saved token for this host, meaning it belongs to another instance. Then nothing is written and the token is used for the session only (`saved: false`).
@@ -265,18 +265,19 @@ The git panel's agent rebase/merge flow ([git-integration internals](git-integra
 
 ## 8. Frontend Integration
 
-- **Hover Line Thread Icon (`web/src/linecomment.js`)**:
-  - Displays a thread icon (a CSS-masked speech bubble on `.line-btn`) when hovering over line numbers in source or diff views.
-  - Clicking calls `openLineMenu()` in `selbar.js`, the selection menu aimed at one line. Rows that are part of the PR's diff pass a `fromDiff` description with the diff side, which is what enables **Add Review Comment** there; other rows get only the local actions.
-- **PR Header Bar (`web/src/pr.js`)**:
-  - Renders PR number, title, author, branch refs, and draft count badge.
-  - Toggles `#pr-merged-badge` (purple pill) when `meta.merged` is true.
-  - Houses **⚡ Batch Apply** and **Submit Review** controls. `renderBar` gates the verdict buttons through `prmerge.js`'s `reviewGate()`.
-- **Merge UI (`web/src/prmerge.js`)**:
-  - Owns the status pill (`#pr-merge-state`), the split merge button with its method menu (`#pr-merge-group`; the last method is remembered in `localStorage` under `faah.prMergeMethod`), and the merge dialog (`#pr-merge-modal`). It talks only to `/api/pr/merge-*` and has no forge-specific logic.
-  - Talks to `gitpanel.js` over the bus to avoid an import cycle. It emits `pr:resolve` (fetch the base, then offer rebase or merge), `pr:force-push` (the confirmation card), and `pr:pull`. It listens to `git:sync` (`{running, inProgress, rewritten}`), which drives the pill, the main button, and `reviewGate()`.
+[`pr/store.ts`](../../web/src/pr/store.js) owns the PR session in the browser: metadata, existing and draft comments, composers, review submission, batch apply and their pending and error state. [`pr/merge-store.ts`](../../web/src/pr/merge-store.js) and [`pr/forge-store.ts`](../../web/src/pr/forge-store.js) own merging and the token connection. Pure rules (thread grouping, review gating, merge pill and warnings) live in [`pr/logic.ts`](../../web/src/pr/logic.js) with unit tests.
+
+- **Line actions and comment markers**:
+  - Hovering a line number in the source or diff view shows a thread button (`data-control="line-btn"`). Clicking it calls `openLineActions`, the selection menu aimed at one line. Rows that are part of the PR's diff carry their diff side, which enables **Add Review Comment**; other rows get only the local actions.
+  - `RowComments.tsx` renders a marker on diff rows with threads and the inline composers (`PRComposer`) under their rows.
+- **PR bar (`PRBar.tsx`)**:
+  - Shows the PR number, title, author, branch refs, state badge and draft count.
+  - Houses **Batch Apply** and the review panel (`ReviewPanel.tsx`, Comment / Approve / Request changes). The verdict buttons are gated by `reviewGate()` from `pr/logic.ts`.
+- **Merge UI**:
+  - `MergePill` shows the merge state; `MergeControls` is the split merge button with its method menu (the last method is remembered in `localStorage` under `faah.prMergeMethod`); `MergeDialog` is the merge dialog. They talk only to `/api/pr/merge-*` and have no forge-specific logic.
+  - The merge store reads the Git store's sync state (`pending`, `inProgress`, `rewritten`) directly, which drives the pill, the main button and `reviewGate()`, and calls named actions to fetch the base and offer a rebase or merge, to confirm a force push, or to pull.
 - **Child PR Launching**:
-  - Command Palette **Git: Open Pull Request…** posts to `/api/pr/launch`, or, in a workbench child (`S.meta.workbench` set), to the workbench's `/api/wb/open` (see [workbench.md](workbench.md)).
+  - Command Palette **Git: Open Pull Request…** posts to `/api/pr/launch`, or, in a workbench child (the workspace metadata has `workbench`), to the workbench's `/api/wb/open` (see [workbench.md](workbench.md)).
   - Spawns `faah -y <url>` in a new detached process on an ephemeral port.
-- **Git Panel Resync (`web/src/pr.js`'s `refreshPRMeta`)**:
-  - Called by `gitpanel.js` after a successful Pull. Re-fetches `/api/pr/meta`, re-renders the PR bar, and re-fetches existing/draft comments, so a PR that moved forward under the reviewer never leaves the bar, diff warning, or comment threads showing the state from session start.
+- **Resync after Git changes (`refreshPRMeta` in `pr/store.ts`)**:
+  - Called after a successful Pull, after merging, after connecting a token, and when the history is rewritten. Re-fetches `/api/pr/meta`, then existing and draft comments and the merge status, so a PR that moved forward under the reviewer never leaves the bar, diff warning or comment threads showing the state from session start.

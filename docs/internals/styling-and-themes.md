@@ -1,5 +1,8 @@
 # Styling and themes
 
+Frontend architecture and build commands: [Frontend implementation](frontend.md).
+
+
 faah uses Tailwind CSS 4.3.5 and Basecoat 1.1.0 (Vega). Basecoat supplies the
 components; vanilla JavaScript owns their behaviour. Basecoat JavaScript is not
 loaded. There are no separate browser, workbench or desktop component sheets.
@@ -7,7 +10,7 @@ loaded. There are no separate browser, workbench or desktop component sheets.
 ## Build and entry point
 
 `web/tailwind.css` is the only stylesheet source outside the theme directory.
-`node scripts/build-web.js` compiles it to the gitignored `web/app.css`, then
+`node scripts/build-web.js` compiles it to the gitignored `web/dist/app.css`, then
 bundles the editor, workbench and holding-page JavaScript. The Go server embeds
 the generated assets, not the Tailwind source or npm dependencies. Pages load
 `static/app.css` followed by `static/themes.css`.
@@ -21,7 +24,7 @@ The entry has these sections, in order:
    `[data-shell]`; `win-linux:` matches the desktop platform attributes.
 4. **Theme mapping:** `@theme inline` exposes faah colours, fonts and type sizes
    as utilities, such as `text-primary-text`, `bg-gi-bg` and `text-11`.
-5. **Fonts and base layer:** bundled Inter font faces, browser and desktop type
+5. **Fonts and base layer:** system font defaults, browser and desktop type
    scales, titlebar geometry, page defaults, scrollbars and `[hidden]` enforcement.
 6. **Components layer:** code-selection state, syntax spans, Markdown prose,
    Mermaid output, CSV tables, edit-mode measurement, diff rows, diagnostics,
@@ -63,10 +66,11 @@ The server joins these files into `static/themes.css`. The theme picker discover
 them from the loaded CSS rules, reading `--theme-name` and `color-scheme`; there
 is no second registry to maintain. Theme files hold tokens, not component rules.
 
-`web/src/theme.js` sets `data-theme` and synchronizes the `.dark` class with the
-theme's declared `color-scheme`. Call `setTheme(id, false)` for a temporary
-preview; the default call also saves the preference. It emits `theme:changed`
-when the theme changes, allowing Mermaid and other rendered previews to update.
+`createThemeStore` in `web/src/lib/theme.js` sets `data-theme` and synchronizes
+the `.dark` class with the theme's declared `color-scheme`. Call
+`setTheme(id, false)` for a temporary preview; the default call also saves the
+preference. Mermaid and other rendered previews read the store's current theme,
+so they update when it changes.
 
 To add a theme, copy a theme file, choose a unique ID and display name, set
 `color-scheme`, and supply all the colour tokens. Rebuild the embedded app, or
@@ -142,9 +146,10 @@ Titlebar height and native window-control insets use `--titlebar-h`,
 `--titlebar-left` and `--titlebar-right`. The workbench has a draggable empty strip;
 interactive controls and overlays opt out of dragging.
 
-`:root[data-shell]` changes `--ui` to bundled Inter and maps the `--t-*` scale to
-11, 12, 13, 14, 16 and 20 px. `@font-face` URLs are relative to `static/app.css`,
-so keep them as `fonts/...`. Browser defaults remain in `:root`.
+`:root` uses `system-ui, sans-serif` for `--ui` and `ui-monospace, monospace`
+for `--mono`. The app ships no font files; `editor.fontFamily` can override the
+monospace stack with an installed font. `:root[data-shell]` keeps these font
+defaults and maps the `--t-*` scale to 11, 12, 13, 14, 16 and 20 px.
 
 | Tokens | Browser sizes | Desktop sizes |
 | --- | --- | --- |
@@ -186,9 +191,9 @@ shorter, not to hide a second component system.
   between full strings; never construct utilities such as `'text-' + size`.
 - Use theme tokens only. Do not add colour literals outside `web/themes/`.
 - Preserve behaviour and accessibility hooks; do not load Basecoat JavaScript.
-- Keep generated `web/app.css` out of commits. Add no stylesheet imports for a
+- Keep generated `web/dist/app.css` out of commits. Add no stylesheet imports for a
   single feature and no npm dependency for prose styling.
-- Run `node scripts/build-web.js && node scripts/check-web.js`, `bun test web/src/`,
-  `go test ./...` and `npm test --prefix desktop`. Inspect both a dark and a light
-  theme, including desktop shell layout, when changing styling.
+- Run `npm run check`, `go test ./...` and `npm test --prefix desktop`. Inspect
+  both a dark and a light theme, including desktop shell layout, when changing
+  styling.
 

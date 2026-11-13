@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": [
+      "es2023"
+    ],
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "vite.config.ts",
+    "web/src/contrast.test.ts",
+    "web/src/typescale.test.ts"
+  ],
+  "exclude": []
+}

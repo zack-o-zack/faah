@@ -14,6 +14,7 @@ process.on('unhandledRejection', reason => {
   if (!closed && !shell) process.exit(1);
 });
 
+// aislop-ignore-next-line ai-slop/hallucinated-import -- install.go installs the pinned SDK beside this embedded helper at runtime.
 const { Agent } = await import('@cursor/sdk');
 const emit = value => process.stdout.write(JSON.stringify(value) + '\n');
 const message = error => error?.message ?? String(error);

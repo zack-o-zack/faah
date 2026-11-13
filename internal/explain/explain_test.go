@@ -448,3 +448,14 @@ func TestExplainInstructionsLeaveLengthToTheReader(t *testing.T) {
 		t.Fatalf("instructions = %s", got)
 	}
 }
+
+func TestValidateRefsRejectsUnreadableSource(t *testing.T) {
+	root := t.TempDir()
+	if err := os.Mkdir(filepath.Join(root, "directory.go"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	got := ValidateRefs(root, "`directory.go` and `directory.go:1`")
+	if len(got) != 0 {
+		t.Fatalf("unreadable source should not link: %+v", got)
+	}
+}

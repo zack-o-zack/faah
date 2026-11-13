@@ -21,13 +21,11 @@ Thumbs.db
 build/
 node_modules/
 desktop/bin/
-web/app.js
-web/app.css
-web/workbench.js
-web/holding.js
 web/vendor/*.min.js
 web/vendor/*.min.js.gz
 
 # Logs
 *.log
 faah
+
+/web/dist/
