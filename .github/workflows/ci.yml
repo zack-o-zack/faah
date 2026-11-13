@@ -3,7 +3,11 @@ name: CI
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build-and-test:
@@ -13,6 +17,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -25,9 +31,28 @@ jobs:
         with:
           node-version: '24'
 
+      # aislop prefers the tracked pnpm lockfile for dependency audits.
+      - name: Setup pnpm for aislop audits
+        uses: pnpm/action-setup@v4
+        with:
+          version: '10.28.1'
+
       # web/dist/app.js is not committed — regenerate it so go:embed has a fresh
       # bundle, and prove the source modules bundle cleanly.
       - run: npm ci
+
+      - name: Install package-local aislop engines
+        run: npx --no-install aislop-tools
+
+      - name: Gate new findings in pull requests
+        if: github.event_name == 'pull_request'
+        run: npx aislop ci --changes --base origin/main
+
+      - name: Gate new findings on main and manual runs
+        if: github.event_name != 'pull_request'
+        run: npx aislop ci
+
+      # SARIF upload requires security-events: write; keep this workflow read-only.
 
       - name: Check and bundle web assets
         run: npm run check

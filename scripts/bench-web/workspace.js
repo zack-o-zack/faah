@@ -69,7 +69,11 @@ export async function realWorkspace(requested, repoRoot) {
           'https://github.com/facebook/react.git', root], { stdio: 'inherit', env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } });
         const timer = setTimeout(() => { child.kill('SIGKILL'); reject(new Error('Corpus clone timed out after 180s')); }, 180_000);
         child.on('error', reject);
-        child.on('exit', code => { clearTimeout(timer); code === 0 ? resolve() : reject(new Error(`Corpus clone exited ${code}`)); });
+        child.on('exit', code => {
+          clearTimeout(timer);
+          if (code === 0) resolve();
+          else reject(new Error(`Corpus clone exited ${code}`));
+        });
       });
     }
   }

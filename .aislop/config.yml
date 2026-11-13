@@ -1,0 +1,63 @@
+version: 1
+exclude:
+  - web/dist
+  - web/vendor
+  - node_modules
+  - bench-out
+  - bench-repos
+  - desktop/node_modules
+  - dist
+  - '**/fixture/**'
+  - '**/fixtures/**'
+  - '**/__fixtures__/**'
+  - '**/testdata/**'
+overrides:
+  - files: ['web/src/**']
+    rules:
+      # Solid components run once; mutating local state in event handlers is valid.
+      react/immutability: 'off'
+      # Solid DOM refs are assigned directly and read outside React's render lifecycle.
+      react/refs: 'off'
+      # Solid setup code and reactive computations do not use React's render-purity model.
+      react/purity: 'off'
+      # Solid resource helpers such as useFolder are not React hooks.
+      react-hooks/rules-of-hooks: 'off'
+engines:
+  format: true
+  lint: true
+  code-quality: true
+  ai-slop: true
+  architecture: false
+  security: true
+quality:
+  maxFunctionLoc: 80
+  maxFileLoc: 400
+  maxNesting: 5
+  maxParams: 6
+  knip: auto
+lint:
+  # In 0.20.1, golangci-lint v2 is detected but its invocation uses the removed --out-format flag.
+  typecheck: false
+  expoDoctor: false
+security:
+  audit: true
+  auditTimeout: 25000
+scoring:
+  weights:
+    format: 0.3
+    lint: 0.6
+    code-quality: 0.8
+    ai-slop: 1
+    architecture: 1
+    security: 1.5
+  thresholds:
+    good: 75
+    ok: 50
+  smoothing: 5
+  maxPerRule: 40
+ci:
+  failBelow: 70
+  format: json
+  baseline: .aislop/ci-baseline.json
+telemetry:
+  enabled: false

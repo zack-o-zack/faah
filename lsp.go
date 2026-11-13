@@ -56,7 +56,7 @@ type lspDocumentSymbol struct {
 	Range          lspRange            `json:"range"`
 	SelectionRange lspRange            `json:"selectionRange"`
 	Children       []lspDocumentSymbol `json:"children"`
-	// symbolInformation form, used by servers without hierarchical support
+	// Location carries flat SymbolInformation responses from non-hierarchical servers.
 	Location *lspLocation `json:"location"`
 }
 

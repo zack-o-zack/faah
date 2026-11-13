@@ -27,7 +27,8 @@ func fixtures(t *testing.T) []string {
 		}
 		if de.IsDir() {
 			name := de.Name()
-			if name == ".git" || name == "bench-repos" || name == "node_modules" || name == "dist" {
+			// Scanner reports and benchmark output are generated metadata, not source fixtures.
+			if name == ".git" || name == ".aislop" || name == "bench-out" || name == "bench-repos" || name == "node_modules" || name == "dist" {
 				return filepath.SkipDir
 			}
 			return nil
@@ -513,4 +514,3 @@ func BenchmarkColdHighlight_Go(b *testing.B) {
 		_, _ = d.Lines(0, 300)
 	}
 }
-

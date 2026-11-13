@@ -1448,6 +1448,7 @@ func gitCommitsWebURL(root, branch string) string {
 	}
 	return fmt.Sprintf("https://%s/%s/%s", host, path, seg)
 }
+
 // GitStatusPayload contains the complete serialized git status event sent to the browser
 // over Server-Sent Events (SSE). It includes working tree status, staged files, dirty directories,
 // current branch, commit ahead/behind counts, and recent commits.

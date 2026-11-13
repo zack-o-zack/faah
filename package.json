@@ -5,6 +5,8 @@
   "private": true,
   "description": "High-performance code reader and review engine",
   "scripts": {
+    "aislop": "aislop scan",
+    "aislop:ci": "aislop ci",
     "build": "node ./scripts/build-web.js",
     "build-web": "node ./scripts/build-web.js",
     "check": "node ./scripts/check-web.js",
@@ -28,6 +30,7 @@
     "@tailwindcss/cli": "4.3.5",
     "@testing-library/user-event": "14.6.10",
     "@types/node": "24.19.2",
+    "aislop": "0.20.1",
     "basecoat-css": "1.1.0",
     "eslint": "10.14.0",
     "eslint-config-prettier": "10.1.8",
