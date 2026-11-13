@@ -5,37 +5,71 @@ import { CommitRow } from './CommitRow.jsx';
 export function Unpushed() {
   const editor = useEditor();
   const git = editor.git;
+  let panel;
   return (
     <Show when={editor.tree.mode() === 'git' && git.state.unpushed.length}>
       <section
         id="unpushed"
-        class="relative flex shrink-0 flex-col border-t"
-        style={{ height: git.state.unpushedCollapsed ? 'auto' : `${git.state.unpushedHeight}px` }}
+        ref={panel}
+        class="unpushed relative flex min-h-8 max-h-[45vh] flex-col border-t bg-sidebar [&.collapsed]:flex-none [&.collapsed_.unpushed-body]:hidden"
+        classList={{ collapsed: git.state.unpushedCollapsed }}
+        style={{
+          height:
+            !git.state.unpushedCollapsed && git.state.unpushedHeight
+              ? `${git.state.unpushedHeight}px`
+              : undefined,
+        }}
       >
         <SplitHandle
           label="Unpushed panel height"
           vertical
-          value={-git.state.unpushedHeight}
+          class="unpushed-resizer absolute -top-1 inset-x-0 z-10 h-2 cursor-row-resize hover:bg-primary [&.drag]:bg-primary"
+          value={-(git.state.unpushedHeight || panel?.offsetHeight || 82)}
           min={-600}
           max={-60}
           onChange={(value) => editor.actions.setUnpushedHeight(-value)}
         />
-        <header class="flex items-center gap-2 p-2 text-xs">
-          <span>Unpushed</span>
-          <span id="unpushed-count">{git.state.unpushed.length}</span>
-          <span class="min-w-0 flex-1 truncate">{git.state.upstream}</span>
+        <div class="unpushed-head flex shrink-0 items-center gap-2 px-3 py-2">
+          <span
+            class="icon-[lucide--git-commit-vertical] size-3.5 shrink-0 text-primary"
+            aria-hidden="true"
+          />
+          <span class="unpushed-title shrink-0 text-xs font-medium text-muted-foreground">
+            Unpushed
+          </span>
+          <span
+            id="unpushed-count"
+            class="badge empty:hidden"
+            data-variant="secondary"
+            data-control="unpushed-count"
+          >
+            {git.state.unpushed.length}
+          </span>
+          <span class="flex-1 min-w-0" />
+          <span
+            id="unpushed-upstream"
+            class="unpushed-upstream max-w-[45%] truncate font-mono text-xs text-muted-foreground"
+          >
+            {git.state.upstream}
+          </span>
           <button
+            id="unpushed-collapse"
             class="btn"
+            data-control="pr-comments-collapse"
+            data-variant="ghost"
+            data-size="icon-xs"
             aria-label="Collapse unpushed commits"
             aria-expanded={!git.state.unpushedCollapsed}
             onClick={() => editor.actions.setUnpushedCollapsed(!git.state.unpushedCollapsed)}
           >
-            ⌃
+            <span class="icon-[lucide--chevron-down] size-3.5 shrink-0" aria-hidden="true" />
           </button>
-        </header>
+        </div>
         <Show when={!git.state.unpushedCollapsed}>
-          <div id="unpushed-body" class="min-h-0 overflow-auto">
-            <For each={git.state.unpushed}>{(commit) => <CommitRow commit={commit} />}</For>
+          <div id="unpushed-body" class="unpushed-body min-h-0 flex-1 overflow-y-auto py-2">
+            <For each={git.state.unpushed}>
+              {(commit) => <CommitRow commit={commit} unpushed />}
+            </For>
           </div>
         </Show>
       </section>

@@ -8,19 +8,38 @@ export function AgentPicker(props) {
   const agents = editor.agents;
   const [open, setOpen] = createSignal(false);
   return (
-    <Popover
-      label={
-        agents.state.selected
-          ? agents.state.selected + (agents.state.model ? ' · ' + agents.state.model : '')
-          : 'Choose harness'
-      }
-      accessibleLabel="Coding harness and model"
-      disabled={props.disabled || !agents.state.harnesses.some((agent) => agent.installed)}
-      open={open()}
-      onOpenChange={setOpen}
+    <div
+      id={props.id}
+      class={props.compact ? 'inline-flex min-w-0 flex-1' : 'inline-flex min-w-0 max-w-full'}
+      data-control="agent-picker"
+      data-placeholder="No harness"
     >
-      <PickerPanel close={() => setOpen(false)} />
-    </Popover>
+      <Popover
+        triggerClass={
+          props.compact
+            ? 'btn max-w-full h-7! text-muted-foreground! border-transparent! bg-transparent! px-2! text-xs! shadow-none! hover:bg-accent! hover:text-foreground!'
+            : 'btn max-w-full'
+        }
+        variant={props.compact ? 'ghost' : 'outline'}
+        size="sm"
+        label={
+          <>
+            <span class="truncate">
+              {agents.state.selected
+                ? agents.state.selected + (agents.state.model ? ' · ' + agents.state.model : '')
+                : 'No harness'}
+            </span>
+            <i class="icon-[lucide--chevrons-up-down] size-3.5 shrink-0" aria-hidden="true" />
+          </>
+        }
+        accessibleLabel="Coding harness and model"
+        disabled={props.disabled || !agents.state.harnesses.some((agent) => agent.installed)}
+        open={open()}
+        onOpenChange={setOpen}
+      >
+        <PickerPanel close={() => setOpen(false)} />
+      </Popover>
+    </div>
   );
 }
 function PickerPanel(props) {

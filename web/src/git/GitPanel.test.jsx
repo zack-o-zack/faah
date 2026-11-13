@@ -3,8 +3,7 @@ import { expect, test, vi } from 'vitest';
 import { createAppStore } from '../app/store.ts';
 import { EditorProvider } from '../editor/context.jsx';
 import { createGitStore } from './store.ts';
-import { CommitForm } from './CommitForm.jsx';
-import { GitNotice } from './GitNotice.jsx';
+import { GitPanel } from './GitPanel.jsx';
 test('a fresh Git provider submits a typed message and shows server errors', async () => {
   const post = vi.fn().mockRejectedValue(new Error('Commit hook rejected'));
   render(() => {
@@ -21,8 +20,7 @@ test('a fresh Git provider submits a typed message and shows server errors', asy
     };
     return (
       <EditorProvider value={editor}>
-        <CommitForm />
-        <GitNotice />
+        <GitPanel />
       </EditorProvider>
     );
   });

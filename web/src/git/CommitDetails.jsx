@@ -1,46 +1,151 @@
-import { createResource, Show } from 'solid-js';
+import { createResource, createSignal, onCleanup, onMount, Show } from 'solid-js';
+import { Portal } from 'solid-js/web';
 import { createResourceRequest } from '../lib/resource-request.ts';
-import { Popover } from '../lib/Popover.jsx';
+import { copyText } from '../lib/clipboard.ts';
 export function CommitDetails(props) {
-  return <Popover label="Commit details">{() => <Details sha={props.sha} />}</Popover>;
-}
-function Details(props) {
   const request = createResourceRequest();
+  const [open, setOpen] = createSignal(false);
+  const [position, setPosition] = createSignal({ left: '8px', top: '8px' });
+  const [copied, setCopied] = createSignal(false);
   const [detail] = createResource(
-    () => props.sha,
+    () => open() && props.sha,
     (sha) => request('api/commitdetail', { sha }),
   );
+  let timer,
+    leaveTimer,
+    copiedTimer,
+    pointerY = 0;
+  const hide = () => {
+    clearTimeout(timer);
+    clearTimeout(leaveTimer);
+    setOpen(false);
+  };
+  const enter = (event) => {
+    clearTimeout(leaveTimer);
+    pointerY = event.clientY;
+    clearTimeout(timer);
+    timer = setTimeout(() => setOpen(true), 350);
+  };
+  const leave = () => {
+    clearTimeout(timer);
+    leaveTimer = setTimeout(hide, 180);
+  };
+  onMount(() => {
+    const key = (event) => {
+      if (event.key === 'Escape') hide();
+    };
+    document.addEventListener('keydown', key);
+    onCleanup(() => document.removeEventListener('keydown', key));
+  });
+  onCleanup(() => {
+    clearTimeout(timer);
+    clearTimeout(leaveTimer);
+    clearTimeout(copiedTimer);
+  });
   return (
     <>
-      <Show when={detail.error}>
-        <p role="alert">{detail.error.message}</p>
-      </Show>
-      <Show
-        when={!detail.error && detail()}
-        fallback={
-          <Show when={!detail.error}>
-            <p>Loading…</p>
-          </Show>
-        }
-      >
+      {props.children({ onMouseEnter: enter, onMouseLeave: leave, hide })}
+      <Show when={open() && !detail.error && detail()}>
         {(data) => (
-          <div class="max-h-80 w-72 overflow-auto p-2">
-            <p>
-              {data().author} · {data().date}
-            </p>
-            <Show when={data().authorUrl}>
-              <a href={data().authorUrl} target="_blank" rel="noopener">
-                Author profile
-              </a>
-            </Show>
-            <pre class="whitespace-pre-wrap">{data().message || data().subject}</pre>
-            <p>
-              {data().files || 0} files · +{data().insertions || 0} −{data().deletions || 0}
-            </p>
-            <button class="btn" onClick={() => void navigator.clipboard.writeText(props.sha)}>
-              Copy SHA
-            </button>
-          </div>
+          <Portal>
+            <div
+              id="commitcard"
+              class="card fixed z-[60] max-w-[480px] max-h-[70vh] overflow-auto"
+              style={position()}
+              ref={(element) =>
+                queueMicrotask(() => {
+                  const bounds = element.getBoundingClientRect();
+                  setPosition({
+                    left:
+                      Math.max(8, Math.min(props.sideWidth + 8, innerWidth - bounds.width - 8)) +
+                      'px',
+                    top:
+                      Math.max(8, Math.min(pointerY - 12, innerHeight - bounds.height - 8)) + 'px',
+                  });
+                })
+              }
+              onMouseEnter={() => clearTimeout(leaveTimer)}
+              onMouseLeave={leave}
+            >
+              <div data-ui="cc-head" class="flex items-center gap-2 p-3">
+                <span data-ui="cc-sha" class="font-mono text-primary-text" title={data().hash}>
+                  {data().short}
+                </span>
+                <span class="flex-1 min-w-0" />
+                <button
+                  type="button"
+                  title="Copy the full SHA"
+                  class="btn"
+                  data-control="cc-copy"
+                  data-variant="outline"
+                  data-size="xs"
+                  onClick={async () => {
+                    if (await copyText(data().hash || props.sha, 'Copied ' + data().short)) {
+                      setCopied(true);
+                      clearTimeout(copiedTimer);
+                      copiedTimer = setTimeout(() => setCopied(false), 1200);
+                    }
+                  }}
+                >
+                  {copied() ? 'Copied' : 'Copy SHA'}
+                </button>
+              </div>
+              <div
+                data-ui="cc-meta"
+                class="flex items-center flex-wrap gap-2 p-3 text-muted-foreground"
+              >
+                <Show
+                  when={data().authorUrl}
+                  fallback={
+                    <span data-ui="cc-who" class="font-semibold" title={data().email}>
+                      {data().author}
+                    </span>
+                  }
+                >
+                  <a
+                    data-ui="cc-who"
+                    class="font-semibold"
+                    href={data().authorUrl}
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    {data().author}
+                  </a>
+                </Show>
+                <span data-ui="cc-dot" class="text-muted-foreground">
+                  ·
+                </span>
+                <span class="cc-date" title={data().dateIso}>
+                  {data().date}
+                </span>
+              </div>
+              <div
+                data-ui="cc-msg"
+                class="overflow-x-hidden overflow-y-auto whitespace-pre-wrap p-3 font-mono"
+              >
+                {data().message || data().subject}
+              </div>
+              <Show when={data().files || data().insertions || data().deletions}>
+                <div data-ui="cc-stat" class="flex items-center gap-2 p-3 font-mono">
+                  <Show when={data().files}>
+                    <span data-ui="cc-files" class="text-muted-foreground">
+                      {data().files} {data().files === 1 ? 'file' : 'files'}
+                    </span>
+                  </Show>
+                  <Show when={data().insertions}>
+                    <span data-ui="cc-add" class="text-gi">
+                      +{data().insertions}
+                    </span>
+                  </Show>
+                  <Show when={data().deletions}>
+                    <span data-ui="cc-del" class="text-gd">
+                      −{data().deletions}
+                    </span>
+                  </Show>
+                </div>
+              </Show>
+            </div>
+          </Portal>
         )}
       </Show>
     </>

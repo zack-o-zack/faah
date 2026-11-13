@@ -67,8 +67,8 @@ function initialState(): GitState {
     sync: {},
     collapsed: false,
     unpushedCollapsed: false,
-    height: 340,
-    unpushedHeight: 180,
+    height: 384,
+    unpushedHeight: 0,
   };
 }
 export function createGitStore(
