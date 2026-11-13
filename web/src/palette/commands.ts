@@ -1,13 +1,14 @@
+import type { Command } from './types.ts';
 import { createSignal } from 'solid-js';
 export function createCommandRegistry() {
-  const entries = new Map();
+  const entries = new Map<string, Command>();
   const [revision, publish] = createSignal(0);
   return {
     list() {
       revision();
       return [...entries.values()];
     },
-    register(commands) {
+    register(commands: Command[]): () => void {
       for (const command of commands) entries.set(command.id || command.name, command);
       publish((value) => value + 1);
       return () => {

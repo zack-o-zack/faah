@@ -1,7 +1,7 @@
 import { createEffect, on } from 'solid-js';
 import { createMemo, createSignal, For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { shortKind } from '../lsp/logic.js';
+import { shortKind } from '../lsp/logic.ts';
 export function Symbols() {
   const editor = useEditor();
   let input;

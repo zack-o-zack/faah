@@ -3,7 +3,7 @@ import { useEditor } from '../editor/context.jsx';
 import { createShortcut } from '../lib/shortcuts.jsx';
 import { Dialog } from '../lib/Dialog.jsx';
 import { PaletteItem } from './PaletteItem.jsx';
-import { MODES, scrollToItem } from './logic.js';
+import { MODES, scrollToItem } from './logic.ts';
 import { PALETTE_HELP } from '../shortcuts/help.ts';
 export function Palette() {
   const editor = useEditor();

@@ -1,16 +1,17 @@
+import type { GitOptions } from './store.ts';
 import { createRoot } from 'solid-js';
 import { afterEach, expect, test, vi } from 'vitest';
 import { createAppStore } from '../app/store.ts';
-import { createGitStore } from './store.js';
-import { cleanCommitMessage, gitCounts, syncPlan, syncNotice } from './logic.js';
-const disposers = [];
+import { createGitStore } from './store.ts';
+import { cleanCommitMessage, gitCounts, syncPlan, syncNotice } from './logic.ts';
+const disposers: (() => void)[] = [];
 afterEach(() => disposers.splice(0).forEach((dispose) => dispose()));
-function fixture(options = {}) {
+function fixture(options: GitOptions = {}) {
   return createRoot((dispose) => {
     disposers.push(dispose);
     const app = createAppStore();
     app.actions.setWorkspace({ git: true });
-    const request = vi.fn(async (path) =>
+    const request = vi.fn(async (path: string) =>
       path === 'api/unpushed'
         ? { commits: [], upstream: 'origin/main' }
         : { commits: [], files: [{ path: 'one.js' }] },
@@ -32,10 +33,12 @@ test('shapes messages, counts and sync decisions', () => {
   expect(syncNotice({ inProgress: 'rebase' }).choices).toEqual(['finish', 'abort']);
 });
 test('commit pending state prevents double submission and clears the message', async () => {
-  let finish;
+  let finish: (value: unknown) => void = () => {
+    throw new Error('Missing request');
+  };
   const post = vi.fn(
     () =>
-      new Promise((resolve) => {
+      new Promise<unknown>((resolve) => {
         finish = resolve;
       }),
   );
@@ -56,10 +59,10 @@ test('pull divergence becomes an actionable notice and force push needs confirma
   });
   const { git, app, post } = fixture({ post: vi.fn().mockRejectedValue(error) });
   await git.actions.pullGit();
-  expect(git.state.notice.choices).toEqual(['rebase', 'merge']);
+  expect(git.state.notice?.choices).toEqual(['rebase', 'merge']);
   app.actions.acceptGitSnapshot({ git: true, rewritten: true });
   await git.actions.pushGit();
-  expect(git.state.notice.choices).toEqual(['force', 'dismiss']);
+  expect(git.state.notice?.choices).toEqual(['force', 'dismiss']);
   expect(post).toHaveBeenCalledTimes(1);
 });
 test('commit files deduplicate, retry failures, and unpushed follows snapshots', async () => {

@@ -1,6 +1,6 @@
 import { createResource, createSignal, For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { filePage } from './logic.js';
+import { filePage } from './logic.ts';
 export function CommitFiles(props) {
   const editor = useEditor();
   const [shown, setShown] = createSignal(100);

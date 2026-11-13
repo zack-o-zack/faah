@@ -1,13 +1,31 @@
+import { record, text } from '../lib/decode.ts';
+import type { Request } from '../lib/api.ts';
+import type { PaletteItem } from './types.ts';
+function filePath(item: PaletteItem | undefined): string | undefined {
+  return item?.kind === 'file' ? item.path : undefined;
+}
 import { createRoot } from 'solid-js';
 import { afterEach, expect, test, vi } from 'vitest';
-import { createPaletteStore } from './store.js';
-import { fuzzyParts, paletteQuery, scrollToItem } from './logic.js';
-const disposers = [];
+import { createPaletteStore } from './store.ts';
+import { fuzzyParts, paletteQuery, scrollToItem } from './logic.ts';
+const disposers: (() => void)[] = [];
 afterEach(() => disposers.splice(0).forEach((dispose) => dispose()));
-function fixture(request = vi.fn()) {
+function fixture(request: Request = vi.fn()) {
   return createRoot((dispose) => {
     disposers.push(dispose);
-    const editor = { actions: {}, active: () => null, tree: {} };
+    const editor = {
+      actions: {
+        openFile: vi.fn(async () => {}),
+        showFilesPanel: vi.fn(async () => {}),
+        revealFile: vi.fn(async () => {}),
+        patch: vi.fn(),
+        centerLine: vi.fn(),
+        pushHistory: vi.fn(),
+        launchPR: vi.fn(),
+      },
+      active: () => null,
+      tree: { autoReveal: () => false },
+    };
     const palette = createPaletteStore(editor, { request });
     return palette;
   });
@@ -27,13 +45,16 @@ test('immediate Enter executes the current command rather than the previous quer
   expect(next).toHaveBeenCalledOnce();
 });
 test('old file replies cannot replace new results and requests are aborted', async () => {
-  let finish;
-  let oldSignal;
+  let finish: () => void = () => {
+    throw new Error('Missing request');
+  };
+  let oldSignal: AbortSignal | null | undefined;
   const palette = fixture(
-    vi.fn(async (_, { q }, options) => {
+    vi.fn(async (_path: string, params: unknown, options) => {
+      const q = text(record(params).q);
       if (q === 'old') {
-        oldSignal = options.signal;
-        await new Promise((resolve) => {
+        oldSignal = options?.signal;
+        await new Promise<void>((resolve) => {
           finish = resolve;
         });
       }
@@ -42,12 +63,12 @@ test('old file replies cannot replace new results and requests are aborted', asy
   );
   palette.actions.openPalette('file', 'old');
   palette.actions.setPaletteQuery('new');
-  await vi.waitFor(() => expect(palette.items()[0]?.path).toBe('new.go'));
-  expect(oldSignal.aborted).toBe(true);
+  await vi.waitFor(() => expect(filePath(palette.items()[0])).toBe('new.go'));
+  expect(oldSignal?.aborted).toBe(true);
   finish();
   await Promise.resolve();
   await Promise.resolve();
-  expect(palette.items()[0].path).toBe('new.go');
+  expect(filePath(palette.items()[0])).toBe('new.go');
 });
 test('prefixes, inert fuzzy parts and bounded native scroll calculations', () => {
   expect(paletteQuery('>Theme', 'file')).toEqual({ mode: 'command', query: 'Theme' });

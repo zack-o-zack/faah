@@ -1,8 +1,8 @@
 import { render, screen, fireEvent, waitFor } from '@solidjs/testing-library';
 import { afterEach, expect, test, vi } from 'vitest';
 import { createRoot } from 'solid-js';
-import { createSearchStore } from './store.js';
-import { searchRequest, groupHits } from './logic.js';
+import { createSearchStore } from './store.ts';
+import { searchRequest, groupHits } from './logic.ts';
 import { Search } from './Search.jsx';
 import { EditorProvider } from '../editor/context.jsx';
 afterEach(() => vi.useRealTimers());

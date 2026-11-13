@@ -1,23 +1,58 @@
+import type { Accessor } from 'solid-js';
+import type { Request } from '../lib/api.ts';
+import type { ThemeStore } from '../lib/theme.ts';
+import type { DocTab, OpenOptions } from '../editor/types.ts';
+import type { Command, PaletteItem, PaletteMode } from './types.ts';
+import { decodeFinder } from './decode.ts';
+export interface PaletteOptions {
+  request?: Request;
+  theme?: ThemeStore;
+}
+interface PaletteState {
+  open: boolean;
+  base: string;
+  query: string;
+  selected: number;
+  restoreTheme: string | null;
+}
+interface PaletteHost {
+  active: Accessor<DocTab | null>;
+  tree: { autoReveal: () => boolean };
+  actions: {
+    loadSymbols?: () => Promise<unknown>;
+    openFile: (path: string, options?: OpenOptions) => Promise<unknown>;
+    showFilesPanel: () => Promise<void>;
+    revealFile: (path: string) => Promise<void>;
+    patch: (patch: Partial<DocTab>) => void;
+    centerLine: (line: number) => void;
+    pushHistory: (path: string, line: number) => void;
+    launchPR: (target: string) => unknown;
+  };
+}
 import { createMemo, createResource, onCleanup } from 'solid-js';
 import { createStore } from 'solid-js/store';
 import { api } from '../lib/api.ts';
 import { listThemes } from '../lib/theme.ts';
-import { createCommandRegistry } from './commands.js';
-import { paletteQuery, rankCommands } from './logic.js';
-/** @returns {{open:boolean,base:string,query:string,selected:number,restoreTheme:string|null}} */
-function initialState() {
+import { createCommandRegistry } from './commands.ts';
+import { paletteQuery, rankCommands } from './logic.ts';
+
+function initialState(): PaletteState {
   return { open: false, base: 'file', query: '', selected: 0, restoreTheme: null };
 }
-export function createPaletteStore(editor, options = {}) {
+export function createPaletteStore(editor: PaletteHost, options: PaletteOptions = {}) {
   const request = options.request || api;
   const [state, set] = createStore(initialState());
   const commands = createCommandRegistry();
-  let controller,
-    latest,
-    generation = 0,
-    timer;
+  let controller: AbortController | undefined;
+  let latest: Promise<PaletteItem[]> | undefined;
+  let generation = 0;
+  let timer: ReturnType<typeof setTimeout> | undefined;
   const query = createMemo(() => paletteQuery(state.query, state.base));
-  async function load(key) {
+  async function load(key: {
+    mode: PaletteMode;
+    query: string;
+    commands: Command[];
+  }): Promise<PaletteItem[]> {
     controller?.abort();
     controller = new AbortController();
     const current = ++generation;
@@ -55,7 +90,9 @@ export function createPaletteStore(editor, options = {}) {
         .filter((theme) => (theme.name + ' ' + theme.id).toLowerCase().includes(q.toLowerCase()))
         .map((theme) => ({ kind: 'theme', id: theme.id, label: theme.name, sub: theme.scheme }));
     if (mode === 'openpr') return q ? [{ kind: 'openpr', target: q, label: 'Open PR: ' + q }] : [];
-    const result = await request('api/find', { q, limit: 120 }, { signal: controller.signal });
+    const result = decodeFinder(
+      await request('api/find', { q, limit: 120 }, { signal: controller.signal }),
+    );
     if (result.indexing && current === generation) {
       clearTimeout(timer);
       timer = setTimeout(() => {
@@ -78,13 +115,14 @@ export function createPaletteStore(editor, options = {}) {
     },
   );
   const data = () => (items.error ? [] : items() || []);
-  async function openPalette(mode, seed) {
+  async function openPalette(mode: string, seed?: string): Promise<void> {
+    const prefixes: Record<string, string> = { command: '>', symbol: '@', line: ':' };
     set({
       open: true,
       base: mode,
-      query: seed ?? ({ command: '>', symbol: '@', line: ':' }[mode] || ''),
+      query: seed ?? prefixes[mode] ?? '',
       selected: 0,
-      restoreTheme: mode === 'theme' ? options.theme?.current() : null,
+      restoreTheme: mode === 'theme' ? options.theme?.current() || null : null,
     });
   }
   function closePalette(accepted = false) {
@@ -114,7 +152,8 @@ export function createPaletteStore(editor, options = {}) {
     } else if (item.kind === 'line') {
       editor.actions.patch({ cur: item.line });
       editor.actions.centerLine(item.line);
-      editor.actions.pushHistory(editor.active().path, item.line);
+      const doc = editor.active();
+      if (doc) editor.actions.pushHistory(doc.path, item.line);
     } else if (item.kind === 'command') item.command.run();
     else if (item.kind === 'theme') options.theme?.setTheme(item.id);
     else if (item.kind === 'openpr') editor.actions.launchPR(item.target);
@@ -135,15 +174,16 @@ export function createPaletteStore(editor, options = {}) {
       openPalette,
       closePalette,
       acceptPalette,
-      setPaletteQuery(value) {
+      setPaletteQuery(value: string): void {
         set({ query: value, selected: 0 });
       },
-      movePalette(delta) {
+      movePalette(delta: number): void {
         const all = data();
         if (!all.length) return;
         const selected = (state.selected + delta + all.length) % all.length;
         set('selected', selected);
-        if (query().mode === 'theme') options.theme?.setTheme(all[selected].id, false);
+        const item = all[selected];
+        if (item?.kind === 'theme') options.theme?.setTheme(item.id, false);
       },
     },
   };

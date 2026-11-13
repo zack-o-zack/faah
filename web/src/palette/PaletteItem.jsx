@@ -1,5 +1,5 @@
 import { For, Show } from 'solid-js';
-import { fuzzyParts } from './logic.js';
+import { fuzzyParts } from './logic.ts';
 export function PaletteItem(props) {
   const positions = () =>
     props.item.kind === 'file'

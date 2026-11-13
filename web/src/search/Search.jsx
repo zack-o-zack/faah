@@ -2,7 +2,7 @@ import { createEffect, on } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
 import { ResultGroup } from './ResultGroup.jsx';
-import { resultHeading } from './logic.js';
+import { resultHeading } from './logic.ts';
 export function Search() {
   const editor = useEditor();
   let input;

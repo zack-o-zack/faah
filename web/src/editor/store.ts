@@ -26,12 +26,12 @@ import { createPRStore } from '../pr/store.js';
 import { createShortcutRegistry } from '../shortcuts/registry.ts';
 import { createMergeStore } from '../pr/merge-store.js';
 import { createForgeStore } from '../pr/forge-store.js';
-import { registerFeatureCommands } from '../palette/features.js';
-import { createDocumentGitActions } from '../git/documents.js';
-import { createLanguageStore } from '../lsp/store.js';
-import { createSearchStore } from '../search/store.js';
-import { createPaletteStore } from '../palette/store.js';
-import { createGitStore } from '../git/store.js';
+import { registerFeatureCommands } from '../palette/features.ts';
+import { createDocumentGitActions } from '../git/documents.ts';
+import { createLanguageStore } from '../lsp/store.ts';
+import { createSearchStore } from '../search/store.ts';
+import { createPaletteStore } from '../palette/store.ts';
+import { createGitStore } from '../git/store.ts';
 import { createTreeStore } from '../workspace/tree-store.ts';
 import { createSelectionActions } from './selection-actions.ts';
 import { createFindActions } from './find-actions.ts';
@@ -271,6 +271,18 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
   // Factories resolve peer actions after assembly; closures avoid unsafe construction casts.
   const coreActions: CoreActions = {
     ...baseActions,
+    wordAtCaret: () => hoverActions.wordAtCaret(),
+    searchWorkspace: (...args) => search.actions.searchWorkspace(...args),
+    setSearchResults: (...args) => search.actions.setSearchResults(...args),
+    showFilesPanel: async () => {
+      actions.setPanelVisible('left', true);
+      await tree.actions.setTreeMode('files');
+    },
+    revealFile: (...args) => tree.actions.revealFile(...args),
+    loadSymbols: () => language.actions.loadSymbols(),
+    launchPR: (...args) => pr.actions.launchPR(...args),
+    reloadOpenTabs: (...args) => editActions.reloadOpenTabs(...args),
+    reconcileTreeSnapshot: () => tree.actions.reconcileTreeSnapshot(),
     clearFind: () => findActions.clearFind(),
     hideHover: () => hoverActions.hideHover(),
     centerEditLine: (...args) => editActions.centerEditLine(...args),
@@ -346,7 +358,7 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
     historyChanged: () => actions.historyChanged(),
   });
   const search = createSearchStore();
-  const palette = createPaletteStore(prEditor, options);
+  const palette = createPaletteStore(Object.assign(prEditor, { tree }), options);
   const language = createLanguageStore(prEditor, options.language);
   const documentActions = createDocumentGitActions(prEditor);
   const featureActions = Object.assign(

@@ -1,17 +1,35 @@
+import type { Request } from '../lib/api.ts';
+import type { DocTab } from '../editor/types.ts';
+import type { GitSnapshot } from '../workspace/decode.ts';
+import type { EditorHost } from '../editor/contracts.ts';
+import { decodeGutter, decodeCommitFiles } from './decode.ts';
+import { isAbort, errorMessage } from '../lib/decode.ts';
+interface DocumentGitHost extends Omit<EditorHost, 'actions'> {
+  actions: EditorHost['actions'] & {
+    reloadOpenTabs: (options: { onlyIfChanged: boolean }) => Promise<void>;
+    reconcileTreeSnapshot: () => Promise<void>;
+    closeTabs: (indices: number[]) => void;
+    setDiffMode: (doc: DocTab, mode: string) => void;
+    stepDiffFile: (doc: DocTab, file: { path: string }) => Promise<void>;
+  };
+}
 import { diffLayout } from '../settings/logic.ts';
 import { onCleanup } from 'solid-js';
 import { api } from '../lib/api.ts';
-import { documentGitPlan } from './document-logic.js';
+import { documentGitPlan } from './document-logic.ts';
 import { canDiff } from '../viewers/view.ts';
-export function createDocumentGitActions(editor, options = {}) {
+export function createDocumentGitActions(
+  editor: DocumentGitHost,
+  options: { request?: Request } = {},
+) {
   const app = editor.store;
   const request = options.request || api;
-  const pending = new Map();
+  const pending = new Map<string, AbortController>();
   let disposed = false,
-    queued = null,
+    queued: GitSnapshot | null = null,
     running = false,
     signature = '';
-  async function loadGutter(path) {
+  async function loadGutter(path: string): Promise<void> {
     const document = app.state.documents.tabs.find((tab) => tab.path === path);
     if (!document || !app.state.workspace.meta?.git) return;
     const buffer = app.buffers.get(path),
@@ -20,7 +38,9 @@ export function createDocumentGitActions(editor, options = {}) {
     const controller = new AbortController();
     pending.set(path, controller);
     try {
-      const result = await request('api/gutter', { path, ref }, { signal: controller.signal });
+      const result = decodeGutter(
+        await request('api/gutter', { path, ref }, { signal: controller.signal }),
+      );
       if (
         disposed ||
         controller.signal.aborted ||
@@ -28,11 +48,11 @@ export function createDocumentGitActions(editor, options = {}) {
         (document.diffRef || '') !== ref
       )
         return;
-      const marks = new Map();
+      const marks = new Map<number, string>();
       for (const line of result.modified || []) marks.set(line, 'mod');
       for (const line of result.added || []) marks.set(line, 'add');
       const available = !!(result.available || document.diffBase);
-      const patch = {
+      const patch: Partial<DocTab> = {
         gutterLoaded: true,
         diffAvailable: available,
         gutter: result.available ? { marks, dels: new Set(result.deleted || []) } : null,
@@ -41,12 +61,12 @@ export function createDocumentGitActions(editor, options = {}) {
         patch.diffMode = diffLayout(app.settings.preferences());
       app.actions.patchDocument(path, patch);
     } catch (error) {
-      if (error.name !== 'AbortError' && !disposed) app.actions.setWorkspaceError(error.message);
+      if (!isAbort(error) && !disposed) app.actions.setWorkspaceError(errorMessage(error));
     } finally {
       if (pending.get(path) === controller) pending.delete(path);
     }
   }
-  async function apply(snapshot) {
+  async function apply(snapshot: GitSnapshot): Promise<void> {
     const next = JSON.stringify(snapshot);
     if (next === signature) {
       await editor.actions.reloadOpenTabs({ onlyIfChanged: true });
@@ -68,7 +88,7 @@ export function createDocumentGitActions(editor, options = {}) {
     if (document && !document.diffRef && snapshot.statuses?.[document.path])
       await loadGutter(document.path);
   }
-  async function receive(snapshot) {
+  async function receive(snapshot: GitSnapshot): Promise<void> {
     queued = snapshot;
     if (running) return;
     running = true;
@@ -79,7 +99,7 @@ export function createDocumentGitActions(editor, options = {}) {
         await apply(next);
       }
     } catch (error) {
-      if (!disposed && error.name !== 'AbortError') app.actions.setWorkspaceError(error.message);
+      if (!disposed && !isAbort(error)) app.actions.setWorkspaceError(errorMessage(error));
     } finally {
       running = false;
     }
@@ -92,22 +112,22 @@ export function createDocumentGitActions(editor, options = {}) {
     for (const controller of pending.values()) controller.abort();
     pending.clear();
   });
-  /** Mod+D: the active file's changes, or back to its source. */
+
   function toggleActiveDiff() {
     const document = editor.active();
-    if (!canDiff(document, app.state.workspace.meta)) return;
+    if (!document || !canDiff(document, app.state.workspace.meta)) return;
     editor.actions.setDiffMode(
       document,
       document.diffMode ? 'source' : diffLayout(app.settings.preferences()),
     );
   }
-  /** [f and ]f: the previous or next file in the same change set. */
-  async function stepChangedFile(direction) {
+
+  async function stepChangedFile(direction: number): Promise<void> {
     const document = editor.active();
     if (!document) return;
     let files = document.turnFiles;
     if (!files && document.diffRef)
-      files = (await request('api/commitfiles', { sha: document.diffRef })).files;
+      files = decodeCommitFiles(await request('api/commitfiles', { sha: document.diffRef })).files;
     files ||= (app.state.workspace.meta?.gitFiles || []).map((path) => ({ path }));
     files = files
       .map((file) => (typeof file === 'string' ? { path: file } : file))
@@ -119,6 +139,6 @@ export function createDocumentGitActions(editor, options = {}) {
     loadGutter,
     toggleActiveDiff,
     stepChangedFile,
-    stepDiffHunk: (direction) => editor.services.diff?.stepHunk(direction),
+    stepDiffHunk: (direction: number) => editor.services.diff?.stepHunk(direction),
   };
 }

@@ -1,7 +1,7 @@
 import { createMemo, createResource, createSignal, For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
 import { createResourceRequest } from '../lib/resource-request.ts';
-import { callIdentity, callTarget, isCallCycle } from '../lsp/logic.js';
+import { callIdentity, callTarget, isCallCycle } from '../lsp/logic.ts';
 export function CallNode(props) {
   const editor = useEditor();
   const request = createResourceRequest();

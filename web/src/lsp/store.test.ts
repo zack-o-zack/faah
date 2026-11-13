@@ -1,11 +1,13 @@
+import { record, text } from '../lib/decode.ts';
+import type { Request } from '../lib/api.ts';
 import { createRoot } from 'solid-js';
 import { afterEach, expect, test, vi } from 'vitest';
 import { createAppStore } from '../app/store.ts';
-import { createLanguageStore } from './store.js';
-import { callIdentity, callTarget, isCallCycle, canAskServer, positionNow } from './logic.js';
-const disposers = [];
+import { createLanguageStore } from './store.ts';
+import { callIdentity, callTarget, isCallCycle, canAskServer, positionNow } from './logic.ts';
+const disposers: (() => void)[] = [];
 afterEach(() => disposers.splice(0).forEach((dispose) => dispose()));
-function fixture(request) {
+function fixture(request: Request) {
   return createRoot((dispose) => {
     disposers.push(dispose);
     const app = createAppStore();
@@ -43,7 +45,7 @@ test('definition requests use the measured position and preserve navigation hist
     { path: 'one.js', word: 'value', line: 1, col: 6 },
     { view: 'source' },
   );
-  expect(request.mock.calls[0].slice(0, 2)).toEqual([
+  expect(request.mock.calls[0]?.slice(0, 2)).toEqual([
     'api/lsp/def',
     { path: 'one.js', line: 1, col: 6, wait: 5000 },
   ]);
@@ -52,16 +54,19 @@ test('definition requests use the measured position and preserve navigation hist
     view: 'source',
     soft: false,
   });
-  expect(app.state.documents.history[0].path).toBe('one.js');
+  expect(app.state.documents.history[0]?.path).toBe('one.js');
 });
 test('stale references cannot replace a newer target', async () => {
-  let finish;
-  const request = vi.fn(async (path, params) => {
-    if (params.q === 'old')
-      await new Promise((resolve) => {
+  let finish: () => void = () => {
+    throw new Error('Missing request');
+  };
+  const request = vi.fn(async (_path: string, params: unknown) => {
+    const query = text(record(params).q);
+    if (query === 'old')
+      await new Promise<void>((resolve) => {
         finish = resolve;
       });
-    return { header: params.q, results: [] };
+    return { header: query, results: [] };
   });
   const { language } = fixture(request);
   language.actions.findReferences({ word: 'old', imprecise: true });
@@ -70,7 +75,7 @@ test('stale references cannot replace a newer target', async () => {
   finish();
   await Promise.resolve();
   await Promise.resolve();
-  expect(language.references().header).toBe('new');
+  expect(language.references()?.header).toBe('new');
 });
 test('LSP actions expose pending/errors and refresh the shared server resource', async () => {
   const { app, language, post } = fixture(vi.fn(async () => ({ servers: [], anyRunning: false })));

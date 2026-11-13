@@ -3,7 +3,7 @@ import { createStore } from 'solid-js/store';
 import { api, apiPost } from '../lib/api.ts';
 import { toast } from '../lib/toast.jsx';
 import { agentSelection, editRequest, rangesOverlap } from './logic.js';
-import { createAgentJobs } from './jobs.js';
+import { createAgentJobs } from './jobs.ts';
 /** @returns {{harnesses:object[],selected:string,model:string,pinned:boolean,pending:string,error:string,sessions:object[],batch:object}} */
 function initialState() {
   return {

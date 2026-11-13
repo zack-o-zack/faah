@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { documentGitPlan } from './document-logic.js';
+import { documentGitPlan } from './document-logic.ts';
 
 test('clean worktree closes only clean live diff tabs outside PR review', () => {
   const tabs = [

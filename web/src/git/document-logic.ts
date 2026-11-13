@@ -1,10 +1,16 @@
-export function documentGitPlan(documents, snapshot, reviewing) {
+import type { DocTab } from '../editor/types.ts';
+import type { GitSnapshot } from '../workspace/decode.ts';
+export function documentGitPlan(
+  documents: Partial<DocTab>[],
+  snapshot: GitSnapshot,
+  reviewing: boolean,
+): { close: number[]; patch: { path: string; diffAvailable: boolean }[]; reload: boolean } {
   const close = [],
     patch = [];
   let reload = false;
   for (let index = 0; index < documents.length; index++) {
     const document = documents[index];
-    if (document.diffRef) continue;
+    if (!document?.path || document.diffRef) continue;
     const status = snapshot.statuses?.[document.path];
     const available = !!status && status !== 'U';
     if (

@@ -1,13 +1,26 @@
+import type { Request } from '../lib/api.ts';
+import type { AgentJob } from './job-decode.ts';
+import { decodeAgentJob } from './job-decode.ts';
+export interface AgentJobOptions {
+  signal?: AbortSignal;
+  progress?: (job: AgentJob) => void;
+}
+interface JobsHost {
+  actions: { watchWorkspaceThread: (id: string) => () => void };
+}
 import { onCleanup } from 'solid-js';
 import { api, apiPostJson } from '../lib/api.ts';
 /** Completion is polled; live output uses the workspace's owned thread subscription. */
-export function createAgentJobs(app, options = {}) {
+export function createAgentJobs(
+  app: JobsHost,
+  options: { request?: Request; post?: Request } = {},
+) {
   const request = options.request || api;
   const post = options.post || apiPostJson;
-  const controllers = new Set();
+  const controllers = new Set<AbortController>();
   let disposed = false;
-  function wait(signal) {
-    return new Promise((resolve, reject) => {
+  function wait(signal: AbortSignal): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
       const abort = () => {
         clearTimeout(timer);
         reject(new DOMException('Cancelled', 'AbortError'));
@@ -20,16 +33,20 @@ export function createAgentJobs(app, options = {}) {
       if (signal.aborted) abort();
     });
   }
-  async function runAgentJob(endpoint, params, { signal: external, progress = () => {} } = {}) {
+  async function runAgentJob(
+    endpoint: string,
+    params: unknown,
+    { signal: external, progress = () => {} }: AgentJobOptions = {},
+  ): Promise<AgentJob> {
     const controller = new AbortController();
     const abort = () => controller.abort();
     external?.addEventListener('abort', abort, { once: true });
     if (external?.aborted) abort();
     controllers.add(controller);
     const signal = controller.signal;
-    let release;
+    let release: (() => void) | undefined;
     try {
-      const job = await post(endpoint, params, { signal });
+      const job = decodeAgentJob(await post(endpoint, params, { signal }));
       if (signal.aborted || disposed) throw new DOMException('Cancelled', 'AbortError');
       release = app.actions.watchWorkspaceThread(job.threadId);
       progress({ ...job, running: true });
@@ -37,9 +54,16 @@ export function createAgentJobs(app, options = {}) {
         await wait(signal);
         let result;
         try {
-          result = await request('api/agent/job', { id: job.id }, { signal });
+          result = decodeAgentJob(await request('api/agent/job', { id: job.id }, { signal }));
         } catch (error) {
-          if (error.body && 'running' in error.body) result = error.body;
+          if (
+            error instanceof Error &&
+            'body' in error &&
+            typeof error.body === 'object' &&
+            error.body !== null &&
+            'running' in error.body
+          )
+            result = decodeAgentJob(error.body);
           else throw error;
         }
         if (signal.aborted || disposed) throw new DOMException('Cancelled', 'AbortError');
@@ -65,5 +89,5 @@ export function createAgentJobs(app, options = {}) {
     disposed = true;
     for (const controller of controllers) controller.abort();
   });
-  return { runAgentJob, cancelAgentJob: (id) => post('api/agent/cancel', { id }) };
+  return { runAgentJob, cancelAgentJob: (id?: number) => post('api/agent/cancel', { id }) };
 }

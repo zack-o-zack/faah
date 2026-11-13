@@ -1,6 +1,9 @@
 import type { Accessor } from 'solid-js';
 import type { SetStoreFunction } from 'solid-js/store';
 import type { AppStore } from '../app/store.ts';
+import type { OpenOptions } from './types.ts';
+import type { SearchFields } from '../search/logic.ts';
+import type { SearchReply } from '../search/decode.ts';
 import type { DocTab } from './types.ts';
 import type { DocumentBuffer } from './buffer.ts';
 import type { FindHit } from './find.ts';
@@ -67,7 +70,7 @@ export interface Services {
     line: (line: number) => void;
     topLine: () => number;
   };
-  diff?: { scrollLine: (line: number) => void };
+  diff?: { scrollLine: (line: number) => void; stepHunk: (direction: number) => void };
 }
 export interface CoreActions {
   executeFind: (delta?: number) => Promise<void>;
@@ -91,7 +94,21 @@ export interface CoreActions {
   openFind: (seed?: string, delta?: number) => void;
   jumpToHit: (index: number) => void;
   runSelectionAction: (action: string, info?: SelectionInfo | null) => boolean;
-  openPalette: (mode: string) => void;
+  openPalette: (mode: string, seed?: string) => void;
+  pushHistory: (path: string, line: number) => void;
+  openFile: (path: string, options?: OpenOptions) => Promise<void>;
+  wordAtCaret: () => WordPosition | null;
+  searchWorkspace: (query: string, patch?: Partial<SearchFields>) => void;
+  setSearchResults: (reply: SearchReply) => void;
+  showFilesPanel: () => Promise<void>;
+  revealFile: (path: string) => Promise<void>;
+  loadSymbols: () => Promise<unknown>;
+  launchPR: (target: string) => unknown;
+  reloadOpenTabs: (options?: { onlyIfChanged: boolean }) => Promise<void>;
+  reconcileTreeSnapshot: () => Promise<void>;
+  closeTabs: (indices: number[]) => void;
+  setDiffMode: (doc: DocTab | null, mode: string) => void;
+  stepDiffFile: (doc: DocTab, file: { path: string }) => Promise<void>;
   acceptLspReply: (reply: LspBrief) => void;
 }
 export interface EditorHost {

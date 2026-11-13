@@ -1,12 +1,16 @@
+import type { EditorStore } from '../editor/store.ts';
+import type { DocTab } from '../editor/types.ts';
+import type { ThemeStore } from '../lib/theme.ts';
 import { listThemes } from '../lib/theme.ts';
 import { withKeys } from '../lib/keyboard.ts';
 import { copyRich, copyText } from '../lib/clipboard.ts';
-export function registerFeatureCommands(editor, theme) {
+export function registerFeatureCommands(editor: EditorStore, theme?: ThemeStore): () => void {
   const actions = editor.actions;
   const document = editor.active;
-  const command = (name, run) => ({ name, run });
+  const command = (name: string, run: () => unknown) => ({ name, run });
   const selection = () => editor.ui.selection;
-  const wholeFile = (document) => `Copied ${document.name} (${document.total} lines)`;
+  const wholeFile = (document: Pick<DocTab, 'name' | 'total'>) =>
+    `Copied ${document.name} (${document.total} lines)`;
   const commands = [
     command('File: New File…', () => actions.openNewItem('file')),
     command('File: New Folder…', () => actions.openNewItem('dir')),
@@ -30,21 +34,24 @@ export function registerFeatureCommands(editor, theme) {
     command('Toggle Right Sidebar / Inspector', () => actions.togglePanel('right')),
     command('Show File Symbols (Right Panel)', () => actions.showRightInspector('symbols')),
     command('Reveal Active File in Explorer', async () => {
-      if (document()) {
+      const current = document();
+      if (current) {
         await actions.showFilesPanel();
-        await actions.revealFile(document().path);
+        await actions.revealFile(current.path);
       }
     }),
     command('Toggle Word Wrap', () => actions.toggleWrap()),
     command('Toggle Markdown / Table Preview', () => {
-      if (document()) actions.togglePreview(document(), document().cur);
+      const current = document();
+      if (current) actions.togglePreview(current, current.cur);
     }),
     command('Toggle Sidebar', () => actions.togglePanel('left')),
     command('Select Theme…', () => actions.openPalette('theme')),
     command('Next Theme', () => {
       const themes = listThemes();
       const index = themes.findIndex((item) => item.id === theme?.current());
-      theme?.setTheme(themes[(index + 1) % themes.length].id);
+      const next = themes[(index + 1) % themes.length];
+      if (next) theme?.setTheme(next.id);
     }),
     command('Re-index Workspace', () => actions.reindexWorkspace()),
     command('Close Tab', () => actions.closeTabs([editor.store.state.documents.active])),
@@ -60,20 +67,24 @@ export function registerFeatureCommands(editor, theme) {
     ),
     command('Help: Vim Keybindings Cheat Sheet', () => actions.showVimHelp()),
     command(withKeys('File: Copy Source Code ({Mod+C})'), () => {
-      if (selection()?.text) void copyText(selection().text, 'Copied source code');
+      const info = selection();
+      if (info?.text) void copyText(info.text, 'Copied source code');
       else void actions.copyFile(wholeFile);
     }),
     command('File: Copy Raw Markdown', () => {
-      if (selection()?.rawMarkdown) void copyText(selection().rawMarkdown, 'Copied raw Markdown');
+      const info = selection();
+      if (info?.rawMarkdown) void copyText(info.rawMarkdown, 'Copied raw Markdown');
       else void actions.copyFile(wholeFile);
     }),
     command('File: Copy Formatted Text (Markdown Preview)', () => {
-      if (selection()?.isMarkdownPreview)
-        void copyRich(selection().text, selection().html, 'Copied formatted text');
-      else void actions.copyFile((document) => `Copied ${document.name}`);
+      const info = selection();
+      if (info?.isMarkdownPreview)
+        void copyRich(info.text, info.html || '', 'Copied formatted text');
+      else void actions.copyFile((document: Pick<DocTab, 'name'>) => `Copied ${document.name}`);
     }),
     command('File: Copy Relative Path', () => {
-      if (document()) void copyText(document().path, `Copied ${document().path}`);
+      const current = document();
+      if (current) void copyText(current.path, `Copied ${current.path}`);
     }),
     command(withKeys('Preferences: Open Settings (UI) ({Mod+,})'), () =>
       actions.openSettings('ui'),

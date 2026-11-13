@@ -2,7 +2,7 @@ import { createSignal, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
 import { CommitFiles } from './CommitFiles.jsx';
 import { CommitDetails } from './CommitDetails.jsx';
-import { commitIdentity } from './logic.js';
+import { commitIdentity } from './logic.ts';
 export function CommitRow(props) {
   const editor = useEditor();
   const [expanded, setExpanded] = createSignal(false);

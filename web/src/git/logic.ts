@@ -1,12 +1,23 @@
-export function cleanCommitMessage(text = '') {
+import type { GitSnapshot } from '../workspace/decode.ts';
+import type { SyncState } from './decode.ts';
+export interface GitNotice {
+  tone: string;
+  title: string;
+  text: string;
+  choices: string[];
+  log?: string;
+  sync?: SyncState;
+  job?: number;
+}
+export function cleanCommitMessage(text = ''): string {
   let result = text.trim();
   const fence =
     result.match(/```[\w-]*\r?\n([\s\S]*?)\r?\n```/) || result.match(/^```([\s\S]*?)```$/);
-  if (fence) result = fence[1].trim();
+  if (fence) result = (fence[1] || '').trim();
   if (/^(["']).*\1$/s.test(result)) result = result.slice(1, -1).trim();
   return result;
 }
-export function gitCounts(snapshot = {}) {
+export function gitCounts(snapshot: GitSnapshot = {}) {
   const staged = Object.keys(snapshot.staged || {}).length;
   const changed = snapshot.gitChanges ?? Object.keys(snapshot.statuses || {}).length;
   return {
@@ -16,10 +27,10 @@ export function gitCounts(snapshot = {}) {
     label: staged ? `${staged} of ${changed} staged` : `${changed} changed`,
   };
 }
-export function syncPlan({ ahead = 0, behind = 0 } = {}) {
+export function syncPlan({ ahead = 0, behind = 0 }: { ahead?: number; behind?: number } = {}) {
   return { pull: behind > 0 || ahead === 0, push: ahead > 0 };
 }
-export function syncNotice(state, error = '', log = '') {
+export function syncNotice(state: SyncState, error = '', log = ''): GitNotice {
   const operation = state.inProgress || '';
   if (operation)
     return {
@@ -39,7 +50,7 @@ export function syncNotice(state, error = '', log = '') {
     log,
   };
 }
-export function commitIdentity(commit) {
+export function commitIdentity(commit: { full?: string; hash: string }): string {
   return commit.full || commit.hash;
 }
-export const filePage = (files, count) => files.slice(0, count);
+export const filePage = <T>(files: T[], count: number): T[] => files.slice(0, count);
