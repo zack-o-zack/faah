@@ -1,21 +1,33 @@
 import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
+import { lspStatus } from './logic.ts';
 import { LspServerRow } from './LspServerRow.tsx';
 import { Popover } from '../lib/Popover.tsx';
 export function LspMenu(): JSX.Element {
   const editor = useEditor();
   const language = editor.language;
+  const status = () =>
+    lspStatus(
+      editor.store.state.lsp.servers,
+      editor.store.state.lsp.state,
+      editor.store.state.lsp.anyRunning,
+    );
   return (
     <>
       <Popover
         triggerId="st-lsp"
+        accessibleLabel={status().title}
+        triggerTitle={status().title}
         triggerClass="btn text-muted-foreground"
         panelId="lsp-menu"
         gap={6}
         label={
           <>
-            <span class="size-1.5 shrink-0 rounded-full bg-faint" aria-hidden="true" />
+            <span class={`size-1.5 shrink-0 rounded-full ${status().dot}`} aria-hidden="true" />
+            <Show when={status().count}>
+              <span class="tabular-nums">{status().count}</span>{' '}
+            </Show>
             LSP
           </>
         }

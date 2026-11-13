@@ -105,6 +105,7 @@ function buildLanguageStore(editor: LanguageHost, options: LanguageOptions = {})
         if (disposed) return result;
         app.actions.acceptLspServers(result);
         for (const server of result.servers || []) {
+          if (server.state === 'installing') installing.add(server.name);
           if (installing.has(server.name) && server.installed && server.state !== 'installing') {
             installing.delete(server.name);
             await post('api/lsp/start', { server: server.name });
