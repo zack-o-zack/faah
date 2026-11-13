@@ -13,6 +13,8 @@ export function ReviewPanel() {
   return (
     <Popover
       triggerId="pr-review-toggle"
+      variant="outline"
+      size="sm"
       label={
         <>
           <span class="icon-[lucide--message-square-text] size-3.5 shrink-0" aria-hidden="true" />

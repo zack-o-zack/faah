@@ -35,7 +35,8 @@ export function CommentThread(props) {
         />
         <button
           type="button"
-          class="inline-flex w-fit cursor-pointer items-center gap-2 font-mono text-primary-text"
+          data-ui="pr-comment-loc"
+          class="inline-flex items-center cursor-pointer w-fit gap-2 p-3 font-mono text-primary-text"
           onClick={(event) => {
             event.preventDefault();
             void editor.actions.openFile(props.thread.path, { line: props.thread.line });

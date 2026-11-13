@@ -17,7 +17,9 @@ export function WalkthroughFiles(props) {
           <LineStats additions={props.data.totalAdditions} deletions={props.data.totalDeletions} />{' '}
           ·{' '}
           <span class="font-mono">
-            {shortRef(props.data.baseRef || 'HEAD')} → {shortRef(props.data.headRef || 'now')}
+            {shortRef(props.data.baseRef || 'HEAD')}{' '}
+            <span class="icon-[lucide--arrow-right] size-3 align-[-2px]" aria-hidden="true" />{' '}
+            {shortRef(props.data.headRef || 'now')}
           </span>
         </span>
       </div>

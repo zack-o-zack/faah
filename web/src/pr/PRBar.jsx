@@ -50,7 +50,9 @@ export function PRBar() {
         </div>
         <div class="flex min-w-0 items-center gap-3 pl-px text-xs text-muted-foreground">
           <span id="pr-refs" class="min-w-0 shrink-[4] truncate font-mono">
-            {pr().base} ← {pr().head}
+            {pr().base}{' '}
+            <span class="icon-[lucide--arrow-left] size-3 align-[-2px]" aria-hidden="true" />{' '}
+            {pr().head}
           </span>
           <MergePill />
           <Show when={pr().diffBaseWarning}>
