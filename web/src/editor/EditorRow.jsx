@@ -69,6 +69,9 @@ export function EditorRow(props) {
       classList={{
         cur: current(),
         'agent-sel': agent(),
+        'agent-anchor': editor.agents
+          .targets()
+          .some((target) => target.path === editor.active()?.path && line() === target.l1),
         'ref-range': reference(),
         'gut-del': deleted(),
         'row-has-err': !!diagnostic() && (diagnostic().severity || 1) === 1,

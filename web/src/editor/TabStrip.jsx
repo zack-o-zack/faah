@@ -104,6 +104,7 @@ export function TabStrip(props) {
         <div class="dropdown-menu contents">
           <div
             id="tab-menu"
+            role="menu"
             ref={panel}
             data-popover
             aria-hidden="false"
@@ -114,6 +115,7 @@ export function TabStrip(props) {
               {(name) => (
                 <button
                   role="menuitem"
+                  data-tab-action={name()}
                   class="w-full justify-start"
                   data-control="sel-menu-item"
                   data-variant="ghost"

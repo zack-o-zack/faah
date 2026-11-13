@@ -9,7 +9,7 @@ export function VimStatus() {
         id="st-vim"
         class="btn font-mono"
         data-control="status-vim-chip"
-        data-variant="ghost"
+        data-variant={editor.ui.vim.mode === 'NORMAL' ? 'primary' : 'secondary'}
         data-size="xs"
         hidden={!editor.settings.preferences().vim}
         onClick={editor.actions.showVimHelp}

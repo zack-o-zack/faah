@@ -71,7 +71,7 @@ export function StatusBar() {
       <LspMenu />
       <span id="sel-stats" class="hidden [#status.selecting_&]:inline-flex">
         {editor.ui.selection
-          ? `${editor.ui.selection.l2 - editor.ui.selection.l1 + 1} lines · ${editor.ui.selection.text.length} chars`
+          ? `${editor.ui.selection.l2 - editor.ui.selection.l1 + 1} ${editor.ui.selection.l1 === editor.ui.selection.l2 ? 'line' : 'lines'} · ${editor.ui.selection.text.length} ${editor.ui.selection.text.length === 1 ? 'char' : 'chars'}`
           : ''}
       </span>
       <span class="status-sep h-3 w-px shrink-0 bg-border [#status.selecting_#footer-actions+&]:hidden" />

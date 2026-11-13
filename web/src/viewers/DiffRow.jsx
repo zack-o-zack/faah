@@ -29,7 +29,7 @@ function Gutter(props) {
             );
           }}
         >
-          •••
+          Edit
         </button>
         {props.number}
       </Show>
