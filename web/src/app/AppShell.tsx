@@ -5,7 +5,7 @@ import { Sidebar } from '../layout/Sidebar.tsx';
 import { RightSidebar } from '../layout/RightSidebar.tsx';
 import { PanelHandle } from '../layout/PanelHandle.tsx';
 import { StatusBar } from '../status/StatusBar.tsx';
-import { ThreadsPanel, ThreadsToggle } from '../threads/ThreadsPanel.jsx';
+import { ThreadsPanel, ThreadsToggle } from '../threads/ThreadsPanel.tsx';
 import { ReviewToggle } from '../review/ReviewToggle.jsx';
 import { ReviewView } from '../review/ReviewView.jsx';
 import { PRPanels } from '../pr/PRPanels.jsx';

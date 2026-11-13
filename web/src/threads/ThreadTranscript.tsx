@@ -1,15 +1,27 @@
+import type { Accessor } from 'solid-js';
+import type { Thread, ThreadTurn as Turn } from './decode.ts';
+interface ThreadTranscriptProps {
+  thread?: Thread | null;
+  id?: string;
+  class?: string;
+  empty?: JSX.Element;
+  children?: (turn: Turn, index: Accessor<number>) => JSX.Element;
+}
+import type { JSX } from 'solid-js';
 import { createEffect, For, onCleanup, Show } from 'solid-js';
-import { ThreadTurn } from './ThreadTurn.jsx';
-export function ThreadTranscript(props) {
-  let viewport, frame;
+import { ThreadTurn } from './ThreadTurn.tsx';
+export function ThreadTranscript(props: ThreadTranscriptProps): JSX.Element {
+  let viewport: HTMLDivElement | undefined;
+  let frame = 0;
   let following = true;
   createEffect(() => {
-    props.thread?.id;
-    props.thread?.turns?.length;
-    props.thread?.turns?.at(-1)?.reply;
-    props.thread?.turns?.at(-1)?.tools?.length;
+    void props.thread?.id;
+    void props.thread?.turns?.length;
+    void props.thread?.turns?.at(-1)?.reply;
+    void props.thread?.turns?.at(-1)?.tools?.length;
     if (following)
       frame = requestAnimationFrame(() => {
+        if (!viewport) return;
         viewport.scrollTop = viewport.scrollHeight;
       });
     onCleanup(() => cancelAnimationFrame(frame));
@@ -20,6 +32,7 @@ export function ThreadTranscript(props) {
       ref={viewport}
       class={props.class || 'flex min-h-0 flex-1 flex-col gap-4 overflow-auto p-4'}
       onScroll={() => {
+        if (!viewport) return;
         following = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight < 60;
       }}
     >

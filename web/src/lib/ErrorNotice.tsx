@@ -1,8 +1,8 @@
 import type { JSX } from 'solid-js';
 
 interface ErrorNoticeProps {
-  error: string;
-  streams?: string[][];
+  error?: string;
+  streams?: (string | undefined)[][];
   children?: JSX.Element;
 }
 import { For, Show } from 'solid-js';
@@ -22,7 +22,7 @@ export function ErrorNotice(props: ErrorNoticeProps): JSX.Element {
             </Show>
           )}
         </For>
-        <button class="btn" onClick={() => void copyText(props.error)}>
+        <button class="btn" onClick={() => void copyText(props.error || '')}>
           Copy error
         </button>
         {props.children}

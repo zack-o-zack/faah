@@ -1,23 +1,29 @@
+import type { ThreadTurn as Turn, Thread } from './decode.ts';
+interface ThreadTurnProps {
+  turn: Turn;
+  thread?: Thread | null;
+}
+import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { Markdown } from '../lib/Markdown.tsx';
 import { ErrorNotice } from '../lib/ErrorNotice.tsx';
 import { explainEvidenceLine, explainStaleLabel } from './references.ts';
 import { turnDuration } from './logic.ts';
-export function ThreadTurn(props) {
+export function ThreadTurn(props: ThreadTurnProps): JSX.Element {
   const editor = useEditor();
-  const open = (target) => {
+  const open = (target: { path: string; line?: number; end?: number }) => {
     void editor.actions.openFile(target.path, { line: target.line || 1 }).then(() => {
       if (target.end)
         editor.actions.setNavigation({
-          reference: { path: target.path, l1: target.line, l2: target.end },
+          reference: { path: target.path, l1: target.line || 1, l2: target.end },
         });
     });
   };
   return (
     <section data-turn={props.turn.id} class="flex flex-col gap-2">
       <div class="ml-8 self-end rounded bg-muted px-3 py-2">
-        <Markdown text={props.turn.prompt} onOpen={open} />
+        <Markdown text={props.turn.prompt || ''} onOpen={open} />
       </div>
       <article class="thr-agent min-w-0 text-sm">
         <p class="text-xs text-muted-foreground">
@@ -28,7 +34,7 @@ export function ThreadTurn(props) {
         </Show>
         <Show when={props.turn.tools?.length}>
           <details>
-            <summary>{props.turn.tools.length} steps</summary>
+            <summary>{props.turn.tools?.length} steps</summary>
             <ol class="list-decimal pl-4">
               <For each={props.turn.tools}>
                 {(step) => <li class="whitespace-pre-wrap">{step}</li>}
@@ -37,9 +43,9 @@ export function ThreadTurn(props) {
           </details>
         </Show>
         <Markdown
-          text={props.turn.reply}
+          text={props.turn.reply || ''}
           refs={
-            props.thread.kind === 'explain' && !props.turn.running ? props.turn.refs || {} : null
+            props.thread?.kind === 'explain' && !props.turn.running ? props.turn.refs || {} : null
           }
           onOpen={open}
         />
@@ -95,7 +101,7 @@ export function ThreadTurn(props) {
                 disabled={!!editor.threads.state.pending}
                 onClick={() => {
                   if (confirm('Revert files changed in this turn?'))
-                    void editor.actions.revertThreadTurn(props.thread.id, props.turn.id);
+                    void editor.actions.revertThreadTurn(props.thread?.id || '', props.turn.id);
                 }}
               >
                 Revert turn
@@ -109,16 +115,19 @@ export function ThreadTurn(props) {
         <Show when={!props.turn.running && props.turn.tracked === false}>
           <p>Changes are unknown outside Git; the workspace was reloaded.</p>
         </Show>
-        <Show when={props.thread.kind === 'explain' && props.turn.id === 1 && !props.turn.running}>
+        <Show when={props.thread?.kind === 'explain' && props.turn.id === 1 && !props.turn.running}>
           <footer class="text-xs text-muted-foreground">
-            {explainEvidenceLine(props.thread.evidence)}{' '}
-            <Show when={editor.threads.state.stale?.id === props.thread.id}>
-              {explainStaleLabel(editor.threads.state.stale.reason)}
+            {explainEvidenceLine(props.thread?.evidence)}{' '}
+            <Show when={editor.threads.state.stale?.id === props.thread?.id}>
+              {explainStaleLabel(editor.threads.state.stale?.reason || '')}
             </Show>
-            <Show when={props.thread.explainReq}>
+            <Show when={props.thread?.explainReq}>
               <button
                 class="btn"
-                onClick={() => void editor.actions.explainSelection(props.thread.explainReq, true)}
+                onClick={() => {
+                  const target = props.thread?.explainReq;
+                  if (target) void editor.actions.explainSelection(target, true);
+                }}
               >
                 Re-explain
               </button>

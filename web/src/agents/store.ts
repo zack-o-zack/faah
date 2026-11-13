@@ -11,7 +11,7 @@ export interface AgentOptions {
   request?: Request;
   post?: Request;
 }
-interface EditSession {
+export interface EditSession {
   id: number;
   target: EditTarget;
   instruction: string;

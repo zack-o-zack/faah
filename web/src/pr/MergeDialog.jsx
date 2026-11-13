@@ -3,7 +3,7 @@ import { useEditor } from '../editor/context.tsx';
 import { Dialog } from '../lib/Dialog.tsx';
 import { ErrorNotice } from '../lib/ErrorNotice.tsx';
 import { keyLabel } from '../lib/keyboard.ts';
-import { AgentPicker } from '../agents/AgentPicker.jsx';
+import { AgentPicker } from '../agents/AgentPicker.tsx';
 import { MERGE_METHODS } from './logic.ts';
 // Shows exactly what lands on the base: method, commit title and message, and what blocks it.
 export function MergeDialog() {

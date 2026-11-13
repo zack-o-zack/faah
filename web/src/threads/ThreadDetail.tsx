@@ -1,14 +1,20 @@
+import type { JSX } from 'solid-js';
 import { For, onMount, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
-import { AgentPicker } from '../agents/AgentPicker.jsx';
+import { AgentPicker } from '../agents/AgentPicker.tsx';
 import { targetRef } from '../agents/logic.ts';
-import { ThreadTranscript } from './ThreadTranscript.jsx';
-export function ThreadDetail() {
+import { ThreadTranscript } from './ThreadTranscript.tsx';
+export function ThreadDetail(): JSX.Element {
   const editor = useEditor();
+  const scopeLabels: Record<string, string> = {
+    pr: 'Whole PR',
+    mine: 'My changes',
+    selection: 'Selection',
+  };
   const thread = () => editor.threads.current() || editor.threads.state.draft;
-  let input;
+  let input: HTMLTextAreaElement | undefined;
   onMount(() => {
-    input.focus();
+    input?.focus();
     editor.actions.clearSelection?.();
   });
   return (
@@ -29,7 +35,7 @@ export function ThreadDetail() {
           <span class="icon-[lucide--arrow-left] size-3.5 shrink-0" aria-hidden="true" />
         </button>
         <span id="thr-title" class="min-w-0 flex-1 truncate text-sm font-medium">
-          {thread()?.title || 'New thread'}
+          {editor.threads.current()?.title || 'New thread'}
         </span>
         <Show when={editor.threads.current()}>
           <button
@@ -72,11 +78,13 @@ export function ThreadDetail() {
                 id="thr-anchor"
                 data-ui="thr-anchor"
                 class="inline-flex max-w-full min-w-0 items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground [&.jump]:cursor-pointer [&.jump]:hover:text-foreground jump"
-                onClick={() => editor.actions.openFile(thread().path, { line: thread().l1 })}
+                onClick={() =>
+                  editor.actions.openFile(thread()?.path || '', { line: thread()?.l1 })
+                }
               >
                 <span class="icon-[lucide--file-code] size-3 shrink-0" aria-hidden="true" />
                 <span data-ui="thr-anchor-text" class="truncate">
-                  {targetRef(thread())}
+                  {targetRef(thread() || {})}
                 </span>
               </button>
             </Show>
@@ -98,7 +106,7 @@ export function ThreadDetail() {
                       disabled={scope === 'selection' && !thread()?.path}
                       onClick={() => void editor.actions.setThreadScope(scope)}
                     >
-                      {{ pr: 'Whole PR', mine: 'My changes', selection: 'Selection' }[scope]}
+                      {scopeLabels[scope]}
                     </button>
                   )}
                 </For>
@@ -127,7 +135,7 @@ export function ThreadDetail() {
                 event.preventDefault();
                 void editor.actions.sendThread();
               }
-              if (event.key === 'Escape') input.blur();
+              if (event.key === 'Escape') input?.blur();
             }}
           />
           <footer data-ui="thr-box-foot" data-align="block-end" class="gap-1">

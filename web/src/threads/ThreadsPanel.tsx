@@ -1,11 +1,12 @@
+import type { JSX } from 'solid-js';
 import { withKeys } from '../lib/keyboard.ts';
 import { Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
-import { AgentSessions } from '../agents/AgentSessions.jsx';
+import { AgentSessions } from '../agents/AgentSessions.tsx';
 import { ErrorNotice } from '../lib/ErrorNotice.tsx';
-import { ThreadList } from './ThreadList.jsx';
-import { ThreadDetail } from './ThreadDetail.jsx';
-export function ThreadsPanel() {
+import { ThreadList } from './ThreadList.tsx';
+import { ThreadDetail } from './ThreadDetail.tsx';
+export function ThreadsPanel(): JSX.Element {
   const editor = useEditor();
   return (
     <aside
@@ -61,7 +62,7 @@ export function ThreadsPanel() {
     </aside>
   );
 }
-export function ThreadsToggle() {
+export function ThreadsToggle(): JSX.Element {
   const editor = useEditor();
   const shown = () => editor.store.state.layout.threads;
   const waiting = () => editor.agents.state.sessions.length;

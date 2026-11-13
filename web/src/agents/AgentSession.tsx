@@ -1,13 +1,18 @@
+import type { EditSession } from './store.ts';
+interface AgentSessionProps {
+  session: EditSession;
+}
+import type { JSX } from 'solid-js';
 import { createEffect, on, onCleanup, onMount, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { createShortcut } from '../lib/shortcuts.tsx';
 import { ErrorNotice } from '../lib/ErrorNotice.tsx';
-import { AgentPicker } from './AgentPicker.jsx';
+import { AgentPicker } from './AgentPicker.tsx';
 import { targetRef } from './logic.ts';
 import { keyLabel } from '../lib/keyboard.ts';
-export function AgentSession(props) {
+export function AgentSession(props: AgentSessionProps): JSX.Element {
   const editor = useEditor();
-  let input;
+  let input: HTMLTextAreaElement | undefined;
   onMount(() => {
     editor.actions.clearSelection?.();
     const frame = requestAnimationFrame(() => input?.focus());

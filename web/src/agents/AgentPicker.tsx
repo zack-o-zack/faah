@@ -1,9 +1,16 @@
+interface AgentPickerProps {
+  id?: string;
+  compact?: boolean;
+  triggerClass?: string;
+  disabled?: boolean;
+}
+import type { JSX } from 'solid-js';
 import { createMemo, createResource, createSignal, For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { Popover } from '../lib/Popover.tsx';
 import { ErrorNotice } from '../lib/ErrorNotice.tsx';
 import { filterAgentModels, groupAgentModels } from './logic.ts';
-export function AgentPicker(props) {
+export function AgentPicker(props: AgentPickerProps): JSX.Element {
   const editor = useEditor();
   const agents = editor.agents;
   const [open, setOpen] = createSignal(false);
@@ -48,13 +55,14 @@ export function AgentPicker(props) {
     </div>
   );
 }
-function PickerPanel(props) {
+function PickerPanel(props: { close: () => void }): JSX.Element {
   const editor = useEditor();
   const agents = editor.agents;
   const [query, setQuery] = createSignal('');
   const [chosen, setChosen] = createSignal('');
   const [selected, setSelected] = createSignal(0);
-  let input, list;
+  let input: HTMLInputElement | undefined;
+  let list: HTMLDivElement | undefined;
   const groups = createMemo(() => groupAgentModels(agents.state.harnesses));
   const active = () =>
     groups().find((group) => group.harness === (chosen() || agents.state.selected)) || groups()[0];
@@ -74,13 +82,13 @@ function PickerPanel(props) {
       )[0]?.models || []
     );
   });
-  async function choose(model) {
-    if (await editor.actions.selectAgent(active().harness, model)) props.close();
+  async function choose(model: string) {
+    if (await editor.actions.selectAgent(active()?.harness || '', model)) props.close();
   }
-  function move(delta) {
+  function move(delta: number) {
     const index = Math.max(0, Math.min(models().length - 1, selected() + delta));
     setSelected(index);
-    list.children[index]?.scrollIntoView({ block: 'nearest' });
+    list?.children[index]?.scrollIntoView({ block: 'nearest' });
   }
   return (
     <div
@@ -98,7 +106,7 @@ function PickerPanel(props) {
                 setChosen(group.harness);
                 setQuery('');
                 setSelected(0);
-                input.focus();
+                input?.focus();
               }}
             >
               {group.harness}
@@ -124,7 +132,8 @@ function PickerPanel(props) {
             }
             if (event.key === 'Enter' && models()[selected()]) {
               event.preventDefault();
-              void choose(models()[selected()].value);
+              const model = models()[selected()];
+              if (model) void choose(model.value);
             }
           }}
         />

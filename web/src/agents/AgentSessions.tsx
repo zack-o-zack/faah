@@ -1,15 +1,16 @@
+import type { JSX } from 'solid-js';
 import { For, Show, onMount, onCleanup } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
-import { AgentSession } from './AgentSession.jsx';
-import { AgentPicker } from './AgentPicker.jsx';
+import { AgentSession } from './AgentSession.tsx';
+import { AgentPicker } from './AgentPicker.tsx';
 import { ErrorNotice } from '../lib/ErrorNotice.tsx';
 import { createShortcut } from '../lib/shortcuts.tsx';
 import { AGENT_HELP } from '../shortcuts/help.ts';
-export function AgentSessions() {
+export function AgentSessions(): JSX.Element {
   const editor = useEditor();
   const agents = editor.agents;
   onMount(() => {
-    const beforeUnload = (event) => {
+    const beforeUnload = (event: BeforeUnloadEvent) => {
       if (!agents.state.batch.pending && !agents.state.sessions.some((session) => session.pending))
         return;
       event.preventDefault();

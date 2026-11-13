@@ -1,6 +1,6 @@
 import { Match, Show, Switch } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
-import { ThreadTranscript } from '../threads/ThreadTranscript.jsx';
+import { ThreadTranscript } from '../threads/ThreadTranscript.tsx';
 import { STAGE_STATUS, stageStatus } from './logic.ts';
 import { StageDot } from './StageDot.jsx';
 import { StageEditor } from './StageEditor.jsx';

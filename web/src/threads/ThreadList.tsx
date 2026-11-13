@@ -1,9 +1,10 @@
+import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { targetRef } from '../agents/logic.ts';
 import { relativeTime } from './logic.ts';
 import { keyLabel } from '../lib/keyboard.ts';
-export function ThreadList() {
+export function ThreadList(): JSX.Element {
   const editor = useEditor();
   return (
     <section id="thr-list-view" class="flex flex-1 min-h-0 flex-col">
@@ -28,7 +29,7 @@ export function ThreadList() {
         <button
           id="thr-new"
           class="btn"
-          onClick={() => editor.actions.newThread()}
+          onClick={() => editor.actions.newThread(null)}
           data-variant="primary"
           data-size="xs"
           data-control="thr-btn-primary"
@@ -65,7 +66,7 @@ export function ThreadList() {
                 </strong>
                 <span class="block truncate font-mono text-xs text-muted-foreground">
                   {targetRef(thread)} · {thread.turns} turns ·{' '}
-                  {relativeTime(thread.updated, Date.now())}
+                  {relativeTime(thread.updated || 0, Date.now())}
                 </span>
               </button>
               <button
