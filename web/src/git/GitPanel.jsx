@@ -48,7 +48,6 @@ export function GitPanel() {
             data-variant="ghost"
             data-size="icon-xs"
             aria-label="Collapse Git panel"
-            aria-expanded={!git.state.collapsed}
             onClick={() => editor.actions.setGitPanelCollapsed(!git.state.collapsed)}
           >
             <span class="icon-[lucide--chevron-down] size-3.5 shrink-0" aria-hidden="true" />

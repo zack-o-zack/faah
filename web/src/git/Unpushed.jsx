@@ -59,7 +59,6 @@ export function Unpushed() {
             data-variant="ghost"
             data-size="icon-xs"
             aria-label="Collapse unpushed commits"
-            aria-expanded={!git.state.unpushedCollapsed}
             onClick={() => editor.actions.setUnpushedCollapsed(!git.state.unpushedCollapsed)}
           >
             <span class="icon-[lucide--chevron-down] size-3.5 shrink-0" aria-hidden="true" />
