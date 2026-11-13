@@ -3,7 +3,7 @@ import { expect, test } from 'vitest';
 import { createAppStore } from '../app/store.js';
 import { EditorProvider } from '../editor/context.jsx';
 import { Metrics } from './Metrics.jsx';
-import { fmtBytes, imageStatus } from './logic.js';
+import { fmtBytes, imageStatus, statusMessage } from './logic.js';
 
 test('metrics chip and open popover follow workspace publications', () => {
   let app;
@@ -41,4 +41,11 @@ test('status formatting covers empty metrics and image dimensions and zoom', () 
   expect(
     imageStatus({ isImage: true, imageMeta: { width: 20, height: 30 }, image: { scale: 2 } }),
   ).toBe('20 × 30 px · 200%');
+});
+
+test('workspace status exposes failures and pending work before document detail', () => {
+  expect(statusMessage({ error: 'Offline', note: 'Saved', pending: true }, null)).toBe('Offline');
+  expect(statusMessage({ pending: true }, null)).toBe('Refreshing workspace…');
+  expect(statusMessage({ reindexing: true }, null)).toBe('Re-indexing workspace…');
+  expect(statusMessage({ note: 'Agent finished' }, null)).toBe('Agent finished');
 });

@@ -211,12 +211,13 @@ real document. See `lib/primitives.test.jsx`, `workbench/Workbench.test.jsx` and
 
 ## A1 Solid audit
 
-Effects retained after the phase 0/A1 audit:
+Effects retained at the phase 0/A1 audit (later deletions are noted):
 
 - `lib/theme.js`: applies the resolved theme to the document root.
 - `lib/Dialog.jsx`: drives native modal open/close and restores focus.
 - `lib/ToastItem.jsx`: owns notification expiry timers and cancels them on disposal.
-- `app/legacy-bridge.js`: notifies imperative legacy theme consumers.
+- `app/legacy-bridge.js`: notified imperative legacy theme consumers; removed in B
+  after its final consumer disappeared.
 - `editor/EditorShell.jsx`: applies editor mode classes to the static document body,
   using explicit dependencies with `on`.
 - `editor/EditorRow.jsx` (observer): registers each owned row with ResizeObserver.
@@ -248,7 +249,7 @@ and separated feature actions from pure algorithms. Workbench children expose fo
 operations instead of handing DOM elements to parents. Workbench refresh/open actions
 also reject stale responses. Context injects stores and services, and no migrated
 component receives signal accessors as data props or destructures its props.
-There are twelve production `createEffect` calls in the directories above (two each
+At A1 there were twelve production `createEffect` calls in these directories (two each
 in `EditorRow` and `HoverCard`, one in each other listed module), and one test-only
 effect in `lib/events.test.jsx` that observes batched stream updates. Workbench and
 holding contain none. The selection bar mounts its actions only while selected;
@@ -445,7 +446,7 @@ and unpushed sections. Sidebar/inspector/status markup has left `index.html`;
 its remaining mounts and Threads contents belong to phase C.
 
 `status/StatusBar`, `StatusActions`, `Metrics` and `MetricsSummary` derive document,
-note and process data from the app store. Metrics arrive through the one workspace
+note, refresh progress/errors and process data from the app store. Metrics arrive through the one workspace
 stream, and their details use `Popover`. Container queries reduce footer actions
 as available width shrinks, replacing the old mutation/resize fitting controller.
 `status.js`, `metricsview.js` and `panels.js` are deleted. Every phase-B legacy

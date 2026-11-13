@@ -11,3 +11,11 @@ export function imageStatus(document) {
     ? `${document.imageMeta.width} × ${document.imageMeta.height} px · ${zoom}`
     : zoom;
 }
+
+export function statusMessage(workspace, document) {
+  if (workspace.error) return workspace.error;
+  if (workspace.note) return workspace.note;
+  if (workspace.reindexing) return 'Re-indexing workspace…';
+  if (workspace.pending) return 'Refreshing workspace…';
+  return imageStatus(document);
+}

@@ -5,7 +5,7 @@ import { VimStatus } from '../editor/VimStatus.jsx';
 import { LspMenu } from '../lsp/LspMenu.jsx';
 import { Metrics } from './Metrics.jsx';
 import { StatusActions } from './StatusActions.jsx';
-import { fmtBytes, imageStatus } from './logic.js';
+import { fmtBytes, statusMessage } from './logic.js';
 export function StatusBar() {
   const editor = useEditor();
   return (
@@ -20,8 +20,14 @@ export function StatusBar() {
       <span id="st-size" class="hidden @3xl:inline">
         {editor.active() ? fmtBytes(editor.active().size) : ''}
       </span>
-      <span id="st-pos" class="min-w-0 truncate">
-        {editor.store.state.workspace.note || imageStatus(editor.active())}
+      <span
+        id="st-pos"
+        role="status"
+        class="min-w-0 truncate"
+        classList={{ 'text-destructive': !!editor.store.state.workspace.error }}
+        title={editor.store.state.workspace.error || ''}
+      >
+        {statusMessage(editor.store.state.workspace, editor.active())}
       </span>
       <SelectionBar />
       <span id="editor-cursor-root" class="contents">
