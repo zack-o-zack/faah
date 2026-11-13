@@ -3,6 +3,7 @@ import { onCleanup, onMount } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { SelectionBar } from '../editor/SelectionBar.tsx';
 import { VimStatus } from '../editor/VimStatus.tsx';
+import { Metrics } from './Metrics.tsx';
 import { LspMenu } from '../lsp/LspMenu.tsx';
 import { StatusSettings } from './StatusSettings.tsx';
 import { StatusActions } from './StatusActions.tsx';
@@ -73,12 +74,14 @@ export function StatusBar(): JSX.Element {
         {statusMessage(editor.store.state.workspace, editor.active())}
       </span>
       <span id="status-spacer" ref={spacer} class="flex-1" />
+      <LspMenu />
       <span id="sel-stats" class="hidden [#status.selecting_&]:inline-flex">
         {editor.ui.selection
           ? `${editor.ui.selection?.l2 - editor.ui.selection?.l1 + 1} ${editor.ui.selection?.l1 === editor.ui.selection?.l2 ? 'line' : 'lines'} · ${editor.ui.selection?.text.length} ${editor.ui.selection?.text.length === 1 ? 'char' : 'chars'}`
           : ''}
       </span>
-      <LspMenu />
+      <span class="status-sep h-3 w-px shrink-0 bg-border [#status.selecting_#footer-actions+&]:hidden" />
+      <Metrics />
       <StatusSettings />
     </footer>
   );
