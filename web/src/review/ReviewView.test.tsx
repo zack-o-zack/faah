@@ -2,31 +2,29 @@ import { fireEvent, render, screen, waitFor } from '@solidjs/testing-library';
 import { expect, test, vi } from 'vitest';
 import { createAppStore } from '../app/store.ts';
 import { EditorProvider } from '../editor/context.tsx';
-import { createReviewStore } from './store.ts';
-import { ReviewView } from './ReviewView.jsx';
+import { createEditorStore } from '../editor/store.ts';
+import type { EditorStore } from '../editor/store.ts';
+import { required } from '../lib/test-values.ts';
+import { ReviewView } from './ReviewView.tsx';
 
-function mount(reply, walkthrough = { files: [], totalFiles: 0 }) {
-  let editor;
+function mount(reply: unknown, walkthrough: unknown = { files: [], totalFiles: 0 }) {
+  let editor: EditorStore | undefined;
   render(() => {
     const app = createAppStore();
     app.actions.subscribeWorkspaceEvent = () => () => {};
     app.actions.setWorkspaceTopic = vi.fn();
     app.actions.watchWorkspaceThread = () => () => {};
-    editor = {
-      store: app,
-      threads: { state: { records: {} } },
-      actions: { loadThread: vi.fn(async () => ({})), openFile: vi.fn() },
-    };
-    const request = vi.fn(async (path) => (path.includes('walkthrough') ? walkthrough : reply));
-    editor.review = createReviewStore(editor, { request });
-    Object.assign(editor.actions, editor.review.actions);
+    const request = vi.fn(async (path: string) =>
+      path.includes('walkthrough') ? walkthrough : reply,
+    );
+    editor = createEditorStore(app, { review: { request } });
     return (
       <EditorProvider value={editor}>
         <ReviewView />
       </EditorProvider>
     );
   });
-  return editor;
+  return required(editor);
 }
 
 test('the overview mounts only in review mode and toggles its layout', async () => {
@@ -35,7 +33,7 @@ test('the overview mounts only in review mode and toggles its layout', async () 
   editor.actions.setReviewMode('review');
   await screen.findByText('Working tree is clean');
   editor.actions.setReviewTab('stages');
-  const view = document.getElementById('review-view');
+  const view = required(document.getElementById('review-view'));
   expect(view.classList.contains('layout-vertical')).toBe(true);
   fireEvent.click(screen.getByRole('button', { name: 'Toggle layout' }));
   expect(view.classList.contains('layout-horizontal')).toBe(true);
@@ -63,9 +61,13 @@ test('a configured stage shows its title and question before its first run', asy
   editor.actions.setReviewMode('review');
   editor.actions.setReviewTab('stages');
   await waitFor(() =>
-    expect(document.getElementById('review-question-text')?.textContent).toBe('What changed?'),
+    expect(required(document.getElementById('review-question-text'))?.textContent).toBe(
+      'What changed?',
+    ),
   );
-  expect(document.getElementById('review-stage-title').textContent).toBe('Configured stage');
+  expect(required(document.getElementById('review-stage-title')).textContent).toBe(
+    'Configured stage',
+  );
 });
 
 test('walkthrough filters list only files with that kind of insight', async () => {

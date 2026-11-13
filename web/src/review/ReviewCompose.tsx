@@ -1,6 +1,7 @@
+import type { JSX } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 // Follow-up questions about a stage go to that stage's thread.
-export function ReviewCompose() {
+export function ReviewCompose(): JSX.Element {
   const editor = useEditor();
   const review = editor.review;
   const canSend = () =>

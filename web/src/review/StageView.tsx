@@ -1,16 +1,17 @@
+import type { JSX } from 'solid-js';
 import { Match, Show, Switch } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { ThreadTranscript } from '../threads/ThreadTranscript.tsx';
 import { STAGE_STATUS, stageStatus } from './logic.ts';
-import { StageDot } from './StageDot.jsx';
-import { StageEditor } from './StageEditor.jsx';
-import { StageTurn } from './StageTurn.jsx';
-import { ReviewCompose } from './ReviewCompose.jsx';
-export function StageView() {
+import { StageDot } from './StageDot.tsx';
+import { StageEditor } from './StageEditor.tsx';
+import { StageTurn } from './StageTurn.tsx';
+import { ReviewCompose } from './ReviewCompose.tsx';
+export function StageView(): JSX.Element {
   const editor = useEditor();
   const review = editor.review;
   const stage = () => review.active();
-  const thread = () => editor.threads.state.records[stage()?.threadId] || null;
+  const thread = () => editor.threads.state.records[stage()?.threadId || ''] || null;
   return (
     <section id="review-stage-main" class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       <Show when={stage()}>
@@ -23,7 +24,7 @@ export function StageView() {
         <Match when={!stage()}>
           <div class="flex-1" />
         </Match>
-        <Match when={!stage().threadId}>
+        <Match when={!stage()?.threadId}>
           <div
             id="review-thread-msgs"
             data-ui="review-thread-msgs thr-msgs"
@@ -49,7 +50,7 @@ export function StageView() {
             </div>
           </div>
         </Match>
-        <Match when={!thread() && review.state.loadingThread === stage().threadId}>
+        <Match when={!thread() && review.state.loadingThread === stage()?.threadId}>
           <p class="flex flex-1 items-center justify-center gap-2 text-sm text-muted-foreground">
             <span class="icon-[lucide--loader-circle] size-3.5 animate-spin" aria-hidden="true" />
             Loading the answer…
@@ -74,11 +75,11 @@ export function StageView() {
     </section>
   );
 }
-function StageHeader() {
+function StageHeader(): JSX.Element {
   const editor = useEditor();
   const review = editor.review;
   const status = () => stageStatus(review.active());
-  const def = () => review.active().def;
+  const def = () => review.active()?.def;
   return (
     <header class="flex items-start gap-3 border-b px-4 py-3">
       <div class="flex min-w-0 flex-1 flex-col gap-1">
@@ -93,11 +94,12 @@ function StageHeader() {
           </span>
         </span>
         <h2 id="review-stage-title" class="min-w-0 truncate text-base font-semibold">
-          {def().title || `Stage ${review.state.active + 1}`}
+          {def()?.title || `Stage ${review.state.active + 1}`}
         </h2>
         <Show
           when={
-            (!review.state.edit || review.state.edit.index < 0) && (def().question || def().prompt)
+            (!review.state.edit || review.state.edit.index < 0) &&
+            (def()?.question || def()?.prompt)
           }
         >
           <div
@@ -110,7 +112,7 @@ function StageHeader() {
               data-ui="review-question-text"
               class="min-w-0 text-sm text-muted-foreground"
             >
-              {def().question || def().prompt}
+              {def()?.question || def()?.prompt}
             </span>
           </div>
         </Show>

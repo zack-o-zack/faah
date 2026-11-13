@@ -34,8 +34,15 @@ export const STAGE_STATUS = {
   stopped: { dot: 'bg-muted-foreground/40 ring-1 ring-muted-foreground', label: 'Stopped' },
 };
 
-export const stageStatus = (stage: { status?: string } | null | undefined): string =>
-  stage?.status && Object.hasOwn(STAGE_STATUS, stage.status) ? stage.status : 'pending';
+function knownStatus(value: string): value is keyof typeof STAGE_STATUS {
+  return Object.hasOwn(STAGE_STATUS, value);
+}
+export function stageStatus(
+  stage: { status?: string } | null | undefined,
+): keyof typeof STAGE_STATUS {
+  const status = stage?.status;
+  return status && knownStatus(status) ? status : 'pending';
+}
 export const isRunning = (run: ReviewRun | null | undefined): boolean => run?.status === 'running';
 
 /** The server sends the active workflow either flat or inside its workflow list. */

@@ -1,11 +1,19 @@
+import type { StageState } from './types.ts';
+
+interface StageCardProps {
+  stage: StageState;
+  index: number;
+  last: boolean;
+}
+import type { JSX } from 'solid-js';
 import { Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { ContextMenu } from '../lib/ContextMenu.tsx';
 import { DropdownMenu } from '../lib/DropdownMenu.tsx';
 import { MenuItem } from '../lib/MenuItem.tsx';
 import { STAGE_STATUS, stageStatus } from './logic.ts';
-import { StageDot } from './StageDot.jsx';
-export function StageCard(props) {
+import { StageDot } from './StageDot.tsx';
+export function StageCard(props: StageCardProps): JSX.Element {
   const editor = useEditor();
   const review = editor.review;
   const title = () => props.stage.def.title || `Stage ${props.index + 1}`;
@@ -49,7 +57,7 @@ export function StageCard(props) {
   );
 }
 // Reordering and removing wait while the pipeline runs: run stages match the list by position.
-function StageMenuItems(props) {
+function StageMenuItems(props: { index: number }): JSX.Element {
   const editor = useEditor();
   const review = editor.review;
   const count = () => review.state.config.stages.length;

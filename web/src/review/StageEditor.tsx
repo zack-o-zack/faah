@@ -1,12 +1,17 @@
+import type { StageDraft } from './types.ts';
+import type { JSX } from 'solid-js';
 import { onMount, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { Dialog } from '../lib/Dialog.tsx';
-export function StageEditor() {
+export function StageEditor(): JSX.Element {
   const editor = useEditor();
   const edit = () => editor.review.state.edit;
-  const field = (key) => (event) => editor.actions.setStageField(key, event.currentTarget.value);
+  const field =
+    (key: keyof StageDraft) =>
+    (event: InputEvent & { currentTarget: HTMLInputElement | HTMLTextAreaElement }) =>
+      editor.actions.setStageField(key, event.currentTarget.value);
   return (
-    <Show when={edit().index < 0} fallback={<InlineStageEditor />}>
+    <Show when={(edit()?.index ?? -1) < 0} fallback={<InlineStageEditor />}>
       <Dialog
         open
         bare
@@ -42,7 +47,7 @@ export function StageEditor() {
                 placeholder="e.g. Security & Permissions"
                 class="input h-8!"
                 autofocus
-                value={edit().value.title}
+                value={edit()?.value.title}
                 onInput={field('title')}
               />
             </label>
@@ -53,7 +58,7 @@ export function StageEditor() {
                 id="add-stage-q-input"
                 placeholder="e.g. Does this PR introduce any auth or injection risks?"
                 class="input h-8!"
-                value={edit().value.question}
+                value={edit()?.value.question}
                 onInput={field('question')}
               />
             </label>
@@ -64,7 +69,7 @@ export function StageEditor() {
                 id="add-stage-prompt-input"
                 placeholder="What the harness should look at and how to answer"
                 class="textarea resize-y"
-                value={edit().value.prompt}
+                value={edit()?.value.prompt}
                 onInput={field('prompt')}
               />
             </label>
@@ -99,12 +104,15 @@ export function StageEditor() {
     </Show>
   );
 }
-function InlineStageEditor() {
+function InlineStageEditor(): JSX.Element {
   const editor = useEditor();
   const edit = () => editor.review.state.edit;
-  const field = (key) => (event) => editor.actions.setStageField(key, event.currentTarget.value);
-  let question;
-  onMount(() => question.focus());
+  const field =
+    (key: keyof StageDraft) =>
+    (event: InputEvent & { currentTarget: HTMLInputElement | HTMLTextAreaElement }) =>
+      editor.actions.setStageField(key, event.currentTarget.value);
+  let question: HTMLTextAreaElement | undefined;
+  onMount(() => question?.focus());
   return (
     <form
       id="review-stage-inline-editor"
@@ -131,7 +139,7 @@ function InlineStageEditor() {
           placeholder="e.g. Performance Impact"
           class="input h-8!"
           data-control="review-inline-input"
-          value={edit().value.title}
+          value={edit()?.value.title}
           onInput={field('title')}
         />
       </label>
@@ -145,7 +153,7 @@ function InlineStageEditor() {
           placeholder="e.g. Are there any performance bottlenecks or lock contentions?"
           class="textarea resize-y"
           data-control="review-inline-textarea"
-          value={edit().value.question}
+          value={edit()?.value.question}
           onInput={field('question')}
         />
       </label>
@@ -158,7 +166,7 @@ function InlineStageEditor() {
           placeholder="What the harness should look at and how to answer"
           class="textarea resize-y"
           data-control="review-inline-textarea"
-          value={edit().value.prompt}
+          value={edit()?.value.prompt}
           onInput={field('prompt')}
         />
       </label>

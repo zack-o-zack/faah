@@ -1,6 +1,11 @@
+interface LineStatsProps {
+  additions?: number;
+  deletions?: number;
+}
+import type { JSX } from 'solid-js';
 import { Show } from 'solid-js';
 // +12 −3, leaving out a side with nothing on it.
-export function LineStats(props) {
+export function LineStats(props: LineStatsProps): JSX.Element {
   return (
     <Show
       when={props.additions || props.deletions}

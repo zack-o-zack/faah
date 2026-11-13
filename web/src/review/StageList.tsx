@@ -1,8 +1,9 @@
+import type { JSX } from 'solid-js';
 import { createSignal, For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { ErrorNotice } from '../lib/ErrorNotice.tsx';
-import { StageCard } from './StageCard.jsx';
-export function StageList() {
+import { StageCard } from './StageCard.tsx';
+export function StageList(): JSX.Element {
   const editor = useEditor();
   const review = editor.review;
   return (
@@ -106,10 +107,10 @@ export function StageList() {
     </aside>
   );
 }
-function WorkflowName() {
+function WorkflowName(): JSX.Element {
   const editor = useEditor();
   const [editing, setEditing] = createSignal(false);
-  const commit = (value) => {
+  const commit = (value: string) => {
     setEditing(false);
     void editor.actions.renameReview(value);
   };

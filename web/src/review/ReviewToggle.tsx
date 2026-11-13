@@ -1,10 +1,11 @@
+import type { JSX } from 'solid-js';
 import { onCleanup, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { createShortcut } from '../lib/shortcuts.tsx';
 import { withKeys } from '../lib/keyboard.ts';
 import { REVIEW_HELP } from '../shortcuts/help.ts';
 // The top bar's way into the overview, and back to the editor while it shows.
-export function ReviewToggle() {
+export function ReviewToggle(): JSX.Element {
   const editor = useEditor();
   const review = editor.review;
   const pr = () => editor.store.state.workspace.meta?.pr;
@@ -34,7 +35,7 @@ export function ReviewToggle() {
           >
             <span class="icon-[lucide--git-pull-request] size-3.5 shrink-0" aria-hidden="true" />
             <span>
-              PR <span class="tabular-nums">#{pr().number}</span>
+              PR <span class="tabular-nums">#{pr()?.number}</span>
             </span>
           </Show>
           <Show when={review.running()}>

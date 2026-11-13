@@ -1,14 +1,20 @@
+import type { WalkthroughFile as File } from './types.ts';
+
+interface WalkthroughFileProps {
+  file: File;
+}
+import type { JSX } from 'solid-js';
 import { createEffect, For, on } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { rowLine } from './logic.ts';
-import { LineStats } from './LineStats.jsx';
-const ROW_TYPE = { add: 'diff-type-add', del: 'diff-type-del' };
-const SIGN = { add: '+', del: '-' };
-export function WalkthroughFile(props) {
+import { LineStats } from './LineStats.tsx';
+const ROW_TYPE: Record<string, string> = { add: 'diff-type-add', del: 'diff-type-del' };
+const SIGN: Record<string, string> = { add: '+', del: '-' };
+export function WalkthroughFile(props: WalkthroughFileProps): JSX.Element {
   const editor = useEditor();
   const review = editor.review;
-  const rows = new Map();
-  let header;
+  const rows = new Map<number, HTMLDivElement>();
+  let header: HTMLDivElement | undefined;
   const target = () => review.state.target;
   const targetLine = () => (target().path === props.file.path ? target().line : -1);
   // Native scroll for a requested reveal of this file or one of its lines.
@@ -19,7 +25,7 @@ export function WalkthroughFile(props) {
         if (target().path !== props.file.path) return;
         const row = rows.get(target().line);
         if (row) row.scrollIntoView({ block: 'center', behavior: 'smooth' });
-        else header.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        else header?.scrollIntoView({ block: 'start', behavior: 'smooth' });
       },
       { defer: true },
     ),

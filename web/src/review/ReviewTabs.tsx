@@ -1,8 +1,14 @@
+interface ReviewTabProps {
+  id: string;
+  title: string;
+  children?: JSX.Element;
+}
+import type { JSX } from 'solid-js';
 import { For, Index, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { INSIGHT_KINDS, insightCounts, pipelineProgress } from './logic.ts';
-import { StageDot } from './StageDot.jsx';
-export function ReviewTabs() {
+import { StageDot } from './StageDot.tsx';
+export function ReviewTabs(): JSX.Element {
   const editor = useEditor();
   const review = editor.review;
   return (
@@ -28,7 +34,7 @@ export function ReviewTabs() {
     </div>
   );
 }
-function ReviewTab(props) {
+function ReviewTab(props: ReviewTabProps): JSX.Element {
   const editor = useEditor();
   const selected = () => editor.review.state.tab === props.id;
   return (
@@ -47,7 +53,7 @@ function ReviewTab(props) {
   );
 }
 // The tab carries the pipeline's progress, so it reads from the Diff tab too.
-function PipelineBadge() {
+function PipelineBadge(): JSX.Element {
   const review = useEditor().review;
   const progress = () => pipelineProgress(review.stages());
   return (
@@ -73,11 +79,14 @@ function PipelineBadge() {
     </span>
   );
 }
-function WalkthroughToolbar() {
+function WalkthroughToolbar(): JSX.Element {
   const editor = useEditor();
   const review = editor.review;
   const counts = () => insightCounts(review.walkthroughData()?.files || []);
-  const chips = [{ id: 'all', label: 'All', title: 'Show all insights' }, ...INSIGHT_KINDS];
+  const chips: { id: string; label: string; title: string; icon?: string }[] = [
+    { id: 'all', label: 'All', title: 'Show all insights' },
+    ...INSIGHT_KINDS,
+  ];
   return (
     <div class="flex items-center gap-2">
       <div class="flex flex-wrap items-center gap-1" role="group" aria-label="Filter insights">

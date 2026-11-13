@@ -1,7 +1,8 @@
+import type { JSX } from 'solid-js';
 import { Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { withKeys } from '../lib/keyboard.ts';
-export function ReturnPill() {
+export function ReturnPill(): JSX.Element {
   const editor = useEditor();
   const review = editor.review;
   return (
@@ -11,7 +12,7 @@ export function ReturnPill() {
         class="card fixed right-6 bottom-12 z-50 flex flex-row items-center gap-2 p-3"
       >
         <span class="icon-[lucide--corner-up-left] size-3.5 shrink-0 text-primary-text" />
-        <span>Jumped from: {review.state.returnTo.title}</span>
+        <span>Jumped from: {review.state.returnTo?.title}</span>
         <button
           id="btn-return-to-review"
           title={withKeys('Back to the overview ({Mod+Shift+V})')}

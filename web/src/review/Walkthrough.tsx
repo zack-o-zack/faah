@@ -1,8 +1,15 @@
+interface EmptyStateProps {
+  icon?: string;
+  spinner?: boolean;
+  title: string;
+  children?: JSX.Element;
+}
+import type { JSX } from 'solid-js';
 import { Match, Show, Switch } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
-import { WalkthroughFiles } from './WalkthroughFiles.jsx';
-import { WalkthroughDiff } from './WalkthroughDiff.jsx';
-export function Walkthrough() {
+import { WalkthroughFiles } from './WalkthroughFiles.tsx';
+import { WalkthroughDiff } from './WalkthroughDiff.tsx';
+export function Walkthrough(): JSX.Element {
   const review = useEditor().review;
   const files = () => review.walkthroughData()?.files || [];
   return (
@@ -19,7 +26,7 @@ export function Walkthrough() {
         <Match when={!files().length}>
           <EmptyState icon="icon-[lucide--check]" title="Working tree is clean">
             No modified files or uncommitted diffs found against{' '}
-            {review.walkthroughData().baseRef || 'HEAD'}.
+            {review.walkthroughData()?.baseRef || 'HEAD'}.
           </EmptyState>
         </Match>
         <Match when={files().length}>
@@ -30,7 +37,7 @@ export function Walkthrough() {
     </div>
   );
 }
-function EmptyState(props) {
+function EmptyState(props: EmptyStateProps): JSX.Element {
   return (
     <div class="empty flex h-full flex-1 flex-col items-center justify-center gap-2 p-3 text-center text-muted-foreground">
       <Show

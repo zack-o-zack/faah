@@ -1,9 +1,15 @@
+import type { WalkthroughReply, WalkthroughFile } from './types.ts';
+
+interface WalkthroughFilesProps {
+  data: WalkthroughReply | null | undefined;
+}
+import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { fileInsights, shortRef, visibleFiles } from './logic.ts';
-import { LineStats } from './LineStats.jsx';
+import { LineStats } from './LineStats.tsx';
 // The left pane lists files; insights stay hidden until a filter asks for one kind.
-export function WalkthroughFiles(props) {
+export function WalkthroughFiles(props: WalkthroughFilesProps): JSX.Element {
   const review = useEditor().review;
   return (
     <aside
@@ -13,13 +19,16 @@ export function WalkthroughFiles(props) {
       <div class="flex flex-col gap-1 px-3 pt-3">
         <span class="text-sm font-semibold">Changed files</span>
         <span class="text-xs text-muted-foreground">
-          {props.data.totalFiles || props.data.files.length} files ·{' '}
-          <LineStats additions={props.data.totalAdditions} deletions={props.data.totalDeletions} />{' '}
+          {props.data?.totalFiles || props.data?.files.length || 0} files ·{' '}
+          <LineStats
+            additions={props.data?.totalAdditions}
+            deletions={props.data?.totalDeletions}
+          />{' '}
           ·{' '}
           <span class="font-mono">
-            {shortRef(props.data.baseRef || 'HEAD')}{' '}
+            {shortRef(props.data?.baseRef || 'HEAD')}{' '}
             <span class="icon-[lucide--arrow-right] size-3 align-[-2px]" aria-hidden="true" />{' '}
-            {shortRef(props.data.headRef || 'now')}
+            {shortRef(props.data?.headRef || 'now')}
           </span>
         </span>
       </div>
@@ -27,14 +36,14 @@ export function WalkthroughFiles(props) {
         id="review-understanding-content"
         class="flex min-h-0 flex-1 flex-col gap-px overflow-x-hidden overflow-y-auto overscroll-contain px-1.5 py-2"
       >
-        <For each={visibleFiles(props.data.files, review.state.filter)}>
+        <For each={visibleFiles(props.data?.files || [], review.state.filter)}>
           {(file) => <FileCard file={file} />}
         </For>
       </div>
     </aside>
   );
 }
-function FileCard(props) {
+function FileCard(props: { file: WalkthroughFile }): JSX.Element {
   const editor = useEditor();
   const review = editor.review;
   const slash = () => props.file.path.lastIndexOf('/');
@@ -70,7 +79,10 @@ function FileCard(props) {
     </article>
   );
 }
-function InsightRow(props) {
+function InsightRow(props: {
+  path: string;
+  item: ReturnType<typeof fileInsights>[number];
+}): JSX.Element {
   const editor = useEditor();
   const target = () => editor.review.state.target;
   return (

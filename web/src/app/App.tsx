@@ -8,7 +8,7 @@ import { EditorShortcuts } from '../editor/EditorShortcuts.tsx';
 import { EditorMeasure, type EditorGeometry } from '../editor/EditorMeasure.tsx';
 import { Palette } from '../palette/Palette.tsx';
 import { NewItemDialog } from '../workspace/NewItemDialog.tsx';
-import { ReturnPill } from '../review/ReturnPill.jsx';
+import { ReturnPill } from '../review/ReturnPill.tsx';
 import { MergeDialog } from '../pr/MergeDialog.jsx';
 import { ForgeConnectDialog } from '../pr/ForgeConnectDialog.jsx';
 import { ComposerDock } from '../pr/ComposerDock.jsx';

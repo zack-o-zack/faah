@@ -1,10 +1,11 @@
+import type { JSX } from 'solid-js';
 import { Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
-import { ReviewTabs } from './ReviewTabs.jsx';
-import { Walkthrough } from './Walkthrough.jsx';
-import { StageList } from './StageList.jsx';
-import { StageView } from './StageView.jsx';
-export function ReviewView() {
+import { ReviewTabs } from './ReviewTabs.tsx';
+import { Walkthrough } from './Walkthrough.tsx';
+import { StageList } from './StageList.tsx';
+import { StageView } from './StageView.tsx';
+export function ReviewView(): JSX.Element {
   const review = useEditor().review;
   return (
     <Show when={review.state.mode === 'review'}>

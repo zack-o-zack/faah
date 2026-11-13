@@ -1,17 +1,25 @@
+import type { ThreadTurn } from '../threads/decode.ts';
+
+interface StageTurnProps {
+  turn: ThreadTurn;
+  first: boolean;
+}
+import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { Markdown } from '../lib/Markdown.tsx';
 // The first turn holds the stage's own instructions, folded away; follow-ups read like a chat.
-export function StageTurn(props) {
+export function StageTurn(props: StageTurnProps): JSX.Element {
   const editor = useEditor();
-  const open = (target) => void editor.actions.openReviewReference(target);
+  const open = (target: { path: string; line?: number; end?: number }) =>
+    void editor.actions.openReviewReference(target);
   return (
     <>
       <Show
         when={props.first}
         fallback={
           <div class="ml-8 min-w-0 self-end rounded-lg bg-muted px-3 py-2 text-sm">
-            <Markdown text={props.turn.prompt} onOpen={open} />
+            <Markdown text={props.turn.prompt || ''} onOpen={open} />
           </div>
         }
       >
@@ -24,7 +32,7 @@ export function StageTurn(props) {
             Instructions sent to the harness
           </summary>
           <div class="mt-2">
-            <Markdown text={props.turn.prompt} onOpen={open} />
+            <Markdown text={props.turn.prompt || ''} onOpen={open} />
           </div>
         </details>
       </Show>
@@ -41,7 +49,7 @@ export function StageTurn(props) {
                   class="icon-[lucide--chevron-right] size-3 shrink-0 group-open/steps:rotate-90"
                   aria-hidden="true"
                 />
-                {props.turn.tools.length} step{props.turn.tools.length === 1 ? '' : 's'}
+                {props.turn.tools?.length} step{props.turn.tools?.length === 1 ? '' : 's'}
               </summary>
               <ul class="mt-1 flex flex-col gap-0.5 pl-4">
                 <For each={props.turn.tools}>{(tool) => <li class="truncate">{tool}</li>}</For>
@@ -61,7 +69,7 @@ export function StageTurn(props) {
             }
           >
             <div class="text-sm">
-              <Markdown text={props.turn.reply} onOpen={open} />
+              <Markdown text={props.turn.reply || ''} onOpen={open} />
             </div>
           </Show>
         </div>
