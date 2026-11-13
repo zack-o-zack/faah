@@ -25,7 +25,7 @@ test('fresh workbench loads recents, browses and opens a folder', async () => {
     </ThemeProvider>
   ));
   await waitFor(() => expect(request).toHaveBeenCalledWith('api/wb/state'));
-  await userEvent.click(screen.getByRole('tab', { name: 'browse' }));
+  await userEvent.click(screen.getByRole('tab', { name: 'Browse' }));
   expect(await screen.findByRole('option', { name: 'repo' })).toBeTruthy();
   await userEvent.click(screen.getByRole('button', { name: 'Open this folder' }));
   expect(post).toHaveBeenCalledWith('api/wb/open', { target: '/code' });
