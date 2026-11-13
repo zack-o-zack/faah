@@ -1,9 +1,14 @@
+interface DirectoryListProps {
+  onReady?: (focus: () => void) => void;
+  onKeyDown: (event: KeyboardEvent) => void;
+}
+import type { JSX } from 'solid-js';
 import { For, onMount } from 'solid-js';
-import { useWorkbench } from './context.jsx';
-export function DirectoryList(props) {
+import { useWorkbench } from './context.tsx';
+export function DirectoryList(props: DirectoryListProps): JSX.Element {
   const { state, actions } = useWorkbench();
-  let list;
-  onMount(() => props.onReady?.(() => list.focus()));
+  let list: HTMLUListElement | undefined;
+  onMount(() => props.onReady?.(() => list?.focus()));
   return (
     <ul
       ref={list}

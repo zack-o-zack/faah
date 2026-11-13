@@ -15,7 +15,7 @@ faah is engineered as an ultra-fast, zero-overhead code exploration console. Its
 1. Stateless in the Workspace: faah never writes configuration directories, temporary caches, or metadata files (e.g., `.faah/` or `.cache/`) into a workspace. Indexes and caches live in volatile memory. Outside the workspace it keeps the remembered harness choice and update/telemetry state under `~/.faah/` (or `$XDG_CONFIG_HOME/faah/`), and per-workspace session files (PR review drafts) and the workbench store under `~/.faah/` (or `$XDG_STATE_HOME/faah/`).
 1. Strict Memory Reclamation: Long-lived background processes should not hold idle RAM. When the user finishes a burst of queries, unused pages are proactively returned to the operating system.
 
-The browser's file tabs are document entries in the app store ([`web/src/editor/documents.js`](../../web/src/editor/documents.js)); [`web/src/editor/TabStrip.jsx`](../../web/src/editor/TabStrip.jsx) renders them with their context menu. Single and bulk closes share one `closeTabs` action, which releases each tab's buffer and updates the view once. Open tabs are not saved: a reload starts with no tabs open.
+The browser's file tabs are document entries in the app store ([`web/src/editor/documents.js`](../../web/src/editor/documents.js)); [`web/src/editor/TabStrip.tsx`](../../web/src/editor/TabStrip.tsx) renders them with their context menu. Single and bulk closes share one `closeTabs` action, which releases each tab's buffer and updates the view once. Open tabs are not saved: a reload starts with no tabs open.
 
 ## 2. Startup Pipeline (<1 ms Critical Path)
 

@@ -1,33 +1,48 @@
+import { decodeCompletion } from './decode.ts';
+
+interface PathInputProps {
+  autofocus?: boolean;
+  value: string;
+  group?: boolean;
+  label?: string;
+  placeholder?: string;
+  leading?: JSX.Element;
+  trailing?: JSX.Element;
+  onInput: (value: string) => void;
+  onFolder?: (path: string) => void;
+  onReady?: (focus: () => void) => void;
+}
+import type { JSX } from 'solid-js';
 import { createResource, createSignal, createUniqueId, onMount, Show } from 'solid-js';
 import { api } from '../lib/api.ts';
 import { looksLikeURL } from './logic.ts';
-import { PathSuggestions } from './PathSuggestions.jsx';
-export function PathInput(props) {
+import { PathSuggestions } from './PathSuggestions.tsx';
+export function PathInput(props: PathInputProps): JSX.Element {
   const [focused, setFocused] = createSignal(false);
   const [selected, setSelected] = createSignal(-1);
   const id = createUniqueId();
-  let input;
+  let input: HTMLInputElement | undefined;
   onMount(() => {
-    if (props.autofocus) input.focus();
-    props.onReady?.(() => input.focus());
+    if (props.autofocus) input?.focus();
+    props.onReady?.(() => input?.focus());
   });
   const [entries] = createResource(
     () => (focused() && props.value.trim() && !looksLikeURL(props.value) ? props.value : false),
     async (q) => {
       try {
-        return (await api('api/wb/complete', { q })).entries || [];
+        return decodeCompletion(await api('api/wb/complete', { q })).entries || [];
       } catch {
         return [];
       }
     },
   );
-  const accept = (index) => {
+  const accept = (index: number) => {
     const item = entries()?.[index];
     if (!item) return;
     props.onInput(item.path);
     props.onFolder?.(item.path);
     setSelected(-1);
-    input.focus();
+    input?.focus();
   };
   return (
     <div class={props.group ? 'contents' : 'dropdown-menu relative flex-1'}>
@@ -69,7 +84,8 @@ export function PathInput(props) {
               e.preventDefault();
               accept(selected() < 0 ? 0 : selected());
             } else if (e.key === 'Enter' && selected() >= 0) {
-              props.onInput(items[selected()].path);
+              const item = items[selected()];
+              if (item) props.onInput(item.path);
               setFocused(false);
             } else if (e.key === 'Escape') {
               e.preventDefault();

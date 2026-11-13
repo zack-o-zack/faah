@@ -1,8 +1,8 @@
 # Editor Virtualization & Caret Engine
 
-How faah's virtualized code view, caret and selection work. The code is [`web/src/editor/Viewport.jsx`](../../web/src/editor/Viewport.jsx), [`EditorRow.jsx`](../../web/src/editor/EditorRow.jsx), [`Caret.jsx`](../../web/src/editor/Caret.jsx), the buffer in [`buffer.js`](../../web/src/editor/buffer.js), and the pure geometry in [`layout.js`](../../web/src/editor/layout.js) and [`cursor.js`](../../web/src/editor/cursor.js). [Frontend implementation](frontend.md) describes how these fit into the app.
+How faah's virtualized code view, caret and selection work. The code is [`web/src/editor/Viewport.tsx`](../../web/src/editor/Viewport.tsx), [`EditorRow.tsx`](../../web/src/editor/EditorRow.tsx), [`Caret.tsx`](../../web/src/editor/Caret.tsx), the buffer in [`buffer.js`](../../web/src/editor/buffer.js), and the pure geometry in [`layout.js`](../../web/src/editor/layout.js) and [`cursor.js`](../../web/src/editor/cursor.js). [Frontend implementation](frontend.md) describes how these fit into the app.
 
-The sidebar file tree is virtualized separately: [`workspace/tree-model.ts`](../../web/src/workspace/tree-model.js) flattens the expanded tree and [`Tree.jsx`](../../web/src/workspace/Tree.jsx) renders a bounded window of it. Its Expand All loads directory children in small batches, skips ignored subtrees and can be cancelled without late replies reopening collapsed folders.
+The sidebar file tree is virtualized separately: [`workspace/tree-model.ts`](../../web/src/workspace/tree-model.js) flattens the expanded tree and [`Tree.tsx`](../../web/src/workspace/Tree.tsx) renders a bounded window of it. Its Expand All loads directory children in small batches, skips ignored subtrees and can be cancelled without late replies reopening collapsed folders.
 
 ## 1. Why a Bespoke Virtualized Viewer?
 
@@ -59,4 +59,4 @@ The document entry holds the caret (`cur`, `col`) and the selection anchor (`sel
 
 `Mod+A` outside a field does not use the browser's select-all, which would select sidebar text and miss off-screen lines. `selectAll` in [`selection-actions.js`](../../web/src/editor/selection-actions.js) reads the file once from `/api/raw` and sets a selection covering every line; `Mod+C` then copies all of it. Esc or a click clears it.
 
-Any selection drives the footer selection bar (`#footer-sel`) and the right-click menu in [`SelectionBar.jsx`](../../web/src/editor/SelectionBar.jsx): Copy Ref, Copy with Context, Edit Inline, Find Usages and the `Alt` shortcuts. `runSelectionAction` performs them. A right click on a selection neither moves the caret nor collapses the selection. See [Harness Editing & Agent Dispatch](agent-editing.md).
+Any selection drives the footer selection bar (`#footer-sel`) and the right-click menu in [`SelectionBar.tsx`](../../web/src/editor/SelectionBar.tsx): Copy Ref, Copy with Context, Edit Inline, Find Usages and the `Alt` shortcuts. `runSelectionAction` performs them. A right click on a selection neither moves the caret nor collapses the selection. See [Harness Editing & Agent Dispatch](agent-editing.md).

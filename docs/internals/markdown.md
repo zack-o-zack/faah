@@ -2,7 +2,7 @@
 
 This document describes how faah renders Markdown files: the server-side conversion, the browser-side sanitizer, and the logic that keeps the rendered view and the source view in step.
 
-A Markdown tab (`.md` or `.markdown`) opens rendered by default. The reader switches to the raw source with the Preview / Source switch in the tab bar, the Preview button in the status bar, or Alt+M. The code lives in two files: [`internal/render/render.go`](../../internal/render/render.go) on the server and [`web/src/viewers/`](../../web/src/viewers/) in the browser (`PreviewViewer.jsx`, `PreviewContent.jsx`, `markdown-dom.js`, `preview-dom.js`).
+A Markdown tab (`.md` or `.markdown`) opens rendered by default. The reader switches to the raw source with the Preview / Source switch in the tab bar, the Preview button in the status bar, or Alt+M. The code lives in two files: [`internal/render/render.go`](../../internal/render/render.go) on the server and [`web/src/viewers/`](../../web/src/viewers/) in the browser (`PreviewViewer.tsx`, `PreviewContent.tsx`, `markdown-dom.js`, `preview-dom.js`).
 
 ## 1. Request Flow
 
@@ -31,7 +31,7 @@ While the preview shows, the source viewport renders no rows; switching back mou
 `handleFile` in [`server.go`](../../server.go) adds `markdown: isMarkdown(rel)` to every `/api/file` response, and the document entry ([`web/src/editor/documents.js`](../../web/src/editor/documents.js)) records it. A new Markdown document opens in the preview when the `markdown.preview.open` setting is on; toggling the preview saves that setting, so the next file opens the same way.
 
 - `previewKind(document)` in [`view.js`](../../web/src/viewers/view.js) returns `'markdown'`, `'table'` or `''`; `viewMode(document)` returns the view to show (`source` while editing, then image, diff, the chosen preview, or source).
-- [`Viewers.jsx`](../../web/src/viewers/Viewers.jsx) mounts `PreviewViewer` for the preview views. Its resource fetches `/api/markdown`, keyed by the path, the buffer and its revision, so a replaced request is aborted and a stale reply is dropped.
+- [`Viewers.tsx`](../../web/src/viewers/Viewers.tsx) mounts `PreviewViewer` for the preview views. Its resource fetches `/api/markdown`, keyed by the path, the buffer and its revision, so a replaced request is aborted and a stale reply is dropped.
 - `PreviewContent` sanitizes the HTML in a memo, renders it into `#md`, enhances it and restores the saved scroll (`mdScroll`), or applies a pending line (`mdLine`) or anchor (`mdAnchor`).
 
 A failed fetch (for example a file over 4 MB) shows the error with a Retry button in place of the preview; the Source switch still works.
@@ -173,14 +173,14 @@ These cases come from the browser checks run against the implementation:
 - Code block wrappers. Each `<pre>` moves into `.md-pre`, which carries `data-lang` for a corner label and a copy button. The button holds an SVG icon rather than a text label, because find in the preview walks text nodes and would otherwise match the word "Copy".
 - Mermaid diagrams. A fence whose `data-lang` is `mermaid` keeps its sanitized source block and copy button, then a `MermaidDiagram` component renders a diagram beside it. Successful renders hide the source block and provide per-diagram zoom controls; failed renders leave the source visible with a local error message.
 - Inline image enhancements. Every kept `<img>` is injected with `loading="lazy"` and `decoding="async"`, preventing layout shifts and deferring offscreen network transfers. Standalone images receive `.md-zoomable`, affording hover highlights and zoom-in cursors.
-- Lightbox. Clicking a standalone image opens `Lightbox.jsx`, a native modal dialog with **Open in tab** (promotes the image into an image tab) and **Copy path**; Escape or a backdrop click closes it.
+- Lightbox. Clicking a standalone image opens `Lightbox.tsx`, a native modal dialog with **Open in tab** (promotes the image into an image tab) and **Copy path**; Escape or a backdrop click closes it.
 - Broken image recovery. A capture-phase error listener on `#md` detects failed image loads and replaces the element with a styled `.md-img-broken` card displaying the missing path. See [Image Viewer Architecture](image-viewer.md) for full details.
 
 Styles live in the Markdown section of `@layer components` in [`web/tailwind.css`](../../web/tailwind.css). They read only theme tokens, so all themes work without changes. Alerts set a local `--alert` property from existing tokens: Note `--primary`, Tip `--gi`, Important `--nc`, Warning `--mark-active`, Caution `--destructive`. [`styling-and-themes.md`](styling-and-themes.md) lists every token the preview uses.
 
 ### Mermaid Diagrams
 
-Mermaid is a presentation-stage enhancement, not a server renderer. `renderFence` emits the same escaped `<pre><code>` and `data-line` metadata as every other fence. After the sanitizer has rejected repository-supplied SVG, `PreviewContent` mounts a [`MermaidDiagram`](../../web/src/viewers/MermaidDiagram.jsx) beside each Mermaid fence. [`mermaid-runtime.js`](../../web/src/viewers/mermaid-runtime.js) lazy-loads the pinned, same-origin `web/vendor/mermaid-12.0.0.min.js` asset. The runtime is fetched on demand and cached under the user cache directory (`~/.faah/cache/vendor/`), keeping the binary lean while diagrams work offline after the first fetch and under `-base-path`.
+Mermaid is a presentation-stage enhancement, not a server renderer. `renderFence` emits the same escaped `<pre><code>` and `data-line` metadata as every other fence. After the sanitizer has rejected repository-supplied SVG, `PreviewContent` mounts a [`MermaidDiagram`](../../web/src/viewers/MermaidDiagram.tsx) beside each Mermaid fence. [`mermaid-runtime.js`](../../web/src/viewers/mermaid-runtime.js) lazy-loads the pinned, same-origin `web/vendor/mermaid-12.0.0.min.js` asset. The runtime is fetched on demand and cached under the user cache directory (`~/.faah/cache/vendor/`), keeping the binary lean while diagrams work offline after the first fetch and under `-base-path`.
 
 The runtime initializes Mermaid with `startOnLoad: false`, `securityLevel: strict`, disabled error rendering, and Mermaid's secure configuration keys. Diagram directives therefore cannot enable HTML labels, click callbacks, or a weaker security level. The returned `bindFunctions` hook is intentionally ignored.
 
@@ -222,8 +222,8 @@ Three controls call `togglePreview()`:
 
 | Control                          | Location                               | Wiring                                         |
 | -------------------------------- | -------------------------------------- | ---------------------------------------------- |
-| Preview / Source switch          | `#md-switch`, right end of the tab bar | `FileActions.jsx`                              |
-| Preview button                   | Status bar                             | `StatusActions.jsx`                            |
+| Preview / Source switch          | `#md-switch`, right end of the tab bar | `FileActions.tsx`                              |
+| Preview button                   | Status bar                             | `StatusActions.tsx`                            |
 | Alt+M, "Toggle Markdown / Table Preview" | Keyboard, command palette      | `GlobalShortcuts.tsx`, `palette/features.ts`  |
 
 The switch and the status button show only on Markdown and CSV/TSV tabs (labelled Table on the latter) and derive their state from `viewMode`. Clicking the half that is already selected does nothing.
@@ -254,7 +254,7 @@ Hover cards, Ctrl+click definitions and the selection bar belong to the source v
 - `TestMarkdownPreview` checks heading ids and `data-line`, highlighted fenced code, preserved relative links, task list checkboxes, the `markdown` flag on `/api/file`, and the 415 and 400 responses.
 - `TestHeadingIDsFollowGitHub` checks the id rules and deduplication.
 
-Browser tests run in Vitest with jsdom: [`markdown.test.js`](../../web/src/viewers/markdown.test.js) (sanitizer, URL rules, selection serialization, broken images), [`markdown-picture.test.js`](../../web/src/viewers/markdown-picture.test.js), [`mermaid-logic.test.js`](../../web/src/viewers/mermaid-logic.test.js) and [`viewers.test.jsx`](../../web/src/viewers/viewers.test.jsx) (views, preview find and handles). Layout-dependent behaviour (scroll positions, Mermaid output) is checked in a real browser.
+Browser tests run in Vitest with jsdom: [`markdown.test.js`](../../web/src/viewers/markdown.test.js) (sanitizer, URL rules, selection serialization, broken images), [`markdown-picture.test.js`](../../web/src/viewers/markdown-picture.test.js), [`mermaid-logic.test.js`](../../web/src/viewers/mermaid-logic.test.js) and [`viewers.test.tsx`](../../web/src/viewers/viewers.test.tsx) (views, preview find and handles). Layout-dependent behaviour (scroll positions, Mermaid output) is checked in a real browser.
 
 ## 12. Table Preview (CSV / TSV)
 
@@ -278,7 +278,7 @@ CSV and TSV tabs reuse this overlay. `/api/file` returns `"table": true` for `.c
 
 ### Rendering
 
-[`TableViewer.jsx`](../../web/src/viewers/TableViewer.jsx) renders the rows with `For` and `Index`; every cell is text, nothing from the file is parsed as HTML, so the table needs no sanitizer. The article's class is `csv` (the `.md` styles do not apply). Cells use `white-space: pre-wrap` with `max-width: 48ch` and `overflow-wrap: break-word`, so long text wraps inside its column (checked in Chromium, WebKit and Firefox, which all honour `max-width` on cells of a `width: max-content` table). The header `th` cells and the `.ln` gutter are `position: sticky`; the preview handle uses the header row's height as its gap, so `line(n)` places a row just under the pinned header instead of behind it. The header row is skipped as a scroll target (a line at or before it scrolls to the top), and `topLine()` returns the header's line while the table is unscrolled. Find skips the `.ln` gutter and the footer, so counts and stepping cover cells only. The footer's **Open Source** button calls `togglePreview()`. It states the number of rows shown and the file's line count; counting rows in the whole file would mean parsing all of it.
+[`TableViewer.tsx`](../../web/src/viewers/TableViewer.tsx) renders the rows with `For` and `Index`; every cell is text, nothing from the file is parsed as HTML, so the table needs no sanitizer. The article's class is `csv` (the `.md` styles do not apply). Cells use `white-space: pre-wrap` with `max-width: 48ch` and `overflow-wrap: break-word`, so long text wraps inside its column (checked in Chromium, WebKit and Firefox, which all honour `max-width` on cells of a `width: max-content` table). The header `th` cells and the `.ln` gutter are `position: sticky`; the preview handle uses the header row's height as its gap, so `line(n)` places a row just under the pinned header instead of behind it. The header row is skipped as a scroll target (a line at or before it scrolls to the top), and `topLine()` returns the header's line while the table is unscrolled. Find skips the `.ln` gutter and the footer, so counts and stepping cover cells only. The footer's **Open Source** button calls `togglePreview()`. It states the number of rows shown and the file's line count; counting rows in the whole file would mean parsing all of it.
 
 ### Tests
 

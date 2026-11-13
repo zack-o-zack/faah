@@ -1,6 +1,7 @@
-import { useWorkbench } from './context.jsx';
+import type { JSX } from 'solid-js';
+import { useWorkbench } from './context.tsx';
 
-export function WorkbenchHeader() {
+export function WorkbenchHeader(): JSX.Element {
   const { state } = useWorkbench();
   return (
     <header class="mb-5 flex shrink-0 items-center gap-2">

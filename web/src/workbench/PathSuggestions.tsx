@@ -1,7 +1,16 @@
+import type { DirectoryEntry } from './decode.ts';
+
+interface PathSuggestionsProps {
+  id: string;
+  entries?: DirectoryEntry[];
+  selected: number;
+  onAccept: (index: number) => void;
+}
+import type { JSX } from 'solid-js';
 import { For } from 'solid-js';
-import { useWorkbench } from './context.jsx';
+import { useWorkbench } from './context.tsx';
 import { tildify } from './logic.ts';
-export function PathSuggestions(props) {
+export function PathSuggestions(props: PathSuggestionsProps): JSX.Element {
   const { state } = useWorkbench();
   return (
     <ul

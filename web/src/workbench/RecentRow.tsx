@@ -1,8 +1,14 @@
+import type { RecentItem } from './decode.ts';
+
+interface RecentRowProps {
+  item: RecentItem;
+}
+import type { JSX } from 'solid-js';
 import { Show } from 'solid-js';
-import { useWorkbench } from './context.jsx';
+import { useWorkbench } from './context.tsx';
 import { ago, recentSubtitle } from './logic.ts';
 
-export function RecentRow(props) {
+export function RecentRow(props: RecentRowProps): JSX.Element {
   const { state, actions } = useWorkbench();
   const item = () => props.item;
   return (
@@ -14,7 +20,9 @@ export function RecentRow(props) {
             {recentSubtitle(item(), state.home, state.sep)}
           </p>
         </a>
-        <span class="text-xs text-muted-foreground max-sm:hidden">{ago(item().lastOpened)}</span>
+        <span class="text-xs text-muted-foreground max-sm:hidden">
+          {ago(item().lastOpened || 0)}
+        </span>
         <button
           class="btn"
           data-variant="ghost"

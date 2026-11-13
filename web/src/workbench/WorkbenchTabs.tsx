@@ -1,9 +1,10 @@
+import type { JSX } from 'solid-js';
 import { Index, Show } from 'solid-js';
-import { useWorkbench } from './context.jsx';
-import { Recent } from './Recent.jsx';
-import { Browse } from './Browse.jsx';
+import { useWorkbench } from './context.tsx';
+import { Recent } from './Recent.tsx';
+import { Browse } from './Browse.tsx';
 
-export function WorkbenchTabs() {
+export function WorkbenchTabs(): JSX.Element {
   const { state, actions } = useWorkbench();
   return (
     <div id="wb-tabs" class="tabs mt-5 min-h-0 flex-1 gap-2">
@@ -18,7 +19,9 @@ export function WorkbenchTabs() {
             e.preventDefault();
             const tab = state.tab === 'recent' ? 'browse' : 'recent';
             actions.selectTab(tab);
-            e.currentTarget.querySelector(`[aria-controls="wb-panel-${tab}"]`).focus();
+            e.currentTarget
+              .querySelector<HTMLButtonElement>(`[aria-controls="wb-panel-${tab}"]`)
+              ?.focus();
           }
         }}
       >

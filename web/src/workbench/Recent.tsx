@@ -1,8 +1,9 @@
+import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
-import { useWorkbench } from './context.jsx';
-import { RecentRow } from './RecentRow.jsx';
+import { useWorkbench } from './context.tsx';
+import { RecentRow } from './RecentRow.tsx';
 
-export function Recent() {
+export function Recent(): JSX.Element {
   const { state, groups, actions } = useWorkbench();
   return (
     <>

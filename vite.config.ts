@@ -3,9 +3,9 @@ import solid from 'vite-plugin-solid';
 
 type Entry = 'app' | 'workbench' | 'holding';
 const entries: Record<Entry, string> = {
-  app: 'web/src/main.jsx',
-  workbench: 'web/src/workbench/main.jsx',
-  holding: 'web/src/holding/main.jsx',
+  app: 'web/src/main.tsx',
+  workbench: 'web/src/workbench/main.tsx',
+  holding: 'web/src/holding/main.tsx',
 };
 const requested = process.env.WEB_ENTRY || 'app';
 const entry: Entry = requested === 'workbench' || requested === 'holding' ? requested : 'app';
@@ -23,7 +23,7 @@ export default defineConfig({
     pool: 'vmThreads',
     isolate: true,
     setupFiles: ['./web/src/test-setup.ts'],
-    include: ['web/src/**/*.test.{js,jsx,ts,tsx}'],
+    include: ['web/src/**/*.test.{ts,tsx}'],
     restoreMocks: true,
   },
 });

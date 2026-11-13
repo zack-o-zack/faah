@@ -5,7 +5,7 @@ import prettier from 'eslint-config-prettier';
 // typescript-eslint parses with the TypeScript 6 JS API from scripts/eslint-typescript; tsc itself is the native TypeScript 7.
 import tseslint from 'eslint-typescript';
 
-const frontend = ['web/src/**/*.{js,jsx,ts,tsx}'];
+const frontend = ['web/src/**/*.{ts,tsx}'];
 const typescript = ['web/src/**/*.{ts,tsx}', 'vite.config.ts'];
 const tooling = [
   'vite.config.ts',
@@ -98,7 +98,7 @@ export default [
   },
   { files: tooling, languageOptions: { globals: globals.node } },
   {
-    files: ['web/src/**/*.test.{js,jsx,ts,tsx}', 'web/src/test-setup.js'],
+    files: ['web/src/**/*.test.{ts,tsx}', 'web/src/test-setup.ts'],
     languageOptions: { globals: globals.vitest },
   },
   { ...prettier, files: [...frontend, ...tooling] },

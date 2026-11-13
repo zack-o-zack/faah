@@ -1,3 +1,5 @@
+import { decodeMetrics } from '../workspace/decode.ts';
+import type { Metrics } from '../workspace/decode.ts';
 import { record, text, number, boolean, list } from '../lib/decode.ts';
 export interface DirectoryEntry {
   name: string;
@@ -71,10 +73,7 @@ export function decodeDirectory(value: unknown): Directory {
     path: text(v.path),
     parent: text(v.parent),
     git: boolean(v.git),
-    entries: list(v.entries).map((item) => {
-      const e = record(item);
-      return { name: text(e.name), path: text(e.path), git: boolean(e.git) };
-    }),
+    entries: list(v.entries).map(decodeDirectoryEntry),
   };
 }
 export function decodeOpen(value: unknown): OpenReply {
@@ -85,4 +84,25 @@ export function decodeOpen(value: unknown): OpenReply {
 }
 export function decodeMkdir(value: unknown): { path: string } {
   return { path: text(record(value).path) };
+}
+
+export interface WorkbenchMetrics extends Metrics {
+  parts: (Metrics & { name: string })[];
+}
+export function decodeWorkbenchMetrics(value: unknown): WorkbenchMetrics {
+  const row = record(value);
+  return {
+    ...decodeMetrics(row),
+    parts: list(row.parts).map((part) => ({
+      ...decodeMetrics(part),
+      name: text(record(part).name),
+    })),
+  };
+}
+export function decodeCompletion(value: unknown): { entries: DirectoryEntry[] } {
+  return { entries: list(record(value).entries).map(decodeDirectoryEntry) };
+}
+function decodeDirectoryEntry(value: unknown): DirectoryEntry {
+  const entry = record(value);
+  return { name: text(entry.name), path: text(entry.path), git: boolean(entry.git) };
 }

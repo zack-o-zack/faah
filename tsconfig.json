@@ -12,16 +12,25 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "target": "es2022",
-    "lib": ["es2023", "dom", "dom.iterable"],
+    "lib": [
+      "es2023",
+      "dom",
+      "dom.iterable"
+    ],
     "noEmit": true,
     "allowImportingTsExtensions": true,
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
-    "types": ["vite/client"],
-    "allowJs": true,
-    "checkJs": false,
+    "types": [
+      "vite/client"
+    ],
     "skipLibCheck": true
   },
-  "include": ["web/src"],
-  "exclude": ["web/src/contrast.test.ts", "web/src/typescale.test.ts"]
+  "include": [
+    "web/src"
+  ],
+  "exclude": [
+    "web/src/contrast.test.ts",
+    "web/src/typescale.test.ts"
+  ]
 }

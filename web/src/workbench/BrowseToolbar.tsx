@@ -1,7 +1,15 @@
+import type { DirectoryEntry } from './decode.ts';
+
+interface BrowseToolbarProps {
+  selected?: DirectoryEntry;
+  onMkdir: () => void;
+  onOpen: () => void;
+}
+import type { JSX } from 'solid-js';
 import { For } from 'solid-js';
-import { useWorkbench } from './context.jsx';
+import { useWorkbench } from './context.tsx';
 import { breadcrumbs } from './logic.ts';
-export function BrowseToolbar(props) {
+export function BrowseToolbar(props: BrowseToolbarProps): JSX.Element {
   const { state, actions } = useWorkbench();
   return (
     <div class="flex flex-wrap items-center gap-2 border-b p-2">

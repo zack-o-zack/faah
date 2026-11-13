@@ -44,7 +44,7 @@ imageMeta: null, // { width, height } once the image loads
 
 ### Which view shows
 
-`viewMode(document)` in `view.js` derives the view from the entry: `source` while editing, `image` for an image, `diff` when `diffMode` is set, otherwise the chosen preview or source. [`Viewers.jsx`](../../web/src/viewers/Viewers.jsx) mounts `ImageViewer` only for the image view, and the source viewport renders no rows while it is covered. Nothing is shown or hidden by hand.
+`viewMode(document)` in `view.js` derives the view from the entry: `source` while editing, `image` for an image, `diff` when `diffMode` is set, otherwise the chosen preview or source. [`Viewers.tsx`](../../web/src/viewers/Viewers.tsx) mounts `ImageViewer` only for the image view, and the source viewport renders no rows while it is covered. Nothing is shown or hidden by hand.
 
 ### Reloads
 
@@ -54,7 +54,7 @@ imageMeta: null, // { width, height } once the image loads
 
 ## 3. Image Viewer
 
-[`web/src/viewers/ImageViewer.jsx`](../../web/src/viewers/ImageViewer.jsx) renders `#imgview` (viewport, canvas and image) and [`ImageHUD.jsx`](../../web/src/viewers/ImageHUD.jsx) the zoom and mode controls. Every change goes through named document actions (`updateImage`, `fitImage`, `actualImage`, `cycleImageBg`, `togglePixelated`) in [`viewers/actions.ts`](../../web/src/viewers/actions.js). The viewer owns its pointer, wheel and resize listeners and releases them on cleanup.
+[`web/src/viewers/ImageViewer.tsx`](../../web/src/viewers/ImageViewer.tsx) renders `#imgview` (viewport, canvas and image) and [`ImageHUD.tsx`](../../web/src/viewers/ImageHUD.tsx) the zoom and mode controls. Every change goes through named document actions (`updateImage`, `fitImage`, `actualImage`, `cycleImageBg`, `togglePixelated`) in [`viewers/actions.ts`](../../web/src/viewers/actions.js). The viewer owns its pointer, wheel and resize listeners and releases them on cleanup.
 
 ### Zoom math and fitting
 
@@ -93,7 +93,7 @@ Standalone images get `.md-zoomable`: a hover outline and a `zoom-in` cursor.
 
 ### Lightbox
 
-Clicking a zoomable image opens [`Lightbox.jsx`](../../web/src/viewers/Lightbox.jsx), a native modal dialog showing the image with its path or alt text. **Open in tab** opens the image as an editor tab; **Copy path** copies the repository path or remote URL. Escape, the close button or the backdrop close it.
+Clicking a zoomable image opens [`Lightbox.tsx`](../../web/src/viewers/Lightbox.tsx), a native modal dialog showing the image with its path or alt text. **Open in tab** opens the image as an editor tab; **Copy path** copies the repository path or remote URL. Escape, the close button or the backdrop close it.
 
 ### Broken image handling
 

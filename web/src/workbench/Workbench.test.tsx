@@ -1,10 +1,12 @@
+import { required } from '../lib/test-values.ts';
+import { record } from '../lib/decode.ts';
 import { render, screen, waitFor } from '@solidjs/testing-library';
 import userEvent from '@testing-library/user-event';
 import { expect, test, vi } from 'vitest';
 import { createWorkbenchStore } from './store.ts';
-import { WorkbenchProvider } from './context.jsx';
+import { WorkbenchProvider } from './context.tsx';
 import { ThemeProvider } from '../lib/theme-context.tsx';
-import { Workbench } from './Workbench.jsx';
+import { Workbench } from './Workbench.tsx';
 test('fresh workbench loads recents, browses and opens a folder', async () => {
   const request = vi.fn(async (path) =>
     path === 'api/wb/state'
@@ -14,9 +16,7 @@ test('fresh workbench loads recents, browses and opens a folder', async () => {
   const post = vi.fn(async () => ({ href: '/w/repo/' }));
   const navigate = vi.fn();
   const store = createWorkbenchStore(request, post, navigate);
-  vi.spyOn(globalThis, 'fetch').mockResolvedValue({
-    json: async () => ({ cpuUsage: 0, rssBytes: 1024 }),
-  });
+  vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json({ cpuUsage: 0, rssBytes: 1024 }));
   const view = render(() => (
     <ThemeProvider>
       <WorkbenchProvider store={store}>
@@ -33,8 +33,10 @@ test('fresh workbench loads recents, browses and opens a folder', async () => {
   view.unmount();
 });
 test('clone requests preserve the original PR and cancellation restores tab', async () => {
-  const post = vi.fn(async (_, body) =>
-    body.clone ? { href: '/w/pr/' } : { needClone: true, repo: 'org/repo', managed: '/managed' },
+  const post = vi.fn(async (_path: string, body?: unknown) =>
+    record(body).clone
+      ? { href: '/w/pr/' }
+      : { needClone: true, repo: 'org/repo', managed: '/managed' },
   );
   const navigate = vi.fn();
   const store = createWorkbenchStore(vi.fn(), post, navigate);
@@ -51,29 +53,29 @@ test('clone requests preserve the original PR and cancellation restores tab', as
 });
 
 test('stale refreshes and workspace opens cannot replace newer results', async () => {
-  const refreshes = [];
-  const opens = [];
+  const refreshes: ((value: unknown) => void)[] = [];
+  const opens: ((value: unknown) => void)[] = [];
   const navigate = vi.fn();
   const store = createWorkbenchStore(
     (path) =>
       path === 'api/wb/state'
-        ? new Promise((resolve) => refreshes.push(resolve))
+        ? new Promise<unknown>((resolve) => refreshes.push(resolve))
         : Promise.resolve({ path: '/code', entries: [] }),
-    () => new Promise((resolve) => opens.push(resolve)),
+    () => new Promise<unknown>((resolve) => opens.push(resolve)),
     navigate,
   );
   const first = store.actions.refresh();
   const second = store.actions.refresh();
-  refreshes[1]({ items: [], version: 'new' });
+  required(refreshes[1])({ items: [], version: 'new' });
   await second;
-  refreshes[0]({ items: [], version: 'old' });
+  required(refreshes[0])({ items: [], version: 'old' });
   await first;
   expect(store.state.version).toBe('new');
   const oldOpen = store.actions.open('/old');
   const newOpen = store.actions.open('/new');
-  opens[1]({ href: '/w/new/' });
+  required(opens[1])({ href: '/w/new/' });
   await newOpen;
-  opens[0]({ href: '/w/old/' });
+  required(opens[0])({ href: '/w/old/' });
   await oldOpen;
   expect(navigate).toHaveBeenCalledExactlyOnceWith('/w/new/');
 });

@@ -1,15 +1,16 @@
+import type { JSX } from 'solid-js';
 import { createMemo, createSignal, onMount } from 'solid-js';
-import { useWorkbench } from './context.jsx';
+import { useWorkbench } from './context.tsx';
 import { fieldKind, openLabel } from './logic.ts';
-import { PathInput } from './PathInput.jsx';
+import { PathInput } from './PathInput.tsx';
 import { createShortcut } from '../lib/shortcuts.tsx';
 
-export function OpenWorkspaceForm() {
+export function OpenWorkspaceForm(): JSX.Element {
   const { actions } = useWorkbench();
   const [target, setTarget] = createSignal('');
   const kind = createMemo(() => fieldKind(target()));
   const label = () => openLabel(kind());
-  let focusInput;
+  let focusInput: (() => void) | undefined;
   createShortcut('/', () => focusInput?.());
   onMount(() => {
     const open = new URLSearchParams(location.search).get('open');

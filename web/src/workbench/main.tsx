@@ -1,8 +1,10 @@
 import { render } from 'solid-js/web';
 import { ThemeProvider } from '../lib/theme-context.tsx';
 import { Toaster } from '../lib/toast.tsx';
-import { WorkbenchProvider } from './context.jsx';
-import { Workbench } from './Workbench.jsx';
+import { WorkbenchProvider } from './context.tsx';
+import { Workbench } from './Workbench.tsx';
+const mount = document.getElementById('root');
+if (!mount) throw new Error('Missing root mount point');
 render(
   () => (
     <ThemeProvider>
@@ -12,5 +14,5 @@ render(
       </WorkbenchProvider>
     </ThemeProvider>
   ),
-  document.getElementById('root'),
+  mount,
 );

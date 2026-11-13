@@ -15,7 +15,7 @@ Handlers are `handleFileSave` and `handleFSNew` in [`server.go`](../../server.go
 
 ## 2. Frontend
 
-[`web/src/editor/edit-actions.js`](../../web/src/editor/edit-actions.js) owns the edit transitions; [`web/src/editor/EditView.jsx`](../../web/src/editor/EditView.jsx) owns the surface: a `<textarea id="editview-textarea">` and a gutter inside `#editview`, over the virtualized viewport. The source rows render an empty window while a document is editing.
+[`web/src/editor/edit-actions.js`](../../web/src/editor/edit-actions.js) owns the edit transitions; [`web/src/editor/EditView.tsx`](../../web/src/editor/EditView.tsx) owns the surface: a `<textarea id="editview-textarea">` and a gutter inside `#editview`, over the virtualized viewport. The source rows render an empty window while a document is editing.
 
 - **State.** The document entry holds `isEditing` and `dirty`; the document's buffer holds the working text (`editContent`). Switching tabs therefore needs no copying: `EditView` shows the active buffer's text and restores its scroll when the edited document changes.
 - **Entering.** `enterEditMode(line)` refuses images, deleted files and commit-pinned tabs, asks before loading a file over 10,000 lines or 1 MB, loads `/api/raw` once with a cancellable request (`editLoading`/`editError` in the UI state), clears `diffMode`, and centres the given line, or the caret line.
@@ -25,4 +25,4 @@ Handlers are `handleFileSave` and `handleFSNew` in [`server.go`](../../server.go
 - **Leaving.** `exitEditMode()` asks before discarding unsaved changes, drops the working text and reloads open tabs, so the source and preview are fetched again.
 - **After save.** `saveActiveFile()` posts the text, clears `dirty` when the text has not changed since, and refreshes the workspace so the Git panel does not wait for the next stream event. Creating an item in `NewItemDialog` refreshes the same way.
 
-`Mod+E` and `Mod+S` are bound in [`EditorShortcuts.jsx`](../../web/src/editor/EditorShortcuts.jsx); the palette commands are in [`palette/features.ts`](../../web/src/palette/features.js). Closing a dirty tab asks first (`closeTabs` in `editor/store.ts`), and the app's `beforeunload` listener (`app/App.tsx`) warns while any tab is dirty.
+`Mod+E` and `Mod+S` are bound in [`EditorShortcuts.tsx`](../../web/src/editor/EditorShortcuts.tsx); the palette commands are in [`palette/features.ts`](../../web/src/palette/features.js). Closing a dirty tab asks first (`closeTabs` in `editor/store.ts`), and the app's `beforeunload` listener (`app/App.tsx`) warns while any tab is dirty.

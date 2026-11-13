@@ -1,6 +1,10 @@
+interface NewFolderFormProps {
+  onDone: () => void;
+}
+import type { JSX } from 'solid-js';
 import { createSignal } from 'solid-js';
-import { useWorkbench } from './context.jsx';
-export function NewFolderForm(props) {
+import { useWorkbench } from './context.tsx';
+export function NewFolderForm(props: NewFolderFormProps): JSX.Element {
   const { actions } = useWorkbench();
   const [name, setName] = createSignal('');
   return (

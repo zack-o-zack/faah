@@ -1,18 +1,19 @@
+import type { JSX } from 'solid-js';
 import { createSignal, Show } from 'solid-js';
-import { useWorkbench } from './context.jsx';
-import { BrowseToolbar } from './BrowseToolbar.jsx';
-import { NewFolderForm } from './NewFolderForm.jsx';
-import { DirectoryList } from './DirectoryList.jsx';
+import { useWorkbench } from './context.tsx';
+import { BrowseToolbar } from './BrowseToolbar.tsx';
+import { NewFolderForm } from './NewFolderForm.tsx';
+import { DirectoryList } from './DirectoryList.tsx';
 import { Kbd } from '../lib/shortcuts.tsx';
 
-export function Browse() {
+export function Browse(): JSX.Element {
   const { state, actions } = useWorkbench();
   const [mkdir, setMkdir] = createSignal(false);
-  let focusList;
+  let focusList: (() => void) | undefined;
   const selected = () => state.directory.entries[state.selected];
   const useFolder = () => actions.useFolder(selected()?.path || state.directory.path);
-  const keydown = (e) => {
-    if (e.target.tagName === 'INPUT') return;
+  const keydown = (e: KeyboardEvent) => {
+    if (e.target instanceof Element && e.target.tagName === 'INPUT') return;
     const entries = state.directory.entries;
     if (['ArrowDown', 'ArrowUp'].includes(e.key) && !e.metaKey) {
       e.preventDefault();
@@ -27,7 +28,8 @@ export function Browse() {
       useFolder();
     } else if (['Enter', 'ArrowRight'].includes(e.key) || (e.metaKey && e.key === 'ArrowDown')) {
       e.preventDefault();
-      if (selected()) actions.browse(selected().path);
+      const entry = selected();
+      if (entry) actions.browse(entry.path);
     } else if (['Backspace', 'ArrowLeft'].includes(e.key) || (e.metaKey && e.key === 'ArrowUp')) {
       e.preventDefault();
       if (state.directory.parent) actions.browse(state.directory.parent);

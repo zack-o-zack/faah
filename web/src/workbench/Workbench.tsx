@@ -1,19 +1,21 @@
+import { decodeWorkbenchMetrics } from './decode.ts';
+import type { JSX } from 'solid-js';
 import { createResource, Show } from 'solid-js';
-import { useWorkbench } from './context.jsx';
+import { useWorkbench } from './context.tsx';
 import { api } from '../lib/api.ts';
 import { createPolling } from '../lib/events.ts';
 import { createShortcut } from '../lib/shortcuts.tsx';
-import { Clone } from './Clone.jsx';
-import { OpenWorkspaceForm } from './OpenWorkspaceForm.jsx';
-import { WorkbenchTabs } from './WorkbenchTabs.jsx';
-import { WorkbenchHeader } from './WorkbenchHeader.jsx';
-import { WorkbenchFooter } from './WorkbenchFooter.jsx';
+import { Clone } from './Clone.tsx';
+import { OpenWorkspaceForm } from './OpenWorkspaceForm.tsx';
+import { WorkbenchTabs } from './WorkbenchTabs.tsx';
+import { WorkbenchHeader } from './WorkbenchHeader.tsx';
+import { WorkbenchFooter } from './WorkbenchFooter.tsx';
 
-export function Workbench() {
+export function Workbench(): JSX.Element {
   const { state, actions } = useWorkbench();
   const [metrics, { refetch }] = createResource(async () => {
     try {
-      return await api('api/metrics');
+      return decodeWorkbenchMetrics(await api('api/metrics'));
     } catch {
       return null;
     }

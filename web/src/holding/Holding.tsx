@@ -1,10 +1,20 @@
+import type { HoldingPage } from './decode.ts';
+import type { Request } from '../lib/api.ts';
+import { record } from '../lib/decode.ts';
+
+interface HoldingProps {
+  data: HoldingPage;
+  request?: Request;
+  reload?: () => void;
+}
+import type { JSX } from 'solid-js';
 import { createSignal, onCleanup, onMount, Show } from 'solid-js';
 import { api } from '../lib/api.ts';
 import { createPolling } from '../lib/events.ts';
 import { holdingUpdate } from './logic.ts';
-export function Holding(props) {
+export function Holding(props: HoldingProps): JSX.Element {
   const data = () => props.data;
-  const [polledProgress, setProgress] = createSignal();
+  const [polledProgress, setProgress] = createSignal<string>();
   const progress = () => polledProgress() ?? data().Progress;
   onMount(() => {
     if (!data().Starting) return;
@@ -19,7 +29,7 @@ export function Holding(props) {
             timeout: 10000,
           });
           if (controller.signal.aborted) return;
-          const update = holdingUpdate(state.items, location.pathname);
+          const update = holdingUpdate(record(state).items, location.pathname);
           if (update.reload) (props.reload || (() => location.replace(location.href)))();
           else if (update.progress) setProgress(update.progress);
         } catch {

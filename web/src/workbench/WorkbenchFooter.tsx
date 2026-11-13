@@ -1,8 +1,14 @@
-import { useWorkbench } from './context.jsx';
-import { MetricsMenu } from './MetricsMenu.jsx';
-import { ThemeMenu } from './ThemeMenu.jsx';
+import type { WorkbenchMetrics } from './decode.ts';
+
+interface WorkbenchFooterProps {
+  metrics?: WorkbenchMetrics | null;
+}
+import type { JSX } from 'solid-js';
+import { useWorkbench } from './context.tsx';
+import { MetricsMenu } from './MetricsMenu.tsx';
+import { ThemeMenu } from './ThemeMenu.tsx';
 import { Show } from 'solid-js';
-export function WorkbenchFooter(props) {
+export function WorkbenchFooter(props: WorkbenchFooterProps): JSX.Element {
   const { state } = useWorkbench();
   return (
     <footer

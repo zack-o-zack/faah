@@ -1,10 +1,11 @@
+import type { JSX } from 'solid-js';
 import { render } from 'solid-js/web';
 import { AppProvider, useApp } from './app/context.tsx';
 import { ThemeProvider } from './lib/theme-context.tsx';
 import { App } from './app/App.tsx';
 
 // The theme follows the color theme setting; picking one saves it.
-function SettingsThemeProvider(props) {
+function SettingsThemeProvider(props: { children?: JSX.Element }): JSX.Element {
   const app = useApp();
   return (
     <ThemeProvider
@@ -17,6 +18,8 @@ function SettingsThemeProvider(props) {
     </ThemeProvider>
   );
 }
+const mount = document.getElementById('root');
+if (!mount) throw new Error('Missing root mount point');
 render(
   () => (
     <AppProvider>
@@ -25,5 +28,5 @@ render(
       </SettingsThemeProvider>
     </AppProvider>
   ),
-  document.getElementById('root'),
+  mount,
 );

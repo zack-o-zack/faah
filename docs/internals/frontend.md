@@ -18,9 +18,9 @@ package-lock.json; refresh the tracked pnpm lock with
 Each page is a mount point plus fonts and stylesheets; JSX renders everything
 visible.
 
-- `web/index.html` → `src/main.jsx`: the code reader. Renders into `#root`.
-- `web/workbench.html` → `src/workbench/main.jsx`: the workbench a bare `faah` opens.
-- The holding page (served by `workbench.go`) → `src/holding/main.jsx`. Go passes
+- `web/index.html` → `src/main.tsx`: the code reader. Renders into `#root`.
+- `web/workbench.html` → `src/workbench/main.tsx`: the workbench a bare `faah` opens.
+- The holding page (served by `workbench.go`) → `src/holding/main.tsx`. Go passes
   escaped JSON in the mount point's `data-page` attribute and keeps routing and the
   no-JavaScript refresh tag.
 
@@ -33,7 +33,7 @@ Under `web/src`:
 
 | Directory | Owns |
 |---|---|
-| `app/` | Composition: `App.tsx` (editor store, page-wide effects, dialogs), `AppShell.tsx` (page layout and top bar), `Welcome.tsx` (empty editor), `boot.ts` (workspace start-up), `store.ts` (app store), `context.jsx`, `types.ts` (workspace metadata) |
+| `app/` | Composition: `App.tsx` (editor store, page-wide effects, dialogs), `AppShell.tsx` (page layout and top bar), `Welcome.tsx` (empty editor), `boot.ts` (workspace start-up), `store.ts` (app store), `context.tsx`, `types.ts` (workspace metadata) |
 | `editor/` | Documents, buffers, the virtualized source view, editing, find, hover, selection, Vim, tabs and the editor store that composes every slice |
 | `viewers/` | Markdown/table preview, image, diff and Mermaid views, the explanation orb, and viewer actions |
 | `workspace/` | File tree model and store, workspace snapshots, the event stream, new items |
@@ -107,7 +107,7 @@ intent belong to stores and must not depend on whether a handle is registered.
 
 ## Start-up
 
-`main.jsx` renders `AppProvider` → the settings-driven `ThemeProvider` → `App`.
+`main.tsx` renders `AppProvider` → the settings-driven `ThemeProvider` → `App`.
 `App` creates the editor store and provides it. Its root component:
 
 - applies body classes from layout, review mode, editor mode and preferences in one effect;
@@ -144,14 +144,14 @@ read store state rather than subscribing to events.
 
 ## Shortcuts and commands
 
-`createShortcut(combo, action, options)` (`lib/shortcuts.jsx`) binds a key inside
+`createShortcut(combo, action, options)` (`lib/shortcuts.tsx`) binds a key inside
 its component's owner and releases it on cleanup. Fields are excluded unless
 `inputs` is set; `when(event)` guards the binding. `matchesShortcut` requires an
 exact modifier match. Show keys with `<Kbd combo="Mod+P" />`.
 
 - `shortcuts/GlobalShortcuts.tsx`: app-wide keys (settings, palette, inspector,
   diff, preview, sidebar, help, Escape and the `[c ]c [f ]f` chords).
-- `editor/EditorShortcuts.jsx`: editor keys and Vim, inactive inside dialogs.
+- `editor/EditorShortcuts.tsx`: editor keys and Vim, inactive inside dialogs.
 - Feature components bind their own keys (palette, review toggle, agent sessions,
   settings dialog).
 
@@ -196,10 +196,10 @@ accepts text only; zero duration persists until dismissal. Copy with
 `innerHTML` is allowed only for HTML the server rendered or the sanitizer
 passed. Each site disables the lint rules on its line with the reason:
 
-- `editor/EditorRow.jsx`: server-highlighted source lines.
-- `editor/HoverCard.jsx`: the server-highlighted symbol signature.
-- `viewers/PreviewContent.jsx`: goldmark Markdown after the allowlist sanitizer.
-- `viewers/viewers.test.jsx`: a static DOM fixture for the Range contract.
+- `editor/EditorRow.tsx`: server-highlighted source lines.
+- `editor/HoverCard.tsx`: the server-highlighted symbol signature.
+- `viewers/PreviewContent.tsx`: goldmark Markdown after the allowlist sanitizer.
+- `viewers/viewers.test.tsx`: a static DOM fixture for the Range contract.
 
 `viewers/markdown-dom.ts` reads `innerHTML` to serialize already-sanitized nodes.
 
@@ -299,22 +299,22 @@ Every production `createEffect` touches something outside Solid:
 - `settings/PreferenceStyles.tsx`: typography CSS variables on the document root.
 - `settings/SettingCard.tsx`: scrolls to and focuses the setting the dialog opened on.
 - `lib/theme.ts`: applies the resolved theme to the document root.
-- `lib/Dialog.jsx`: opens and closes the native modal and restores focus.
-- `lib/ToastItem.jsx`: the notification's expiry timer.
+- `lib/Dialog.tsx`: opens and closes the native modal and restores focus.
+- `lib/ToastItem.tsx`: the notification's expiry timer.
 - `editor/EditorMeasure.tsx`: measures the font after type settings change.
-- `editor/EditorRow.jsx` (2): ResizeObserver registration; CSS Highlight ranges.
-- `editor/Viewport.jsx`: restores the native selection after slots move.
-- `editor/EditView.jsx`: the textarea value and scroll when the edited document changes.
-- `editor/HoverCard.jsx` (2): pointer, outside and blur listeners; card measurement and position.
-- `editor/TabStrip.jsx`: focuses the tab context menu and restores focus.
-- `workspace/Tree.jsx`: applies reveal intent to the native scroll.
-- `search/Search.jsx`, `inspector/Symbols.jsx`: focus their input when the pane opens.
-- `agents/AgentSession.jsx`: focuses and scrolls to a requested session input.
-- `threads/ThreadTranscript.jsx`: keeps a followed transcript scrolled to the end.
+- `editor/EditorRow.tsx` (2): ResizeObserver registration; CSS Highlight ranges.
+- `editor/Viewport.tsx`: restores the native selection after slots move.
+- `editor/EditView.tsx`: the textarea value and scroll when the edited document changes.
+- `editor/HoverCard.tsx` (2): pointer, outside and blur listeners; card measurement and position.
+- `editor/TabStrip.tsx`: focuses the tab context menu and restores focus.
+- `workspace/Tree.tsx`: applies reveal intent to the native scroll.
+- `search/Search.tsx`, `inspector/Symbols.tsx`: focus their input when the pane opens.
+- `agents/AgentSession.tsx`: focuses and scrolls to a requested session input.
+- `threads/ThreadTranscript.tsx`: keeps a followed transcript scrolled to the end.
 - `review/store.ts`: subscribes the stream to the thread of the stage on screen.
-- `review/WalkthroughFile.jsx`, `pr/CommentThread.jsx`: scroll to a requested file, line or thread.
-- `viewers/PreviewContent.jsx`: theme picture sources and requested line or anchor scrolls.
-- `viewers/MermaidDiagram.jsx`: adopts and sizes the renderer's SVG.
+- `review/WalkthroughFile.tsx`, `pr/CommentThread.tsx`: scroll to a requested file, line or thread.
+- `viewers/PreviewContent.tsx`: theme picture sources and requested line or anchor scrolls.
+- `viewers/MermaidDiagram.tsx`: adopts and sizes the renderer's SVG.
 
 ## Tests
 
@@ -352,6 +352,6 @@ test('opening on a category lists its settings', async () => {
 
 Pure modules have plain unit tests beside them. Store tests drive actions with
 injected requests (`settings/store.test.ts`, `pr/test-editor.ts`). Component
-examples: `lib/primitives.test.jsx`, `shortcuts/GlobalShortcuts.test.tsx`,
-`workbench/Workbench.test.jsx`. `contrast.test.ts` and `typescale.test.ts`
+examples: `lib/primitives.test.tsx`, `shortcuts/GlobalShortcuts.test.tsx`,
+`workbench/Workbench.test.tsx`. `contrast.test.ts` and `typescale.test.ts`
 check every theme's contrast and every used type-scale token.

@@ -269,10 +269,10 @@ The git panel's agent rebase/merge flow ([git-integration internals](git-integra
 
 - **Line actions and comment markers**:
   - Hovering a line number in the source or diff view shows a thread button (`data-control="line-btn"`). Clicking it calls `openLineActions`, the selection menu aimed at one line. Rows that are part of the PR's diff carry their diff side, which enables **Add Review Comment**; other rows get only the local actions.
-  - `RowComments.jsx` renders a marker on diff rows with threads and the inline composers (`PRComposer`) under their rows.
-- **PR bar (`PRBar.jsx`)**:
+  - `RowComments.tsx` renders a marker on diff rows with threads and the inline composers (`PRComposer`) under their rows.
+- **PR bar (`PRBar.tsx`)**:
   - Shows the PR number, title, author, branch refs, state badge and draft count.
-  - Houses **Batch Apply** and the review panel (`ReviewPanel.jsx`, Comment / Approve / Request changes). The verdict buttons are gated by `reviewGate()` from `pr/logic.ts`.
+  - Houses **Batch Apply** and the review panel (`ReviewPanel.tsx`, Comment / Approve / Request changes). The verdict buttons are gated by `reviewGate()` from `pr/logic.ts`.
 - **Merge UI**:
   - `MergePill` shows the merge state; `MergeControls` is the split merge button with its method menu (the last method is remembered in `localStorage` under `faah.prMergeMethod`); `MergeDialog` is the merge dialog. They talk only to `/api/pr/merge-*` and have no forge-specific logic.
   - The merge store reads the Git store's sync state (`pending`, `inProgress`, `rewritten`) directly, which drives the pill, the main button and `reviewGate()`, and calls named actions to fetch the base and offer a rebase or merge, to confirm a force push, or to pull.
