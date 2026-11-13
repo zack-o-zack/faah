@@ -1,0 +1,12 @@
+{
+  "name": "eslint-typescript",
+  "version": "0.0.0",
+  "private": true,
+  "description": "typescript-eslint with the TypeScript 6 JS API it parses with; the project's own tsc is the native TypeScript 7.",
+  "type": "module",
+  "exports": "./index.js",
+  "dependencies": {
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.2"
+  }
+}

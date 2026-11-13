@@ -1,12 +1,14 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import solid from 'vite-plugin-solid';
 
-const entry = process.env.WEB_ENTRY || 'app';
-const entries = {
+type Entry = 'app' | 'workbench' | 'holding';
+const entries: Record<Entry, string> = {
   app: 'web/src/main.jsx',
   workbench: 'web/src/workbench/main.jsx',
   holding: 'web/src/holding/main.jsx',
 };
+const requested = process.env.WEB_ENTRY || 'app';
+const entry: Entry = requested === 'workbench' || requested === 'holding' ? requested : 'app';
 export default defineConfig({
   plugins: [solid()],
   build: {
@@ -19,7 +21,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./web/src/test-setup.js'],
-    include: ['web/src/**/*.test.{js,jsx}'],
+    include: ['web/src/**/*.test.{js,jsx,ts,tsx}'],
     restoreMocks: true,
   },
 });

@@ -13,7 +13,7 @@ To keep iteration fast and avoid unnecessary delays:
 
 | Task | Command | Typical Time | Notes |
 | :--- | :--- | :--- | :--- |
-| **Frontend Check** | `make web-check` or `npm run check` | **<100ms** | Validates JS syntax, relative imports, and runs frontend tests. |
+| **Frontend Check** | `make web-check` or `npm run check` | **~10s** | Checks formatting, ESLint, the native TypeScript type check and frontend tests, then builds. |
 | **Frontend Bundle** | `make web` or `node scripts/build-web.js` | **<50ms** | Run whenever modifying files under `web/src/`. |
 | **Build Binary** | `make build` | **~2s** | Bundles frontend (`web/app.js`) and compiles local `./faah` binary. |
 | **Fast Verification** | `make check` or `go test -short ./...` | **~7s** | Runs frontend validation, asset bundling, and fast Go unit tests. |

@@ -5,10 +5,10 @@ The frontend uses Solid 1.9, Vite and Vitest. Go embeds `web/dist` and serves
 Each script is a self-contained, minified IIFE targeting ES2022: no vendor chunks
 or runtime package dependencies. Install with `npm ci`; run `npm run build`
 before compiling Go. `npm test` runs Vitest in jsdom. `npm run lint` checks
-JavaScript and Solid reactivity rules. `npm run format`
-formats the migrated frontend and its build/config files with Prettier.
-`npm run check` checks formatting, runs ESLint and Vitest, then builds all three
-entries and Tailwind CSS. Use Node 22.22.2+, 24.15.0+, or
+JavaScript, TypeScript and Solid reactivity rules. `npm run typecheck` runs the
+native TypeScript 7 `tsc`. `npm run format` formats the frontend and its
+build/config files with Prettier. `npm run check` checks formatting, runs ESLint,
+the type check and Vitest, then builds all three entries and Tailwind CSS. Use Node 22.22.2+, 24.15.0+, or
 26+ as required by jsdom. npm owns package-lock.json; refresh the tracked pnpm
 lock with `pnpm install --lockfile-only --ignore-scripts` too.
 
@@ -103,6 +103,47 @@ Workbench is composed from `WorkbenchHeader`, `OpenWorkspaceForm`,
 `WorkbenchTabs`, `Recent`, `RecentRow`, `Browse`, `BrowseToolbar`, `DirectoryList`,
 `NewFolderForm`, `Clone`, `WorkbenchFooter`, `MetricsMenu` and `ThemeMenu`, with
 one component per file. Path completion uses `PathInput` and `PathSuggestions`.
+
+## TypeScript
+
+New frontend modules are `.ts`/`.tsx`; existing `.js`/`.jsx` modules stay until
+the conversion phase, which also drops `allowJs`. Imports name the real file
+extension (`./Foo.tsx`), as the JavaScript modules do.
+
+- Type checking is `tsc --noEmit` from TypeScript 7, the native compiler, over
+  `tsconfig.json` (browser code and tests) and `tsconfig.node.json`
+  (`vite.config.ts`). The build never type-checks: Vite strips types with oxc and
+  `vite-plugin-solid` compiles `.tsx` JSX.
+- The compiler options are strict with `noUncheckedIndexedAccess`, and output is
+  erasable (`verbatimModuleSyntax`, `erasableSyntaxOnly`): no enums or
+  namespaces, so stripping types is all a build does.
+- typescript-eslint runs syntactic rules only (`no-explicit-any`,
+  `no-non-null-assertion`, `consistent-type-imports`, `ban-ts-comment`). Its
+  parser gets a pinned TypeScript 6 from `scripts/eslint-typescript`, because
+  TypeScript 7 has no JS API until 7.1; `tsc` stays native.
+
+Conventions:
+
+- No `any`. Use `unknown` at boundaries (JSON from `/api/*`, `event.data`,
+  `localStorage`) and narrow it once in a small typed parser per endpoint,
+  because scattered casts hide the one place a shape can be wrong.
+- No type gymnastics. Plain interfaces and type aliases, unions for states
+  (`{ status: 'idle' } | { status: 'loading' } | …`), and simple generics only
+  where they remove real duplication, because readers should not need to run a
+  type program in their head. Conditional, mapped, recursive or template-literal
+  types need a one-line comment saying why.
+- No `as` casts except at a parsing boundary or for a DOM ref whose element type
+  is known, because a cast turns off the check it sits on. No `!` non-null
+  assertions; handle the null, because the null case is usually a real state.
+- Each component types its props with an interface and uses Solid's
+  `Component`/`ParentComponent`/`JSX.Element`, so props read like documentation
+  and match Solid's own contracts.
+- Store state has an explicit interface, and actions take and return concrete
+  types, because the store is the contract between components and logic.
+- Let locals infer. Annotate exported function signatures, because they are the
+  module's interface and inference across modules hides breaking changes.
+- `@ts-expect-error` needs a description; `@ts-ignore` and `@ts-nocheck` are
+  banned, because a suppression without a reason never gets revisited.
 
 ## Solid practices
 

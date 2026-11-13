@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["es2023"],
+    "types": ["node"],
+    "allowJs": false
+  },
+  "include": ["vite.config.ts"]
+}

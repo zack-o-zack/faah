@@ -2,6 +2,8 @@ import js from '@eslint/js';
 import solid from 'eslint-plugin-solid';
 import globals from 'globals';
 import prettier from 'eslint-config-prettier';
+// typescript-eslint parses with the TypeScript 6 JS API from scripts/eslint-typescript; tsc itself is the native TypeScript 7.
+import tseslint from 'eslint-typescript';
 
 // Legacy modules leave this list as they are migrated.
 const legacy = [
@@ -22,12 +24,14 @@ const legacy = [
   'web/src/typescale.test.js',
   'web/src/ui.js',
 ];
-const frontend = ['web/src/**/*.{js,jsx}'];
+const frontend = ['web/src/**/*.{js,jsx,ts,tsx}'];
+const typescript = ['web/src/**/*.{ts,tsx}', 'vite.config.ts'];
 const tooling = [
-  'vite.config.js',
+  'vite.config.ts',
   'eslint.config.js',
   'scripts/build-web.js',
   'scripts/check-web.js',
+  'scripts/eslint-typescript/index.js',
 ];
 function asError(rule) {
   const config = Array.isArray(rule) ? rule : [rule];
@@ -80,9 +84,30 @@ export default [
       'max-statements-per-line': ['error', { max: 1 }],
     },
   },
+  // Syntactic rules only: type-aware ones need the TypeScript JS API, which TypeScript 7 lacks until 7.1.
+  ...tseslint.configs.recommended.map((config) => ({ ...config, files: typescript })),
+  {
+    files: typescript,
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-non-null-assertion': 'error',
+      '@typescript-eslint/consistent-type-imports': 'error',
+      '@typescript-eslint/ban-ts-comment': [
+        'error',
+        {
+          'ts-ignore': true,
+          'ts-nocheck': true,
+          'ts-check': false,
+          'ts-expect-error': 'allow-with-description',
+        },
+      ],
+      // tsc reports unused locals and parameters.
+      '@typescript-eslint/no-unused-vars': 'off',
+    },
+  },
   { files: tooling, languageOptions: { globals: globals.node } },
   {
-    files: ['web/src/**/*.test.{js,jsx}', 'web/src/test-setup.js'],
+    files: ['web/src/**/*.test.{js,jsx,ts,tsx}', 'web/src/test-setup.js'],
     languageOptions: { globals: globals.vitest },
   },
   { ...prettier, files: [...frontend, ...tooling] },
