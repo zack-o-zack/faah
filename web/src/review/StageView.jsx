@@ -95,10 +95,24 @@ function StageHeader() {
         <h2 id="review-stage-title" class="min-w-0 truncate text-base font-semibold">
           {def().title || `Stage ${review.state.active + 1}`}
         </h2>
-        <Show when={!review.state.edit && (def().question || def().prompt)}>
-          <p id="review-question-text" class="min-w-0 text-sm text-muted-foreground">
-            {def().question || def().prompt}
-          </p>
+        <Show
+          when={
+            (!review.state.edit || review.state.edit.index < 0) && (def().question || def().prompt)
+          }
+        >
+          <div
+            id="review-question-banner"
+            data-ui="review-question-banner"
+            class="flex min-w-0 items-start gap-1"
+          >
+            <span
+              id="review-question-text"
+              data-ui="review-question-text"
+              class="min-w-0 text-sm text-muted-foreground"
+            >
+              {def().question || def().prompt}
+            </span>
+          </div>
         </Show>
       </div>
       <div class="flex shrink-0 items-center">

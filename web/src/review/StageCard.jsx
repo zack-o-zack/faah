@@ -39,6 +39,8 @@ export function StageCard(props) {
         <DropdownMenu
           label={<span class="icon-[lucide--ellipsis] size-3.5 shrink-0" aria-hidden="true" />}
           accessibleLabel={`Actions for ${title()}`}
+          size="icon-xs"
+          control="review-stage-menu-btn"
         >
           <StageMenuItems index={props.index} />
         </DropdownMenu>
