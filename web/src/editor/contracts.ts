@@ -55,6 +55,7 @@ export interface EditorUI {
   vim: VimState;
 }
 export interface Services {
+  selection?: { copied: (action: string) => void };
   source?: {
     scrollTo: (top: number) => void;
     topLine: () => number;

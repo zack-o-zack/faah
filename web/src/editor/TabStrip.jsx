@@ -17,7 +17,6 @@ export function TabStrip(props) {
   createEffect(() => {
     if (!menu()) return;
     const previous = document.activeElement;
-    queueMicrotask(() => panel?.querySelector('button')?.focus());
     onCleanup(() => previous?.isConnected && previous.focus());
   });
   function action(name) {
@@ -106,7 +105,6 @@ export function TabStrip(props) {
           <div
             id="tab-menu"
             ref={panel}
-            role="menu"
             data-popover
             aria-hidden="false"
             class="fixed min-w-[190px] max-w-[min(380px,95vw)] z-[70] top-auto left-auto m-0 gap-0"
@@ -120,6 +118,12 @@ export function TabStrip(props) {
                   data-control="sel-menu-item"
                   data-variant="ghost"
                   data-size="xs"
+                  disabled={
+                    (name() === 'others' && editor.store.state.documents.tabs.length < 2) ||
+                    (name() === 'left' && menu().index === 0) ||
+                    (name() === 'right' &&
+                      menu().index === editor.store.state.documents.tabs.length - 1)
+                  }
                   onClick={() => action(name())}
                 >
                   {

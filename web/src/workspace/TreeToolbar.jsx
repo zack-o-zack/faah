@@ -39,7 +39,7 @@ export function TreeToolbar() {
             id="btn-files"
             class="btn"
             aria-pressed={tree.mode() === 'files'}
-            data-variant={tree.mode() === 'files' ? 'secondary' : 'ghost'}
+            data-variant={tree.mode() === 'files' ? 'secondary' : 'outline'}
             onClick={() => void editor.actions.setTreeMode('files')}
             data-size="xs"
             data-control="view-choice"
@@ -52,7 +52,7 @@ export function TreeToolbar() {
             class="btn"
             disabled={!tree.hasGitView()}
             aria-pressed={tree.mode() === 'git'}
-            data-variant={tree.mode() === 'git' ? 'secondary' : 'ghost'}
+            data-variant={tree.mode() === 'git' ? 'secondary' : 'outline'}
             onClick={() => void editor.actions.setTreeMode('git')}
             data-size="xs"
             data-control="view-choice"

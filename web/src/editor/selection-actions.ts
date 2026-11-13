@@ -110,11 +110,11 @@ function buildSelectionActions(editor: SelectionHost) {
       toast('error', errorMessage(error));
     }
   }
-  async function copyMarkdown(info: SelectionInfo) {
+  async function copyMarkdown(info: SelectionInfo): Promise<boolean> {
     if (info.rawMarkdown) return copyText(info.rawMarkdown, 'Copied raw Markdown');
     try {
       const document = active();
-      if (!document) return;
+      if (!document) return false;
       const text = await rawText(document);
       const lines = text
         .split(/\r?\n/)
@@ -131,6 +131,12 @@ function buildSelectionActions(editor: SelectionHost) {
     override?: SelectionInfo | null,
     onCopied?: () => void,
   ) {
+    const confirm = (ok: boolean) => {
+      if (ok) {
+        services.selection?.copied(action);
+        onCopied?.();
+      }
+    };
     let info = override || ui.selection;
     if (!info) {
       const document = active();
@@ -160,13 +166,11 @@ function buildSelectionActions(editor: SelectionHost) {
       return true;
     }
     if (action === 'copy-preview-text') {
-      void copyRich(info.text, info.html || '', 'Copied formatted text').then(
-        (ok) => ok && onCopied?.(),
-      );
+      void copyRich(info.text, info.html || '', 'Copied formatted text').then(confirm);
       return true;
     }
     if (action === 'copy-markdown') {
-      void copyMarkdown(info).then((ok) => ok && onCopied?.());
+      void copyMarkdown(info).then(confirm);
       return true;
     }
     const values: Record<string, string> = {
@@ -180,7 +184,7 @@ function buildSelectionActions(editor: SelectionHost) {
     void copyText(
       value,
       action === 'copy-source' ? `Copied ${lines} ${lines === 1 ? 'line' : 'lines'}` : 'Copied',
-    ).then((ok) => ok && onCopied?.());
+    ).then(confirm);
     return true;
   }
   return {

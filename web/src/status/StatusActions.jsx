@@ -1,6 +1,6 @@
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { previewKind } from '../viewers/view.ts';
+import { previewKind, viewMode } from '../viewers/view.ts';
 import { Kbd } from '../lib/shortcuts.jsx';
 
 export function StatusActions() {
@@ -39,6 +39,12 @@ export function StatusActions() {
     },
     { name: 'help', label: 'Help', keys: '?', run: () => editor.actions.showHelp() },
   ];
+  function pressed(action) {
+    if (action.name === 'wrap') return editor.settings.preferences().wrap;
+    return (
+      action.name === 'md-preview' && ['markdown', 'table'].includes(viewMode(editor.active()))
+    );
+  }
   return (
     <div id="footer-actions" class="flex items-center gap-1 [#status.selecting_&]:hidden">
       <For each={actions}>
@@ -48,7 +54,10 @@ export function StatusActions() {
               class={action.icon ? 'btn' : 'btn desktop:hidden!'}
               data-action={action.name}
               data-control="bar-action"
-              data-variant="ghost"
+              data-variant={pressed(action) ? 'secondary' : 'ghost'}
+              aria-pressed={
+                ['wrap', 'md-preview'].includes(action.name) ? pressed(action) : undefined
+              }
               data-size="xs"
               onClick={action.run}
             >

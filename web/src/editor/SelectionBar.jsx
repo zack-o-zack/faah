@@ -1,5 +1,5 @@
 import { Portal } from 'solid-js/web';
-import { createSignal, For, onCleanup, Show } from 'solid-js';
+import { createSignal, For, onCleanup, onMount, Show } from 'solid-js';
 import { useEditor } from './context.jsx';
 import { SEL_MENU_ITEMS } from './selection.ts';
 import { Kbd } from '../lib/shortcuts.jsx';
@@ -10,6 +10,16 @@ export function SelectionBar() {
   const [copied, setCopied] = createSignal('');
   let panel, timer;
   onCleanup(() => clearTimeout(timer));
+  onMount(() => {
+    editor.services.selection = {
+      copied(action) {
+        setCopied(action);
+        clearTimeout(timer);
+        timer = setTimeout(() => setCopied(''), 1200);
+      },
+    };
+    onCleanup(() => delete editor.services.selection);
+  });
   createMenuEvents({
     open: () => !!editor.ui.menu,
     panel: () => panel,
@@ -45,11 +55,7 @@ export function SelectionBar() {
   function run(action) {
     const info = editor.ui.menu?.info || editor.ui.selection;
     editor.actions.closeSelectionMenu();
-    editor.actions.runSelectionAction(action, info, () => {
-      setCopied(action);
-      clearTimeout(timer);
-      timer = setTimeout(() => setCopied(''), 1200);
-    });
+    editor.actions.runSelectionAction(action, info);
   }
   return (
     <>
@@ -68,6 +74,10 @@ export function SelectionBar() {
                 data-control="bar-action"
                 data-variant="ghost"
                 data-size="xs"
+                classList={{
+                  'text-gi!': copied() === item.sel,
+                  'border-gi!': copied() === item.sel,
+                }}
                 data-sel={item.sel}
                 onClick={() => run(item.sel)}
               >

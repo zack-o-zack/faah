@@ -33,7 +33,10 @@ export function Tree() {
   function scrollPath(path) {
     const index = rows().findIndex((row) => row.path === path);
     if (index < 0) return;
-    viewport.scrollTop = Math.max(0, index * 24 - viewport.clientHeight / 2 + 12);
+    const rowTop = index * 24;
+    if (rowTop < viewport.scrollTop) viewport.scrollTop = rowTop;
+    else if (rowTop + 24 > viewport.scrollTop + viewport.clientHeight)
+      viewport.scrollTop = rowTop + 24 - viewport.clientHeight;
     update();
   }
   createEffect(
@@ -84,7 +87,7 @@ export function Tree() {
     <div
       id="tree"
       ref={viewport}
-      class="panel-body relative min-h-0 flex-1 overflow-auto"
+      class="panel-body relative min-h-0 flex-1 overflow-auto pb-4"
       classList={{
         'changed-only': tree.mode() === 'git',
         'scope-yours': tree.scope() === 'yours',

@@ -25,13 +25,16 @@ export function treeDecoration(
     staged &&
     (snapshot ? !!snapshot.partial?.[row.path] : !!row.partial)
   );
+  const directoryDirty = snapshot
+    ? Object.keys(snapshot.statuses || {}).some((path) => path.startsWith(row.path + '/'))
+    : !!row.dirty;
   return {
     code,
     yours,
     staged,
     partial,
     viewed,
-    dirty: !!status,
+    dirty: row.dir ? directoryDirty : !!status,
     showStage: pr ? !!yours : !!status,
   };
 }

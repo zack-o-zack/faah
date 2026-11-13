@@ -10,7 +10,8 @@ export function Popover(props) {
     else setLocalOpen(value);
   }
   const id = createUniqueId();
-  let trigger, panel;
+  let trigger, panel, resize;
+  onCleanup(() => resize?.disconnect());
   const [position, setPosition] = createSignal({ left: '8px', top: '8px' });
   function place() {
     if (!open() || !trigger || !panel) return;
@@ -64,7 +65,7 @@ export function Popover(props) {
         data-size={props.size || 'xs'}
         aria-haspopup={props.role || 'dialog'}
         aria-expanded={open()}
-        aria-controls={id}
+        aria-controls={props.panelId || id}
         onClick={() => {
           if (open()) close();
           else {
@@ -81,6 +82,11 @@ export function Popover(props) {
             <div
               ref={(el) => {
                 panel = el;
+                resize?.disconnect();
+                if (typeof ResizeObserver !== 'undefined') {
+                  resize = new ResizeObserver(place);
+                  resize.observe(el);
+                }
                 queueMicrotask(() => {
                   place();
                   if (props.autofocus) el.querySelector('button, input, [tabindex="0"]')?.focus();
