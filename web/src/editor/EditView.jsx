@@ -82,7 +82,9 @@ export function EditView() {
       <div
         id="editview-gutter"
         class="editview-gutter relative"
-        style={{ width: `${String(starts().length).length * editor.geometry.charWidth + 26}px` }}
+        style={{
+          width: `${Math.max(45, String(starts().length).length * editor.geometry.charWidth + 26)}px`,
+        }}
       >
         <div
           class="absolute left-0 w-full text-right"
