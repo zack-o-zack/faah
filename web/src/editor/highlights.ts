@@ -80,7 +80,8 @@ export function markOccurrences(element: HTMLElement, query = ''): void {
   if (query) {
     const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
     const nodes: Text[] = [];
-    for (let node = walker.nextNode(); node; node = walker.nextNode()) if (node instanceof Text) nodes.push(node);
+    for (let node = walker.nextNode(); node; node = walker.nextNode())
+      if (node instanceof Text) nodes.push(node);
     for (const node of nodes) {
       const raw = node.data;
       if (!raw.includes(query)) continue;
@@ -109,8 +110,10 @@ export function markOccurrences(element: HTMLElement, query = ''): void {
     return [element, element.childNodes.length];
   }
   if (selection && (anchor !== null || focus !== null)) {
-    const start: [Node | null, number] = anchor === null ? [selection.anchorNode, selection.anchorOffset] : point(anchor);
-    const end: [Node | null, number] = focus === null ? [selection.focusNode, selection.focusOffset] : point(focus);
+    const start: [Node | null, number] =
+      anchor === null ? [selection.anchorNode, selection.anchorOffset] : point(anchor);
+    const end: [Node | null, number] =
+      focus === null ? [selection.focusNode, selection.focusOffset] : point(focus);
     if (start[0] && end[0]) selection.setBaseAndExtent(start[0], start[1], end[0], end[1]);
   }
 }

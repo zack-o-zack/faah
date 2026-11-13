@@ -126,7 +126,11 @@ function buildSelectionActions(editor: SelectionHost) {
     }
   }
   // Runs a selection action on the selection, or on the caret line for thread and agent edits.
-  function runSelectionAction(action: string, override?: SelectionInfo | null, onCopied?: () => void) {
+  function runSelectionAction(
+    action: string,
+    override?: SelectionInfo | null,
+    onCopied?: () => void,
+  ) {
     let info = override || ui.selection;
     if (!info) {
       const document = active();
