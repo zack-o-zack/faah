@@ -1,13 +1,45 @@
+import type { AppState } from '../app/store.ts';
+import type { DocTab } from '../editor/documents.js';
+import type { Request } from '../lib/api.ts';
+import type { TreeEntry } from './decode.ts';
+import { decodeTree, decodeNewItem } from './decode.ts';
+import { errorMessage, isAbort, isRecord } from '../lib/decode.ts';
+interface TreeState {
+  mode: string;
+  scope: string;
+  revision: number;
+  busy: boolean;
+  error: string;
+  suppressed: boolean;
+  reveal: { path: string; sequence: number };
+  staging: Record<string, { staged: boolean }>;
+  newItem: { type: string; path: string; pending: boolean; error: string } | null;
+}
+interface TreeHost {
+  state: AppState;
+  activeDocument: () => DocTab | null;
+  settings: { preferences: () => { autoReveal: boolean } };
+  actions: {
+    focusScope: (document: DocTab, scope: string) => void;
+    acceptGitSnapshot: (snapshot: unknown) => void;
+    refreshWorkspace: () => Promise<void>;
+    setPanelVisible: (name: 'left', visible: boolean) => void;
+  };
+}
+interface TreeOptions {
+  request?: Request;
+  post?: Request;
+  openFile?: (path: string, options?: unknown) => Promise<unknown>;
+  enterEditMode?: () => void | Promise<unknown>;
+}
 import { batch, createMemo, onCleanup } from 'solid-js';
 import { createStore, produce } from 'solid-js/store';
 import { api, apiPostJson } from '../lib/api.ts';
 import { toast } from '../lib/toast.jsx';
-import { createTreeModel } from './tree-model.js';
-import { copyPath, newItemRequest, parentPath, treeDecoration } from './tree-logic.js';
+import { createTreeModel } from './tree-model.ts';
+import { copyPath, newItemRequest, parentPath, treeDecoration } from './tree-logic.ts';
 
-/** @returns {{mode:string, scope:string, revision:number, busy:boolean, error:string,
- * suppressed:boolean, reveal:{path:string, sequence:number}, staging:Object, newItem:Object|null}} */
-function initialState() {
+function initialState(): TreeState {
   return {
     mode: 'files',
     scope: 'all',
@@ -20,19 +52,22 @@ function initialState() {
     newItem: null,
   };
 }
-export function createTreeStore(app, options = {}) {
+export function createTreeStore(app: TreeHost, options: TreeOptions = {}) {
   const request = options.request || api;
   const post = options.post || apiPostJson;
   const model = createTreeModel();
   const [state, set] = createStore(initialState());
-  const pending = new Map();
-  const stagingRequests = new Map();
+  const pending = new Map<
+    string,
+    { controller: AbortController; promise: Promise<boolean> | null }
+  >();
+  const stagingRequests = new Map<string, AbortController>();
   let generation = 0;
   let intent = 0;
   let disposed = false;
   let loadedView = '';
   let signature = '';
-  let itemRequest;
+  let itemRequest: AbortController | undefined;
   const hasGitView = () =>
     !!(
       app.state.workspace.meta?.git &&
@@ -50,9 +85,9 @@ export function createTreeStore(app, options = {}) {
   const view = () => (mode() === 'files' ? 'all' : 'changed');
   const compact = () => (mode() === 'git' && scope() === 'yours' ? 'yours' : view());
   const rows = createMemo(() => {
-    state.revision;
+    void state.revision;
     const snapshot = app.state.git.snapshot;
-    app.state.git.revision;
+    void app.state.git.revision;
     return model.flatten(mode() === 'git' && scope() === 'yours' ? 'yours' : view(), snapshot);
   });
   const publish = () => set('revision', (value) => value + 1);
@@ -61,19 +96,20 @@ export function createTreeStore(app, options = {}) {
     for (const operation of pending.values()) operation.controller.abort();
     pending.clear();
   }
-  async function load(dir, version = generation) {
+  async function load(dir: string, version = generation): Promise<boolean> {
     if (disposed || version !== generation) return false;
     if (model.children.has(dir)) return true;
-    if (pending.has(dir)) return pending.get(dir).promise;
+    if (pending.has(dir)) return pending.get(dir)?.promise || false;
     const controller = new AbortController();
-    const operation = { controller, promise: null };
+    const operation: { controller: AbortController; promise: Promise<boolean> | null } = {
+      controller,
+      promise: null,
+    };
     pending.set(dir, operation);
     operation.promise = (async () => {
       try {
-        const data = await request(
-          'api/tree',
-          { dir, compact: compact() },
-          { signal: controller.signal },
+        const data = decodeTree(
+          await request('api/tree', { dir, compact: compact() }, { signal: controller.signal }),
         );
         if (disposed || version !== generation) return false;
         model.apply(dir, data.children || []);
@@ -84,7 +120,7 @@ export function createTreeStore(app, options = {}) {
     })();
     return operation.promise;
   }
-  async function expandPath(path) {
+  async function expandPath(path: string) {
     await load('');
     const version = generation;
     for (const part of path
@@ -96,23 +132,23 @@ export function createTreeStore(app, options = {}) {
     }
     publish();
   }
-  function target(path) {
+  function target(path: string) {
     set('reveal', { path, sequence: state.reveal.sequence + 1 });
   }
-  async function revealFile(path) {
+  async function revealFile(path: string) {
     if (!path) return;
     const current = ++intent;
     set('busy', false);
     await expandPath(parentPath(path));
     if (!disposed && current === intent) target(path);
   }
-  async function revealDirectory(path) {
+  async function revealDirectory(path: string) {
     intent++;
     set('busy', false);
     await expandPath(path);
     if (!disposed) target(path);
   }
-  async function expandLoaded(path, current) {
+  async function expandLoaded(path: string, current: number) {
     if (await load(path)) {
       if (current === intent) model.expand(path);
     }
@@ -121,7 +157,7 @@ export function createTreeStore(app, options = {}) {
     if (state.busy) return;
     const current = ++intent;
     set({ busy: true, error: '' });
-    const seen = new Set();
+    const seen = new Set<string>();
     try {
       await load('');
       while (!disposed && current === intent) {
@@ -141,7 +177,7 @@ export function createTreeStore(app, options = {}) {
         publish();
       }
     } catch (error) {
-      if (error.name !== 'AbortError' && !disposed) set('error', error.message);
+      if (!isAbort(error) && !disposed) set('error', errorMessage(error));
     } finally {
       if (!disposed && current === intent) set('busy', false);
     }
@@ -164,7 +200,7 @@ export function createTreeStore(app, options = {}) {
         await expandPath(path);
       }
     } catch (error) {
-      if (!disposed && error.name !== 'AbortError') set('error', error.message);
+      if (!disposed && !isAbort(error)) set('error', errorMessage(error));
     }
   }
   async function reconcileTreeSnapshot() {
@@ -187,26 +223,26 @@ export function createTreeStore(app, options = {}) {
       if (mode() === 'git') await expandTree(true);
     }
   }
-  async function setTreeMode(value, { expandDirty = true } = {}) {
+  async function setTreeMode(value: string, { expandDirty = true } = {}) {
     set('mode', value === 'git' ? 'git' : 'files');
     if (loadedView !== compact()) await refreshTree();
     if (mode() === 'git' && expandDirty) await expandTree(true);
   }
-  async function setTreeScope(value) {
+  async function setTreeScope(value: string) {
     set('scope', value === 'yours' ? 'yours' : 'all');
     await refreshTree();
     if (mode() === 'git') await expandTree(true);
     focusScope(app.activeDocument());
   }
-  function focusScope(document) {
+  function focusScope(document: DocTab | null) {
     if (!document || !app.state.workspace.meta?.pr) return;
     app.actions.focusScope(document, scope() === 'yours' ? 'yours' : 'pr');
   }
-  async function openTreeFile(path) {
-    await options.openFile(path);
+  async function openTreeFile(path: string) {
+    await options.openFile?.(path);
     focusScope(app.activeDocument());
   }
-  async function stageTreeFile(path, staged) {
+  async function stageTreeFile(path: string, staged: boolean) {
     stagingRequests.get(path)?.abort();
     const controller = new AbortController();
     stagingRequests.set(path, controller);
@@ -218,12 +254,12 @@ export function createTreeStore(app, options = {}) {
         { signal: controller.signal },
       );
       if (disposed || controller.signal.aborted) return;
-      if (snapshot.git !== undefined) app.actions.acceptGitSnapshot(snapshot);
+      if (isRecord(snapshot) && snapshot.git !== undefined) app.actions.acceptGitSnapshot(snapshot);
       else await app.actions.refreshWorkspace();
     } catch (error) {
       if (disposed || controller.signal.aborted) return;
-      set('error', error.message);
-      toast('error', error.message);
+      set('error', errorMessage(error));
+      toast('error', errorMessage(error));
     } finally {
       if (stagingRequests.get(path) === controller && !disposed) {
         stagingRequests.delete(path);
@@ -246,20 +282,20 @@ export function createTreeStore(app, options = {}) {
     set('newItem', { pending: true, error: '' });
     try {
       const shape = newItemRequest(state.newItem.path, state.newItem.type);
-      const result = await post('api/fs/new', shape, { signal: mine.signal });
+      const result = decodeNewItem(await post('api/fs/new', shape, { signal: mine.signal }));
       if (disposed || mine.signal.aborted) return;
       set('newItem', null);
       await refreshTree();
       await revealDirectory(parentPath(result.path));
       void app.actions.refreshWorkspace();
       if (shape.type === 'file') {
-        await options.openFile(result.path);
-        await options.enterEditMode();
+        await options.openFile?.(result.path);
+        await options.enterEditMode?.();
       }
       toast('success', 'Created ' + result.path);
     } catch (error) {
       if (!disposed && !mine.signal.aborted && state.newItem)
-        set('newItem', { pending: false, error: error.message });
+        set('newItem', { pending: false, error: errorMessage(error) });
     }
   }
   onCleanup(() => {
@@ -277,11 +313,11 @@ export function createTreeStore(app, options = {}) {
     scope,
     counts,
     hasGitView,
-    expanded(path) {
-      state.revision;
+    expanded(path: string) {
+      void state.revision;
       return model.expanded.has(path);
     },
-    decoration: (row) =>
+    decoration: (row: TreeEntry) =>
       treeDecoration(
         row,
         app.state.git.snapshot,
@@ -293,10 +329,10 @@ export function createTreeStore(app, options = {}) {
     autoReveal: () => !state.suppressed && app.settings.preferences().autoReveal,
     actions: {
       refreshTree,
-      async openLink(path, openOptions) {
+      async openLink(path: string, openOptions?: unknown) {
         try {
           const clean = path.replace(/\/+$/, '');
-          const result = await request('api/tree', { dir: parentPath(clean) });
+          const result = decodeTree(await request('api/tree', { dir: parentPath(clean) }));
           if (disposed) return;
           if (!clean || result.children.some((entry) => entry.path === clean && entry.dir)) {
             app.actions.setPanelVisible('left', true);
@@ -307,7 +343,7 @@ export function createTreeStore(app, options = {}) {
         } catch {
           // The document action reports a missing path or closing workspace.
         }
-        if (!disposed) return options.openFile(path, openOptions);
+        if (!disposed) return options.openFile?.(path, openOptions);
       },
       revealFile,
       revealDirectory,
@@ -318,7 +354,7 @@ export function createTreeStore(app, options = {}) {
       openTreeFile,
       stageTreeFile,
       focusTreeScope: focusScope,
-      async toggleTreeDirectory(path) {
+      async toggleTreeDirectory(path: string) {
         intent++;
         set('busy', false);
         if (model.expanded.has(path)) model.collapse(path);
@@ -326,7 +362,7 @@ export function createTreeStore(app, options = {}) {
           try {
             if (await load(path)) model.expand(path);
           } catch (error) {
-            if (error.name !== 'AbortError') set('error', error.message);
+            if (!isAbort(error)) set('error', errorMessage(error));
           }
         }
         publish();
@@ -339,8 +375,8 @@ export function createTreeStore(app, options = {}) {
           publish();
         });
       },
-      setAutoRevealSuppressed: (value) => set('suppressed', value),
-      openNewItem(type, dir = '') {
+      setAutoRevealSuppressed: (value: boolean) => set('suppressed', value),
+      openNewItem(type: string, dir = '') {
         set('newItem', {
           type,
           path: dir ? dir.replace(/\/+$/, '') + '/' : '',
@@ -348,10 +384,10 @@ export function createTreeStore(app, options = {}) {
           error: '',
         });
       },
-      setNewItemPath: (path) => set('newItem', 'path', path),
+      setNewItemPath: (path: string) => set('newItem', 'path', path),
       closeNewItem,
       createItem,
-      async copyTreePath(path, kind) {
+      async copyTreePath(path: string, kind: string) {
         const value = copyPath(path, kind, app.state.workspace.meta?.root);
         await navigator.clipboard.writeText(value);
         toast('success', 'Copied ' + value);

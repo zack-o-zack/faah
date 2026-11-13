@@ -1,7 +1,7 @@
 import { createMemo, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
 import { ContextMenu } from '../lib/ContextMenu.jsx';
-import { fileKind } from './tree-logic.js';
+import { fileKind } from './tree-logic.ts';
 export function TreeRow(props) {
   const editor = useEditor();
   const decoration = createMemo(() => editor.tree.decoration(props.row));

@@ -15,7 +15,7 @@ export interface WorkspaceMeta {
   ready?: boolean;
   threadsEnabled?: boolean;
   metrics?: unknown;
-  pr?: unknown;
+  pr?: { files?: Record<string, string>; [key: string]: unknown };
   forge?: {
     info: {
       name: string;

@@ -5,7 +5,7 @@ import { VimStatus } from '../editor/VimStatus.jsx';
 import { LspMenu } from '../lsp/LspMenu.jsx';
 import { Metrics } from './Metrics.jsx';
 import { StatusActions } from './StatusActions.jsx';
-import { fmtBytes, statusMessage } from './logic.js';
+import { fmtBytes, statusMessage } from './logic.ts';
 export function StatusBar() {
   const editor = useEditor();
   return (

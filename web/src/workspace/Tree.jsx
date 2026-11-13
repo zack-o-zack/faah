@@ -9,7 +9,7 @@ import {
   Show,
 } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { rowWindow } from './tree-model.js';
+import { rowWindow } from './tree-model.ts';
 import { TreeRow } from './TreeRow.jsx';
 export function Tree() {
   const editor = useEditor();

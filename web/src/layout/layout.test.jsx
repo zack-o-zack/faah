@@ -4,7 +4,7 @@ import { expect, test } from 'vitest';
 import { createAppStore } from '../app/store.ts';
 import { EditorProvider } from '../editor/context.jsx';
 import { PanelHandle } from './PanelHandle.jsx';
-import { DEFAULT_LAYOUT, readLayout } from './logic.js';
+import { DEFAULT_LAYOUT, readLayout } from './logic.ts';
 
 test('invalid saved layout falls back and widths stay within supported limits', () => {
   expect(readLayout('{')).toEqual(DEFAULT_LAYOUT);

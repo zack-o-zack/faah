@@ -1,5 +1,5 @@
 import { Show } from 'solid-js';
-import { fmtBytes, fmtCpu } from './logic.js';
+import { fmtBytes, fmtCpu } from './logic.ts';
 export function MetricsSummary(props) {
   return (
     <span class="inline-flex gap-1 font-mono text-xs">

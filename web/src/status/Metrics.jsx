@@ -2,7 +2,7 @@ import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
 import { Popover } from '../lib/Popover.jsx';
 import { MetricsSummary } from './MetricsSummary.jsx';
-import { fmtBytes, fmtCpu } from './logic.js';
+import { fmtBytes, fmtCpu } from './logic.ts';
 export function Metrics() {
   const editor = useEditor();
   const metrics = () => editor.store.state.workspace.metrics;

@@ -1,19 +1,20 @@
+import type { StreamHandler } from '../lib/events.ts';
 import { createRoot, onCleanup } from 'solid-js';
 import { createEventStream } from '../lib/events.ts';
-import { streamPath } from './snapshot.js';
+import { streamPath } from './snapshot.ts';
 
 /** Owns the workspace's one event connection: snapshots, metrics, and the threads and review topics while they are wanted. */
-export function createWorkspaceStream(options = {}) {
-  const handlers = new Map();
-  const threads = new Map();
-  const topics = { threads: false, review: false };
-  let connection;
-  let release;
+export function createWorkspaceStream(options: WorkspaceStreamOptions = {}): WorkspaceStream {
+  const handlers = new Map<string, Set<StreamHandler>>();
+  const threads = new Map<string, number>();
+  const topics: Record<string, boolean> = { threads: false, review: false };
+  let connection: EventSource | null = null;
+  let release: (() => void) | null = null;
   let wanted = false;
   let disposed = false;
   let queued = false;
   let lastTraffic = Date.now();
-  let timer;
+  let timer: ReturnType<typeof setInterval> | undefined;
   let listening = false;
   function close() {
     release?.();
@@ -29,7 +30,7 @@ export function createWorkspaceStream(options = {}) {
       const dispatch = Object.fromEntries(
         [...handlers].map(([name, subscribers]) => [
           name,
-          (data) => {
+          (data: unknown) => {
             for (const subscriber of subscribers) {
               try {
                 subscriber(data)?.catch?.(options.report || console.error);
@@ -108,20 +109,22 @@ export function createWorkspaceStream(options = {}) {
       wanted = false;
       close();
     },
-    subscribe(name, handler) {
+    subscribe(name: string, handler: StreamHandler) {
       if (!handlers.has(name)) {
         handlers.set(name, new Set());
         if (connection) reconnectSoon();
       }
-      handlers.get(name).add(handler);
-      return () => handlers.get(name)?.delete(handler);
+      handlers.get(name)?.add(handler);
+      return () => {
+        handlers.get(name)?.delete(handler);
+      };
     },
-    topic(name, enabled) {
+    topic(name: string, enabled: boolean) {
       if (topics[name] === !!enabled) return;
       topics[name] = !!enabled;
       reconnectSoon();
     },
-    watch(id) {
+    watch(id: string) {
       if (!id) return () => {};
       threads.set(id, (threads.get(id) || 0) + 1);
       if (threads.get(id) === 1) reconnectSoon();
@@ -129,7 +132,7 @@ export function createWorkspaceStream(options = {}) {
       return () => {
         if (released || disposed) return;
         released = true;
-        const count = threads.get(id) - 1;
+        const count = (threads.get(id) || 1) - 1;
         if (count) threads.set(id, count);
         else {
           threads.delete(id);
@@ -141,8 +144,26 @@ export function createWorkspaceStream(options = {}) {
 }
 
 /** Bind a topic callback to the current feature owner without owning another connection. */
-export function createWorkspaceSubscription(app, name, listener) {
+export function createWorkspaceSubscription(
+  app: { actions: { subscribeWorkspaceEvent: WorkspaceStream['subscribe'] } },
+  name: string,
+  listener: StreamHandler,
+): () => void {
   const release = app.actions.subscribeWorkspaceEvent(name, listener);
   onCleanup(release);
   return release;
+}
+
+export interface WorkspaceStreamOptions {
+  connected?: (connected: boolean) => void;
+  refresh?: () => void | Promise<unknown>;
+  report?: (error: unknown) => void;
+}
+export interface WorkspaceStream {
+  start: () => void;
+  dispose: () => void;
+  stop: () => void;
+  subscribe: (name: string, handler: StreamHandler) => () => void;
+  topic: (name: string, enabled: boolean) => void;
+  watch: (id: string) => () => void;
 }

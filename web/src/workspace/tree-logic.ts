@@ -1,18 +1,30 @@
-export const parentPath = (path) => path.slice(0, Math.max(0, path.lastIndexOf('/')));
-export function newItemRequest(path, type) {
+import type { TreeEntry, GitSnapshot } from './decode.ts';
+export const parentPath = (path: string): string =>
+  path.slice(0, Math.max(0, path.lastIndexOf('/')));
+export function newItemRequest(path: string, type: string): { path: string; type: 'file' | 'dir' } {
   const clean = path.trim().replace(/^\/+|\/+$/g, '');
   if (!clean) throw new Error('Path cannot be empty');
   return { path: clean, type: type === 'dir' ? 'dir' : 'file' };
 }
-export function treeDecoration(row, snapshot, pr, scope, viewed, optimistic) {
+export function treeDecoration(
+  row: TreeEntry,
+  snapshot: GitSnapshot | null,
+  pr: { files?: Record<string, string> } | null | undefined,
+  scope: string,
+  viewed: boolean,
+  optimistic?: { staged: boolean },
+): TreeDecoration {
   const status = snapshot ? snapshot.statuses?.[row.path] || '' : row.status || '';
   const yours = snapshot ? snapshot.yourStatuses?.[row.path] || '' : row.yourStatus || '';
   let code = status;
   if (scope === 'yours') code = yours || status;
   else if (pr) code = pr.files?.[row.path] || status;
   const staged = optimistic?.staged ?? (snapshot ? !!snapshot.staged?.[row.path] : !!row.staged);
-  const partial =
-    !optimistic && staged && (snapshot ? !!snapshot.partial?.[row.path] : !!row.partial);
+  const partial = !!(
+    !optimistic &&
+    staged &&
+    (snapshot ? !!snapshot.partial?.[row.path] : !!row.partial)
+  );
   return {
     code,
     yours,
@@ -23,7 +35,7 @@ export function treeDecoration(row, snapshot, pr, scope, viewed, optimistic) {
     showStage: pr ? !!yours : !!status,
   };
 }
-const FILE_KIND = {
+const FILE_KIND: Record<string, string> = {
   go: 'code',
   js: 'code',
   mjs: 'code',
@@ -84,12 +96,22 @@ const FILE_KIND = {
   ico: 'img',
   avif: 'img',
 };
-export function fileKind(name) {
+export function fileKind(name: string): string {
   const dot = name.lastIndexOf('.');
   return (dot > 0 && FILE_KIND[name.slice(dot + 1).toLowerCase()]) || 'other';
 }
-export function copyPath(path, kind, root = '') {
-  if (kind === 'name') return path.split('/').pop();
+export function copyPath(path: string, kind: string, root = ''): string {
+  if (kind === 'name') return path.split('/').pop() || '';
   if (kind === 'absolute' && root) return root.replace(/\/+$/, '') + '/' + path;
   return path;
+}
+
+export interface TreeDecoration {
+  code: string;
+  yours: string;
+  staged: boolean;
+  partial: boolean;
+  viewed: boolean;
+  dirty: boolean;
+  showStage: boolean;
 }

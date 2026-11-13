@@ -1,4 +1,4 @@
-import { createWorkspaceSubscription } from '../workspace/stream.js';
+import { createWorkspaceSubscription } from '../workspace/stream.ts';
 import { batch, onCleanup } from 'solid-js';
 import { createStore, reconcile, produce } from 'solid-js/store';
 import { api, apiPostJson } from '../lib/api.ts';

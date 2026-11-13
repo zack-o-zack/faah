@@ -1,17 +1,29 @@
+import type { SetStoreFunction } from 'solid-js/store';
+import type { AppState } from '../app/store.ts';
+import type { Request } from '../lib/api.ts';
+import { errorMessage, isAbort } from '../lib/decode.ts';
+import { decodeGitSnapshot, decodeMetrics, decodeMeta, decodeReindex } from './decode.ts';
+import type { GitSnapshot } from './decode.ts';
 import { batch, onCleanup } from 'solid-js';
 import { reconcile } from 'solid-js/store';
 import { api, apiPost } from '../lib/api.ts';
-import { createWorkspaceStream } from './stream.js';
-import { workspacePatch } from './snapshot.js';
+import { createWorkspaceStream } from './stream.ts';
+import { workspacePatch } from './snapshot.ts';
 
-export function createWorkspaceActions(store, set, { request = api, post = apiPost } = {}) {
-  const observers = new Set();
-  let refreshing;
-  let requestController;
+export function createWorkspaceActions(
+  store: { state: AppState; actions: { setWorkspace: (meta: unknown) => void } },
+  set: SetStoreFunction<AppState>,
+  { request = api, post = apiPost }: { request?: Request; post?: Request } = {},
+) {
+  const observers = new Set<(snapshot: GitSnapshot) => void>();
+  let refreshing: Promise<void> | null = null;
+  let requestController: AbortController | undefined;
   let disposed = false;
-  let noteTimer, reindexController;
-  function acceptGitSnapshot(snapshot) {
-    if (!snapshot || disposed) return;
+  let noteTimer: ReturnType<typeof setTimeout> | undefined;
+  let reindexController: AbortController | undefined;
+  function acceptGitSnapshot(input: unknown): void {
+    if (!input || disposed) return;
+    const snapshot = decodeGitSnapshot(input);
     batch(() => {
       set('git', 'snapshot', reconcile(snapshot));
       if (store.state.workspace.meta) set('workspace', 'meta', workspacePatch(snapshot));
@@ -19,15 +31,19 @@ export function createWorkspaceActions(store, set, { request = api, post = apiPo
     });
     for (const observer of observers) observer(snapshot);
   }
-  function acceptMetrics(metrics) {
+  function acceptMetrics(input: unknown): void {
+    const metrics = decodeMetrics(input);
     if (!disposed)
       batch(() => {
         set('workspace', 'metrics', reconcile(metrics));
         set('lsp', { enabled: !!metrics.lspEnabled, memBytes: metrics.lspMemBytes || 0 });
       });
   }
-  async function refreshWorkspace() {
-    if (refreshing || disposed) return refreshing;
+  async function refreshWorkspace(): Promise<void> {
+    if (refreshing || disposed) {
+      if (refreshing) await refreshing;
+      return;
+    }
     requestController = new AbortController();
     const options = { signal: requestController.signal };
     set('workspace', { pending: true, error: '' });
@@ -38,11 +54,11 @@ export function createWorkspaceActions(store, set, { request = api, post = apiPo
         } else {
           const meta = await request('api/meta', undefined, options);
           if (disposed) return;
-          store.actions.setWorkspace(meta);
+          store.actions.setWorkspace(decodeMeta(meta));
           acceptGitSnapshot({ git: false, statuses: {} });
         }
       } catch (error) {
-        if (!disposed && error.name !== 'AbortError') set('workspace', 'error', error.message);
+        if (!disposed && !isAbort(error)) set('workspace', 'error', errorMessage(error));
       } finally {
         refreshing = null;
         if (!disposed) set('workspace', 'pending', false);
@@ -63,12 +79,12 @@ export function createWorkspaceActions(store, set, { request = api, post = apiPo
     clearTimeout(noteTimer);
   });
   return {
-    observeGitSnapshots: (observer) => {
+    observeGitSnapshots: (observer: (snapshot: GitSnapshot) => void) => {
       observers.add(observer);
       return () => observers.delete(observer);
     },
-    setWorkspaceError: (error) => set('workspace', 'error', error),
-    setStatusNote(note, timeout = 0) {
+    setWorkspaceError: (error: string) => set('workspace', 'error', error),
+    setStatusNote(note: string, timeout = 0) {
       clearTimeout(noteTimer);
       set('workspace', 'note', note);
       if (note && timeout) noteTimer = setTimeout(() => set('workspace', 'note', ''), timeout);
@@ -78,16 +94,17 @@ export function createWorkspaceActions(store, set, { request = api, post = apiPo
       reindexController = new AbortController();
       set('workspace', { reindexing: true, error: '' });
       try {
-        const result = await request('api/reindex', undefined, {
-          signal: reindexController.signal,
-        });
+        const result = decodeReindex(
+          await request('api/reindex', undefined, {
+            signal: reindexController.signal,
+          }),
+        );
         if (disposed) return;
-        for (const key of ['files', 'indexMs', 'gitChanges', 'gitFiles'])
-          if (result[key] !== undefined) set('workspace', 'meta', key, result[key]);
+        set('workspace', 'meta', (current) => (current ? { ...current, ...result } : current));
         await refreshWorkspace();
         return result;
       } catch (error) {
-        if (!disposed && error.name !== 'AbortError') set('workspace', 'error', error.message);
+        if (!disposed && !isAbort(error)) set('workspace', 'error', errorMessage(error));
       } finally {
         if (!disposed) set('workspace', 'reindexing', false);
       }

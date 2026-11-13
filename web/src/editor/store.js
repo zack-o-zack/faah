@@ -12,7 +12,7 @@ import { createLanguageStore } from '../lsp/store.js';
 import { createSearchStore } from '../search/store.js';
 import { createPaletteStore } from '../palette/store.js';
 import { createGitStore } from '../git/store.js';
-import { createTreeStore } from '../workspace/tree-store.js';
+import { createTreeStore } from '../workspace/tree-store.ts';
 import { createSelectionActions } from './selection-actions.js';
 import { createFindActions } from './find-actions.js';
 import { createEditActions } from './edit-actions.js';

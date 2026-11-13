@@ -3,7 +3,7 @@ import { expect, test } from 'vitest';
 import { createAppStore } from '../app/store.ts';
 import { EditorProvider } from '../editor/context.jsx';
 import { Metrics } from './Metrics.jsx';
-import { fmtBytes, imageStatus, statusMessage } from './logic.js';
+import { fmtBytes, imageStatus, statusMessage } from './logic.ts';
 
 test('metrics chip and open popover follow workspace publications', () => {
   let app;

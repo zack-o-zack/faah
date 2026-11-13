@@ -1,7 +1,16 @@
 import { test, expect } from 'vitest';
-import { createTreeModel, rowWindow } from './tree-model.js';
-const folder = (path, fields = {}) => ({ path, name: path.split('/').pop(), dir: true, ...fields });
-const file = (path, fields = {}) => ({ path, name: path.split('/').pop(), ...fields });
+import { createTreeModel, rowWindow } from './tree-model.ts';
+const folder = (path: string, fields = {}) => ({
+  path,
+  name: path.split('/').pop() || '',
+  dir: true,
+  ...fields,
+});
+const file = (path: string, fields = {}) => ({
+  path,
+  name: path.split('/').pop() || '',
+  ...fields,
+});
 test('lazy compacted folders flatten in server order and preserve row identity', () => {
   const model = createTreeModel();
   model.apply('', [folder('a/b'), file('root.js')]);

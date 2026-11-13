@@ -1,6 +1,8 @@
-import { createLayoutActions } from '../layout/actions.js';
-import { readLayout } from '../layout/logic.js';
-import { createWorkspaceActions } from '../workspace/actions.js';
+import type { GitSnapshot, Metrics } from '../workspace/decode.ts';
+import { decodeMeta, decodeMetrics } from '../workspace/decode.ts';
+import { createLayoutActions } from '../layout/actions.ts';
+import { readLayout } from '../layout/logic.ts';
+import { createWorkspaceActions } from '../workspace/actions.ts';
 import { createViewerActions } from '../viewers/actions.js';
 import { createDocuments } from '../editor/documents.js';
 import { createSettingsStore } from '../settings/store.ts';
@@ -16,7 +18,7 @@ export interface AppState {
   workspace: {
     meta: WorkspaceMeta | null;
     generation: number;
-    metrics: unknown;
+    metrics: Metrics | null;
     note: string;
     reindexing: boolean;
     connected: boolean;
@@ -50,7 +52,7 @@ export interface AppState {
     enabled?: boolean;
     memBytes?: number;
   };
-  git: { unpushedCount: number; snapshot: unknown; revision: number };
+  git: { unpushedCount: number; snapshot: GitSnapshot | null; revision: number };
   viewers: { viewed: Record<string, boolean> };
   explanation: { model: OrbModel | null; shown: boolean };
 }
@@ -123,10 +125,11 @@ function buildAppStore(options: AppOptions) {
       setNavigation: (patch: NavigationPatch): void => set('navigation', patch),
       setGeometry: (patch: { charWidth?: number; lineHeight?: number }): void =>
         set('editor', patch),
-      setWorkspace: (meta: WorkspaceMeta): void =>
+      setWorkspace: (input: unknown): void =>
         batch(() => {
+          const meta = decodeMeta(input);
           set('workspace', 'meta', reconcile(meta));
-          if (meta?.metrics) set('workspace', 'metrics', reconcile(meta.metrics));
+          if (meta.metrics) set('workspace', 'metrics', reconcile(decodeMetrics(meta.metrics)));
         }),
       patchWorkspace: (name: keyof WorkspaceMeta, value: unknown): void =>
         set('workspace', 'meta', name, value),
@@ -163,11 +166,11 @@ function buildAppStore(options: AppOptions) {
       },
     },
   };
-  Object.assign(
+  const actions = Object.assign(
     store.actions,
     createLayoutActions(store, set),
     createViewerActions(store),
     createWorkspaceActions(store, set, options),
   );
-  return store;
+  return { ...store, actions };
 }

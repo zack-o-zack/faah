@@ -13,7 +13,7 @@ export const prMeta = (fields = {}) => ({
   head: 'fix',
   state: 'open',
   writeAccess: true,
-  files: ['a.go'],
+  files: { 'a.go': 'M' },
   ...fields,
 });
 

@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@solidjs/testing-library';
 import { afterEach, expect, test, vi } from 'vitest';
 import { createAppStore } from '../app/store.ts';
 import { EditorProvider } from '../editor/context.jsx';
-import { createTreeStore } from './tree-store.js';
+import { createTreeStore } from './tree-store.ts';
 import { Tree } from './Tree.jsx';
 import { NewItemDialog } from './NewItemDialog.jsx';
 afterEach(() => vi.unstubAllGlobals());
