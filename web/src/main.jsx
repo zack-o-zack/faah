@@ -1,6 +1,5 @@
+import { LayoutShell } from './layout/LayoutShell.jsx';
 import { Palette } from './palette/Palette.jsx';
-import { InspectorShell } from './inspector/InspectorShell.jsx';
-import { GitShell } from './git/GitShell.jsx';
 import { getOwner, onMount, runWithOwner } from 'solid-js';
 import { render } from 'solid-js/web';
 import { AppProvider, useApp } from './app/context.jsx';
@@ -9,7 +8,6 @@ import { Toaster } from './lib/toast.jsx';
 import { bindLegacyEditor, attachLegacyDOM } from './app/legacy-bridge.js';
 import { createEditorStore } from './editor/store.js';
 import { EditorProvider } from './editor/context.jsx';
-import { TreeShell } from './workspace/TreeShell.jsx';
 import { ViewerShell } from './viewers/ViewerShell.jsx';
 import { EditorShell } from './editor/EditorShell.jsx';
 
@@ -26,9 +24,7 @@ function App() {
   return (
     <EditorProvider value={editorStore}>
       <Palette />
-      <InspectorShell />
-      <TreeShell />
-      <GitShell />
+      <LayoutShell />
       <EditorShell />
       <ViewerShell />
       <Toaster />

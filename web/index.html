@@ -16,31 +16,7 @@
 <body class="right-hidden threads-hidden">
 <div id="app" class="flex h-dvh overflow-hidden">
   <!-- SECTION: Sidebar (File explorer tree) -->
-  <aside id="side" class="flex w-[340px] shrink-0 flex-col overflow-hidden border-r bg-sidebar text-sidebar-foreground [body.side-hidden_&]:hidden">
-    <div id="tree-toolbar-root" class="contents"></div>
-    <div id="tree-scope-root" class="contents"></div>
-    <div id="tree-root" class="contents"></div>
-    <div id="git-root" class="contents"></div>
-    <footer class="side-foot flex shrink-0 items-center justify-end gap-2 border-t px-2 py-1 desktop:hidden">
-      <span class="side-actions flex shrink-0 items-center gap-1 desktop:hidden">
-      <a class="btn" data-variant="ghost" data-size="icon-xs" href="https://github.com/zack-o-zack/faah" target="_blank" rel="noopener" title="faah on GitHub" aria-label="faah on GitHub">
-        <span class="icon-[lucide--github] size-3.5 shrink-0" aria-hidden="true"></span>
-      </a>
-      <button id="btn-help" title="Help & Tips" aria-label="Help & Tips" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs">
-        <span class="icon-[lucide--circle-help] size-3.5 shrink-0" aria-hidden="true"></span>
-      </button>
-      <button id="btn-theme" title="Cycle theme (pick one: Command Palette > Select Theme)" aria-label="Cycle theme" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs">
-        <span class="icon-[lucide--palette] size-3.5 shrink-0" aria-hidden="true"></span>
-      </button>
-      <button id="btn-settings" title="Settings ({Mod+,})" aria-label="Settings" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs">
-        <span class="icon-[lucide--settings] size-3.5 shrink-0" aria-hidden="true"></span>
-      </button>
-      </span>
-    </footer>
-  </aside>
-
-  <!-- Sidebar Resizer Divider -->
-  <div id="resizer" class="-ml-0.5 w-1 shrink-0 cursor-col-resize z-10 hover:bg-primary [&.drag]:bg-primary [body.side-hidden_&]:hidden"></div>
+  <div id="sidebar-root" class="contents"></div>
 
   <!-- SECTION: Main Editor Area -->
   <main id="main" class="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
@@ -410,7 +386,6 @@
     <!-- Commit card: author, message and diffstat for a hovered unpushed commit -->
 
     <!-- Metrics menu, opened from CPU/RAM status bar -->
-    <div id="metrics-menu" role="menu" hidden></div>
 
     <!-- LSP management menu, opened from LSP status bar button -->
 
@@ -439,68 +414,13 @@
       </div>
     </div>
 
-    <!-- Bottom Status Bar -->
-    <footer id="status" class="flex shrink-0 items-center gap-2 overflow-hidden whitespace-nowrap border-t bg-sidebar px-2 py-1 font-mono text-xs text-muted-foreground select-none [&>*]:shrink-0 [&:has(#footer-sel:not([hidden]))]:border-primary [&.fit-1_kbd]:hidden [&.fit-2_#st-size]:hidden [&.fit-3_.metric-label]:hidden [&.fit-4_[data-action=wrap]]:hidden [&.fit-4_[data-action=help]]:hidden [&.fit-4_.sel-chip]:hidden [&.fit-4_#sel-stats]:hidden! [&.fit-5_#st-lang]:hidden [&.fit-6_#st-pos]:hidden">
-      <!-- Selection actions: replace the buttons and size below while code is selected -->
-
-      <div id="footer-actions" class="flex items-center gap-1 [#status:has(#footer-sel:not([hidden]))_&]:hidden">
-        <button data-action="quick-open" title="Go to File ({Mod+P})" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="icon-[lucide--zap] size-3.5 shrink-0 shell-ico hidden desktop:block" aria-hidden="true"></span><span class="bar-action-label text-xs font-medium desktop:hidden">Files</span><kbd data-keys="Mod+P" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-action="search" title="Search in Files ({Mod+Shift+F})" class="btn" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="icon-[lucide--search] size-3.5 shrink-0 shell-ico hidden desktop:block" aria-hidden="true"></span><span class="bar-action-label text-xs font-medium desktop:hidden">Search</span><kbd data-keys="Mod+Shift+F" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-action="find" title="Find in File ({Mod+F})" class="btn desktop:hidden!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Find in File</span><kbd data-keys="Mod+F" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-action="goto" title="Go to Line ({Mod+G})" class="btn desktop:hidden!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Go to</span><kbd data-keys="Mod+G" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-action="md-preview" title="Toggle Markdown / table preview ({Alt+M})" hidden class="btn desktop:hidden!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Preview</span><kbd data-keys="Alt+M" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-action="wrap" title="Toggle Word Wrap ({Alt+Z})" class="btn desktop:hidden!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Wrap</span><kbd data-keys="Alt+Z" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-        <button data-action="help" title="Keyboard Shortcuts ({?})" class="btn desktop:hidden!" data-control="bar-action" data-variant="ghost" data-size="xs"><span class="bar-action-label text-xs font-medium desktop:hidden">Help</span><kbd data-keys="?" class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1" data-control="shortcut"></kbd></button>
-      </div>
-      <span class="status-sep h-3 w-px shrink-0 bg-border [#status:has(#footer-sel:not([hidden]))_#footer-actions+&]:hidden"></span>
-      <span id="editor-vim-root" class="contents"></span>
-      <span id="st-size" class="[#status:has(#footer-sel:not([hidden]))_&]:hidden"></span>
-      <span class="empty:hidden" id="st-pos"></span>
-      <span id="editor-selection-root" class="contents"></span><span id="editor-cursor-root" class="contents"></span><span id="status-spacer" class="flex-1"></span>
-      <span id="lsp-root" class="contents"></span>
-      <span class="status-sep h-3 w-px shrink-0 bg-border [#status:has(#footer-sel:not([hidden]))_#footer-actions+&]:hidden"></span>
-      <span id="st-metrics" role="button" tabindex="0" class="btn font-mono desktop:[&>:not(.shell-ico)]:hidden" data-control="status-metrics" data-variant="ghost" data-size="xs">
-        <span class="icon-[lucide--activity] size-3.5 shrink-0 shell-ico hidden desktop:block" aria-hidden="true"></span>
-        <span class="metric"><span class="metric-label">CPU</span> <span id="st-cpu">--%</span></span>
-        <span class="metric-divider text-muted-foreground">·</span>
-        <span class="metric"><span class="metric-label">RAM</span> <span id="st-ram">-- MB</span></span>
-        <span id="st-lspmem-wrap" class="status-metrics-group inline-flex items-center gap-2" hidden>
-          <span class="metric-divider text-muted-foreground">·</span>
-          <span class="metric"><span class="metric-label">LSP</span> <span id="st-lspmem">-- MB</span></span>
-        </span>
-      </span>
-    </footer>
+    <div id="status-root" class="contents"></div>
   </main>
 
-  <!-- Right Inspector Resizer Divider -->
-  <div id="right-resizer-root" class="contents"></div>
-
-  <!-- SECTION: Right-side Inspector (Symbols & References) -->
-  <aside id="right-side" class="flex w-96 shrink-0 flex-col overflow-hidden border-l bg-sidebar [body.right-hidden_&]:hidden">
-    <div id="inspector-head-root" class="contents"></div>
-    <div id="inspector-panes-root" class="contents"></div>
-    <!-- Right Pane 5: Tips & Tricks. Browse, search and filter all faah tips. web/src/tips.js owns it. -->
-    <section class="hidden h-full flex-col overflow-hidden [&.active]:flex inspector-pane hidden min-h-0 flex-1 flex-col overflow-hidden [&.active]:flex" id="pane-right-tips">
-      <div data-ui="tips-header-bar" class="inspector-bar flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2 text-xs flex items-center gap-2 p-3">
-        <div data-ui="tips-search-wrap" class="flex items-center flex-1 gap-2 p-3 text-muted-foreground">
-          <span class="icon-[lucide--search] size-3.5 shrink-0" aria-hidden="true"></span>
-          <input type="text" id="tips-filter" aria-label="Filter tips" placeholder="Filter tips..." autocomplete="off" spellcheck="false" class="input">
-        </div>
-        <span id="tips-count-badge" class="badge" data-variant="secondary" data-control="inspector-badge">0 tips</span>
-        <button id="btn-refresh-tips" title="Reload tips" class="btn" data-control="icon-action" data-variant="ghost" data-size="icon-xs" aria-label="Reload tips"><span class="icon-[lucide--rotate-cw] size-3.5 shrink-0" aria-hidden="true"></span></button>
-      </div>
-      <div data-ui="tips-toolbar-sub" class="flex items-center justify-between p-3">
-        <label title="Toggle automatic tip popups in interface" data-ui="tips-setting-toggle" class="label inline-flex items-center cursor-pointer select-none gap-2 text-muted-foreground">
-          <input type="checkbox" id="tips-toggle-popup" checked class="input">
-          <span>Show tip popups in interface</span>
-        </label>
-      </div>
-      <div class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-3 [&>*]:shrink-0" id="tips-list"></div>
-    </section>
-  </aside>
+  <div id="right-sidebar-root" class="contents"></div>
 
   <!-- Threads Resizer Divider -->
-  <div id="threads-resizer" title="Drag to resize threads sidebar" class="-mr-0.5 w-1 shrink-0 cursor-col-resize z-10 hover:bg-primary [&.drag]:bg-primary [body.threads-hidden_&]:hidden"></div>
+  <div id="threads-resizer-root" class="contents"></div>
 
   <!-- SECTION: Dedicated Threads Sidebar -->
   <aside id="threads-side" class="flex w-96 shrink-0 flex-col overflow-hidden border-l bg-sidebar [body.threads-hidden_&]:hidden">

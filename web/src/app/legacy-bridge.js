@@ -243,37 +243,9 @@ function legacyDocument(path) {
 }
 export function configureLegacyServices(value) {
   Object.assign(services, value);
-  let disposed = false;
-  onCleanup(() => {
-    disposed = true;
-  });
-  // Until the following checkpoints replace these views, snapshots notify their DOM adapters.
-  createEffect(
-    on(
-      () => editorStore.store.state.git.revision,
-      () => {
-        const snapshot = editorStore.store.state.git.snapshot;
-        if (snapshot && !disposed) void paintLegacyGitSnapshot(snapshot).catch(console.error);
-      },
-    ),
-  );
-  createEffect(
-    on(
-      () => editorStore.store.state.workspace.metrics,
-      (metrics) => {
-        if (metrics) value.updateMetricsDisplay(metrics);
-      },
-    ),
-  );
   const {
     openSettings,
-    openLspMenu,
-    startAllLsp,
-    stopAllLsp,
-    showRightInspector,
-    hideRightInspector,
     showHelp,
-    reindexWorkspace,
     newThread,
     deleteCurrentThread,
     showThreadsSidebar,
@@ -282,11 +254,6 @@ export function configureLegacyServices(value) {
     copyToClipboard,
     copyRichToClipboard,
   } = value;
-  const gotoDefinition = value.gotoDefinition;
-  const findReferences = value.findReferences;
-  const showCalls = value.showCalls;
-  const showPanel = value.showPanel;
-  editorStore.actions.showFilesPanel = () => value.showPanel('files');
   editorStore.actions.openLegacyPR = value.launchPR;
   const releaseCommands = editorStore.palette.commands.register([
     {
@@ -333,72 +300,8 @@ export function configureLegacyServices(value) {
         if (d) copyToClipboard(d.path, `Copied ${d.path}`);
       },
     },
-    {
-      name: withKeys('File: Edit Current File ({Mod+E})'),
-      run: () => {
-        const d = doc_();
-        if (d && !d.isImage && !d.deleted && !d.diffRef) {
-          if (d.isEditing) exitEditMode();
-          else enterEditMode();
-        }
-      },
-    },
-    { name: withKeys('File: Save File ({Mod+S})'), run: () => saveActiveFile() },
-    { name: 'File: New File…', run: () => promptNewItem('file') },
-    { name: 'File: New Folder…', run: () => promptNewItem('dir') },
     { name: withKeys('Preferences: Open Settings (UI) ({Mod+,})'), run: () => openSettings('ui') },
     { name: 'Preferences: Open Settings (JSON)', run: () => openSettings('json') },
-    { name: 'Go to File…', run: () => openPalette('file') },
-    { name: 'Go to Symbol in File…', run: () => openPalette('symbol') },
-    { name: 'Go to Line…', run: () => openPalette('line') },
-    { name: 'Search in Files', run: () => showRightInspector('search') },
-    { name: 'Find in Current File', run: () => openFind(S.lastWord) },
-    { name: 'Show Symbol Documentation (Shift+F1)', run: showHoverAtCaret },
-    { name: 'Go to Definition', run: () => gotoDefinition() },
-    { name: 'Find All References (Right Panel)', run: () => findReferences() },
-    {
-      name: withKeys('Show Call Trail: Callers / Callees ({Alt+Shift+H})'),
-      run: () => showCalls(),
-    },
-    { name: 'Language Servers: Setup & Manage…', run: () => openLspMenu() },
-    { name: 'Set Up Language Server…', run: () => openLspMenu() },
-    { name: 'Language Servers: Start All', run: startAllLsp },
-    { name: 'Language Servers: Stop All', run: stopAllLsp },
-    {
-      name: 'Toggle Right Sidebar / Inspector',
-      run: () => {
-        if (document.body.classList.contains('right-hidden')) showRightInspector();
-        else hideRightInspector();
-      },
-    },
-    { name: 'Show File Symbols (Right Panel)', run: () => showRightInspector('symbols') },
-    {
-      name: 'Reveal Active File in Explorer',
-      run: () => {
-        const d = doc_();
-        if (d) {
-          showPanel('files');
-          revealFile(d.path);
-        }
-      },
-    },
-    { name: withKeys('Toggle Word Wrap ({Alt+Z})'), run: () => toggleWordWrap() },
-    { name: withKeys('Toggle Markdown / Table Preview ({Alt+M})'), run: () => togglePreview() },
-    {
-      name: withKeys('Toggle Sidebar ({Mod+B})'),
-      run: () => document.body.classList.toggle('side-hidden'),
-    },
-    { name: 'Select Theme…', run: () => openPalette('theme') },
-    { name: 'Next Theme', run: cycleTheme },
-    { name: 'Re-index Workspace', run: reindexWorkspace },
-    {
-      name: 'Close Tab',
-      run: () => {
-        if (S.active >= 0) closeTab(S.active);
-      },
-    },
-    { name: 'Close All Tabs', run: () => closeAllTabs() },
-    { name: withKeys('Reopen Closed Tab ({Alt+Shift+T})'), run: () => reopenClosedTab() },
     { name: 'Threads: Show All', run: () => showThreadsSidebar() },
     {
       name: withKeys('Threads: Start New Thread ({Alt+T} on a selection)'),
@@ -406,11 +309,6 @@ export function configureLegacyServices(value) {
     },
     { name: 'Threads: Delete Current Thread', run: deleteCurrentThread },
     { name: 'Git: Open Pull Request…', run: () => openPalette('openpr', '') },
-    {
-      name: 'Preferences: Toggle Vim Keybindings',
-      run: () => setVimModeEnabled(!isVimEnabled(), true),
-    },
-    { name: 'Help: Vim Keybindings Cheat Sheet', run: showVimHelp },
     { name: 'Help: Tips & Tricks (All Tips)', run: () => navigateToTips() },
     { name: 'Help: Show Tip', run: () => showTipWidget() },
     { name: 'Keyboard Shortcuts', run: showHelp },
@@ -419,15 +317,17 @@ export function configureLegacyServices(value) {
   createEffect(
     on(
       () => [
+        editorStore.store.state.layout.left,
         editorStore.store.state.layout.right,
         editorStore.store.state.layout.threads,
-        editorStore.store.state.layout.rightWidth,
+        editorStore.store.state.layout.threadsWidth,
       ],
-      ([right, threads, width]) => {
+      ([left, right, threads, width]) => {
+        document.body.classList.toggle('side-hidden', !left);
         document.body.classList.toggle('right-hidden', !right);
         document.body.classList.toggle('threads-hidden', !threads);
-        $('#right-side').style.width = width + 'px';
-        $('#btn-open-right')?.setAttribute('aria-pressed', String(right));
+        $('#threads-side').style.width = width + 'px';
+        $('#btn-top-threads')?.setAttribute('aria-pressed', String(threads));
       },
     ),
   );
@@ -435,7 +335,6 @@ export function configureLegacyServices(value) {
     on(
       () => [editorStore.store.state.layout.inspector, editorStore.store.state.layout.right],
       ([tab, visible]) => {
-        $('#pane-right-tips')?.classList.toggle('active', tab === 'tips');
         if (tab === 'tips' && visible) {
           value.emit('tips:shown');
           $('#tips-filter')?.focus();
@@ -445,12 +344,14 @@ export function configureLegacyServices(value) {
   );
   Object.assign(editorStore.actions, {
     openLegacySettings: value.openSettings,
+    openLegacyHelp: value.showHelp,
+    openLegacyTips: value.navigateToTips,
     nudgeLegacyForgeToken: value.nudgeForgeToken,
     selectLegacyAgent: value.selectAgent,
     legacyAgentModels: value.loadPickerModels,
     cancelLegacyAgentJob: (id) => apiPostJson('api/agent/cancel', { id }),
     async legacyHistoryChanged() {
-      await value.reindexWorkspace();
+      await editorStore.actions.reindexWorkspace();
       if (S.meta?.pr) await value.refreshPRMeta();
       await reloadOpenTabs();
     },
@@ -505,7 +406,7 @@ export function configureLegacyServices(value) {
       const parent = clean.slice(0, Math.max(0, clean.lastIndexOf('/')));
       const result = await api('api/tree', { dir: parent });
       if (!clean || result.children.some((entry) => entry.path === clean && entry.dir)) {
-        await value.showPanel('files');
+        await editorStore.actions.showFilesPanel();
         await value.revealDir(clean);
         return;
       }
@@ -526,13 +427,10 @@ export function configureLegacyServices(value) {
       if (!document) {
         $('#empty').hidden = false;
         syncViewers();
-        value.updateStatus();
         return;
       }
       $('#empty').hidden = true;
       syncViewers();
-      if (!document.gutterLoaded) void loadGutter(document);
-      value.updateStatus();
       value.emit('tab:activated', { doc: document });
       if (
         editorStore.tree.autoReveal() &&
@@ -558,10 +456,9 @@ export function configureLegacyServices(value) {
       S.lastWord = word.word;
       if (definition) {
         event.preventDefault();
-        value.gotoDefinition(word, { view: event.altKey ? 'source' : 'diff' });
+        editorStore.actions.gotoDefinition(word, { view: event.altKey ? 'source' : 'diff' });
       } else hoverAt(event.clientX, event.clientY);
     },
-    loadGutter: (path) => loadGutter(legacyDocument(path)),
     saved: value.triggerRefresh,
     previewing,
     previewLine,
@@ -800,34 +697,6 @@ function selectionAction(action, info, trigger) {
   services.copyToClipboard(values[action], 'Copied', trigger);
   return true;
 }
-export async function loadGutter(document) {
-  if (!document || !S.meta?.git) return;
-  const ref = document.diffRef || '';
-  try {
-    const result = await api('api/gutter', { path: document.path, ref });
-    if ((document.diffRef || '') !== ref) return;
-    document.gutterLoaded = true;
-    document.diffAvailable = !!(result.available || document.diffBase);
-    if (
-      document.diffAvailable &&
-      !document.diffMode &&
-      !document.diffDismissed &&
-      document.openedInDiffView
-    ) {
-      document.diffMode = localStorage.getItem('faah.diffLayout') || 'split';
-      if (doc_() === document) syncViewers();
-    }
-    const marks = new Map();
-    for (const line of result.modified || []) marks.set(line, 'mod');
-    for (const line of result.added || []) marks.set(line, 'add');
-    document.gutter = result.available ? { marks, dels: new Set(result.deleted) } : null;
-    editorStore.store.actions.patchDocument(document.path, { gutter: document.gutter });
-    editorStore.actions.refresh();
-    services.updateStatus?.();
-  } catch {
-    /* Git can disappear while a workspace is closing. */
-  }
-}
 export const loadOutline = () => editorStore.actions.loadSymbols();
 
 // Phase B/C consumers keep their imperative calls at this boundary.
@@ -856,7 +725,6 @@ export function togglePreview() {
   viewerActions().togglePreview(document, line);
   if (shown) editorStore.actions.centerLine(line);
   if (editorStore.ui.findOpen) void editorStore.actions.executeFind();
-  services.updateStatus?.();
 }
 export const handleImageKey = (event) => editorStore.services.imageKey?.(event) || false;
 export const exitMermaidFullscreen = () => {
@@ -885,7 +753,6 @@ export const toggleDiff = () => {
     document,
     document.diffMode ? 'source' : localStorage.getItem('faah.diffLayout') || 'split',
   );
-  services.updateStatus?.();
 };
 export const stepDiffHunk = (direction) => editorStore.services.diff?.stepHunk(direction);
 export const stepChangedFile = async (direction) => {
@@ -942,8 +809,6 @@ export const orbSummary = (summary) => {
   orbSync();
 };
 
-let legacyGitSignature = '';
-export const handleGitStatus = (snapshot) => editorStore.actions.acceptGitSnapshot(snapshot);
 export const triggerRefresh = () => editorStore.actions.refreshWorkspace();
 export const initGitStream = () => editorStore.actions.startWorkspaceStream();
 export const onStream = (name, handler) =>
@@ -951,90 +816,6 @@ export const onStream = (name, handler) =>
 export const setStreamTopic = (name, enabled) =>
   editorStore.actions.setWorkspaceTopic(name, enabled);
 export const watchThread = (id) => editorStore.actions.watchWorkspaceThread(id);
-async function paintLegacyGitSnapshot(data) {
-  if (!data) return;
-
-  // Identical snapshot to the last one applied (refocus, SSE reconnect): the
-  // tree, panel and gutters are already right. Open modified tabs are still
-  // re-checked, since a file can change on disk while its status stays "M",
-  // but they only repaint if something actually differs.
-  const sig = JSON.stringify(data);
-  if (sig === legacyGitSignature) {
-    await reloadOpenTabs({ onlyIfChanged: true });
-    return;
-  }
-  legacyGitSignature = sig;
-
-  // Before the Git-view check below: committing empties the tree but fills the
-  // Unpushed section, and pushing empties that in turn, so whether Git view
-  // still has anything to show depends on a fresh unpushed count.
-  // Cheap: only re-reads git log when the ahead count or head commit moved.
-
-  await editorStore.actions.reconcileTreeSnapshot();
-  const statuses = data.statuses || {};
-
-  // Close tabs that were opened in git diff view or currently in diff view if their changes are gone.
-  // In PR review mode, tabs should remain open even if clean relative to HEAD.
-  if (!S.meta?.pr) {
-    for (let i = S.tabs.length - 1; i >= 0; i--) {
-      const t = S.tabs[i];
-      // A tab pinned to a commit shows a frozen diff; the working tree going
-      // clean is exactly when you want to still be reading it.
-      if (t.diffRef) continue;
-      const code = statuses[t.path];
-      const isDiff = !!code && code !== 'U';
-      const wasDiff = !!(t.diffMode || t.openedInDiffView);
-      if (wasDiff && (t.diffAvailable || t.diffMode) && !isDiff) {
-        closeTab(i);
-      }
-    }
-  }
-
-  // Check if any open tabs are affected by modifications
-  const anyTabModified = S.tabs.some((t) => {
-    if (t.diffRef) return false; // frozen at a commit; the working tree can't move it
-    const code = statuses[t.path];
-    return code && code !== 'U';
-  });
-
-  if (anyTabModified) {
-    // In-place reload of open tabs updates file lines, syntax highlighting, and diff view live
-    await reloadOpenTabs({ onlyIfChanged: true });
-  } else {
-    // Synchronize open tabs' diff badges
-    let tabsChanged = false;
-    for (const t of S.tabs) {
-      if (t.diffRef) continue;
-      const code = statuses[t.path];
-      const isDiff = !!code && code !== 'U';
-      if (t.diffAvailable !== isDiff) {
-        t.diffAvailable = isDiff;
-        tabsChanged = true;
-      }
-    }
-    if (tabsChanged) {
-      drawTabs();
-    }
-
-    // Update active editor gutter and diff view if active document is affected
-    const curDoc = doc_();
-    if (curDoc && !curDoc.diffRef) {
-      const curCode = statuses[curDoc.path];
-      const hasDiff = !!curCode && curCode !== 'U';
-
-      if (curDoc.diffAvailable !== hasDiff || curCode) {
-        curDoc.diffAvailable = hasDiff;
-        await loadGutter(curDoc);
-        render();
-        if (curDoc.diffMode) {
-          syncDiffView(true);
-        }
-        services.updateStatus();
-      }
-    }
-  }
-}
-
 export const refreshTree = () => editorStore.actions.refreshTree();
 export const revealDir = (path) => editorStore.actions.revealDirectory(path);
 export const revealFile = (path) => editorStore.actions.revealFile(path);
@@ -1066,3 +847,10 @@ export const hideRightInspector = () => editorStore.actions.hideRightInspector()
 export const openLspMenu = () => editorStore.actions.openLspMenu();
 export const startAllLsp = () => editorStore.actions.startAllLsp();
 export const stopAllLsp = () => editorStore.actions.stopAllLsp();
+
+export const setStatusNote = (...args) => editorStore.actions.setStatusNote(...args);
+export const reindexWorkspace = () => editorStore.actions.reindexWorkspace();
+export const showPanel = () => editorStore.actions.showFilesPanel();
+export const toggleSidebar = () => editorStore.actions.togglePanel('left');
+export const setThreadsPanelVisible = (visible) =>
+  editorStore.actions.setPanelVisible('threads', visible);

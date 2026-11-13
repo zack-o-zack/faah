@@ -4,11 +4,10 @@ import { ownsNavigationKey } from './controls.js';
 // web/src/shortcuts.js
 import { $, $$, esc, S } from './state.js';
 
-import { updateStatus } from './status.js';
 
 import { showRightInspector, hideRightInspector } from './app/legacy-bridge.js';
 import { hideThreadsSidebar } from './thread.js';
-import { isPaletteOpen, openPalette, closePalette } from './app/legacy-bridge.js';
+import { toggleSidebar, isPaletteOpen, openPalette, closePalette } from './app/legacy-bridge.js';
 
 import { previewing, togglePreview, previewKey } from './app/legacy-bridge.js';
 import { exitMermaidFullscreen } from './app/legacy-bridge.js';
@@ -17,7 +16,7 @@ import { openSettings, closeSettings, isSettingsOpen } from './settings.js';
 
 import { handleImageKey } from './app/legacy-bridge.js';
 import { submitBatch } from './agent.js';
-import { reindexWorkspace } from './panels.js';
+import { reindexWorkspace } from './app/legacy-bridge.js';
 
 import { navigateToTips } from './tips.js';
 
@@ -83,9 +82,6 @@ export function showHelp() {
 export const inField = el => el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT');
 
 export function initShortcuts() {
-  $('#btn-theme')?.addEventListener('click', cycleTheme);
-  $('#btn-settings')?.addEventListener('click', () => openSettings('ui'));
-  $('#btn-help')?.addEventListener('click', () => navigateToTips());
   $('#helpsheet').addEventListener('click', () => { $('#helpsheet').close(); });
 
   // Footer quick action buttons
@@ -168,7 +164,7 @@ export function initShortcuts() {
     if (mod && e.shiftKey && (e.key === 'R' || e.key === 'r')) { e.preventDefault(); reindexWorkspace(); return; }
     if (mod && !e.shiftKey && (e.key === 'p' || e.key === 'P')) { e.preventDefault(); openPalette('file'); return; }
     if (mod && (e.key === 'g' || e.key === 'G')) { e.preventDefault(); openPalette('line'); return; }
-    if (mod && (e.key === 'b' || e.key === 'B')) { e.preventDefault(); document.body.classList.toggle('side-hidden'); layout(); render(); return; }
+    if (mod && (e.key === 'b' || e.key === 'B')) { e.preventDefault(); toggleSidebar(); layout(); render(); return; }
     // Diff view of the open file (git only; fails quiet when git is off).
     if (mod && !e.shiftKey && (e.key === 'd' || e.key === 'D')) { if (S.meta?.git) { e.preventDefault(); toggleDiff(); } return; }
     if (e.altKey && !mod && !e.shiftKey && e.code === 'KeyM') {

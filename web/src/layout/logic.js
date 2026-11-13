@@ -14,6 +14,7 @@ export function readLayout(value) {
   } catch {
     parsed = {};
   }
+  if (!parsed || typeof parsed !== 'object') parsed = {};
   const result = { ...DEFAULT_LAYOUT };
   for (const key of ['left', 'right', 'threads'])
     if (typeof parsed[key] === 'boolean') result[key] = parsed[key];
@@ -25,5 +26,6 @@ export function readLayout(value) {
     if (Number.isFinite(parsed[key])) result[key] = Math.max(min, Math.min(max, parsed[key]));
   if (['refs', 'symbols', 'calls', 'search', 'tips'].includes(parsed.inspector))
     result.inspector = parsed.inspector;
+  if (result.right) result.threads = false;
   return result;
 }

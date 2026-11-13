@@ -80,7 +80,7 @@ export function createEditActions(editor) {
           cur: Math.max(1, Math.min(result?.total || 1, document.cur)),
           outline: null,
         });
-        services.loadGutter?.(document.path);
+        editor.actions.loadGutter(document.path);
       }),
     );
     refresh();

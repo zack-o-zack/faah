@@ -45,7 +45,7 @@ export function GitPanel() {
               <button
                 id="git-token-nudge"
                 class="btn"
-                onClick={editor.actions.nudgeLegacyForgeToken}
+                onClick={() => editor.actions.nudgeLegacyForgeToken()}
               >
                 No {meta().forge.kind || 'forge'} token configured — add one
               </button>

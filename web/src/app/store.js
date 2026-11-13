@@ -37,6 +37,8 @@ function initialState() {
       meta: /** @type {WorkspaceMeta|null} */ (null),
       generation: 0,
       metrics: null,
+      note: '',
+      reindexing: false,
       connected: false,
       pending: false,
       error: '',

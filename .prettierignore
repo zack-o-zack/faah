@@ -16,10 +16,8 @@ web/src/errors.test.js
 web/src/forgeconnect.js
 web/src/linecomment.js
 web/src/main.js
-web/src/metricsview.js
 web/src/overlays.js
 web/src/overlays.test.js
-web/src/panels.js
 web/src/pr.js
 web/src/prmerge.js
 web/src/reviewflow.js
@@ -28,7 +26,6 @@ web/src/reviewwalkthrough.js
 web/src/settings.js
 web/src/shortcuts.js
 web/src/state.js
-web/src/status.js
 web/src/theme.test.js
 web/src/thread.js
 web/src/threadrefs.js
@@ -39,4 +36,3 @@ web/src/tips.test.js
 web/src/toast.test.js
 web/src/typescale.test.js
 web/src/ui.js
-# Phase B replaces the right-pane UI.

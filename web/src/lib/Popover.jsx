@@ -54,6 +54,8 @@ export function Popover(props) {
         ref={(element) => {
           trigger = element;
         }}
+        id={props.triggerId}
+        aria-label={props.accessibleLabel}
         type="button"
         class="btn"
         aria-haspopup={props.role || 'dialog'}
@@ -81,7 +83,9 @@ export function Popover(props) {
             }}
             id={id}
             role={props.role || 'dialog'}
-            aria-label={props.label}
+            aria-label={
+              props.accessibleLabel || (typeof props.label === 'string' ? props.label : undefined)
+            }
             data-popover
             style={position()}
             class={`fixed z-50 min-w-48 rounded-md

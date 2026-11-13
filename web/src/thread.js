@@ -1,3 +1,4 @@
+import { setThreadsPanelVisible } from './app/legacy-bridge.js';
 import { openFile, setThreadHandler, setExplainHandler, setExplainPrepareHandler, hideSelectionBar, highlightRange, layout, render, doc_, api, apiPost, apiPostJson, applyKeyLabels, showToast, onStream, setStreamTopic, watchThread, initOrb, orbBegin, orbAttach, orbFailed, orbThread, orbStep, orbSummary, orbSync } from './app/legacy-bridge.js';
 
 import { setPressed } from './controls.js';
@@ -393,8 +394,7 @@ export function thrMd(src) {
 
 export function showThreadsSidebar() {
   hideRightInspector();
-  document.body.classList.remove('threads-hidden');
-  setPressed($('#btn-top-threads'), true);
+  setThreadsPanelVisible(true);
   if (!thr.cur && !thr.draft) thrShow('list');
   thrDrawList();
   layout();
@@ -402,8 +402,7 @@ export function showThreadsSidebar() {
 }
 
 export function hideThreadsSidebar() {
-  document.body.classList.add('threads-hidden');
-  setPressed($('#btn-top-threads'), false);
+  setThreadsPanelVisible(false);
   layout();
   render();
 }
@@ -890,19 +889,6 @@ export function initThreads() {
   $('#btn-top-threads')?.addEventListener('click', toggleThreadsSidebar);
   $('#btn-close-threads')?.addEventListener('click', hideThreadsSidebar);
 
-  /* Threads sidebar resizer */
-  (() => {
-    const trz = $('#threads-resizer');
-    if (!trz) return;
-    let dragging = false;
-    trz.addEventListener('mousedown', e => { dragging = true; trz.classList.add('drag'); e.preventDefault(); });
-    addEventListener('mousemove', e => {
-      if (!dragging) return;
-      const w = Math.max(260, Math.min(800, window.innerWidth - e.clientX));
-      $('#threads-side').style.width = w + 'px';
-    });
-    addEventListener('mouseup', () => { if (dragging) { dragging = false; trz.classList.remove('drag'); layout(); render(); } });
-  })();
   thrEl.send.addEventListener('click', () => {
     if (!thrRunning()) { thrSend(); return; }
     if (thr.cur) apiPost('/api/threads/cancel', { id: thr.cur.id }).catch(e => showToast('error', e.message));

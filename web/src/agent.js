@@ -4,7 +4,7 @@ import { updateAgentPicker } from './agent-picker.js';
 import { $, esc, S } from './state.js';
 
 import { showError } from './errors.js';
-import { setStatusNote } from './status.js';
+import { setStatusNote } from './app/legacy-bridge.js';
 
 import { refreshTree } from './app/legacy-bridge.js';
 

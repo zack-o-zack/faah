@@ -294,11 +294,6 @@ export function initTips() {
     setTipsPermanentlyHidden(true);
   });
 
-  // Left bottom bar Help button
-  $('#btn-help')?.addEventListener('click', () => {
-    navigateToTips();
-  });
-
   // Inspector Tips panel events
   $('#tips-filter')?.addEventListener('input', (e) => {
     tipsFilterQuery = e.target.value.trim().toLowerCase();

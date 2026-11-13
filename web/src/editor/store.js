@@ -1,3 +1,5 @@
+import { registerFeatureCommands } from '../palette/features.js';
+import { createDocumentGitActions } from '../git/documents.js';
 import { createLanguageStore } from '../lsp/store.js';
 import { createSearchStore } from '../search/store.js';
 import { createPaletteStore } from '../palette/store.js';
@@ -9,7 +11,7 @@ import { createEditActions } from './edit-actions.js';
 import { createHoverActions } from './hover-actions.js';
 import { createVimActions } from './vim-actions.js';
 import { createStore } from 'solid-js/store';
-import { batch, createMemo, createSignal } from 'solid-js';
+import { batch, createMemo, createSignal, onCleanup } from 'solid-js';
 import { apiPostJson } from '../lib/api.js';
 import { toast } from '../lib/toast.jsx';
 import { codeWidth, LH } from './layout.js';
@@ -106,6 +108,7 @@ export function createEditorStore(store, options = {}) {
     store.actions.setNavigation({ at: null, link: null });
     services.activate?.(active());
     const document = active();
+    if (document && !document.gutterLoaded) void editor.actions.loadGutter(document.path);
     services.source?.scrollTo(document?.scrollTop || 0);
   }
   async function openFile(path, options) {
@@ -252,5 +255,19 @@ export function createEditorStore(store, options = {}) {
   Object.assign(actions, editor.palette.actions);
   editor.language = createLanguageStore(editor, options.language);
   Object.assign(actions, editor.language.actions);
+  Object.assign(actions, createDocumentGitActions(editor));
+  actions.showFilesPanel = async () => {
+    actions.setPanelVisible('left', true);
+    await actions.setTreeMode('files');
+  };
+  actions.reindexWorkspace = async () => {
+    if (!(await store.actions.reindexWorkspace())) return;
+    await actions.refreshUnpushed();
+    await actions.setTreeMode(editor.tree.hasGitView() ? 'git' : 'files');
+    await actions.refreshTree();
+    await actions.reloadOpenTabs();
+    toast('success', 'Workspace refreshed');
+  };
+  onCleanup(registerFeatureCommands(editor, options.theme));
   return editor;
 }

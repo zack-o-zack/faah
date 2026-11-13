@@ -11,7 +11,7 @@ export function TreeToolbar() {
           id="st-ver"
           class="btn font-mono text-xs"
           title="Keyboard shortcuts"
-          onClick={() => editor.services.showHelp?.()}
+          onClick={() => editor.actions.openLegacyHelp()}
         >
           {editor.store.state.workspace.meta?.version
             ? 'v' + editor.store.state.workspace.meta.version
@@ -73,7 +73,13 @@ export function TreeToolbar() {
       >
         <span class="icon-[lucide--chevrons-down] size-3.5" />
       </button>
-      <button id="btn-reindex" class="btn" aria-label="Re-index">
+      <button
+        id="btn-reindex"
+        class="btn"
+        aria-label="Re-index"
+        disabled={editor.store.state.workspace.reindexing}
+        onClick={() => void editor.actions.reindexWorkspace()}
+      >
         <span class="icon-[lucide--rotate-cw] size-3.5" />
       </button>
     </header>

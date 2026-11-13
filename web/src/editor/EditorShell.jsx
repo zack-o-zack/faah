@@ -1,13 +1,11 @@
-import { VimStatus } from './VimStatus.jsx';
 import { Minimap } from './Minimap.jsx';
-import { createEffect, on, onCleanup, onMount, Show } from 'solid-js';
+import { createEffect, on, onCleanup, onMount } from 'solid-js';
 import { Portal } from 'solid-js/web';
 import { useEditor } from './context.jsx';
 import { Viewport } from './Viewport.jsx';
 import { EditView } from './EditView.jsx';
 import { HoverCard } from './HoverCard.jsx';
 import { FindBar } from './FindBar.jsx';
-import { SelectionBar } from './SelectionBar.jsx';
 import { TabStrip } from './TabStrip.jsx';
 import { FileActions } from './FileActions.jsx';
 import { EditorShortcuts } from './EditorShortcuts.jsx';
@@ -54,19 +52,6 @@ export function EditorShell() {
         <EditView />
         <FindBar />
         <HoverCard />
-      </Portal>
-      <Portal mount={document.getElementById('editor-selection-root')}>
-        <SelectionBar />
-      </Portal>
-      <Portal mount={document.getElementById('editor-cursor-root')}>
-        <Show when={editor.active()}>
-          <span>
-            Ln {editor.active().cur}, Col {(editor.active().col || 0) + 1}
-          </span>
-        </Show>
-      </Portal>
-      <Portal mount={document.getElementById('editor-vim-root')}>
-        <VimStatus />
       </Portal>
       <Portal mount={document.getElementById('editor-minimap-root')}>
         <Minimap />

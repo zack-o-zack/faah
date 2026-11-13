@@ -23,7 +23,7 @@ export function createLayoutActions(app, set) {
     togglePanel: (name) => setPanelVisible(name, !app.state.layout[name]),
     setPanelWidth(name, value) {
       const limits = { left: [170, 620], right: [200, 700], threads: [240, 900] };
-      if (!limits[name]) return;
+      if (!limits[name] || !Number.isFinite(value)) return;
       set('layout', name + 'Width', Math.max(limits[name][0], Math.min(limits[name][1], value)));
       persist();
     },

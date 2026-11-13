@@ -7,18 +7,17 @@ import { launchPR } from './pr.js';
 import { showRightInspector, hideRightInspector } from './app/legacy-bridge.js';
 import { openLspMenu, startAllLsp, stopAllLsp } from './app/legacy-bridge.js';
 import { openSettings } from './settings.js';
-import { reindexWorkspace } from './panels.js';
+import { reindexWorkspace } from './app/legacy-bridge.js';
 import { selectAgent, loadPickerModels } from './agent.js';
 import { gotoDefinition, findReferences } from './app/legacy-bridge.js';
 import { showCalls } from './app/legacy-bridge.js';
 import { copyToClipboard, copyRichToClipboard, initErrorCopy } from './ui.js';
-import { initMetrics, initStatusFit, updateMetricsDisplay, updateStatus } from './status.js';
 import { openPalette } from './app/legacy-bridge.js';
 import { showHelp, initShortcuts } from './shortcuts.js';
 
 import { $, S } from './state.js';
 import { revealDir, revealFile, refreshTree, collapseAllDirs, expandDirtyDirs, inGitMode, setAutoRevealSuppressed, setSidebarMode, hasGitView } from './app/legacy-bridge.js';
-import { initPanels, showPanel } from './panels.js';
+import { showPanel } from './app/legacy-bridge.js';
 import { initAgent, applyAgentMeta, loadAgentAsync } from './agent.js';
 import { initThreads } from './thread.js';
 import { initSettings } from './settings.js';
@@ -34,7 +33,7 @@ import { initReviewFlow, setMode } from './reviewflow.js';
 
 export function initLegacy() {
 configureLegacyServices({
- emit, on, launchPR, newThread, deleteCurrentThread, showThreadsSidebar, navigateToTips, showTipWidget, showRightInspector, hideRightInspector, openLspMenu, startAllLsp, stopAllLsp, refreshPRMeta, nudgeForgeToken, openSettings, reindexWorkspace, selectAgent, loadPickerModels, setSidebarMode, hasGitView, refreshUnpushed, updateMetricsDisplay, showPanel, revealDir, updateStatus, gotoDefinition, findReferences, showCalls,
+ emit, on, launchPR, newThread, deleteCurrentThread, showThreadsSidebar, navigateToTips, showTipWidget, showRightInspector, hideRightInspector, openLspMenu, startAllLsp, stopAllLsp, refreshPRMeta, nudgeForgeToken, openSettings, reindexWorkspace, selectAgent, loadPickerModels, setSidebarMode, hasGitView, refreshUnpushed, showPanel, revealDir, gotoDefinition, findReferences, showCalls,
  copyToClipboard, copyRichToClipboard, openPalette, showHelp, triggerRefresh,
 });
 
@@ -45,16 +44,16 @@ initReviewFlow();
 
 
 
-initPanels();
+
 
 
 
 initShortcuts();
 initAgent();
 initThreads();
-initMetrics();
 
-initStatusFit();
+
+
 initSettings();
 initLineComment();
 initErrorCopy();
@@ -87,7 +86,6 @@ initErrorCopy();
 
   measure();
   S.meta = await api('/api/meta');
-  if (S.meta.metrics) updateMetricsDisplay(S.meta.metrics);
 
 
   syncGitPanelMeta();
@@ -113,11 +111,6 @@ initErrorCopy();
     const emptyVerEl = $('#empty-ver');
     if (emptyVerEl) emptyVerEl.textContent = 'v' + S.meta.version;
   }
-  // The desktop app keeps its footer for the workspace; Settings joins the status bar.
-  if (document.documentElement.hasAttribute('data-shell')) {
-    $('#status').append($('#btn-settings'));
-  }
-  updateStatus();
   setAutoRevealSuppressed(true);
   await refreshTree();
   initGitStream();
@@ -190,8 +183,7 @@ initErrorCopy();
           S.meta = m;
         
           syncGitPanelMeta();
-          updateStatus();
-          setAutoRevealSuppressed(true);
+                  setAutoRevealSuppressed(true);
           await refreshTree();
           await triggerRefresh();
           if (!initialPath) {
