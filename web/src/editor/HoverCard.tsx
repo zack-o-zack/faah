@@ -1,5 +1,6 @@
 import type { JSX } from 'solid-js';
 import { createEffect, createSignal, For, on, onCleanup, Show } from 'solid-js';
+import { HoverAction } from './HoverAction.tsx';
 import { useEditor } from './context.tsx';
 import { nearCard, placeCard } from './hover.ts';
 import { copyText } from '../lib/clipboard.ts';
@@ -73,40 +74,71 @@ export function HoverCard(): JSX.Element {
                 <p class="border-b p-3 text-sm text-destructive">{diagnostic.message}</p>
               )}
             </For>
-            <div
-              class="whitespace-pre-wrap p-3 font-mono text-xs"
-              // eslint-disable-next-line solid/no-innerhtml, no-restricted-syntax -- Server-highlighted signature.
-              innerHTML={hover().data.signature || ''}
-            />
-            <p class="whitespace-pre-wrap px-3 pb-2 text-sm">{hover().data.doc}</p>
-            <footer class="flex flex-wrap gap-1 border-t p-2">
-              <button
-                class="btn"
-                onClick={() => {
+            <Show when={hover().data.signature}>
+              <div
+                data-ui="sig"
+                class="whitespace-pre-wrap wrap-anywhere px-3 py-2 font-mono text-xs"
+                // eslint-disable-next-line solid/no-innerhtml, no-restricted-syntax -- Server-highlighted signature.
+                innerHTML={hover().data.signature || ''}
+              />
+            </Show>
+            <Show when={hover().data.doc}>
+              <div
+                data-ui="doc"
+                class="max-h-60 overflow-auto whitespace-pre-wrap wrap-anywhere px-3 pb-2 text-sm text-muted-foreground"
+              >
+                {hover().data.doc}
+              </div>
+            </Show>
+            <footer
+              data-ui="actions"
+              class="flex flex-wrap items-center gap-0.5 border-t px-1.5 py-1"
+            >
+              <HoverAction
+                id="hc-def-src"
+                title="Jump to definition"
+                onAction={() => {
                   editor.actions.gotoDefinition(hover().at, { view: 'source' });
                   editor.actions.hideHover();
                 }}
               >
                 Definition
-              </button>
-              <button
-                class="btn"
-                onClick={() => {
+              </HoverAction>
+              <HoverAction
+                id="hc-def-diff"
+                title="Jump to definition in the diff"
+                onAction={() => {
                   editor.actions.gotoDefinition(hover().at, { view: 'diff' });
                   editor.actions.hideHover();
                 }}
               >
                 In diff
-              </button>
-              <button class="btn" onClick={() => editor.actions.findReferences(hover().at)}>
+              </HoverAction>
+              <HoverAction
+                id="hc-find-refs"
+                title="Find all usages"
+                onAction={() => editor.actions.findReferences(hover().at)}
+              >
                 Usages
-              </button>
-              <button class="btn" onClick={() => editor.actions.showCalls(hover().at)}>
+              </HoverAction>
+              <HoverAction
+                id="hc-calls"
+                title="Trace callers and callees"
+                onAction={() => editor.actions.showCalls(hover().at)}
+              >
                 Calls
-              </button>
-              <button
-                class="btn"
-                onClick={() =>
+              </HoverAction>
+              <HoverAction
+                id="hc-copy-ref"
+                title="Copy file and line reference"
+                onAction={() => void copyText(`${hover().at.path}:${hover().at.line}`)}
+              >
+                Copy ref
+              </HoverAction>
+              <HoverAction
+                id="hc-copy-ai"
+                title="Copy the line with its file path and line number"
+                onAction={() =>
                   editor.actions.runSelectionAction('copy-agent', {
                     path: hover().at.path,
                     l1: hover().at.line,
@@ -115,14 +147,11 @@ export function HoverCard(): JSX.Element {
                   })
                 }
               >
-                Copy with Context
-              </button>
-              <button
-                class="btn"
-                onClick={() => void copyText(`${hover().at.path}:${hover().at.line}`)}
-              >
-                Copy Ref
-              </button>
+                Copy with context
+              </HoverAction>
+              <span class="ml-auto px-1.5 text-xs text-muted-foreground">
+                {hover().data.server || 'lsp'}
+              </span>
             </footer>
           </>
         )}

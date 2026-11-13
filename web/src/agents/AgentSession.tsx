@@ -157,6 +157,8 @@ export function AgentSession(props: AgentSessionProps): JSX.Element {
                 <Show when={props.session.threadId}>
                   <button
                     class="btn"
+                    data-variant="outline"
+                    data-size="xs"
                     onClick={() => void editor.actions.openThread(props.session.threadId)}
                   >
                     View thread
@@ -188,7 +190,14 @@ export function AgentSession(props: AgentSessionProps): JSX.Element {
         ]}
       >
         <Show when={props.session.error.includes('already running')}>
-          <button class="btn" onClick={() => void editor.actions.cancelAgentJob(0)}>
+          <button
+            class="btn"
+            data-control="agent-err-cancel-btn"
+            data-variant="ghost"
+            data-size="xs"
+            title="Stop and cancel running edits on the server"
+            onClick={() => void editor.actions.cancelAgentJob(0)}
+          >
             Cancel in-flight edit
           </button>
         </Show>

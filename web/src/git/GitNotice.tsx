@@ -38,11 +38,15 @@ export function GitNotice(): JSX.Element {
             <strong id="git-notice-title">{notice().title}</strong>
             <button
               class="btn"
+              id="git-notice-close"
+              data-control="git-notice-close"
+              data-variant="ghost"
+              data-size="icon-xs"
               aria-label="Dismiss"
               disabled={!!editor.git.state.pending}
               onClick={editor.actions.clearGitNotice}
             >
-              ×
+              <span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true" />
             </button>
           </div>
           <p class="whitespace-pre-wrap">{notice().text}</p>
@@ -54,9 +58,14 @@ export function GitNotice(): JSX.Element {
               {(choice) => (
                 <button
                   class="btn"
+                  data-variant={noticeVariant(choice)}
+                  data-size="xs"
                   disabled={!!editor.git.state.pending && choice !== 'cancel'}
                   onClick={() => void choose(choice)}
                 >
+                  <Show when={['rebase', 'merge', 'finish'].includes(choice)}>
+                    <span class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true" />
+                  </Show>
                   {labels[choice]}
                 </button>
               )}
@@ -72,4 +81,10 @@ export function GitNotice(): JSX.Element {
       )}
     </Show>
   );
+}
+
+function noticeVariant(choice: string): string {
+  if (['rebase', 'merge', 'finish'].includes(choice)) return 'special';
+  if (['force', 'push'].includes(choice)) return 'primary';
+  return 'outline';
 }

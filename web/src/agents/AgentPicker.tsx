@@ -45,6 +45,7 @@ export function AgentPicker(props: AgentPickerProps): JSX.Element {
             />
           </>
         }
+        panelClass="fixed m-0 overflow-hidden rounded-lg border bg-popover p-0 text-popover-foreground shadow-lg z-[70] w-[min(576px,calc(100vw-24px))]"
         accessibleLabel="Coding harness and model"
         disabled={props.disabled || !agents.state.harnesses.some((agent) => agent.installed)}
         open={open()}
@@ -92,14 +93,21 @@ function PickerPanel(props: { close: () => void }): JSX.Element {
   }
   return (
     <div
-      class="grid w-[min(34rem,calc(100vw-3rem))] max-h-96 grid-cols-[1fr_2fr] overflow-hidden"
+      class="grid h-[360px] max-h-[calc(100vh-24px)] grid-cols-[minmax(0,1fr)_minmax(0,2fr)]"
       aria-label="Choose agent and model"
     >
-      <nav class="overflow-auto border-r p-1" aria-label="Agents">
+      <nav
+        class="min-h-0 min-w-0 overflow-y-auto overscroll-contain border-r bg-sidebar p-1.5"
+        aria-label="Agents"
+      >
         <For each={groups()}>
           {(group) => (
             <button
-              class="btn w-full justify-start"
+              class="flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-2 text-left text-sm outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring aria-selected:bg-accent aria-selected:text-accent-foreground flex-col items-start! gap-0.5! disabled:opacity-50"
+              classList={{
+                'bg-primary/10': active()?.harness === group.harness,
+                'text-primary-text': active()?.harness === group.harness,
+              }}
               aria-pressed={active()?.harness === group.harness}
               disabled={agents.state.pinned && agents.state.selected !== group.harness}
               onClick={() => {
@@ -144,7 +152,7 @@ function PickerPanel(props: { close: () => void }): JSX.Element {
           <p>Loading models…</p>
         </Show>
         <ErrorNotice error={discovered.error?.message}>
-          <button class="btn" onClick={refetch}>
+          <button class="btn mt-2" data-variant="outline" data-size="sm" onClick={refetch}>
             Retry
           </button>
         </ErrorNotice>
@@ -152,7 +160,7 @@ function PickerPanel(props: { close: () => void }): JSX.Element {
           <For each={models()}>
             {(model, index) => (
               <button
-                class="btn w-full justify-start"
+                class="flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-2 text-left text-sm outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring aria-selected:bg-accent aria-selected:text-accent-foreground cursor-pointer aria-selected:bg-primary/10! aria-selected:text-primary-text!"
                 role="option"
                 aria-selected={
                   agents.state.selected === active()?.harness && agents.state.model === model.value
@@ -160,14 +168,22 @@ function PickerPanel(props: { close: () => void }): JSX.Element {
                 classList={{ 'bg-accent': selected() === index() }}
                 onClick={() => void choose(model.value)}
               >
-                {model.label}
+                <span class="min-w-0 flex-1 truncate">{model.label}</span>
+                <Show
+                  when={
+                    agents.state.selected === active()?.harness &&
+                    agents.state.model === model.value
+                  }
+                >
+                  <span class="icon-[lucide--check] size-3.5 shrink-0" aria-hidden="true" />
+                </Show>
               </button>
             )}
           </For>
         </div>
         <Show when={!discovered.loading && !models().length}>
           <p>No matching models.</p>
-          <button class="btn" onClick={() => void choose('')}>
+          <button class="btn" data-variant="ghost" data-size="xs" onClick={() => void choose('')}>
             Use harness default
           </button>
         </Show>

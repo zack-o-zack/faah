@@ -92,3 +92,37 @@ test('walkthrough filters list only files with that kind of insight', async () =
   expect(screen.queryByTitle('src/b.go')).toBe(null);
   expect(screen.getByText('nil')).toBeTruthy();
 });
+
+test('overview preserves server syntax tokens and decodes source text safely', async () => {
+  const editor = mount(
+    { config: { stages: [] } },
+    {
+      totalFiles: 1,
+      files: [
+        {
+          path: 'main.go',
+          additions: 1,
+          hunks: [
+            {
+              oldStart: 1,
+              newStart: 1,
+              rows: [
+                {
+                  type: 'add',
+                  newLine: 1,
+                  text: 'func main() { x < 2 }',
+                  html: '<i class=k>func</i> <i class=nf>main</i>() { x &lt; <i class=m>2</i> }',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  );
+  editor.actions.setReviewMode('review');
+  await screen.findByText('func');
+  expect(document.querySelector('.diff-col-code .k')?.textContent).toBe('func');
+  expect(document.querySelector('.diff-col-code .nf')?.textContent).toBe('main');
+  expect(document.querySelector('.diff-col-code')?.textContent).toBe('func main() { x < 2 }');
+});

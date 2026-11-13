@@ -72,7 +72,13 @@ export function CommitFiles(props: CommitFilesProps): JSX.Element {
         )}
       </For>
       <Show when={shown() < (files.error ? 0 : files()?.length || 0)}>
-        <button class="btn w-full" data-control="up-more" onClick={() => setShown(shown() + 100)}>
+        <button
+          class="btn w-full"
+          data-control="up-more"
+          data-variant="ghost"
+          data-size="xs"
+          onClick={() => setShown(shown() + 100)}
+        >
           Show {Math.min(100, (files()?.length || 0) - shown())} more
         </button>
       </Show>

@@ -7,6 +7,7 @@ import type { JSX } from 'solid-js';
 import { createEffect, For, on } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { rowLine } from './logic.ts';
+import { syntaxParts } from '../viewers/diff-intraline.ts';
 import { LineStats } from './LineStats.tsx';
 const ROW_TYPE: Record<string, string> = { add: 'diff-type-add', del: 'diff-type-del' };
 const SIGN: Record<string, string> = { add: '+', del: '-' };
@@ -80,7 +81,11 @@ export function WalkthroughFile(props: WalkthroughFileProps): JSX.Element {
                     <span class="diff-col-num">{row.oldLine || ''}</span>
                     <span class="diff-col-num">{row.newLine || ''}</span>
                     <span class="diff-col-sign">{SIGN[row.type] || ' '}</span>
-                    <span class="diff-col-code">{row.text || ''}</span>
+                    <span class="diff-col-code c">
+                      <For each={syntaxParts(row.text || '', row.html)}>
+                        {(part) => <span class={part.className}>{part.text}</span>}
+                      </For>
+                    </span>
                   </div>
                 )}
               </For>

@@ -22,7 +22,13 @@ export function ErrorNotice(props: ErrorNoticeProps): JSX.Element {
             </Show>
           )}
         </For>
-        <button class="btn" onClick={() => void copyText(props.error || '')}>
+        <button
+          class="btn -ml-2 mt-1 text-muted-foreground"
+          data-control="copy-error"
+          data-variant="ghost"
+          data-size="xs"
+          onClick={() => void copyText(props.error || '')}
+        >
           Copy error
         </button>
         {props.children}

@@ -106,6 +106,8 @@ export function AgentSessions(): JSX.Element {
           <Show when={agents.state.batch.threadId}>
             <button
               class="btn"
+              data-variant="outline"
+              data-size="xs"
               onClick={() => void editor.actions.openThread(agents.state.batch.threadId)}
             >
               View batch thread

@@ -12,8 +12,8 @@ export function SidebarFooter(): JSX.Element {
     if (next) theme.setTheme(next.id);
   }
   return (
-    <footer class="side-foot flex shrink-0 items-center justify-end gap-2 border-t px-2 py-1 desktop:hidden">
-      <span class="side-actions flex shrink-0 items-center gap-1 desktop:hidden">
+    <footer class="side-foot flex shrink-0 items-center justify-end gap-2 border-t px-2 py-1">
+      <span class="side-actions flex shrink-0 items-center gap-1">
         <a
           class="btn"
           data-control="icon-action"
