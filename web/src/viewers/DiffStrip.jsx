@@ -46,20 +46,38 @@ export function DiffStrip(props) {
         {props.document.path}
       </span>
       <span class="flex-1" />
-      <button class="btn" data-size="xs" data-hunk-step="-1" onClick={() => props.stepHunk(-1)}>
-        ↑ Hunk
+      <button
+        class="btn"
+        data-control="dcs-step dcs-hunk-btn"
+        data-variant="outline"
+        data-size="xs"
+        data-hunk-step="-1"
+        onClick={() => props.stepHunk(-1)}
+      >
+        <span class="icon-[lucide--arrow-up] size-3.5" aria-hidden="true" /> Hunk
       </button>
-      <button class="btn" data-size="xs" data-hunk-step="1" onClick={() => props.stepHunk(1)}>
-        ↓ Hunk
+      <button
+        class="btn"
+        data-control="dcs-step dcs-hunk-btn"
+        data-variant="outline"
+        data-size="xs"
+        data-hunk-step="1"
+        onClick={() => props.stepHunk(1)}
+      >
+        <span class="icon-[lucide--arrow-down] size-3.5" aria-hidden="true" /> Hunk
       </button>
       <button
         class="btn"
         data-size="xs"
         data-toggle-viewed="1"
+        data-control="dcs-viewed"
+        data-variant={
+          editor.store.state.viewers.viewed[props.document.path] ? 'secondary' : 'ghost'
+        }
         aria-pressed={!!editor.store.state.viewers.viewed[props.document.path]}
         onClick={viewed}
       >
-        Viewed
+        <span class="icon-[lucide--check] size-3.5" aria-hidden="true" /> Viewed
       </button>
       <Show when={commit.loading}>
         <span role="status">Loading commit files…</span>
@@ -68,28 +86,32 @@ export function DiffStrip(props) {
         <span role="alert">Unable to load commit files: {commit.error?.message}</span>
       </Show>
       <Show when={files().length}>
-        <span data-ui="dcs-pos">
+        <span data-ui="dcs-pos" class="flex-none text-muted-foreground">
           {index() + 1} / {files().length}
         </span>
         <button
           class="btn"
-          data-size="xs"
+          data-size="icon-xs"
+          data-variant="ghost"
+          data-control="dcs-step"
           aria-label="Previous file"
           data-review-step="-1"
           disabled={commitStepTarget(files(), index(), -1) < 0}
           onClick={() => step(-1)}
         >
-          ‹
+          <span class="icon-[lucide--chevron-left] size-3.5" aria-hidden="true" />
         </button>
         <button
           class="btn"
-          data-size="xs"
+          data-size="icon-xs"
+          data-variant="ghost"
+          data-control="dcs-step"
           aria-label="Next file"
           data-review-step="1"
           disabled={commitStepTarget(files(), index(), 1) < 0}
           onClick={() => step(1)}
         >
-          ›
+          <span class="icon-[lucide--chevron-right] size-3.5" aria-hidden="true" />
         </button>
       </Show>
     </div>

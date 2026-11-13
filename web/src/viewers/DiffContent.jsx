@@ -49,6 +49,7 @@ export function DiffContent(props) {
         when={isPR()}
         fallback={
           <DiffSection
+            bare={!props.document.diffRef}
             document={props.document}
             kind={props.document.diffRef ? 'commit' : 'you'}
             title={

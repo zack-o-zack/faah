@@ -7,7 +7,8 @@ export const fmtCpu = (metrics?: { cpuUsage?: number } | null): string =>
   `${(metrics?.cpuUsage || 0).toFixed(1)}%`;
 export function imageStatus(document?: StatusDocument | null): string {
   if (!document?.isImage) return '';
-  const zoom = document.image?.fit ? 'Fit' : `${Math.round((document.image?.scale || 1) * 100)}%`;
+  const percent = `${Math.round((document.image?.scale || 1) * 100)}%`;
+  const zoom = document.image?.fit ? `Fit (${percent})` : percent;
   return document.imageMeta
     ? `${document.imageMeta.width} × ${document.imageMeta.height} px · ${zoom}`
     : zoom;

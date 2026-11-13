@@ -11,28 +11,30 @@ export function DiffSection(props) {
       class={`diff-section diff-section-${props.kind}`}
       classList={{ collapsed: collapsed() }}
     >
-      <div
-        data-ui="diff-section-head"
-        class="flex flex-wrap items-center gap-2 p-3 bg-muted cursor-pointer"
-        onClick={() => editor.actions.toggleSection(props.document, props.kind, collapsed())}
-      >
-        <span data-ui="diff-section-title" class="label">
-          {props.title}
-        </span>
-        <span data-ui="diff-section-sub" class="text-muted-foreground">
-          {props.subtitle}
-        </span>
-        <span class="flex-1" />
-        <button
-          class="btn"
-          data-control="pr-comments-collapse diff-section-collapse"
-          data-variant="ghost"
-          data-size="icon-xs"
-          aria-label="Collapse or expand diff section"
+      <Show when={!props.bare}>
+        <div
+          data-ui="diff-section-head"
+          class="flex flex-wrap items-center gap-2 p-3 bg-muted cursor-pointer"
+          onClick={() => editor.actions.toggleSection(props.document, props.kind, collapsed())}
         >
-          <span class="icon-[lucide--chevron-down] size-3.5" />
-        </button>
-      </div>
+          <span data-ui="diff-section-title" class="label">
+            {props.title}
+          </span>
+          <span data-ui="diff-section-sub" class="text-muted-foreground">
+            {props.subtitle}
+          </span>
+          <span class="flex-1" />
+          <button
+            class="btn"
+            data-control="pr-comments-collapse diff-section-collapse"
+            data-variant="ghost"
+            data-size="icon-xs"
+            aria-label="Collapse or expand diff section"
+          >
+            <span class="icon-[lucide--chevron-down] size-3.5" />
+          </button>
+        </div>
+      </Show>
       <div class="diff-section-body">
         <Show
           when={props.hunks.length}
@@ -67,6 +69,7 @@ export function DiffSection(props) {
                       data-hunk-expand={index()}
                       onClick={() => props.actions.expand(hunk())}
                     >
+                      <span class="icon-[lucide--chevrons-up-down] size-3" aria-hidden="true" />{' '}
                       Expand
                     </button>
                     <Show when={props.canAct}>
@@ -77,6 +80,7 @@ export function DiffSection(props) {
                             data-control="diff-hunk-btn"
                             data-hunk-act={action}
                             data-size="xs"
+                            data-variant="outline"
                             onClick={() => props.actions.apply(hunk(), action)}
                           >
                             {action[0].toUpperCase() + action.slice(1)}
