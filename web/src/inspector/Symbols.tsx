@@ -1,7 +1,6 @@
 import type { SymbolInfo } from '../editor/decode.ts';
 import type { JSX } from 'solid-js';
-import { createEffect, on } from 'solid-js';
-import { createMemo, createSignal, For, Show } from 'solid-js';
+import { createEffect, createMemo, createSignal, For, on, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { shortKind } from '../lsp/logic.ts';
 export function Symbols(): JSX.Element {

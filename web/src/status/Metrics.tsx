@@ -1,11 +1,8 @@
-import type { Metrics } from '../workspace/decode.ts';
-export interface MetricsProps {
-  metrics?: (Metrics & { parts?: { name: string; rssBytes: number; cpuUsage: number }[] }) | null;
-}
 import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { Popover } from '../lib/Popover.tsx';
+import type { MetricsProps } from './MetricsSummary.tsx';
 import { MetricsSummary } from './MetricsSummary.tsx';
 import { fmtBytes, fmtCpu } from './logic.ts';
 export function Metrics(): JSX.Element {

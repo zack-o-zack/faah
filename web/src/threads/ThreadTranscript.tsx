@@ -1,4 +1,3 @@
-import type { Accessor } from 'solid-js';
 import type { Thread, ThreadTurn as Turn } from './decode.ts';
 interface ThreadTranscriptProps {
   thread?: Thread | null;
@@ -8,7 +7,7 @@ interface ThreadTranscriptProps {
   children?: (turn: Turn, index: Accessor<number>) => JSX.Element;
 }
 import type { JSX } from 'solid-js';
-import { createEffect, For, onCleanup, Show } from 'solid-js';
+import { createEffect, For, onCleanup, Show, type Accessor } from 'solid-js';
 import { ThreadTurn } from './ThreadTurn.tsx';
 export function ThreadTranscript(props: ThreadTranscriptProps): JSX.Element {
   let viewport: HTMLDivElement | undefined;

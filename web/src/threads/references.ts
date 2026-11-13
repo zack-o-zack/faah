@@ -3,7 +3,6 @@ const staleLabels: Record<string, string> = {
   reader: 'Written for a different reader',
   callers: 'Callers changed',
 };
-// web/src/threadrefs.js
 /* The parts of a thread's rendering that depend on no page state. */
 
 /* Decides what a citation links to. Without refs, anything path-shaped links as

@@ -1,7 +1,7 @@
-diff --git a/web/src/editor/EditView.jsx b/web/src/editor/EditView.jsx
+diff --git a/web/src/editor/EditView.tsx b/web/src/editor/EditView.tsx
 index 48ba35e..0e881c5 100644
---- a/web/src/editor/EditView.jsx
-+++ b/web/src/editor/EditView.jsx
+--- a/web/src/editor/EditView.tsx
++++ b/web/src/editor/EditView.tsx
 @@ -35,8 +35,9 @@ export function EditView() {
      on(
        () => [editor.active()?.path, editor.active()?.isEditing, editor.buffer()],

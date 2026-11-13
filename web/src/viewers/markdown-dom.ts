@@ -44,7 +44,7 @@ function sanitizeBody(html: string, docPath: string): HTMLElement {
   const body = new DOMParser().parseFromString(html, 'text/html').body;
   const dir = docPath.slice(0, docPath.lastIndexOf('/') + 1);
   const base = MD_ORIGIN + '/' + dir.split('/').map(encodeURIComponent).join('/');
-  for (const el of [...body.querySelectorAll<HTMLElement>('*')]) {
+  for (const el of body.querySelectorAll<HTMLElement>('*')) {
     if (!body.contains(el)) continue; // inside something already removed
     const tag = el.localName;
     if (el.namespaceURI !== HTML_NS || MD_DROP.has(tag)) {

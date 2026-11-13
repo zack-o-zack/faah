@@ -52,6 +52,7 @@ export const SettingControl: Component<ControlProps & { invalid: boolean }> = (p
             id={id()}
             type="checkbox"
             role="switch"
+            aria-checked={current() === control().on}
             aria-label={props.item.title}
             class="input"
             checked={current() === control().on}

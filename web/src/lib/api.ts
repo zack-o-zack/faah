@@ -44,7 +44,7 @@ async function request(
       (Array.isArray(params) ||
         Object.values(params).some((v) => typeof v === 'object' && v !== null));
     if (isPost && (opts.json || hasComplex)) {
-      fetchOpts.headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+      fetchOpts.headers = { 'Content-Type': 'application/json', ...opts.headers };
       fetchOpts.body = JSON.stringify(params);
     } else {
       for (const [k, v] of Object.entries(

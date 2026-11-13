@@ -1,6 +1,5 @@
 import type { JSX } from 'solid-js';
-import { createEffect, on } from 'solid-js';
-import { For, Show } from 'solid-js';
+import { createEffect, For, on, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { ResultGroup } from './ResultGroup.tsx';
 import { resultHeading } from './logic.ts';

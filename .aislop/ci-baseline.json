@@ -205,13 +205,6 @@
       "count": 1
     },
     {
-      "rule": "ai-slop/swallowed-exception",
-      "engine": "ai-slop",
-      "file": "internal/explain/refs.go",
-      "fingerprint": "a0b85bb390d1f047",
-      "count": 1
-    },
-    {
       "rule": "complexity/function-too-long",
       "engine": "code-quality",
       "file": "internal/fuzzy/fuzzy.go",
@@ -258,13 +251,6 @@
       "engine": "code-quality",
       "file": "internal/settings/settings.go",
       "fingerprint": "message:acc412ddac35058f",
-      "count": 1
-    },
-    {
-      "rule": "ai-slop/swallowed-exception",
-      "engine": "ai-slop",
-      "file": "internal/update/update.go",
-      "fingerprint": "eac8eefc3a8a897e",
       "count": 1
     },
     {
@@ -334,7 +320,7 @@
       "rule": "security/vulnerable-dependency",
       "engine": "security",
       "file": "package.json",
-      "fingerprint": "message:fe90b26e3fd0af10",
+      "fingerprint": "message:77a89a389f64ccdb",
       "count": 1
     },
     {
@@ -452,652 +438,673 @@
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/agents/AgentPicker.jsx",
+      "file": "web/src/agents/AgentPicker.tsx",
       "fingerprint": "11f4e64b1712fbf7",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/agents/AgentPicker.jsx",
+      "file": "web/src/agents/AgentPicker.tsx",
       "fingerprint": "7e55becffcdf1f76",
-      "count": 1
-    },
-    {
-      "rule": "jsx-a11y/prefer-tag-over-role",
-      "engine": "lint",
-      "file": "web/src/agents/AgentSession.jsx",
-      "fingerprint": "d2090c6365860806",
       "count": 1
     },
     {
       "rule": "complexity/function-too-long",
       "engine": "code-quality",
-      "file": "web/src/agents/store.js",
-      "fingerprint": "ab40fbf1870b22c8",
+      "file": "web/src/agents/AgentSession.tsx",
+      "fingerprint": "281d7a7948099fdb",
       "count": 1
     },
     {
-      "rule": "unicorn/no-useless-spread",
+      "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/agents/store.js",
-      "fingerprint": "c51ee24f41c1dc7e",
-      "count": 1
-    },
-    {
-      "rule": "ai-slop/duplicate-import",
-      "engine": "ai-slop",
-      "file": "web/src/app/legacy-bridge.js",
-      "fingerprint": "4bc9de7cb2741662",
+      "file": "web/src/agents/AgentSession.tsx",
+      "fingerprint": "d2090c6365860806",
       "count": 1
     },
     {
       "rule": "ai-slop/thin-wrapper",
       "engine": "ai-slop",
-      "file": "web/src/app/legacy-bridge.js",
-      "fingerprint": "f60ae019379970e0",
+      "file": "web/src/agents/jobs.ts",
+      "fingerprint": "bd6db05b5bb7d53d",
       "count": 1
     },
     {
-      "rule": "complexity/file-too-large",
-      "engine": "code-quality",
-      "file": "web/src/app/legacy-bridge.js",
-      "fingerprint": "message:96b0128c3491727f",
-      "count": 1
-    },
-    {
-      "rule": "complexity/function-too-long",
-      "engine": "code-quality",
-      "file": "web/src/app/legacy-bridge.js",
-      "fingerprint": "418a69f7f64f5df1",
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/agents/store.ts",
+      "fingerprint": "1eec59e9d0189928",
       "count": 1
     },
     {
       "rule": "complexity/function-too-long",
       "engine": "code-quality",
-      "file": "web/src/app/legacy-bridge.js",
-      "fingerprint": "a0797edf6f0e6ee6",
+      "file": "web/src/agents/store.ts",
+      "fingerprint": "0095c90dacf66666",
       "count": 1
     },
     {
-      "rule": "import/no-duplicates",
+      "rule": "unicorn/no-useless-spread",
       "engine": "lint",
-      "file": "web/src/app/legacy-bridge.js",
-      "fingerprint": "5718e264dc4b9b76",
-      "count": 1
-    },
-    {
-      "rule": "security/innerhtml",
-      "engine": "security",
-      "file": "web/src/app/legacy-bridge.js",
-      "fingerprint": "b377d3d6bbd79f13",
-      "count": 1
-    },
-    {
-      "rule": "security/innerhtml",
-      "engine": "security",
-      "file": "web/src/app/legacy-bridge.js",
-      "fingerprint": "fb2b013d82e1375e",
+      "file": "web/src/agents/store.ts",
+      "fingerprint": "c51ee24f41c1dc7e",
       "count": 1
     },
     {
       "rule": "complexity/function-too-long",
       "engine": "code-quality",
-      "file": "web/src/editor/documents.js",
-      "fingerprint": "61fb5ca881b41d42",
+      "file": "web/src/app/boot.ts",
+      "fingerprint": "7ab6ddf6b57cf309",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/app/store.ts",
+      "fingerprint": "22ab7128fd5afbb1",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/editor/edit-actions.ts",
+      "fingerprint": "32df96ae8e23c7fa",
       "count": 1
     },
     {
       "rule": "complexity/function-too-long",
       "engine": "code-quality",
-      "file": "web/src/editor/edit-actions.js",
-      "fingerprint": "c2d3353f20eac504",
+      "file": "web/src/editor/edit-actions.ts",
+      "fingerprint": "ca4e97524e7886da",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/editor/EditControls.jsx",
+      "file": "web/src/editor/EditControls.tsx",
       "fingerprint": "8011df4bd56840a7",
-      "count": 1
-    },
-    {
-      "rule": "eslint/no-unused-expressions",
-      "engine": "lint",
-      "file": "web/src/editor/EditorRow.jsx",
-      "fingerprint": "e321a5949ecacc07",
       "count": 1
     },
     {
       "rule": "jsx-a11y/click-events-have-key-events",
       "engine": "lint",
-      "file": "web/src/editor/EditorRow.jsx",
+      "file": "web/src/editor/EditorRow.tsx",
       "fingerprint": "d70b8e28e0ce8716",
       "count": 1
     },
     {
       "rule": "jsx-a11y/no-static-element-interactions",
       "engine": "lint",
-      "file": "web/src/editor/EditorRow.jsx",
+      "file": "web/src/editor/EditorRow.tsx",
       "fingerprint": "d70b8e28e0ce8716",
       "count": 1
     },
     {
       "rule": "complexity/function-too-long",
       "engine": "code-quality",
-      "file": "web/src/editor/EditorShortcuts.jsx",
-      "fingerprint": "2d5892a1866103b9",
+      "file": "web/src/editor/EditorShortcuts.tsx",
+      "fingerprint": "4f5c93b4fa63ecaf",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/editor/FileActions.jsx",
+      "file": "web/src/editor/FileActions.tsx",
       "fingerprint": "4d0abbe0893fd335",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/editor/FileActions.jsx",
+      "file": "web/src/editor/FileActions.tsx",
       "fingerprint": "a400e88b8dd22c90",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/editor/find-actions.ts",
+      "fingerprint": "20461f5116aff070",
       "count": 1
     },
     {
       "rule": "complexity/function-too-long",
       "engine": "code-quality",
-      "file": "web/src/editor/find-actions.js",
-      "fingerprint": "10e182d2be572533",
+      "file": "web/src/editor/find-actions.ts",
+      "fingerprint": "923ade8c056a15c3",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/editor/hover-actions.ts",
+      "fingerprint": "a5f6c13e670bc9fb",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/editor/HoverCard.jsx",
+      "file": "web/src/editor/HoverCard.tsx",
       "fingerprint": "76ca64da3d8c9ba2",
       "count": 1
     },
     {
       "rule": "jsx-a11y/click-events-have-key-events",
       "engine": "lint",
-      "file": "web/src/editor/Minimap.jsx",
+      "file": "web/src/editor/Minimap.tsx",
       "fingerprint": "d70b8e28e0ce8716",
       "count": 1
     },
     {
       "rule": "jsx-a11y/no-static-element-interactions",
       "engine": "lint",
-      "file": "web/src/editor/Minimap.jsx",
+      "file": "web/src/editor/Minimap.tsx",
       "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/editor/selection-actions.ts",
+      "fingerprint": "6e074a5a96c85482",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/editor/selection-actions.ts",
+      "fingerprint": "29beed35a9ed6488",
       "count": 1
     },
     {
       "rule": "jsx-a11y/interactive-supports-focus",
       "engine": "lint",
-      "file": "web/src/editor/SelectionBar.jsx",
+      "file": "web/src/editor/SelectionBar.tsx",
       "fingerprint": "d70b8e28e0ce8716",
       "count": 1
     },
     {
       "rule": "jsx-a11y/no-static-element-interactions",
       "engine": "lint",
-      "file": "web/src/editor/SelectionBar.jsx",
+      "file": "web/src/editor/SelectionBar.tsx",
       "fingerprint": "d70b8e28e0ce8716",
       "count": 1
     },
     {
       "rule": "ai-slop/narrative-comment",
       "engine": "ai-slop",
-      "file": "web/src/editor/source-dom.js",
+      "file": "web/src/editor/source-dom.ts",
       "fingerprint": "58ee22f26d5707e4",
       "count": 1
     },
     {
-      "rule": "complexity/function-too-long",
-      "engine": "code-quality",
-      "file": "web/src/editor/store.js",
-      "fingerprint": "c8327586a48fe570",
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/editor/store.ts",
+      "fingerprint": "c8e4c4a06c5558b1",
       "count": 1
     },
     {
       "rule": "complexity/function-too-long",
       "engine": "code-quality",
-      "file": "web/src/editor/Viewport.jsx",
-      "fingerprint": "1ac71b205a26113b",
+      "file": "web/src/editor/store.ts",
+      "fingerprint": "0d28a882e6c773a5",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/editor/Viewport.tsx",
+      "fingerprint": "a7510dc297eee43c",
       "count": 1
     },
     {
       "rule": "jsx-a11y/no-noninteractive-tabindex",
       "engine": "lint",
-      "file": "web/src/editor/Viewport.jsx",
+      "file": "web/src/editor/Viewport.tsx",
       "fingerprint": "e53bf55df73d6cfc",
       "count": 1
     },
     {
       "rule": "jsx-a11y/no-static-element-interactions",
       "engine": "lint",
-      "file": "web/src/editor/Viewport.jsx",
+      "file": "web/src/editor/Viewport.tsx",
       "fingerprint": "d70b8e28e0ce8716",
       "count": 1
     },
     {
-      "rule": "complexity/function-too-long",
-      "engine": "code-quality",
-      "file": "web/src/editor/vim-actions.js",
-      "fingerprint": "bf43d66d30177579",
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/editor/vim-actions.ts",
+      "fingerprint": "e8371703506b03eb",
       "count": 1
     },
     {
       "rule": "complexity/function-too-long",
       "engine": "code-quality",
-      "file": "web/src/editor/vim.js",
-      "fingerprint": "c561388cc0c0e532",
-      "count": 1
-    },
-    {
-      "rule": "security/innerhtml",
-      "engine": "security",
-      "file": "web/src/errors.js",
-      "fingerprint": "884c59e48efe0f3d",
-      "count": 1
-    },
-    {
-      "rule": "complexity/function-too-long",
-      "engine": "code-quality",
-      "file": "web/src/git/documents.js",
-      "fingerprint": "40acd69e609e14fc",
+      "file": "web/src/editor/vim-actions.ts",
+      "fingerprint": "327771f16d35d568",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/git/GitNotice.jsx",
+      "file": "web/src/git/CommitFiles.tsx",
+      "fingerprint": "5ede61a62d336911",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/git/CommitRow.tsx",
+      "fingerprint": "5ede61a62d336911",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/git/documents.ts",
+      "fingerprint": "969ad33fb838188b",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/git/documents.ts",
+      "fingerprint": "1de538ef2c6d5144",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/git/GitNotice.tsx",
       "fingerprint": "5eb5ce93f3546513",
       "count": 1
     },
     {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/git/GitSyncMenu.tsx",
+      "fingerprint": "d3388f3ee8df7dd9",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/git/store.ts",
+      "fingerprint": "cdb81a1e5f91837e",
+      "count": 1
+    },
+    {
       "rule": "complexity/function-too-long",
       "engine": "code-quality",
-      "file": "web/src/git/store.js",
-      "fingerprint": "66a99489c5fe3806",
+      "file": "web/src/git/store.ts",
+      "fingerprint": "56b14e28f29a9e5d",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/holding/Holding.jsx",
+      "file": "web/src/holding/Holding.tsx",
       "fingerprint": "552e64958d446578",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/inspector/Calls.jsx",
+      "file": "web/src/inspector/Calls.tsx",
       "fingerprint": "8e856afda7045dd5",
-      "count": 1
-    },
-    {
-      "rule": "ai-slop/duplicate-import",
-      "engine": "ai-slop",
-      "file": "web/src/inspector/Symbols.jsx",
-      "fingerprint": "9929b33aac61d04c",
-      "count": 1
-    },
-    {
-      "rule": "import/no-duplicates",
-      "engine": "lint",
-      "file": "web/src/inspector/Symbols.jsx",
-      "fingerprint": "be9c25473c461a20",
-      "count": 1
-    },
-    {
-      "rule": "unicorn/no-useless-fallback-in-spread",
-      "engine": "lint",
-      "file": "web/src/lib/api.js",
-      "fingerprint": "f5f102bea10d3036",
       "count": 1
     },
     {
       "rule": "jsx-a11y/click-events-have-key-events",
       "engine": "lint",
-      "file": "web/src/lib/ContextMenu.jsx",
+      "file": "web/src/inspector/Symbols.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/inspector/Symbols.tsx",
+      "fingerprint": "5ede61a62d336911",
+      "count": 1
+    },
+    {
+      "rule": "code-quality/duplicate-block",
+      "engine": "code-quality",
+      "file": "web/src/layout/SidebarFooter.tsx",
+      "fingerprint": "f855bb452ba7aa69",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/click-events-have-key-events",
+      "engine": "lint",
+      "file": "web/src/lib/ContextMenu.tsx",
       "fingerprint": "d70b8e28e0ce8716",
       "count": 1
     },
     {
       "rule": "jsx-a11y/interactive-supports-focus",
       "engine": "lint",
-      "file": "web/src/lib/ContextMenu.jsx",
+      "file": "web/src/lib/ContextMenu.tsx",
       "fingerprint": "d70b8e28e0ce8716",
       "count": 1
     },
     {
       "rule": "jsx-a11y/no-static-element-interactions",
       "engine": "lint",
-      "file": "web/src/lib/ContextMenu.jsx",
+      "file": "web/src/lib/ContextMenu.tsx",
       "fingerprint": "d70b8e28e0ce8716",
       "count": 1
     },
     {
       "rule": "jsx-a11y/click-events-have-key-events",
       "engine": "lint",
-      "file": "web/src/lib/Dialog.jsx",
+      "file": "web/src/lib/Dialog.tsx",
       "fingerprint": "1917765aa77e9622",
       "count": 1
     },
     {
       "rule": "jsx-a11y/no-noninteractive-element-interactions",
       "engine": "lint",
-      "file": "web/src/lib/Dialog.jsx",
+      "file": "web/src/lib/Dialog.tsx",
       "fingerprint": "1917765aa77e9622",
-      "count": 1
-    },
-    {
-      "rule": "ai-slop/thin-wrapper",
-      "engine": "ai-slop",
-      "file": "web/src/lib/keyboard.js",
-      "fingerprint": "3e19919c500aeeda",
       "count": 1
     },
     {
       "rule": "jsx-a11y/click-events-have-key-events",
       "engine": "lint",
-      "file": "web/src/lib/Popover.jsx",
+      "file": "web/src/lib/Popover.tsx",
       "fingerprint": "d70b8e28e0ce8716",
       "count": 1
     },
     {
       "rule": "jsx-a11y/no-static-element-interactions",
       "engine": "lint",
-      "file": "web/src/lib/Popover.jsx",
+      "file": "web/src/lib/Popover.tsx",
       "fingerprint": "d70b8e28e0ce8716",
       "count": 1
     },
     {
       "rule": "ai-slop/empty-function",
       "engine": "ai-slop",
-      "file": "web/src/lib/SplitHandle.jsx",
+      "file": "web/src/lib/SplitHandle.tsx",
       "fingerprint": "ba931ca0cddbc140",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/lib/SplitHandle.jsx",
+      "file": "web/src/lib/SplitHandle.tsx",
       "fingerprint": "56f8c37d4216c357",
       "count": 1
     },
     {
       "rule": "jsx-a11y/no-static-element-interactions",
       "engine": "lint",
-      "file": "web/src/lib/Tooltip.jsx",
+      "file": "web/src/lib/Tooltip.tsx",
       "fingerprint": "06f2bed01ae9f680",
       "count": 1
     },
     {
-      "rule": "complexity/function-too-long",
-      "engine": "code-quality",
-      "file": "web/src/lsp/store.js",
-      "fingerprint": "42cb41e940defdb2",
-      "count": 1
-    },
-    {
-      "rule": "ai-slop/duplicate-import",
+      "rule": "ai-slop/thin-wrapper",
       "engine": "ai-slop",
-      "file": "web/src/main.js",
-      "fingerprint": "36dae2f7ed86daa1",
-      "count": 1
-    },
-    {
-      "rule": "ai-slop/duplicate-import",
-      "engine": "ai-slop",
-      "file": "web/src/main.js",
-      "fingerprint": "598c0dd2ed3512f0",
-      "count": 1
-    },
-    {
-      "rule": "ai-slop/duplicate-import",
-      "engine": "ai-slop",
-      "file": "web/src/main.js",
-      "fingerprint": "5fa7bfb80bc2c305",
-      "count": 1
-    },
-    {
-      "rule": "ai-slop/duplicate-import",
-      "engine": "ai-slop",
-      "file": "web/src/main.js",
-      "fingerprint": "8bc45aa15dcd7313",
-      "count": 1
-    },
-    {
-      "rule": "ai-slop/duplicate-import",
-      "engine": "ai-slop",
-      "file": "web/src/main.js",
-      "fingerprint": "b4c5303795a15241",
-      "count": 1
-    },
-    {
-      "rule": "ai-slop/duplicate-import",
-      "engine": "ai-slop",
-      "file": "web/src/main.js",
-      "fingerprint": "cfeb79614c46c207",
-      "count": 1
-    },
-    {
-      "rule": "ai-slop/duplicate-import",
-      "engine": "ai-slop",
-      "file": "web/src/main.js",
-      "fingerprint": "f841e07e3f6f056e",
-      "count": 1
-    },
-    {
-      "rule": "ai-slop/unused-import",
-      "engine": "ai-slop",
-      "file": "web/src/main.js",
-      "fingerprint": "72c6cef6c21b75c3",
-      "count": 1
-    },
-    {
-      "rule": "complexity/deep-nesting",
-      "engine": "code-quality",
-      "file": "web/src/main.js",
-      "fingerprint": "34a77d62244ef9cd",
+      "file": "web/src/lsp/store.ts",
+      "fingerprint": "7f2d8bec9bf0d373",
       "count": 1
     },
     {
       "rule": "complexity/function-too-long",
       "engine": "code-quality",
-      "file": "web/src/main.js",
-      "fingerprint": "34a77d62244ef9cd",
-      "count": 1
-    },
-    {
-      "rule": "eslint/no-empty",
-      "engine": "lint",
-      "file": "web/src/main.js",
-      "fingerprint": "ca33f970ce0c7be1",
-      "count": 1
-    },
-    {
-      "rule": "eslint/no-unused-vars",
-      "engine": "lint",
-      "file": "web/src/main.js",
-      "fingerprint": "72c6cef6c21b75c3",
-      "count": 2
-    },
-    {
-      "rule": "import/no-duplicates",
-      "engine": "lint",
-      "file": "web/src/main.js",
-      "fingerprint": "72c6cef6c21b75c3",
-      "count": 1
-    },
-    {
-      "rule": "ai-slop/duplicate-import",
-      "engine": "ai-slop",
-      "file": "web/src/main.jsx",
-      "fingerprint": "9a5f85ed396ea8f9",
-      "count": 1
-    },
-    {
-      "rule": "import/no-duplicates",
-      "engine": "lint",
-      "file": "web/src/main.jsx",
-      "fingerprint": "deff2d8d012c28d1",
+      "file": "web/src/lsp/store.ts",
+      "fingerprint": "c2362040be261664",
       "count": 1
     },
     {
       "rule": "complexity/function-too-long",
       "engine": "code-quality",
-      "file": "web/src/palette/store.js",
-      "fingerprint": "a61af9d1f24bd259",
+      "file": "web/src/palette/features.ts",
+      "fingerprint": "c86211ee5bd77846",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/click-events-have-key-events",
+      "engine": "lint",
+      "file": "web/src/palette/PaletteItem.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/interactive-supports-focus",
+      "engine": "lint",
+      "file": "web/src/palette/PaletteItem.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/palette/store.ts",
+      "fingerprint": "9122dc69a161e420",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/palette/store.ts",
+      "fingerprint": "ad5716e6d23af209",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/click-events-have-key-events",
+      "engine": "lint",
+      "file": "web/src/pr/CommentsPanel.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/no-static-element-interactions",
+      "engine": "lint",
+      "file": "web/src/pr/CommentsPanel.tsx",
+      "fingerprint": "d70b8e28e0ce8716",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/pr/forge-store.ts",
+      "fingerprint": "255b04edbda29e1b",
       "count": 1
     },
     {
       "rule": "jsx-a11y/label-has-associated-control",
       "engine": "lint",
-      "file": "web/src/pr/ForgeConnectDialog.jsx",
+      "file": "web/src/pr/ForgeConnectDialog.tsx",
       "fingerprint": "fcc6fa1813865abe",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/pr/merge-store.ts",
+      "fingerprint": "6d0f66b2b9789c34",
       "count": 1
     },
     {
       "rule": "complexity/function-too-long",
       "engine": "code-quality",
-      "file": "web/src/pr/merge-store.js",
-      "fingerprint": "f9d8e5c60544da0f",
+      "file": "web/src/pr/merge-store.ts",
+      "fingerprint": "ee83b1cf7a7a87f4",
       "count": 1
     },
     {
       "rule": "jsx-a11y/control-has-associated-label",
       "engine": "lint",
-      "file": "web/src/pr/MergeControls.jsx",
+      "file": "web/src/pr/MergeControls.tsx",
       "fingerprint": "596a703135d03aef",
       "count": 1
     },
     {
       "rule": "jsx-a11y/label-has-associated-control",
       "engine": "lint",
-      "file": "web/src/pr/MergeDialog.jsx",
+      "file": "web/src/pr/MergeDialog.tsx",
       "fingerprint": "580bf8f3eb99317d",
       "count": 1
     },
     {
       "rule": "jsx-a11y/label-has-associated-control",
       "engine": "lint",
-      "file": "web/src/pr/MergeDialog.jsx",
+      "file": "web/src/pr/MergeDialog.tsx",
       "fingerprint": "aad0987d76d09623",
       "count": 1
     },
     {
       "rule": "jsx-a11y/no-static-element-interactions",
       "engine": "lint",
-      "file": "web/src/pr/MergeDialog.jsx",
+      "file": "web/src/pr/MergeDialog.tsx",
       "fingerprint": "d70b8e28e0ce8716",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/pr/MergeDialog.jsx",
+      "file": "web/src/pr/MergeDialog.tsx",
       "fingerprint": "856aaea8fa3c2694",
       "count": 1
     },
     {
       "rule": "jsx-a11y/role-supports-aria-props",
       "engine": "lint",
-      "file": "web/src/pr/MergeDialog.jsx",
+      "file": "web/src/pr/MergeDialog.tsx",
       "fingerprint": "f98483597c85f5ed",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/pr/MergePill.jsx",
+      "file": "web/src/pr/MergePill.tsx",
       "fingerprint": "5eb5ce93f3546513",
       "count": 1
     },
     {
       "rule": "jsx-a11y/control-has-associated-label",
       "engine": "lint",
-      "file": "web/src/pr/ReviewPanel.jsx",
+      "file": "web/src/pr/ReviewPanel.tsx",
       "fingerprint": "596a703135d03aef",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/pr/ReviewPanel.jsx",
+      "file": "web/src/pr/ReviewPanel.tsx",
       "fingerprint": "8a2ce7fe23265362",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/pr/store.ts",
+      "fingerprint": "6e333437f66ffde4",
+      "count": 1
+    },
+    {
+      "rule": "complexity/file-too-large",
+      "engine": "code-quality",
+      "file": "web/src/pr/store.ts",
+      "fingerprint": "message:96b0128c3491727f",
       "count": 1
     },
     {
       "rule": "complexity/function-too-long",
       "engine": "code-quality",
-      "file": "web/src/pr/store.js",
-      "fingerprint": "b84bfb75b420b2c8",
+      "file": "web/src/pr/store.ts",
+      "fingerprint": "bf4ce9e2542c3d3b",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/pr/test-editor.ts",
+      "fingerprint": "95dde424c49edd95",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/review/ReviewTabs.jsx",
+      "file": "web/src/review/ReviewTabs.tsx",
       "fingerprint": "c255179a8345fcea",
       "count": 1
     },
     {
       "rule": "jsx-a11y/control-has-associated-label",
       "engine": "lint",
-      "file": "web/src/review/ReviewToggle.jsx",
+      "file": "web/src/review/ReviewToggle.tsx",
       "fingerprint": "596a703135d03aef",
       "count": 1
     },
     {
       "rule": "jsx-a11y/control-has-associated-label",
       "engine": "lint",
-      "file": "web/src/review/StageCard.jsx",
+      "file": "web/src/review/StageCard.tsx",
       "fingerprint": "50ceb52c1592b636",
       "count": 1
     },
     {
       "rule": "jsx-a11y/no-noninteractive-element-to-interactive-role",
       "engine": "lint",
-      "file": "web/src/review/StageCard.jsx",
+      "file": "web/src/review/StageCard.tsx",
       "fingerprint": "50ceb52c1592b636",
       "count": 1
     },
     {
       "rule": "jsx-a11y/no-redundant-roles",
       "engine": "lint",
-      "file": "web/src/review/StageCard.jsx",
+      "file": "web/src/review/StageCard.tsx",
       "fingerprint": "50ceb52c1592b636",
+      "count": 1
+    },
+    {
+      "rule": "code-quality/duplicate-block",
+      "engine": "code-quality",
+      "file": "web/src/review/StageEditor.tsx",
+      "fingerprint": "596a703135d03aef",
       "count": 1
     },
     {
       "rule": "jsx-a11y/no-noninteractive-element-interactions",
       "engine": "lint",
-      "file": "web/src/review/StageEditor.jsx",
+      "file": "web/src/review/StageEditor.tsx",
       "fingerprint": "c23058ed09bd4050",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/review/store.ts",
+      "fingerprint": "0331e118f08bbee7",
       "count": 1
     },
     {
       "rule": "complexity/function-too-long",
       "engine": "code-quality",
-      "file": "web/src/review/store.js",
-      "fingerprint": "b6b119c8c37fbb57",
+      "file": "web/src/review/store.ts",
+      "fingerprint": "a25d4b4de1626f38",
       "count": 1
     },
     {
-      "rule": "ai-slop/duplicate-import",
-      "engine": "ai-slop",
-      "file": "web/src/search/Search.jsx",
-      "fingerprint": "01cc873b10d18801",
-      "count": 1
-    },
-    {
-      "rule": "import/no-duplicates",
+      "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/search/Search.jsx",
-      "fingerprint": "be9c25473c461a20",
+      "file": "web/src/search/ResultGroup.tsx",
+      "fingerprint": "5ede61a62d336911",
+      "count": 2
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/search/store.ts",
+      "fingerprint": "ac2c8b84922c455b",
       "count": 1
     },
     {
@@ -1105,13 +1112,6 @@
       "engine": "lint",
       "file": "web/src/settings/SettingControl.tsx",
       "fingerprint": "bdc8d591c7ee1fe6",
-      "count": 1
-    },
-    {
-      "rule": "jsx-a11y/role-has-required-aria-props",
-      "engine": "lint",
-      "file": "web/src/settings/SettingControl.tsx",
-      "fingerprint": "bcaf24292c6eec0f",
       "count": 1
     },
     {
@@ -1125,7 +1125,7 @@
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
       "file": "web/src/settings/SettingsFooter.tsx",
-      "fingerprint": "b10777d31ab26c29",
+      "fingerprint": "5eb5ce93f3546513",
       "count": 1
     },
     {
@@ -1136,6 +1136,13 @@
       "count": 1
     },
     {
+      "rule": "code-quality/duplicate-block",
+      "engine": "code-quality",
+      "file": "web/src/settings/SettingsToolbar.tsx",
+      "fingerprint": "596a703135d03aef",
+      "count": 1
+    },
+    {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
       "file": "web/src/settings/SettingsToolbar.tsx",
@@ -1143,430 +1150,409 @@
       "count": 1
     },
     {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/settings/store.ts",
+      "fingerprint": "d684ae8ded3a9e2c",
+      "count": 1
+    },
+    {
       "rule": "complexity/function-too-long",
       "engine": "code-quality",
       "file": "web/src/settings/store.ts",
-      "fingerprint": "056ccc2edb94b8ec",
+      "fingerprint": "dfae709408564228",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/status/StatusBar.jsx",
+      "file": "web/src/status/StatusBar.tsx",
       "fingerprint": "5eb5ce93f3546513",
       "count": 1
     },
     {
-      "rule": "complexity/function-too-long",
-      "engine": "code-quality",
-      "file": "web/src/threads/store.js",
-      "fingerprint": "4dfe87e752035eb1",
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/threads/store.ts",
+      "fingerprint": "ac20f944a32164d4",
       "count": 1
     },
     {
-      "rule": "eslint/no-unused-expressions",
-      "engine": "lint",
-      "file": "web/src/threads/store.js",
-      "fingerprint": "245843abef9e72e7",
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/threads/store.ts",
+      "fingerprint": "97caf6400765efe4",
+      "count": 1
+    },
+    {
+      "rule": "complexity/function-too-long",
+      "engine": "code-quality",
+      "file": "web/src/threads/ThreadDetail.tsx",
+      "fingerprint": "504eb6f467d05959",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/threads/ThreadDetail.jsx",
+      "file": "web/src/threads/ThreadDetail.tsx",
       "fingerprint": "8011df4bd56840a7",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/threads/ThreadDetail.jsx",
+      "file": "web/src/threads/ThreadDetail.tsx",
       "fingerprint": "ab169fe2dce5d58a",
-      "count": 1
-    },
-    {
-      "rule": "eslint/no-unused-expressions",
-      "engine": "lint",
-      "file": "web/src/threads/ThreadTranscript.jsx",
-      "fingerprint": "543b269bf31269cc",
-      "count": 1
-    },
-    {
-      "rule": "eslint/no-unused-expressions",
-      "engine": "lint",
-      "file": "web/src/threads/ThreadTranscript.jsx",
-      "fingerprint": "7ce5d9f3b4c5ffc8",
-      "count": 1
-    },
-    {
-      "rule": "eslint/no-unused-expressions",
-      "engine": "lint",
-      "file": "web/src/threads/ThreadTranscript.jsx",
-      "fingerprint": "7f6b2328de2e6f0b",
-      "count": 1
-    },
-    {
-      "rule": "eslint/no-unused-expressions",
-      "engine": "lint",
-      "file": "web/src/threads/ThreadTranscript.jsx",
-      "fingerprint": "b8612148c7a36d1c",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/threads/ThreadTurn.jsx",
+      "file": "web/src/threads/ThreadList.tsx",
+      "fingerprint": "f7635b382c37d9b1",
+      "count": 1
+    },
+    {
+      "rule": "import/no-duplicates",
+      "engine": "lint",
+      "file": "web/src/threads/ThreadTranscript.tsx",
+      "fingerprint": "8925c87d1e2eca81",
+      "count": 1
+    },
+    {
+      "rule": "jsx-a11y/prefer-tag-over-role",
+      "engine": "lint",
+      "file": "web/src/threads/ThreadTurn.tsx",
       "fingerprint": "2e28fcf3f6c24187",
       "count": 1
     },
     {
-      "rule": "ai-slop/unused-import",
+      "rule": "ai-slop/thin-wrapper",
       "engine": "ai-slop",
-      "file": "web/src/ui.js",
-      "fingerprint": "a99c4d772411cfbf",
-      "count": 1
-    },
-    {
-      "rule": "eslint/no-unused-vars",
-      "engine": "lint",
-      "file": "web/src/ui.js",
-      "fingerprint": "a99c4d772411cfbf",
-      "count": 2
-    },
-    {
-      "rule": "eslint/no-unused-vars",
-      "engine": "lint",
-      "file": "web/src/ui.js",
-      "fingerprint": "e1be4fdef0777b64",
+      "file": "web/src/viewers/actions.ts",
+      "fingerprint": "d69eb1f52d995655",
       "count": 1
     },
     {
       "rule": "complexity/function-too-long",
       "engine": "code-quality",
-      "file": "web/src/viewers/actions.js",
-      "fingerprint": "29d9eda2c9c6a60b",
+      "file": "web/src/viewers/actions.ts",
+      "fingerprint": "24c041bdffc33e98",
       "count": 1
     },
     {
       "rule": "jsx-a11y/click-events-have-key-events",
       "engine": "lint",
-      "file": "web/src/viewers/DiffRow.jsx",
+      "file": "web/src/viewers/DiffRow.tsx",
       "fingerprint": "d70b8e28e0ce8716",
       "count": 3
     },
     {
       "rule": "jsx-a11y/no-static-element-interactions",
       "engine": "lint",
-      "file": "web/src/viewers/DiffRow.jsx",
+      "file": "web/src/viewers/DiffRow.tsx",
       "fingerprint": "d70b8e28e0ce8716",
       "count": 3
     },
     {
       "rule": "jsx-a11y/click-events-have-key-events",
       "engine": "lint",
-      "file": "web/src/viewers/DiffSection.jsx",
+      "file": "web/src/viewers/DiffSection.tsx",
       "fingerprint": "d70b8e28e0ce8716",
       "count": 1
     },
     {
       "rule": "jsx-a11y/no-static-element-interactions",
       "engine": "lint",
-      "file": "web/src/viewers/DiffSection.jsx",
+      "file": "web/src/viewers/DiffSection.tsx",
       "fingerprint": "d70b8e28e0ce8716",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/viewers/DiffStrip.jsx",
+      "file": "web/src/viewers/DiffStrip.tsx",
       "fingerprint": "d8ee0c118033e9cd",
       "count": 1
     },
     {
       "rule": "jsx-a11y/click-events-have-key-events",
       "engine": "lint",
-      "file": "web/src/viewers/DiffViewer.jsx",
+      "file": "web/src/viewers/DiffViewer.tsx",
       "fingerprint": "d70b8e28e0ce8716",
       "count": 1
     },
     {
       "rule": "jsx-a11y/no-static-element-interactions",
       "engine": "lint",
-      "file": "web/src/viewers/DiffViewer.jsx",
+      "file": "web/src/viewers/DiffViewer.tsx",
       "fingerprint": "d70b8e28e0ce8716",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/viewers/DiffViewer.jsx",
+      "file": "web/src/viewers/DiffViewer.tsx",
       "fingerprint": "2a746c08c7f91d85",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/viewers/ExplainOrb.jsx",
+      "file": "web/src/viewers/ExplainOrb.tsx",
       "fingerprint": "318b5d906e52f432",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/viewers/ImageViewer.jsx",
+      "file": "web/src/viewers/ImageViewer.tsx",
       "fingerprint": "b65291c362cdcb88",
       "count": 1
     },
     {
       "rule": "complexity/file-too-large",
       "engine": "code-quality",
-      "file": "web/src/viewers/markdown-dom.js",
+      "file": "web/src/viewers/markdown-dom.ts",
       "fingerprint": "message:96b0128c3491727f",
       "count": 1
     },
     {
       "rule": "complexity/function-too-long",
       "engine": "code-quality",
-      "file": "web/src/viewers/markdown-dom.js",
-      "fingerprint": "43d4573dbeaf0d04",
+      "file": "web/src/viewers/markdown-dom.ts",
+      "fingerprint": "2a8fc87e74b7c1f1",
       "count": 1
     },
     {
       "rule": "unicorn/no-useless-spread",
       "engine": "lint",
-      "file": "web/src/viewers/markdown-dom.js",
-      "fingerprint": "69e95730a6602dd8",
-      "count": 1
-    },
-    {
-      "rule": "unicorn/no-useless-spread",
-      "engine": "lint",
-      "file": "web/src/viewers/markdown-dom.js",
+      "file": "web/src/viewers/markdown-dom.ts",
       "fingerprint": "eadf233d7f299f94",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/viewers/MermaidControls.jsx",
-      "fingerprint": "8011df4bd56840a7",
+      "file": "web/src/viewers/MermaidControls.tsx",
+      "fingerprint": "16ae34a665ac7211",
       "count": 1
     },
     {
       "rule": "jsx-a11y/no-noninteractive-element-interactions",
       "engine": "lint",
-      "file": "web/src/viewers/MermaidDiagram.jsx",
+      "file": "web/src/viewers/MermaidDiagram.tsx",
       "fingerprint": "d70b8e28e0ce8716",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/viewers/MermaidDiagram.jsx",
+      "file": "web/src/viewers/MermaidDiagram.tsx",
       "fingerprint": "24252993d1909a0a",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/viewers/MermaidDiagram.jsx",
+      "file": "web/src/viewers/MermaidDiagram.tsx",
       "fingerprint": "44d3c5d602ac7c89",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/viewers/preview-dom.ts",
+      "fingerprint": "3fb01a8ba6e5a34f",
       "count": 1
     },
     {
       "rule": "complexity/function-too-long",
       "engine": "code-quality",
-      "file": "web/src/viewers/preview-dom.js",
-      "fingerprint": "958f108040acadf1",
+      "file": "web/src/viewers/preview-dom.ts",
+      "fingerprint": "e34f8e045d6f53c0",
       "count": 1
     },
     {
       "rule": "jsx-a11y/click-events-have-key-events",
       "engine": "lint",
-      "file": "web/src/viewers/PreviewContent.jsx",
+      "file": "web/src/viewers/PreviewContent.tsx",
       "fingerprint": "d70b8e28e0ce8716",
       "count": 1
     },
     {
       "rule": "jsx-a11y/no-static-element-interactions",
       "engine": "lint",
-      "file": "web/src/viewers/PreviewContent.jsx",
+      "file": "web/src/viewers/PreviewContent.tsx",
       "fingerprint": "d70b8e28e0ce8716",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/viewers/PreviewViewer.jsx",
+      "file": "web/src/viewers/PreviewViewer.tsx",
       "fingerprint": "d699dbfe3454649e",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/viewers/TableViewer.jsx",
+      "file": "web/src/viewers/TableViewer.tsx",
       "fingerprint": "5ede61a62d336911",
       "count": 2
     },
     {
       "rule": "jsx-a11y/click-events-have-key-events",
       "engine": "lint",
-      "file": "web/src/workbench/DirectoryList.jsx",
+      "file": "web/src/workbench/DirectoryList.tsx",
       "fingerprint": "08ee5f90dbbd9f49",
       "count": 1
     },
     {
       "rule": "jsx-a11y/no-noninteractive-element-to-interactive-role",
       "engine": "lint",
-      "file": "web/src/workbench/DirectoryList.jsx",
+      "file": "web/src/workbench/DirectoryList.tsx",
       "fingerprint": "11f4e64b1712fbf7",
       "count": 1
     },
     {
       "rule": "jsx-a11y/no-noninteractive-element-to-interactive-role",
       "engine": "lint",
-      "file": "web/src/workbench/DirectoryList.jsx",
+      "file": "web/src/workbench/DirectoryList.tsx",
       "fingerprint": "9648cda4adc234ce",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/workbench/DirectoryList.jsx",
+      "file": "web/src/workbench/DirectoryList.tsx",
       "fingerprint": "11f4e64b1712fbf7",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/workbench/DirectoryList.jsx",
+      "file": "web/src/workbench/DirectoryList.tsx",
       "fingerprint": "9648cda4adc234ce",
       "count": 1
     },
     {
       "rule": "jsx-a11y/no-noninteractive-element-to-interactive-role",
       "engine": "lint",
-      "file": "web/src/workbench/PathSuggestions.jsx",
+      "file": "web/src/workbench/PathSuggestions.tsx",
       "fingerprint": "11f4e64b1712fbf7",
       "count": 1
     },
     {
       "rule": "jsx-a11y/no-noninteractive-element-to-interactive-role",
       "engine": "lint",
-      "file": "web/src/workbench/PathSuggestions.jsx",
+      "file": "web/src/workbench/PathSuggestions.tsx",
       "fingerprint": "9648cda4adc234ce",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/workbench/PathSuggestions.jsx",
+      "file": "web/src/workbench/PathSuggestions.tsx",
       "fingerprint": "11f4e64b1712fbf7",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/workbench/PathSuggestions.jsx",
+      "file": "web/src/workbench/PathSuggestions.tsx",
       "fingerprint": "9648cda4adc234ce",
       "count": 1
     },
     {
       "rule": "jsx-a11y/no-noninteractive-element-to-interactive-role",
       "engine": "lint",
-      "file": "web/src/workbench/WorkbenchTabs.jsx",
+      "file": "web/src/workbench/WorkbenchTabs.tsx",
       "fingerprint": "a8ee3127aa200569",
-      "count": 1
-    },
-    {
-      "rule": "complexity/function-too-long",
-      "engine": "code-quality",
-      "file": "web/src/workspace/actions.js",
-      "fingerprint": "e23c347af5c9a4a4",
       "count": 1
     },
     {
       "rule": "ai-slop/empty-function",
       "engine": "ai-slop",
-      "file": "web/src/workspace/stream.js",
+      "file": "web/src/workspace/stream.ts",
       "fingerprint": "9a0d91b5b9df411c",
       "count": 1
     },
     {
-      "rule": "complexity/deep-nesting",
+      "rule": "complexity/function-too-long",
       "engine": "code-quality",
-      "file": "web/src/workspace/stream.js",
-      "fingerprint": "126d922a8dd22785",
+      "file": "web/src/workspace/stream.ts",
+      "fingerprint": "8e672256ea79f186",
+      "count": 1
+    },
+    {
+      "rule": "ai-slop/thin-wrapper",
+      "engine": "ai-slop",
+      "file": "web/src/workspace/tree-store.ts",
+      "fingerprint": "23581b82a6ca95d4",
       "count": 1
     },
     {
       "rule": "complexity/function-too-long",
       "engine": "code-quality",
-      "file": "web/src/workspace/stream.js",
-      "fingerprint": "126d922a8dd22785",
+      "file": "web/src/workspace/tree-store.ts",
+      "fingerprint": "d9a843ac798b5a46",
       "count": 1
-    },
-    {
-      "rule": "complexity/function-too-long",
-      "engine": "code-quality",
-      "file": "web/src/workspace/tree-store.js",
-      "fingerprint": "757105ff1131f4b4",
-      "count": 1
-    },
-    {
-      "rule": "eslint/no-unused-expressions",
-      "engine": "lint",
-      "file": "web/src/workspace/tree-store.js",
-      "fingerprint": "06a270dde5119b88",
-      "count": 1
-    },
-    {
-      "rule": "eslint/no-unused-expressions",
-      "engine": "lint",
-      "file": "web/src/workspace/tree-store.js",
-      "fingerprint": "8ee7458f7837ed6e",
-      "count": 2
     },
     {
       "rule": "jsx-a11y/click-events-have-key-events",
       "engine": "lint",
-      "file": "web/src/workspace/TreeRow.jsx",
+      "file": "web/src/workspace/TreeRow.tsx",
       "fingerprint": "54fce323234ef271",
       "count": 1
     },
     {
       "rule": "jsx-a11y/click-events-have-key-events",
       "engine": "lint",
-      "file": "web/src/workspace/TreeRow.jsx",
+      "file": "web/src/workspace/TreeRow.tsx",
       "fingerprint": "d70b8e28e0ce8716",
       "count": 1
     },
     {
       "rule": "jsx-a11y/interactive-supports-focus",
       "engine": "lint",
-      "file": "web/src/workspace/TreeRow.jsx",
+      "file": "web/src/workspace/TreeRow.tsx",
       "fingerprint": "d70b8e28e0ce8716",
       "count": 1
     },
     {
       "rule": "jsx-a11y/no-noninteractive-element-interactions",
       "engine": "lint",
-      "file": "web/src/workspace/TreeRow.jsx",
+      "file": "web/src/workspace/TreeRow.tsx",
       "fingerprint": "54fce323234ef271",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/workspace/TreeScope.jsx",
+      "file": "web/src/workspace/TreeScope.tsx",
       "fingerprint": "9d77453b560c279f",
+      "count": 1
+    },
+    {
+      "rule": "code-quality/duplicate-block",
+      "engine": "code-quality",
+      "file": "web/src/workspace/TreeToolbar.tsx",
+      "fingerprint": "596a703135d03aef",
+      "count": 1
+    },
+    {
+      "rule": "code-quality/duplicate-block",
+      "engine": "code-quality",
+      "file": "web/src/workspace/TreeToolbar.tsx",
+      "fingerprint": "f855bb452ba7aa69",
       "count": 1
     },
     {
       "rule": "jsx-a11y/prefer-tag-over-role",
       "engine": "lint",
-      "file": "web/src/workspace/TreeToolbar.jsx",
-      "fingerprint": "1c2e1b8ef819151b",
+      "file": "web/src/workspace/TreeToolbar.tsx",
+      "fingerprint": "93a3ccd325f1fe68",
       "count": 1
     },
     {

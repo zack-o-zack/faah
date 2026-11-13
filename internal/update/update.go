@@ -239,7 +239,14 @@ func AutoUpdate(currentVersion string) {
 		return
 	}
 
-	state, _ := readUpdateState()
+	state, err := readUpdateState()
+	if err != nil {
+		// A damaged cache must not prevent a fresh update check.
+		state = nil
+		if !os.IsNotExist(err) && ui.Verbose {
+			ui.Status("warn", "Could not read update cache", err.Error(), 0, os.Stdout)
+		}
+	}
 	now := time.Now()
 
 	var rel *githubRelease

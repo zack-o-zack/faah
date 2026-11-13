@@ -1,5 +1,4 @@
-import type { SearchMatch } from './decode.ts';
-import type { FileMatches } from './decode.ts';
+import type { SearchMatch, FileMatches } from './decode.ts';
 
 interface ResultGroupProps {
   file: FileMatches;

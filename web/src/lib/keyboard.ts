@@ -32,7 +32,7 @@ export function keyLabel(combo: string, mac = isMac): string {
   const key = parts.pop() || '';
   return parts.join('') + (parts.length && /^[a-z]{2,}$/i.test(key) ? ' ' : '') + key;
 }
-export const keyCaps = (combo: string, mac = isMac): string[] => keyParts(combo, mac);
+export const keyCaps = keyParts;
 export const withKeys = (text: string, mac = isMac): string =>
   text.replace(/\{([^}]+)\}/g, (_, combo) => keyLabel(combo, mac));
 export function matchesShortcut(
