@@ -197,6 +197,7 @@ function buildTreeStore(app: TreeHost, options: TreeOptions = {}) {
     model.clear();
     loadedView = compact();
     set({ busy: false, error: '' });
+    set('reveal', 'path', '');
     publish();
     try {
       await load('', version);

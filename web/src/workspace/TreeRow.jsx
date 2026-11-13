@@ -76,7 +76,7 @@ export function TreeRow(props) {
             dir: !!props.row.dir,
             file: !props.row.dir,
             open: editor.tree.expanded(props.row.path),
-            sel: editor.active()?.path === props.row.path,
+            sel: editor.tree.state.reveal.path === props.row.path,
             ignored: !!props.row.ignored,
             dirty: decoration().dirty,
             'your-change': !!decoration().yours,
@@ -91,7 +91,7 @@ export function TreeRow(props) {
           role="treeitem"
           aria-level={props.row.depth + 1}
           aria-expanded={props.row.dir ? editor.tree.expanded(props.row.path) : undefined}
-          aria-selected={editor.active()?.path === props.row.path}
+          aria-selected={editor.tree.state.reveal.path === props.row.path}
           data-path={props.row.path}
           data-dir={props.row.dir ? props.row.path : undefined}
           data-file={!props.row.dir ? props.row.path : undefined}
