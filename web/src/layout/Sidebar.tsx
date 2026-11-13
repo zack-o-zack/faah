@@ -5,7 +5,6 @@ import { TreeScope } from '../workspace/TreeScope.tsx';
 import { Tree } from '../workspace/Tree.tsx';
 import { GitPanel } from '../git/GitPanel.tsx';
 import { Unpushed } from '../git/Unpushed.tsx';
-import { SidebarFooter } from './SidebarFooter.tsx';
 export function Sidebar(): JSX.Element {
   const editor = useEditor();
   return (
@@ -20,7 +19,6 @@ export function Sidebar(): JSX.Element {
       <Tree />
       <Unpushed />
       <GitPanel />
-      <SidebarFooter />
     </aside>
   );
 }

@@ -8,7 +8,6 @@ export interface PopoverProps {
   gap?: number;
   role?: 'menu' | 'dialog';
   triggerId?: string;
-  triggerTitle?: string;
   panelId?: string;
   accessibleLabel?: string;
   disabled?: boolean;
@@ -81,7 +80,6 @@ export function Popover(props: PopoverProps): JSX.Element {
           trigger = element;
         }}
         id={props.triggerId}
-        title={props.triggerTitle}
         aria-label={props.accessibleLabel}
         disabled={props.disabled}
         type="button"

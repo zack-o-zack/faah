@@ -104,21 +104,3 @@ export function serverPresentation(server: ServerInfo): {
     label: '',
   };
 }
-
-export function lspStatus(
-  servers: ServerInfo[],
-  state: string,
-  anyRunning = false,
-): { dot: string; title: string; count: string } {
-  const running = servers.filter((server) => server.running).length;
-  const available = servers.filter((server) => server.installed).length;
-  if (running || anyRunning || ['ready', 'indexing'].includes(state))
-    return {
-      dot: state === 'indexing' ? 'bg-warn' : 'bg-gi',
-      title: `Language servers: ${running || 1} of ${available || running || 1} running (click to manage)`,
-      count: available ? `${running}/${available}` : '',
-    };
-  if (state === 'failed')
-    return { dot: 'bg-gd', title: 'A language server failed (click to manage)', count: '' };
-  return { dot: 'bg-faint', title: 'Language servers: stopped (click to manage)', count: '' };
-}

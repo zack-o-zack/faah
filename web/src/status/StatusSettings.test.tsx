@@ -3,20 +3,17 @@ import { expect, test } from 'vitest';
 import { createAppStore } from '../app/store.ts';
 import { createEditorStore, type EditorStore } from '../editor/store.ts';
 import { EditorProvider } from '../editor/context.tsx';
-import { ThemeProvider } from '../lib/theme-context.tsx';
 import { required } from '../lib/test-values.ts';
-import { SidebarFooter } from './SidebarFooter.tsx';
+import { StatusSettings } from './StatusSettings.tsx';
 
-test('sidebar gear opens settings in the desktop shell', () => {
+test('status gear opens settings in the desktop shell', () => {
   let editor: EditorStore | undefined;
   document.documentElement.dataset.shell = 'desktop';
   const view = render(() => {
     editor = createEditorStore(createAppStore());
     return (
       <EditorProvider value={editor}>
-        <ThemeProvider>
-          <SidebarFooter />
-        </ThemeProvider>
+        <StatusSettings />
       </EditorProvider>
     );
   });
