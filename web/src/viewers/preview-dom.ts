@@ -7,7 +7,13 @@ import {
 } from './markdown-dom.ts';
 import { isMac } from '../lib/keyboard.ts';
 
-export function createPreviewDOM(viewport: HTMLElement, article: HTMLElement) {
+export function createPreviewDOM(
+  viewport: HTMLElement,
+  article: HTMLElement,
+): ReturnType<typeof buildPreviewDOM> {
+  return buildPreviewDOM(viewport, article);
+}
+function buildPreviewDOM(viewport: HTMLElement, article: HTMLElement) {
   const blocks = () => [...article.querySelectorAll<HTMLElement>('[data-line]')];
   const gap = () => article.querySelector('thead')?.getBoundingClientRect().height || 16;
   function line(n: number): void {

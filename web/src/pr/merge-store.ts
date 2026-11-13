@@ -79,7 +79,13 @@ function initialState(): MergeState {
   };
 }
 
-export function createMergeStore(editor: MergeHost, options: MergeOptions = {}) {
+export function createMergeStore(
+  editor: MergeHost,
+  options: MergeOptions = {},
+): ReturnType<typeof buildMergeStore> {
+  return buildMergeStore(editor, options);
+}
+function buildMergeStore(editor: MergeHost, options: MergeOptions = {}) {
   const app = editor.store;
   const request = options.request || api;
   const post = options.post || apiPostJson;

@@ -92,7 +92,7 @@ test('the stage on screen follows its thread only while the pipeline tab shows',
 });
 
 test('editing saves through named actions and refuses structural changes while running', async () => {
-  const post = vi.fn(async (_path, body) => ({ config: body }));
+  const post = vi.fn(async (_path: string, body: unknown) => ({ config: body }));
   const { review, dispose } = fixture({ request: async () => reply(), post });
   review.actions.setReviewMode('review');
   await vi.waitFor(() => expect(review.state.run).not.toBe(null));

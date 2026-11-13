@@ -55,7 +55,13 @@ import { positionNow, canAskServer } from './logic.ts';
 function initialState(): LanguageState {
   return { menuOpen: false, pending: '', error: '', refs: null, calls: null, direction: 'in' };
 }
-export function createLanguageStore(editor: LanguageHost, options: LanguageOptions = {}) {
+export function createLanguageStore(
+  editor: LanguageHost,
+  options: LanguageOptions = {},
+): ReturnType<typeof buildLanguageStore> {
+  return buildLanguageStore(editor, options);
+}
+function buildLanguageStore(editor: LanguageHost, options: LanguageOptions = {}) {
   const app = editor.store;
   const request = options.request || api;
   const post = options.post || apiPost;

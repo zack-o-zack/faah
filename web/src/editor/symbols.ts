@@ -5,6 +5,11 @@ import type { LspBrief } from './decode.ts';
 import { api } from '../lib/api.ts';
 
 export function createSymbolActions(
+  ...args: Parameters<typeof buildSymbolActions>
+): ReturnType<typeof buildSymbolActions> {
+  return buildSymbolActions(...args);
+}
+function buildSymbolActions(
   store: {
     state: { documents: { tabs: DocTab[] }; lsp: { state: string } };
     buffers: ReadonlyMap<string, unknown>;

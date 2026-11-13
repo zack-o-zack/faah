@@ -1,6 +1,6 @@
 import { For } from 'solid-js';
 import { useWorkbench } from './context.jsx';
-import { tildify } from './logic.js';
+import { tildify } from './logic.ts';
 export function PathSuggestions(props) {
   const { state } = useWorkbench();
   return (

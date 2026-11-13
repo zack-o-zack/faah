@@ -59,7 +59,13 @@ function initialState(): AgentState {
     batch: { pending: false, error: '', threadId: '', job: null },
   };
 }
-export function createAgentStore(editor: AgentHost, options: AgentOptions = {}) {
+export function createAgentStore(
+  editor: AgentHost,
+  options: AgentOptions = {},
+): ReturnType<typeof buildAgentStore> {
+  return buildAgentStore(editor, options);
+}
+function buildAgentStore(editor: AgentHost, options: AgentOptions = {}) {
   const [state, set] = createStore(initialState());
   const request = options.request || api;
   const post = options.post || apiPost;

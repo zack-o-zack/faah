@@ -13,7 +13,12 @@ import { searchRequest } from './logic.ts';
 function initialState(): SearchState {
   return { query: '', glob: '', caseSensitive: false, word: false, regex: false, external: null };
 }
-export function createSearchStore(options: { request?: Request } = {}) {
+export function createSearchStore(
+  options: { request?: Request } = {},
+): ReturnType<typeof buildSearchStore> {
+  return buildSearchStore(options);
+}
+function buildSearchStore(options: { request?: Request } = {}) {
   const request = options.request || api;
   const [state, set] = createStore(initialState());
   const [key, setKey] = createSignal<SearchParams | false>(false);

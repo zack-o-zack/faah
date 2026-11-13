@@ -176,7 +176,21 @@ export function measuredWindow(
   };
 }
 
-export function gutterSelection(row: DiffRow | null | undefined, path: string, reviewable = true) {
+export function gutterSelection(
+  row: DiffRow | null | undefined,
+  path: string,
+  reviewable = true,
+): {
+  path: string;
+  text: string;
+  l1: number;
+  l2: number;
+  delL1?: number;
+  delL2?: number;
+  fromDiff: boolean;
+  side: string;
+  reviewable: boolean;
+} | null {
   if (!row) return null;
   const deleted = row.newLine === undefined;
   const l1 = deleted ? Math.max(1, (row.at || 1) - 1) : (row.newLine ?? 1);

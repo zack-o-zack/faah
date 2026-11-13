@@ -1,6 +1,9 @@
 import { onCleanup } from 'solid-js';
 
-export function createHighlights() {
+export function createHighlights(): ReturnType<typeof buildHighlights> {
+  return buildHighlights();
+}
+function buildHighlights() {
   const groups = new Map<string, Highlight>();
   const owners = new Map<unknown, [string, Range[]][]>();
   function remove(owner: unknown): void {

@@ -1,5 +1,6 @@
 import type { AgentJobOptions } from '../agents/jobs.ts';
 import { vi } from 'vitest';
+import type { Mock } from 'vitest';
 import { createStore } from 'solid-js/store';
 import { createAppStore } from '../app/store.ts';
 import { createPRStore } from './store.ts';
@@ -27,12 +28,10 @@ export interface PREditorOptions {
   post?: Request;
 }
 // A real app store and the three PR slices; the remaining actions are isolated.
-export function createPREditor({
-  meta = prMeta(),
-  forge = null,
-  request,
-  post,
-}: PREditorOptions = {}) {
+export function createPREditor(options: PREditorOptions = {}): ReturnType<typeof buildPREditor> {
+  return buildPREditor(options);
+}
+function buildPREditor({ meta = prMeta(), forge = null, request, post }: PREditorOptions = {}) {
   const app = createAppStore();
   app.actions.setWorkspace({ name: 'repo', pr: meta, forge });
   const [git] = createStore({ pending: '', sync: { inProgress: '', rewritten: false } });
@@ -81,7 +80,7 @@ type RouteValue =
   | boolean
   | null
   | ((params: Record<string, unknown>, path: string) => unknown);
-export function routes(table: Record<string, RouteValue>) {
+export function routes(table: Record<string, RouteValue>): Mock<Request> {
   return vi.fn(async (path: string, value?: unknown): Promise<unknown> => {
     const key = Object.keys(table).find((prefix) => path.startsWith(prefix));
     if (!key) throw new Error('unexpected ' + path);

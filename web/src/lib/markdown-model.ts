@@ -28,9 +28,7 @@ export function safeMarkdownURL(value: string): string {
 }
 export function citation(value: string): { path: string; line: number; end: number } | null {
   const match = /^([\w./-]+\.[\w]+)(?::(\d+)(?:-(\d+))?)?$/.exec(value);
-  return match
-    ? { path: match[1] || '' || '', line: +(match[2] || '' || 0), end: +(match[3] || '' || 0) }
-    : null;
+  return match ? { path: match[1] || '', line: +(match[2] || 0), end: +(match[3] || 0) } : null;
 }
 export function inlineMarkdown(text: string, depth = 0): InlineNode[] {
   if (depth > 10) return [{ type: 'text', text }];
@@ -43,25 +41,25 @@ export function inlineMarkdown(text: string, depth = 0): InlineNode[] {
     if (match.index > start) result.push({ type: 'text', text: text.slice(start, match.index) });
     const raw = match[0] || '';
     if (match[1] || '') result.push({ type: 'code', text: match[2] || '' });
-    else if ((match[3] || '') !== undefined)
+    else if (match[3] !== undefined)
       result.push({ type: 'image', text: match[3] || '', url: safeMarkdownURL(match[4] || '') });
-    else if ((match[5] || '') !== undefined)
+    else if (match[5] !== undefined)
       result.push({
         type: 'link',
         url: safeMarkdownURL(match[6] || ''),
         children: inlineMarkdown(match[5] || '', depth + 1),
       });
-    else if (match[7] || '' || match[8] || '')
+    else if (match[7] || match[8] || '')
       result.push({
         type: 'strong',
-        children: inlineMarkdown(match[7] || '' || match[8] || '', depth + 1),
+        children: inlineMarkdown(match[7] || match[8] || '', depth + 1),
       });
     else if (match[9] || '')
       result.push({ type: 'del', children: inlineMarkdown(match[9] || '', depth + 1) });
-    else if (match[10] || '' || match[11] || '')
+    else if (match[10] || match[11] || '')
       result.push({
         type: 'em',
-        children: inlineMarkdown(match[10] || '' || match[11] || '', depth + 1),
+        children: inlineMarkdown(match[10] || match[11] || '', depth + 1),
       });
     else
       result.push({

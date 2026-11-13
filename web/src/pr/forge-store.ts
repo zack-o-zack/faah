@@ -28,7 +28,13 @@ function initialState(): ForgeState {
   return { open: false, reason: '', token: '', extra: '', pending: false, error: '' };
 }
 
-export function createForgeStore(editor: ForgeHost, options: ForgeOptions = {}) {
+export function createForgeStore(
+  editor: ForgeHost,
+  options: ForgeOptions = {},
+): ReturnType<typeof buildForgeStore> {
+  return buildForgeStore(editor, options);
+}
+function buildForgeStore(editor: ForgeHost, options: ForgeOptions = {}) {
   const app = editor.store;
   const post = options.post || apiPostJson;
   const [state, set] = createStore(initialState());

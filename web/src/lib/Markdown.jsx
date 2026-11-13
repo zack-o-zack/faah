@@ -1,6 +1,6 @@
 import { createMemo, For, Match, Show, Switch } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
-import { citation, inlineMarkdown, markdownBlocks } from './markdown.ts';
+import { citation, inlineMarkdown, markdownBlocks } from './markdown-model.ts';
 import { linkTarget } from '../threads/references.ts';
 import { copyText } from './clipboard.ts';
 export function Markdown(props) {

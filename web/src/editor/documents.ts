@@ -12,6 +12,11 @@ import { createDocumentBuffer } from './buffer.ts';
 import { CHUNK } from './layout.ts';
 
 export function createDocuments(
+  ...args: Parameters<typeof buildDocuments>
+): ReturnType<typeof buildDocuments> {
+  return buildDocuments(...args);
+}
+function buildDocuments(
   state: AppState,
   set: SetStoreFunction<AppState>,
   {

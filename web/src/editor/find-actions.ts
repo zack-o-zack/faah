@@ -8,7 +8,10 @@ import { toast } from '../lib/toast.jsx';
 import { isPreview } from '../viewers/view.ts';
 import { findMatches, hitIndex } from './find.ts';
 
-export function createFindActions(editor: EditorHost) {
+export function createFindActions(editor: EditorHost): ReturnType<typeof buildFindActions> {
+  return buildFindActions(editor);
+}
+function buildFindActions(editor: EditorHost) {
   const { active, buffer, ui, setUI, services } = editor;
   const { patch, centerLine } = editor.actions;
   let findTimer: ReturnType<typeof setTimeout> | undefined;

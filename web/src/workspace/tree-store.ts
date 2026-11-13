@@ -53,7 +53,13 @@ function initialState(): TreeState {
     newItem: null,
   };
 }
-export function createTreeStore(app: TreeHost, options: TreeOptions = {}) {
+export function createTreeStore(
+  app: TreeHost,
+  options: TreeOptions = {},
+): ReturnType<typeof buildTreeStore> {
+  return buildTreeStore(app, options);
+}
+function buildTreeStore(app: TreeHost, options: TreeOptions = {}) {
   const request = options.request || api;
   const post = options.post || apiPostJson;
   const model = createTreeModel();

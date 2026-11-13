@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@solidjs/testing-library';
 import { expect, test, vi } from 'vitest';
 import { Holding } from './Holding.jsx';
-import { holdingUpdate } from './logic.js';
+import { holdingUpdate } from './logic.ts';
 import { createStore } from 'solid-js/store';
 test('holding state reloads only after startup ends', () => {
   expect(holdingUpdate([{ href: '/', state: 'starting', progress: 'Indexing' }], '/')).toEqual({

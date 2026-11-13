@@ -16,6 +16,14 @@ export function createDiffActions(
   document: Accessor<DocTab>,
   replace: (hunk: DiffHunk, replacement: DiffHunk) => void,
   refresh: () => void,
+): ReturnType<typeof buildDiffActions> {
+  return buildDiffActions(editor, document, replace, refresh);
+}
+function buildDiffActions(
+  editor: EditorHost,
+  document: Accessor<DocTab>,
+  replace: (hunk: DiffHunk, replacement: DiffHunk) => void,
+  refresh: () => void,
 ) {
   const controller = new AbortController();
   let fullFile: FileWindow | undefined;

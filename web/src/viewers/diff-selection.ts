@@ -11,13 +11,22 @@ export function diffSelection(
   root: HTMLElement,
   range: Range,
   document: { total: number; path: string },
-) {
+): {
+  text: string;
+  l1: number;
+  l2: number;
+  delL1: number;
+  delL2: number;
+  path: string;
+  fromDiff: boolean;
+  side: string;
+} | null {
   if (!root.contains(range.commonAncestorContainer)) return null;
   const lines = [];
   const deleted = [];
   const anchors = [];
   const text = [];
-  const seen = new Set();
+  const seen = new Set<number>();
   for (const row of root.querySelectorAll<HTMLElement>('[data-l], [data-at], [data-old-l]')) {
     if (!range.intersectsNode(row)) continue;
     if (row.dataset.l !== undefined) {

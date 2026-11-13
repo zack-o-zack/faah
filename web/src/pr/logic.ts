@@ -9,6 +9,7 @@ import type {
   MergeStatus,
   MergePill,
   ForgeReply,
+  ForgeInfo,
 } from './types.ts';
 interface ComposerInput {
   path: string;
@@ -57,7 +58,7 @@ const DEFAULT_FORGE = {
   tokenHint: 'set GITHUB_TOKEN, set GH_TOKEN, or run `gh auth login`',
 };
 /** The forge this workspace talks to; GitHub when the server does not say. */
-export const forgeInfo = (meta: Partial<WorkspaceMeta> | null | undefined) =>
+export const forgeInfo = (meta: Partial<WorkspaceMeta> | null | undefined): ForgeInfo =>
   meta?.forge?.info || DEFAULT_FORGE;
 
 export const pluralize = (n: number, word: string): string => n + ' ' + word + (n === 1 ? '' : 's');

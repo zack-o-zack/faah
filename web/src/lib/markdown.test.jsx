@@ -1,7 +1,7 @@
 import { render, screen } from '@solidjs/testing-library';
 import { expect, test, vi } from 'vitest';
 import { createSignal } from 'solid-js';
-import { markdownBlocks, safeMarkdownURL } from './markdown.ts';
+import { markdownBlocks, safeMarkdownURL } from './markdown-model.ts';
 import { Markdown } from './Markdown.jsx';
 test('streaming Markdown preserves completed block identities', () => {
   const first = markdownBlocks('# Heading\n\nComplete paragraph.\n\nTail');

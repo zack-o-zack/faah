@@ -4,10 +4,10 @@ import process from 'node:process';
 import { URL } from 'node:url';
 
 const root = new URL(`file://${process.cwd()}/`);
-const read = (path) => fs.readFileSync(new URL(path, root), 'utf8');
-const tokens = (text) => new Set(text.match(/--t-[\d-]+/g) || []);
-const declarations = (text) =>
-  new Set([...text.matchAll(/(--t-[\d-]+):\s*[\d.]+px\s*;/g)].map((match) => match[1]));
+const read = (path: string): string => fs.readFileSync(new URL(path, root), 'utf8');
+const tokens = (text: string): Set<string> => new Set(text.match(/--t-[\d-]+/g) || []);
+const declarations = (text: string): Set<string> =>
+  new Set([...text.matchAll(/(--t-[\d-]+):\s*[\d.]+px\s*;/g)].map((match) => match[1] || ''));
 
 const sources = [
   'web/tailwind.css',
@@ -16,7 +16,7 @@ const sources = [
   ...fs.readdirSync(root).filter((path) => path.endsWith('.go')),
   ...['web/src/', 'web/themes/', 'internal/', 'desktop/'].flatMap((directory) =>
     fs
-      .readdirSync(new URL(directory, root), { recursive: true })
+      .readdirSync(new URL(directory, root), { recursive: true, encoding: 'utf8' })
       .filter((path) => /\.(?:[jt]sx?|cjs|go|css)$/.test(path) && !path.includes('node_modules/'))
       .map((path) => directory + path),
   ),

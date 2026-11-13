@@ -54,7 +54,7 @@ imageMeta: null, // { width, height } once the image loads
 
 ## 3. Image Viewer
 
-[`web/src/viewers/ImageViewer.jsx`](../../web/src/viewers/ImageViewer.jsx) renders `#imgview` (viewport, canvas and image) and [`ImageHUD.jsx`](../../web/src/viewers/ImageHUD.jsx) the zoom and mode controls. Every change goes through named document actions (`updateImage`, `fitImage`, `actualImage`, `cycleImageBg`, `togglePixelated`) in [`viewers/actions.js`](../../web/src/viewers/actions.js). The viewer owns its pointer, wheel and resize listeners and releases them on cleanup.
+[`web/src/viewers/ImageViewer.jsx`](../../web/src/viewers/ImageViewer.jsx) renders `#imgview` (viewport, canvas and image) and [`ImageHUD.jsx`](../../web/src/viewers/ImageHUD.jsx) the zoom and mode controls. Every change goes through named document actions (`updateImage`, `fitImage`, `actualImage`, `cycleImageBg`, `togglePixelated`) in [`viewers/actions.ts`](../../web/src/viewers/actions.js). The viewer owns its pointer, wheel and resize listeners and releases them on cleanup.
 
 ### Zoom math and fitting
 

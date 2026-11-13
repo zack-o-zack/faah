@@ -17,7 +17,12 @@ export function cleanCommitMessage(text = ''): string {
   if (/^(["']).*\1$/s.test(result)) result = result.slice(1, -1).trim();
   return result;
 }
-export function gitCounts(snapshot: GitSnapshot = {}) {
+export function gitCounts(snapshot: GitSnapshot = {}): {
+  staged: number;
+  changed: number;
+  hasChanges: boolean;
+  label: string;
+} {
   const staged = Object.keys(snapshot.staged || {}).length;
   const changed = snapshot.gitChanges ?? Object.keys(snapshot.statuses || {}).length;
   return {
@@ -27,7 +32,10 @@ export function gitCounts(snapshot: GitSnapshot = {}) {
     label: staged ? `${staged} of ${changed} staged` : `${changed} changed`,
   };
 }
-export function syncPlan({ ahead = 0, behind = 0 }: { ahead?: number; behind?: number } = {}) {
+export function syncPlan({ ahead = 0, behind = 0 }: { ahead?: number; behind?: number } = {}): {
+  pull: boolean;
+  push: boolean;
+} {
   return { pull: behind > 0 || ahead === 0, push: ahead > 0 };
 }
 export function syncNotice(state: SyncState, error = '', log = ''): GitNotice {

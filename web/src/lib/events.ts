@@ -26,7 +26,7 @@ export function createEventStream(
       } catch {
         return;
       }
-      const report = options.onError || console.error;
+      const report: (error: unknown) => void = options.onError || console.error;
       try {
         const result = batch(() => handler(data));
         result?.catch?.(report);

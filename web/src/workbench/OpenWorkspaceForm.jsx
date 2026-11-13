@@ -1,6 +1,6 @@
 import { createMemo, createSignal, onMount } from 'solid-js';
 import { useWorkbench } from './context.jsx';
-import { fieldKind, openLabel } from './logic.js';
+import { fieldKind, openLabel } from './logic.ts';
 import { PathInput } from './PathInput.jsx';
 import { createShortcut } from '../lib/shortcuts.jsx';
 

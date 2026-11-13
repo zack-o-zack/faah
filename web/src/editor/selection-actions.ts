@@ -48,7 +48,12 @@ import { contextSnippet, selectionRef } from './selection.ts';
 const rawText = (document: SelectionDocument) =>
   apiText('api/raw', { path: document.path, ref: document.diffRef || '' });
 
-export function createSelectionActions(editor: SelectionHost) {
+export function createSelectionActions(
+  editor: SelectionHost,
+): ReturnType<typeof buildSelectionActions> {
+  return buildSelectionActions(editor);
+}
+function buildSelectionActions(editor: SelectionHost) {
   const { active, buffer, ui, setUI, services } = editor;
   const { patch } = editor.actions;
   let prepareTimer: ReturnType<typeof setTimeout> | undefined;

@@ -1,6 +1,9 @@
 import type { Command } from './types.ts';
 import { createSignal } from 'solid-js';
-export function createCommandRegistry() {
+export function createCommandRegistry(): ReturnType<typeof buildCommandRegistry> {
+  return buildCommandRegistry();
+}
+function buildCommandRegistry() {
   const entries = new Map<string, Command>();
   const [revision, publish] = createSignal(0);
   return {

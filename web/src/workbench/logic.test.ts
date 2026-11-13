@@ -1,5 +1,5 @@
 import { test, expect } from 'vitest';
-import { ago, tildify, fieldKind, breadcrumbs, recentGroups } from './logic.js';
+import { ago, tildify, fieldKind, breadcrumbs, recentGroups } from './logic.ts';
 test('recognises folders and supported PR links', () => {
   expect(fieldKind(' ')).toBe('empty');
   expect(fieldKind('~/code')).toBe('dir');

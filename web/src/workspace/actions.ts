@@ -11,6 +11,11 @@ import { createWorkspaceStream } from './stream.ts';
 import { workspacePatch } from './snapshot.ts';
 
 export function createWorkspaceActions(
+  ...args: Parameters<typeof buildWorkspaceActions>
+): ReturnType<typeof buildWorkspaceActions> {
+  return buildWorkspaceActions(...args);
+}
+function buildWorkspaceActions(
   store: { state: AppState; actions: { setWorkspace: (meta: unknown) => void } },
   set: SetStoreFunction<AppState>,
   { request = api, post = apiPost }: { request?: Request; post?: Request } = {},

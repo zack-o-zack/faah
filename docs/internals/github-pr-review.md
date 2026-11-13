@@ -265,19 +265,19 @@ The git panel's agent rebase/merge flow ([git-integration internals](git-integra
 
 ## 8. Frontend Integration
 
-[`pr/store.js`](../../web/src/pr/store.js) owns the PR session in the browser: metadata, existing and draft comments, composers, review submission, batch apply and their pending and error state. [`pr/merge-store.js`](../../web/src/pr/merge-store.js) and [`pr/forge-store.js`](../../web/src/pr/forge-store.js) own merging and the token connection. Pure rules (thread grouping, review gating, merge pill and warnings) live in [`pr/logic.js`](../../web/src/pr/logic.js) with unit tests.
+[`pr/store.ts`](../../web/src/pr/store.js) owns the PR session in the browser: metadata, existing and draft comments, composers, review submission, batch apply and their pending and error state. [`pr/merge-store.ts`](../../web/src/pr/merge-store.js) and [`pr/forge-store.ts`](../../web/src/pr/forge-store.js) own merging and the token connection. Pure rules (thread grouping, review gating, merge pill and warnings) live in [`pr/logic.ts`](../../web/src/pr/logic.js) with unit tests.
 
 - **Line actions and comment markers**:
   - Hovering a line number in the source or diff view shows a thread button (`data-control="line-btn"`). Clicking it calls `openLineActions`, the selection menu aimed at one line. Rows that are part of the PR's diff carry their diff side, which enables **Add Review Comment**; other rows get only the local actions.
   - `RowComments.jsx` renders a marker on diff rows with threads and the inline composers (`PRComposer`) under their rows.
 - **PR bar (`PRBar.jsx`)**:
   - Shows the PR number, title, author, branch refs, state badge and draft count.
-  - Houses **Batch Apply** and the review panel (`ReviewPanel.jsx`, Comment / Approve / Request changes). The verdict buttons are gated by `reviewGate()` from `pr/logic.js`.
+  - Houses **Batch Apply** and the review panel (`ReviewPanel.jsx`, Comment / Approve / Request changes). The verdict buttons are gated by `reviewGate()` from `pr/logic.ts`.
 - **Merge UI**:
   - `MergePill` shows the merge state; `MergeControls` is the split merge button with its method menu (the last method is remembered in `localStorage` under `faah.prMergeMethod`); `MergeDialog` is the merge dialog. They talk only to `/api/pr/merge-*` and have no forge-specific logic.
   - The merge store reads the Git store's sync state (`pending`, `inProgress`, `rewritten`) directly, which drives the pill, the main button and `reviewGate()`, and calls named actions to fetch the base and offer a rebase or merge, to confirm a force push, or to pull.
 - **Child PR Launching**:
   - Command Palette **Git: Open Pull Request…** posts to `/api/pr/launch`, or, in a workbench child (the workspace metadata has `workbench`), to the workbench's `/api/wb/open` (see [workbench.md](workbench.md)).
   - Spawns `faah -y <url>` in a new detached process on an ephemeral port.
-- **Resync after Git changes (`refreshPRMeta` in `pr/store.js`)**:
+- **Resync after Git changes (`refreshPRMeta` in `pr/store.ts`)**:
   - Called after a successful Pull, after merging, after connecting a token, and when the history is rewritten. Re-fetches `/api/pr/meta`, then existing and draft comments and the merge status, so a PR that moved forward under the reviewer never leaves the bar, diff warning or comment threads showing the state from session start.

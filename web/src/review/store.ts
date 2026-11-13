@@ -81,7 +81,13 @@ function initialState(): ReviewState {
   };
 }
 
-export function createReviewStore(editor: ReviewHost, options: ReviewOptions = {}) {
+export function createReviewStore(
+  editor: ReviewHost,
+  options: ReviewOptions = {},
+): ReturnType<typeof buildReviewStore> {
+  return buildReviewStore(editor, options);
+}
+function buildReviewStore(editor: ReviewHost, options: ReviewOptions = {}) {
   const app = editor.store;
   const request = options.request || api;
   const post = options.post || apiPostJson;

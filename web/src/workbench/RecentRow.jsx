@@ -1,6 +1,6 @@
 import { Show } from 'solid-js';
 import { useWorkbench } from './context.jsx';
-import { ago, recentSubtitle } from './logic.js';
+import { ago, recentSubtitle } from './logic.ts';
 
 export function RecentRow(props) {
   const { state, actions } = useWorkbench();

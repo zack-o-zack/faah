@@ -50,35 +50,35 @@ Under `web/src`:
 | `workbench/`, `holding/` | The other two pages |
 
 Pure parsing, formatting, ranking, keymaps, layout math and request shaping live
-in `logic` modules (`*/logic.js`, `settings/logic.ts`, `editor/cursor.js` and
+in `logic` modules (`*/logic.js`, `settings/logic.ts`, `editor/cursor.ts` and
 similar) with no DOM or Solid imports, and have unit tests. Components take
 props and read shared state from context, never another component's DOM.
 Dependencies point one way: components → store actions → pure logic.
 
 ## Store slices and owners
 
-`createAppStore()` (`app/store.js`) is created by `AppProvider`. Its state slices:
+`createAppStore()` (`app/store.ts`) is created by `AppProvider`. Its state slices:
 
 | Slice | Owner | Holds |
 |---|---|---|
-| `layout` | `layout/actions.js` | Sidebar, inspector and threads visibility and widths, persisted in `faah.layout` |
-| `workspace` | `workspace/actions.js` | `/api/meta` metadata, metrics, refresh/reindex pending and error, connection state, status note |
-| `documents` | `editor/documents.js` | Open tabs, active tab and history; buffers live outside the store with revision signals |
-| `editor` | `app/store.js` | Measured character width and line height |
-| `navigation` | `app/store.js` | Word under the caret, link target, occurrence and reference highlights |
-| `lsp` | `app/store.js`, `lsp/store.js` | Language server state for the active file |
-| `git` | `workspace/actions.js` | The latest Git snapshot, its revision, unpushed count |
-| `viewers`, `explanation` | `viewers/actions.js` | Viewed flags; the explanation orb model |
+| `layout` | `layout/actions.ts` | Sidebar, inspector and threads visibility and widths, persisted in `faah.layout` |
+| `workspace` | `workspace/actions.ts` | `/api/meta` metadata, metrics, refresh/reindex pending and error, connection state, status note |
+| `documents` | `editor/documents.ts` | Open tabs, active tab and history; buffers live outside the store with revision signals |
+| `editor` | `app/store.ts` | Measured character width and line height |
+| `navigation` | `app/store.ts` | Word under the caret, link target, occurrence and reference highlights |
+| `lsp` | `app/store.ts`, `lsp/store.ts` | Language server state for the active file |
+| `git` | `workspace/actions.ts` | The latest Git snapshot, its revision, unpushed count |
+| `viewers`, `explanation` | `viewers/actions.ts` | Viewed flags; the explanation orb model |
 
 `app.settings` is the settings store (`settings/store.ts`): schema, values,
 edits, the save state and the dialog. `preferences()` derives every editor
 preference from the values, so the editor, documents and theme read settings
 instead of keeping their own copies.
 
-`createEditorStore()` (`editor/store.js`) is created by `App` and composes the
+`createEditorStore()` (`editor/store.ts`) is created by `App` and composes the
 editor UI state (`ui`, `geometry`) with these stores, each created by its own
 factory: `agents`, `threads`, `review`, `pr`, `merge`, `forge`, `tree`, `git`,
-`search`, `palette`, `language`, `shortcuts`. Each has a typed or JSDoc-typed
+`search`, `palette`, `language`, `shortcuts`. Each has an explicit TypeScript
 `initialState()` and named actions, and owns its requests, cancellation and
 pending/error state.
 
@@ -127,14 +127,14 @@ reported on `workspace.error`.
 
 ## Event stream
 
-`workspace/stream.js` owns the page's one `EventSource` (`/api/stream`) through
-`createEventStream`. `workspace/actions.js` starts it and consumes `git-status`
+`workspace/stream.ts` owns the page's one `EventSource` (`/api/stream`) through
+`createEventStream`. `workspace/actions.ts` starts it and consumes `git-status`
 and `metrics`. Features subscribe with `createWorkspaceSubscription(app, name,
 listener)`, which releases on cleanup:
 
-- `threads/store.js`: `threads:list`, `threads:summary`, `threads:deleted`, and
+- `threads/store.ts`: `threads:list`, `threads:summary`, `threads:deleted`, and
   `thread:*` events for watched threads.
-- `review/store.js`: `review:*` pipeline events.
+- `review/store.ts`: `review:*` pipeline events.
 
 Topics are opt-in: `setWorkspaceTopic('threads' | 'review', on)` and
 `watchWorkspaceThread(id)` (reference counted) change the stream's query, and
@@ -160,13 +160,13 @@ owner calls `editor.shortcuts.describe(entries)` with its help entries
 (`shortcuts/help.ts` holds the editor, palette, review and agent lists) and
 releases them on cleanup. `HelpSheet` groups the registry's entries by section.
 
-Palette commands come from `palette/commands.js`, a per-app registry. Features
-register their commands with cleanup; `palette/features.js` registers the
+Palette commands come from `palette/commands.ts`, a per-app registry. Features
+register their commands with cleanup; `palette/features.ts` registers the
 editor, file, copy, settings, threads, theme and Vim commands.
 
 ## Editor and viewers
 
-`editor/buffer.js` owns per-document HTML, loaded chunks, cancellable requests,
+`editor/buffer.ts` owns per-document HTML, loaded chunks, cancellable requests,
 measured heights, layout offsets and editable text, outside store proxies, with
 revision signals. The `find`, `edit`, `hover`, `selection` and `vim` action
 modules own request lifetimes and state transitions; pure `layout`, `cursor`,
@@ -191,7 +191,7 @@ its JavaScript. Use Select, DropdownMenu, ContextMenu, Popover, Dialog, Tooltip,
 SplitHandle and Toaster from `lib`. Native select and dialog semantics provide
 keyboard interaction and modal focus containment. `toast(kind, text, duration)`
 accepts text only; zero duration persists until dismissal. Copy with
-`copyText`/`copyRich` from `lib/clipboard.js`.
+`copyText`/`copyRich` from `lib/clipboard.ts`.
 
 `innerHTML` is allowed only for HTML the server rendered or the sanitizer
 passed. Each site disables the lint rules on its line with the reason:
@@ -201,7 +201,7 @@ passed. Each site disables the lint rules on its line with the reason:
 - `viewers/PreviewContent.jsx`: goldmark Markdown after the allowlist sanitizer.
 - `viewers/viewers.test.jsx`: a static DOM fixture for the Range contract.
 
-`viewers/markdown-dom.js` reads `innerHTML` to serialize already-sanitized nodes.
+`viewers/markdown-dom.ts` reads `innerHTML` to serialize already-sanitized nodes.
 
 Delete replaced implementations outright: no fallbacks, compatibility shims or
 speculative backups. Match existing names and use short comments explaining
@@ -234,6 +234,12 @@ single quotes, two-space indentation and semicolons, and checks every frontend f
 
 ## TypeScript
 
+All plain modules and their unit tests under `web/src` use `.ts`. Components
+remain `.jsx` until their separate conversion; changes to those files during D1
+are limited to imports that follow module renames. The filesystem contrast and
+type-scale tests use `tsconfig.node.json`, keeping Node globals out of the browser
+configuration.
+
 New frontend modules are `.ts`/`.tsx`. The remaining `.js`/`.jsx` modules stay
 until they are converted, which also drops `allowJs`. Imports name the real file
 extension (`./Foo.tsx`).
@@ -257,7 +263,7 @@ Conventions:
   because scattered casts hide the one place a shape can be wrong.
 - A TypeScript module reads the editor composite through `useEditor()` into a
   narrow interface of what it uses (`const editor: ShellEditor = useEditor()`).
-  That assignment is the one boundary with the untyped JavaScript stores.
+  That assignment narrows the still-untyped JSX context; the stores themselves are typed.
 - No type gymnastics. Plain interfaces and type aliases, unions for states
   (`{ status: 'idle' } | { status: 'loading' } | …`), and simple generics only
   where they remove real duplication. Conditional, mapped, recursive or
@@ -299,7 +305,7 @@ Every production `createEffect` touches something outside Solid:
 - `app/App.tsx` (2): body classes; the document title.
 - `settings/PreferenceStyles.tsx`: typography CSS variables on the document root.
 - `settings/SettingCard.tsx`: scrolls to and focuses the setting the dialog opened on.
-- `lib/theme.js`: applies the resolved theme to the document root.
+- `lib/theme.ts`: applies the resolved theme to the document root.
 - `lib/Dialog.jsx`: opens and closes the native modal and restores focus.
 - `lib/ToastItem.jsx`: the notification's expiry timer.
 - `editor/EditorMeasure.tsx`: measures the font after type settings change.
@@ -312,7 +318,7 @@ Every production `createEffect` touches something outside Solid:
 - `search/Search.jsx`, `inspector/Symbols.jsx`: focus their input when the pane opens.
 - `agents/AgentSession.jsx`: focuses and scrolls to a requested session input.
 - `threads/ThreadTranscript.jsx`: keeps a followed transcript scrolled to the end.
-- `review/store.js`: subscribes the stream to the thread of the stage on screen.
+- `review/store.ts`: subscribes the stream to the thread of the stage on screen.
 - `review/WalkthroughFile.jsx`, `pr/CommentThread.jsx`: scroll to a requested file, line or thread.
 - `viewers/PreviewContent.jsx`: theme picture sources and requested line or anchor scrolls.
 - `viewers/MermaidDiagram.jsx`: adopts and sizes the renderer's SVG.
@@ -322,7 +328,7 @@ Every production `createEffect` touches something outside Solid:
 Mount with a fresh store through its provider; never share stores between
 tests. Assert visible behavior, keyboard interaction, focus and disposal.
 Inject request and navigation functions at the store boundary, or mock
-`lib/api.js` for modules that call it directly. Shared setup cleans mounted
+`lib/api.ts` for modules that call it directly. Shared setup cleans mounted
 components after each test and polyfills the native dialog methods jsdom lacks.
 Abridged from `settings/SettingsDialog.test.tsx`, where `reply` and `post` are
 its request fixtures:
@@ -352,7 +358,7 @@ test('opening on a category lists its settings', async () => {
 ```
 
 Pure modules have plain unit tests beside them. Store tests drive actions with
-injected requests (`settings/store.test.ts`, `pr/test-editor.js`). Component
+injected requests (`settings/store.test.ts`, `pr/test-editor.ts`). Component
 examples: `lib/primitives.test.jsx`, `shortcuts/GlobalShortcuts.test.tsx`,
 `workbench/Workbench.test.jsx`. `contrast.test.js` and `typescale.test.js`
 check every theme's contrast and every used type-scale token.

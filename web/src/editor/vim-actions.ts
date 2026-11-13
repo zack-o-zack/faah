@@ -4,7 +4,10 @@ import { initialVimState, vimKey } from './vim.ts';
 import { lineIndexAtY } from './layout.ts';
 import { copyText } from '../lib/clipboard.ts';
 
-export function createVimActions(editor: EditorHost) {
+export function createVimActions(editor: EditorHost): ReturnType<typeof buildVimActions> {
+  return buildVimActions(editor);
+}
+function buildVimActions(editor: EditorHost) {
   const { active, buffer, store, ui, setUI, geometry, offsets, services } = editor;
   const { patch, revealLine, activateView } = editor.actions;
   let pendingTimer: ReturnType<typeof setTimeout> | undefined;

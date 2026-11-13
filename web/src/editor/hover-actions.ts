@@ -6,7 +6,10 @@ import { api } from '../lib/api.ts';
 import { toast } from '../lib/toast.jsx';
 import { wordAtColumn } from './cursor.ts';
 
-export function createHoverActions(editor: EditorHost) {
+export function createHoverActions(editor: EditorHost): ReturnType<typeof buildHoverActions> {
+  return buildHoverActions(editor);
+}
+function buildHoverActions(editor: EditorHost) {
   const { active, buffer, setUI, services } = editor;
   let request: AbortController | undefined;
   let hoverGeneration = 0;

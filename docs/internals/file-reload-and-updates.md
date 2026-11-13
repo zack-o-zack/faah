@@ -12,9 +12,9 @@ Most file changes happen outside faah: `git checkout`, `git pull`, branch switch
 |---|---|
 | Re-index (sidebar button, `Mod+Shift+R`, palette) | `reindexWorkspace` → `reloadOpenTabs()` |
 | A rewritten history (reset, rebase, checkout) | `historyChanged` → re-index and `reloadOpenTabs()` |
-| An agent job that changed files | `reloadOpenTabs()` from `agents/store.js` |
+| An agent job that changed files | `reloadOpenTabs()` from `agents/store.ts` |
 | Leaving edit mode | `exitEditMode` → `reloadOpenTabs()` |
-| A Git snapshot on the event stream | `reloadOpenTabs({ onlyIfChanged: true })` from `git/documents.js` |
+| A Git snapshot on the event stream | `reloadOpenTabs({ onlyIfChanged: true })` from `git/documents.ts` |
 
 ## 2. How a reload works
 
@@ -47,7 +47,7 @@ if d := cache.get(key); d != nil {
 
 ## 4. Git changes and the diff view
 
-`git/documents.js` compares each snapshot with the last one. An identical snapshot only runs the `onlyIfChanged` reload. Otherwise `documentGitPlan` (in `git/document-logic.js`, unit tested) decides which diff tabs close because their changes disappeared, which tabs gain or lose `diffAvailable`, and whether to reload. PR tabs, commit-pinned tabs and unsaved edits survive working-tree changes. A tab in source view stays in source when new changes appear; a tab opened in the diff view returns to it when changes come back, unless the reader dismissed the diff.
+`git/documents.ts` compares each snapshot with the last one. An identical snapshot only runs the `onlyIfChanged` reload. Otherwise `documentGitPlan` (in `git/document-logic.ts`, unit tested) decides which diff tabs close because their changes disappeared, which tabs gain or lose `diffAvailable`, and whether to reload. PR tabs, commit-pinned tabs and unsaved edits survive working-tree changes. A tab in source view stays in source when new changes appear; a tab opened in the diff view returns to it when changes come back, unless the reader dismissed the diff.
 
 ---
 

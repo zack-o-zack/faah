@@ -9,6 +9,11 @@ import { CHUNK, htmlTextLen, lineText, lineOffsets } from './layout.ts';
 
 /** Large arrays live here, outside the metadata store's deep proxy. */
 export function createDocumentBuffer(
+  ...args: Parameters<typeof buildDocumentBuffer>
+): ReturnType<typeof buildDocumentBuffer> {
+  return buildDocumentBuffer(...args);
+}
+function buildDocumentBuffer(
   path: string,
   {
     fetcher = api,
@@ -216,4 +221,4 @@ export function createDocumentBuffer(
   };
 }
 
-export type DocumentBuffer = ReturnType<typeof createDocumentBuffer>;
+export type DocumentBuffer = ReturnType<typeof buildDocumentBuffer>;

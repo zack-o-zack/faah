@@ -122,7 +122,7 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
     store.actions.setNavigation({ at: null, link: null });
     const document = active();
     if (document && tree.autoReveal() && store.state.layout.left)
-      void actions.revealFile(document.path);
+      void coreActions.revealFile(document.path);
     if (document && !document.gutterLoaded) void editor.actions.loadGutter(document.path);
     services.source?.scrollTo(document?.scrollTop || 0);
   }
@@ -336,14 +336,14 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
   const editActions = createEditActions(editor);
   const hoverActions = createHoverActions(editor);
   const vimActions = createVimActions(editor);
-  const interactionActions = Object.assign(
-    coreActions,
-    selectionActions,
-    findActions,
-    editActions,
-    hoverActions,
-    vimActions,
-  );
+  const interactionActions = Object.assign(coreActions, {
+    ...baseActions,
+    ...selectionActions,
+    ...findActions,
+    ...editActions,
+    ...hoverActions,
+    ...vimActions,
+  });
   const agents = createAgentStore(editor, options.agents);
   const agentEditor = Object.assign(editor, { agents });
   const threads = createThreadStore(agentEditor, options.threads);
@@ -354,15 +354,14 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
   const prEditor = Object.assign(reviewEditor, { pr });
   const merge = createMergeStore(prEditor, options.merge);
   const forge = createForgeStore(prEditor, options.forge);
-  const actions = Object.assign(
-    interactionActions,
-    agents.actions,
-    threads.actions,
-    review.actions,
-    pr.actions,
-    merge.actions,
-    forge.actions,
-  );
+  const actions = Object.assign(interactionActions, {
+    ...agents.actions,
+    ...threads.actions,
+    ...review.actions,
+    ...pr.actions,
+    ...merge.actions,
+    ...forge.actions,
+  });
   handlers.review = actions.openPRComposer;
   handlers.agent = actions.openAgentEdit;
   handlers.thread = actions.newThread;
@@ -373,40 +372,37 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
     openFile,
     runAgent: agents.actions.runAgentJob,
     cancelAgent: agents.actions.cancelAgentJob,
-    historyChanged: () => actions.historyChanged(),
+    historyChanged: () => featureActions.historyChanged(),
   });
   const search = createSearchStore();
   const palette = createPaletteStore(prEditor, options);
   const language = createLanguageStore(prEditor, options.language);
   const documentActions = createDocumentGitActions(prEditor);
-  const featureActions = Object.assign(
-    actions,
-    tree.actions,
-    git.actions,
-    search.actions,
-    palette.actions,
-    language.actions,
-    documentActions,
-    {
-      async showFilesPanel() {
-        actions.setPanelVisible('left', true);
-        await tree.actions.setTreeMode('files');
-      },
-      async reindexWorkspace() {
-        if (!(await store.actions.reindexWorkspace())) return;
-        await git.actions.refreshUnpushed();
-        await tree.actions.setTreeMode(tree.hasGitView() ? 'git' : 'files');
-        await tree.actions.refreshTree();
-        await editActions.reloadOpenTabs();
-        toast('success', 'Workspace refreshed');
-      },
-      async historyChanged() {
-        await featureActions.reindexWorkspace();
-        if (pr.available()) await pr.actions.refreshPRMeta();
-        await editActions.reloadOpenTabs();
-      },
+  const featureActions = Object.assign(actions, {
+    ...tree.actions,
+    ...git.actions,
+    ...search.actions,
+    ...palette.actions,
+    ...language.actions,
+    ...documentActions,
+    async showFilesPanel() {
+      actions.setPanelVisible('left', true);
+      await tree.actions.setTreeMode('files');
     },
-  );
+    async reindexWorkspace() {
+      if (!(await store.actions.reindexWorkspace())) return;
+      await git.actions.refreshUnpushed();
+      await tree.actions.setTreeMode(tree.hasGitView() ? 'git' : 'files');
+      await tree.actions.refreshTree();
+      await editActions.reloadOpenTabs();
+      toast('success', 'Workspace refreshed');
+    },
+    async historyChanged() {
+      await featureActions.reindexWorkspace();
+      if (pr.available()) await pr.actions.refreshPRMeta();
+      await editActions.reloadOpenTabs();
+    },
+  });
   const result = {
     ...prEditor,
     merge,

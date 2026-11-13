@@ -1,3 +1,4 @@
+import type { RequestOptions } from '../lib/api.ts';
 import type { Request } from '../lib/api.ts';
 import type { StreamHandler } from '../lib/events.ts';
 import { required } from '../lib/test-values.ts';
@@ -55,7 +56,7 @@ test('late opens cannot select an old thread and disposal aborts pending request
   const pending: { signal: AbortSignal | null | undefined; resolve: (value: unknown) => void }[] =
     [];
   const request = vi.fn(
-    (_path: string, _params: unknown, options) =>
+    (_path: string, _params: unknown, options?: RequestOptions) =>
       new Promise<unknown>((resolve) => pending.push({ signal: options?.signal, resolve })),
   );
   const { threads, dispose } = fixture(request);

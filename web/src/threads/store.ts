@@ -64,7 +64,13 @@ function initialState(): ThreadState {
     stale: null,
   };
 }
-export function createThreadStore(editor: ThreadHost, options: ThreadOptions = {}) {
+export function createThreadStore(
+  editor: ThreadHost,
+  options: ThreadOptions = {},
+): ReturnType<typeof buildThreadStore> {
+  return buildThreadStore(editor, options);
+}
+function buildThreadStore(editor: ThreadHost, options: ThreadOptions = {}) {
   const app = editor.store;
   const [state, set] = createStore(initialState());
   const request = options.request || api;

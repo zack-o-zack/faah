@@ -5,7 +5,10 @@ import { onCleanup } from 'solid-js';
 import { apiPostJson, apiText } from '../lib/api.ts';
 import { toast } from '../lib/toast.jsx';
 
-export function createEditActions(editor: EditorHost) {
+export function createEditActions(editor: EditorHost): ReturnType<typeof buildEditActions> {
+  return buildEditActions(editor);
+}
+function buildEditActions(editor: EditorHost) {
   const { active, buffer, store, services, setUI } = editor;
   const { patch, refresh } = editor.actions;
   onCleanup(() => editRequest?.abort());

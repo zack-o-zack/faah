@@ -91,7 +91,13 @@ function initialState(): PRState {
   };
 }
 
-export function createPRStore(editor: PRHost, options: PROptions = {}) {
+export function createPRStore(
+  editor: PRHost,
+  options: PROptions = {},
+): ReturnType<typeof buildPRStore> {
+  return buildPRStore(editor, options);
+}
+function buildPRStore(editor: PRHost, options: PROptions = {}) {
   const app = editor.store;
   const request = options.request || api;
   const post = options.post || apiPostJson;

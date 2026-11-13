@@ -101,7 +101,13 @@ export function reviewStages(config: ReviewConfig, run: ReviewRun | null): Stage
   });
 }
 
-export function pipelineProgress(stages: StageState[]) {
+export function pipelineProgress(stages: StageState[]): {
+  statuses: string[];
+  done: number;
+  total: number;
+  title: string;
+  summary: string;
+} {
   const statuses = stages.map(stageStatus);
   const done = statuses.filter((status) => status === 'completed').length;
   const working = statuses.indexOf('running');

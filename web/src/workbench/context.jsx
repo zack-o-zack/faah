@@ -1,5 +1,5 @@
 import { createContext, untrack, useContext } from 'solid-js';
-import { createWorkbenchStore } from './store.js';
+import { createWorkbenchStore } from './store.ts';
 const Context = createContext();
 export function WorkbenchProvider(props) {
   // Store injection is fixed for the lifetime of this provider.

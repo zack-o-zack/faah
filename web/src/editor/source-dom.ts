@@ -5,6 +5,12 @@ import { wordAtColumn } from './cursor.ts';
 export function createSourceDOM(
   rows: HTMLElement | null | undefined,
   activeDocument: () => { path: string } | null,
+): ReturnType<typeof buildSourceDOM> {
+  return buildSourceDOM(rows, activeDocument);
+}
+function buildSourceDOM(
+  rows: HTMLElement | null | undefined,
+  activeDocument: () => { path: string } | null,
 ) {
   const rowFor = (line: number) => rows?.querySelector(`[data-l="${line}"]`);
   function toPoint(position: Position | null): [Node, number] | null {

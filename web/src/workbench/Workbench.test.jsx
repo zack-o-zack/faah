@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@solidjs/testing-library';
 import userEvent from '@testing-library/user-event';
 import { expect, test, vi } from 'vitest';
-import { createWorkbenchStore } from './store.js';
+import { createWorkbenchStore } from './store.ts';
 import { WorkbenchProvider } from './context.jsx';
 import { ThemeProvider } from '../lib/theme-context.jsx';
 import { Workbench } from './Workbench.jsx';

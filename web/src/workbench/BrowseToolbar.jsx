@@ -1,6 +1,6 @@
 import { For } from 'solid-js';
 import { useWorkbench } from './context.jsx';
-import { breadcrumbs } from './logic.js';
+import { breadcrumbs } from './logic.ts';
 export function BrowseToolbar(props) {
   const { state, actions } = useWorkbench();
   return (

@@ -190,7 +190,7 @@ The original `<pre>` stays in the DOM after a successful render, hidden from pre
 
 ## 6. Keeping the Reader's Place
 
-Navigation in faah is line-based: the outline, go to line, search results, references, history, and `openFile(path, { line })`. All of them call `centerLine(n)` in [`editor/store.js`](../../web/src/editor/store.js), which records the line on the document (`mdLine`) and asks the preview's `line(n)` handle to scroll while previewing.
+Navigation in faah is line-based: the outline, go to line, search results, references, history, and `openFile(path, { line })`. All of them call `centerLine(n)` in [`editor/store.ts`](../../web/src/editor/store.js), which records the line on the document (`mdLine`) and asks the preview's `line(n)` handle to scroll while previewing.
 
 ### Line to Block (`line`)
 
@@ -204,7 +204,7 @@ If the HTML has not arrived yet, the line waits in `mdLine` and `PreviewContent`
 
 ### Switching Views
 
-`togglePreview(document, line)` in [`viewers/actions.js`](../../web/src/viewers/actions.js) stores the line and flips the view. The switch passes the reader's position in each direction: from the preview, `topLine()` of the preview handle; from the source, the source view's top line. The source view then centres that line, and the preview scrolls its block into place once drawn.
+`togglePreview(document, line)` in [`viewers/actions.ts`](../../web/src/viewers/actions.js) stores the line and flips the view. The switch passes the reader's position in each direction: from the preview, `topLine()` of the preview handle; from the source, the source view's top line. The source view then centres that line, and the preview scrolls its block into place once drawn.
 
 ## 7. Links and History
 
@@ -224,7 +224,7 @@ Three controls call `togglePreview()`:
 | -------------------------------- | -------------------------------------- | ---------------------------------------------- |
 | Preview / Source switch          | `#md-switch`, right end of the tab bar | `FileActions.jsx`                              |
 | Preview button                   | Status bar                             | `StatusActions.jsx`                            |
-| Alt+M, "Toggle Markdown / Table Preview" | Keyboard, command palette      | `GlobalShortcuts.tsx`, `palette/features.js`  |
+| Alt+M, "Toggle Markdown / Table Preview" | Keyboard, command palette      | `GlobalShortcuts.tsx`, `palette/features.ts`  |
 
 The switch and the status button show only on Markdown and CSV/TSV tabs (labelled Table on the latter) and derive their state from `viewMode`. Clicking the half that is already selected does nothing.
 

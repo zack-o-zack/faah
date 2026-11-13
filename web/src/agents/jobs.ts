@@ -14,7 +14,10 @@ import { api, apiPostJson } from '../lib/api.ts';
 export function createAgentJobs(
   app: JobsHost,
   options: { request?: Request; post?: Request } = {},
-) {
+): ReturnType<typeof buildAgentJobs> {
+  return buildAgentJobs(app, options);
+}
+function buildAgentJobs(app: JobsHost, options: { request?: Request; post?: Request } = {}) {
   const request = options.request || api;
   const post = options.post || apiPostJson;
   const controllers = new Set<AbortController>();

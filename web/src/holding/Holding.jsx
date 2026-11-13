@@ -1,7 +1,7 @@
 import { createSignal, onCleanup, onMount, Show } from 'solid-js';
 import { api } from '../lib/api.ts';
 import { createPolling } from '../lib/events.ts';
-import { holdingUpdate } from './logic.js';
+import { holdingUpdate } from './logic.ts';
 export function Holding(props) {
   const data = () => props.data;
   const [polledProgress, setProgress] = createSignal();

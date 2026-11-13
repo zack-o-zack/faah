@@ -21,7 +21,10 @@ import { canDiff } from '../viewers/view.ts';
 export function createDocumentGitActions(
   editor: DocumentGitHost,
   options: { request?: Request } = {},
-) {
+): ReturnType<typeof buildDocumentGitActions> {
+  return buildDocumentGitActions(editor, options);
+}
+function buildDocumentGitActions(editor: DocumentGitHost, options: { request?: Request } = {}) {
   const app = editor.store;
   const request = options.request || api;
   const pending = new Map<string, AbortController>();

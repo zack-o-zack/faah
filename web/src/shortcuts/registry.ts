@@ -29,7 +29,10 @@ export interface HelpGroup {
  * The shortcuts the app binds right now, as their owners describe them. The help sheet
  * lists exactly these, so a removed binding leaves the sheet with it.
  */
-export function createShortcutRegistry() {
+export function createShortcutRegistry(): ReturnType<typeof buildShortcutRegistry> {
+  return buildShortcutRegistry();
+}
+function buildShortcutRegistry() {
   const [entries, setEntries] = createSignal<readonly ShortcutHelp[]>([]);
   const [helpOpen, setHelpOpen] = createSignal(false);
   function describe(list: ShortcutHelp[]): () => void {
@@ -54,7 +57,7 @@ export function createShortcutRegistry() {
   };
 }
 
-export type ShortcutRegistry = ReturnType<typeof createShortcutRegistry>;
+export type ShortcutRegistry = ReturnType<typeof buildShortcutRegistry>;
 
 /** [c ]c [f ]f: a bracket, then a letter within this many milliseconds. */
 export const CHORD_WINDOW = 900;

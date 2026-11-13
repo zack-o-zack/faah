@@ -17,7 +17,10 @@ import { diffLayout } from '../settings/logic.ts';
 import { zoomScale } from './image-math.ts';
 import { orbStart, orbFromThread, orbFromStep, orbFromSummary } from './orb-model.ts';
 
-export function createViewerActions(store: ViewerStore) {
+export function createViewerActions(store: ViewerStore): ReturnType<typeof buildViewerActions> {
+  return buildViewerActions(store);
+}
+function buildViewerActions(store: ViewerStore) {
   const patch = (document: DocTab, value: Partial<DocTab>): void => {
     if (store.state.documents.tabs.includes(document))
       store.actions.patchDocument(document.path, value);

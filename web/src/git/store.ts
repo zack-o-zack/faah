@@ -71,7 +71,13 @@ function initialState(): GitState {
     unpushedHeight: 180,
   };
 }
-export function createGitStore(app: AppStore, options: GitOptions = {}) {
+export function createGitStore(
+  app: AppStore,
+  options: GitOptions = {},
+): ReturnType<typeof buildGitStore> {
+  return buildGitStore(app, options);
+}
+function buildGitStore(app: AppStore, options: GitOptions = {}) {
   const request = options.request || api;
   const post = options.post || apiPostJson;
   const [state, set] = createStore(initialState());

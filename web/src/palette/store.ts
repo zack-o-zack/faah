@@ -39,7 +39,13 @@ import { paletteQuery, rankCommands } from './logic.ts';
 function initialState(): PaletteState {
   return { open: false, base: 'file', query: '', selected: 0, restoreTheme: null };
 }
-export function createPaletteStore(editor: PaletteHost, options: PaletteOptions = {}) {
+export function createPaletteStore(
+  editor: PaletteHost,
+  options: PaletteOptions = {},
+): ReturnType<typeof buildPaletteStore> {
+  return buildPaletteStore(editor, options);
+}
+function buildPaletteStore(editor: PaletteHost, options: PaletteOptions = {}) {
   const request = options.request || api;
   const [state, set] = createStore(initialState());
   const commands = createCommandRegistry();
@@ -168,7 +174,7 @@ export function createPaletteStore(editor: PaletteHost, options: PaletteOptions 
     query,
     items: data,
     loading: () => items.loading,
-    error: () => items.error,
+    error: (): unknown => items.error,
     commands,
     actions: {
       openPalette,

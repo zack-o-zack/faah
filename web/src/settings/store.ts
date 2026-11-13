@@ -88,7 +88,12 @@ const message = (error: unknown): string =>
 const aborted = (error: unknown): boolean => error instanceof Error && error.name === 'AbortError';
 
 /** Settings from /api/settings: the dialog's state, the values, and what the app derives from them. */
-export function createSettingsStore(options: SettingsOptions = {}) {
+export function createSettingsStore(
+  options: SettingsOptions = {},
+): ReturnType<typeof buildSettingsStore> {
+  return buildSettingsStore(options);
+}
+function buildSettingsStore(options: SettingsOptions = {}) {
   const request = options.request ?? ((path, signal) => api(path, undefined, { signal }));
   const post = options.post ?? ((path, body, signal) => apiPostJson(path, body, { signal }));
   const [state, set] = createStore(initialState());
@@ -272,4 +277,4 @@ export function createSettingsStore(options: SettingsOptions = {}) {
   };
 }
 
-export type SettingsStore = ReturnType<typeof createSettingsStore>;
+export type SettingsStore = ReturnType<typeof buildSettingsStore>;

@@ -2,7 +2,7 @@
 
 How faah's virtualized code view, caret and selection work. The code is [`web/src/editor/Viewport.jsx`](../../web/src/editor/Viewport.jsx), [`EditorRow.jsx`](../../web/src/editor/EditorRow.jsx), [`Caret.jsx`](../../web/src/editor/Caret.jsx), the buffer in [`buffer.js`](../../web/src/editor/buffer.js), and the pure geometry in [`layout.js`](../../web/src/editor/layout.js) and [`cursor.js`](../../web/src/editor/cursor.js). [Frontend implementation](frontend.md) describes how these fit into the app.
 
-The sidebar file tree is virtualized separately: [`workspace/tree-model.js`](../../web/src/workspace/tree-model.js) flattens the expanded tree and [`Tree.jsx`](../../web/src/workspace/Tree.jsx) renders a bounded window of it. Its Expand All loads directory children in small batches, skips ignored subtrees and can be cancelled without late replies reopening collapsed folders.
+The sidebar file tree is virtualized separately: [`workspace/tree-model.ts`](../../web/src/workspace/tree-model.js) flattens the expanded tree and [`Tree.jsx`](../../web/src/workspace/Tree.jsx) renders a bounded window of it. Its Expand All loads directory children in small batches, skips ignored subtrees and can be cancelled without late replies reopening collapsed folders.
 
 ## 1. Why a Bespoke Virtualized Viewer?
 
