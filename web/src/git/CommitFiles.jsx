@@ -20,7 +20,9 @@ export function CommitFiles(props) {
       </Show>
       <For each={filePage(files.error ? [] : files() || [], shown())}>
         {(file) => (
-          <button
+          <div
+            role="button"
+            tabindex="0"
             class="flex min-w-0 items-center gap-2 rounded px-2 py-1 text-xs cursor-pointer hover:bg-accent [&.sel]:bg-accent"
             data-commit-file
             data-path={file.path}
@@ -29,6 +31,11 @@ export function CommitFiles(props) {
             }}
             title={`${file.path}${file.from ? ' (was ' + file.from + ')' : ''}`}
             onClick={() => void editor.actions.openCommitFile(props.sha, file)}
+            onKeyDown={(event) => {
+              if (event.key !== 'Enter' && event.key !== ' ') return;
+              event.preventDefault();
+              void editor.actions.openCommitFile(props.sha, file);
+            }}
           >
             <span class="min-w-0 shrink truncate">{file.path.split('/').pop()}</span>
             <span class="min-w-0 flex-1 truncate text-muted-foreground">
@@ -54,7 +61,7 @@ export function CommitFiles(props) {
             >
               {file.status}
             </span>
-          </button>
+          </div>
         )}
       </For>
       <Show when={shown() < (files.error ? 0 : files()?.length || 0)}>
