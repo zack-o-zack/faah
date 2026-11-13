@@ -4,7 +4,7 @@ import { useTheme } from '../lib/theme-context.tsx';
 import { Toaster } from '../lib/toast.tsx';
 import { createEditorStore } from '../editor/store.ts';
 import { EditorProvider, useEditor } from '../editor/context.tsx';
-import { EditorShortcuts } from '../editor/EditorShortcuts.jsx';
+import { EditorShortcuts } from '../editor/EditorShortcuts.tsx';
 import { EditorMeasure, type EditorGeometry } from '../editor/EditorMeasure.tsx';
 import { Palette } from '../palette/Palette.jsx';
 import { NewItemDialog } from '../workspace/NewItemDialog.tsx';

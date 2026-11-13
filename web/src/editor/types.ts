@@ -18,6 +18,7 @@ export interface DocTab {
   cur: number;
   col: number;
   scrollTop: number;
+  editScrollTop?: number;
   dirty: boolean;
   isEditing: boolean;
   isImage: boolean;

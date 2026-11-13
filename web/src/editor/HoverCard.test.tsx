@@ -1,21 +1,31 @@
 import { render, screen, fireEvent } from '@solidjs/testing-library';
 import { expect, test, vi } from 'vitest';
-import { createStore } from 'solid-js/store';
+import { createAppStore } from '../app/store.ts';
+import { createEditorStore } from './store.ts';
+import { decodeHover } from './decode.ts';
 import { EditorProvider } from './context.tsx';
-import { HoverCard } from './HoverCard.jsx';
+import { HoverCard } from './HoverCard.tsx';
 test('keyboard focus keeps a card open after pointer departure and focusout releases it', async () => {
   vi.useFakeTimers();
   const hideHover = vi.fn();
-  const [ui] = createStore({
-    hover: { at: { path: 'a.go' }, data: { doc: 'Documentation' }, diagnostics: [] },
-    hoverPosition: { x: 0, y: 0 },
-  });
   try {
-    render(() => (
-      <EditorProvider value={{ ui, actions: { hideHover }, services: {} }}>
-        <HoverCard />
-      </EditorProvider>
-    ));
+    render(() => {
+      const editor = createEditorStore(createAppStore());
+      editor.setUI({
+        hover: {
+          at: { path: 'a.go', word: 'name', line: 1, col: 0 },
+          data: decodeHover({ doc: 'Documentation' }),
+          diagnostics: [],
+          focus: false,
+        },
+        hoverPosition: { x: 0, y: 0 },
+      });
+      return (
+        <EditorProvider value={{ ...editor, actions: { ...editor.actions, hideHover } }}>
+          <HoverCard />
+        </EditorProvider>
+      );
+    });
     const card = screen.getByRole('region', { name: 'Symbol documentation' });
     card.focus();
     fireEvent.mouseMove(document, { clientX: 9999, clientY: 9999 });

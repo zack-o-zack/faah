@@ -1,13 +1,14 @@
+import type { JSX } from 'solid-js';
 import { onMount, onCleanup, Show } from 'solid-js';
 import { useEditor } from './context.tsx';
-export function FindBar() {
+export function FindBar(): JSX.Element {
   const editor = useEditor();
-  let input;
+  let input: HTMLInputElement | undefined;
   onMount(() => {
     editor.services.find = {
       focus() {
-        input.focus();
-        input.select();
+        input?.focus();
+        input?.select();
       },
     };
     onCleanup(() => {

@@ -1,3 +1,4 @@
+import type { WordPosition } from '../editor/contracts.ts';
 import type { GitSnapshot, Metrics } from '../workspace/decode.ts';
 import { decodeMeta, decodeMetrics } from '../workspace/decode.ts';
 import { createLayoutActions } from '../layout/actions.ts';
@@ -38,8 +39,8 @@ export interface AppState {
     selection: unknown;
     hover: unknown;
     hoverAnchor: unknown;
-    at: unknown;
-    link: unknown;
+    at: WordPosition | null;
+    link: WordPosition | null;
     lastWord: string;
     reference?: { path: string; l1: number; l2: number };
   };

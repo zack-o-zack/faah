@@ -1,18 +1,19 @@
+import type { JSX } from 'solid-js';
 import { useEditor } from './context.tsx';
-export function EditControls() {
+export function EditControls(): JSX.Element {
   const editor = useEditor();
   const unavailable = () =>
     !editor.active() ||
-    editor.active().isImage ||
-    editor.active().deleted ||
-    editor.active().diffRef;
+    editor.active()?.isImage ||
+    editor.active()?.deleted ||
+    editor.active()?.diffRef;
   return (
     <div
       id="edit-switch"
       class="flex items-center gap-1"
       role="group"
       aria-label="Edit controls"
-      hidden={unavailable()}
+      hidden={!!unavailable()}
     >
       <button
         id="btn-edit-mode"

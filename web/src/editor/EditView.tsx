@@ -1,12 +1,13 @@
+import type { JSX } from 'solid-js';
 import { createEffect, createMemo, createSignal, Index, on, onCleanup, onMount } from 'solid-js';
 import { useEditor } from './context.tsx';
 import { indentEdit } from './edit.ts';
 import { visibleRange, lineOffsets } from './layout.ts';
 
-export function EditView() {
+export function EditView(): JSX.Element {
   const editor = useEditor();
   const [top, setTop] = createSignal(0);
-  let textarea;
+  let textarea: HTMLTextAreaElement | undefined;
   let frame = 0;
   onCleanup(() => cancelAnimationFrame(frame));
   const starts = createMemo(() => {
@@ -35,28 +36,31 @@ export function EditView() {
     on(
       () => [editor.active()?.path, editor.active()?.isEditing, editor.buffer()],
       () => {
+        if (!textarea) return;
         // Release the native textarea's copy when the editable buffer is discarded or closed.
-        textarea.value = editor.active()?.isEditing ? editor.buffer().editContent || '' : '';
+        textarea.value = editor.active()?.isEditing ? editor.buffer()?.editContent || '' : '';
         if (!editor.active()?.isEditing) return;
-        textarea.scrollTop = editor.active().editScrollTop || 0;
+        textarea.scrollTop = editor.active()?.editScrollTop || 0;
       },
     ),
   );
   onMount(() => {
+    const input = textarea;
+    if (!input) return;
     editor.services.edit = {
-      focus: () => textarea.focus(),
-      selectedText: () => textarea.value.slice(textarea.selectionStart, textarea.selectionEnd),
+      focus: () => input.focus(),
+      selectedText: () => input.value.slice(input.selectionStart, input.selectionEnd),
       center(line, start, end) {
         const index = Math.max(0, Math.min(starts().length - 1, line - 1));
         const offset = starts()[index] || 0;
-        textarea.focus();
-        textarea.setSelectionRange(
+        input.focus();
+        input.setSelectionRange(
           typeof start === 'number' ? start : offset,
           typeof end === 'number' ? end : offset,
         );
-        textarea.scrollTop = Math.max(
+        input.scrollTop = Math.max(
           0,
-          offsets()[index] - textarea.clientHeight / 2 + editor.geometry.lineHeight * 2,
+          (offsets()[index] || 0) - input.clientHeight / 2 + editor.geometry.lineHeight * 2,
         );
       },
     };
@@ -64,13 +68,13 @@ export function EditView() {
       delete editor.services.edit;
     });
   });
-  function onInput(event) {
+  function onInput(event: InputEvent & { currentTarget: HTMLTextAreaElement }) {
     const model = editor.buffer();
-    model.setEditContent(event.currentTarget.value);
+    model?.setEditContent(event.currentTarget.value);
     editor.actions.patch({ dirty: true });
   }
-  function insert(change) {
-    textarea.setSelectionRange(change.start, change.end);
+  function insert(change: ReturnType<typeof indentEdit>) {
+    textarea?.setSelectionRange(change.start, change.end);
     window.document.execCommand('insertText', false, change.replacement);
   }
   return (
@@ -89,7 +93,9 @@ export function EditView() {
         <div style={{ transform: `translateY(${(offsets()[range().first] || 0) - top()}px)` }}>
           <Index each={slots()}>
             {(index) => (
-              <div style={{ height: `${offsets()[index() + 1] - offsets()[index()]}px` }}>
+              <div
+                style={{ height: `${(offsets()[index() + 1] || 0) - (offsets()[index()] || 0)}px` }}
+              >
                 {index() + 1}
               </div>
             )}
@@ -109,7 +115,7 @@ export function EditView() {
             if (frame) return;
             frame = requestAnimationFrame(() => {
               frame = 0;
-              const scrollTop = textarea.scrollTop;
+              const scrollTop = textarea?.scrollTop || 0;
               setTop(scrollTop);
               editor.actions.patch({ editScrollTop: scrollTop });
             });

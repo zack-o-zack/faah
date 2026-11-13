@@ -1,43 +1,46 @@
+import type { JSX } from 'solid-js';
 import { createEffect, createSignal, For, on, onCleanup, Show } from 'solid-js';
 import { useEditor } from './context.tsx';
 import { nearCard, placeCard } from './hover.ts';
 import { copyText } from '../lib/clipboard.ts';
 
-export function HoverCard() {
+export function HoverCard(): JSX.Element {
   const editor = useEditor();
-  let card;
+  let card: HTMLDivElement | undefined;
   createEffect(
     on(
       () => editor.ui.hover,
       () => {
-        if (!editor.ui.hover) return;
-        let timer;
-        let rect;
-        const track = (event) => {
+        const element = card;
+        if (!editor.ui.hover || !element) return;
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        let rect: DOMRect | undefined;
+        const track = (event: MouseEvent | null) => {
           const point = event ? { x: event.clientX, y: event.clientY } : null;
-          rect ||= card.getBoundingClientRect();
+          rect ||= element.getBoundingClientRect();
           if (
-            card.contains(document.activeElement) ||
+            element.contains(document.activeElement) ||
             nearCard(point, editor.ui.hoverPosition, rect)
           ) {
             clearTimeout(timer);
-            timer = null;
+            timer = undefined;
           } else if (!timer) timer = setTimeout(editor.actions.hideHover, 340);
         };
-        const outside = (event) => {
-          if (!card.contains(event.target)) editor.actions.hideHover();
+        const outside = (event: PointerEvent) => {
+          if (event.target instanceof Node && !element.contains(event.target))
+            editor.actions.hideHover();
         };
         const blur = () => track(null);
         document.addEventListener('mousemove', track, true);
         document.addEventListener('pointerdown', outside);
         window.addEventListener('blur', blur);
-        card.addEventListener('focusout', blur);
+        element.addEventListener('focusout', blur);
         onCleanup(() => {
           clearTimeout(timer);
           document.removeEventListener('mousemove', track, true);
           document.removeEventListener('pointerdown', outside);
           window.removeEventListener('blur', blur);
-          card.removeEventListener('focusout', blur);
+          element.removeEventListener('focusout', blur);
         });
       },
     ),
@@ -45,7 +48,7 @@ export function HoverCard() {
   const [position, setPosition] = createSignal({ left: 8, top: 8 });
   createEffect(() => {
     const hover = editor.ui.hover;
-    if (!hover || !card) return;
+    if (!hover || !card || !editor.ui.hoverPosition) return;
     const host = { left: 0, top: 0, width: innerWidth, height: innerHeight };
     setPosition(placeCard(editor.ui.hoverPosition, host, card.getBoundingClientRect()));
     if (hover.focus) card.focus();
@@ -108,7 +111,7 @@ export function HoverCard() {
                     path: hover().at.path,
                     l1: hover().at.line,
                     l2: hover().at.line,
-                    text: editor.buffer().text(hover().at.line - 1),
+                    text: editor.buffer()?.text(hover().at.line - 1) || '',
                   })
                 }
               >

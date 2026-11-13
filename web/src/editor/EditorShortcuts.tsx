@@ -1,3 +1,4 @@
+import type { JSX } from 'solid-js';
 import { onCleanup } from 'solid-js';
 import { createShortcut } from '../lib/shortcuts.tsx';
 import { isMac } from '../lib/keyboard.ts';
@@ -7,19 +8,20 @@ import { EDITOR_HELP } from '../shortcuts/help.ts';
 import { isPreview } from '../viewers/view.ts';
 
 // A modal dialog takes the keyboard; editor keys wait until it closes.
-const inDialog = (event) => !!event.target?.closest?.('dialog');
+const inDialog = (event: KeyboardEvent) =>
+  event.target instanceof Element && !!event.target.closest('dialog');
 
-export function EditorShortcuts() {
+export function EditorShortcuts(): JSX.Element {
   const editor = useEditor();
   const present = () => !!editor.active();
   const available = () => present() && !editor.ui.menu;
   const source = () =>
     available() &&
-    !editor.active().isEditing &&
-    !editor.active().isImage &&
-    !editor.active().diffMode &&
+    !editor.active()?.isEditing &&
+    !editor.active()?.isImage &&
+    !editor.active()?.diffMode &&
     !isPreview(editor.active());
-  const vim = (event) => {
+  const vim = (event: KeyboardEvent) => {
     if (!inDialog(event) && source() && editor.actions.handleVimKeyDown(event)) {
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -27,7 +29,12 @@ export function EditorShortcuts() {
   };
   createShortcut(null, vim, { target: window, capture: true, preventDefault: false });
   onCleanup(editor.shortcuts.describe(EDITOR_HELP));
-  const register = (combo, action, when = available, inputs = false) =>
+  const register = (
+    combo: string,
+    action: (event: KeyboardEvent) => void,
+    when: () => boolean = available,
+    inputs = false,
+  ) =>
     createShortcut(combo, action, {
       target: window,
       when: (event) => !inDialog(event) && when(),
@@ -44,7 +51,7 @@ export function EditorShortcuts() {
   register(
     'Mod+E',
     () => {
-      if (editor.active().isEditing) void editor.actions.exitEditMode();
+      if (editor.active()?.isEditing) void editor.actions.exitEditMode();
       else void editor.actions.enterEditMode();
     },
     available,
@@ -84,26 +91,29 @@ export function EditorShortcuts() {
   );
   for (let digit = 1; digit <= 9; digit++)
     register(`Alt+${digit}`, () => editor.actions.switchTab(digit - 1));
-  for (const [key, delta] of [
+  const motions1: [string, number][] = [
     ['ArrowDown', 1],
     ['ArrowUp', -1],
     ['j', 1],
     ['k', -1],
-  ]) {
+  ];
+  for (const [key, delta] of motions1) {
     register(key, () => editor.actions.move(delta), source);
     register('Shift+' + key, () => editor.actions.move(delta, true), source);
   }
-  for (const [key, delta] of [
+  const motions2: [string, number][] = [
     ['ArrowRight', 1],
     ['ArrowLeft', -1],
-  ]) {
+  ];
+  for (const [key, delta] of motions2) {
     register(key, () => editor.actions.move(delta, false, 'column'), source);
     register('Shift+' + key, () => editor.actions.move(delta, true, 'column'), source);
   }
-  for (const [key, end] of [
+  const motions3: [string, boolean][] = [
     ['Home', false],
     ['End', true],
-  ]) {
+  ];
+  for (const [key, end] of motions3) {
     register(key, () => editor.actions.edge(end), source);
     register('Shift+' + key, () => editor.actions.edge(end, true), source);
   }
@@ -128,8 +138,8 @@ export function EditorShortcuts() {
   register(
     isMac ? 'Mod+ArrowDown' : 'Mod+End',
     () => {
-      editor.actions.patch({ cur: editor.active().total, col: 0 });
-      editor.actions.centerLine(editor.active().total);
+      editor.actions.patch({ cur: editor.active()?.total || 0, col: 0 });
+      editor.actions.centerLine(editor.active()?.total || 0);
     },
     source,
   );
@@ -155,7 +165,7 @@ export function EditorShortcuts() {
       if (isPreview(editor.active())) editor.services.preview?.select();
       else void editor.actions.selectAll();
     },
-    () => available() && !editor.active().isEditing && !editor.active().isImage,
+    () => available() && !editor.active()?.isEditing && !editor.active()?.isImage,
   );
   register(
     'Mod+C',
@@ -163,7 +173,7 @@ export function EditorShortcuts() {
       editor.actions.runSelectionAction(
         editor.ui.selection?.isMarkdownPreview ? 'copy-preview-text' : 'copy-source',
       ),
-    () => available() && !!editor.ui.selection && !editor.active().isEditing,
+    () => available() && !!editor.ui.selection && !editor.active()?.isEditing,
   );
   register('F12', () => editor.actions.gotoDefinition());
   register('Shift+F12', () => editor.actions.findReferences());
@@ -173,7 +183,7 @@ export function EditorShortcuts() {
     register('Alt+Shift+ArrowLeft', () => editor.actions.move(-1, true, 'word'), source);
     register('Alt+Shift+ArrowRight', () => editor.actions.move(1, true, 'word'), source);
   }
-  const clearModifier = (event) => {
+  const clearModifier = (event: KeyboardEvent) => {
     if (event.key === 'Meta' || event.key === 'Control')
       editor.actions.setNavigation({ link: null });
   };

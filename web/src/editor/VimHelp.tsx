@@ -1,9 +1,10 @@
+import type { JSX } from 'solid-js';
 import { For, Index } from 'solid-js';
 import { useEditor } from './context.tsx';
 import { Dialog } from '../lib/Dialog.tsx';
 import { Kbd } from '../lib/shortcuts.tsx';
 import { VIM_SHORTCUT_SECTIONS } from './vim-help.ts';
-export function VimHelp() {
+export function VimHelp(): JSX.Element {
   const editor = useEditor();
   return (
     <Dialog open={true} title="Vim Keybindings" onClose={editor.actions.hideVimHelp}>

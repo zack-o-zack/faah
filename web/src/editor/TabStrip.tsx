@@ -1,13 +1,14 @@
+import type { JSX } from 'solid-js';
 import { Portal } from 'solid-js/web';
 import { createEffect, createSignal, For, Index, onCleanup, Show } from 'solid-js';
 import { useEditor } from './context.tsx';
 import { createMenuEvents } from '../lib/menu-events.ts';
 
-export function TabStrip(props) {
+export function TabStrip(props: { children?: JSX.Element }): JSX.Element {
   const editor = useEditor();
-  const [menu, setMenu] = createSignal(null);
-  let panel;
-  let dragging;
+  const [menu, setMenu] = createSignal<{ index: number; x: number; y: number } | null>(null);
+  let panel: HTMLDivElement | undefined;
+  let dragging: number | undefined;
   createMenuEvents({
     open: () => !!menu(),
     panel: () => panel,
@@ -18,10 +19,14 @@ export function TabStrip(props) {
   createEffect(() => {
     if (!menu()) return;
     const previous = document.activeElement;
-    onCleanup(() => previous?.isConnected && previous.focus());
+    onCleanup(() => {
+      if (previous instanceof HTMLElement && previous.isConnected) previous.focus();
+    });
   });
-  function action(name) {
-    const index = menu().index;
+  function action(name: string) {
+    const current = menu();
+    if (!current) return;
+    const index = current.index;
     const tabs = editor.store.state.documents.tabs;
     const indices = tabs
       .map((_, at) => at)
@@ -63,7 +68,8 @@ export function TabStrip(props) {
               onDragOver={(event) => event.preventDefault()}
               onDrop={(event) => {
                 event.preventDefault();
-                if (Number.isInteger(dragging)) editor.actions.moveDocument(dragging, index());
+                if (typeof dragging === 'number' && Number.isInteger(dragging))
+                  editor.actions.moveDocument(dragging, index());
               }}
               onContextMenu={(event) => {
                 event.preventDefault();
@@ -120,7 +126,7 @@ export function TabStrip(props) {
             data-popover
             aria-hidden="false"
             class="fixed min-w-[190px] max-w-[min(380px,95vw)] z-[70] top-auto left-auto m-0 gap-0"
-            style={{ left: `${menu().x}px`, top: `${menu().y}px` }}
+            style={{ left: `${menu()?.x}px`, top: `${menu()?.y}px` }}
           >
             <Index each={['close', 'all', 'others', 'right', 'left']}>
               {(name) => (
@@ -133,9 +139,9 @@ export function TabStrip(props) {
                   data-size="xs"
                   disabled={
                     (name() === 'others' && editor.store.state.documents.tabs.length < 2) ||
-                    (name() === 'left' && menu().index === 0) ||
+                    (name() === 'left' && menu()?.index === 0) ||
                     (name() === 'right' &&
-                      menu().index === editor.store.state.documents.tabs.length - 1)
+                      menu()?.index === editor.store.state.documents.tabs.length - 1)
                   }
                   onClick={() => action(name())}
                 >

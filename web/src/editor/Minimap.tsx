@@ -1,6 +1,7 @@
+import type { JSX } from 'solid-js';
 import { createMemo, Index } from 'solid-js';
 import { useEditor } from './context.tsx';
-export function Minimap() {
+export function Minimap(): JSX.Element {
   const editor = useEditor();
   const positions = createMemo(() => {
     const seen = new Set();

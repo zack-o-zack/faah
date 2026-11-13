@@ -1,11 +1,12 @@
+import type { JSX } from 'solid-js';
 import { diffLayout } from '../settings/logic.ts';
 import { Show } from 'solid-js';
 import { useEditor } from './context.tsx';
-import { EditControls } from './EditControls.jsx';
+import { EditControls } from './EditControls.tsx';
 import { canDiff, previewKind, viewMode } from '../viewers/view.ts';
 import { withKeys } from '../lib/keyboard.ts';
 
-export function FileActions() {
+export function FileActions(): JSX.Element {
   const editor = useEditor();
   const actions = editor.actions;
   const document = editor.active;
@@ -33,7 +34,7 @@ export function FileActions() {
             data-size="xs"
             aria-pressed={preview()}
             onClick={() => {
-              if (!preview()) actions.togglePreview(document(), document().cur);
+              if (!preview()) actions.togglePreview(document(), document()?.cur);
             }}
           >
             {kind() === 'table' ? 'Table' : 'Preview'}
@@ -57,9 +58,9 @@ export function FileActions() {
             title={withKeys('Show the file ({Mod+D})')}
             class="btn"
             data-size="xs"
-            aria-pressed={!document().diffMode}
+            aria-pressed={!document()?.diffMode}
             onClick={source}
-            data-variant={!document().diffMode ? 'secondary' : 'outline'}
+            data-variant={!document()?.diffMode ? 'secondary' : 'outline'}
           >
             File
           </button>
@@ -68,38 +69,41 @@ export function FileActions() {
             title={withKeys('Show what changed ({Mod+D})')}
             class="btn"
             data-size="xs"
-            aria-pressed={!!document().diffMode}
+            aria-pressed={!!document()?.diffMode}
             onClick={() =>
               actions.setDiffMode(document(), diffLayout(editor.settings.preferences()))
             }
-            data-variant={document().diffMode ? 'secondary' : 'outline'}
+            data-variant={document()?.diffMode ? 'secondary' : 'outline'}
           >
             Changes
           </button>
         </div>
-        <Show when={document().diffMode}>
+        <Show when={document()?.diffMode}>
           <button
             id="diff-layout"
             class="btn"
             data-variant="ghost"
             data-size="icon-xs"
             title={
-              document().diffMode === 'split'
+              document()?.diffMode === 'split'
                 ? 'Show changes in one column'
                 : 'Show changes side by side'
             }
             aria-label={
-              document().diffMode === 'split'
+              document()?.diffMode === 'split'
                 ? 'Show changes in one column'
                 : 'Show changes side by side'
             }
             onClick={() =>
-              actions.setDiffMode(document(), document().diffMode === 'split' ? 'unified' : 'split')
+              actions.setDiffMode(
+                document(),
+                document()?.diffMode === 'split' ? 'unified' : 'split',
+              )
             }
           >
             <span
               class={
-                document().diffMode === 'split'
+                document()?.diffMode === 'split'
                   ? 'icon-[lucide--rectangle-vertical] size-3.5'
                   : 'icon-[lucide--columns-2] size-3.5'
               }

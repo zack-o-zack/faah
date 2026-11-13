@@ -1,7 +1,8 @@
+import type { JSX } from 'solid-js';
 import { Show } from 'solid-js';
-import { VimHelp } from './VimHelp.jsx';
+import { VimHelp } from './VimHelp.tsx';
 import { useEditor } from './context.tsx';
-export function VimStatus() {
+export function VimStatus(): JSX.Element {
   const editor = useEditor();
   return (
     <>

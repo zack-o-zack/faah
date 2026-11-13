@@ -1,3 +1,4 @@
+import { required } from '../lib/test-values.ts';
 import { render } from '@solidjs/testing-library';
 import { expect, test } from 'vitest';
 import { markFind, markOccurrences } from './highlights.ts';
@@ -8,10 +9,10 @@ test('occurrence marks preserve syntax and the native selection across updates',
       <span class="token">reader</span> reader
     </div>
   ));
-  const code = view.container.firstChild;
-  const token = code.firstChild;
-  const selection = document.getSelection();
-  selection.setBaseAndExtent(token.firstChild, 1, token.firstChild, 5);
+  const code = required(view.container.querySelector<HTMLElement>(':scope > *'));
+  const token = required(code.firstChild);
+  const selection = required(document.getSelection());
+  selection.setBaseAndExtent(required(token.firstChild), 1, required(token.firstChild), 5);
   markOccurrences(code, 'reader');
   expect(code.querySelectorAll('.occ')).toHaveLength(2);
   expect(code.querySelector('.token')).toBe(token);
@@ -26,13 +27,13 @@ test('occurrence marks preserve syntax and the native selection across updates',
 });
 test('find uses the original marks, case matching and active match class', () => {
   const view = render(() => <div>Reader reader</div>);
-  const code = view.container.firstChild;
+  const code = required(view.container.querySelector<HTMLElement>(':scope > *'));
   markFind(code, 'reader', false, 1);
   expect([...code.querySelectorAll('mark')].map((mark) => mark.textContent)).toEqual([
     'Reader',
     'reader',
   ]);
-  expect(code.querySelector('mark.on').textContent).toBe('reader');
+  expect(required(code.querySelector<HTMLElement>('mark.on')).textContent).toBe('reader');
   markFind(code, '', false);
   expect(code.querySelector('mark')).toBeNull();
 });

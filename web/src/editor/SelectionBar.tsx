@@ -1,3 +1,6 @@
+import type { SelectionInfo } from './selection.ts';
+type MenuItem = (typeof SEL_MENU_ITEMS)[number];
+import type { JSX } from 'solid-js';
 import { Portal } from 'solid-js/web';
 import { createSignal, For, onCleanup, onMount, Show } from 'solid-js';
 import { useEditor } from './context.tsx';
@@ -5,10 +8,11 @@ import { SEL_MENU_ITEMS } from './selection.ts';
 import { Kbd } from '../lib/shortcuts.tsx';
 import { createMenuEvents } from '../lib/menu-events.ts';
 
-export function SelectionBar() {
+export function SelectionBar(): JSX.Element {
   const editor = useEditor();
   const [copied, setCopied] = createSignal('');
-  let panel, timer;
+  let panel: HTMLDivElement | undefined;
+  let timer: ReturnType<typeof setTimeout> | undefined;
   onCleanup(() => clearTimeout(timer));
   onMount(() => {
     editor.services.selection = {
@@ -27,10 +31,10 @@ export function SelectionBar() {
     dismiss: editor.actions.closeSelectionMenu,
     roving: () => true,
   });
-  function items(info) {
+  function items(info: SelectionInfo | null | undefined) {
     return SEL_MENU_ITEMS.filter((item) => {
       if (item.sel === 'review-comment' && !editor.pr.available()) return false;
-      if (item.sel === 'explain' && (info?.isMarkdownPreview || info?.text.length > 12000))
+      if (item.sel === 'explain' && (info?.isMarkdownPreview || (info?.text.length || 0) > 12000))
         return false;
       return info?.isMarkdownPreview ? !item.forCode : !item.forPreview;
     });
@@ -47,12 +51,13 @@ export function SelectionBar() {
       'agent-edit',
     ]
       .map((action) => items(editor.ui.selection).find((item) => item.sel === action))
-      .filter(Boolean);
-  function label(item) {
+      .filter((item): item is MenuItem => item !== undefined);
+  function label(item: MenuItem) {
     if (copied() === item.sel) return 'Copied';
-    return { thread: 'Thread', 'copy-preview-text': 'Copy Text' }[item.sel] || item.label;
+    const labels: Record<string, string> = { thread: 'Thread', 'copy-preview-text': 'Copy Text' };
+    return labels[item.sel] || item.label;
   }
-  function run(action) {
+  function run(action: string) {
     const info = editor.ui.menu?.info || editor.ui.selection;
     editor.actions.closeSelectionMenu();
     editor.actions.runSelectionAction(action, info);
@@ -103,7 +108,7 @@ export function SelectionBar() {
               aria-hidden="false"
               role="menu"
               class="fixed min-w-[190px] max-w-[min(380px,95vw)] z-[70] top-auto left-auto m-0 gap-0"
-              style={{ left: `${editor.ui.menu.x}px`, top: `${editor.ui.menu.y}px` }}
+              style={{ left: `${editor.ui.menu?.x}px`, top: `${editor.ui.menu?.y}px` }}
               onMouseDown={(event) => event.preventDefault()}
             >
               <For each={items(editor.ui.menu?.info)}>

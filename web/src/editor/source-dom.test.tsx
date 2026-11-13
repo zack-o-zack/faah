@@ -1,3 +1,4 @@
+import { required } from '../lib/test-values.ts';
 import { render } from '@solidjs/testing-library';
 import { expect, test } from 'vitest';
 import { createSourceDOM } from './source-dom.ts';
@@ -13,10 +14,21 @@ test('DOM positions span highlighted nodes and exclude the gutter', () => {
     </div>
   ));
   const adapter = createSourceDOM(view.container, () => ({ path: 'file.js' }));
-  const code = view.container.querySelector('.c');
-  expect(adapter.toPoint({ line: 12, col: 7 })).toEqual([code.lastChild.firstChild, 2]);
-  expect(adapter.toPos(code.lastChild.firstChild, 4)).toEqual({ line: 12, col: 9 });
-  expect(adapter.toPos(view.container.querySelector('.g').firstChild, 1)).toEqual({
+  const code = required(view.container.querySelector<HTMLElement>('.c'));
+  expect(adapter.toPoint({ line: 12, col: 7 })).toEqual([
+    required(required(code.lastChild).firstChild),
+    2,
+  ]);
+  expect(adapter.toPos(required(required(code.lastChild).firstChild), 4)).toEqual({
+    line: 12,
+    col: 9,
+  });
+  expect(
+    adapter.toPos(
+      required(required(view.container.querySelector<HTMLElement>('.g')).firstChild),
+      1,
+    ),
+  ).toEqual({
     line: 12,
     col: 0,
   });
@@ -30,11 +42,11 @@ test('diff word hit testing uses the diff cell and its original line mapping', (
       <span class="diff-code">removedSymbol</span>
     </div>
   ));
-  const code = view.container.querySelector('.diff-code');
+  const code = required(view.container.querySelector<HTMLElement>('.diff-code'));
   Object.defineProperty(document, 'caretPositionFromPoint', {
     configurable: true,
     value: () => ({
-      offsetNode: code.firstChild,
+      offsetNode: required(code.firstChild),
       offset: 3,
     }),
   });
@@ -48,6 +60,6 @@ test('diff word hit testing uses the diff cell and its original line mapping', (
     path: 'file.js',
     inDiff: true,
   });
-  delete document.elementFromPoint;
-  delete document.caretPositionFromPoint;
+  Reflect.deleteProperty(document, 'elementFromPoint');
+  Reflect.deleteProperty(document, 'caretPositionFromPoint');
 });

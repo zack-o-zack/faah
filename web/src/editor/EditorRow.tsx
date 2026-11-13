@@ -1,19 +1,29 @@
+import type { createHighlights } from './highlights.ts';
+interface EditorRowProps {
+  index: number;
+  observer: ResizeObserver;
+  highlights: ReturnType<typeof createHighlights>;
+}
+import type { JSX } from 'solid-js';
 import { createEffect, createMemo, onCleanup } from 'solid-js';
 import { useEditor } from './context.tsx';
 import { markFind, markOccurrences, textRanges } from './highlights.ts';
 
-export function EditorRow(props) {
+export function EditorRow(props: EditorRowProps): JSX.Element {
   const editor = useEditor();
-  let code;
-  let row;
+  let code: HTMLDivElement | undefined;
+  let row: HTMLDivElement | undefined;
   createEffect(() => {
-    props.index;
+    void props.index;
+    if (!row) return;
     if (editor.settings.preferences().wrap) {
       props.observer.unobserve(row);
       props.observer.observe(row);
     } else props.observer.unobserve(row);
   });
-  onCleanup(() => props.observer.unobserve(row));
+  onCleanup(() => {
+    if (row) props.observer.unobserve(row);
+  });
   const line = () => props.index + 1;
   const html = createMemo(() => {
     editor.buffer()?.revision();
@@ -30,7 +40,9 @@ export function EditorRow(props) {
   );
   const reference = createMemo(() => {
     const range = editor.store.state.navigation.reference;
-    return range?.path === editor.active()?.path && line() >= range.l1 && line() <= range.l2;
+    return (
+      !!range && range.path === editor.active()?.path && line() >= range.l1 && line() <= range.l2
+    );
   });
   const diagnostic = createMemo(() =>
     editor.active()?.diagnostics?.find((item) => item.line === line()),
@@ -39,14 +51,15 @@ export function EditorRow(props) {
   const gutter = createMemo(() => editor.active()?.gutter?.marks?.get(line()));
   createEffect(() => {
     html();
+    if (!code) return;
     const navigation = editor.store.state.navigation;
-    markOccurrences(code, navigation.occurrence);
+    markOccurrences(code, navigation.occurrence || '');
     const hit = editor.ui.hits[editor.ui.activeHit];
     markFind(
       code,
       editor.ui.findOpen ? editor.ui.query : '',
       editor.ui.caseSensitive,
-      hit?.line === line() ? hit.n || 0 : -1,
+      hit && hit.line === line() ? hit.n || 0 : -1,
     );
     props.highlights.update(code, [
       [
@@ -62,8 +75,8 @@ export function EditorRow(props) {
       ref={row}
       class="row group/line flex h-[var(--lh)] [body.word-wrap_&]:h-auto [body.word-wrap_&]:min-h-[var(--lh)] font-mono text-[length:var(--fs)] leading-[var(--lh)] [font-feature-settings:normal]"
       onClick={(event) => {
-        if (!event.target.closest('button'))
-          editor.actions.focusAgentAt(editor.active().path, line());
+        if (event.target instanceof Element && !event.target.closest('button'))
+          editor.actions.focusAgentAt(editor.active()?.path || '', line());
       }}
       data-l={line()}
       classList={{
@@ -74,8 +87,8 @@ export function EditorRow(props) {
           .some((target) => target.path === editor.active()?.path && line() === target.l1),
         'ref-range': reference(),
         'gut-del': deleted(),
-        'row-has-err': !!diagnostic() && (diagnostic().severity || 1) === 1,
-        'row-has-warn': !!diagnostic() && diagnostic().severity > 1,
+        'row-has-err': !!diagnostic() && (diagnostic()?.severity || 1) === 1,
+        'row-has-warn': !!diagnostic() && (diagnostic()?.severity || 0) > 1,
       }}
     >
       <div
@@ -92,10 +105,10 @@ export function EditorRow(props) {
           onClick={(event) =>
             editor.actions.openLineActions(
               {
-                path: editor.active().path,
+                path: editor.active()?.path || '',
                 l1: line(),
                 l2: line(),
-                text: editor.buffer().text(props.index),
+                text: editor.buffer()?.text(props.index) || '',
               },
               event.clientX,
               event.clientY,

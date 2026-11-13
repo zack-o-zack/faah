@@ -1,4 +1,4 @@
-export const VIM_SHORTCUT_SECTIONS = [
+export const VIM_SHORTCUT_SECTIONS: { title: string; items: [string[], string][] }[] = [
   {
     title: 'Modes & Motions',
     items: [

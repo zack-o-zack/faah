@@ -1,8 +1,8 @@
 import type { JSX } from 'solid-js';
 import { onCleanup, onMount } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
-import { SelectionBar } from '../editor/SelectionBar.jsx';
-import { VimStatus } from '../editor/VimStatus.jsx';
+import { SelectionBar } from '../editor/SelectionBar.tsx';
+import { VimStatus } from '../editor/VimStatus.tsx';
 import { LspMenu } from '../lsp/LspMenu.jsx';
 import { Metrics } from './Metrics.tsx';
 import { StatusActions } from './StatusActions.tsx';

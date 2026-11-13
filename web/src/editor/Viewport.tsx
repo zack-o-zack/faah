@@ -1,3 +1,5 @@
+import type { Position } from './cursor.ts';
+import type { JSX } from 'solid-js';
 import {
   createEffect,
   createMemo,
@@ -12,25 +14,25 @@ import { useEditor } from './context.tsx';
 import { viewMode } from '../viewers/view.ts';
 import { visibleRange } from './layout.ts';
 import { createHighlights } from './highlights.ts';
-import { EditorRow } from './EditorRow.jsx';
-import { Caret } from './Caret.jsx';
+import { EditorRow } from './EditorRow.tsx';
+import { Caret } from './Caret.tsx';
 import { createSourceDOM } from './source-dom.ts';
 
-export function Viewport() {
+export function Viewport(): JSX.Element {
   const editor = useEditor();
-  let viewport;
-  let rows;
-  let dom;
+  let viewport: HTMLDivElement | undefined;
+  let rows: HTMLDivElement | undefined;
+  let dom: ReturnType<typeof createSourceDOM> | undefined;
   let selectionFrame = 0;
-  let hoverTimer;
+  let hoverTimer: ReturnType<typeof setTimeout> | undefined;
   const covered = () => {
     const document = editor.active();
     return !!document && (document.isEditing || viewMode(document) !== 'source');
   };
   const highlights = createHighlights();
   const rowObserver = new ResizeObserver((entries) => {
-    const measurements = entries.map((entry) => [
-      +entry.target.dataset.l - 1,
+    const measurements = entries.map((entry): [number, number] => [
+      +(entry.target.getAttribute('data-l') || 0) - 1,
       entry.borderBoxSize?.[0]?.blockSize || entry.contentRect.height,
     ]);
     editor.buffer()?.measureHeights(measurements);
@@ -53,7 +55,7 @@ export function Viewport() {
   let frame = 0;
   const update = () => {
     frame = 0;
-    if (!viewport.clientWidth || !viewport.clientHeight) return;
+    if (!viewport || !viewport.clientWidth || !viewport.clientHeight) return;
     editor.setGeometry({
       top: viewport.scrollTop,
       height: viewport.clientHeight,
@@ -69,13 +71,14 @@ export function Viewport() {
     () => ({ model: editor.buffer(), ...range() }),
     ({ model, first, last }) => model?.ensure(first, last),
   );
-  function applySelection(anchor, head) {
+  function applySelection(anchor: Position | null, head: Position | null) {
     if (!anchor || !head) return;
     const start = dom?.toPoint(anchor);
     const end = dom?.toPoint(head);
     if (start && end) window.getSelection()?.setBaseAndExtent(...start, ...end);
   }
   function readSelection() {
+    if (!viewport || !dom) return;
     const selection = window.getSelection();
     if (!selection?.rangeCount || selection.isCollapsed) {
       if (!editor.ui.selection?.all) editor.actions.clearSelection();
@@ -93,9 +96,9 @@ export function Viewport() {
       readSelection();
     });
   }
-  function measureCaret(position) {
+  function measureCaret(position: Position) {
     const point = dom?.toPoint(position);
-    if (!point) return null;
+    if (!point || !viewport) return null;
     const range = document.createRange();
     range.setStart(...point);
     range.collapse(true);
@@ -107,7 +110,8 @@ export function Viewport() {
       y: rect.top - host.top + viewport.scrollTop,
     };
   }
-  function movePointer(event) {
+  function movePointer(event: MouseEvent) {
+    if (!dom) return;
     clearTimeout(hoverTimer);
     const { clientX: x, clientY: y } = event;
     if (event.metaKey || event.ctrlKey) {
@@ -119,7 +123,10 @@ export function Viewport() {
     const lsp = editor.store.state.lsp.state;
     if (editor.ui.hover || !editor.settings.preferences().hover) return;
     if (lsp !== 'ready' && lsp !== 'indexing') return;
-    hoverTimer = setTimeout(() => editor.actions.showHover(dom.wordAtPoint(x, y), x, y), 380);
+    hoverTimer = setTimeout(
+      () => editor.actions.showHover(dom?.wordAtPoint(x, y) || null, x, y),
+      380,
+    );
   }
   createEffect(
     on(
@@ -136,30 +143,30 @@ export function Viewport() {
     ),
   );
   onMount(() => {
-    dom = createSourceDOM(rows, editor.active);
+    const host = viewport;
+    const list = rows;
+    if (!host || !list) return;
+    dom = createSourceDOM(list, editor.active);
     const view = {
-      topLine: () => offsets().findIndex((value) => value >= viewport.scrollTop) || 1,
-      scrollTo: (top) => {
-        viewport.scrollTop = top;
+      topLine: () => offsets().findIndex((value) => value >= host.scrollTop) || 1,
+      scrollTo: (top: number) => {
+        host.scrollTop = top;
       },
-      focus: () => viewport.focus({ preventScroll: true }),
+      focus: () => host.focus({ preventScroll: true }),
       select: applySelection,
       clearSelection() {
         const selection = window.getSelection();
-        if (
-          selection?.rangeCount &&
-          viewport.contains(selection.getRangeAt(0).commonAncestorContainer)
-        )
+        if (selection?.rangeCount && host.contains(selection.getRangeAt(0).commonAncestorContainer))
           selection.removeAllRanges();
       },
       caretPoint() {
-        const rect = dom.rowFor(editor.active()?.cur)?.getBoundingClientRect();
+        const rect = dom?.rowFor(editor.active()?.cur || 1)?.getBoundingClientRect();
         return rect ? { x: rect.left + 40, y: rect.top } : null;
       },
     };
     editor.services.source = view;
     const observer = new ResizeObserver(onScroll);
-    observer.observe(viewport);
+    observer.observe(host);
     document.addEventListener('selectionchange', scheduleSelection);
     document.addEventListener('mouseup', scheduleSelection);
     update();
@@ -185,11 +192,21 @@ export function Viewport() {
       style={{ visibility: covered() ? 'hidden' : undefined }}
       onScroll={onScroll}
       onMouseDown={(event) => {
-        if (event.button !== 0 || event.target.closest('button')) return;
-        const row = event.target.closest('.row');
+        if (
+          event.button !== 0 ||
+          !(event.target instanceof Element) ||
+          event.target.closest('button') ||
+          !dom
+        )
+          return;
+        const row = event.target.closest<HTMLElement>('.row');
         if (!row) return;
-        const at = dom.pointAt(event.clientX, event.clientY) || { line: +row.dataset.l, col: 0 };
+        const at = dom.pointAt(event.clientX, event.clientY) || {
+          line: +(row.dataset.l || 1),
+          col: 0,
+        };
         const document = editor.active();
+        if (!document) return;
         editor.actions.patch({
           cur: at.line,
           col: at.col,
@@ -197,7 +214,7 @@ export function Viewport() {
             ? document.selAnchor || { line: document.cur, col: document.col || 0 }
             : null,
         });
-        const word = dom.wordAtPoint(event.clientX, event.clientY);
+        const word = dom?.wordAtPoint(event.clientX, event.clientY);
         editor.actions.setNavigation({ at: word, lastWord: word?.word || '' });
         if ((event.metaKey || event.ctrlKey) && word) {
           event.preventDefault();
@@ -212,7 +229,7 @@ export function Viewport() {
         editor.actions.openSelectionMenu(info, event.clientX, event.clientY);
       }}
       onDblClick={(event) => {
-        const word = dom.wordAtPoint(event.clientX, event.clientY);
+        const word = dom?.wordAtPoint(event.clientX, event.clientY);
         editor.actions.setNavigation({ occurrence: word?.word || null });
       }}
       onMouseMove={movePointer}
@@ -221,7 +238,7 @@ export function Viewport() {
         id="sizer"
         class="relative"
         style={{
-          height: `${offsets().at(-1) + Math.max(120, editor.geometry.height / 2)}px`,
+          height: `${(offsets().at(-1) || 0) + Math.max(120, editor.geometry.height / 2)}px`,
           width: editor.settings.preferences().wrap ? '100%' : `${contentWidth()}px`,
         }}
       >
