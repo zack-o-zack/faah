@@ -42,7 +42,7 @@ import { createMemo, For, Match, Show, Switch } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 import { citation, inlineMarkdown, markdownBlocks } from './markdown-model.ts';
 import { linkTarget } from '../threads/references.ts';
-import { copyText } from './clipboard.ts';
+import { MarkdownCopy } from './MarkdownCopy.tsx';
 export function Markdown(props: MarkdownProps): JSX.Element {
   const blocks = createMemo<MarkdownBlock[]>((previous) => markdownBlocks(props.text, previous));
   return (
@@ -64,13 +64,7 @@ function Blocks(props: BlocksProps): JSX.Element {
               <pre>
                 <code>{block.text}</code>
               </pre>
-              <button
-                class="btn absolute right-1 top-1"
-                aria-label="Copy code"
-                onClick={() => void copyText(block.text || '')}
-              >
-                Copy
-              </button>
+              <MarkdownCopy text={block.text || ''} />
             </div>
           </Match>
           <Match when={block.type === 'heading'}>

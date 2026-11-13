@@ -1,8 +1,7 @@
 import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
-import { targetRef } from '../agents/logic.ts';
-import { relativeTime } from './logic.ts';
+import { ThreadListRow } from './ThreadListRow.tsx';
 import { keyLabel } from '../lib/keyboard.ts';
 export function ThreadList(): JSX.Element {
   const editor = useEditor();
@@ -55,28 +54,12 @@ export function ThreadList(): JSX.Element {
         </Show>
         <For each={editor.threads.list()}>
           {(thread) => (
-            <div class="group flex items-center gap-1 border-b p-2" data-ui="thr-item">
-              <button
-                class="min-w-0 flex-1 text-left"
-                onClick={() => void editor.actions.openThread(thread.id)}
-              >
-                <strong class="block truncate">
-                  {thread.running ? '◌ ' : ''}
-                  {thread.title}
-                </strong>
-                <span class="block truncate font-mono text-xs text-muted-foreground">
-                  {targetRef(thread)} · {thread.turns} turns ·{' '}
-                  {relativeTime(thread.updated || 0, Date.now())}
-                </span>
-              </button>
-              <button
-                class="btn"
-                aria-label="Delete thread"
-                onClick={() => void editor.actions.deleteThread(thread.id)}
-              >
-                ×
-              </button>
-            </div>
+            <ThreadListRow
+              thread={thread}
+              selected={editor.threads.state.current === thread.id}
+              onOpen={() => void editor.actions.openThread(thread.id)}
+              onDelete={() => void editor.actions.deleteThread(thread.id)}
+            />
           )}
         </For>
       </div>

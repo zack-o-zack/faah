@@ -4,8 +4,11 @@ interface ThreadTurnProps {
   thread?: Thread | null;
 }
 import type { JSX } from 'solid-js';
-import { For, Show } from 'solid-js';
+import { Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
+import { ThreadSteps } from './ThreadSteps.tsx';
+import { ThreadChanges } from './ThreadChanges.tsx';
+import { ThreadArtifacts } from './ThreadArtifacts.tsx';
 import { Markdown } from '../lib/Markdown.tsx';
 import { ErrorNotice } from '../lib/ErrorNotice.tsx';
 import { explainEvidenceLine, explainStaleLabel } from './references.ts';
@@ -21,27 +24,35 @@ export function ThreadTurn(props: ThreadTurnProps): JSX.Element {
     });
   };
   return (
-    <section data-turn={props.turn.id} class="flex flex-col gap-2">
-      <div class="ml-8 self-end rounded bg-muted px-3 py-2">
+    <>
+      <div
+        data-ui="thr-msg"
+        class="thr-user ml-8 self-end min-w-0 rounded-lg bg-muted px-3 py-2 text-sm"
+      >
         <Markdown text={props.turn.prompt || ''} onOpen={open} />
       </div>
-      <article class="thr-agent min-w-0 text-sm">
-        <p class="text-xs text-muted-foreground">
-          {props.turn.harness || 'agent'} {props.turn.model || ''} · {turnDuration(props.turn.ms)}
-        </p>
-        <Show when={props.turn.running}>
-          <p role="status">{props.turn.tools?.at(-1) || 'Starting…'}</p>
-        </Show>
-        <Show when={props.turn.tools?.length}>
-          <details>
-            <summary>{props.turn.tools?.length} steps</summary>
-            <ol class="list-decimal pl-4">
-              <For each={props.turn.tools}>
-                {(step) => <li class="whitespace-pre-wrap">{step}</li>}
-              </For>
-            </ol>
-          </details>
-        </Show>
+      <article
+        data-ui="thr-msg"
+        data-turn={props.turn.id}
+        class="thr-agent flex min-w-0 flex-col gap-2 text-sm"
+      >
+        <div data-ui="thr-who" class="text-xs text-muted-foreground">
+          {props.turn.harness || 'agent'}
+          {props.turn.model ? ' · ' + props.turn.model : ''}
+          <Show when={!props.turn.running && props.turn.ms}>
+            {' · '}
+            <span
+              title={
+                props.turn.firstMs
+                  ? `First words after ${turnDuration(props.turn.firstMs)}`
+                  : undefined
+              }
+            >
+              {turnDuration(props.turn.ms)}
+            </span>
+          </Show>
+        </div>
+        <ThreadSteps turn={props.turn} />
         <Markdown
           text={props.turn.reply || ''}
           refs={
@@ -49,92 +60,37 @@ export function ThreadTurn(props: ThreadTurnProps): JSX.Element {
           }
           onOpen={open}
         />
-        <For each={props.turn.notes}>
-          {(note) => (
-            <button
-              class="btn whitespace-pre-wrap"
-              onClick={() => open({ path: note.path, line: note.l1, end: note.l2 })}
-            >
-              {note.path}:{note.l1} · {note.summary}
-            </button>
-          )}
-        </For>
-        <For each={props.turn.walkthroughs}>
-          {(walk) => (
-            <section class="rounded border p-2">
-              <strong>{walk.title}</strong>
-              <ol class="list-decimal pl-4">
-                <For each={walk.steps}>
-                  {(step) => (
-                    <li>
-                      <button
-                        class="btn"
-                        onClick={() => open({ path: step.path, line: step.l1, end: step.l2 })}
-                      >
-                        {step.title}
-                      </button>
-                      <p>{step.body}</p>
-                    </li>
-                  )}
-                </For>
-              </ol>
-            </section>
-          )}
-        </For>
+        <ThreadArtifacts turn={props.turn} onOpen={open} />
         <ErrorNotice error={props.turn.error} />
-        <Show when={!props.turn.running && props.turn.changed?.length}>
-          <div class="flex flex-wrap gap-1">
-            <For each={props.turn.changed}>
-              {(path) => (
-                <button
-                  class="btn max-w-full truncate font-mono text-xs"
-                  data-control="thr-file"
-                  onClick={() => editor.actions.openThreadFile(props.turn, path)}
-                >
-                  {path}
-                </button>
-              )}
-            </For>
-            <Show when={props.turn.beforeSha && !props.turn.reverted}>
-              <button
-                class="btn"
-                disabled={!!editor.threads.state.pending}
-                onClick={() => {
-                  if (confirm('Revert files changed in this turn?'))
-                    void editor.actions.revertThreadTurn(props.thread?.id || '', props.turn.id);
-                }}
-              >
-                Revert turn
-              </button>
-            </Show>
-            <Show when={props.turn.reverted}>
-              <span>Reverted</span>
-            </Show>
-          </div>
-        </Show>
-        <Show when={!props.turn.running && props.turn.tracked === false}>
-          <p>Changes are unknown outside Git; the workspace was reloaded.</p>
-        </Show>
         <Show when={props.thread?.kind === 'explain' && props.turn.id === 1 && !props.turn.running}>
-          <footer class="text-xs text-muted-foreground">
-            {explainEvidenceLine(props.thread?.evidence)}{' '}
+          <footer
+            data-ui="thr-evidence"
+            class="flex items-center flex-wrap gap-2 font-mono text-muted-foreground"
+          >
+            <span>{explainEvidenceLine(props.thread?.evidence)}</span>
             <Show when={editor.threads.state.stale?.id === props.thread?.id}>
-              {explainStaleLabel(editor.threads.state.stale?.reason || '')}
+              <span data-ui="thr-stale">
+                {explainStaleLabel(editor.threads.state.stale?.reason || '')}
+              </span>
             </Show>
             <Show when={props.thread?.explainReq}>
               <button
                 class="btn"
+                data-control="thr-evidence-btn"
+                data-variant="outline"
+                data-size="xs"
                 onClick={() => {
                   const target = props.thread?.explainReq;
                   if (target) void editor.actions.explainSelection(target, true);
                 }}
               >
-                Re-explain
+                {editor.threads.state.stale?.id === props.thread?.id ? 'Refresh' : 'Re-explain'}
               </button>
             </Show>
           </footer>
         </Show>
+        <ThreadChanges turn={props.turn} thread={props.thread} />
       </article>
-    </section>
+    </>
   );
 }
