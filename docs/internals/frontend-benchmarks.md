@@ -18,7 +18,7 @@ for options, timing boundaries, and statistics. UI selectors live in
 
 ## Current results
 
-Measured on an Apple M4 (10 logical CPUs, 16 GiB RAM), Darwin arm64, Chrome
+Measured on 2026-11-13 from `28d327c` (five runs, zero failures), on an Apple M4 (10 logical CPUs, 16 GiB RAM), Darwin arm64, Chrome
 157.0.8103.51 headless, Node 24.15.0. The real corpus is React at
 `df6aa4ec76cff5b3adde531c6fe8c36099e0469b`. The deterministic synthetic corpus
 contains 50k source lines, 5k Markdown lines, 20k CSV rows, 20k source files and
@@ -33,37 +33,37 @@ records source and binary hashes, corpus identity and browser version.
 
 | Metric | Unit | Median | p95 |
 |---|---|---:|---:|
-| cold.real.tree | ms | 852.10 | 1321.90 |
-| cold.real.idle | ms | 1368.00 | 1837.60 |
-| cold.real.js_transfer | bytes | 181406.00 | 181406.00 |
-| cold.real.heap | bytes | 4716088.00 | 4716300.00 |
-| cold.real.dom_nodes | nodes | 1804.00 | 1804.00 |
-| cold.synthetic.tree | ms | 597.70 | 892.20 |
-| cold.synthetic.idle | ms | 1112.90 | 1402.50 |
-| cold.synthetic.js_transfer | bytes | 181406.00 | 181406.00 |
-| cold.synthetic.heap | bytes | 4412248.00 | 4432936.00 |
-| cold.synthetic.dom_nodes | nodes | 1685.00 | 1685.00 |
-| finder.keystroke | ms | 46.20 | 48.90 |
-| file.open_50k | ms | 45.10 | 59.60 |
-| scroll.frame | ms | 16.70 | 16.70 |
-| scroll.frames_over_16_7 | frames | 6.00 | 10.00 |
+| cold.real.tree | ms | 177.00 | 233.60 |
+| cold.real.idle | ms | 707.10 | 765.40 |
+| cold.real.js_transfer | bytes | 182811.00 | 182811.00 |
+| cold.real.heap | bytes | 4707828.00 | 4737544.00 |
+| cold.real.dom_nodes | nodes | 1800.00 | 1800.00 |
+| cold.synthetic.tree | ms | 144.60 | 145.80 |
+| cold.synthetic.idle | ms | 673.40 | 673.80 |
+| cold.synthetic.js_transfer | bytes | 182811.00 | 182811.00 |
+| cold.synthetic.heap | bytes | 4366684.00 | 4389304.00 |
+| cold.synthetic.dom_nodes | nodes | 1681.00 | 1681.00 |
+| finder.keystroke | ms | 45.80 | 97.20 |
+| file.open_50k | ms | 44.00 | 89.60 |
+| scroll.frame | ms | 16.70 | 33.40 |
+| scroll.frames_over_16_7 | frames | 11.00 | 240.00 |
 | scroll.long_tasks | tasks | 0.00 | 0.00 |
 | scroll.long_task_total | ms | 0.00 | 0.00 |
 | scroll.geometry_misses | checkpoints | 0.00 | 0.00 |
 | scroll.content_misses | checkpoints | 0.00 | 0.00 |
-| cursor.interaction | ms | 24.00 | 48.00 |
-| cursor.interactions_ge_16 | interactions | 298.00 | 300.00 |
-| edit.enter_50k | ms | 541.70 | 545.10 |
-| edit.keystroke | ms | 36.30 | 40.00 |
-| edit.interaction | ms | 40.00 | 40.00 |
+| cursor.interaction | ms | 24.00 | 40.00 |
+| cursor.interactions_ge_16 | interactions | 281.00 | 298.00 |
+| edit.enter_50k | ms | 549.20 | 564.70 |
+| edit.keystroke | ms | 35.50 | 80.50 |
+| edit.interaction | ms | 40.00 | 56.00 |
 | edit.interactions_ge_16 | interactions | 200.00 | 200.00 |
-| tabs.switch | ms | 30.05 | 35.00 |
-| tree.expand_20k | ms | 78.40 | 78.80 |
-| tree.reveal_deep | ms | 49.60 | 54.90 |
-| search.results | ms | 877.80 | 1043.80 |
-| preview.markdown_5k | ms | 104.20 | 179.40 |
-| preview.csv_20k | ms | 98.30 | 101.80 |
-| memory.heap_delta | bytes | 548652.00 | 555996.00 |
+| tabs.switch | ms | 31.85 | 64.10 |
+| tree.expand_20k | ms | 80.40 | 127.40 |
+| tree.reveal_deep | ms | 49.30 | 86.00 |
+| search.results | ms | 891.70 | 1092.10 |
+| preview.markdown_5k | ms | 113.50 | 190.40 |
+| preview.csv_20k | ms | 101.30 | 105.50 |
+| memory.heap_delta | bytes | 552216.00 | 590200.00 |
 | memory.dom_delta | nodes | 0.00 | 0.00 |
 | memory.attached_delta | elements | 0.00 | 0.00 |
 
@@ -86,6 +86,11 @@ records source and binary hashes, corpus identity and browser version.
   closing tabs warms code: decreasing growth over repeated cycles and stable
   DOM counts do not prove leak freedom. Inspect retaining paths before changing
   caches or bounded navigation history.
+- The five-run scroll result includes one uniformly paced 33.3 ms run (240/240
+  intervals over budget). Three subsequent alternating runs of each binary
+  reproduced the same 33.3 ms cadence in both builds, with zero long tasks or
+  geometry/content misses. The cadence change is environmental; retain the
+  observed p95 rather than dropping the outlier.
 - Scroll intervals of 16.8 ms cross the strict 16.7 ms counter without implying
   a missed 33 ms display frame. Keep geometry/content checks and long-task counts
   alongside that threshold.
