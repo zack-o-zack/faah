@@ -1,9 +1,14 @@
+import type { JSX } from 'solid-js';
+import type { ToastItemModel } from './toast.tsx';
+interface ToastItemProps {
+  item: ToastItemModel;
+  dismiss: (id: number) => void;
+}
 import { createEffect, onCleanup, Show } from 'solid-js';
 
-export function ToastItem(props) {
-  const color = () =>
-    ({ success: 'text-gi', error: 'text-destructive' })[props.item.category] ||
-    'text-muted-foreground';
+export function ToastItem(props: ToastItemProps): JSX.Element {
+  const colors: Record<string, string> = { success: 'text-gi', error: 'text-destructive' };
+  const color = () => colors[props.item.category] || 'text-muted-foreground';
   createEffect(() => {
     const duration = props.item.duration;
     if (duration === 0 || duration === -1) return;

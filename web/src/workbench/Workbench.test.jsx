@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { expect, test, vi } from 'vitest';
 import { createWorkbenchStore } from './store.ts';
 import { WorkbenchProvider } from './context.jsx';
-import { ThemeProvider } from '../lib/theme-context.jsx';
+import { ThemeProvider } from '../lib/theme-context.tsx';
 import { Workbench } from './Workbench.jsx';
 test('fresh workbench loads recents, browses and opens a folder', async () => {
   const request = vi.fn(async (path) =>

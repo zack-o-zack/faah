@@ -1,7 +1,7 @@
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { Markdown } from '../lib/Markdown.jsx';
-import { ErrorNotice } from '../lib/ErrorNotice.jsx';
+import { Markdown } from '../lib/Markdown.tsx';
+import { ErrorNotice } from '../lib/ErrorNotice.tsx';
 import { explainEvidenceLine, explainStaleLabel } from './references.ts';
 import { turnDuration } from './logic.ts';
 export function ThreadTurn(props) {

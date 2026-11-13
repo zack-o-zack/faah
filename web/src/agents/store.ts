@@ -42,7 +42,7 @@ interface AgentHost {
 import { batch, createMemo, onCleanup } from 'solid-js';
 import { createStore } from 'solid-js/store';
 import { api, apiPost } from '../lib/api.ts';
-import { toast } from '../lib/toast.jsx';
+import { toast } from '../lib/toast.tsx';
 import { agentSelection, editRequest, rangesOverlap } from './logic.ts';
 import { createAgentJobs } from './jobs.ts';
 

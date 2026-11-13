@@ -1,6 +1,17 @@
+import type { JSX } from 'solid-js';
+
+interface MenuItemProps {
+  role?: 'menuitem' | 'menuitemradio' | 'menuitemcheckbox';
+  checked?: boolean;
+  disabled?: boolean;
+  class?: string;
+  icon?: string;
+  onSelect: () => unknown;
+  children?: JSX.Element;
+}
 import { Show } from 'solid-js';
 // A menu row for DropdownMenu and ContextMenu panels; both close on selection.
-export function MenuItem(props) {
+export function MenuItem(props: MenuItemProps): JSX.Element {
   return (
     <button
       type="button"

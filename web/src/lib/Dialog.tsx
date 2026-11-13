@@ -1,21 +1,37 @@
+import type { JSX } from 'solid-js';
+
+interface DialogProps {
+  open: boolean;
+  title: string;
+  subtitle?: string;
+  onClose: () => void;
+  id?: string;
+  dialogClass?: string;
+  class?: string;
+  bare?: boolean;
+  footer?: JSX.Element;
+  children?: JSX.Element;
+}
 import { createEffect, createUniqueId, onCleanup, Show } from 'solid-js';
 import { Portal } from 'solid-js/web';
 
-export function Dialog(props) {
-  let dialog, previous;
+export function Dialog(props: DialogProps): JSX.Element {
+  let dialog: HTMLDialogElement | undefined;
+  let previous: Element | null = null;
   const title = createUniqueId();
   createEffect(() => {
+    if (!dialog) return;
     if (props.open) {
       previous = document.activeElement;
       dialog.showModal();
     } else if (dialog.open) {
       dialog.close();
-      previous?.focus();
+      if (previous instanceof HTMLElement) previous.focus();
     }
   });
   onCleanup(() => {
-    dialog.close();
-    previous?.focus();
+    dialog?.close();
+    if (previous instanceof HTMLElement) previous.focus();
   });
   return (
     <Portal>

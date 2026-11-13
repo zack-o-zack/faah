@@ -1,7 +1,7 @@
 import { createMemo, createResource, createSignal, For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { Popover } from '../lib/Popover.jsx';
-import { ErrorNotice } from '../lib/ErrorNotice.jsx';
+import { Popover } from '../lib/Popover.tsx';
+import { ErrorNotice } from '../lib/ErrorNotice.tsx';
 import { filterAgentModels, groupAgentModels } from './logic.ts';
 export function AgentPicker(props) {
   const editor = useEditor();

@@ -1,7 +1,7 @@
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
 import { previewKind, viewMode } from '../viewers/view.ts';
-import { Kbd } from '../lib/shortcuts.jsx';
+import { Kbd } from '../lib/shortcuts.tsx';
 
 export function StatusActions() {
   const editor = useEditor();

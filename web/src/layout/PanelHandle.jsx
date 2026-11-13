@@ -1,5 +1,5 @@
 import { useEditor } from '../editor/context.jsx';
-import { SplitHandle } from '../lib/SplitHandle.jsx';
+import { SplitHandle } from '../lib/SplitHandle.tsx';
 export function PanelHandle(props) {
   const editor = useEditor();
   const width = () => editor.store.state.layout[props.panel + 'Width'];

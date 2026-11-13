@@ -1,5 +1,5 @@
 import { onCleanup } from 'solid-js';
-import { createShortcut } from '../lib/shortcuts.jsx';
+import { createShortcut } from '../lib/shortcuts.tsx';
 import { isMac } from '../lib/keyboard.ts';
 import { useEditor } from './context.jsx';
 import { SEL_KEYS } from './selection.ts';

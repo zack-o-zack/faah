@@ -2,7 +2,7 @@ import { createResource, Show } from 'solid-js';
 import { useWorkbench } from './context.jsx';
 import { api } from '../lib/api.ts';
 import { createPolling } from '../lib/events.ts';
-import { createShortcut } from '../lib/shortcuts.jsx';
+import { createShortcut } from '../lib/shortcuts.tsx';
 import { Clone } from './Clone.jsx';
 import { OpenWorkspaceForm } from './OpenWorkspaceForm.jsx';
 import { WorkbenchTabs } from './WorkbenchTabs.jsx';

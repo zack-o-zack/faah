@@ -2,7 +2,7 @@ import { Portal } from 'solid-js/web';
 import { createSignal, For, onCleanup, onMount, Show } from 'solid-js';
 import { useEditor } from './context.jsx';
 import { SEL_MENU_ITEMS } from './selection.ts';
-import { Kbd } from '../lib/shortcuts.jsx';
+import { Kbd } from '../lib/shortcuts.tsx';
 import { createMenuEvents } from '../lib/menu-events.ts';
 
 export function SelectionBar() {

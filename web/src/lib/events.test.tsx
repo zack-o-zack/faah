@@ -1,22 +1,28 @@
+import { record, number } from './decode.ts';
+import { required } from './test-values.ts';
 import { createEffect, createSignal } from 'solid-js';
 import { render } from '@solidjs/testing-library';
 import { test, expect, vi } from 'vitest';
 import { createEventStream } from './events.ts';
 
 function mockSource() {
-  let stream;
+  const stream: { current?: Source } = {};
   class Source {
+    handlers: Record<string, (event: { data: string }) => void> = {};
+    emit(name: string, data: string): void {
+      required(this.handlers[name])({ data });
+    }
     constructor() {
-      stream = this;
+      stream.current = this;
       this.handlers = {};
     }
-    addEventListener(name, handler) {
+    addEventListener(name: string, handler: (event: { data: string }) => void) {
       this.handlers[name] = handler;
     }
     close = vi.fn();
   }
   vi.stubGlobal('EventSource', Source);
-  return () => stream;
+  return () => required(stream.current);
 }
 
 test('stream handlers run synchronously and batch their signal updates', () => {
@@ -30,8 +36,8 @@ test('stream handlers run synchronously and batch their signal updates', () => {
     createEventStream('api/stream', {
       state(data) {
         called(data);
-        setFirst(data.first);
-        setSecond(data.second);
+        setFirst(number(record(data).first));
+        setSecond(number(record(data).second));
       },
     });
     return null;
@@ -39,7 +45,7 @@ test('stream handlers run synchronously and batch their signal updates', () => {
   try {
     const view = render(() => <Consumer />);
     expect(observed).toHaveBeenCalledExactlyOnceWith(0);
-    source().handlers.state({ data: '{"first":2,"second":3}' });
+    source().emit('state', '{"first":2,"second":3}');
     expect(called).toHaveBeenCalledExactlyOnceWith({ first: 2, second: 3 });
     expect(observed.mock.calls).toEqual([[0], [5]]);
     view.unmount();
@@ -67,9 +73,9 @@ test('stream failures report synchronously and malformed JSON is ignored', () =>
   }
   try {
     render(() => <Consumer />);
-    source().handlers.state({ data: 'bad' });
+    source().emit('state', 'bad');
     expect(report).not.toHaveBeenCalled();
-    source().handlers.state({ data: '{}' });
+    source().emit('state', '{}');
     expect(report).toHaveBeenCalledExactlyOnceWith(failure);
   } finally {
     vi.unstubAllGlobals();

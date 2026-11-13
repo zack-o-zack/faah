@@ -43,7 +43,7 @@ import {
 import { createStore, reconcile } from 'solid-js/store';
 import { api, apiPostJson } from '../lib/api.ts';
 import { createResourceRequest } from '../lib/resource-request.ts';
-import { toast } from '../lib/toast.jsx';
+import { toast } from '../lib/toast.tsx';
 import { createWorkspaceSubscription } from '../workspace/stream.ts';
 import {
   REVIEW_EVENTS,

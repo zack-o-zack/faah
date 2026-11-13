@@ -1,10 +1,10 @@
 import type { PREditorOptions } from './test-editor.ts';
 import { createRoot } from 'solid-js';
 import { expect, test, vi } from 'vitest';
-import { toast } from '../lib/toast.jsx';
+import { toast } from '../lib/toast.tsx';
 import { createPREditor } from './test-editor.ts';
 
-vi.mock('../lib/toast.jsx', () => ({ toast: vi.fn() }));
+vi.mock('../lib/toast.tsx', () => ({ toast: vi.fn() }));
 
 function fixture(options: PREditorOptions = {}) {
   return createRoot((dispose) => {

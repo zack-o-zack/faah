@@ -1,6 +1,6 @@
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { SplitHandle } from '../lib/SplitHandle.jsx';
+import { SplitHandle } from '../lib/SplitHandle.tsx';
 import { CommitRow } from './CommitRow.jsx';
 export function Unpushed() {
   const editor = useEditor();

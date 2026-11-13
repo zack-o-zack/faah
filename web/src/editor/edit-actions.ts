@@ -3,7 +3,7 @@ import type { EditorHost } from './contracts.ts';
 import { errorMessage, isAbort } from '../lib/decode.ts';
 import { onCleanup } from 'solid-js';
 import { apiPostJson, apiText } from '../lib/api.ts';
-import { toast } from '../lib/toast.jsx';
+import { toast } from '../lib/toast.tsx';
 
 export function createEditActions(editor: EditorHost): ReturnType<typeof buildEditActions> {
   return buildEditActions(editor);

@@ -1,6 +1,6 @@
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { Popover } from '../lib/Popover.jsx';
+import { Popover } from '../lib/Popover.tsx';
 import { MetricsSummary } from './MetricsSummary.jsx';
 import { fmtBytes, fmtCpu } from './logic.ts';
 export function Metrics() {

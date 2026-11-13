@@ -16,7 +16,7 @@ export interface MarkdownBlock {
   items?: { checked: boolean | null; blocks: MarkdownBlock[] }[];
   ordered?: boolean;
   header?: string[];
-  align?: string[];
+  align?: ('left' | 'center' | 'right')[];
   rows?: string[][];
 }
 /** Parse text into inert nodes. JSX owns escaping; raw HTML is always plain text. */

@@ -7,7 +7,7 @@ import { createRoot } from 'solid-js';
 import { expect, test, vi } from 'vitest';
 import { createPREditor, prMeta, routes } from './test-editor.ts';
 
-vi.mock('../lib/toast.jsx', () => ({ toast: vi.fn() }));
+vi.mock('../lib/toast.tsx', () => ({ toast: vi.fn() }));
 
 function fixture(options: PREditorOptions = {}) {
   return createRoot((dispose) => ({ editor: createPREditor(options), dispose }));

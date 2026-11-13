@@ -1,6 +1,6 @@
 import { createEffect, For, on, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { ErrorNotice } from '../lib/ErrorNotice.jsx';
+import { ErrorNotice } from '../lib/ErrorNotice.tsx';
 import { formatTime } from './logic.ts';
 import { CommentBody } from './CommentBody.jsx';
 export function CommentThread(props) {

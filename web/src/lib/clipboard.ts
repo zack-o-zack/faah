@@ -1,4 +1,4 @@
-import { toast } from './toast.jsx';
+import { toast } from './toast.tsx';
 export async function copyText(text: string, message = 'Copied'): Promise<boolean> {
   try {
     try {

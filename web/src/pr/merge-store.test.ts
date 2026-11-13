@@ -4,7 +4,7 @@ import { createRoot } from 'solid-js';
 import { afterEach, expect, test, vi } from 'vitest';
 import { createPREditor, routes } from './test-editor.ts';
 
-vi.mock('../lib/toast.jsx', () => ({ toast: vi.fn() }));
+vi.mock('../lib/toast.tsx', () => ({ toast: vi.fn() }));
 afterEach(() => vi.useRealTimers());
 
 function fixture(options: PREditorOptions = {}) {

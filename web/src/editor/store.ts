@@ -41,7 +41,7 @@ import { createVimActions } from './vim-actions.ts';
 import { createStore } from 'solid-js/store';
 import { batch, createMemo, createSignal, onCleanup } from 'solid-js';
 import { apiPostJson } from '../lib/api.ts';
-import { toast } from '../lib/toast.jsx';
+import { toast } from '../lib/toast.tsx';
 import { codeWidth, LH } from './layout.ts';
 import { movePosition } from './cursor.ts';
 import { initialVimState } from './vim.ts';

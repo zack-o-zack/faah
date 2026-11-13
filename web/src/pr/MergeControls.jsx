@@ -1,6 +1,6 @@
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { DropdownMenu } from '../lib/DropdownMenu.jsx';
+import { DropdownMenu } from '../lib/DropdownMenu.tsx';
 import { MERGE_METHODS } from './logic.ts';
 // A split button: the last-used method, and a caret to pick another.
 export function MergeControls() {

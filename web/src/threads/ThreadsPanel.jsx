@@ -2,7 +2,7 @@ import { withKeys } from '../lib/keyboard.ts';
 import { Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
 import { AgentSessions } from '../agents/AgentSessions.jsx';
-import { ErrorNotice } from '../lib/ErrorNotice.jsx';
+import { ErrorNotice } from '../lib/ErrorNotice.tsx';
 import { ThreadList } from './ThreadList.jsx';
 import { ThreadDetail } from './ThreadDetail.jsx';
 export function ThreadsPanel() {

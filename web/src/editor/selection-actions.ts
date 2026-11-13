@@ -40,7 +40,7 @@ import { errorMessage } from '../lib/decode.ts';
 import { onCleanup } from 'solid-js';
 import { apiText } from '../lib/api.ts';
 import { copyRich, copyText } from '../lib/clipboard.ts';
-import { toast } from '../lib/toast.jsx';
+import { toast } from '../lib/toast.tsx';
 import { selectedText } from './cursor.ts';
 import { contextSnippet, selectionRef } from './selection.ts';
 

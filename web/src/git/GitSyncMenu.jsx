@@ -1,6 +1,6 @@
 import { For } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { DropdownMenu } from '../lib/DropdownMenu.jsx';
+import { DropdownMenu } from '../lib/DropdownMenu.tsx';
 export function GitSyncMenu() {
   const editor = useEditor();
   const ahead = () => editor.store.state.git.snapshot?.ahead || 0;

@@ -1,5 +1,5 @@
 import { api } from '../lib/api.ts';
-import { toast } from '../lib/toast.jsx';
+import { toast } from '../lib/toast.tsx';
 import type { WorkspaceMeta } from './types.ts';
 
 interface BootDocument {

@@ -1,8 +1,8 @@
 import { Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { ContextMenu } from '../lib/ContextMenu.jsx';
-import { DropdownMenu } from '../lib/DropdownMenu.jsx';
-import { MenuItem } from '../lib/MenuItem.jsx';
+import { ContextMenu } from '../lib/ContextMenu.tsx';
+import { DropdownMenu } from '../lib/DropdownMenu.tsx';
+import { MenuItem } from '../lib/MenuItem.tsx';
 import { STAGE_STATUS, stageStatus } from './logic.ts';
 import { StageDot } from './StageDot.jsx';
 export function StageCard(props) {

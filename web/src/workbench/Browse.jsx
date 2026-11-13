@@ -3,7 +3,7 @@ import { useWorkbench } from './context.jsx';
 import { BrowseToolbar } from './BrowseToolbar.jsx';
 import { NewFolderForm } from './NewFolderForm.jsx';
 import { DirectoryList } from './DirectoryList.jsx';
-import { Kbd } from '../lib/shortcuts.jsx';
+import { Kbd } from '../lib/shortcuts.tsx';
 
 export function Browse() {
   const { state, actions } = useWorkbench();

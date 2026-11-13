@@ -3,10 +3,10 @@ import { createSignal } from 'solid-js';
 import { test, expect, vi } from 'vitest';
 import { createMenuEvents } from './menu-events.ts';
 
-function MenuHarness(props) {
+function MenuHarness(props: { close: () => void; dismiss: () => void }) {
   const [open] = createSignal(true);
-  let panel;
-  let trigger;
+  let panel: HTMLDivElement | undefined;
+  let trigger: HTMLButtonElement | undefined;
   createMenuEvents({
     open,
     panel: () => panel,

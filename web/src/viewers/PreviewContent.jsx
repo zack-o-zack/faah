@@ -10,7 +10,7 @@ import {
 } from 'solid-js';
 import { Portal } from 'solid-js/web';
 import { useEditor } from '../editor/context.jsx';
-import { useTheme } from '../lib/theme-context.jsx';
+import { useTheme } from '../lib/theme-context.tsx';
 import {
   brokenImageCard,
   sanitizeHTML,

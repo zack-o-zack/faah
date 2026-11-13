@@ -1,6 +1,6 @@
 import { onCleanup, type Component } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { createShortcut } from '../lib/shortcuts.jsx';
+import { createShortcut } from '../lib/shortcuts.tsx';
 import { chordStep, type Chord, type ShortcutHelp, type ShortcutRegistry } from './registry.ts';
 
 type InspectorTab = 'search' | 'symbols';

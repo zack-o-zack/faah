@@ -7,7 +7,7 @@ import { CommentsPanel } from './CommentsPanel.jsx';
 import { MergeDialog } from './MergeDialog.jsx';
 import { RowComposers } from './RowComments.jsx';
 
-vi.mock('../lib/toast.jsx', () => ({ toast: vi.fn() }));
+vi.mock('../lib/toast.tsx', () => ({ toast: vi.fn() }));
 
 const replies = {
   'api/pr/comments': {

@@ -1,6 +1,6 @@
 import { createSignal, For } from 'solid-js';
-import { DropdownMenu } from '../lib/DropdownMenu.jsx';
-import { useTheme } from '../lib/theme-context.jsx';
+import { DropdownMenu } from '../lib/DropdownMenu.tsx';
+import { useTheme } from '../lib/theme-context.tsx';
 
 export function ThemeMenu() {
   const theme = useTheme();

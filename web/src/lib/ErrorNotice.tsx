@@ -1,6 +1,13 @@
+import type { JSX } from 'solid-js';
+
+interface ErrorNoticeProps {
+  error: string;
+  streams?: string[][];
+  children?: JSX.Element;
+}
 import { For, Show } from 'solid-js';
 import { copyText } from './clipboard.ts';
-export function ErrorNotice(props) {
+export function ErrorNotice(props: ErrorNoticeProps): JSX.Element {
   return (
     <Show when={props.error}>
       <div role="alert" class="rounded border border-destructive p-2 text-xs text-destructive">

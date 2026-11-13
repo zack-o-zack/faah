@@ -1,5 +1,5 @@
 import { useEditor } from '../editor/context.jsx';
-import { useTheme } from '../lib/theme-context.jsx';
+import { useTheme } from '../lib/theme-context.tsx';
 import { listThemes } from '../lib/theme.ts';
 export function SidebarFooter() {
   const editor = useEditor();

@@ -1,6 +1,15 @@
+import type { JSX } from 'solid-js';
+
+interface SelectProps {
+  label: string;
+  value: string;
+  disabled?: boolean;
+  options: { value: string; label: string }[];
+  onChange: (value: string) => void;
+}
 import { For } from 'solid-js';
 
-export function Select(props) {
+export function Select(props: SelectProps): JSX.Element {
   return (
     <select
       class="select"

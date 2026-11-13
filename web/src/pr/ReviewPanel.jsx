@@ -1,7 +1,7 @@
 import { Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { Popover } from '../lib/Popover.jsx';
-import { ErrorNotice } from '../lib/ErrorNotice.jsx';
+import { Popover } from '../lib/Popover.tsx';
+import { ErrorNotice } from '../lib/ErrorNotice.tsx';
 import { draftsNote, forgeInfo, prEnded } from './logic.ts';
 // One panel holds the summary and the verdict that sends it.
 export function ReviewPanel() {

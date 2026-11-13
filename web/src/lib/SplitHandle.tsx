@@ -1,10 +1,22 @@
+import type { JSX } from 'solid-js';
+
+interface SplitHandleProps {
+  label: string;
+  value: number;
+  min?: number;
+  max?: number;
+  reverse?: boolean;
+  vertical?: boolean;
+  class?: string;
+  onChange: (value: number) => void;
+}
 import { onCleanup } from 'solid-js';
 
-export function SplitHandle(props) {
+export function SplitHandle(props: SplitHandleProps): JSX.Element {
   let release = () => {};
   onCleanup(() => release());
   // A reversed handle sits on the far edge of what it sizes: dragging toward it shrinks it.
-  const change = (delta) =>
+  const change = (delta: number) =>
     props.onChange(
       Math.max(
         props.min ?? 0,
@@ -38,7 +50,7 @@ export function SplitHandle(props) {
         release();
         e.preventDefault();
         let last = props.vertical ? e.clientY : e.clientX;
-        const onPointerMove = (e) => {
+        const onPointerMove = (e: PointerEvent) => {
           const at = props.vertical ? e.clientY : e.clientX;
           change(at - last);
           last = at;

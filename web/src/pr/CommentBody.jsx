@@ -1,5 +1,5 @@
 import { createMemo, Show } from 'solid-js';
-import { Markdown } from '../lib/Markdown.jsx';
+import { Markdown } from '../lib/Markdown.tsx';
 import { commentFragment } from './comment-dom.ts';
 // Posted comments use the forge's rendered Markdown, sanitized; drafts use the thread renderer.
 export function CommentBody(props) {

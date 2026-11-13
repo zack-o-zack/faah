@@ -1,7 +1,7 @@
 import { createEffect, on, onCleanup, onMount, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { createShortcut } from '../lib/shortcuts.jsx';
-import { ErrorNotice } from '../lib/ErrorNotice.jsx';
+import { createShortcut } from '../lib/shortcuts.tsx';
+import { ErrorNotice } from '../lib/ErrorNotice.tsx';
 import { AgentPicker } from './AgentPicker.jsx';
 import { targetRef } from './logic.ts';
 import { keyLabel } from '../lib/keyboard.ts';

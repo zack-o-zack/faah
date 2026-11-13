@@ -3,7 +3,7 @@ import type { EditorHost, WordPosition } from './contracts.ts';
 import { errorMessage, isAbort } from '../lib/decode.ts';
 import { onCleanup } from 'solid-js';
 import { api } from '../lib/api.ts';
-import { toast } from '../lib/toast.jsx';
+import { toast } from '../lib/toast.tsx';
 import { wordAtColumn } from './cursor.ts';
 
 export function createHoverActions(editor: EditorHost): ReturnType<typeof buildHoverActions> {

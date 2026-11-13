@@ -2,8 +2,8 @@ import { For, Show, onMount, onCleanup } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
 import { AgentSession } from './AgentSession.jsx';
 import { AgentPicker } from './AgentPicker.jsx';
-import { ErrorNotice } from '../lib/ErrorNotice.jsx';
-import { createShortcut } from '../lib/shortcuts.jsx';
+import { ErrorNotice } from '../lib/ErrorNotice.tsx';
+import { createShortcut } from '../lib/shortcuts.tsx';
 import { AGENT_HELP } from '../shortcuts/help.ts';
 export function AgentSessions() {
   const editor = useEditor();

@@ -1,7 +1,7 @@
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { SplitHandle } from '../lib/SplitHandle.jsx';
-import { ErrorNotice } from '../lib/ErrorNotice.jsx';
+import { SplitHandle } from '../lib/SplitHandle.tsx';
+import { ErrorNotice } from '../lib/ErrorNotice.tsx';
 import { withKeys } from '../lib/keyboard.ts';
 import { sortedByTime } from './logic.ts';
 import { IssueComment } from './IssueComment.jsx';

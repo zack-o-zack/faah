@@ -1,6 +1,6 @@
 import { onMount, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { Dialog } from '../lib/Dialog.jsx';
+import { Dialog } from '../lib/Dialog.tsx';
 export function StageEditor() {
   const editor = useEditor();
   const edit = () => editor.review.state.edit;

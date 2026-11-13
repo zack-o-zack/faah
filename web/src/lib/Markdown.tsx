@@ -1,17 +1,57 @@
+import type { JSX } from 'solid-js';
+import type { MarkdownBlock, InlineNode } from './markdown-model.ts';
+import type { Citation } from '../threads/decode.ts';
+type LinkTarget = NonNullable<ReturnType<typeof linkTarget>>;
+interface References {
+  refs?: Record<string, Citation> | null;
+  onOpen?: (target: LinkTarget) => unknown;
+}
+interface MarkdownProps extends References {
+  text: string;
+}
+interface BlocksProps extends References {
+  blocks?: MarkdownBlock[];
+}
+interface InlineProps extends References {
+  text?: string;
+}
+interface PartsProps extends References {
+  parts?: InlineNode[];
+}
+interface LinkProps extends References {
+  value?: string;
+  children?: JSX.Element;
+}
+function heading(level: number | undefined): 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' {
+  switch (level) {
+    case 2:
+      return 'h2';
+    case 3:
+      return 'h3';
+    case 4:
+      return 'h4';
+    case 5:
+      return 'h5';
+    case 6:
+      return 'h6';
+    default:
+      return 'h1';
+  }
+}
 import { createMemo, For, Match, Show, Switch } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 import { citation, inlineMarkdown, markdownBlocks } from './markdown-model.ts';
 import { linkTarget } from '../threads/references.ts';
 import { copyText } from './clipboard.ts';
-export function Markdown(props) {
-  const blocks = createMemo((previous) => markdownBlocks(props.text, previous));
+export function Markdown(props: MarkdownProps): JSX.Element {
+  const blocks = createMemo<MarkdownBlock[]>((previous) => markdownBlocks(props.text, previous));
   return (
     <div class="thr-body min-w-0 break-words">
       <Blocks blocks={blocks()} refs={props.refs} onOpen={props.onOpen} />
     </div>
   );
 }
-function Blocks(props) {
+function Blocks(props: BlocksProps): JSX.Element {
   return (
     <For each={props.blocks}>
       {(block) => (
@@ -27,14 +67,14 @@ function Blocks(props) {
               <button
                 class="btn absolute right-1 top-1"
                 aria-label="Copy code"
-                onClick={() => void copyText(block.text)}
+                onClick={() => void copyText(block.text || '')}
               >
                 Copy
               </button>
             </div>
           </Match>
           <Match when={block.type === 'heading'}>
-            <Dynamic component={'h' + block.level}>
+            <Dynamic component={heading(block.level)}>
               <Inline text={block.text} refs={props.refs} onOpen={props.onOpen} />
             </Dynamic>
           </Match>
@@ -55,7 +95,7 @@ function Blocks(props) {
                 {(item) => (
                   <li>
                     <Show when={item.checked !== null}>
-                      <input type="checkbox" disabled checked={item.checked} />
+                      <input type="checkbox" disabled checked={item.checked ?? false} />
                     </Show>
                     <Blocks blocks={item.blocks} refs={props.refs} onOpen={props.onOpen} />
                   </li>
@@ -69,7 +109,7 @@ function Blocks(props) {
                 <tr>
                   <For each={block.header}>
                     {(cell, index) => (
-                      <th style={{ 'text-align': block.align[index()] }}>
+                      <th style={{ 'text-align': block.align?.[index()] }}>
                         <Inline text={cell} refs={props.refs} onOpen={props.onOpen} />
                       </th>
                     )}
@@ -82,7 +122,7 @@ function Blocks(props) {
                     <tr>
                       <For each={block.header}>
                         {(_, index) => (
-                          <td style={{ 'text-align': block.align[index()] }}>
+                          <td style={{ 'text-align': block.align?.[index()] }}>
                             <Inline
                               text={row[index()] || ''}
                               refs={props.refs}
@@ -107,11 +147,11 @@ function Blocks(props) {
     </For>
   );
 }
-function Inline(props) {
-  const parts = createMemo(() => inlineMarkdown(props.text));
+function Inline(props: InlineProps): JSX.Element {
+  const parts = createMemo(() => inlineMarkdown(props.text || ''));
   return <Parts parts={parts()} refs={props.refs} onOpen={props.onOpen} />;
 }
-function Parts(props) {
+function Parts(props: PartsProps): JSX.Element {
   return (
     <For each={props.parts}>
       {(part) => (
@@ -139,9 +179,9 @@ function Parts(props) {
                 loading="lazy"
                 alt={part.text}
                 src={
-                  /^(https?:|\/)/.test(part.url)
+                  /^(https?:|\/)/.test(part.url || '')
                     ? part.url
-                    : 'api/raw?path=' + encodeURIComponent(part.url)
+                    : 'api/raw?path=' + encodeURIComponent(part.url || '')
                 }
               />
             </Show>
@@ -151,17 +191,22 @@ function Parts(props) {
     </For>
   );
 }
-function Link(props) {
-  const file = () => citation(props.value);
+function Link(props: LinkProps): JSX.Element {
+  const file = () => citation(props.value || '');
   const target = () => {
     const found = file();
-    return found ? linkTarget(props.refs, props.value, found.path, found.line, found.end) : null;
+    return found
+      ? linkTarget(props.refs, props.value || '', found.path, found.line, found.end)
+      : null;
   };
   return (
     <Show
       when={target() && props.onOpen}
       fallback={
-        <Show when={!file() && /^(https?:|mailto:|#)/.test(props.value)} fallback={props.children}>
+        <Show
+          when={!file() && /^(https?:|mailto:|#)/.test(props.value || '')}
+          fallback={props.children}
+        >
           <a href={props.value} target="_blank" rel="noopener noreferrer">
             {props.children}
           </a>
@@ -170,7 +215,10 @@ function Link(props) {
     >
       <button
         class="cursor-pointer text-primary-text underline"
-        onClick={() => props.onOpen(target())}
+        onClick={() => {
+          const value = target();
+          if (value) props.onOpen?.(value);
+        }}
       >
         {props.children}
       </button>

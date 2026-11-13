@@ -9,7 +9,7 @@ import {
   Show,
 } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { useTheme } from '../lib/theme-context.jsx';
+import { useTheme } from '../lib/theme-context.tsx';
 import { renderDiagram } from './mermaid-runtime.ts';
 import { diagramDimensions, diagramFit, diagramZoom } from './mermaid-logic.ts';
 import { MermaidControls } from './MermaidControls.jsx';

@@ -4,7 +4,7 @@ import { SettingsProvider } from './context.ts';
 import { SettingsDialog } from './SettingsDialog.tsx';
 import { createSettingsStore, type SettingsStore } from './store.ts';
 
-vi.mock('../lib/toast.jsx', () => ({ toast: vi.fn() }));
+vi.mock('../lib/toast.tsx', () => ({ toast: vi.fn() }));
 
 const reply = {
   settings: { 'editor.tabSize': 4, 'editor.vimMode': false },

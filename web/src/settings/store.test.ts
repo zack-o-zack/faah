@@ -2,7 +2,7 @@ import { createRoot } from 'solid-js';
 import { expect, test, vi } from 'vitest';
 import { createSettingsStore, type SettingsOptions } from './store.ts';
 
-vi.mock('../lib/toast.jsx', () => ({ toast: vi.fn() }));
+vi.mock('../lib/toast.tsx', () => ({ toast: vi.fn() }));
 
 const reply = () => ({
   settings: { 'editor.wordWrap': 'on', 'editor.fontSize': 13.5 },

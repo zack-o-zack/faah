@@ -1,6 +1,12 @@
+import type { JSX } from 'solid-js';
+
+interface TooltipProps {
+  text: string;
+  children: (attrs: { 'aria-describedby': string }) => JSX.Element;
+}
 import { createSignal, createUniqueId, Show } from 'solid-js';
 
-export function Tooltip(props) {
+export function Tooltip(props: TooltipProps): JSX.Element {
   const [shown, setShown] = createSignal(false);
   const id = createUniqueId();
   return (

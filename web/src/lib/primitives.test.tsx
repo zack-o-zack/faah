@@ -1,18 +1,19 @@
+import { required } from './test-values.ts';
 import { createRoot } from 'solid-js';
 import { render, screen, fireEvent } from '@solidjs/testing-library';
 import userEvent from '@testing-library/user-event';
 import { expect, test, vi } from 'vitest';
-import { DropdownMenu } from './DropdownMenu.jsx';
-import { Select } from './Select.jsx';
-import { SplitHandle } from './SplitHandle.jsx';
-import { Dialog } from './Dialog.jsx';
-import { Tooltip } from './Tooltip.jsx';
-import { ContextMenu } from './ContextMenu.jsx';
-import { createToastStore, Toaster } from './toast.jsx';
-import { createShortcut, Kbd } from './shortcuts.jsx';
+import { DropdownMenu } from './DropdownMenu.tsx';
+import { Select } from './Select.tsx';
+import { SplitHandle } from './SplitHandle.tsx';
+import { Dialog } from './Dialog.tsx';
+import { Tooltip } from './Tooltip.tsx';
+import { ContextMenu } from './ContextMenu.tsx';
+import { createToastStore, Toaster } from './toast.tsx';
+import { createShortcut, Kbd } from './shortcuts.tsx';
 import { createEventStream, createPolling } from './events.ts';
 import { createAppStore } from '../app/store.ts';
-import { AppProvider, useApp } from '../app/context.jsx';
+import { AppProvider, useApp } from '../app/context.tsx';
 test('mounts a component with isolated app state', () => {
   const store = createAppStore();
   const other = createAppStore();
@@ -87,13 +88,17 @@ test('shortcuts release listeners on unmount', () => {
   expect(action).toHaveBeenCalledTimes(1);
 });
 test('streams ignore malformed frames and close on disposal', async () => {
-  let stream;
+  const stream: { current?: Source } = {};
   class Source {
+    handlers: Record<string, (event: { data: string }) => void> = {};
+    emit(name: string, data: string): void {
+      required(this.handlers[name])({ data });
+    }
     constructor() {
-      stream = this;
+      stream.current = this;
       this.handlers = {};
     }
-    addEventListener(k, fn) {
+    addEventListener(k: string, fn: (event: { data: string }) => void) {
       this.handlers[k] = fn;
     }
     close = vi.fn();
@@ -104,20 +109,20 @@ test('streams ignore malformed frames and close on disposal', async () => {
     createEventStream('api/stream', { state: handler });
     return dispose;
   });
-  stream.handlers.state({ data: 'bad' });
-  stream.handlers.state({ data: '{"ok":true}' });
+  required(stream.current).emit('state', 'bad');
+  required(stream.current).emit('state', '{"ok":true}');
   await Promise.resolve();
   expect(handler).toHaveBeenCalledWith({ ok: true });
   dispose();
-  expect(stream.close).toHaveBeenCalledOnce();
+  expect(required(stream.current).close).toHaveBeenCalledOnce();
   vi.unstubAllGlobals();
 });
 test('polling stops after disposal even with a request in flight', async () => {
   vi.useFakeTimers();
-  let finish;
+  let finish: (() => void) | undefined;
   const action = vi.fn(
     () =>
-      new Promise((resolve) => {
+      new Promise<void>((resolve) => {
         finish = resolve;
       }),
   );
@@ -126,7 +131,7 @@ test('polling stops after disposal even with a request in flight', async () => {
     return dispose;
   });
   dispose();
-  finish();
+  required(finish)();
   await vi.advanceTimersByTimeAsync(1000);
   expect(action).toHaveBeenCalledOnce();
   vi.useRealTimers();
@@ -138,7 +143,7 @@ test('dialog requests close on Escape and releases its modal on disposal', () =>
       <p>Continue?</p>
     </Dialog>
   ));
-  const dialog = screen.getByRole('dialog');
+  const dialog = screen.getByRole<HTMLDialogElement>('dialog');
   expect(dialog.open).toBe(true);
   fireEvent(dialog, new Event('cancel', { cancelable: true }));
   expect(close).toHaveBeenCalledOnce();

@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@solidjs/testing-library';
 import { afterEach, test, expect, vi } from 'vitest';
 import { createAppStore } from '../app/store.ts';
 import { EditorProvider } from '../editor/context.jsx';
-import { ThemeProvider } from '../lib/theme-context.jsx';
+import { ThemeProvider } from '../lib/theme-context.tsx';
 import { createViewerResource } from './resource.ts';
 import { viewMode, previewKind, blockIndex } from './view.ts';
 import { TableViewer } from './TableViewer.jsx';

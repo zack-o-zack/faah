@@ -5,7 +5,7 @@ import { bootWorkspace, type BootEditor } from './boot.ts';
 import type { WorkspaceMeta } from './types.ts';
 
 vi.mock('../lib/api.ts', () => ({ api: vi.fn() }));
-vi.mock('../lib/toast.jsx', () => ({ toast: vi.fn() }));
+vi.mock('../lib/toast.tsx', () => ({ toast: vi.fn() }));
 
 interface Tab {
   path: string;

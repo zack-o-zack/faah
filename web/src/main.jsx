@@ -1,6 +1,6 @@
 import { render } from 'solid-js/web';
-import { AppProvider, useApp } from './app/context.jsx';
-import { ThemeProvider } from './lib/theme-context.jsx';
+import { AppProvider, useApp } from './app/context.tsx';
+import { ThemeProvider } from './lib/theme-context.tsx';
 import { App } from './app/App.tsx';
 
 // The theme follows the color theme setting; picking one saves it.

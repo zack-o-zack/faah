@@ -1,6 +1,6 @@
 import { createSignal, For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.jsx';
-import { ErrorNotice } from '../lib/ErrorNotice.jsx';
+import { ErrorNotice } from '../lib/ErrorNotice.tsx';
 import { StageCard } from './StageCard.jsx';
 export function StageList() {
   const editor = useEditor();

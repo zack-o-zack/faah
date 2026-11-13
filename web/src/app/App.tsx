@@ -1,7 +1,7 @@
 import { createEffect, onCleanup, onMount, type Component } from 'solid-js';
-import { useApp } from './context.jsx';
-import { useTheme } from '../lib/theme-context.jsx';
-import { Toaster } from '../lib/toast.jsx';
+import { useApp } from './context.tsx';
+import { useTheme } from '../lib/theme-context.tsx';
+import { Toaster } from '../lib/toast.tsx';
 import { createEditorStore } from '../editor/store.ts';
 import { EditorProvider, useEditor } from '../editor/context.jsx';
 import { EditorShortcuts } from '../editor/EditorShortcuts.jsx';

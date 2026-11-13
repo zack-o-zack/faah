@@ -21,7 +21,7 @@ interface ForgeHost {
 import { createStore } from 'solid-js/store';
 import { onCleanup } from 'solid-js';
 import { apiPostJson } from '../lib/api.ts';
-import { toast } from '../lib/toast.jsx';
+import { toast } from '../lib/toast.tsx';
 import { connectedMessage } from './logic.ts';
 
 function initialState(): ForgeState {
