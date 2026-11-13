@@ -88,7 +88,7 @@ export function Tree() {
     <div
       id="tree"
       ref={viewport}
-      class="panel-body relative min-h-0 flex-1 overflow-auto pb-4"
+      class="panel-body relative min-h-0 flex-1 overflow-auto pb-4 after:block after:p-3 after:text-xs after:text-muted-foreground"
       classList={{
         'changed-only': tree.mode() === 'git',
         'scope-yours': tree.scope() === 'yours',
