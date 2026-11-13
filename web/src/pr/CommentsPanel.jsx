@@ -16,7 +16,8 @@ export function CommentsPanel() {
   return (
     <div
       id="pr-comments-panel"
-      class="[body:not(.in-review-mode)_&]:hidden! group/comments relative flex h-72 max-h-[80vh] shrink-0 flex-col border-t [&.collapsed]:h-auto! collapsed"
+      class="[body:not(.in-review-mode)_&]:hidden! group/comments relative flex h-72 max-h-[80vh] shrink-0 flex-col border-t [&.collapsed]:h-auto!"
+      classList={{ collapsed: panel().collapsed }}
       style={{ height: panel().collapsed ? 'auto' : panel().height + 'px' }}
     >
       <div class="absolute inset-x-0 -top-1">

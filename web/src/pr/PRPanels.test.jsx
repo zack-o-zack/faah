@@ -86,7 +86,10 @@ test('the merge caret lists the allowed methods and opens the dialog for one', a
 test('the comments panel lists the conversation and code threads and posts a comment', async () => {
   const post = vi.fn(async (path, body) => ({ id: 2, author: 'me', ...body }));
   const editor = mount(post);
+  const panel = document.getElementById('pr-comments-panel');
+  expect(panel.classList.contains('collapsed')).toBe(true);
   fireEvent.click(screen.getByRole('button', { name: 'Expand/collapse comments panel' }));
+  expect(panel.classList.contains('collapsed')).toBe(false);
   await screen.findByText('a.go:3');
   expect(document.getElementById('pr-comments-count').textContent).toBe('3');
   expect(document.querySelector('.thr-alert-title').textContent).toBe('Note');

@@ -45,7 +45,7 @@ export function PRBar() {
             >
               {pr().title}
             </span>
-            <span class="icon-[lucide--external-link] size-3.5 shrink-0 text-muted-foreground" />
+            <span class="icon-[lucide--external-link] size-3.5 shrink-0 text-muted-foreground group-hover:text-foreground group-focus-visible:text-foreground" />
           </a>
           <span
             id="pr-state-badge"
@@ -53,7 +53,7 @@ export function PRBar() {
             data-variant="outline"
           >
             <span class={`${state().icon} size-3 shrink-0`} aria-hidden="true" />
-            <span class="text-xs">{state().label}</span>
+            <span class="text-foreground">{state().label}</span>
           </span>
         </div>
         <div class="flex min-w-0 items-center gap-3 pl-px text-xs text-muted-foreground">
