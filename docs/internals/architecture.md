@@ -15,7 +15,7 @@ faah is engineered as an ultra-fast, zero-overhead code exploration console. Its
 1. Stateless in the Workspace: faah never writes configuration directories, temporary caches, or metadata files (e.g., `.faah/` or `.cache/`) into a workspace. Indexes and caches live in volatile memory. Outside the workspace it keeps the remembered harness choice and update/telemetry state under `~/.faah/` (or `$XDG_CONFIG_HOME/faah/`), and per-workspace session files (PR review drafts) and the workbench store under `~/.faah/` (or `$XDG_STATE_HOME/faah/`).
 1. Strict Memory Reclamation: Long-lived background processes should not hold idle RAM. When the user finishes a burst of queries, unused pages are proactively returned to the operating system.
 
-The browser's file tabs are managed in `web/src/tabs.js`. Tab context-menu actions and the tab close button share cache cleanup. A bulk close updates the browser view once after removing the selected tabs. Open tabs are not saved: a reload starts with no tabs open.
+The browser's file tabs are document entries in the app store ([`web/src/editor/documents.js`](../../web/src/editor/documents.js)); [`web/src/editor/TabStrip.jsx`](../../web/src/editor/TabStrip.jsx) renders them with their context menu. Single and bulk closes share one `closeTabs` action, which releases each tab's buffer and updates the view once. Open tabs are not saved: a reload starts with no tabs open.
 
 ## 2. Startup Pipeline (<1 ms Critical Path)
 
@@ -284,7 +284,7 @@ faah employs several complementary strategies to maintain an ultra-lean binary f
 
 1. **Compile-time Trimming & Stripping**: Binaries are built with `-trimpath` and `-ldflags="-s -w"`, removing host filesystem paths, symbol tables, and DWARF debug sections.
 2. **Runtime Offloading of Heavy Vendor Assets**: Bulky third-party vendor assets (such as the 1.6 MB gzipped / 4 MB uncompressed Mermaid diagramming bundle) are excluded from `go:embed`. Instead, they are downloaded on-demand and cached in volatile/persistent user storage outside the repository, served via same-origin streaming handlers.
-3. **Frontend Bundle Minification**: Frontend assets (`web/app.js`) are bundled with `--minify` via Bun, reducing uncompressed client JavaScript from ~448 KB to ~250 KB.
+3. **Frontend Bundle Minification**: Vite builds each page into one minified script in `web/dist` (`app.js` is about 430 KB uncompressed, 131 KB gzipped). See [Frontend implementation](frontend.md).
 4. **Standard Executable Integrity**: Executables are distributed as native, unpacked binaries rather than using runtime packers (e.g., UPX), preventing antivirus false positives, ensuring compatibility across all platforms (macOS Gatekeeper, OpenBSD W^X, BSDs, Windows ARM64), and enabling the operating system to share read-only executable pages across multiple running processes.
 
 ### Self-Update Integrity

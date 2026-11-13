@@ -66,10 +66,11 @@ The server joins these files into `static/themes.css`. The theme picker discover
 them from the loaded CSS rules, reading `--theme-name` and `color-scheme`; there
 is no second registry to maintain. Theme files hold tokens, not component rules.
 
-`web/src/theme.js` sets `data-theme` and synchronizes the `.dark` class with the
-theme's declared `color-scheme`. Call `setTheme(id, false)` for a temporary
-preview; the default call also saves the preference. It emits `theme:changed`
-when the theme changes, allowing Mermaid and other rendered previews to update.
+`createThemeStore` in `web/src/lib/theme.js` sets `data-theme` and synchronizes
+the `.dark` class with the theme's declared `color-scheme`. Call
+`setTheme(id, false)` for a temporary preview; the default call also saves the
+preference. Mermaid and other rendered previews read the store's current theme,
+so they update when it changes.
 
 To add a theme, copy a theme file, choose a unique ID and display name, set
 `color-scheme`, and supply all the colour tokens. Rebuild the embedded app, or
@@ -191,7 +192,7 @@ shorter, not to hide a second component system.
 - Preserve behaviour and accessibility hooks; do not load Basecoat JavaScript.
 - Keep generated `web/app.css` out of commits. Add no stylesheet imports for a
   single feature and no npm dependency for prose styling.
-- Run `node scripts/build-web.js && node scripts/check-web.js`, `bun test web/src/`,
-  `go test ./...` and `npm test --prefix desktop`. Inspect both a dark and a light
-  theme, including desktop shell layout, when changing styling.
+- Run `npm run check`, `go test ./...` and `npm test --prefix desktop`. Inspect
+  both a dark and a light theme, including desktop shell layout, when changing
+  styling.
 

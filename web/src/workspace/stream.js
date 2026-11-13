@@ -2,7 +2,7 @@ import { createRoot, onCleanup } from 'solid-js';
 import { createEventStream } from '../lib/events.js';
 import { streamPath } from './snapshot.js';
 
-/** Owns one connection, including the topics still consumed by phase C. */
+/** Owns the workspace's one event connection: snapshots, metrics, and the threads and review topics while they are wanted. */
 export function createWorkspaceStream(options = {}) {
   const handlers = new Map();
   const threads = new Map();

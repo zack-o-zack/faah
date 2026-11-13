@@ -7,7 +7,7 @@ This document describes the design and implementation of threads, the long-runni
 - the selected harness and change settling it reuses: [`agent.go`](../../agent.go)
 - native agent sessions, protocol handling and Ask mode: [`internal/agents`](../../internal/agents), one package per harness, listed in [`internal/agents/all/all.go`](../../internal/agents/all/all.go)
 - Explain's selection checks, evidence, prompt and citation checks: [`internal/explain`](../../internal/explain)
-- the sidebar views, streams and composer: [`web/src/thread.js`](../../web/src/thread.js)
+- the sidebar views, stream subscriptions and composer: [`web/src/threads/`](../../web/src/threads/)
 
 Threads share agent selection, native sessions, `changedSince` and `settle`. [Inline and batch edits](agent-editing.md) are specialized threads with an overlap guard; ordinary conversations can work on any file. All thread kinds persist and support follow-ups.
 
@@ -16,7 +16,7 @@ Threads share agent selection, native sessions, `changedSince` and `settle`. [In
 ```mermaid
 sequenceDiagram
     autonumber
-    participant UI as Browser (thread.js)
+    participant UI as Browser (threads/store.js)
     participant S as faah (agent.go / server.go)
     participant H as Harness
     participant G as git
@@ -51,7 +51,7 @@ See [Native agent sessions](agents.md) for the `Agent`/`Open`/`Session` interfac
 
 Each adapter translates its native events into `threadSink.Text`, `Reasoning`, `Step`, and `Result`. Text streams into the reply, reasoning is kept separately, and tool activity becomes step labels. A turn finishes only on the protocol's completion event or an error. Diagnostics go to a bounded buffer and are appended to errors when a failed turn has no reply.
 
-The feed is Server-Sent Events at `/api/threads/stream`. The browser does not open it directly: browsers allow six HTTP/1.1 connections per host across all tabs, and a stream per feature used to take them all, after which every request queued forever. Instead the same events ride on the tab's one `/api/stream` connection (`web/src/stream.js`): `?threads=1` adds the list events as `threads:<event>`, and each `?thread=<id>` adds that thread's events as `thread:<event>` with payload `{id, data}`. A `thread=` id that no longer exists gets a `thread:deleted` on connect.
+The feed is Server-Sent Events at `/api/threads/stream`. The browser does not open it directly: browsers allow six HTTP/1.1 connections per host across all tabs, and a stream per feature used to take them all, after which every request queued forever. Instead the same events ride on the tab's one `/api/stream` connection ([`web/src/workspace/stream.js`](../../web/src/workspace/stream.js)): `?threads=1` adds the list events as `threads:<event>`, and each `?thread=<id>` adds that thread's events as `thread:<event>` with payload `{id, data}`. A `thread=` id that no longer exists gets a `thread:deleted` on connect.
 
 | Event | Payload | Sent to |
 | --- | --- | --- |
@@ -110,9 +110,9 @@ To provide instant visual review and safe rollbacks of code modifications genera
 - **Harness:** `explainHarness` resolves `explain.agent` and `explain.model` for explain turns only. A harness pinned with `-agent` wins.
 - **Prefetch:** `POST /api/explain/prepare` answers at once and gathers in a goroutine. `explainPrefetch` holds one selection; a new one cancels the one in flight. `/api/explain` uses prepared evidence only when the key (selection plus the file's size and modification time) matches and it is under 30 seconds old.
 - **Timing:** `threadTurn.FirstMs` records when the first words arrived. `TestExplainBenchmark`, behind the `harness` build tag, times real explanations per harness and model.
-- **Citations:** at the end of a turn `explain.ValidateRefs` fills `threadTurn.Refs`. `thrInline` then links only those targets. `Reply` is left as written.
+- **Citations:** at the end of a turn `explain.ValidateRefs` fills `threadTurn.Refs`. The transcript (`lib/Markdown.jsx` with `threads/references.js`) then links only those targets. `Reply` is left as written.
 - **Tools:** every agent receives `annotate` (notes on symbols, lines or blocks) and `walkthrough` (2 to 20 steps across files) over MCP. `internal/explain/notes` validates calls, saves accepted results on the running turn, and returns what was shown or refused. `/api/mcp` uses a thread-bound session credential that remains valid between turns; tool calls require a running turn, and closing the native session revokes the credential. `SetToolsAddr` supplies the listening endpoint. See [MCP and credentials](agents.md#mcp-and-credentials) for transport headers and per-agent attachment.
-- **Orb:** Explain leaves the sidebar closed and prepares the thread view behind it. `web/src/orb.js` turns the explanation's events into the editor pill: the `/api/explain` reply, then `thread:thread` snapshots and `thread:tool` steps while that thread's stream is followed, and `threads:summary` to end it when another thread took over the stream. The pill is hidden while the sidebar shows the same thread. `notes.StepLabel` names annotate and walkthrough calls in words whatever prefix the agent gives them, and steps drop the workspace prefix from paths.
+- **Orb:** Explain leaves the sidebar closed and prepares the thread view behind it. [`web/src/viewers/orb-model.js`](../../web/src/viewers/orb-model.js) turns the explanation's events into the editor pill (`ExplainOrb.jsx`): the `/api/explain` reply, then `thread:thread` snapshots and `thread:tool` steps while that thread's stream is followed, and `threads:summary` to end it when another thread took over the stream. The pill is hidden while the sidebar shows the same thread. `notes.StepLabel` names annotate and walkthrough calls in words whatever prefix the agent gives them, and steps drop the workspace prefix from paths.
 - **Notes:** `GET /api/explain/notes?path=` returns every note on a file, each found again with `notes.Locate` by the text it covered. A note whose text is gone stays at its saved line with `stale: "text"`. Where notes cover the same lines, the newest wins. A symbol note saves its callers and references hash (`explain.Gather`) in the background when it is added; the endpoint compares it with a hash it refreshes in the background at most every 10 seconds, and marks a change `stale: "refs"`.
 
 ## 7. HTTP Surface
@@ -137,9 +137,9 @@ Every mutating endpoint except `/api/mcp` is guarded by `localPost`, and carries
 
 ## 8. Frontend
 
-`thread.js` owns two views in the `#pane-right-threads` pane: the list and one thread (or a draft). `newThread(info)` is registered into `selbar.js` through `setThreadHandler`, the same one-way hook `agent.js` uses. The compose box's harness and model selects are registered with `registerAgentPicker` in `agent.js`, so they show and set the same global selection as every other picker.
+[`threads/store.js`](../../web/src/threads/store.js) owns the thread list, the open thread or draft, requests and their pending and error state. The Threads sidebar (`ThreadsPanel`, `#threads-side`) shows the list (`ThreadList`) or one thread (`ThreadDetail`, `ThreadTranscript`, `ThreadTurn`). The editor's selection actions reach it through `editor.handlers.thread` (`newThread`) and `editor.handlers.explain`. The compose box uses `AgentPicker`, which reads and sets the agents store's one selection, shared with every other picker.
 
-The list stream is opened once at startup and drives the running indicators and the tab reload. The per-thread stream is opened when a thread is opened and closed when leaving it. Replies are rendered by a small escape-first Markdown subset (`thrMd`): fences, inline code, bold and bullet lists, so a reply can never inject markup, with streaming `delta` updates coalesced into `requestAnimationFrame`.
+The store turns on the stream's `threads` topic while thread data is wanted and watches the open thread with `watchWorkspaceThread`, released when it closes; list events drive the running indicators and the tab reload. Replies render through `lib/Markdown.jsx`, which builds JSX from a parsed subset of Markdown (`lib/markdown.js`: fences, inline code, emphasis, lists, citations), so a reply can never inject markup. Streamed `delta` events append to the turn in the store, and the transcript follows the end while the reader has not scrolled away.
 
 ## 8b. PR Scope
 

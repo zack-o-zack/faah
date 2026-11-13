@@ -31,161 +31,73 @@ Tree / Palette Click
 
 ## 2. Tab Lifecycle & Document Model
 
-### Tab Document State
+### Document state
 
-When `/api/file` returns `image: true`, `openFile` in [`web/src/tabs.js`](../../web/src/tabs.js) creates a lightweight document object in `S.tabs`:
+When `/api/file` returns `image: true`, the document entry ([`web/src/editor/documents.js`](../../web/src/editor/documents.js)) gets `isImage: true` and no text buffer. Its view state lives on the entry, so it survives tab switches:
 
 ```javascript
-const d = {
-  path,
-  name: path.split('/').pop(),
-  lang: 'image',
-  total: 0,
-  maxCols: 0,
-  size: j.size,
-  lines: [],
-  chunks: new Set(),
-  pending: new Set(),
-  refining: new Set(),
-  scrollTop: 0,
-  cur: 1,
-  outline: null,
-  gen: 0,
-  markdown: false,
-  isImage: true,
-  gutter: null,
-  diffMode: null,
-  diffAvailable: false,
-  diffDismissed: true,
-  imageFit: true,        // True if fitted to viewport; false if manually scaled
-  imageScale: 1,         // Numeric zoom multiplier (0.05 to 32.0)
-  imagePanX: 0,          // Pan offset X in pixels
-  imagePanY: 0,          // Pan offset Y in pixels
-  imageBg: 'checker',    // 'checker' | 'dark' | 'light'
-  imagePixelated: false, // True for pixelated rendering; false for smooth
-  imageMeta: null,       // { width: naturalWidth, height: naturalHeight }
-};
+image: { fit: true, scale: 1, panX: 0, panY: 0, bg: 'checker', pixelated: null },
+imageMeta: null, // { width, height } once the image loads
 ```
 
-### View Synchronization
+`initialImage()` in [`web/src/viewers/view.js`](../../web/src/viewers/view.js) creates the `image` record. `pixelated: null` means "not chosen yet".
 
-Tab transitions are coordinated across four view containers in `#editor`:
+### Which view shows
 
-| Container | Role | Toggled by |
-| :--- | :--- | :--- |
-| `#viewport` | Virtualized source code viewer | Shown when tab is source code |
-| `#mdview` | Rendered Markdown article | `syncPreview()` (`Alt+M`) |
-| `#diffview` | Side-by-side or unified Git diff | `syncDiffView()` (`Mod+D`) |
-| `#imgview` | Interactive image canvas & HUD | `syncImageView()` |
+`viewMode(document)` in `view.js` derives the view from the entry: `source` while editing, `image` for an image, `diff` when `diffMode` is set, otherwise the chosen preview or source. [`Viewers.jsx`](../../web/src/viewers/Viewers.jsx) mounts `ImageViewer` only for the image view, and the source viewport renders no rows while it is covered. Nothing is shown or hidden by hand.
 
-When an image tab is active, `syncImageView()` makes `#imgview` visible and hides `#viewport`, `#mdview`, and `#diffview`. When switching away from an image tab, `syncImageView()` hides `#imgview`, allowing `#viewport` or `#mdview` to resume without rebuilding DOM elements.
+### Reloads
 
-### Workspace Reindexes
-
-When an agent edit or filesystem event triggers `reloadOpenTabs()`, image tabs are preserved: their file size is updated from the new `/api/file` stat response while preserving zoom scale, pan position, and background mode.
+`reloadOpenTabs()` skips image tabs; their zoom, pan and background stay on the entry. The image URL carries the document's `viewerRevision`, so invalidating the viewer reloads the file.
 
 ---
 
-## 3. Dedicated Image Viewer (`imageview.js`)
+## 3. Image Viewer
 
-The dedicated image viewer lives in [`web/src/imageview.js`](../../web/src/imageview.js) and operates on `#imgview`:
+[`web/src/viewers/ImageViewer.jsx`](../../web/src/viewers/ImageViewer.jsx) renders `#imgview` (viewport, canvas and image) and [`ImageHUD.jsx`](../../web/src/viewers/ImageHUD.jsx) the zoom and mode controls. Every change goes through named document actions (`updateImage`, `fitImage`, `actualImage`, `cycleImageBg`, `togglePixelated`) in [`viewers/actions.js`](../../web/src/viewers/actions.js). The viewer owns its pointer, wheel and resize listeners and releases them on cleanup.
 
-```html
-<div id="imgview" hidden>
-  <div id="imgview-viewport">
-    <div id="imgview-canvas" class="bg-checker">
-      <img id="imgview-img" src="" alt="">
-    </div>
-  </div>
-  <div id="imgview-hud">...</div>
-</div>
-```
+### Zoom math and fitting
 
-### Zoom Math & Fitting
+[`image-math.js`](../../web/src/viewers/image-math.js) holds the tested calculations:
 
-The image scale is calculated through two primary states:
-
-1. **Fit-to-Window (`imageFit = true`)**:
+1. **Fit (`fit: true`)**:
    $$
-   \text{fitScale} = \min\left(1, \frac{\text{viewportWidth} - 64}{\text{naturalWidth}}, \frac{\text{viewportHeight} - 64}{\text{naturalHeight}}\right)
+   \text{fitScale} = \max\left(0.05, \min\left(1, \frac{\text{viewWidth} - 80}{\text{naturalWidth}}, \frac{\text{viewHeight} - 80}{\text{naturalHeight}}\right)\right)
    $$
-   If both natural dimensions fit within the viewport without scaling, `currentScale` defaults to $1.0$ (100%) to avoid unneeded upscaling of small icons.
-2. **Manual Scale (`imageFit = false`)**:
-   Step zoom multiplies or divides `imageScale` by $1.25$, clamped between $0.05$ ($5\%$) and $32.0$ ($3200\%$).
+   An image that already fits stays at 100%, so small icons are not upscaled.
+2. **Manual scale (`fit: false`)**: `zoomScale` multiplies or divides by 1.25, clamped between 0.05 (5%) and 32 (3200%). The wheel uses a smaller step for small deltas and for pinch zoom.
 
-CSS transforms are applied directly to `#imgview-canvas`:
-```javascript
-canvas.style.transform = `translate(${d.imagePanX}px, ${d.imagePanY}px) scale(${currentScale})`;
-```
+`imageTransform` turns the view state into the canvas's `translate(panX, panY) scale(s)`.
 
 ### Panning
 
-Dragging anywhere on `#imgview-viewport` (with mouse button 0) initiates panning:
-- On `mousedown`, the starting pointer $(x_0, y_0)$ and existing pan $(panX_0, panY_0)$ are captured.
-- On `mousemove`, the delta $(\Delta x, \Delta y)$ is added to origin offsets. If movement exceeds 3px, `imageFit` is set to `false`.
-- The viewport cursor toggles between `grab` and `grabbing`.
+Dragging the viewport with the primary button pans. The pointer-down position and pan are captured; each move applies the delta (`panFrom`) and leaves fit mode. The cursor shows `grab`/`grabbing`.
 
-### Background Contrast Modes
+### Background and rendering modes
 
-To evaluate transparency in SVG icons and alpha-masked PNGs, users can cycle the background mode (`b` key or HUD button):
-
-| Mode | Class | Appearance |
-| :--- | :--- | :--- |
-| **Checkerboard** | `.bg-checker` | Repeating conic gradient (`var(--bg3)` / `var(--bg2)`) |
-| **Dark** | `.bg-dark` | Solid `#121214` dark matte |
-| **Light** | `.bg-light` | Solid `#ffffff` bright matte |
-
-### Rendering Quality Modes
-
-Users can toggle between bilinear smoothing and nearest-neighbor pixelated rendering (`p` key or HUD button):
-- **Smooth**: `image-rendering: auto` (standard for diagrams, photos, and high-res assets).
-- **Pixelated**: `image-rendering: pixelated` (crisp pixel art and icon boundary inspection).
-- **Smart default**: Images with natural dimensions $\le 64\times64$ px automatically default to pixelated mode on first load.
+`b` or the HUD button cycles the background: checkerboard (`.bg-checker`), dark and light, for checking transparency. `p` toggles smooth and pixelated rendering. On first load, images at most 64×64 px default to pixelated.
 
 ---
 
 ## 4. Markdown Inline Images & Lightbox
 
-Markdown documents containing inline images (`![]()`) are enhanced in [`web/src/markdown.js`](../../web/src/markdown.js):
+The preview's sanitizer ([`web/src/viewers/markdown-dom.js`](../../web/src/viewers/markdown-dom.js)) prepares Markdown images.
 
-### Lazy Loading & Decoding
+### Lazy loading
 
-`mdSetImage` injects `loading="lazy"` and `decoding="async"` on all Markdown `<img>` tags. This prevents layout thrashing and avoids downloading offscreen images until scrolled near the viewport.
+Every Markdown `<img>` gets `loading="lazy"` and `decoding="async"`, so off-screen images are not downloaded until scrolled near.
 
-### Standalone Image Affordance
+### Standalone image affordance
 
-Standalone Markdown images receive `.md-zoomable`, giving them a subtle hover outline (`var(--accent)`) and a `zoom-in` cursor.
+Standalone images get `.md-zoomable`: a hover outline and a `zoom-in` cursor.
 
-### Interactive Lightbox Overlay
+### Lightbox
 
-Clicking an inline Markdown image opens the `#img-lightbox` modal overlay:
+Clicking a zoomable image opens [`Lightbox.jsx`](../../web/src/viewers/Lightbox.jsx), a native modal dialog showing the image with its path or alt text. **Open in tab** opens the image as an editor tab; **Copy path** copies the repository path or remote URL. Escape, the close button or the backdrop close it.
 
-1. **Backdrop**: Fullscreen semi-transparent dimming (`rgba(0, 0, 0, 0.72)`) with a CSS backdrop blur filter (`blur(8px)`).
-2. **Dialog Header**:
-   - Displays the image file name or alt text.
-   - Displays natural dimensions (`width × height px`).
-   - **Open in Tab**: Calls `openFile(path)` to instantly promote the image into a first-class editor tab for full zoom/pan manipulation.
-   - **Copy Path / URL**: Copies either the repository-relative path or remote URL to the clipboard.
-   - **Close Button**: Dismisses the overlay.
-3. **Dismissal Triggers**: Pressing `Escape`, clicking the `✕` button, or clicking anywhere on the dimmed backdrop.
+### Broken image handling
 
-### Broken Image Handling
-
-Broken or missing image links are intercepted using a capture-phase error listener on `#md`:
-
-```javascript
-mdArticle.addEventListener('error', e => {
-  if (e.target && e.target.localName === 'img') {
-    const img = e.target;
-    const path = img.dataset.rawPath || img.dataset.origSrc || img.getAttribute('src');
-    const fallback = document.createElement('div');
-    fallback.className = 'md-img-broken';
-    fallback.innerHTML = `<svg ...></svg><span>Image not found: ${esc(path)}</span>`;
-    img.replaceWith(fallback);
-  }
-}, true);
-```
-This replaces missing images with a clean warning card instead of leaving broken browser icons or causing unexpected layout shifts.
+Image errors do not bubble, so `PreviewContent` listens for them on its article in the capture phase and replaces a failed image with an `.md-img-broken` card reading "Image not found: <path>" (`brokenImageCard` in `markdown-dom.js`), instead of a broken-image icon.
 
 ---
 

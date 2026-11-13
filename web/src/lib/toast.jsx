@@ -15,7 +15,7 @@ export function createToastStore() {
     },
   };
 }
-// The bridge and providers share this notification service; tests can supply a fresh one.
+// The app shares one notification service; tests can supply a fresh one.
 export const notifications = createToastStore();
 export const toast = (...args) => notifications.toast(...args);
 export function Toaster(props) {

@@ -2,7 +2,7 @@
 
 This document describes how faah renders Markdown files: the server-side conversion, the browser-side sanitizer, and the logic that keeps the rendered view and the source view in step.
 
-A Markdown tab (`.md` or `.markdown`) opens rendered by default. The reader switches to the raw source with the Preview / Source switch in the tab bar, the Preview button in the status bar, or Alt+M. The code lives in two files: [`internal/render/render.go`](../../internal/render/render.go) on the server and [`web/src/markdown.js`](../../web/src/markdown.js) in the browser.
+A Markdown tab (`.md` or `.markdown`) opens rendered by default. The reader switches to the raw source with the Preview / Source switch in the tab bar, the Preview button in the status bar, or Alt+M. The code lives in two files: [`internal/render/render.go`](../../internal/render/render.go) on the server and [`web/src/viewers/`](../../web/src/viewers/) in the browser (`PreviewViewer.jsx`, `PreviewContent.jsx`, `markdown-dom.js`, `preview-dom.js`).
 
 ## 1. Request Flow
 
@@ -11,34 +11,30 @@ openFile(path)
   |
   |  GET /api/file            -> { lines, total, ..., markdown: true }
   v
-tab doc { markdown: true }  -- syncPreview() --> #mdview shown over #viewport
+document { markdown: true, view: 'markdown' }   -- viewMode() --> PreviewViewer mounts
   |
   |  GET /api/markdown        -> { path, html }   (goldmark, raw HTML kept)
   v
-mdSanitize(html)            -- inert DOMParser document, allowlist
+sanitizeHTML(html)          -- inert DOMParser document, allowlist
   |
   v
-mdEnhance()                 -- alerts, code block wrappers, copy buttons
+enhanceMarkdown()           -- alerts, code block wrappers, copy buttons, Mermaid mounts
   |
   v
 #md article                 -- scroll restored or line / anchor applied
 ```
 
-The source view is not replaced. `#viewport` keeps loading and painting its rows underneath `#mdview`, so switching to the source costs one `hidden` toggle.
+While the preview shows, the source viewport renders no rows; switching back mounts them from the same buffer, so the text is not fetched again.
 
 ## 2. Opening a Markdown Tab
 
-`handleFile` in [`server.go`](../../server.go) adds `markdown: isMarkdown(rel)` to every `/api/file` response. `openFile` in [`web/src/tabs.js`](../../web/src/tabs.js) copies it onto the tab's doc object. Tab state then flows through one function:
+`handleFile` in [`server.go`](../../server.go) adds `markdown: isMarkdown(rel)` to every `/api/file` response, and the document entry ([`web/src/editor/documents.js`](../../web/src/editor/documents.js)) records it. A new Markdown document opens in the preview when the `markdown.preview.open` setting is on; toggling the preview saves that setting, so the next file opens the same way.
 
-- `previewing(d)` returns true when the doc is Markdown, the global preference `S.mdPreview` is on, and the doc has no `mdError`.
-- `syncPreview()` compares the active doc against the doc currently shown. When they differ, it saves the outgoing doc's `mdScroll`, clears `#md`, toggles `#mdview`, and starts `drawPreview` for the incoming doc. `openFile`, `switchTab` and `closeTab` call it every time the active tab changes.
-- `drawPreview(d)` fetches `/api/markdown` once per tab and caches the response string in `d.mdHtml`. It re-sanitizes that string on every draw, which avoids serializing and re-parsing cleaned DOM.
+- `previewKind(document)` in [`view.js`](../../web/src/viewers/view.js) returns `'markdown'`, `'table'` or `''`; `viewMode(document)` returns the view to show (`source` while editing, then image, diff, the chosen preview, or source).
+- [`Viewers.jsx`](../../web/src/viewers/Viewers.jsx) mounts `PreviewViewer` for the preview views. Its resource fetches `/api/markdown`, keyed by the path, the buffer and its revision, so a replaced request is aborted and a stale reply is dropped.
+- `PreviewContent` sanitizes the HTML in a memo, renders it into `#md`, enhances it and restores the saved scroll (`mdScroll`), or applies a pending line (`mdLine`) or anchor (`mdAnchor`).
 
-A generation counter (`mdGen`) discards a draw whose fetch finishes after the reader has moved to another tab. A shared promise (`d.mdReq`) stops a quick switch away and back from issuing a second request.
-
-When the fetch fails (for example a file over 4 MB), `drawPreview` stores the message in `d.mdError`, shows a toast, and calls `syncPreview()` again. Because `previewing(d)` is now false, the tab falls back to its source. Choosing Preview again clears `mdError` and retries.
-
-The preference persists in `localStorage` under `faah.mdPreview` and is restored in `boot()` in [`web/src/main.js`](../../web/src/main.js).
+A failed fetch (for example a file over 4 MB) shows the error with a Retry button in place of the preview; the Source switch still works.
 
 ## 3. Server Rendering
 ### Converter Configuration
@@ -171,92 +167,82 @@ These cases come from the browser checks run against the implementation:
 
 ## 5. Presentation
 
-`mdEnhance` runs after sanitization and adds markup that faah itself creates:
+`enhanceMarkdown` ([`markdown-dom.js`](../../web/src/viewers/markdown-dom.js)) runs after sanitization and adds markup that faah itself creates:
 
 - GitHub alerts. A blockquote whose first paragraph opens with `[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]` or `[!CAUTION]` loses the marker, gains a `.md-alert-title` paragraph, and gets `.md-alert .md-alert-<kind>`.
 - Code block wrappers. Each `<pre>` moves into `.md-pre`, which carries `data-lang` for a corner label and a copy button. The button holds an SVG icon rather than a text label, because find in the preview walks text nodes and would otherwise match the word "Copy".
-- Mermaid diagrams. A fence whose `data-lang` is `mermaid` keeps its sanitized source block and copy button, then `web/src/mermaid.js` renders a diagram beside it. Successful renders hide the source block and provide per-diagram zoom controls; failed renders leave the source visible with a local error message.
+- Mermaid diagrams. A fence whose `data-lang` is `mermaid` keeps its sanitized source block and copy button, then a `MermaidDiagram` component renders a diagram beside it. Successful renders hide the source block and provide per-diagram zoom controls; failed renders leave the source visible with a local error message.
 - Inline image enhancements. Every kept `<img>` is injected with `loading="lazy"` and `decoding="async"`, preventing layout shifts and deferring offscreen network transfers. Standalone images receive `.md-zoomable`, affording hover highlights and zoom-in cursors.
-- Interactive Lightbox (`#img-lightbox`). Clicking a standalone image opens a centered modal over a blurred backdrop (`rgba(0, 0, 0, 0.72)` + `backdrop-filter: blur(8px)`). The lightbox displays natural dimensions, offers an "Open in Tab" button (to promote the image into a dedicated image tab), a "Copy Path" button, and dismisses on `Esc` or backdrop click.
-- Broken image recovery. An error event listener registered during the capture phase on `#md` detects failed image loads and replaces the element with a styled `.md-img-broken` card displaying the missing path. See [Image Viewer Architecture](image-viewer.md) for full details.
+- Lightbox. Clicking a standalone image opens `Lightbox.jsx`, a native modal dialog with **Open in tab** (promotes the image into an image tab) and **Copy path**; Escape or a backdrop click closes it.
+- Broken image recovery. A capture-phase error listener on `#md` detects failed image loads and replaces the element with a styled `.md-img-broken` card displaying the missing path. See [Image Viewer Architecture](image-viewer.md) for full details.
 
 Styles live in the Markdown section of `@layer components` in [`web/tailwind.css`](../../web/tailwind.css). They read only theme tokens, so all themes work without changes. Alerts set a local `--alert` property from existing tokens: Note `--primary`, Tip `--gi`, Important `--nc`, Warning `--mark-active`, Caution `--destructive`. [`styling-and-themes.md`](styling-and-themes.md) lists every token the preview uses.
 
 ### Mermaid Diagrams
 
-Mermaid is a presentation-stage enhancement, not a server renderer. `renderFence` emits the same escaped `<pre><code>` and `data-line` metadata as every other fence. After `mdSanitize` has rejected repository-supplied SVG, `renderMermaidBlocks` lazy-loads the pinned, same-origin `web/vendor/mermaid-12.0.0.min.js` asset and inserts Mermaid's generated SVG. The runtime is fetched on demand at runtime and cached persistently under the user cache directory (`~/.faah/cache/vendor/`), keeping the compiled binary lean while still allowing diagrams to work offline after initial fetch and under `-base-path`.
+Mermaid is a presentation-stage enhancement, not a server renderer. `renderFence` emits the same escaped `<pre><code>` and `data-line` metadata as every other fence. After the sanitizer has rejected repository-supplied SVG, `PreviewContent` mounts a [`MermaidDiagram`](../../web/src/viewers/MermaidDiagram.jsx) beside each Mermaid fence. [`mermaid-runtime.js`](../../web/src/viewers/mermaid-runtime.js) lazy-loads the pinned, same-origin `web/vendor/mermaid-12.0.0.min.js` asset. The runtime is fetched on demand and cached under the user cache directory (`~/.faah/cache/vendor/`), keeping the binary lean while diagrams work offline after the first fetch and under `-base-path`.
 
-The adapter initializes Mermaid with `startOnLoad: false`, `securityLevel: strict`, disabled error rendering, and Mermaid's secure configuration keys. Diagram directives therefore cannot enable HTML labels, click callbacks, or a weaker security level. The returned `bindFunctions` hook is intentionally ignored.
+The runtime initializes Mermaid with `startOnLoad: false`, `securityLevel: strict`, disabled error rendering, and Mermaid's secure configuration keys. Diagram directives therefore cannot enable HTML labels, click callbacks, or a weaker security level. The returned `bindFunctions` hook is intentionally ignored.
 
-Rendering leverages an LRU diagram cache and cooperative event-loop yielding to optimize resource utilization and responsiveness. Every asynchronous continuation checks the preview generation and active document before changing the DOM. `drawPreview` waits for the batch before restoring a line, anchor, or saved scroll position. A syntax error affects only its fence: the original source remains visible and neighboring diagrams continue.
+Renders are serialized through one queue and cached by source and theme (at most 50 diagrams). Each diagram is a resource keyed by its source and the current theme, so a theme change re-renders it and a stale render is dropped. A syntax error affects only its fence: the source stays visible with a local error and neighbouring diagrams continue.
 
-The original `<pre>` stays in the DOM after a successful render, hidden from presentation and find but available to the existing copy button and `domToMarkdown`. This preserves exact Mermaid source when copying code or raw Markdown. Each rendered diagram owns a lightweight toolbar with controls for zooming (from 25% through 400%, with percentage label and fit-to-view), click-and-drag panning, and a full-screen toggle button. Full-screen mode maximizes the diagram into a focused overlay (`.md-mermaid.is-fullscreen`) centered across the entire viewport with locked page background scrolling, recalculating optimal fit while retaining zoom and pan. Dedicated close buttons in the controls toolbar and top-right corner, as well as `Esc`, cleanly dismiss full-screen view. `theme:changed` rerenders only the active preview after a short debounce, using the current faah theme tokens.
+The original `<pre>` stays in the DOM after a successful render, hidden from presentation and find but available to the copy button and `domToMarkdown`, so copying keeps the exact Mermaid source. Each diagram has `MermaidControls`: zoom from 25% to 400% with a percentage label and fit-to-view, drag panning, and full screen. Full screen (`.md-mermaid.is-fullscreen`) fills the viewport, locks page scrolling and refits while keeping zoom and pan; the close buttons and Escape leave it.
 
 ## 6. Keeping the Reader's Place
 
-Navigation in faah is line-based: the outline, go to line, search results, references, history, and `openFile(path, { line })`. All of them call `centerLine(n)` in [`web/src/tabs.js`](../../web/src/tabs.js), which hands off to `previewLine(n)` while previewing.
+Navigation in faah is line-based: the outline, go to line, search results, references, history, and `openFile(path, { line })`. All of them call `centerLine(n)` in [`editor/store.js`](../../web/src/editor/store.js), which records the line on the document (`mdLine`) and asks the preview's `line(n)` handle to scroll while previewing.
 
-### Line to Block (`previewLine`)
+### Line to Block (`line`)
 
-`previewLine` picks the element with the largest `data-line` that is at most `n`, and scrolls it to `MD_GAP` (16 px) below the top edge. It picks the largest line rather than stopping at the first one past `n`, because footnote definitions render at the end of the document but can sit anywhere in the source.
+`line(n)` in [`preview-dom.js`](../../web/src/viewers/preview-dom.js) picks the element with the largest `data-line` that is at most `n` and scrolls it to a gap (16 px, or the table header's height) below the top edge. It picks the largest line rather than stopping at the first one past `n`, because footnote definitions render at the end of the document but can sit anywhere in the source.
 
-If the HTML has not arrived yet, the line waits in `d.mdLine` and `drawPreview` applies it. Links to another file's heading wait the same way in `d.mdAnchor`.
+If the HTML has not arrived yet, the line waits in `mdLine` and `PreviewContent` applies it after rendering. Links to another file's heading wait the same way in `mdAnchor`.
 
-### Block to Line (`previewTopLine`)
+### Block to Line (`topLine`)
 
-`previewTopLine` walks `[data-line]` elements in document order and returns the last one whose top edge sits within `MD_GAP + 8` px of the view's top. The tolerance has to exceed `MD_GAP`. Otherwise a heading just scrolled into place by `previewLine` would report the block above it.
+`topLine()` walks `[data-line]` elements in document order and returns the last one whose top edge sits within the gap plus 8 px of the view's top. The tolerance has to exceed the gap; otherwise a heading just scrolled into place by `line(n)` would report the block above it.
 
 ### Switching Views
 
-`togglePreview` converts the reader's position in each direction:
-
-- Preview to source. `previewTopLine()` gives the line, then `sourceToLine(line)` scrolls the code view. The virtual scroller places rows at multiples of `LH` (20 px), but rows render at `--lh` (21 px) and grow when wrapped. `sourceToLine` therefore paints, measures where the row actually landed, and corrects `scrollTop`, up to three times.
-- Source to preview. `sourceTopLine()` reads the first painted row below the viewport's top, stores it in `d.mdLine`, and `drawPreview` applies it.
+`togglePreview(document, line)` in [`viewers/actions.js`](../../web/src/viewers/actions.js) stores the line and flips the view. The switch passes the reader's position in each direction: from the preview, `topLine()` of the preview handle; from the source, the source view's top line. The source view then centres that line, and the preview scrolls its block into place once drawn.
 
 ## 7. Links and History
 
-A click handler on `#md` routes plain left clicks. Modified clicks fall through to the browser, which opens the `/api/raw` href in a new tab.
+`PreviewContent` routes plain left clicks on `#md`. Modified clicks fall through to the browser, which opens the `/api/raw` href in a new tab.
 
-- `data-anchor` without `data-path` calls `mdJump`. It pushes the current position to history, scrolls to `md-<anchor>`, and pushes the target block's line, so Alt+Left and Alt+Right move between the two.
-- `data-path` calls `mdFollow`, which handles four cases:
-  - A link to the current file becomes `mdJump`.
-  - A folder is detected by probing `/api/tree?dir=<path>` and revealed in the explorer.
-  - A `#L12` anchor opens the file at line 12.
-  - Any other anchor opens the file and then scrolls to the heading, immediately if the preview is drawn or later through `d.mdAnchor`.
-- A path that fails to open shows a "Cannot open" toast.
-
-`mdFindAnchor` tries the anchor as written and lowercased, both URL-decoded, and accepts the element only if it sits inside `#md`.
+- A copy button copies its code block's text.
+- A zoomable image opens the lightbox.
+- `data-anchor` without `data-path`, or a link to the current file, pushes the current position to history and scrolls to the anchor, so Alt+Left and Alt+Right move between the two.
+- `data-path` pushes history and calls `openLink` ([`tree-store.js`](../../web/src/workspace/tree-store.js)), which reveals a folder in the explorer or opens a file. A `#L12` anchor opens the file at line 12; any other anchor opens the file and then scrolls to the heading through `mdAnchor`.
+- A path that fails to open shows a toast.
 
 ## 8. Switch Controls
 
 Three controls call `togglePreview()`:
 
-| Control                          | Location                                     | Wiring                            |
-| -------------------------------- | -------------------------------------------- | --------------------------------- |
-| Preview / Source switch          | `#md-switch`, right end of the tab bar       | `initMarkdown()` in `markdown.js` |
-| Preview button                   | `data-action="md-preview"` in the status bar | Footer handler in `shortcuts.js`  |
-| Alt+M, "Toggle Markdown Preview" | Keyboard, command palette                    | `shortcuts.js`, `palette.js`      |
+| Control                          | Location                               | Wiring                                         |
+| -------------------------------- | -------------------------------------- | ---------------------------------------------- |
+| Preview / Source switch          | `#md-switch`, right end of the tab bar | `FileActions.jsx`                              |
+| Preview button                   | Status bar                             | `StatusActions.jsx`                            |
+| Alt+M, "Toggle Markdown / Table Preview" | Keyboard, command palette      | `GlobalShortcuts.tsx`, `palette/features.js`  |
 
-`updateStatus()` in [`web/src/status.js`](../../web/src/status.js) owns the visible state. It shows `#md-switch` and the status button only on Markdown tabs, marks the active half with `.on`, and toggles `body.md-tab`. That class pads the end of `#tabs` so the last tab can scroll clear of the absolutely positioned switch. The switch buttons cancel `mousedown`, so focus stays where it was and arrow keys keep scrolling the view.
-
-Clicking the half that is already selected does nothing. The handler toggles only when the requested view differs from `previewing()`.
+The switch and the status button show only on Markdown and CSV/TSV tabs (labelled Table on the latter) and derive their state from `viewMode`. Clicking the half that is already selected does nothing.
 
 ## 9. Find, Select All and Keys
 
-The code view's features assume rows, so the preview substitutes its own versions:
+The code view's features assume rows, so the preview registers its own versions as the `preview` handle:
 
-- Find (Ctrl+F). `runFind` in [`web/src/find.js`](../../web/src/find.js) calls `findInPreview(q, caseSensitive)` instead of `/api/search`. It clears earlier `mark.md-hit` elements, then reuses `markNodes` from [`web/src/renderer.js`](../../web/src/renderer.js), the same text-node walker the code view uses, case-insensitively unless the findbar Match case toggle (`#find-case`) is on. Hidden Mermaid source is excluded so matches correspond to visible content. `S.find.preview` routes `jumpToHit` to `showPreviewHit`, which scrolls the match to the middle when it is near an edge. Minimap ticks come from each mark's offset within `#mdview`'s scroll height.
-- Select all (Ctrl+A). `selectPreview()` selects the contents of `#md` natively instead of the whole-file `S.selAll` mode, so Ctrl+C copies the rendered text.
-- Scrolling. `previewKey(e)` maps ArrowUp and ArrowDown (and `k` / `j`) to 48 px, PageUp and PageDown to 90% of the view, and Home and End (Cmd+Up and Cmd+Down on macOS) to the ends. `shortcuts.js` calls it before the code view's caret handling.
+- Find (Ctrl+F). The find actions ([`find-actions.js`](../../web/src/editor/find-actions.js)) call `preview.find(query, caseSensitive)` instead of `/api/search`. It clears earlier `mark.md-hit` elements and marks matches in text nodes, case-insensitively unless Match case is on. Hidden Mermaid source is excluded so matches correspond to visible content. Stepping calls `preview.showHit(index)`, which scrolls the match to the middle of the view.
+- Select all (Ctrl+A). `preview.select()` selects the contents of `#md` natively instead of the whole-file selection, so Ctrl+C copies the rendered text.
+- Scrolling. `preview.key(event)` maps ArrowUp and ArrowDown (and `k` / `j`) to 48 px, PageUp and PageDown to 90% of the view, and Home and End (Cmd+Up and Cmd+Down on macOS) to the ends. `GlobalShortcuts` calls it for keys no other binding took.
 
-Hover cards, Ctrl+click definitions and the selection bar listen on `#viewport`. `#mdview` covers it, so none of them fire in the preview.
+Hover cards, Ctrl+click definitions and the selection bar belong to the source viewport, which renders no rows under the preview, so none of them fire there. Text selected in the preview still reaches the selection bar through `selectionchange`, for the copy actions that apply to rendered text.
 
 ## 10. Limits and Known Gaps
 
 - Markdown files over 4 MB are not previewed. CSV and TSV files show their first 1,000 rows or 1 MB (section 12).
 - Fences over 256 KB and fences without a language are not highlighted.
 - Math fences render as code blocks.
-- The preview does not reload when the file changes on disk. Close and reopen the tab.
 - Images that load after a scroll position is restored can push content down.
 - Relative images in a Markdown file outside the workspace (opened through a language server) do not load, because `/api/raw` accepts only workspace paths.
 - The selection bar and right-click menu actions (Copy Ref, Copy with Context, Edit Inline, Find Usages) do not act on text selected in the preview. Switch to Source to edit.
@@ -268,11 +254,11 @@ Hover cards, Ctrl+click definitions and the selection bar listen on `#viewport`.
 - `TestMarkdownPreview` checks heading ids and `data-line`, highlighted fenced code, preserved relative links, task list checkboxes, the `markdown` flag on `/api/file`, and the 415 and 400 responses.
 - `TestHeadingIDsFollowGitHub` checks the id rules and deduplication.
 
-The sanitizer, Mermaid rendering, link routing, position sync and switch run only in a browser and have no automated test in the repository.
+Browser tests run in Vitest with jsdom: [`markdown.test.js`](../../web/src/viewers/markdown.test.js) (sanitizer, URL rules, selection serialization, broken images), [`markdown-picture.test.js`](../../web/src/viewers/markdown-picture.test.js), [`mermaid-logic.test.js`](../../web/src/viewers/mermaid-logic.test.js) and [`viewers.test.jsx`](../../web/src/viewers/viewers.test.jsx) (views, preview find and handles). Layout-dependent behaviour (scroll positions, Mermaid output) is checked in a real browser.
 
 ## 12. Table Preview (CSV / TSV)
 
-CSV and TSV tabs reuse this overlay. `/api/file` returns `"table": true` for `.csv` and `.tsv`, the tab records `d.table`, and `previewKind(d)` returns `'markdown'`, `'table'` or `''`. `previewing(d)` reads `S.mdPreview` or `S.tablePreview` to match, so each kind keeps its own setting (`faah.mdPreview` / `faah.tablePreview` in localStorage, `markdown.preview.open` / `table.preview.open` in settings). Everything else in sections 6–9 (position sync, switch, find, select all, keys) is shared, because table rows carry `data-line` the same way Markdown blocks do.
+CSV and TSV tabs reuse this overlay. `/api/file` returns `"table": true` for `.csv` and `.tsv`, the document records `table`, and `previewKind` returns `'table'`. Each kind keeps its own setting (`markdown.preview.open` / `table.preview.open`). Everything else in sections 6–9 (position sync, switch, find, select all, keys) is shared, because table rows carry `data-line` the same way Markdown blocks do.
 
 ### Endpoint
 
@@ -292,7 +278,7 @@ CSV and TSV tabs reuse this overlay. `/api/file` returns `"table": true` for `.c
 
 ### Rendering
 
-`buildTable` ([`web/src/table.js`](../../web/src/table.js)) creates every cell with `textContent`. Nothing from the file is parsed as HTML, so the table needs no sanitizer. `drawPreview` sets the article's class to `csv` (the `.md` styles do not apply) and caches the rows in `d.tableData`. Cells use `white-space: pre-wrap` with `max-width: 48ch` and `overflow-wrap: break-word`, so long text wraps inside its column (checked in Chromium, WebKit and Firefox, which all honour `max-width` on cells of a `width: max-content` table). The header `th` cells and the `.ln` gutter are `position: sticky`; `mdGap()` returns the header row's height for tables, so `previewLine` places a row just under the pinned header instead of behind it. The header row is skipped as a scroll target (a line at or before it scrolls to the top), and `previewTopLine` returns the header's line while the table is unscrolled. `findInPreview` unwraps any match inside the `.ln` gutter or the footer, so counts and stepping cover cells only. The footer's **Open Source** button calls `togglePreview()`. It states the number of rows shown and the file's line count (`d.total`); counting rows in the whole file would mean parsing all of it.
+[`TableViewer.jsx`](../../web/src/viewers/TableViewer.jsx) renders the rows with `For` and `Index`; every cell is text, nothing from the file is parsed as HTML, so the table needs no sanitizer. The article's class is `csv` (the `.md` styles do not apply). Cells use `white-space: pre-wrap` with `max-width: 48ch` and `overflow-wrap: break-word`, so long text wraps inside its column (checked in Chromium, WebKit and Firefox, which all honour `max-width` on cells of a `width: max-content` table). The header `th` cells and the `.ln` gutter are `position: sticky`; the preview handle uses the header row's height as its gap, so `line(n)` places a row just under the pinned header instead of behind it. The header row is skipped as a scroll target (a line at or before it scrolls to the top), and `topLine()` returns the header's line while the table is unscrolled. Find skips the `.ln` gutter and the footer, so counts and stepping cover cells only. The footer's **Open Source** button calls `togglePreview()`. It states the number of rows shown and the file's line count; counting rows in the whole file would mean parsing all of it.
 
 ### Tests
 

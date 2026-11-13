@@ -107,7 +107,7 @@ faah provides full incoming and outgoing call hierarchy navigation (`Calls` tab 
 
 ## 6. In-App Setup & One-Click Installers
 
-When reading a codebase without an installed language server, the status bar displays `LSP: set up`. Clicking it opens the interactive setup panel (`web/src/lspsetup.js`).
+When reading a codebase without an installed language server, the status bar displays `LSP: set up`. Clicking it opens the interactive setup panel ([`web/src/lsp/LspSetup.jsx`](../../web/src/lsp/LspSetup.jsx)).
 
 ### Security Validation (DNS-Rebinding Defense)
 
@@ -120,5 +120,5 @@ Executing installation commands (e.g., `go install` or `npm install`) requires r
 
 ## 7. Diagnostics (`textDocument/publishDiagnostics`) & Idle Server Reaping
 
-- **Diagnostics**: `lspClient` advertises `publishDiagnostics: {}` during `initialize` and parses incoming `textDocument/publishDiagnostics` notifications into per-file `LSPDiagnostic` slices (errors and warnings). `/api/file` and `/api/lsp/diagnostics` expose these diagnostics so both the virtualized code viewer (`renderer.js`) and diff viewer (`diff.js`) render inline diagnostic badges via CSS `data-diag` attributes without polluting DOM text nodes.
+- **Diagnostics**: `lspClient` advertises `publishDiagnostics: {}` during `initialize` and parses incoming `textDocument/publishDiagnostics` notifications into per-file `LSPDiagnostic` slices (errors and warnings). `/api/file` and `/api/lsp/diagnostics` expose these diagnostics so both the virtualized code viewer (`editor/EditorRow.jsx`) and diff viewer (`viewers/DiffRow.jsx`) render inline diagnostic badges via CSS `data-diag` attributes without polluting DOM text nodes.
 - **Idle Reaping (`ReapIdle`)**: Each `lspClient` records its last activity timestamp (`lastUsed`). The server's background scavenger (`Server.scavenge()`) calls `lspManager.ReapIdle(10 * time.Minute)`, shutting down idle language servers without marking them permanently stopped so they respawn transparently on the next request.
