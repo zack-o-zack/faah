@@ -18,6 +18,19 @@ export function ThreadsPanel() {
         <div class="threads-head-title flex items-center gap-2 font-medium [&_svg]:shrink-0 [&_svg]:text-primary">
           <span class="icon-[lucide--message-square] size-3.5 shrink-0" aria-hidden="true" />
           <span class="threads-head-label text-xs font-medium">Threads</span>
+          <span
+            class="badge"
+            data-variant="secondary"
+            data-control="thr-tab-count"
+            hidden={!editor.agents.state.sessions.length}
+          >
+            {editor.agents.state.sessions.length}
+          </span>
+          <span
+            data-ui="thr-tab-dot"
+            class="inline-block"
+            hidden={!editor.threads.state.list.some((thread) => thread.running)}
+          />
         </div>
         <div class="inspector-head-actions flex items-center">
           <button
@@ -52,13 +65,17 @@ export function ThreadsToggle() {
   const editor = useEditor();
   const shown = () => editor.store.state.layout.threads;
   const waiting = () => editor.agents.state.sessions.length;
+  const variant = () => {
+    if (shown()) return 'secondary';
+    return editor.store.state.layout.right ? 'ghost' : 'special';
+  };
   return (
     <button
       id="btn-top-threads"
       title={withKeys('Agent Threads ({Alt+T})')}
       class="btn"
       data-control="header-action btn-top-threads"
-      data-variant={shown() ? 'secondary' : 'special'}
+      data-variant={variant()}
       data-size="xs"
       aria-pressed={shown()}
       hidden={editor.store.state.workspace.meta?.threadsEnabled === false}

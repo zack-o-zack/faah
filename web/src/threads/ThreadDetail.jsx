@@ -7,7 +7,10 @@ export function ThreadDetail() {
   const editor = useEditor();
   const thread = () => editor.threads.current() || editor.threads.state.draft;
   let input;
-  onMount(() => input.focus());
+  onMount(() => {
+    input.focus();
+    editor.actions.clearSelection?.();
+  });
   return (
     <section id="thr-thread-view" data-ui="thr-view" class="flex flex-1 min-h-0 flex-col">
       <div

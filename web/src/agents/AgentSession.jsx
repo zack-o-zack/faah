@@ -4,10 +4,14 @@ import { createShortcut } from '../lib/shortcuts.jsx';
 import { ErrorNotice } from '../lib/ErrorNotice.jsx';
 import { AgentPicker } from './AgentPicker.jsx';
 import { targetRef } from './logic.ts';
+import { keyLabel } from '../lib/keyboard.ts';
 export function AgentSession(props) {
   const editor = useEditor();
   let input;
-  onMount(() => input?.focus());
+  onMount(() => {
+    input?.focus();
+    editor.actions.clearSelection?.();
+  });
   createEffect(
     on(
       () => editor.agents.state.focus.sequence,
@@ -109,7 +113,7 @@ export function AgentSession(props) {
                 class="flex items-center gap-2 font-mono text-muted-foreground"
               >
                 <span data-ui="agent-hint" class="flex-1">
-                  Enter to send, Esc to cancel
+                  Enter adds to the batch · {keyLabel('Mod+Enter')} applies now
                 </span>
                 <Show
                   when={!props.session.pending}
