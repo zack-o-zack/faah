@@ -298,17 +298,17 @@ Values below are median / p95 under the existing pooled-sample contract.
   187.8 / 186.9ms. This reproduces the slower reveal boundary in A1 too; it
   does not establish an A2 regression of the size suggested by the older table.
   Raw paired traces remain in `bench-out/a2-cold-*.trace.json` and
-  `bench-out/a2-wrap-paired-*-tree.trace.json`. Phase B still needs to improve
-  the legacy tree and its costly full-DOM layout.
-- The action surface is one flat `editor.actions` object. The bridge adapts
-  `openLink` for directory revelation; components no longer probe an optional
+  `bench-out/a2-wrap-paired-*-tree.trace.json`. The tree still creates a row
+  per file and pays for full-DOM layout; B replaces it.
+- The action surface is one flat `editor.actions` object. The tree store's
+  `openLink` reveals directories and opens files; components no longer probe an optional
   `followDirectory` service. The wrap-up adds no effects.
 
 Validation: frontend checks, Go build and short Go tests pass. The headless viewer
 smoke covers 29 cases with zero console errors; the explain request is mocked and
 the known failing remote tips feed is disabled. The editor smoke passes 38 additional cases with no console errors; its
-results are recorded separately in the local diagnostic output. Phase B benchmarks and migration are
-not included in these A2 results.
+results are recorded separately in the local diagnostic output. The B tree and
+shell work is not included in these A2 results.
 
 ## B — 13 November 2026
 
@@ -413,7 +413,7 @@ and 102 passing subtests, with 49 skip events.
 Six headless Playwright smoke suites pass 46 UI checks and four single-stream
 assertions with zero console/page errors. Coverage includes tree expansion,
 collapse and reveal, new file/folder, context menus, PR scope switching, real
-commit and push to a temporary local bare remote, unpushed/commit-file lists,
+commit and push to a throwaway local bare remote, unpushed/commit-file lists,
 sync menu, case/word/regex/glob search, both palettes, real TypeScript references,
 symbols, calls and definitions, LSP management UI, status metrics, all three
 panel widths and visibility across reload, editing/discard, Markdown/image/diff
@@ -422,3 +422,119 @@ handoff. PR data/scope and explanation completion are mocked; no external PR or
 coding-harness action is performed. Git mutations stay in the throwaway fixture.
 The repo smoke also uses the fresh binary against this checkout. Evidence is in
 `b-smoke-{tree,git,search,lsp,repo,pr}.log` and `b-smoke-summary.json`.
+
+
+## C — 13 November 2026
+
+Five runs of all nine scenarios (45 successful pages, zero failures) on the same
+M4, Chrome 157.0.8103.51, React revision and synthetic fixture hashes as the
+earlier tables. Checks, builds and the harness all use Node 24.15.0 through nvm
+(B ran the harness on Node 26.3.0). Go is 1.27.3. Frontend source is `de3d719`:
+the page renders entirely in Solid, `index.html` holds only `#root`, and the
+legacy layer is gone. Values are medians under the pooled-sample contract; raw
+samples, p95s and binary/fixture hashes are in ignored `bench-out/c.json`.
+
+| Metric | Unit | Vanilla | A1 | A2 | B | C |
+|---|---|---:|---:|---:|---:|---:|
+| cold.real.tree | ms | 526.80 | 495.90 | 573.10 | 564.70 | 547.10 |
+| cold.real.idle | ms | 1047.70 | 1013.00 | 1087.80 | 1077.40 | 1050.90 |
+| cold.real.js_transfer | bytes | 160765.00 | 166781.00 | 169373.00 | 168112.00 | 158465.00 |
+| cold.real.heap | bytes | 3126872.00 | 3601100.00 | 3499356.00 | 4506068.00 | 4277632.00 |
+| cold.real.dom_nodes | nodes | 4064.00 | 4133.00 | 4000.00 | 3880.00 | 1588.00 |
+| cold.synthetic.tree | ms | 509.30 | 506.90 | 534.20 | 596.30 | 518.70 |
+| cold.synthetic.idle | ms | 1033.90 | 1019.40 | 1050.10 | 1110.80 | 1030.60 |
+| cold.synthetic.js_transfer | bytes | 160765.00 | 166781.00 | 169373.00 | 168112.00 | 158465.00 |
+| cold.synthetic.heap | bytes | 3107440.00 | 3563904.00 | 3489852.00 | 4374640.00 | 5109856.00 |
+| cold.synthetic.dom_nodes | nodes | 4060.00 | 4059.00 | 3926.00 | 3770.00 | 1478.00 |
+| finder.keystroke | ms | 64.20 | 77.30 | 76.80 | 45.20 | 47.30 |
+| file.open_50k | ms | 43.90 | 45.90 | 45.60 | 41.90 | 45.50 |
+| scroll.frame | ms | 16.70 | 16.70 | 16.70 | 16.70 | 16.70 |
+| scroll.frames_over_16_7 | frames | 17.00 | 13.00 | 11.00 | 10.00 | 10.00 |
+| scroll.long_tasks | tasks | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 |
+| scroll.long_task_total | ms | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 |
+| scroll.geometry_misses | checkpoints | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 |
+| scroll.content_misses | checkpoints | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 |
+| cursor.interaction | ms | 24.00 | 24.00 | 24.00 | 32.00 | 32.00 |
+| cursor.interactions_ge_16 | interactions | 300.00 | 300.00 | 300.00 | 300.00 | 300.00 |
+| edit.enter_50k | ms | 1647.20 | 529.30 | 536.00 | 526.10 | 547.40 |
+| edit.keystroke | ms | 103.90 | 36.50 | 36.50 | 35.90 | 38.50 |
+| edit.interaction | ms | 88.00 | 40.00 | 40.00 | 40.00 | 40.00 |
+| edit.interactions_ge_16 | interactions | 200.00 | 200.00 | 200.00 | 200.00 | 200.00 |
+| tabs.switch | ms | 31.45 | 30.65 | 30.60 | 30.05 | 31.70 |
+| tree.expand_20k | ms | 1224.50 | 1128.10 | 1143.70 | 79.20 | 79.30 |
+| tree.reveal_deep | ms | 140.80 | 114.40 | 182.10 | 44.80 | 45.70 |
+| search.results | ms | 895.60 | 874.50 | 906.60 | 875.50 | 908.20 |
+| preview.markdown_5k | ms | 194.20 | 119.60 | 111.60 | 102.80 | 117.80 |
+| preview.csv_20k | ms | 118.70 | 103.90 | 98.50 | 92.50 | 97.20 |
+| memory.heap_delta | bytes | 409988.00 | 602756.00 | 602836.00 | 584628.00 | 539504.00 |
+| memory.dom_delta | nodes | 20.00 | 20.00 | 20.00 | 0.00 | 0.00 |
+| memory.attached_delta | elements | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 |
+
+Paired runs rebuilt the vanilla (`3e18f55`), B (`0a25f01`) and C (`de3d719`)
+binaries from source and ran six rotated rounds of cold real and synthetic
+loads, the Markdown/CSV previews and the 300-keydown cursor pass on one
+browser. Each cold page was also measured after a forced GC. Results are in
+`bench-out/c-paired.json`.
+
+| Paired metric | Unit | Vanilla | B | C |
+|---|---|---:|---:|---:|
+| cold.real.tree | ms | 547.3 | 831.9 | 577.8 |
+| cold.synthetic.tree | ms | 551.9 | 528.2 | 492.2 |
+| cold.real.heap after GC | bytes | 2015148 | 3233396 | 3368538 |
+| cold.synthetic.heap after GC | bytes | 2014232 | 3179560 | 3324232 |
+| cold.synthetic.dom_nodes after GC | nodes | 3818 | 3479 | 1200 |
+| preview.markdown_5k | ms | 109.6 | 144.8 | 145.1 |
+| preview.csv_20k | ms | 108.9 | 97.6 | 98.1 |
+| cursor.interaction | ms | 32 | 32 | 24 |
+| cursor dispatch wall | ms | 521.4 | 404.0 | 376.6 |
+
+- Cold synthetic tree readiness is 518.7ms, 1.8% above vanilla's 509.3ms and
+  below B's 596.3ms. The paired synthetic median is 492.2ms against vanilla's
+  551.9ms. The real-corpus tree is 547.1ms (+3.9% on the table, +5.6% paired);
+  its paired samples include one-second outliers in every build, so the
+  medians move with startup and font loading rather than the frontend.
+- **Cold JavaScript heap stays above vanilla and is kept as a tradeoff.** After
+  forced GC the synthetic heap is 3,324,232 bytes against vanilla's 2,014,232
+  (+65%) and B's 3,179,560 (+4.6%, +144,672 bytes). Snapshots of the same
+  three builds attribute the C-over-vanilla JS increase to compiled code
+  (+483,880 bytes), objects (+271,852), arrays (+202,640) and closures
+  (+147,016): the Solid runtime, component templates and the reactive graph
+  for the mounted shell. The C-over-B increase is the shell moving from static
+  HTML into components (+48,660 objects, +42,268 arrays, +31,252 closures),
+  while compiled code fell 41,004 bytes. The same move removes closed dialogs,
+  the hidden review view, PR bar and side-panel contents from the cold DOM:
+  1,200 nodes against vanilla's 3,818. Snapshot native memory is 1,275,904
+  bytes below vanilla and 629,838 below B, and the CDP embedder heap is
+  3,430,624 bytes against vanilla's 5,056,408 and B's 4,215,264. These are
+  separate measurements, not an RSS total. The uncollected cold heap in the
+  table (+16.8% over B on the synthetic corpus, −5.1% on the real one) is
+  garbage that forced GC removes.
+- Markdown preview is 117.8ms in the table (B 102.8ms, vanilla 194.2ms).
+  Samples are bimodal in every build (C: 100.7–208.2ms); the paired medians
+  are 144.8 / 145.1ms (B/C), so the table difference is not reproduced.
+- Cursor Event Timing is 32ms in the table, as in B. The paired pass measures
+  24ms for C against 32ms for vanilla and B, and the dispatch loop is the
+  fastest of the three. Event Timing is quantized to 8ms.
+- Workspace search is 908.2ms (vanilla 895.6ms), within the backend scan and
+  debounce variation seen in every table. Tree expansion (79.3ms) and deep
+  reveal (45.7ms) hold B's improvement.
+- Bundles against vanilla, minified bytes (gzip): `app.js` 430,629 (130,339)
+  versus 433,670 (134,402); `workbench.js` 53,411 (18,973) versus 22,295
+  (8,165); `holding.js` 17,327 (6,952) versus 2,749 (1,460). The workbench and
+  holding pages now carry the Solid runtime and shared components.
+
+Raw evidence is in ignored `bench-out/`: `c.json`, `c/` (CPU profiles and
+traces), `c-run.log`, `c-paired.json`, `c-paired-heap.json`,
+`c-paired-*-cold.heapsnapshot` and `c-go-test.json`.
+
+Validation: `npm run check` passes formatting, ESLint, 329 tests in 66 files
+and the three production builds; `npm run typecheck` passes in 0.2–0.4s.
+`go build ./...` and `go test -short ./...` pass across 23 packages: 366
+passing top-level tests and 102 passing subtests, with 49 skips. Five headless
+Playwright smoke suites against a fresh binary pass 36 UI checks with zero
+console or page errors. They cover the shell structure, welcome page and
+`?path=` start-up, header toggles and body classes, palette copy and select-all,
+the review overview, pipeline, follow-ups and run controls, PR bar, comments,
+diff markers, verdict and merge with mocked PR data, the settings dialog and
+JSON view, and global and editor shortcuts. The workspace is a throwaway
+repository; review runs and PR calls are mocked.
