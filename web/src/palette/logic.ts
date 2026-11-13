@@ -3,7 +3,7 @@ export const MODES = {
   file: {
     label: 'File',
     placeholder: 'Search files by name',
-    hint: 'Prefix : for a line, @ for a symbol, > for a command.',
+    hint: 'Type to fuzzy-match any file. Prefix : for a line, @ for a symbol, > for a command.',
   },
   symbol: { label: 'Symbol', placeholder: 'Go to symbol', hint: 'Symbols in the active file.' },
   line: { label: 'Line', placeholder: 'Go to line', hint: 'Enter a line number.' },
@@ -11,12 +11,12 @@ export const MODES = {
   theme: {
     label: 'Theme',
     placeholder: 'Select a theme',
-    hint: 'Arrows preview. Enter keeps it; Esc restores the previous theme.',
+    hint: 'Arrows preview a theme. Enter keeps it, Esc restores the previous one.',
   },
   openpr: {
     label: 'Open PR',
     placeholder: 'Paste a pull request URL',
-    hint: 'Enter to open in a new tab.',
+    hint: 'Full pull request URL (e.g. https://github.com/owner/repo/pull/123), then Enter.',
   },
 };
 export function paletteQuery(input: string, base: string): { mode: PaletteMode; query: string } {

@@ -55,29 +55,37 @@ function PaletteDialog() {
   return (
     <Dialog
       open
+      bare
+      id="overlay"
+      dialogClass="command-dialog sm:max-w-[40rem]!"
       title={MODES[palette.query().mode].label}
       onClose={() => editor.actions.closePalette()}
     >
-      <div id="palette" class="w-[min(40rem,calc(100vw-5rem))]">
-        <input
-          ref={input}
-          id="pal"
-          class="input w-full"
-          aria-label="Search commands and files"
-          autocomplete="off"
-          spellcheck={false}
-          placeholder={MODES[palette.query().mode].placeholder}
-          value={palette.state.query}
-          onInput={(event) => {
-            editor.actions.setPaletteQuery(event.currentTarget.value);
-            list.scrollTop = 0;
-          }}
-          onKeyDown={key}
-        />
+      <div id="palette" class="command w-[min(40rem,calc(100vw-2rem))]! max-w-none!">
+        <header>
+          <span id="pal-mode" class="badge" data-variant="secondary">
+            {MODES[palette.query().mode].label}
+          </span>
+          <input
+            ref={input}
+            id="pal"
+            class="min-w-0"
+            aria-label="Search commands and files"
+            autocomplete="off"
+            spellcheck={false}
+            placeholder={MODES[palette.query().mode].placeholder}
+            value={palette.state.query}
+            onInput={(event) => {
+              editor.actions.setPaletteQuery(event.currentTarget.value);
+              list.scrollTop = 0;
+            }}
+            onKeyDown={key}
+          />
+        </header>
         <Show when={palette.error()}>
           <p role="alert">{palette.error().message}</p>
         </Show>
-        <div ref={list} id="pal-list" class="relative max-h-[50vh] overflow-auto" role="menu">
+        <div ref={list} id="pal-list" role="menu">
           <For each={palette.items()}>
             {(item, index) => (
               <PaletteItem
@@ -89,12 +97,17 @@ function PaletteDialog() {
             )}
           </For>
           <Show when={!palette.items().length}>
-            <p class="p-2">{palette.loading() ? 'Searching…' : 'No matches'}</p>
+            <div class="px-3 py-2">
+              <span class="truncate">{palette.loading() ? 'Searching…' : 'No matches'}</span>
+            </div>
           </Show>
         </div>
-        <p id="pal-hint" class="p-2 text-xs text-muted-foreground">
+        <div
+          id="pal-hint"
+          class="border-t border-border px-3 py-2 text-xs text-muted-foreground empty:hidden"
+        >
           {MODES[palette.query().mode].hint}
-        </p>
+        </div>
       </div>
     </Dialog>
   );

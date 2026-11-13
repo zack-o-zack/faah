@@ -38,7 +38,7 @@ export function TabStrip(props) {
   return (
     <div
       id="tab-row"
-      class="flex shrink-0 items-center border-b bg-sidebar"
+      class="flex shrink-0 items-center border-b bg-sidebar has-[#tabs:empty]:hidden"
       hidden={!editor.store.state.documents.tabs.length}
     >
       <div
@@ -48,7 +48,7 @@ export function TabStrip(props) {
         <For each={editor.store.state.documents.tabs}>
           {(tab, index) => (
             <div
-              class="tab flex max-w-64 shrink-0 items-center gap-2 rounded px-3 py-1 text-xs"
+              class="tab flex shrink-0 max-w-64 cursor-pointer select-none items-center gap-2 rounded px-3 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground [&.active]:bg-accent [&.active]:text-foreground [&.tab-deleted_.tn]:line-through"
               classList={{
                 active: index() === editor.store.state.documents.active,
                 'tab-dirty': tab.dirty,
@@ -72,7 +72,7 @@ export function TabStrip(props) {
               }}
             >
               <button
-                class="tn truncate"
+                class="tn min-h-6 min-w-6 truncate text-left focus-visible:outline focus-visible:outline-ring"
                 aria-pressed={index() === editor.store.state.documents.active}
                 onClick={() => editor.actions.switchTab(index())}
               >
@@ -89,6 +89,8 @@ export function TabStrip(props) {
               </Show>
               <button
                 class="btn"
+                data-variant="ghost"
+                data-size="icon-xs"
                 aria-label="Close tab"
                 onClick={() => editor.actions.closeTabs([index()])}
               >
@@ -100,28 +102,39 @@ export function TabStrip(props) {
       </div>
       {props.children}
       <Show when={menu()}>
-        <div
-          id="tab-menu"
-          ref={panel}
-          role="menu"
-          class="dropdown-menu fixed z-50 border bg-popover p-1"
-          style={{ left: `${menu().x}px`, top: `${menu().y}px` }}
-        >
-          <Index each={['close', 'all', 'others', 'right', 'left']}>
-            {(name) => (
-              <button role="menuitem" class="btn w-full" onClick={() => action(name())}>
-                {
+        <div class="dropdown-menu contents">
+          <div
+            id="tab-menu"
+            ref={panel}
+            role="menu"
+            data-popover
+            aria-hidden="false"
+            class="fixed min-w-[190px] max-w-[min(380px,95vw)] z-[70] top-auto left-auto m-0 gap-0"
+            style={{ left: `${menu().x}px`, top: `${menu().y}px` }}
+          >
+            <Index each={['close', 'all', 'others', 'right', 'left']}>
+              {(name) => (
+                <button
+                  role="menuitem"
+                  class="w-full justify-start"
+                  data-control="sel-menu-item"
+                  data-variant="ghost"
+                  data-size="xs"
+                  onClick={() => action(name())}
+                >
                   {
-                    close: 'Close',
-                    all: 'Close All',
-                    others: 'Close Others',
-                    right: 'Close to the Right',
-                    left: 'Close to the Left',
-                  }[name()]
-                }
-              </button>
-            )}
-          </Index>
+                    {
+                      close: 'Close',
+                      all: 'Close All',
+                      others: 'Close Others',
+                      right: 'Close to the Right',
+                      left: 'Close to the Left',
+                    }[name()]
+                  }
+                </button>
+              )}
+            </Index>
+          </div>
         </div>
       </Show>
     </div>

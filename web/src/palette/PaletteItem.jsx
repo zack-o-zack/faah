@@ -8,14 +8,15 @@ export function PaletteItem(props) {
           .map((position) => position - props.item.path.length + props.item.label.length)
       : [];
   return (
-    <button
+    <div
       role="menuitem"
-      class="flex w-full min-w-0 items-center gap-2 p-2 text-left text-sm hover:bg-accent data-[selected=true]:bg-accent"
+      class="whitespace-normal! data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground [&_b]:text-primary-text"
+      classList={{ active: props.selected }}
       data-selected={props.selected}
       data-i={props.index}
       onClick={() => props.onChoose()}
     >
-      <span class="min-w-0 flex-1 truncate">
+      <span class="min-w-0 flex-1 whitespace-normal! wrap-anywhere">
         <For each={fuzzyParts(props.item.label, positions())}>
           {(part) => (
             <Show when={part.bold} fallback={part.text}>
@@ -24,7 +25,12 @@ export function PaletteItem(props) {
           )}
         </For>
       </span>
-      <span class="max-w-[40%] truncate text-xs text-muted-foreground">{props.item.sub}</span>
-    </button>
+      <span class="max-w-[35%] truncate">{props.item.sub}</span>
+      <Show when={props.item.right}>
+        <span class="badge ml-auto" data-variant="outline">
+          {props.item.right}
+        </span>
+      </Show>
+    </div>
   );
 }
