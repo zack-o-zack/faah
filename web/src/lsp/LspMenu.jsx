@@ -5,14 +5,31 @@ export function LspMenu() {
   const editor = useEditor();
   const language = editor.language;
   return (
-    <span id="st-lsp">
+    <>
       <Popover
-        label="LSP"
+        triggerId="st-lsp"
+        triggerClass="btn text-muted-foreground"
+        panelId="lsp-menu"
+        gap={6}
+        label={
+          <>
+            <span class="size-1.5 shrink-0 rounded-full bg-faint" aria-hidden="true" />
+            LSP
+          </>
+        }
         open={language.state.menuOpen}
         onOpenChange={editor.actions.setLspMenuOpen}
       >
-        <div id="lsp-menu" class="flex max-h-96 w-80 flex-col gap-2 overflow-auto p-2 text-xs">
-          <strong>Language servers</strong>
+        <div
+          data-ui="lsp-menu-head"
+          class="px-2 pt-1.5 pb-1 text-xs font-medium text-muted-foreground"
+        >
+          Language servers
+        </div>
+        <div
+          data-ui="lsp-server-list"
+          class="grid grid-cols-[auto_1fr_auto_auto] items-center gap-x-3 gap-y-0.5 pl-2 text-xs"
+        >
           <Show when={language.servers.loading}>
             <p>Loading…</p>
           </Show>
@@ -74,18 +91,12 @@ export function LspMenu() {
             )}
           </For>
           <Show when={!editor.store.state.lsp.servers.length}>
-            <p>No language servers detected for workspace.</p>
+            <div data-ui="lsp-empty-note" class="col-span-full py-2 text-muted-foreground">
+              No language servers detected for workspace
+            </div>
           </Show>
-          <div class="flex gap-2">
-            <button class="btn" onClick={() => void editor.actions.startAllLsp()}>
-              Start all
-            </button>
-            <button class="btn" onClick={() => void editor.actions.stopAllLsp()}>
-              Stop all
-            </button>
-          </div>
         </div>
       </Popover>
-    </span>
+    </>
   );
 }

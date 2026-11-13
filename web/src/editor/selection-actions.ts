@@ -126,7 +126,7 @@ function buildSelectionActions(editor: SelectionHost) {
     }
   }
   // Runs a selection action on the selection, or on the caret line for thread and agent edits.
-  function runSelectionAction(action: string, override?: SelectionInfo | null) {
+  function runSelectionAction(action: string, override?: SelectionInfo | null, onCopied?: () => void) {
     let info = override || ui.selection;
     if (!info) {
       const document = active();
@@ -156,11 +156,13 @@ function buildSelectionActions(editor: SelectionHost) {
       return true;
     }
     if (action === 'copy-preview-text') {
-      void copyRich(info.text, info.html || '', 'Copied formatted text');
+      void copyRich(info.text, info.html || '', 'Copied formatted text').then(
+        (ok) => ok && onCopied?.(),
+      );
       return true;
     }
     if (action === 'copy-markdown') {
-      void copyMarkdown(info);
+      void copyMarkdown(info).then((ok) => ok && onCopied?.());
       return true;
     }
     const values: Record<string, string> = {
@@ -170,7 +172,11 @@ function buildSelectionActions(editor: SelectionHost) {
     };
     const value = values[action];
     if (value === undefined) return false;
-    void copyText(value);
+    const lines = info.l2 - info.l1 + 1;
+    void copyText(
+      value,
+      action === 'copy-source' ? `Copied ${lines} ${lines === 1 ? 'line' : 'lines'}` : 'Copied',
+    ).then((ok) => ok && onCopied?.());
     return true;
   }
   return {

@@ -21,7 +21,12 @@ export const toast = (...args) => notifications.toast(...args);
 export function Toaster(props) {
   const service = () => props.store || notifications;
   return (
-    <div class="toaster" data-align="end" aria-live="polite">
+    <div
+      id="toaster"
+      class="toaster top-[var(--titlebar-h,0px)] bottom-auto flex-col [&_.toast]:animate-[toast-down_0.3s_ease-in-out]"
+      data-align="end"
+      aria-live="polite"
+    >
       <For each={service().items()}>
         {(item) => <ToastItem item={item} dismiss={service().dismiss} />}
       </For>

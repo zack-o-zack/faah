@@ -19,9 +19,9 @@ export function Popover(props) {
       8,
       Math.min(innerWidth - panel.offsetWidth - 8, rect.right - panel.offsetWidth),
     );
-    let top = rect.bottom + 4;
+    let top = rect.bottom + (props.gap ?? 4);
     if (top + panel.offsetHeight > innerHeight - 8)
-      top = Math.max(8, rect.top - panel.offsetHeight - 4);
+      top = Math.max(8, rect.top - panel.offsetHeight - (props.gap ?? 4));
     setPosition({ left: left + 'px', top: top + 'px' });
   }
   onMount(() => {
@@ -49,7 +49,7 @@ export function Popover(props) {
     roving: () => props.role === 'menu',
   });
   return (
-    <div class="dropdown-menu relative inline-block">
+    <div class="dropdown-menu contents">
       <button
         ref={(element) => {
           trigger = element;
@@ -58,7 +58,10 @@ export function Popover(props) {
         aria-label={props.accessibleLabel}
         disabled={props.disabled}
         type="button"
-        class="btn"
+        class={props.triggerClass || 'btn'}
+        data-control={props.control}
+        data-variant={props.variant || 'ghost'}
+        data-size={props.size || 'xs'}
         aria-haspopup={props.role || 'dialog'}
         aria-expanded={open()}
         aria-controls={id}
@@ -74,29 +77,34 @@ export function Popover(props) {
       </button>
       <Show when={open()}>
         <Portal>
-          <div
-            ref={(el) => {
-              panel = el;
-              queueMicrotask(() => {
-                place();
-                el.querySelector('button, input, [tabindex="0"]')?.focus();
-              });
-            }}
-            id={id}
-            role={props.role || 'dialog'}
-            aria-label={
-              props.accessibleLabel || (typeof props.label === 'string' ? props.label : undefined)
-            }
-            data-popover
-            classList={{ 'flex flex-col': props.role === 'menu' }}
-            style={position()}
-            class={`fixed z-50 min-w-48 rounded-md
-        border bg-popover p-1 text-popover-foreground`}
-            onClick={(e) => {
-              if (props.role === 'menu' && e.target.closest('[role^="menuitem"]')) close('select');
-            }}
-          >
-            {typeof props.children === 'function' ? props.children(close) : props.children}
+          <div class="dropdown-menu contents">
+            <div
+              ref={(el) => {
+                panel = el;
+                queueMicrotask(() => {
+                  place();
+                  if (props.autofocus) el.querySelector('button, input, [tabindex="0"]')?.focus();
+                });
+              }}
+              id={props.panelId || id}
+              role={props.role || 'dialog'}
+              aria-label={
+                props.accessibleLabel || (typeof props.label === 'string' ? props.label : undefined)
+              }
+              data-popover
+              aria-hidden="false"
+              style={position()}
+              class={
+                props.panelClass ||
+                'fixed min-w-[190px] max-w-[min(380px,95vw)] z-[70] top-auto left-auto m-0 gap-0'
+              }
+              onClick={(e) => {
+                if (props.role === 'menu' && e.target.closest('[role^="menuitem"]'))
+                  close('select');
+              }}
+            >
+              {typeof props.children === 'function' ? props.children(close) : props.children}
+            </div>
           </div>
         </Portal>
       </Show>

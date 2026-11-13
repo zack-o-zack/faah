@@ -22,6 +22,8 @@ export function EditControls() {
         aria-busy={editor.ui.editLoading}
         hidden={editor.active()?.isEditing}
         onClick={() => void editor.actions.enterEditMode()}
+        data-variant="ghost"
+        data-size="icon-xs"
       >
         <span class="icon-[lucide--square-pen] size-3.5" />
       </button>
@@ -30,6 +32,9 @@ export function EditControls() {
         class="btn"
         hidden={!editor.active()?.isEditing}
         onClick={() => void editor.actions.exitEditMode()}
+        data-variant="outline"
+        data-size="xs"
+        data-control="edit-btn-done"
       >
         Done
       </button>
@@ -38,6 +43,9 @@ export function EditControls() {
         class="btn"
         hidden={!editor.active()?.isEditing}
         onClick={() => void editor.actions.saveActiveFile()}
+        data-variant="primary"
+        data-size="xs"
+        data-control="edit-btn-save"
       >
         Save
       </button>

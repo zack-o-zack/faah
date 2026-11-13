@@ -67,10 +67,10 @@ test('select emits values and split handle clamps keyboard resizing', () => {
 test('toasts render text safely and can be dismissed', async () => {
   const service = createToastStore();
   render(() => <Toaster store={service} />);
-  service.toast('success', '<img onerror=alert(1)>', 0);
+  const dismiss = service.toast('success', '<img onerror=alert(1)>', 0);
   expect(screen.getByRole('status').textContent).toContain('<img');
   expect(document.querySelector('img')).toBeNull();
-  await userEvent.click(screen.getByRole('button', { name: 'Dismiss notification' }));
+  dismiss();
   expect(screen.queryByRole('status')).toBeNull();
 });
 test('shortcuts release listeners on unmount', () => {

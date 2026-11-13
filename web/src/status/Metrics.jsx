@@ -9,25 +9,83 @@ export function Metrics() {
   return (
     <Popover
       triggerId="st-metrics"
+      triggerClass="btn font-mono desktop:[&>:not(.shell-ico)]:hidden"
+      control="status-metrics"
+      panelId="metrics-menu"
+      gap={6}
       label={<MetricsSummary metrics={metrics()} />}
       accessibleLabel="Process metrics"
     >
-      <div id="metrics-menu" class="flex flex-col gap-2 p-2 text-xs">
-        <strong>
-          {fmtBytes(metrics()?.rssBytes)} · {fmtCpu(metrics())}
-        </strong>
-        <p>Goroutines {metrics()?.goroutines || 0}</p>
-        <Show when={metrics()?.lspEnabled}>
-          <p>Language servers {fmtBytes(metrics()?.lspMemBytes)}</p>
-        </Show>
-        <For each={metrics()?.parts}>
-          {(part) => (
-            <p>
-              {part.name}: {fmtBytes(part.rssBytes)} · {fmtCpu(part)}
-            </p>
-          )}
-        </For>
+      <div data-ui="metrics-stats" class="grid grid-cols-2 gap-6 px-3 pt-2.5 pb-2">
+        <div data-ui="metrics-stat" class="flex flex-col">
+          <span data-ui="metrics-val" class="text-lg font-semibold tabular-nums leading-tight">
+            {fmtBytes(metrics()?.rssBytes)}
+          </span>
+          <span data-ui="metrics-label" class="text-xs text-muted-foreground">
+            Memory
+          </span>
+        </div>
+        <div data-ui="metrics-stat" class="flex flex-col">
+          <span data-ui="metrics-val" class="text-lg font-semibold tabular-nums leading-tight">
+            {fmtCpu(metrics())}
+          </span>
+          <span data-ui="metrics-label" class="text-xs text-muted-foreground">
+            CPU
+          </span>
+        </div>
       </div>
+      <hr class="border-border" />
+      <div
+        data-ui="metrics-grid"
+        class="grid grid-cols-[1fr_auto] gap-x-6 gap-y-1 px-3 py-2 text-xs"
+      >
+        <Show when={metrics()?.lspEnabled && metrics()?.lspMemBytes}>
+          <span
+            data-ui="metrics-label"
+            class="min-w-0 truncate text-muted-foreground"
+            title="Language servers"
+          >
+            Language servers
+          </span>
+          <span data-ui="metrics-val" class="text-right tabular-nums">
+            {fmtBytes(metrics()?.lspMemBytes)}
+          </span>
+        </Show>
+        <span
+          data-ui="metrics-label"
+          class="min-w-0 truncate text-muted-foreground"
+          title="Goroutines"
+        >
+          Goroutines
+        </span>
+        <span data-ui="metrics-val" class="text-right tabular-nums">
+          {metrics()?.goroutines || 0}
+        </span>
+      </div>
+      <Show when={metrics()?.parts?.length > 1}>
+        <hr class="border-border" />
+        <div
+          data-ui="metrics-grid"
+          class="grid grid-cols-[1fr_auto] gap-x-6 gap-y-1 px-3 py-2 text-xs"
+        >
+          <For each={metrics()?.parts}>
+            {(part) => (
+              <>
+                <span
+                  data-ui="metrics-label"
+                  class="min-w-0 truncate text-muted-foreground"
+                  title={part.name}
+                >
+                  {part.name}
+                </span>
+                <span data-ui="metrics-val" class="text-right tabular-nums">
+                  {fmtBytes(part.rssBytes)} · {fmtCpu(part)}
+                </span>
+              </>
+            )}
+          </For>
+        </div>
+      </Show>
     </Popover>
   );
 }

@@ -2,7 +2,10 @@ import { Index, onCleanup, Show } from 'solid-js';
 import { keyLabel, keyCaps, matchesShortcut } from './keyboard.ts';
 export function Kbd(props) {
   return (
-    <kbd class="kbd">
+    <kbd
+      class={props.class || 'kbd has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1'}
+      data-control="shortcut"
+    >
       <ShowCaps combo={props.combo} caps={props.caps} />
     </kbd>
   );

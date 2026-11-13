@@ -59,6 +59,7 @@ export function FileActions() {
             data-size="xs"
             aria-pressed={!document().diffMode}
             onClick={source}
+            data-variant="outline"
           >
             File
           </button>
@@ -71,6 +72,7 @@ export function FileActions() {
             onClick={() =>
               actions.setDiffMode(document(), diffLayout(editor.settings.preferences()))
             }
+            data-variant="outline"
           >
             Changes
           </button>

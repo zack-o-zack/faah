@@ -43,18 +43,23 @@ export function ContextMenu(props) {
       {typeof props.children === 'function' ? props.children({ open }) : props.children}
       <Show when={point()}>
         <Portal>
-          <div
-            ref={(el) => {
-              panel = el;
-              queueMicrotask(() => el.querySelector('button')?.focus());
-            }}
-            class="dropdown-menu fixed z-50 flex min-w-48 flex-col border bg-popover p-1"
-            role="menu"
-            aria-label={props.label}
-            style={{ left: `${point().x}px`, top: `${point().y}px` }}
-            onClick={close}
-          >
-            {props.menu}
+          <div class="dropdown-menu contents">
+            <div
+              ref={(el) => {
+                panel = el;
+                queueMicrotask(() => el.querySelector('button')?.focus());
+              }}
+              id="tree-menu"
+              data-popover
+              aria-hidden="false"
+              class="fixed min-w-[190px] max-w-[min(380px,95vw)] z-[70] top-auto left-auto m-0 gap-0"
+              role="menu"
+              aria-label={props.label}
+              style={{ left: `${point().x}px`, top: `${point().y}px` }}
+              onClick={close}
+            >
+              {props.menu}
+            </div>
           </div>
         </Portal>
       </Show>

@@ -16,47 +16,62 @@ export function TreeRow(props) {
         <>
           <Show when={props.row.dir}>
             <button
-              class="btn w-full"
+              class="w-full justify-start"
+              data-control="sel-menu-item"
+              data-variant="ghost"
+              data-size="xs"
               role="menuitem"
               onClick={() => editor.actions.openNewItem('file', props.row.path)}
             >
-              New File…
+              <span>New File...</span>
             </button>
             <button
-              class="btn w-full"
+              class="w-full justify-start"
+              data-control="sel-menu-item"
+              data-variant="ghost"
+              data-size="xs"
               role="menuitem"
               onClick={() => editor.actions.openNewItem('dir', props.row.path)}
             >
-              New Folder…
+              <span>New Folder...</span>
             </button>
           </Show>
           <button
-            class="btn w-full"
+            class="w-full justify-start"
+            data-control="sel-menu-item"
+            data-variant="ghost"
+            data-size="xs"
             role="menuitem"
             onClick={() => void editor.actions.copyTreePath(props.row.path, 'relative')}
           >
-            Copy Relative Path
+            <span>Copy Relative Path</span>
           </button>
           <button
-            class="btn w-full"
+            class="w-full justify-start"
+            data-control="sel-menu-item"
+            data-variant="ghost"
+            data-size="xs"
             role="menuitem"
             onClick={() => void editor.actions.copyTreePath(props.row.path, 'name')}
           >
-            Copy Name
+            <span>{props.row.dir ? 'Copy Folder Name' : 'Copy File Name'}</span>
           </button>
           <button
-            class="btn w-full"
+            class="w-full justify-start"
+            data-control="sel-menu-item"
+            data-variant="ghost"
+            data-size="xs"
             role="menuitem"
             onClick={() => void editor.actions.copyTreePath(props.row.path, 'absolute')}
           >
-            Copy Absolute Path
+            <span>Copy Absolute Path</span>
           </button>
         </>
       }
     >
       {(menu) => (
         <div
-          class="tr group flex h-6 items-center gap-1.5 whitespace-nowrap pr-2 text-xs hover:bg-sidebar-accent"
+          class="tr flex min-h-6 cursor-pointer select-none items-center gap-1.5 pr-2 text-xs whitespace-nowrap hover:bg-sidebar-accent focus-visible:outline focus-visible:outline-ring [&.sel]:bg-sidebar-accent [&.ignored]:opacity-50 [&.git-M]:text-primary-text [&.git-R]:text-primary-text [&.git-A]:text-gi [&.git-untracked]:text-gi [&.git-D]:text-gd [&.git-D_.nm]:line-through [&.your-change]:font-semibold [.scope-pr_&.your-change]:font-normal [&.file-viewed_.nm]:opacity-50 group"
           classList={{
             dir: !!props.row.dir,
             file: !props.row.dir,
@@ -81,70 +96,78 @@ export function TreeRow(props) {
           data-dir={props.row.dir ? props.row.path : undefined}
           data-file={!props.row.dir ? props.row.path : undefined}
           title={(props.row.dir ? 'Folder: ' : 'Open ') + props.row.path}
-          style={{ 'padding-left': `${8 + props.row.depth * 12}px` }}
+          style={{ 'padding-left': `${8 + props.row.depth * 12 + (props.row.dir ? 0 : 12)}px` }}
           onClick={open}
         >
           <Show
             when={props.row.dir}
             fallback={
               <span
-                class="ic size-2 shrink-0 rounded-sm bg-faint"
+                class="ic size-2 shrink-0 rounded-sm bg-faint [--dot:var(--faint)] data-[t=code]:bg-[var(--nf)] data-[t=data]:bg-[var(--kt)] data-[t=web]:bg-[var(--nt)] data-[t=img]:bg-[var(--nc)]"
                 data-t={fileKind(props.row.name)}
               />
             }
           >
             <span
-              class="icon-[lucide--chevron-right] size-3 shrink-0"
-              classList={{ 'rotate-90': editor.tree.expanded(props.row.path) }}
+              data-ui="ar"
+              class="shrink-0 text-muted-foreground size-2 border-r border-t border-muted-foreground rotate-45 group-[.open]:rotate-[135deg]"
             />
           </Show>
-          <button class="nm min-w-0 flex-1 truncate text-left" tabindex="-1">
+          <button
+            class="nm min-h-6 min-w-6 text-left focus-visible:outline focus-visible:outline-ring truncate group-[.dir.dirty]:after:ml-1 group-[.dir.dirty]:after:inline-block group-[.dir.dirty]:after:size-1 group-[.dir.dirty]:after:rounded-full group-[.dir.dirty]:after:bg-primary"
+            tabindex="-1"
+          >
             {props.row.name}
           </button>
-          <Show when={!props.row.dir && decoration().code}>
-            <span class="gs font-mono">{decoration().code}</span>
-          </Show>
-          <Show when={!props.row.dir && decoration().yours}>
-            <span class="text-primary" title="Your change">
-              YOU
-            </span>
-          </Show>
-          <Show when={!props.row.dir && decoration().showStage}>
-            <label
-              class="flex size-6 shrink-0 items-center justify-center"
-              data-stage-target
-              onClick={(event) => event.stopPropagation()}
+          <span class="ml-auto flex shrink-0 items-center gap-0.5">
+            <Show when={!props.row.dir && decoration().code}>
+              <span class="gs w-3 text-center font-mono">{decoration().code}</span>
+            </Show>
+            <Show when={!props.row.dir && decoration().yours}>
+              <span class="text-primary" title="Your change">
+                YOU
+              </span>
+            </Show>
+            <Show when={!props.row.dir && decoration().showStage}>
+              <label
+                class="flex size-6 shrink-0 items-center justify-center"
+                data-stage-target
+                onClick={(event) => event.stopPropagation()}
+              >
+                <input
+                  type="checkbox"
+                  class="input"
+                  aria-label="Stage file"
+                  data-stage={props.row.path}
+                  data-partial={!!decoration().partial}
+                  checked={decoration().staged}
+                  prop:indeterminate={!!decoration().partial}
+                  disabled={!!editor.tree.state.staging[props.row.path]}
+                  title={
+                    decoration().partial
+                      ? 'Changed after staging — click to stage the latest copy'
+                      : 'Stage or unstage file'
+                  }
+                  onChange={(event) =>
+                    void editor.actions.stageTreeFile(
+                      props.row.path,
+                      decoration().partial || event.currentTarget.checked,
+                    )
+                  }
+                />
+              </label>
+            </Show>
+            <button
+              class="btn shrink-0 ml-auto opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-[.sel]:opacity-100"
+              data-control="tr-menu-btn"
+              data-variant="ghost"
+              data-size="icon-xs"
+              aria-label="Actions"
+              onClick={menu.open}
             >
-              <input
-                type="checkbox"
-                class="input"
-                aria-label="Stage file"
-                data-stage={props.row.path}
-                data-partial={!!decoration().partial}
-                checked={decoration().staged}
-                prop:indeterminate={!!decoration().partial}
-                disabled={!!editor.tree.state.staging[props.row.path]}
-                title={
-                  decoration().partial
-                    ? 'Changed after staging — click to stage the latest copy'
-                    : 'Stage or unstage file'
-                }
-                onChange={(event) =>
-                  void editor.actions.stageTreeFile(
-                    props.row.path,
-                    decoration().partial || event.currentTarget.checked,
-                  )
-                }
-              />
-            </label>
-          </Show>
-          <button
-            class="btn opacity-0 group-hover:opacity-100 focus:opacity-100"
-            aria-label="Actions"
-            onClick={menu.open}
-          >
-            <span class="icon-[lucide--ellipsis] size-3.5" />
-          </button>
+              <span class="icon-[lucide--ellipsis] size-3 shrink-0" aria-hidden="true" />
+            </button>
+          </span>
         </div>
       )}
     </ContextMenu>

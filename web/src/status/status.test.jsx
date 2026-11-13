@@ -19,7 +19,7 @@ test('metrics chip and open popover follow workspace publications', () => {
   const button = screen.getByRole('button', { name: 'Process metrics' });
   expect(button.textContent).toContain('2.0 KB');
   fireEvent.click(button);
-  expect(screen.getByRole('dialog').textContent).toContain('Goroutines 4');
+  expect(screen.getByText('Goroutines').nextElementSibling.textContent).toBe('4');
   app.actions.acceptMetrics({
     cpuUsage: 4.5,
     rssBytes: 4096,
@@ -28,7 +28,7 @@ test('metrics chip and open popover follow workspace publications', () => {
     lspMemBytes: 1024,
   });
   expect(button.textContent).toContain('4.5%');
-  expect(screen.getByRole('dialog').textContent).toContain('Goroutines 8');
+  expect(screen.getByText('Goroutines').nextElementSibling.textContent).toBe('8');
   expect(button.textContent).toContain('LSP 1.0 KB');
   fireEvent.keyDown(document, { key: 'Escape' });
   expect(screen.queryByRole('dialog')).toBeNull();

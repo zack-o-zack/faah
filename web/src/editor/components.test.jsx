@@ -64,6 +64,21 @@ function Harness() {
     </EditorProvider>
   );
 }
+test('selection copy confirms success on the button without losing the selection', async () => {
+  const clipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
+  Object.defineProperty(navigator, 'clipboard', {
+    configurable: true,
+    value: { writeText: vi.fn().mockResolvedValue(undefined) },
+  });
+  const view = render(() => <Harness />);
+  editor.actions.setSelection({ text: 'Two words', path: 'file.js', l1: 2, l2: 2 });
+  fireEvent.click(screen.getByText('Copy Source'));
+  await screen.findByText('Copied');
+  expect(editor.ui.selection.text).toBe('Two words');
+  view.unmount();
+  if (clipboard) Object.defineProperty(navigator, 'clipboard', clipboard);
+  else Reflect.deleteProperty(navigator, 'clipboard');
+});
 test('source slots are reused across scroll windows and cursor changes', async () => {
   const view = render(() => <Harness />);
   await editor.actions.openFile('file.js');

@@ -21,9 +21,10 @@ export function SplitHandle(props) {
       aria-valuemin={props.min ?? 0}
       aria-valuemax={props.max}
       class={
-        props.vertical
+        props.class ||
+        (props.vertical
           ? 'split-handle h-1 w-full shrink-0 hover:bg-primary'
-          : 'split-handle h-full w-1 shrink-0 hover:bg-primary'
+          : 'split-handle h-full w-1 shrink-0 hover:bg-primary')
       }
       style={{ 'touch-action': 'none', cursor: props.vertical ? 'row-resize' : 'col-resize' }}
       onKeyDown={(e) => {

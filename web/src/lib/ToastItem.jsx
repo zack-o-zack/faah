@@ -1,6 +1,9 @@
 import { createEffect, onCleanup, Show } from 'solid-js';
 
 export function ToastItem(props) {
+  const color = () =>
+    ({ success: 'text-gi', error: 'text-destructive' })[props.item.category] ||
+    'text-muted-foreground';
   createEffect(() => {
     const duration = props.item.duration;
     if (duration === 0 || duration === -1) return;
@@ -8,10 +11,15 @@ export function ToastItem(props) {
     onCleanup(() => clearTimeout(timer));
   });
   return (
-    <div class="toast" role={props.item.category === 'error' ? 'alert' : 'status'}>
+    <div
+      class="toast"
+      data-category={props.item.category || undefined}
+      aria-atomic="true"
+      role={props.item.category === 'error' ? 'alert' : 'status'}
+    >
       <div class="toast-content">
         <Show when={props.item.icon}>
-          <span class={`${props.item.icon} size-4`} aria-hidden="true" />
+          <span class={`${props.item.icon} size-4 shrink-0 ${color()}`} aria-hidden="true" />
         </Show>
         <section>
           <h2>{props.item.title}</h2>
@@ -19,16 +27,6 @@ export function ToastItem(props) {
             <p>{props.item.description}</p>
           </Show>
         </section>
-        <footer>
-          <button
-            class="btn"
-            data-variant="ghost"
-            aria-label="Dismiss notification"
-            onClick={() => props.dismiss(props.item.id)}
-          >
-            <span class="icon-[lucide--x] size-4" aria-hidden="true" />
-          </button>
-        </footer>
       </div>
     </div>
   );
