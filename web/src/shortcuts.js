@@ -18,7 +18,6 @@ import { handleImageKey } from './app/legacy-bridge.js';
 import { submitBatch } from './app/legacy-bridge.js';
 import { reindexWorkspace } from './app/legacy-bridge.js';
 
-import { navigateToTips } from './tips.js';
 
 /* Each entry lists alternative combos, written as for keyLabel in state.js so
    they show as ⌘/⌥/⇧ on a Mac and Ctrl/Alt/Shift elsewhere. Browsers keep
@@ -58,7 +57,6 @@ export function showHelp() {
   const ver = S.meta?.version ? ` <span data-ui="help-version" class="p-3 font-mono text-primary-text">v${esc(S.meta.version)}</span>` : '';
   h.innerHTML = '<div class="sm:max-w-4xl overflow-auto"><header class="flex-row! items-center gap-2"><h2>Keyboard Shortcuts</h2>' + ver +
     '<div style="margin-left:auto;display:flex;gap:12px;align-items:center;">' +
-    '<button id="btn-switch-to-tips" style="font-size:12px;cursor:pointer;" title="View Tips & Tricks" class="btn" data-control="settings-btn-link" data-variant="link" data-size="xs"><span class="icon-[lucide--lightbulb] size-3.5" aria-hidden="true"></span> Tips & Tricks</button>' +
     '<button id="btn-switch-to-vim-help" style="font-size:12px;cursor:pointer;" title="View Vim Keybindings" class="btn" data-control="settings-btn-link" data-variant="link" data-size="xs">View Vim Keybindings</button>' +
     '</div></header><dl data-ui="help-grid" class="grid grid-cols-[auto_1fr_auto_1fr] gap-3 items-center [&_dt]:flex [&_dt]:gap-1 [&_dt]:justify-end [&_dd]:text-muted-foreground">' +
     SHORTCUTS.map(([combos, v]) => {
@@ -71,11 +69,6 @@ export function showHelp() {
     e.stopPropagation();
     h.close();
     showVimHelp();
-  });
-  h.querySelector('#btn-switch-to-tips')?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    h.close();
-    navigateToTips();
   });
 }
 

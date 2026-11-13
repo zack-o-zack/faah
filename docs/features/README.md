@@ -18,7 +18,6 @@ This directory provides comprehensive documentation for all faah user-facing fea
 | **Git Awareness, Diffs & Stage/Commit/Push/Pull** | `Cmd/Ctrl+D` | Real-time status stream, stat cache fast-path, split / unified diffs with intra-line highlights, single-hunk staging/discard, sidebar panel to stage/commit/push/pull with auto-staging, and AI-powered commit messages and rebase/merge | [Git Integration](git-integration.md) |
 | **Review Workbench** | `faah` | Open any directory or pull request from one page, with folder completion, a folder browser, PRs as worktrees of your existing clone, and persistent recent and pinned workspaces | [Review Workbench](workbench.md) |
 | **Pull Request Review** | `faah <pr-url>`, `Alt+R` | GitHub, GitLab, Gitea/Forgejo and Bitbucket Cloud: full-tree checkout, merge-base diffing, draft comments with Approve / Request Changes / Comment, AI conflict resolution, merging, and committing/pushing/pulling straight from the checkout | [Pull Request Review](github-pr-review.md) · [Getting Started](pr-review-getting-started.md) |
-| **Tips & Tricks System** | `?` / `#btn-help` | Interactive floating tip widget, inspector tab, and offline fallbacks for feature discoverability | [Tips System](tips-system.md) |
 | **Direct File Editing** | `Cmd/Ctrl+E`, `Cmd/Ctrl+S` | Edit and save a file in the browser, in-editor find (`Cmd/Ctrl+F`), create new files and folders, word wrap and unsaved-change protection | [File Editing](file-editing.md) |
 | **Coding Agent Editing** | `Alt+E`, Right-click | Delegating edits to Claude Code, Codex, Antigravity, OpenCode, or Cursor Agent | [Agent Editing](agent-editing.md) |
 | **Threads** | `Alt+T` | Long-running, multi-turn conversations with your coding harness that can read and change any file, with isolated per-turn worktree snapshots and turn reversion | [Threads](threads.md) |
@@ -95,7 +94,6 @@ faah adapts to developer habits and viewing environments without requiring manua
 
 - **[Settings & Preferences System](settings-and-configuration.md)**: Comprehensive settings manager accessible via `Cmd/Ctrl+,`. Offers a VS Code-style graphical UI with interactive attribute pills alongside a raw JSON editor (`~/.faah/settings.json`) that updates themes, typography, diff layouts, and search behavior in real time without refreshing the browser.
 - **[Themes & Styling](themes-and-styling.md)**: 14 built-in dark and light themes crafted for high readability and visual consistency across all panels, diffs, and markdown documents.
-- **[Tips & Tricks System](tips-system.md)**: Interactive discoverability system featuring a gentle floating tip widget, dedicated inspector tab, `#btn-help` sidebar trigger, and offline fallbacks.
 - **[Vim Keybindings & Modal Navigation](vim-mode.md)**: Full modal navigation emulation supporting Normal, Visual, and Motion modes for developers accustomed to Vim, Neovim, or Helix.
 - **[File Explorer & Workspace Management](file-explorer.md)**: Dense, clean file tree with single-child folder compacting, `.gitignore` dimming, expand/collapse-all buttons, tab shortcuts (`Alt+1..9`, `Ctrl+Tab`, `Alt+W`), and right-click tab close actions.
 

@@ -44,7 +44,6 @@ type Settings struct {
 	GitCommitMessageInstruction *string  `json:"git.commitMessageInstruction,omitempty"`
 	ServerBasePath              *string  `json:"server.basePath,omitempty"`
 	ExplorerAutoReveal          *bool    `json:"explorer.autoReveal,omitempty"`
-	TipsEnabled                 *bool    `json:"tips.enabled,omitempty"`
 	ExplainAgent                *string  `json:"explain.agent,omitempty"`
 	ExplainModel                *string  `json:"explain.model,omitempty"`
 	ExplainPrefetch             *bool    `json:"explain.prefetch,omitempty"`
@@ -465,14 +464,6 @@ var Schema = []SchemaItem{
 		Category:    "Explain",
 		Type:        "string",
 		Default:     "",
-	},
-	{
-		Key:         "tips.enabled",
-		Title:       "Show Tips in Interface",
-		Description: "Controls whether faah periodically shows helpful tips and tricks in the interface.",
-		Category:    "General",
-		Type:        "boolean",
-		Default:     true,
 	},
 }
 

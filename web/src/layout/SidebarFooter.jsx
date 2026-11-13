@@ -23,8 +23,8 @@ export function SidebarFooter() {
       <button
         id="btn-help"
         class="btn"
-        aria-label="Help and tips"
-        onClick={() => editor.actions.openLegacyTips()}
+        aria-label="Keyboard shortcuts"
+        onClick={() => editor.actions.openLegacyHelp()}
       >
         Help
       </button>

@@ -7,7 +7,6 @@ export function InspectorToolbar() {
     ['symbols', 'Symbols'],
     ['calls', 'Calls'],
     ['search', 'Search'],
-    ['tips', 'Tips'],
   ];
   return (
     <header class="flex shrink-0 items-center justify-between border-b p-2">
@@ -16,7 +15,6 @@ export function InspectorToolbar() {
           {(tab) => (
             <button
               role="tab"
-              id={tab[0] === 'tips' ? 'tab-tips' : undefined}
               class="btn px-2 text-xs"
               data-control="inspector-tab"
               data-itab={tab[0]}

@@ -21,9 +21,6 @@ web/src/settings.js
 web/src/shortcuts.js
 web/src/state.js
 web/src/theme.test.js
-web/src/tips-util.js
-web/src/tips.js
-web/src/tips.test.js
 web/src/toast.test.js
 web/src/typescale.test.js
 web/src/ui.js

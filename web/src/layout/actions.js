@@ -1,4 +1,5 @@
 import { batch } from 'solid-js';
+import { INSPECTOR_TABS } from './logic.js';
 export function createLayoutActions(app, set) {
   function persist() {
     localStorage.setItem('faah.layout', JSON.stringify(app.state.layout));
@@ -13,7 +14,7 @@ export function createLayoutActions(app, set) {
     persist();
   }
   function setInspectorTab(tab) {
-    if (!['refs', 'symbols', 'calls', 'search', 'tips'].includes(tab)) return;
+    if (!INSPECTOR_TABS.includes(tab)) return;
     set('layout', 'inspector', tab);
     persist();
   }

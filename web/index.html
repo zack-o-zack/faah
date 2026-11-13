@@ -356,31 +356,6 @@
 
     <!-- LSP management menu, opened from LSP status bar button -->
 
-    <!-- Floating Async Tip Widget (web/src/tips.js) -->
-    <div id="tip-widget" class="card fixed bottom-[34px] right-[18px] w-[360px] max-w-[calc(100vw-36px)] z-40 gap-0 py-0! overflow-hidden" hidden>
-      <div data-ui="tip-widget-head" class="flex items-center justify-between gap-2 pt-2.5 pr-2 pl-4">
-        <div data-ui="tip-widget-tag-group" class="flex items-center min-w-0 gap-2">
-          <span class="icon-[lucide--lightbulb] size-3.5 shrink-0 text-primary-text" aria-hidden="true"></span>
-          <span data-ui="tip-widget-label" class="text-xs font-medium text-muted-foreground">Tip</span>
-          <button id="tip-widget-tag" type="button" title="Show tips in this category" class="badge cursor-pointer hover:bg-accent" data-control="tip-tag-pill" data-variant="secondary"></button>
-          <span id="tip-widget-count" class="text-xs tabular-nums text-muted-foreground" data-control="tip-count-chip"></span>
-        </div>
-        <button id="tip-widget-close" type="button" title="Dismiss tip" class="btn" data-control="tip-btn-close" data-variant="ghost" data-size="icon-xs" aria-label="Dismiss tip"><span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true"></span></button>
-      </div>
-      <div data-ui="tip-widget-body" class="flex flex-col gap-1.5 px-4 pt-1 pb-4">
-        <h4 id="tip-widget-title" data-ui="tip-widget-title" class="text-sm font-semibold"></h4>
-        <div id="tip-widget-content" data-ui="tip-widget-content" class="text-sm leading-relaxed text-muted-foreground [&_p+p]:mt-2 [&_ul]:mt-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:mt-2 [&_ol]:list-decimal [&_ol]:pl-5"></div>
-      </div>
-      <div data-ui="tip-widget-foot" class="flex items-center justify-between border-t border-border py-1.5 pr-2 pl-2">
-        <button id="tip-widget-hide-perm" type="button" title="Permanently hide tips in the interface" class="btn" data-control="tip-btn-link" data-variant="link" data-size="xs">Don't show tips</button>
-        <div data-ui="tip-widget-actions" class="flex items-center gap-0.5">
-          <button id="tip-widget-prev" type="button" title="Previous tip" class="btn" data-control="tip-btn-nav" data-variant="ghost" data-size="icon-xs" aria-label="Previous tip"><span class="icon-[lucide--chevron-left] size-3.5 shrink-0" aria-hidden="true"></span></button>
-          <button id="tip-widget-next" type="button" title="Next tip" class="btn" data-control="tip-btn-nav" data-variant="ghost" data-size="icon-xs" aria-label="Next tip"><span class="icon-[lucide--chevron-right] size-3.5 shrink-0" aria-hidden="true"></span></button>
-          <button id="tip-widget-all" type="button" title="View all tips in IDE" class="btn" data-control="tip-btn-all" data-variant="ghost" data-size="xs">All tips</button>
-        </div>
-      </div>
-    </div>
-
     <div id="status-root" class="contents"></div>
   </main>
 

@@ -2,7 +2,6 @@ import { measure, layout, render, updateEditorOptionControls, openFile, switchTa
 import { emit, on } from './bus.js';
 import { refreshPRMeta, nudgeForgeToken } from './pr.js';
 import { newThread, deleteCurrentThread, showThreadsSidebar } from './app/legacy-bridge.js';
-import { navigateToTips, showTipWidget } from './tips.js';
 import { launchPR } from './pr.js';
 
 import { openSettings } from './settings.js';
@@ -24,20 +23,18 @@ import { syncGitPanelMeta } from './app/legacy-bridge.js';
 import { initPR } from './pr.js';
 
 import { refreshUnpushed } from './app/legacy-bridge.js';
-import { initTips, startTipsAsync } from './tips.js';
 import { initReviewFlow, setMode } from './reviewflow.js';
 
 // web/src/main.js
 
 export function initLegacy() {
 configureLegacyServices({
- emit, on, launchPR, newThread, deleteCurrentThread, showThreadsSidebar, navigateToTips, showTipWidget, refreshPRMeta, nudgeForgeToken, openSettings, selectAgent, loadPickerModels,
+ emit, on, launchPR, newThread, deleteCurrentThread, showThreadsSidebar, refreshPRMeta, nudgeForgeToken, openSettings, selectAgent, loadPickerModels,
  copyToClipboard, copyRichToClipboard, showHelp,
 });
 
 // Initialize all subsystems
 
-initTips();
 initReviewFlow();
 
 initShortcuts();
@@ -196,8 +193,6 @@ initErrorCopy();
   // Load harnesses and models asynchronously after the browser is loaded.
   loadAgentAsync();
 
-  // Load and asynchronously display tips
-  startTipsAsync();
 })();
 
 }

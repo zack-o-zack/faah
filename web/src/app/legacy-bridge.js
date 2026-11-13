@@ -246,8 +246,6 @@ export function configureLegacyServices(value) {
     newThread,
     deleteCurrentThread,
     showThreadsSidebar,
-    navigateToTips,
-    showTipWidget,
     copyToClipboard,
     copyRichToClipboard,
   } = value;
@@ -306,8 +304,6 @@ export function configureLegacyServices(value) {
     },
     { name: 'Threads: Delete Current Thread', run: deleteCurrentThread },
     { name: 'Git: Open Pull Request…', run: () => openPalette('openpr', '') },
-    { name: 'Help: Tips & Tricks (All Tips)', run: () => navigateToTips() },
-    { name: 'Help: Show Tip', run: () => showTipWidget() },
     { name: 'Keyboard Shortcuts', run: showHelp },
   ]);
   onCleanup(releaseCommands);
@@ -328,21 +324,9 @@ export function configureLegacyServices(value) {
       },
     ),
   );
-  createEffect(
-    on(
-      () => [editorStore.store.state.layout.inspector, editorStore.store.state.layout.right],
-      ([tab, visible]) => {
-        if (tab === 'tips' && visible) {
-          value.emit('tips:shown');
-          $('#tips-filter')?.focus();
-        }
-      },
-    ),
-  );
   Object.assign(editorStore.actions, {
     openLegacySettings: value.openSettings,
     openLegacyHelp: value.showHelp,
-    openLegacyTips: value.navigateToTips,
     nudgeLegacyForgeToken: value.nudgeForgeToken,
     selectLegacyAgent: editorStore.actions.selectAgent,
     legacyAgentModels: editorStore.actions.loadAgentModels,

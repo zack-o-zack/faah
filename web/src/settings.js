@@ -289,14 +289,6 @@ const BUILTIN_SCHEMA = [
     category: "Server",
     type: "string",
     default: "/"
-  },
-  {
-    key: "tips.enabled",
-    title: "Show Tips in Interface",
-    description: "Controls whether faah periodically shows helpful tips and tricks in the interface.",
-    category: "General",
-    type: "boolean",
-    default: true
   }
 ];
 

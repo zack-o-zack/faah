@@ -1,3 +1,4 @@
+export const INSPECTOR_TABS = ['refs', 'symbols', 'calls', 'search'];
 export const DEFAULT_LAYOUT = {
   left: true,
   right: false,
@@ -24,8 +25,7 @@ export function readLayout(value) {
     ['threadsWidth', 240, 900],
   ])
     if (Number.isFinite(parsed[key])) result[key] = Math.max(min, Math.min(max, parsed[key]));
-  if (['refs', 'symbols', 'calls', 'search', 'tips'].includes(parsed.inspector))
-    result.inspector = parsed.inspector;
+  if (INSPECTOR_TABS.includes(parsed.inspector)) result.inspector = parsed.inspector;
   if (result.right) result.threads = false;
   return result;
 }
