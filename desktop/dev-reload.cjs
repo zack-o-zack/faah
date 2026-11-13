@@ -3,6 +3,10 @@ const path = require('node:path');
 
 const DEBOUNCE_MS = 150;
 
+function sourceKind(file) {
+  return /\.tsx?$/.test(file) && !/\.test\.tsx?$/.test(file) && !file.endsWith('.d.ts') ? 'web' : null;
+}
+
 // Swaps stylesheets in place, which keeps scroll position and open panels.
 const SWAP_STYLES = `for (const link of document.querySelectorAll('link[rel="stylesheet"]')) {
   const url = new URL(link.href);
@@ -36,4 +40,4 @@ function watchAssets(root, getWindows) {
   });
 }
 
-module.exports = { reloadKind, watchAssets };
+module.exports = { sourceKind, reloadKind, watchAssets };

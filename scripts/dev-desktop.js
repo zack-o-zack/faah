@@ -10,6 +10,7 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { sourceKind } from '../desktop/dev-reload.cjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const desktop = path.join(root, 'desktop');
@@ -37,6 +38,7 @@ function run(command, args, options = {}) {
 }
 
 function buildWeb() {
+  console.log('[dev-desktop] Building web...');
   return run(process.execPath, [path.join(root, 'scripts/build-web.js')]);
 }
 
@@ -116,7 +118,7 @@ if (!await buildWeb() || !await buildBackend()) process.exit(1);
 installBackend();
 
 watch('web', false, file => file === 'tailwind.css' ? 'web' : null);
-watch('web/src', true, file => (/\.(js|jsx)$/.test(file) && !/\.test\.(js|jsx)$/.test(file) ? 'web' : null));
+watch('web/src', true, sourceKind);
 watch('.', false, goKind);
 watch('internal', true, goKind);
 watch('desktop', false, file => (file.endsWith('.cjs') && !file.endsWith('.test.cjs') ? 'main' : null));
