@@ -14,7 +14,7 @@ export function ThreadDetail(): JSX.Element {
   const thread = () => editor.threads.current() || editor.threads.state.draft;
   let input: HTMLTextAreaElement | undefined;
   onMount(() => {
-    input?.focus();
+    if (editor.threads.state.draft) input?.focus();
     editor.actions.clearSelection?.();
   });
   return (

@@ -57,10 +57,7 @@ function Blocks(props: BlocksProps): JSX.Element {
       {(block) => (
         <Switch>
           <Match when={block.type === 'code'}>
-            <div class="thr-pre relative">
-              <Show when={block.lang}>
-                <span class="text-xs text-muted-foreground">{block.lang}</span>
-              </Show>
+            <div class="thr-pre" data-lang={block.lang || undefined}>
               <pre>
                 <code>{block.text}</code>
               </pre>

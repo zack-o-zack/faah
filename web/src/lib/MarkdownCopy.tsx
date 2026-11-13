@@ -17,6 +17,7 @@ export function MarkdownCopy(props: { text: string }): JSX.Element {
       data-control="thr-copy"
       data-variant="ghost"
       data-size="icon-xs"
+      title="Copy code"
       aria-label={copied() ? 'Copied' : 'Copy code'}
       onClick={() => void copy()}
     >
