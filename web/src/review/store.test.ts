@@ -122,3 +122,22 @@ test('layout persists and a review reference leaves a way back', async () => {
   expect(review.state.returnTo).toBe(null);
   dispose();
 });
+
+test('the walkthrough count finishes loading after switching to the pipeline', async () => {
+  let finish: ((value: unknown) => void) | undefined;
+  const pending = new Promise<unknown>((resolve) => {
+    finish = resolve;
+  });
+  const { review, dispose } = fixture({
+    request: async (path) => (path === 'api/review/walkthrough' ? pending : reply()),
+  });
+  try {
+    review.actions.setReviewMode('review');
+    await vi.waitFor(() => expect(review.walkthrough.loading).toBe(true));
+    review.actions.setReviewTab('stages');
+    finish?.({ totalFiles: 1, files: [] });
+    await vi.waitFor(() => expect(review.walkthroughData()?.totalFiles).toBe(1));
+  } finally {
+    dispose();
+  }
+});

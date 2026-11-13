@@ -103,7 +103,7 @@ function buildReviewStore(editor: ReviewHost, options: ReviewOptions = {}) {
   const active = () => stages()[state.active] || null;
   const running = () => isRunning(state.run);
   const [walkthrough] = createResource(
-    () => state.mode === 'review' && state.tab === 'walkthrough' && revision(),
+    () => state.mode === 'review' && revision(),
     async () => decodeWalkthrough(await walkthroughRequest('api/review/walkthrough')),
   );
 
