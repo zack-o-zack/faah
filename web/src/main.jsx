@@ -1,3 +1,5 @@
+import { Palette } from './palette/Palette.jsx';
+import { SearchShell } from './search/SearchShell.jsx';
 import { GitShell } from './git/GitShell.jsx';
 import { getOwner, onMount, runWithOwner } from 'solid-js';
 import { render } from 'solid-js/web';
@@ -12,7 +14,8 @@ import { ViewerShell } from './viewers/ViewerShell.jsx';
 import { EditorShell } from './editor/EditorShell.jsx';
 
 function App() {
-  const editorStore = createEditorStore(useApp());
+  const theme = useTheme();
+  const editorStore = createEditorStore(useApp(), { theme });
   const owner = getOwner();
   bindLegacyEditor(editorStore, useTheme());
   onMount(async () => {
@@ -22,6 +25,8 @@ function App() {
   });
   return (
     <EditorProvider value={editorStore}>
+      <Palette />
+      <SearchShell />
       <TreeShell />
       <GitShell />
       <EditorShell />

@@ -392,3 +392,20 @@ provide keyboard activation. File lists page at 100 entries. Panel resizers use
 The bridge retains one effect to notify the phase-C PR bar of sync state, plus
 PR/agent/settings actions. The old sidebar-mode notification and Git panel DOM
 adapter are gone. `gitpanel.js`, `unpushed.js` and `commitfiles.js` are deleted.
+
+## Search and palette (phase B checkpoint 4)
+
+`search/store.js` owns query/options and a resource keyed by the debounced request.
+Replacing a key cancels its request; Solid rejects late publications. Search JSX
+renders grouped results with `For`. `search/logic.js` owns request shaping and
+reference grouping. The temporary bridge adapts external legacy LSP results.
+
+`palette/store.js` owns a guarded resource and the palette session. File queries
+start immediately, without the old 40ms debounce. `palette/commands.js` provides
+a per-app command registry with registration cleanup. Phase-C commands enter
+through the bridge. Prefix parsing, command ranking, fuzzy text parts and bounded
+scroll math live in `palette/logic.js`. JSX renders inert text with bold spans;
+keyboard movement changes only the list's native scrollTop when necessary.
+Neither feature adds an effect. The two original palette race tests now exercise
+the fresh store and injected requests. `search.js`, `palette.js` and its old test
+are deleted.

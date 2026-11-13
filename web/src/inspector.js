@@ -6,7 +6,8 @@ import { emit } from './bus.js';
 
 import { updateStatus, setStatusNote } from './status.js';
 
-import { displayPath, cancelSearch } from './search.js';
+import { displayPath } from './search/logic.js';
+import { cancelSearch } from './app/legacy-bridge.js';
 import { groupHits, flashFind, canAskServer, lspCall, positionNow } from './lsp.js';
 
 export function firstInspectorTab() {

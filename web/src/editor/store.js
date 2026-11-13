@@ -1,3 +1,5 @@
+import { createSearchStore } from '../search/store.js';
+import { createPaletteStore } from '../palette/store.js';
 import { createGitStore } from '../git/store.js';
 import { createTreeStore } from '../workspace/tree-store.js';
 import { createSelectionActions } from './selection-actions.js';
@@ -54,7 +56,7 @@ function initialState(vimEnabled) {
  * @property {boolean} vimHelp
  * @property {ReturnType<typeof initialVimState>} vim
  */
-export function createEditorStore(store) {
+export function createEditorStore(store, options = {}) {
   const [ui, setUI] = createStore(
     initialState(localStorage.getItem('faah.editor.vimMode') === 'true'),
   );
@@ -243,5 +245,9 @@ export function createEditorStore(store) {
     historyChanged: () => actions.legacyHistoryChanged(),
   });
   Object.assign(actions, editor.git.actions);
+  editor.search = createSearchStore();
+  Object.assign(actions, editor.search.actions);
+  editor.palette = createPaletteStore(editor, options);
+  Object.assign(actions, editor.palette.actions);
   return editor;
 }

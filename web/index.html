@@ -526,18 +526,7 @@
 
     <!-- Right Pane 4: Full-text search across the workspace -->
     <section class="inspector-pane hidden min-h-0 flex-1 flex-col overflow-hidden [&.active]:flex" id="pane-right-search">
-      <div data-ui="search-form" class="flex flex-col gap-2 p-3">
-        <input id="q" aria-label="Search in files" type="text" spellcheck="false" placeholder="Search in files" autocomplete="off" class="input h-8!">
-        <div class="flex flex-wrap gap-1">
-          <button id="o-case" title="Match case" class="btn" data-control="opt" data-variant="ghost" data-size="xs">Aa</button>
-          <button id="o-word" title="Whole word" class="btn" data-control="opt" data-variant="ghost" data-size="xs">|ab|</button>
-          <button id="o-re" title="Regular expression" class="btn" data-control="opt" data-variant="ghost" data-size="xs">.*</button>
-        </div>
-        <input id="glob" aria-label="Files to include" type="text" spellcheck="false" placeholder="files to include e.g. *.go" autocomplete="off" class="input h-8!">
-      </div>
-      <div class="panel-body min-h-0 flex-1 overflow-auto pb-4" id="results">
-        <div data-ui="hint" class="empty text-muted-foreground">Search text across every indexed file.</div>
-      </div>
+      <div id="search-root" class="contents"></div>
     </section>
     <!-- Right Pane 5: Tips & Tricks. Browse, search and filter all faah tips. web/src/tips.js owns it. -->
     <section class="hidden h-full flex-col overflow-hidden [&.active]:flex inspector-pane hidden min-h-0 flex-1 flex-col overflow-hidden [&.active]:flex" id="pane-right-tips">
@@ -651,13 +640,7 @@
 </div>
 
 <!-- SECTION: Command / File / Symbol Palette Modal (Cmd+K / Ctrl+P) -->
-<dialog id="overlay" class="command-dialog sm:max-w-[40rem]!">
-  <div id="palette" class="command w-[min(40rem,calc(100vw-2rem))]! max-w-none!">
-    <header><span id="pal-mode" class="badge" data-variant="secondary"></span><input id="pal" aria-label="Search commands and files" type="text" spellcheck="false" autocomplete="off" class="min-w-0"></header>
-    <div id="pal-list" role="menu"></div>
-    <div id="pal-hint" class="border-t border-border px-3 py-2 text-xs text-muted-foreground empty:hidden"></div>
-  </div>
-</dialog>
+
 
 <!-- SECTION: Keyboard Shortcuts Cheat Sheet Overlay (?) -->
 <dialog id="helpsheet" class="dialog"></dialog>

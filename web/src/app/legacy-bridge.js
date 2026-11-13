@@ -272,6 +272,158 @@ export function configureLegacyServices(value) {
       },
     ),
   );
+  const {
+    openSettings,
+    openLspMenu,
+    startAllLsp,
+    stopAllLsp,
+    showRightInspector,
+    hideRightInspector,
+    showHelp,
+    reindexWorkspace,
+    newThread,
+    deleteCurrentThread,
+    showThreadsSidebar,
+    navigateToTips,
+    showTipWidget,
+    copyToClipboard,
+    copyRichToClipboard,
+  } = value;
+  const gotoDefinition = value.gotoDefinition;
+  const findReferences = value.findReferences;
+  const showCalls = value.showCalls;
+  const showPanel = value.showPanel;
+  editorStore.actions.showFilesPanel = () => value.showPanel('files');
+  editorStore.actions.openLegacyPR = value.launchPR;
+  editorStore.actions.loadSymbols = () => loadOutline({ upgrade: false });
+  const releaseCommands = editorStore.palette.commands.register([
+    {
+      name: withKeys('File: Copy Source Code ({Mod+C})'),
+      run: () => {
+        const info = getSelectedRangeInfo();
+        const d = doc_();
+        if (info && info.text) {
+          copyToClipboard(info.text, 'Copied source code');
+        } else if (d) {
+          getDocRaw(d).then((raw) => copyToClipboard(raw, `Copied ${d.name} (${d.total} lines)`));
+        }
+      },
+    },
+    {
+      name: 'File: Copy Raw Markdown',
+      run: () => {
+        const d = doc_();
+        if (!d) return;
+        const info = getSelectedRangeInfo();
+        if (info && info.rawMarkdown) {
+          copyToClipboard(info.rawMarkdown, 'Copied raw Markdown');
+        } else {
+          getDocRaw(d).then((raw) => copyToClipboard(raw, `Copied ${d.name} (${d.total} lines)`));
+        }
+      },
+    },
+    {
+      name: 'File: Copy Formatted Text (Markdown Preview)',
+      run: () => {
+        const info = getSelectedRangeInfo();
+        if (info && info.isMarkdownPreview) {
+          copyRichToClipboard(info.text, info.html, 'Copied formatted text');
+        } else {
+          const d = doc_();
+          if (d) getDocRaw(d).then((raw) => copyToClipboard(raw, `Copied ${d.name}`));
+        }
+      },
+    },
+    {
+      name: 'File: Copy Relative Path',
+      run: () => {
+        const d = doc_();
+        if (d) copyToClipboard(d.path, `Copied ${d.path}`);
+      },
+    },
+    {
+      name: withKeys('File: Edit Current File ({Mod+E})'),
+      run: () => {
+        const d = doc_();
+        if (d && !d.isImage && !d.deleted && !d.diffRef) {
+          if (d.isEditing) exitEditMode();
+          else enterEditMode();
+        }
+      },
+    },
+    { name: withKeys('File: Save File ({Mod+S})'), run: () => saveActiveFile() },
+    { name: 'File: New File…', run: () => promptNewItem('file') },
+    { name: 'File: New Folder…', run: () => promptNewItem('dir') },
+    { name: withKeys('Preferences: Open Settings (UI) ({Mod+,})'), run: () => openSettings('ui') },
+    { name: 'Preferences: Open Settings (JSON)', run: () => openSettings('json') },
+    { name: 'Go to File…', run: () => openPalette('file') },
+    { name: 'Go to Symbol in File…', run: () => openPalette('symbol') },
+    { name: 'Go to Line…', run: () => openPalette('line') },
+    { name: 'Search in Files', run: () => showRightInspector('search') },
+    { name: 'Find in Current File', run: () => openFind(S.lastWord) },
+    { name: 'Show Symbol Documentation (Shift+F1)', run: showHoverAtCaret },
+    { name: 'Go to Definition', run: () => gotoDefinition() },
+    { name: 'Find All References (Right Panel)', run: () => findReferences() },
+    {
+      name: withKeys('Show Call Trail: Callers / Callees ({Alt+Shift+H})'),
+      run: () => showCalls(),
+    },
+    { name: 'Language Servers: Setup & Manage…', run: () => openLspMenu() },
+    { name: 'Set Up Language Server…', run: () => openLspMenu() },
+    { name: 'Language Servers: Start All', run: startAllLsp },
+    { name: 'Language Servers: Stop All', run: stopAllLsp },
+    {
+      name: 'Toggle Right Sidebar / Inspector',
+      run: () => {
+        if (document.body.classList.contains('right-hidden')) showRightInspector();
+        else hideRightInspector();
+      },
+    },
+    { name: 'Show File Symbols (Right Panel)', run: () => showRightInspector('symbols') },
+    {
+      name: 'Reveal Active File in Explorer',
+      run: () => {
+        const d = doc_();
+        if (d) {
+          showPanel('files');
+          revealFile(d.path);
+        }
+      },
+    },
+    { name: withKeys('Toggle Word Wrap ({Alt+Z})'), run: () => toggleWordWrap() },
+    { name: withKeys('Toggle Markdown / Table Preview ({Alt+M})'), run: () => togglePreview() },
+    {
+      name: withKeys('Toggle Sidebar ({Mod+B})'),
+      run: () => document.body.classList.toggle('side-hidden'),
+    },
+    { name: 'Select Theme…', run: () => openPalette('theme') },
+    { name: 'Next Theme', run: cycleTheme },
+    { name: 'Re-index Workspace', run: reindexWorkspace },
+    {
+      name: 'Close Tab',
+      run: () => {
+        if (S.active >= 0) closeTab(S.active);
+      },
+    },
+    { name: 'Close All Tabs', run: () => closeAllTabs() },
+    { name: withKeys('Reopen Closed Tab ({Alt+Shift+T})'), run: () => reopenClosedTab() },
+    { name: 'Threads: Show All', run: () => showThreadsSidebar() },
+    {
+      name: withKeys('Threads: Start New Thread ({Alt+T} on a selection)'),
+      run: () => newThread(null),
+    },
+    { name: 'Threads: Delete Current Thread', run: deleteCurrentThread },
+    { name: 'Git: Open Pull Request…', run: () => openPalette('openpr', '') },
+    {
+      name: 'Preferences: Toggle Vim Keybindings',
+      run: () => setVimModeEnabled(!isVimEnabled(), true),
+    },
+    { name: 'Help: Vim Keybindings Cheat Sheet', run: showVimHelp },
+    { name: 'Help: Tips & Tricks (All Tips)', run: () => navigateToTips() },
+    { name: 'Help: Show Tip', run: () => showTipWidget() },
+    { name: 'Keyboard Shortcuts', run: showHelp },
+  ]);
+  onCleanup(releaseCommands);
   Object.assign(editorStore.actions, {
     openLegacySettings: value.openSettings,
     nudgeLegacyForgeToken: value.nudgeForgeToken,
@@ -900,3 +1052,11 @@ export const promptNewItem = (...args) => editorStore.actions.openNewItem(...arg
 
 export const refreshUnpushed = (...args) => editorStore.actions.refreshUnpushed(...args);
 export const syncGitPanelMeta = () => editorStore.actions.initializeGit();
+
+export const openPalette = (...args) => editorStore.actions.openPalette(...args);
+export const closePalette = () => editorStore.actions.closePalette();
+export const isPaletteOpen = () => !!editorStore?.palette.state.open;
+export const runSearch = () => editorStore.actions.runSearch();
+export const cancelSearch = () => editorStore.actions.cancelSearch();
+export const renderResults = (result) => editorStore.actions.setSearchResults(result);
+export const searchWorkspace = (...args) => editorStore.actions.searchWorkspace(...args);

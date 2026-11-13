@@ -2,6 +2,11 @@ import { measure, layout, render, updateEditorOptionControls, openFile, switchTa
 import { initOutline, drawOutline } from './outline-pane.js';
 import { emit, on } from './bus.js';
 import { refreshPRMeta, nudgeForgeToken } from './pr.js';
+import { newThread, deleteCurrentThread, showThreadsSidebar } from './thread.js';
+import { navigateToTips, showTipWidget } from './tips.js';
+import { launchPR } from './pr.js';
+import { showRightInspector, hideRightInspector } from './inspector.js';
+import { openLspMenu, startAllLsp, stopAllLsp } from './status.js';
 import { openSettings } from './settings.js';
 import { reindexWorkspace } from './panels.js';
 import { selectAgent, loadPickerModels } from './agent.js';
@@ -9,12 +14,11 @@ import { warmLSP, gotoDefinition, findReferences } from './lsp.js';
 import { showCalls, initCalls } from './calls.js';
 import { copyToClipboard, copyRichToClipboard, initErrorCopy } from './ui.js';
 import { setLspState, initMetrics, initLspMenu, refreshLspMenu, initStatusFit, updateMetricsDisplay, updateStatus } from './status.js';
-import { openPalette, initPalette } from './palette.js';
+import { openPalette } from './app/legacy-bridge.js';
 import { showHelp, initShortcuts } from './shortcuts.js';
 
 import { $, S } from './state.js';
 import { revealDir, revealFile, refreshTree, collapseAllDirs, expandDirtyDirs, inGitMode, setAutoRevealSuppressed, setSidebarMode, hasGitView } from './app/legacy-bridge.js';
-import { initSearch } from './search.js';
 import { initPanels, showPanel } from './panels.js';
 import { initInspector } from './inspector.js';
 import { initAgent, applyAgentMeta, loadAgentAsync } from './agent.js';
@@ -32,7 +36,7 @@ import { initReviewFlow, setMode } from './reviewflow.js';
 
 export function initLegacy() {
 configureLegacyServices({
- emit, on, refreshPRMeta, nudgeForgeToken, openSettings, reindexWorkspace, selectAgent, loadPickerModels, setSidebarMode, hasGitView, refreshUnpushed, updateMetricsDisplay, showPanel, revealDir, warmLSP, updateStatus, setLspState, gotoDefinition, findReferences, showCalls,
+ emit, on, launchPR, newThread, deleteCurrentThread, showThreadsSidebar, navigateToTips, showTipWidget, showRightInspector, hideRightInspector, openLspMenu, startAllLsp, stopAllLsp, refreshPRMeta, nudgeForgeToken, openSettings, reindexWorkspace, selectAgent, loadPickerModels, setSidebarMode, hasGitView, refreshUnpushed, updateMetricsDisplay, showPanel, revealDir, warmLSP, updateStatus, setLspState, gotoDefinition, findReferences, showCalls,
  copyToClipboard, copyRichToClipboard, openPalette, showHelp, triggerRefresh, drawOutline,
 });
 initOutline();
@@ -42,11 +46,11 @@ initTips();
 initReviewFlow();
 
 
-initSearch();
+
 initPanels();
 initInspector();
 initCalls();
-initPalette();
+
 initShortcuts();
 initAgent();
 initThreads();

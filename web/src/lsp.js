@@ -5,7 +5,7 @@ import { $, S } from './state.js';
 
 import { updateStatus, setStatusNote, setLspState } from './status.js';
 
-import { renderResults, runSearch } from './search.js';
+import { renderResults, runSearch, searchWorkspace } from './app/legacy-bridge.js';
 import { inspectReferences, showRightInspector } from './inspector.js';
 
 /* Language servers answer precisely but can take a long time to wake up, while
@@ -88,8 +88,7 @@ export async function gotoDefinition(arg, opts = {}) {
   if (!rx.defs || !rx.defs.length) {
     setStatusNote('');
     showRightInspector('search');
-    const q = $('#q');
-    if (q) { q.value = at.word; setPressed($('#o-word'), true); runSearch(); }
+    searchWorkspace(at.word, { word: true });
     return;
   }
   acceptHits(at.word, rx.defs, null, 'definition', rx.refCount, { view, soft });

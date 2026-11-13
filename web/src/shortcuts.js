@@ -8,7 +8,7 @@ import { updateStatus } from './status.js';
 
 import { showRightInspector, hideRightInspector } from './inspector.js';
 import { hideThreadsSidebar } from './thread.js';
-import { overlay, openPalette, closePalette } from './palette.js';
+import { isPaletteOpen, openPalette, closePalette } from './app/legacy-bridge.js';
 
 import { previewing, togglePreview, previewKey } from './app/legacy-bridge.js';
 import { exitMermaidFullscreen } from './app/legacy-bridge.js';
@@ -133,7 +133,7 @@ export function initShortcuts() {
       const lb = $('#img-lightbox');
       if (lb && lb.open) { lb.close(); return; }
       if (isSettingsOpen()) { closeSettings(); return; }
-      if (overlay.open) { closePalette(); return; }
+      if (isPaletteOpen()) { closePalette(); return; }
       if ($('#helpsheet').open) { $('#helpsheet').close(); return; }
       if (document.querySelector('dialog[open]')) { document.querySelector('dialog[open]').close(); return; }
       if (!document.body.classList.contains('threads-hidden')) { hideThreadsSidebar(); return; }
