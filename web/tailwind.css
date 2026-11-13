@@ -115,8 +115,6 @@
 
   .diff-row.agent-anchor .diff-ln, .diff-side.agent-anchor .diff-ln { position: relative; }
 
-  .c i, .diff-code i { font-style: normal; }
-
   body.word-wrap .g { align-self: flex-start; height: var(--lh); }
 
   .g.gut-add { box-shadow: inset 2px 0 0 var(--gi); }

@@ -101,6 +101,59 @@ test('source slots are reused across scroll windows and cursor changes', async (
   view.unmount();
   required(editor).actions.disposeDocuments();
 });
+test('native drag selection keeps its initial caret and synchronizes the selected text', async () => {
+  const view = render(() => <Harness />);
+  await required(editor).actions.openFile('file.js');
+  const code = required(document.querySelector<HTMLElement>('#rows [data-l="1"] .c'));
+  const node = required(required(code.firstChild).firstChild);
+  const selection = required(window.getSelection());
+  required(editor).actions.selectRange({ line: 1, col: 0 }, { line: 1, col: 1 });
+  // A mouse drag starts with a collapsed native selection before it expands.
+  selection.setBaseAndExtent(node, 1, node, 1);
+  fireEvent(document, new Event('selectionchange'));
+  await waitFor(() => expect(required(editor).ui.selection).toBeNull());
+  expect(selection.rangeCount).toBe(1);
+  expect(selection.anchorNode).toBe(node);
+  expect(selection.anchorOffset).toBe(1);
+
+  selection.setBaseAndExtent(node, 1, node, 5);
+  fireEvent(document, new Event('selectionchange'));
+  fireEvent.mouseUp(document);
+  await waitFor(() => expect(required(editor).ui.selection?.text).toBe('alue'));
+  expect(required(editor).active()).toMatchObject({
+    cur: 1,
+    col: 5,
+    selAnchor: { line: 1, col: 1 },
+  });
+  expect(selection.toString()).toBe('alue');
+  selection.setBaseAndExtent(node, 5, node, 1);
+  fireEvent(document, new Event('selectionchange'));
+  await waitFor(() => expect(required(editor).active()?.selAnchor?.col).toBe(5));
+  expect(required(editor).active()).toMatchObject({ cur: 1, col: 1 });
+  expect(required(editor).ui.selection?.text).toBe('alue');
+  expect(selection.toString()).toBe('alue');
+  fireEvent.keyDown(required(document.getElementById('viewport')), { key: 'Escape' });
+  expect(required(editor).ui.selection).toBeNull();
+  expect(selection.rangeCount).toBe(0);
+  view.unmount();
+  required(editor).actions.disposeDocuments();
+});
+
+test('a collapsed selection outside the source does not clear its selection', async () => {
+  const view = render(() => <Harness />);
+  await required(editor).actions.openFile('file.js');
+  required(editor).actions.selectRange({ line: 1, col: 0 }, { line: 1, col: 5 });
+  const outside = document.createTextNode('outside source');
+  view.container.append(outside);
+  const selection = required(window.getSelection());
+  selection.setBaseAndExtent(outside, 1, outside, 1);
+  fireEvent(document, new Event('selectionchange'));
+  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+  expect(required(editor).ui.selection?.text).toBe('value');
+  expect(selection.rangeCount).toBe(1);
+  view.unmount();
+  required(editor).actions.disposeDocuments();
+});
 test('find query, next, previous and case actions update the view', async () => {
   render(() => <Harness />);
   await required(editor).actions.openFile('file.js');

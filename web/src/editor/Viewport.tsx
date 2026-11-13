@@ -80,13 +80,18 @@ export function Viewport(): JSX.Element {
   function readSelection() {
     if (!viewport || !dom) return;
     const selection = window.getSelection();
-    if (!selection?.rangeCount || selection.isCollapsed) {
+    if (!selection?.rangeCount) {
       if (!editor.ui.selection?.all) editor.actions.clearSelection();
       return;
     }
     if (!viewport.contains(selection.getRangeAt(0).commonAncestorContainer)) return;
     const anchor = dom.toPos(selection.anchorNode, selection.anchorOffset);
     const head = dom.toPos(selection.focusNode, selection.focusOffset);
+    if (selection.isCollapsed) {
+      // Keep the browser's caret range: it is also the anchor for a mouse drag.
+      if (!editor.ui.selection?.all && head) editor.actions.selectRange(null, head);
+      return;
+    }
     if (anchor && head) editor.actions.selectRange(anchor, head);
   }
   function scheduleSelection() {
