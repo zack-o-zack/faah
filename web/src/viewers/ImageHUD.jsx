@@ -53,7 +53,6 @@ export function ImageHUD(props) {
           id="iv-fit"
           class="btn"
           data-size="xs"
-          aria-pressed={view().fit}
           onClick={() => actions.fitImage(props.document)}
           data-variant="ghost"
           data-control="iv-btn"
@@ -64,7 +63,6 @@ export function ImageHUD(props) {
           id="iv-100"
           class="btn"
           data-size="xs"
-          aria-pressed={!view().fit && view().scale === 1}
           onClick={() => actions.actualImage(props.document)}
           data-variant="ghost"
           data-control="iv-btn"
@@ -90,7 +88,7 @@ export function ImageHUD(props) {
           data-size="xs"
           aria-pressed={!!view().pixelated}
           onClick={() => actions.togglePixelated(props.document)}
-          data-variant="ghost"
+          data-variant={view().pixelated ? 'secondary' : 'ghost'}
           data-control="iv-btn"
         >
           {view().pixelated ? 'Pixelated' : 'Smooth'}

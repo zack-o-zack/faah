@@ -51,6 +51,8 @@ export function TabStrip(props) {
               classList={{
                 active: index() === editor.store.state.documents.active,
                 'tab-dirty': tab.dirty,
+                'tab-image': tab.isImage,
+                'tab-deleted': tab.deleted,
               }}
               data-i={index()}
               draggable="true"
@@ -70,6 +72,12 @@ export function TabStrip(props) {
                 if (event.button === 1) editor.actions.closeTabs([index()]);
               }}
             >
+              <Show when={tab.isImage}>
+                <span
+                  class="icon-[lucide--image] size-3 shrink-0 tab-icon text-primary"
+                  aria-hidden="true"
+                />
+              </Show>
               <button
                 class="tn min-h-6 min-w-6 truncate text-left focus-visible:outline focus-visible:outline-ring"
                 aria-pressed={index() === editor.store.state.documents.active}
@@ -79,12 +87,14 @@ export function TabStrip(props) {
               </button>
               <Show when={tab.dirty}>
                 <span
-                  class="tab-dirty-dot size-2 rounded-full bg-primary"
+                  class="tab-dirty-dot size-2 shrink-0 rounded-full bg-primary"
                   title="Unsaved changes"
                 />
               </Show>
               <Show when={tab.diffRef}>
-                <span class="tab-ref">@{tab.diffRef?.slice(0, 7)}</span>
+                <span class="tab-ref shrink-0 font-mono text-xs text-muted-foreground">
+                  @{tab.diffRef?.slice(0, 7)}
+                </span>
               </Show>
               <button
                 class="btn"
