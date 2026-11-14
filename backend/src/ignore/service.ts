@@ -64,17 +64,26 @@ export function compilePattern(pattern: string, fast = true): Rule | undefined {
   }
   if (kind === 'segment' || kind === 'suffix') {
     const literal = kind === 'suffix' ? p.slice(1) : p;
+    const length = literal.length,
+      suffix = kind === 'suffix';
     return {
       kind,
       negate,
       dirOnly,
       hit: (rel, isDir) => {
-        const parts = rel.split('/');
-        return parts.some(
-          (s, i) =>
-            (kind === 'suffix' ? s.endsWith(literal) : s === literal) &&
-            (i < parts.length - 1 || !dirOnly || isDir),
-        );
+        let index = rel.indexOf(literal);
+        while (index >= 0) {
+          const end = index + length;
+          if (
+            (suffix || index === 0 || rel.charCodeAt(index - 1) === 47) &&
+            (end === rel.length || rel.charCodeAt(end) === 47) &&
+            (end < rel.length || !dirOnly || isDir)
+          )
+            return true;
+          if (index === rel.length) break;
+          index = rel.indexOf(literal, index + 1);
+        }
+        return false;
       },
     };
   }

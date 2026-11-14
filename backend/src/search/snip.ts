@@ -4,7 +4,7 @@ export interface Snippet {
   post: string;
 }
 export function snip(options: { line: Uint8Array; from: number; to: number }): Snippet {
-  const line = Buffer.from(options.line),
+  const line = Buffer.from(options.line.buffer, options.line.byteOffset, options.line.byteLength),
     from = Math.min(line.length, Math.max(0, options.from)),
     to = Math.min(line.length, Math.max(from, options.to));
   const preBytes = line.subarray(0, from),

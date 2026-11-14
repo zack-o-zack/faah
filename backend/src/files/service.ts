@@ -1,4 +1,4 @@
-import { readFile, stat } from 'node:fs/promises';
+import { stat } from 'node:fs/promises';
 import { relative, basename, extname } from 'node:path';
 import { safePath } from '../http/paths.ts';
 export class PathError extends Error {
@@ -23,24 +23,24 @@ export async function rawFile(root: string, path: string) {
     rel,
     missing: false,
     directory: info.isDirectory(),
-    bytes: info.isDirectory() ? new Uint8Array() : await readFile(abs),
+    bytes: info.isDirectory() ? new Uint8Array() : await Bun.file(abs).bytes(),
     modified: info.mtime,
   };
 }
+const image: Record<string, string> = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.bmp': 'image/bmp',
+  '.avif': 'image/avif',
+};
 export function rawHeaders(rel: string): Headers {
   const name = basename(rel || '.'),
     ext = extname(rel).toLowerCase();
-  const image: Record<string, string> = {
-    '.png': 'image/png',
-    '.jpg': 'image/jpeg',
-    '.jpeg': 'image/jpeg',
-    '.gif': 'image/gif',
-    '.webp': 'image/webp',
-    '.svg': 'image/svg+xml',
-    '.ico': 'image/x-icon',
-    '.bmp': 'image/bmp',
-    '.avif': 'image/avif',
-  };
   let filename: string;
   if (/[^\x20-\x7e]/.test(name))
     filename =

@@ -6,6 +6,7 @@ import { walk } from '../src/index/walk.ts';
 import { Search, unindexedTarget } from '../src/search/service.ts';
 import { newItem } from '../src/fuzzy/score.ts';
 import { snip } from '../src/search/snip.ts';
+import { runRG } from '../src/search/rg.ts';
 
 async function workspace() {
   const root = await mkdtemp(join(tmpdir(), 'faah-search-'));
@@ -59,6 +60,10 @@ test('search uses indexed set, literal ASCII folding, Unicode regex and Go word 
       ),
     ).toEqual(['s', 'K', 'k', 'K', 'S', 's', 'ſ', 'É', 'é']);
     expect((await search('你好', { glob: 'plain.txt' })).results[0]?.matches[0]?.mid).toBe('你好');
+    for (const literal of ['é', 'É', 'İ', 'ſ', 'K'])
+      expect(
+        (await search(literal, { glob: 'plain.txt' })).results[0]?.matches.map((m) => m.mid),
+      ).toEqual([literal]);
     expect(
       (await search('needle', { glob: 'ignored/secret.txt' })).results.map((f) => f.path),
     ).toEqual(['ignored/secret.txt']);
@@ -149,6 +154,27 @@ test('search aborts ripgrep and rejects invalid expressions', async () => {
     await expect(f.search.search({ query: 'needle' }, controller.signal)).rejects.toThrow();
     const pending = f.search.search({ query: 'needle' }, AbortSignal.timeout(1));
     await expect(pending).rejects.toThrow();
+  } finally {
+    await f.close();
+  }
+});
+
+test('parallel rg delivery awaits ordered file matches without an end callback', async () => {
+  const f = await workspace();
+  try {
+    const lines: number[] = [];
+    const result = await runRG({
+      root: f.root,
+      args: ['--json', '--text', '-e', 'needle', '--', 'plain.txt'],
+      signal: AbortSignal.timeout(10000),
+      concurrency: 4,
+      match: async (hit) => {
+        await Promise.resolve();
+        lines.push(hit.lineNumber);
+      },
+    });
+    expect(result.code).toBe(0);
+    expect(lines).toEqual([1, 2]);
   } finally {
     await f.close();
   }

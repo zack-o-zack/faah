@@ -39,8 +39,18 @@ export function declPatterns(ident: string): Map<string, RegExp> | undefined {
   return out;
 }
 export function indentCols(text: string): number {
-  let cols = 0;
-  for (const c of text) cols += c === '\t' ? 4 : 1;
+  let cols = text.length;
+  for (let i = 0; i < text.length; i++) {
+    const c = text.charCodeAt(i);
+    if (c === 9) cols += 3;
+    else if (c >= 0xd800 && c <= 0xdbff) {
+      const next = text.charCodeAt(i + 1);
+      if (next >= 0xdc00 && next <= 0xdfff) {
+        cols--;
+        i++;
+      }
+    }
+  }
   return Math.floor(cols / 2);
 }
 const compiled = Object.fromEntries(

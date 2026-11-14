@@ -1,4 +1,5 @@
-import { lstat, open, readFile } from 'node:fs/promises';
+import { lstat, readFile } from 'node:fs/promises';
+import { availableParallelism } from 'node:os';
 import { join, extname, posix } from 'node:path';
 import { compilePattern } from '../ignore/service.ts';
 import { newItem, type Item } from '../fuzzy/score.ts';
@@ -10,6 +11,7 @@ import { walkGlobs, type Excluded } from './walk.ts';
 import { nullable } from './compat.ts';
 import { finishNullable } from './empty.ts';
 import { snip, type Snippet } from './snip.ts';
+import type { SearchProfile, RGProfile } from './profile.ts';
 export interface Match extends Snippet {
   line: number;
   def?: boolean;
@@ -46,6 +48,7 @@ export class Search {
       files: () => Item[];
       strategy?: 'explicit' | 'walk';
       excluded?: () => Excluded[];
+      profile?: (profile: SearchProfile) => void;
     },
   ) {}
   async search(
@@ -53,6 +56,10 @@ export class Search {
     signal: AbortSignal,
   ): Promise<{ results: FileMatches[]; truncated: boolean }> {
     if (!trimSpace(opts.query)) return { results: [], truncated: false };
+    const started = performance.now();
+    let validateMs = 0,
+      validatedFiles = 0;
+    const rg: RGProfile[] = [];
     signal.throwIfAborted();
     const expression = pattern(opts);
     const empty = opts.regex
@@ -73,39 +80,39 @@ export class Search {
     const runSignal = AbortSignal.any([signal, stopped.signal]);
     const complete = (rawPath: string) => {
       if (stopped.signal.aborted) return;
-      const path = rawPath.replace(/^\.\//, '');
+      const path = rawPath.startsWith('./') ? rawPath.slice(2) : rawPath;
       if (results.has(path)) completed.add(path);
       if (completed.size >= maxFiles) stopped.abort();
     };
     const defs = opts.classifyDefs ? declPatterns(opts.query) : undefined;
     const accept = async (hit: RGMatch) => {
       if (stopped.signal.aborted) return;
-      const path = hit.path.replace(/^\.\//, '');
+      const path = hit.path.startsWith('./') ? hit.path.slice(2) : hit.path;
       if (!allowed.has(path)) return;
       let matches = results.get(path);
       if (matches && matches.length >= maxPerFile) return;
       if (!valid.has(path)) {
-        const file = await open(join(this.options.root, path)).catch(() => undefined);
-        if (!file) {
+        const validating = this.options.profile ? performance.now() : 0;
+        validatedFiles++;
+        const buffer = await Bun.file(join(this.options.root, path))
+          .slice(0, 8000)
+          .arrayBuffer()
+          .catch(() => undefined);
+        if (!buffer) {
           valid.set(path, false);
           return;
         }
-        try {
-          const buffer = Buffer.alloc(8000);
-          const { bytesRead } = await file.read(buffer, 0, 8000, 0);
-          let okay = !buffer.subarray(0, bytesRead).includes(0);
-          if (okay && opts.word && !opts.regex && !opts.case) {
-            const data = await readFile(join(this.options.root, path));
-            okay = asciiLower(data.toString()).includes(asciiLower(opts.query));
-          }
-          valid.set(path, okay);
-        } finally {
-          await file.close();
+        let okay = !new Uint8Array(buffer).includes(0);
+        if (okay && opts.word && !opts.regex && !opts.case) {
+          const data = await readFile(join(this.options.root, path));
+          okay = asciiLower(data.toString()).includes(asciiLower(opts.query));
         }
+        valid.set(path, okay);
+        if (this.options.profile) validateMs += performance.now() - validating;
       }
       if (!valid.get(path)) return;
       matches ??= [];
-      const bytes = Buffer.from(hit.line);
+      const bytes = Buffer.from(hit.line.buffer, hit.line.byteOffset, hit.line.byteLength);
       const line = bytes.subarray(0, bytes.at(-1) === 10 ? bytes.length - 1 : bytes.length);
       const declaration = defs?.get(extname(path).toLowerCase())?.test(line.toString()) ?? false;
       for (const match of hit.matches) {
@@ -120,20 +127,6 @@ export class Search {
       }
       if (matches.length) results.set(path, matches);
     };
-    const args = [
-      '--json',
-      '--text',
-      '--hidden',
-      '--no-ignore',
-      '--no-config',
-      '--threads',
-      '1',
-      '--max-count',
-      String(maxPerFile),
-      '-e',
-      expression,
-      '--',
-    ];
     let batches: string[][] = [];
     const strategy = this.options.strategy ?? (files.length >= 4000 ? 'walk' : 'explicit');
     const globs =
@@ -145,7 +138,6 @@ export class Search {
           })
         : undefined;
     if (globs) {
-      args.splice(args.length - 1, 0, ...globs);
       batches = [['.']];
     } else {
       let batch: string[] = [],
@@ -163,6 +155,26 @@ export class Search {
       if (batch.length) batches.push(batch);
     }
     if (!batches.length) batches = [['-']];
+    // One parallel walker avoids the serial metadata/I/O path. Explicit batches
+    // share the same four-thread budget instead of multiplying it per process.
+    const threads =
+      files.length > 32 && batches.length === 1 ? Math.min(4, availableParallelism()) : 1;
+    const args = [
+      '--json',
+      '--text',
+      '--hidden',
+      '--no-ignore',
+      '--no-config',
+      '--threads',
+      String(threads),
+      '--max-count',
+      String(maxPerFile),
+      '-e',
+      expression,
+      ...(globs ?? []),
+      '--',
+    ];
+    const prepareMs = performance.now() - started;
     // Bound process concurrency while keeping the event loop available for HTTP.
     let next = 0;
     await Promise.all(
@@ -176,6 +188,8 @@ export class Search {
             signal: runSignal,
             match: accept,
             complete,
+            concurrency: Math.max(1, Math.floor(4 / Math.min(4, batches.length))),
+            profile: this.options.profile ? (profile) => rg.push(profile) : undefined,
           });
           if (result.code > 1 && !runSignal.aborted && result.stderr.includes('regex parse error'))
             throw regexError(result.stderr, opts);
@@ -196,6 +210,18 @@ export class Search {
     const out = [...results.entries()]
       .map(([path, matches]) => ({ path, matches }))
       .sort((a, b) => compare(a.path, b.path));
+    this.options.profile?.({
+      query: opts.query,
+      expression,
+      files: files.length,
+      batches: batches.length,
+      strategy: globs ? 'walk' : 'explicit',
+      prepareMs,
+      validateMs,
+      validatedFiles,
+      totalMs: performance.now() - started,
+      rg,
+    });
     return { results: out.slice(0, maxFiles), truncated: out.length > maxFiles };
   }
   private async emptyMatch(expression: string, signal: AbortSignal): Promise<boolean> {

@@ -71,19 +71,24 @@ persistent fuzzy shards after a flat-list change. Git overlays and rebuild
 publication are serialized; stream updates received during a walk supersede its
 older Git snapshot.
 
-Fuzzy matching caches original/lowercase UTF-8 bytes. At 4,000 files it creates
+Fuzzy matching caches original/lowercase UTF-8 bytes and path penalties. Scoring
+does not allocate positions for rejected candidates. At 4,000 files it creates
 up to four persistent Workers with disjoint copies of the paths. Build/update
 messages install the paths once; queries and top-K results cross thereafter.
-Each shard uses Go's worst-first heap; the parent merges by score then UTF-8 path.
+Each shard uses Go's worst-first heap and transfers packed IDs/scores; the parent
+merges by score then cached UTF-8 path bytes and computes positions for the final
+winners. In-flight queries retain their installed snapshot during index updates.
 
-Search uses a single ripgrep walk for at least 4,000 eligible files from a full
+Search uses one ripgrep process with up to four walking threads for at least
+4,000 eligible files from a full
 index walk, pruning known ignored paths and ineligible indexed sizes, then
 filtering every hit against the exact indexed set. Small scopes,
 explicit ignored-file targets and files inserted/updated by TouchPath use explicit
 paths in batches below 128 KB, with up to four concurrent processes. That fallback
 also preserves files reached through symlinks by TouchPath. Both strategies apply our
 ignore compiler for glob filtering and the Go literal unindexed-file exception.
-Literal folding uses ASCII classes; regex folding uses Unicode `(?i)`, with Go's
+Literal folding uses Rust's native `(?i-u)` bytes-regex flag; non-ASCII literal
+bytes remain exact. Regex folding uses Unicode `(?i)`, with Go's
 ASCII Perl classes and word boundaries. The adapter preserves byte-based ranges,
 rune-based snippets, line anchors, empty matches and final empty lines. Files
 with a NUL in their first 8,000 bytes are skipped. The 8 MiB filter uses the
@@ -91,6 +96,14 @@ indexed size, matching Go. Request cancellation kills the processes. Complete
 files acquire the 200-file cap; a 50-match file cap does not mark truncation.
 Over 200 matching files, Go's racing workers make selection and truncation
 nondeterministic, so exact response parity is only asserted through that boundary.
+
+Matched-file binary checks use one native prefix read, with up to four complete
+files processed concurrently. Each file retains match order and reaches the
+file cap only after its callbacks finish; backpressure bounds queued files.
+JSON path strings and
+line/snippet buffers avoid redundant copies. Explicit batches share a four-thread
+request budget. Raw responses use native file reads and buffer views while
+preserving the HTTP range, modification and attachment behavior.
 
 All temporary consistency code lives in `legacy/` for removal in phase 8:
 
@@ -142,6 +155,49 @@ The shared harness provides the main comparison; `--raw-only` measures raw bytes
 without repeating its startup and load scenarios. The rg strategy comparison
 checks the base and 200-file-cap contract fixtures plus all four pinned corpora,
 then alternates explicit/walking measurements after two warmups per strategy.
+
+### Targeted profiling
+
+```sh
+FAAH_LEGACY_BIN=/absolute/faah-go FAAH_PROFILE_SEARCH=/tmp/faah-search.jsonl FAAH_PROFILE_REPORT=/tmp/faah-profile.jsonl bun --cpu-prof-md --cpu-prof-dir=/tmp backend/bench/profile.ts --bin /absolute/faah-bun
+```
+
+`FAAH_PROFILE_SEARCH` enables per-request timers only when supplied. They record
+preparation, executable resolution, spawn, first stdout, rg completion, JSON
+decoding, match validation, bytes/events, searched files/bytes, and child CPU.
+The profile harness compares one/four rg threads, native ASCII folding, direct
+and HTTP search, synchronous/sharded fuzzy queries, raw construction, and the
+empty-search spawn floor. HTTP trials use fresh workspace copies so direct rg
+trials do not prime their filesystem state. All reports stay outside the repo.
+
+The optional walker observer separates synchronous walk-body time from its
+remaining wall time and records process user/system CPU. The remaining wall
+time includes filesystem awaits, runtime work and scheduling; it is not a kernel
+I/O-wait counter. CPU totals include parallel filesystem threads and can exceed
+wall time. Startup scheduling and the hidden Go child's walk are unchanged.
+
+The earlier rg strategy measurements were warm: explicit parallel batches ran
+before walking. A cold serial walk over the same 26,256 eligible Kubernetes files
+and 230 MB reproduced the slow path; a parallel scan primed a much faster serial
+follow-up. Folding syntax alone and mmap on/off did not reliably remove it.
+
+The performance pass was verified with 36 backend tests, strict typechecking,
+the frontend check, AIslop CI (zero new findings), three compiled Bun contract
+runs at 257/257, the Go reference at 257/257, and the unchanged differential
+check at 80/80. Sequential full Go then Bun runs over Flask and Kubernetes
+passed the benchmark verifier without load errors or SSE timeouts. Raw trials
+also compared every response byte with the fixture. Reports stayed outside
+the repository; no contract goldens or recorded baselines changed.
+
+In that isolated pair, Kubernetes no-hit search fell from the phase-2 4.65 s
+to 322 ms (Go: 679 ms), and definition lookup measured 327 ms (Go: 694 ms).
+Flask common search improved from 10.86 ms to 7.60 ms but remained slower than
+Go's 2.68 ms. Kubernetes find queries remained 30–62% slower than Go despite
+improving over phase 2. The 50K short-query microbenchmark fell from 2.795 ms
+to 0.477 ms (Go baseline: 0.395 ms). Raw remained slower than Go, and Flask raw
+rose by 0.025 ms versus phase 2. These are single-pair observations, not proof
+of statistical significance; compare small deltas with the recorded Go repeat
+swing before interpreting them.
 
 ## Build and validation
 
@@ -208,7 +264,7 @@ Go code, frontend source, desktop source and contract goldens were unchanged.
 ## Phase 2 verification
 
 The compiled binary passes all 257 contracts in three consecutive runs; the Go
-reference also passes 257. The backend suite has 34 tests, including every Go
+reference also passes 257. The backend suite has 36 tests, including every Go
 ignore fast-path vector and the fuzzy/symbols unit vectors. An additional 80-case
 Go/Bun differential check covers regex line anchors, zero-width Unicode matches,
 Perl/POSIX classes, literal class punctuation, quoting, error responses, newlines

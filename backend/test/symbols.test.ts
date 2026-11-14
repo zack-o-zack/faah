@@ -105,6 +105,8 @@ test('Go outline vectors for Go, Markdown, Python, TypeScript, Rust and shell', 
     ['    ', 2],
     ['\t', 2],
     ['\t  ', 3],
+    ['😀\t', 2],
+    ['😀😀', 1],
   ] as const)
     expect(indentCols(ws)).toBe(n);
   expect(

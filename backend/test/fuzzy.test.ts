@@ -68,6 +68,39 @@ test('fuzzy positions use UTF-8 bytes, including multi-byte query bytes', () => 
   expect(item.lower).toBe('i/foo.go');
 });
 
+test('allocation-free scoring retains Go scores, tightened byte positions and UTF-8 ties', () => {
+  const vectors = [
+    { path: 'httpserver.go', query: 'httpserver', score: 363, pos: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] },
+    {
+      path: 'internal/server/http_server.go',
+      query: 'httpserver',
+      score: 299,
+      pos: [16, 17, 18, 19, 21, 22, 23, 24, 25, 26],
+    },
+    { path: 'fooBarBaz.go', query: 'bb', score: 52, pos: [3, 6] },
+    { path: 'a_b_a_b.go', query: 'bb', score: 63, pos: [2, 6] },
+    { path: '目录/你好.ts', query: '你好', score: 240, pos: [7, 8, 9, 10, 11, 12] },
+    { path: 'İ/Foo.go', query: 'foo', score: 69, pos: [2, 3, 4] },
+  ];
+  for (const vector of vectors) {
+    const item = newItem(vector.path);
+    expect(
+      score({ item, query: Buffer.from(vector.query), original: Buffer.from(vector.query) }),
+    ).toMatchObject({ score: vector.score, pos: vector.pos });
+    expect(find([item], vector.query, 1)[0]).toMatchObject({
+      score: vector.score,
+      pos: vector.pos,
+    });
+  }
+  expect(
+    find(
+      ['😀.go', '\uE000.go'].map((p) => newItem(p)),
+      'go',
+      1,
+    )[0]?.path,
+  ).toBe('\uE000.go');
+});
+
 test('persistent sharded pool agrees with Go top-K merge and survives updates', async () => {
   const pool = new FuzzyPool();
   try {
@@ -76,6 +109,11 @@ test('persistent sharded pool agrees with Go top-K merge and survives updates', 
     expect(pool.workerCount).toBeGreaterThan(0);
     for (const query of ['handler', 'srvutil', 'in', 'server', 'zzqq', ''])
       expect(await pool.find(query, 50)).toEqual(find(items, query, 50));
+    const pending = pool.find('handler', 50);
+    await Promise.resolve();
+    const updated = pool.set([newItem('handler'), ...items]);
+    expect(await pending).toEqual(find(items, 'handler', 50));
+    await updated;
     await pool.set([...items, newItem('handler')]);
     expect((await pool.find('handler', 1))[0]?.path).toBe('handler');
     await pool.set([newItem('one.go')]);

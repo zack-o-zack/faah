@@ -7,6 +7,7 @@ import { decodeMetrics } from '../metrics/decode.ts';
 import { Index } from './service.ts';
 import { FuzzyPool } from '../fuzzy/pool.ts';
 import { Search } from '../search/service.ts';
+import { searchProfiler } from '../search/profile.ts';
 import { LegacyNavigation } from '../legacy/navigation.ts';
 import type { Child } from '../legacy/child.ts';
 export class Navigation {
@@ -38,6 +39,7 @@ export class Navigation {
     this.search = new Search({
       root: options.root,
       files: () => this.index.files,
+      profile: searchProfiler(),
       excluded: () =>
         [...this.index.children.values()].flatMap((kids) => kids.filter((n) => n.ignored)),
     });

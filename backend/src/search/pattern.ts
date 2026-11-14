@@ -17,15 +17,13 @@ export function pattern(options: SearchOptions): string {
   const { query } = options;
   if (options.regex) checkRepeats(query);
   let pat = options.regex ? query : quote(query);
-  if (!options.regex && !options.word && !options.case)
-    pat = Array.from(query, (c) =>
-      /[a-zA-Z]/.test(c) ? `[${c.toLowerCase()}${c.toUpperCase()}]` : quote(c),
-    ).join('');
+  const asciiLiteral = !options.regex && !options.word && !options.case;
   if (options.word) pat = '\\b(?:' + pat + ')\\b';
   if (!options.case && (options.regex || options.word)) pat = '(?i)' + pat;
   // Go's Perl classes and word boundaries are ASCII; Unicode literals stay Unicode.
   pat = asciiClasses(linePattern(pat));
-  return pat;
+  // rg uses a bytes regex: disabling Unicode folding preserves non-ASCII bytes.
+  return asciiLiteral ? '(?i-u)' + pat : pat;
 }
 export function regexError(stderr: string, options: SearchOptions): Error {
   const query = options.query;

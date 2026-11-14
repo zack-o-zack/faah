@@ -1,3 +1,9 @@
+function view(bytes: Uint8Array): Uint8Array<ArrayBuffer> {
+  const buffer = bytes.buffer;
+  return buffer instanceof ArrayBuffer
+    ? new Uint8Array(buffer, bytes.byteOffset, bytes.byteLength)
+    : new Uint8Array(bytes);
+}
 export function content(options: {
   bytes: Uint8Array;
   request: Request;
@@ -34,8 +40,8 @@ export function content(options: {
         return new Response('invalid range: failed to overlap\n', { status: 416, headers });
       }
       headers.set('Content-Range', `bytes ${start}-${end}/${bytes.length}`);
-      return new Response(new Uint8Array(bytes.slice(start, end + 1)), { status: 206, headers });
+      return new Response(view(bytes.subarray(start, end + 1)), { status: 206, headers });
     }
   }
-  return new Response(new Uint8Array(bytes), { headers });
+  return new Response(view(bytes), { headers });
 }
