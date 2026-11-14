@@ -318,7 +318,7 @@ For a plain workspace, `handleGitPush` runs a bare `git.Push` (`git push`); if t
 | `/api/git/commit-message` | POST | Dispatch the selected harness to write a commit message for the staged diff. Returns an `agentJob`, polled via `/api/agent/job`. `400` if nothing is staged or no harness is selected. |
 | `/api/git/log` | GET | List recent commits in current branch. |
 
-Every write endpoint is guarded by `localPost` ([`server.go`](../../server.go)), the same POST-only, same-origin, IP-or-localhost check every other mutating faah endpoint uses.
+Every write endpoint is guarded by `httpx.LocalPost` ([`internal/httpx/http.go`](../../internal/httpx/http.go)), the same POST-only, same-origin, IP-or-localhost check every other mutating faah endpoint uses.
 
 ## 10. Unpushed Commits (`@{u}..HEAD`)
 

@@ -32,6 +32,7 @@ import (
 	"faah/internal/telemetry"
 	"faah/internal/ui"
 	"faah/internal/update"
+	"faah/internal/workbench"
 	"faah/internal/workspace"
 )
 
@@ -176,9 +177,8 @@ func main() {
 		// Outside a clone of the PR's repository, use one the workbench knows,
 		// so the checkout is a worktree rather than a fresh clone.
 		cloneDir := "."
-		if top, _ := prpkg.FindRemote(".", prTarget.Owner, prTarget.Repo); top == "" {
-			st := &wbStore{path: workbenchStorePath()}
-			if known := knownClone(st.Load(), prTarget.Owner+"/"+prTarget.Repo); known != "" {
+		if top, _ := forge.FindRemote(".", prTarget.Owner, prTarget.Repo); top == "" {
+			if known := workbench.KnownClone(prTarget.Owner + "/" + prTarget.Repo); known != "" {
 				cloneDir = known
 			}
 		}
@@ -228,16 +228,14 @@ func main() {
 		configuredBasePath = httpx.CleanBasePath(*cfg.ServerBasePath)
 	}
 
-	pxSrv := NewServer(ix, lsp, configuredBasePath)
+	pxSrv := NewServer(ix, lsp, assets, devRoot, configuredBasePath)
 	pxSrv.tel = tel
 	if *wbChild {
-		pxSrv.workbenchURL = workbenchBaseOf(configuredBasePath)
+		pxSrv.workbenchURL = workbench.BaseOf(configuredBasePath)
 	} else if pr != nil {
-		it := wbPRItem(prTarget)
-		it.Title = pr.Snapshot().Meta.Title
-		go recordRecent(it)
+		go workbench.RecordPR(prTarget, pr.Snapshot().Meta.Title)
 	} else {
-		go recordRecent(wbDirItem(root))
+		go workbench.RecordDirectory(root)
 	}
 	if pr != nil {
 		pxSrv.SetPR(pr)
@@ -257,7 +255,7 @@ func main() {
 	srv.RegisterOnShutdown(pxSrv.EndStreams)
 	if *wbChild {
 		// The workbench reads this line for the address it proxies to.
-		fmt.Printf("%s%s\n", wbReadyPrefix, addr)
+		fmt.Printf("%s%s\n", workbench.ReadyPrefix, addr)
 	}
 
 	url := viewerURL(addr, initialFile, initialLine, configuredBasePath)
@@ -411,7 +409,7 @@ func main() {
 // workspace it started.
 func runWorkbench(host string, port int, basePathFlag string, open, doAutoUpdate bool, childArgs []string, desktop bool) {
 	if !desktop {
-		if u := runningWorkbench(); u != "" {
+		if u := workbench.RunningURL(); u != "" {
 			ui.Status("ok", "workbench already running", u, 0, os.Stdout)
 			if open {
 				openBrowser(u)
@@ -441,7 +439,7 @@ func runWorkbench(host string, port int, basePathFlag string, open, doAutoUpdate
 	if err != nil {
 		fatal(err)
 	}
-	wb := newWorkbench(basePath, cwd, exe, childArgs)
+	wb := workbench.New(workbench.Options{BasePath: basePath, CWD: cwd, Executable: exe, ChildArgs: childArgs, Version: version, DevRoot: devRoot, Assets: assets, ResolveTarget: resolveTarget})
 	srv := &http.Server{Handler: wb}
 
 	u := viewerURL(addr, "", 0, basePath)
@@ -449,8 +447,8 @@ func runWorkbench(host string, port int, basePathFlag string, open, doAutoUpdate
 	// A desktop app owns its backend and must not attach to, or replace the
 	// instance lock of, an independently running CLI workbench.
 	if !desktop {
-		writeWorkbenchLock(viewerURL(net.JoinHostPort("127.0.0.1", boundPort), "", 0, basePath))
-		defer removeWorkbenchLock()
+		workbench.WriteLock(viewerURL(net.JoinHostPort("127.0.0.1", boundPort), "", 0, basePath))
+		defer workbench.RemoveLock()
 	}
 
 	ui.Heading("faah "+version, nil, os.Stdout)
@@ -507,25 +505,15 @@ func runWorkbench(host string, port int, basePathFlag string, open, doAutoUpdate
 	signal.Stop(stop)
 	wb.Close()
 	if interrupted && !desktop {
-		removeWorkbenchLock()
+		workbench.RemoveLock()
 		os.Exit(130)
 	}
 	if err != nil && err != http.ErrServerClosed {
 		if !desktop {
-			removeWorkbenchLock()
+			workbench.RemoveLock()
 		}
 		fatal(err)
 	}
-}
-
-// workbenchBaseOf turns a workspace's base path (/<wb>/w/<id>/) back into the
-// workbench's own.
-func workbenchBaseOf(childBase string) string {
-	trimmed := strings.TrimSuffix(childBase, "/")
-	if i := strings.LastIndex(trimmed, "/w/"); i >= 0 {
-		return trimmed[:i+1]
-	}
-	return "/"
 }
 
 // resolveTarget turns a directory or file into a workspace root, along with an optional

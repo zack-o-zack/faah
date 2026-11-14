@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"faah/internal/httpx"
 	lsppkg "faah/internal/lsp"
 	"faah/internal/workspace"
 )
@@ -20,7 +19,7 @@ func TestExternalAllowlist(t *testing.T) {
 	ix := workspace.NewIndex(root)
 	ix.Build()
 	m := lsppkg.New(lsppkg.Options{Root: root, Enabled: false, Version: version})
-	s := NewServer(ix, m)
+	s := NewServer(ix, m, assets, devRoot)
 
 	if _, _, ok := s.resolvePath("/etc/passwd"); ok {
 		t.Error("resolvePath allowed an arbitrary absolute path")
@@ -35,32 +34,6 @@ func TestExternalAllowlist(t *testing.T) {
 	}
 	if _, _, ok := s.resolvePath("../../../etc/shadow"); ok {
 		t.Error("relative traversal still escapes the root")
-	}
-}
-
-// Only a POST from faah's own page, addressed by IP or localhost, may install.
-func TestLocalPost(t *testing.T) {
-	cases := []struct {
-		name, method, host, origin string
-		want                       bool
-	}{
-		{"same origin", "POST", "127.0.0.1:7777", "http://127.0.0.1:7777", true},
-		{"localhost", "POST", "localhost:7777", "http://localhost:7777", true},
-		{"ipv6 loopback", "POST", "[::1]:7777", "http://[::1]:7777", true},
-		{"GET", "GET", "127.0.0.1:7777", "http://127.0.0.1:7777", false},
-		{"no origin", "POST", "127.0.0.1:7777", "", false},
-		{"other site", "POST", "127.0.0.1:7777", "https://evil.example", false},
-		{"dns rebinding", "POST", "evil.example:7777", "http://evil.example:7777", false},
-	}
-	for _, c := range cases {
-		r := httptest.NewRequest(c.method, "/api/lsp/install", nil)
-		r.Host = c.host
-		if c.origin != "" {
-			r.Header.Set("Origin", c.origin)
-		}
-		if got := httpx.LocalPost(httptest.NewRecorder(), r); got != c.want {
-			t.Errorf("%s: localPost = %v, want %v", c.name, got, c.want)
-		}
 	}
 }
 

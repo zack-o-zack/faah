@@ -72,7 +72,7 @@ func agentServer(t *testing.T, root, name string) *Server {
 	}
 	ix := workspace.NewIndex(root)
 	ix.Build()
-	s := NewServer(ix, nil)
+	s := NewServer(ix, nil, assets, devRoot)
 	s.SetAgent(m)
 	t.Cleanup(func() {
 		s.threads.Close()
@@ -253,7 +253,7 @@ func TestAgentEditRefusedUntilHarnessChosen(t *testing.T) {
 	}
 	ix := workspace.NewIndex(root)
 	ix.Build()
-	s := NewServer(ix, nil)
+	s := NewServer(ix, nil, assets, devRoot)
 	s.SetAgent(m)
 
 	code, body := agentPost(t, s, "/api/agent/edit?path=a.go&l1=1&l2=1&instruction=hi")

@@ -25,7 +25,7 @@ func TestCleanBasePath(t *testing.T) {
 	for _, tc := range cases {
 		got := CleanBasePath(tc.in)
 		if got != tc.want {
-			t.Errorf("CleanBasePath(%q) = %q, want %q", tc.in, got, tc.want)
+			t.Errorf("cleanBasePath(%q) = %q, want %q", tc.in, got, tc.want)
 		}
 	}
 }
@@ -41,7 +41,7 @@ func TestStatusRecorderInterfaces(t *testing.T) {
 			t.Error("expected Flush to propagate to underlying recorder")
 		}
 	} else {
-		t.Error("StatusRecorder does not implement http.Flusher")
+		t.Error("statusRecorder does not implement http.Flusher")
 	}
 
 	// Verify Unwrap
@@ -52,10 +52,10 @@ func TestStatusRecorderInterfaces(t *testing.T) {
 	// Verify GzipWriter Flusher and Unwrap
 	gw := GzipWriter{ResponseWriter: rec}
 	if _, ok := any(gw).(http.Flusher); !ok {
-		t.Error("GzipWriter does not implement http.Flusher")
+		t.Error("gzipWriter does not implement http.Flusher")
 	}
 	if unwrapped := gw.Unwrap(); unwrapped != rec {
-		t.Errorf("expected GzipWriter Unwrap to return %p, got %p", rec, unwrapped)
+		t.Errorf("expected gzipWriter Unwrap to return %p, got %p", rec, unwrapped)
 	}
 }
 
@@ -98,5 +98,31 @@ func TestGzipWriterBodilessResponsesAndContentLength(t *testing.T) {
 	}
 	if rec2.Body.Len() == 0 {
 		t.Errorf("expected compressed body on 200")
+	}
+}
+
+// Only a POST from faah's own page, addressed by IP or localhost, may install.
+func TestLocalPost(t *testing.T) {
+	cases := []struct {
+		name, method, host, origin string
+		want                       bool
+	}{
+		{"same origin", "POST", "127.0.0.1:7777", "http://127.0.0.1:7777", true},
+		{"localhost", "POST", "localhost:7777", "http://localhost:7777", true},
+		{"ipv6 loopback", "POST", "[::1]:7777", "http://[::1]:7777", true},
+		{"GET", "GET", "127.0.0.1:7777", "http://127.0.0.1:7777", false},
+		{"no origin", "POST", "127.0.0.1:7777", "", false},
+		{"other site", "POST", "127.0.0.1:7777", "https://evil.example", false},
+		{"dns rebinding", "POST", "evil.example:7777", "http://evil.example:7777", false},
+	}
+	for _, c := range cases {
+		r := httptest.NewRequest(c.method, "/api/lsp/install", nil)
+		r.Host = c.host
+		if c.origin != "" {
+			r.Header.Set("Origin", c.origin)
+		}
+		if got := LocalPost(httptest.NewRecorder(), r); got != c.want {
+			t.Errorf("%s: localPost = %v, want %v", c.name, got, c.want)
+		}
 	}
 }

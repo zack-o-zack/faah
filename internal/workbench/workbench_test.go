@@ -1,8 +1,9 @@
-package main
+package workbench
 
 import (
 	"context"
 	"encoding/json"
+	"faah/internal/httpx/httpxtest"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -21,56 +22,56 @@ import (
 	"faah/internal/settings"
 )
 
-func newTestStore(t *testing.T) *wbStore {
+func newTestStore(t *testing.T) *store {
 	t.Helper()
 	t.Setenv("XDG_STATE_HOME", t.TempDir())
-	return &wbStore{path: workbenchStorePath()}
+	return &store{path: storePath()}
 }
 
 func TestWorkbenchItemIDsAreStable(t *testing.T) {
-	a := wbDirItem("/work/repo/")
-	b := wbDirItem("/work/repo")
+	a := dirItem("/work/repo/")
+	b := dirItem("/work/repo")
 	if a.ID != b.ID || len(a.ID) != 12 {
 		t.Fatalf("dir ids differ or wrong length: %q %q", a.ID, b.ID)
 	}
-	p1 := wbPRItem(forge.PRTarget{Provider: "github", Owner: "Px0-AI", Repo: "px0", Number: 7, URL: "https://github.com/Px0-AI/px0/pull/7"})
-	p2 := wbPRItem(forge.PRTarget{Provider: "github", Owner: "px0-ai", Repo: "PX0", Number: 7, URL: "https://github.com/px0-ai/px0/pull/7/files"})
+	p1 := prItem(forge.PRTarget{Provider: "github", Owner: "Px0-AI", Repo: "px0", Number: 7, URL: "https://github.com/Px0-AI/px0/pull/7"})
+	p2 := prItem(forge.PRTarget{Provider: "github", Owner: "px0-ai", Repo: "PX0", Number: 7, URL: "https://github.com/px0-ai/px0/pull/7/files"})
 	if p1.ID != p2.ID {
 		t.Fatalf("same PR got different ids: %q %q", p1.ID, p2.ID)
 	}
-	if p1.ID == wbDirItem("px0-ai/px0#7").ID {
+	if p1.ID == dirItem("px0-ai/px0#7").ID {
 		t.Fatal("dir and PR ids must not collide")
 	}
 }
 
 func TestWorkbenchStoreRecordKeepsPinAndTitle(t *testing.T) {
 	st := newTestStore(t)
-	it := wbPRItem(forge.PRTarget{Provider: "github", Owner: "o", Repo: "r", Number: 1, URL: "u"})
+	it := prItem(forge.PRTarget{Provider: "github", Owner: "o", Repo: "r", Number: 1, URL: "u"})
 	it.Title = "Fix things"
-	if err := st.Record(it); err != nil {
+	if err := st.record(it); err != nil {
 		t.Fatal(err)
 	}
-	if err := st.Update(func(f *wbFile) { f.Items[0].Pinned = true }); err != nil {
+	if err := st.update(func(f *file) { f.Items[0].Pinned = true }); err != nil {
 		t.Fatal(err)
 	}
 	it.Title = "" // reopened before the title is known again
-	if err := st.Record(it); err != nil {
+	if err := st.record(it); err != nil {
 		t.Fatal(err)
 	}
-	got, ok := st.Get(it.ID)
+	got, ok := st.get(it.ID)
 	if !ok || !got.Pinned || got.Title != "Fix things" || got.LastOpened == 0 {
 		t.Fatalf("got %+v", got)
 	}
-	if n := len(st.Load().Items); n != 1 {
+	if n := len(st.snapshot().Items); n != 1 {
 		t.Fatalf("want 1 item, got %d", n)
 	}
 }
 
 func TestWorkbenchStoreTrimsOldUnpinned(t *testing.T) {
 	st := newTestStore(t)
-	err := st.Update(func(f *wbFile) {
-		for i := 0; i < wbMaxRecent+10; i++ {
-			it := wbDirItem(filepath.Join("/d", string(rune('a'+i%26)), strings.Repeat("x", i)))
+	err := st.update(func(f *file) {
+		for i := 0; i < maxRecent+10; i++ {
+			it := dirItem(filepath.Join("/d", string(rune('a'+i%26)), strings.Repeat("x", i)))
 			it.LastOpened = int64(i)
 			it.Pinned = i == 0 // the oldest, but pinned
 			f.Items = append(f.Items, it)
@@ -79,11 +80,11 @@ func TestWorkbenchStoreTrimsOldUnpinned(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	items := st.Load().Items
-	if len(items) != wbMaxRecent+1 {
-		t.Fatalf("want %d items, got %d", wbMaxRecent+1, len(items))
+	items := st.snapshot().Items
+	if len(items) != maxRecent+1 {
+		t.Fatalf("want %d items, got %d", maxRecent+1, len(items))
 	}
-	if items[0].LastOpened != wbMaxRecent+9 {
+	if items[0].LastOpened != maxRecent+9 {
 		t.Fatalf("not most recent first: %d", items[0].LastOpened)
 	}
 	pinned := false
@@ -99,7 +100,7 @@ func TestWorkbenchStoreSetsAsideCorruptFile(t *testing.T) {
 	st := newTestStore(t)
 	os.MkdirAll(filepath.Dir(st.path), 0o700)
 	os.WriteFile(st.path, []byte("{not json"), 0o600)
-	if n := len(st.Load().Items); n != 0 {
+	if n := len(st.snapshot().Items); n != 0 {
 		t.Fatalf("want empty, got %d", n)
 	}
 	if _, err := os.Stat(st.path + ".bad"); err != nil {
@@ -115,7 +116,7 @@ func TestWorkbenchBaseOf(t *testing.T) {
 		"/":                "/",
 	}
 	for in, want := range cases {
-		if got := workbenchBaseOf(in); got != want {
+		if got := BaseOf(in); got != want {
 			t.Errorf("%q: got %q, want %q", in, got, want)
 		}
 	}
@@ -154,7 +155,7 @@ func TestWorkbenchResolveTarget(t *testing.T) {
 	newTestStore(t)
 	dir := t.TempDir()
 	os.Mkdir(filepath.Join(dir, "sub"), 0o755)
-	wb := &workbench{cwd: dir}
+	wb := &Launcher{cwd: dir, resolve: testResolveTarget}
 
 	it, err := wb.resolveTarget("sub")
 	if err != nil || it.Kind != "dir" || filepath.Base(it.Path) != "sub" {
@@ -178,7 +179,7 @@ func TestWorkbenchBrowseListsOnlyFolders(t *testing.T) {
 	os.Mkdir(filepath.Join(dir, "plain"), 0o755)
 	os.Mkdir(filepath.Join(dir, ".hidden"), 0o755)
 	os.WriteFile(filepath.Join(dir, "file.txt"), nil, 0o644)
-	wb := newWorkbench("/", dir, "", nil)
+	wb := newTestLauncher("/", dir, "", nil)
 
 	get := func(target, host string) *httptest.ResponseRecorder {
 		r := httptest.NewRequest("GET", target, nil)
@@ -189,7 +190,7 @@ func TestWorkbenchBrowseListsOnlyFolders(t *testing.T) {
 	}
 	w := get("/api/wb/browse?path="+dir, "127.0.0.1:7777")
 	var res struct {
-		Entries []wbEntry `json:"entries"`
+		Entries []entry `json:"entries"`
 	}
 	if err := json.Unmarshal(w.Body.Bytes(), &res); err != nil {
 		t.Fatal(err, w.Body.String())
@@ -204,7 +205,7 @@ func TestWorkbenchBrowseListsOnlyFolders(t *testing.T) {
 
 func TestWorkbenchOpenRequiresLocalPost(t *testing.T) {
 	newTestStore(t)
-	wb := newWorkbench("/", t.TempDir(), "", nil)
+	wb := newTestLauncher("/", t.TempDir(), "", nil)
 	r := httptest.NewRequest("POST", "/api/wb/open", strings.NewReader(`{"target":"."}`))
 	r.Host = "127.0.0.1:7777"
 	r.Header.Set("Origin", "https://evil.example")
@@ -213,14 +214,14 @@ func TestWorkbenchOpenRequiresLocalPost(t *testing.T) {
 	if w.Code != http.StatusForbidden {
 		t.Fatalf("got %d", w.Code)
 	}
-	if n := len(wb.store.Load().Items); n != 0 {
+	if n := len(wb.store.snapshot().Items); n != 0 {
 		t.Fatalf("recorded %d items", n)
 	}
 }
 
 func TestWorkbenchUnknownWorkspace(t *testing.T) {
 	newTestStore(t)
-	wb := newWorkbench("/", t.TempDir(), "", nil)
+	wb := newTestLauncher("/", t.TempDir(), "", nil)
 	r := httptest.NewRequest("GET", "/w/000000000000/", nil)
 	r.Host = "127.0.0.1:7777"
 	w := httptest.NewRecorder()
@@ -244,13 +245,13 @@ func TestWorkbenchRunsChildThroughProxy(t *testing.T) {
 	}
 	newTestStore(t)
 	exe := filepath.Join(t.TempDir(), "px0")
-	if out, err := exec.Command("go", "build", "-o", exe, ".").CombinedOutput(); err != nil {
+	if out, err := exec.Command("go", "build", "-o", exe, "../..").CombinedOutput(); err != nil {
 		t.Fatalf("build: %v\n%s", err, out)
 	}
 	ws := t.TempDir()
 	os.WriteFile(filepath.Join(ws, "hello.go"), []byte("package hello\n"), 0o644)
 
-	wb := newWorkbench("/base/", ws, exe, []string{"-no-lsp", "-no-agent", "-no-telemetry"})
+	wb := newTestLauncher("/base/", ws, exe, []string{"-no-lsp", "-no-agent", "-no-telemetry"})
 	srv := httptest.NewServer(wb)
 	defer srv.Close()
 	defer wb.Close()
@@ -342,11 +343,11 @@ func TestWorkbenchForgetsNewItemThatFails(t *testing.T) {
 	dir := t.TempDir()
 	exe := filepath.Join(dir, "fake-px0")
 	os.WriteFile(exe, []byte("#!/bin/sh\necho 'faah: faah: github: fetch PR #9: 404 Not Found' >&2\nexit 1\n"), 0o755)
-	wb := newWorkbench("/", dir, exe, nil)
+	wb := newTestLauncher("/", dir, exe, nil)
 	defer wb.Close()
 
-	it := wbPRItem(forge.PRTarget{Provider: "github", Owner: "o", Repo: "r", Number: 9, URL: "https://github.com/o/r/pull/9"})
-	wb.store.Record(it)
+	it := prItem(forge.PRTarget{Provider: "github", Owner: "o", Repo: "r", Number: 9, URL: "https://github.com/o/r/pull/9"})
+	wb.store.record(it)
 	wb.rememberClone(it.Repo, prtest.RepoWithRemotes(t, map[string]string{"origin": "https://github.com/o/r.git"}))
 	c := wb.start(it, true)
 	select {
@@ -357,7 +358,7 @@ func TestWorkbenchForgetsNewItemThatFails(t *testing.T) {
 	if c.state != "failed" || c.err != "github: fetch PR #9: 404 Not Found" {
 		t.Fatalf("state %q err %q", c.state, c.err)
 	}
-	if _, ok := wb.store.Get(it.ID); ok {
+	if _, ok := wb.store.get(it.ID); ok {
 		t.Fatal("failed new item still listed")
 	}
 	r := httptest.NewRequest("GET", "/w/"+it.ID+"/", nil)
@@ -385,33 +386,21 @@ func TestScanForCloneFindsNestedClone(t *testing.T) {
 	}
 }
 
-func postJSON(t *testing.T, h http.Handler, path, body string) *httptest.ResponseRecorder {
-	t.Helper()
-	r := httptest.NewRequest("POST", path, strings.NewReader(body))
-	r.Host = "127.0.0.1:7777"
-	r.Header.Set("Origin", "http://127.0.0.1:7777")
-	w := httptest.NewRecorder()
-	h.ServeHTTP(w, r)
-	return w
-}
-
-// New folder takes a name inside the shown folder or a nested path, and
-// refuses one that already exists.
 func TestWorkbenchMkdir(t *testing.T) {
 	newTestStore(t)
 	dir := t.TempDir()
-	wb := newWorkbench("/", dir, "", nil)
-	w := postJSON(t, wb, "/api/wb/mkdir", `{"path":"a/b","base":"`+dir+`"}`)
+	wb := newTestLauncher("/", dir, "", nil)
+	w := httpxtest.PostJSON(t, wb, "/api/wb/mkdir", `{"path":"a/b","base":"`+dir+`"}`)
 	if w.Code != http.StatusOK {
 		t.Fatalf("mkdir: %d %s", w.Code, w.Body.String())
 	}
 	if st, err := os.Stat(filepath.Join(dir, "a", "b")); err != nil || !st.IsDir() {
 		t.Fatalf("folder not created: %v", err)
 	}
-	if w := postJSON(t, wb, "/api/wb/mkdir", `{"path":"a","base":"`+dir+`"}`); w.Code != http.StatusConflict {
+	if w := httpxtest.PostJSON(t, wb, "/api/wb/mkdir", `{"path":"a","base":"`+dir+`"}`); w.Code != http.StatusConflict {
 		t.Fatalf("existing folder: got %d", w.Code)
 	}
-	if w := postJSON(t, wb, "/api/wb/mkdir", `{"path":" ","base":"`+dir+`"}`); w.Code != http.StatusBadRequest {
+	if w := httpxtest.PostJSON(t, wb, "/api/wb/mkdir", `{"path":" ","base":"`+dir+`"}`); w.Code != http.StatusBadRequest {
 		t.Fatalf("empty name: got %d", w.Code)
 	}
 }
@@ -421,34 +410,34 @@ func TestWorkbenchMkdir(t *testing.T) {
 func TestWorkbenchOpenPRAsksForClone(t *testing.T) {
 	newTestStore(t)
 	t.Setenv("HOME", t.TempDir()) // keep the scan away from real code folders
-	wb := newWorkbench("/", t.TempDir(), "/nonexistent/px0", nil)
+	wb := newTestLauncher("/", t.TempDir(), "/nonexistent/px0", nil)
 	defer wb.Close()
 	pr := "https://github.com/acme/widget/pull/5"
 
-	w := postJSON(t, wb, "/api/wb/open", `{"target":"`+pr+`"}`)
+	w := httpxtest.PostJSON(t, wb, "/api/wb/open", `{"target":"`+pr+`"}`)
 	var res map[string]any
 	json.Unmarshal(w.Body.Bytes(), &res)
 	if res["needClone"] != true || res["repo"] != "acme/widget" {
 		t.Fatalf("got %s", w.Body.String())
 	}
-	if n := len(wb.store.Load().Items); n != 0 {
+	if n := len(wb.store.snapshot().Items); n != 0 {
 		t.Fatalf("recorded %d items before a clone was chosen", n)
 	}
 
 	notClone := t.TempDir()
-	if w := postJSON(t, wb, "/api/wb/open", `{"target":"`+pr+`","clone":"`+notClone+`"}`); w.Code != http.StatusBadRequest {
+	if w := httpxtest.PostJSON(t, wb, "/api/wb/open", `{"target":"`+pr+`","clone":"`+notClone+`"}`); w.Code != http.StatusBadRequest {
 		t.Fatalf("non-clone accepted: %d %s", w.Code, w.Body.String())
 	}
 
 	clone := prtest.RepoWithRemotes(t, map[string]string{"origin": "git@github.com:acme/widget.git"})
-	if w := postJSON(t, wb, "/api/wb/open", `{"target":"`+pr+`","clone":"`+clone+`"}`); w.Code != http.StatusOK {
+	if w := httpxtest.PostJSON(t, wb, "/api/wb/open", `{"target":"`+pr+`","clone":"`+clone+`"}`); w.Code != http.StatusOK {
 		t.Fatalf("clone refused: %d %s", w.Code, w.Body.String())
 	}
-	if got := wb.store.Load().Clones["acme/widget"]; got != clone {
+	if got := wb.store.snapshot().Clones["acme/widget"]; got != clone {
 		t.Fatalf("remembered %q, want %q", got, clone)
 	}
 	// Next time it is found without asking.
-	w = postJSON(t, wb, "/api/wb/open", `{"target":"https://github.com/acme/widget/pull/6"}`)
+	w = httpxtest.PostJSON(t, wb, "/api/wb/open", `{"target":"https://github.com/acme/widget/pull/6"}`)
 	if strings.Contains(w.Body.String(), "needClone") {
 		t.Fatalf("asked again: %s", w.Body.String())
 	}
@@ -462,18 +451,18 @@ func TestWorkbenchCompleteFolders(t *testing.T) {
 	}
 	os.WriteFile(filepath.Join(dir, "profile.txt"), nil, 0o644)
 	os.MkdirAll(filepath.Join(dir, "proto", ".git"), 0o755)
-	wb := newWorkbench("/", dir, "", nil)
+	wb := newTestLauncher("/", dir, "", nil)
 
-	complete := func(q string) []wbEntry {
+	complete := func(q string) []entry {
 		r := httptest.NewRequest("GET", "/api/wb/complete?q="+url.QueryEscape(q), nil)
 		r.Host = "127.0.0.1:7777"
 		w := httptest.NewRecorder()
 		wb.ServeHTTP(w, r)
-		var res struct{ Entries []wbEntry }
+		var res struct{ Entries []entry }
 		json.Unmarshal(w.Body.Bytes(), &res)
 		return res.Entries
 	}
-	names := func(es []wbEntry) string {
+	names := func(es []entry) string {
 		var n []string
 		for _, e := range es {
 			n = append(n, e.Path)
@@ -500,14 +489,14 @@ func TestWorkbenchCompleteFolders(t *testing.T) {
 func TestWorkbenchSettingsOnlyTakesTheme(t *testing.T) {
 	newTestStore(t)
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	wb := newWorkbench("/", t.TempDir(), "", nil)
-	if w := postJSON(t, wb, "/api/settings", `{"github.token":"x"}`); w.Code != http.StatusBadRequest {
+	wb := newTestLauncher("/", t.TempDir(), "", nil)
+	if w := httpxtest.PostJSON(t, wb, "/api/settings", `{"github.token":"x"}`); w.Code != http.StatusBadRequest {
 		t.Fatalf("token accepted: %d", w.Code)
 	}
-	if w := postJSON(t, wb, "/api/settings", `{"workbench.colorTheme":"rose-pine"}`); w.Code != http.StatusOK {
+	if w := httpxtest.PostJSON(t, wb, "/api/settings", `{"workbench.colorTheme":"rose-pine"}`); w.Code != http.StatusOK {
 		t.Fatalf("theme refused: %d %s", w.Code, w.Body.String())
 	}
-	if got := wbTheme(); got != "rose-pine" {
+	if got := wb.theme(); got != "rose-pine" {
 		t.Fatalf("theme %q", got)
 	}
 }
@@ -515,7 +504,7 @@ func TestWorkbenchSettingsOnlyTakesTheme(t *testing.T) {
 func TestWorkbenchPagesResolveMissingThemes(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	newTestStore(t)
-	wb := newWorkbench("/", t.TempDir(), "", nil)
+	wb := newTestLauncher("/", t.TempDir(), "", nil)
 	for _, tc := range []struct{ theme, want string }{
 		{"faah", "catppuccin-mocha"},
 		{"missing-theme", "catppuccin-mocha"},
@@ -565,40 +554,40 @@ func TestWorkbenchPagesResolveMissingThemes(t *testing.T) {
 
 func TestWorkbenchPinAndRemove(t *testing.T) {
 	st := newTestStore(t)
-	wb := newWorkbench("/", t.TempDir(), "", nil)
+	wb := newTestLauncher("/", t.TempDir(), "", nil)
 	wb.store = st
 
-	it := wbDirItem("/work/test-repo")
-	if err := st.Record(it); err != nil {
+	it := dirItem("/work/test-repo")
+	if err := st.record(it); err != nil {
 		t.Fatal(err)
 	}
 
 	// Pin item
-	w := postJSON(t, wb, "/api/wb/pin", `{"id":"`+it.ID+`","pinned":true}`)
+	w := httpxtest.PostJSON(t, wb, "/api/wb/pin", `{"id":"`+it.ID+`","pinned":true}`)
 	if w.Code != http.StatusOK {
 		t.Fatalf("pin failed: %d %s", w.Code, w.Body.String())
 	}
-	got, ok := st.Get(it.ID)
+	got, ok := st.get(it.ID)
 	if !ok || !got.Pinned {
 		t.Fatalf("item not pinned: %+v", got)
 	}
 
 	// Unpin item
-	w = postJSON(t, wb, "/api/wb/pin", `{"id":"`+it.ID+`","pinned":false}`)
+	w = httpxtest.PostJSON(t, wb, "/api/wb/pin", `{"id":"`+it.ID+`","pinned":false}`)
 	if w.Code != http.StatusOK {
 		t.Fatalf("unpin failed: %d", w.Code)
 	}
-	got, _ = st.Get(it.ID)
+	got, _ = st.get(it.ID)
 	if got.Pinned {
 		t.Fatal("item should be unpinned")
 	}
 
 	// Remove item
-	w = postJSON(t, wb, "/api/wb/remove", `{"id":"`+it.ID+`"}`)
+	w = httpxtest.PostJSON(t, wb, "/api/wb/remove", `{"id":"`+it.ID+`"}`)
 	if w.Code != http.StatusOK {
 		t.Fatalf("remove failed: %d", w.Code)
 	}
-	if _, ok := st.Get(it.ID); ok {
+	if _, ok := st.get(it.ID); ok {
 		t.Fatal("item was not removed")
 	}
 }
@@ -607,7 +596,7 @@ func TestWorkbenchLockLifecycle(t *testing.T) {
 	t.Setenv("XDG_STATE_HOME", t.TempDir())
 
 	// No lock initially
-	if url := runningWorkbench(); url != "" {
+	if url := RunningURL(); url != "" {
 		t.Errorf("expected empty runningWorkbench, got %q", url)
 	}
 
@@ -622,16 +611,30 @@ func TestWorkbenchLockLifecycle(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	writeWorkbenchLock(ts.URL)
+	WriteLock(ts.URL)
 
-	// Verify runningWorkbench finds it
-	if u := runningWorkbench(); u != ts.URL {
+	// Verify RunningURL finds it
+	if u := RunningURL(); u != ts.URL {
 		t.Errorf("runningWorkbench = %q, want %q", u, ts.URL)
 	}
 
 	// Remove lock
-	removeWorkbenchLock()
-	if u := runningWorkbench(); u != "" {
+	RemoveLock()
+	if u := RunningURL(); u != "" {
 		t.Errorf("runningWorkbench after remove = %q, want empty", u)
 	}
+}
+
+func newTestLauncher(basePath, cwd, exe string, childArgs []string) *Launcher {
+	return New(Options{BasePath: basePath, CWD: cwd, Executable: exe, ChildArgs: childArgs, Assets: os.DirFS("../.."), ResolveTarget: testResolveTarget})
+}
+
+// testResolveTarget supplies the directory resolver owned by the host.
+func testResolveTarget(target string) (string, string, int, error) {
+	root, err := filepath.EvalSymlinks(target)
+	if err != nil {
+		return "", "", 0, err
+	}
+	_, err = os.Stat(root)
+	return root, "", 0, err
 }

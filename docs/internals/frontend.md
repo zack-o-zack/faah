@@ -41,7 +41,7 @@ visible.
 
 - `web/index.html` → `src/main.tsx`: the code reader. Renders into `#root`.
 - `web/workbench.html` → `src/workbench/main.tsx`: the workbench a bare `faah` opens.
-- The holding page (served by `workbench.go`) → `src/holding/main.tsx`. Go passes
+- The holding page (served by `internal/workbench/workbench.go`) → `src/holding/main.tsx`. Go passes
   escaped JSON in the mount point's `data-page` attribute and keeps routing and the
   no-JavaScript refresh tag.
 

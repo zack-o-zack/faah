@@ -58,7 +58,7 @@ func TestExplainBenchmark(t *testing.T) {
 			}
 			ix := workspace.NewIndex(root)
 			ix.Build()
-			s := NewServer(ix, lsppkg.New(lsppkg.Options{Root: root, Enabled: true, Version: version}))
+			s := NewServer(ix, lsppkg.New(lsppkg.Options{Root: root, Enabled: true, Version: version}), assets, devRoot)
 			s.SetAgent(m)
 			s.threads.file = ""
 			defer func() {

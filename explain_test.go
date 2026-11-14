@@ -238,7 +238,7 @@ func TestExplainUsesItsOwnAgentAndModel(t *testing.T) {
 	}
 	ix := workspace.NewIndex(root)
 	ix.Build()
-	s := NewServer(ix, nil)
+	s := NewServer(ix, nil, assets, devRoot)
 	s.SetAgent(m)
 	explainSettings(t, map[string]any{"explain.agent": "claude", "explain.model": "haiku"})
 

@@ -41,6 +41,8 @@ import (
 // Server is the main faah HTTP server handling the web UI, static assets,
 // REST API endpoints, Server-Sent Events (SSE), and workspace services.
 type Server struct {
+	assets     fs.FS
+	devRoot    string
 	ix         *workspace.Index
 	lsp        *lsppkg.Manager
 	tel        *telemetry.Service // nil in tests; Track is nil-safe
@@ -100,10 +102,10 @@ func (s *Server) routePath(subpath string) string {
 }
 
 func (s *Server) registerRoutes() {
-	sub, _ := fs.Sub(assets, "web")
+	sub, _ := fs.Sub(s.assets, "web")
 	staticPrefix := s.routePath("/static/")
 	s.mux.Handle(staticPrefix, httpx.Static(sub, staticPrefix))
-	s.mux.HandleFunc(s.routePath("/static/themes.css"), httpx.Themes(assets, devRoot))
+	s.mux.HandleFunc(s.routePath("/static/themes.css"), httpx.Themes(s.assets, s.devRoot))
 
 	if s.basePath != "/" && s.basePath != "" {
 		s.mux.HandleFunc(s.basePath, s.handleIndex)
@@ -212,7 +214,7 @@ func (s *Server) registerRoutes() {
 
 // NewServer creates and initializes a faah Server instance, binding index and language servers,
 // starting the background workspace.Watcher, and registering all HTTP and SSE routes.
-func NewServer(ix *workspace.Index, lsp *lsppkg.Manager, basePaths ...string) *Server {
+func NewServer(ix *workspace.Index, lsp *lsppkg.Manager, assets fs.FS, devRoot string, basePaths ...string) *Server {
 	if lsp == nil {
 		lsp = lsppkg.New(lsppkg.Options{Root: ix.Root(), Enabled: false, Version: version})
 	}
@@ -220,7 +222,10 @@ func NewServer(ix *workspace.Index, lsp *lsppkg.Manager, basePaths ...string) *S
 	if len(basePaths) > 0 && basePaths[0] != "" {
 		bp = httpx.CleanBasePath(basePaths[0])
 	}
-	s := &Server{ix: ix, lsp: lsp, diffBase: "HEAD", basePath: bp, mux: http.NewServeMux(), streamsDone: make(chan struct{})}
+	s := &Server{
+		assets:  assets,
+		devRoot: devRoot,
+		ix:      ix, lsp: lsp, diffBase: "HEAD", basePath: bp, mux: http.NewServeMux(), streamsDone: make(chan struct{})}
 	s.session = session.New(s.basePath, ix.Root())
 	s.gitWatcher = workspace.NewWatcher(ix)
 	s.gitWatcher.Start(context.Background())
@@ -515,7 +520,7 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	b, err := fs.ReadFile(assets, "web/index.html")
+	b, err := fs.ReadFile(s.assets, "web/index.html")
 	if err != nil {
 		httpx.Fail(w, 500, err.Error())
 		return

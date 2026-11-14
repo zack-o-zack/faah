@@ -1,6 +1,6 @@
 # Workbench Internals
 
-The workbench (`workbench.go`, `web/workbench.{html,css,js}`) is what `faah` serves when started without a target. It is a supervisor and reverse proxy, not a multi-workspace server: every directory or pull request it opens runs as a separate child faah.
+The workbench (`internal/workbench/workbench.go`, `web/workbench.{html,css,js}`) is what `faah` serves when started without a target. It is a supervisor and reverse proxy, not a multi-workspace server: every directory or pull request it opens runs as a separate child faah.
 
 ## Why child processes
 
@@ -29,7 +29,7 @@ faah [passed-on flags] -workbench-child -host 127.0.0.1 -port 0 -no-open -no-upd
 - **Idle stop.** The proxy counts requests in flight per child; an open tab always holds an event stream. `reapIdle` stops children with none in flight for `wbIdleAfter` (30 minutes).
 - **PR clones.** `pr.Checkout` makes a worktree when its working directory is a clone of the PR's repository, so the workbench starts every PR child in one (see below). Before the child is launched, `run` resolves the clone, or makes one, while the state is `starting` and `progress` says what it is waiting on. `stop` cancels this through `wbChild.ctx`.
 
-## PR clones ([`workbench.go`](../../workbench.go))
+## PR clones ([`internal/workbench/workbench.go`](../../internal/workbench/workbench.go))
 
 Every PR is a worktree of one local clone per repository; nothing is cloned per PR.
 
