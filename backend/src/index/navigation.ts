@@ -115,6 +115,7 @@ export class Navigation {
       root: options.root,
       gitDirectory: async () => (await this.gitCommands.probe.get(options.root))?.dir,
       availability: (available) => this.git.watching(available),
+      ignored: () => this.git.changed(),
       changed: async (paths, metadata) => {
         const rebuild = paths.some(ignoreEvent);
         for (const path of paths) {

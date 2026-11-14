@@ -153,6 +153,7 @@ test('Git-disabled and not-ready payloads preserve null maps and empty subscript
     expect(payload.gitFiles).toBeNull();
     expect(payload.statuses).toBeNull();
     for (const path of [
+      '',
       'FETCH_HEAD',
       'MERGE_HEAD',
       'rebase-merge',
@@ -160,9 +161,39 @@ test('Git-disabled and not-ready payloads preserve null maps and empty subscript
       'rebase-apply/applying',
       'refs/heads/main',
     ])
-      expect(gitEvent('.git/' + path)).toBe(true);
+      expect(gitEvent(path ? '.git/' + path : '.git')).toBe(true);
     expect(gitEvent('.git/objects/aa/bb')).toBe(false);
   } finally {
+    await t.close();
+  }
+});
+
+test('ignored filesystem paths still invalidate Git because tracked files can match ignore rules', async () => {
+  const t = await setup();
+  const watch = new WorkspaceWatch({
+    root: t.f.root,
+    delay: 1,
+    ignored: () => t.git.changed(),
+    changed: async (paths, metadata) => {
+      for (const path of paths) await t.index.touch(path);
+      await t.git.changed(metadata);
+    },
+  });
+  try {
+    await t.f.write('.gitignore', 'a.txt\n');
+    await t.f.run('add', '.gitignore');
+    await t.f.run('commit', '-qm', 'Ignore tracked name');
+    await t.index.build();
+    const events: GitPayload[] = [];
+    const stop = await t.git.subscribe((payload) => events.push(payload));
+    await t.f.write('a.txt', 'tracked but ignored\n');
+    watch.receive([{ path: join(t.f.root, 'a.txt'), type: 'update' }]);
+    await Bun.sleep(20);
+    await watch.settled();
+    expect(events.at(-1)?.statuses?.['a.txt']).toBe('M');
+    stop();
+  } finally {
+    await watch.close();
     await t.close();
   }
 });

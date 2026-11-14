@@ -11,6 +11,7 @@ export function ignoreEvent(path: string): boolean {
 }
 export function gitEvent(path: string): boolean {
   return (
+    path === '.git' ||
     path === '.git/HEAD' ||
     path === '.git/index' ||
     path === '.git/packed-refs' ||
@@ -20,6 +21,7 @@ export function gitEvent(path: string): boolean {
     path === '.git/rebase-apply' ||
     path.startsWith('.git/rebase-merge/') ||
     path.startsWith('.git/rebase-apply/') ||
+    path === '.git/refs' ||
     path.startsWith('.git/refs/')
   );
 }
@@ -37,6 +39,7 @@ export class WorkspaceWatch {
       availability?: (available: boolean) => void;
       gitDirectory?: () => Promise<string | undefined>;
       changed: (paths: string[], git: boolean) => Promise<void>;
+      ignored?: () => Promise<void>;
       delay?: number;
       warn?: (message: string) => void;
       connect?: typeof subscribe;
@@ -163,6 +166,7 @@ export class WorkspaceWatch {
       if (ignoreEvent(rel) || (await this.included(rel, event))) paths.push(rel);
     }
     if (paths.length || git) await this.options.changed(paths, git);
+    else await this.options.ignored?.();
   }
   async settled(): Promise<void> {
     await this.work;
