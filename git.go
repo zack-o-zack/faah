@@ -3,13 +3,14 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"faah/internal/git"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"faah/internal/git"
 )
 
 // GitStatusPayload contains the complete serialized git status event sent to the browser

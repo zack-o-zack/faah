@@ -5,8 +5,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"faah/internal/git"
-	"faah/internal/git/gittest"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -17,6 +15,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"faah/internal/git"
+	"faah/internal/git/gittest"
 )
 
 func TestGitStatus(t *testing.T) {
