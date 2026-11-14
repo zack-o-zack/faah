@@ -39,16 +39,20 @@ export class Document {
       this.offsets[i] = offset;
       const newline = this.source.indexOf(10, offset),
         end = newline < 0 ? this.source.length : newline;
-      let columns = 0;
-      for (let p = offset; p < end; p++) {
-        const byte = this.source[p] ?? 0;
-        if (byte >= 128) {
-          columns = visualWidth(goString(this.source.subarray(p, end)), columns);
-          break;
+      // Each byte contributes at most four columns, including tabs and invalid UTF-8.
+      // Once a line cannot exceed the known width, its contents need no width scan.
+      if (width < 20000 && (end - offset) * 4 > width) {
+        let columns = 0;
+        for (let p = offset; p < end; p++) {
+          const byte = this.source[p] ?? 0;
+          if (byte >= 128) {
+            columns = visualWidth(goString(this.source.subarray(p, end)), columns);
+            break;
+          }
+          columns += byte === 9 ? 4 - (columns % 4) : 1;
         }
-        columns += byte === 9 ? 4 - (columns % 4) : 1;
+        width = Math.max(width, columns);
       }
-      width = Math.max(width, columns);
       offset = newline < 0 ? this.source.length : end + 1;
     }
     this.offsets[total] = this.source.length;
@@ -128,6 +132,9 @@ export class Document {
       from = start;
       to = end;
     }
+    // TextMate tokenizes forward one line at a time. Later context cannot change
+    // an earlier line. Keep the source context for grammar loading and byte budgets,
+    // but only ask the engine to tokenize through the end of this chunk.
     const segment = this.source.subarray(
       this.offsets[from] ?? 0,
       this.offsets[to] ?? this.source.length,
@@ -135,7 +142,7 @@ export class Document {
     const all =
       segment.length > windowBytes
         ? plain(goString(segment), to - from)
-        : await this.highlight(goString(segment), this.lang, to - from);
+        : await this.highlight(goString(segment), this.lang, end - from);
     if (this.full) return { lines: this.chunks.get(c) ?? [], exact: true };
     const lines = all.slice(start - from, end - from);
     if (c === 0 && this.total <= chunkLines && segment.length <= windowBytes) this.full = true;

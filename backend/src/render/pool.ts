@@ -73,8 +73,11 @@ export class RenderPool {
     }
     return shard.render(source, lang, want);
   }
-  async warm(langs: readonly string[]): Promise<void> {
+  prepare(): void {
     if (!this.shards.length) this.shards.push(new Shard());
+  }
+  async warm(langs: readonly string[]): Promise<void> {
+    this.prepare();
     await Promise.all(this.shards.map((shard) => shard.warm(langs)));
   }
   scavenge(): void {

@@ -95,7 +95,7 @@ test('multi-chunk requests share window work and refine to the exact background 
   expect(a).toEqual(b);
   expect(a.exact).toBe(false);
   expect(a.lines[0]).toBe('1000');
-  expect(calls.filter((c) => c.lines === 1700).length).toBe(1);
+  expect(calls.filter((c) => c.lines === 1400).length).toBe(1);
   release();
   await doc.settled();
   expect(doc.exact).toBe(true);

@@ -146,8 +146,11 @@ happens before document creation. Files over 64 MiB or with a NUL in the first
 field sets. A `ref=` affects diff availability while the content still comes
 from the working tree, including Go's deleted-file/base exception.
 
-Highlighting uses 1,000-line chunks, 400 context lines on either side and a
-512 KiB byte window. Oversized windows first drop context, then use escaped
+Highlighting uses 1,000-line chunks, 400 source context lines on either side and
+a 512 KiB byte window. TextMate tokenizes only the leading context and requested
+chunk; later source context remains available for grammar loading and byte-budget
+decisions. Filename classification uses a bounded basename cache; content-based
+classification is still evaluated per document. Oversized windows first drop context, then use escaped
 plain text. Multi-chunk sources at most 2 MiB receive an asynchronous full pass;
 larger files remain window-only. Requests share opening, chunk and render work.
 The `exact` and `refine` flags retain Go's behavior, including oversized

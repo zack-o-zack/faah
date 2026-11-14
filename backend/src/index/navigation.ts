@@ -37,6 +37,7 @@ export class Navigation {
     workbench: string;
     gitEnabled?: boolean;
   }) {
+    this.render.pool.prepare();
     this.legacy = new LegacyNavigation({
       origin: options.child.origin,
       base: options.base,
