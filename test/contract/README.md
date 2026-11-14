@@ -124,12 +124,13 @@ Reference goldens were recorded on macOS with Unix symlinks and Git. Filesystem 
 
 ## Highlight fidelity
 
-Only `/api/file`'s `body.lines[]` and code inside `/api/markdown`'s exact
+Only `/api/file`'s `body.lines[]`, `/api/diff` hunk rows' `html`, and code inside `/api/markdown`'s exact
 `<pre class="md-code" …><code>…</code></pre>` wrappers permit different token
 boundaries/classes. The comparator validates properly nested token tags and the
 fixed theme vocabulary, then removes those tags and compares the remaining
 escaped text exactly. Go currently emits `<i class=k>`, so both that shape and
-`<span class="k">` are accepted as token wrappers. All metadata, flags, language
+`<span class="k">` are accepted as token wrappers. Diff comparison keeps raw diff text, row text, line numbers, sections, missing HTML
+fields and null-versus-empty hunks exact. All metadata, flags, language
 names, raw lines, Markdown structure, attributes, heading ids, source markers,
 and HTML outside fenced/indented highlighted code remain exact. Goldens are
 unchanged. Malformed token nesting, unknown classes and changed text fail.

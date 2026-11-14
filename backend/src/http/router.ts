@@ -13,6 +13,7 @@ import { workspaceMetrics } from '../metrics/workspace.ts';
 import type { Workbench } from '../workbench/service.ts';
 import { workbenchMetrics } from '../workbench/metrics.ts';
 import { workbenchRoute } from '../workbench/routes.ts';
+import { gitReadRoute } from '../git/routes.ts';
 export interface HandlerOptions {
   base: string;
   workspace: boolean;
@@ -41,6 +42,8 @@ export function handler(options: HandlerOptions): (request: Request) => Promise<
     if (pr && legacy) return legacyProxy({ request, origin: legacy.origin, route });
     if (navigation) {
       navigation.idle.request(route, request.headers.get('accept'));
+      const git = await gitReadRoute(navigation.gitReads, request, route);
+      if (git) return headers(git, request, workspace);
       const file = await fileRoute(navigation, request, route);
       if (file) return headers(file, request, workspace);
       const response = await navigationRoute({ nav: navigation, request, route });

@@ -17,7 +17,11 @@ import { Search } from '../search/service.ts';
 import { searchProfiler } from '../search/profile.ts';
 import { LegacyNavigation } from '../legacy/navigation.ts';
 import type { Child } from '../legacy/child.ts';
+import { GitCommands } from '../git/commands.ts';
+import { GitReads } from '../git/reads.ts';
 export class Navigation {
+  readonly gitCommands: GitCommands;
+  readonly gitReads: GitReads;
   readonly watcher: WorkspaceWatch;
   readonly idle = new IdleScavenger(() => this.render.scavenge());
   readonly render = new RenderService();
@@ -37,6 +41,8 @@ export class Navigation {
     workbench: string;
     gitEnabled?: boolean;
   }) {
+    this.gitCommands = new GitCommands(undefined, options.gitEnabled !== false);
+    this.gitReads = new GitReads(options.root, this.gitCommands, this.render);
     this.render.pool.prepare();
     this.legacy = new LegacyNavigation({
       origin: options.child.origin,
@@ -188,6 +194,7 @@ export class Navigation {
     await this.legacy.close();
     await this.building.catch(() => undefined);
     this.fuzzy.close();
+    await this.gitCommands.processes.close();
     await this.render.close();
   }
 }

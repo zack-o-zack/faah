@@ -60,10 +60,26 @@ export function markdownHighlights(html: string): string {
     (_, open: string, code: string, close: string) => open + highlightedText(code) + close,
   );
 }
+function diffHighlights(value: unknown): unknown {
+  if (value === null) return null;
+  if (!Array.isArray(value)) throw new Error('invalid diff hunks');
+  return value.map((hunk: unknown) => {
+    if (!object(hunk) || !Array.isArray(hunk.rows)) throw new Error('invalid diff hunk');
+    return {
+      ...hunk,
+      rows: hunk.rows.map((row: unknown) => {
+        if (!object(row)) throw new Error('invalid diff row');
+        if (row.html === undefined) return row;
+        if (typeof row.html !== 'string') throw new Error('invalid diff HTML');
+        return { ...row, html: highlightedText(row.html) };
+      }),
+    };
+  });
+}
 export function comparableHighlight(value: unknown, route: string): unknown {
   if (!object(value)) return value;
   const name = route.split('?')[0];
-  if (name !== 'api/file' && name !== 'api/markdown') return value;
+  if (name !== 'api/file' && name !== 'api/markdown' && name !== 'api/diff') return value;
   const body = object(value.body) ? value.body : undefined;
   if (!body || (typeof value.status === 'number' && value.status !== 200)) return value;
   const copy = { ...body };
@@ -74,5 +90,8 @@ export function comparableHighlight(value: unknown, route: string): unknown {
     });
   if (name === 'api/markdown' && typeof body.html === 'string')
     copy.html = markdownHighlights(body.html);
+  if (name === 'api/diff')
+    for (const key of ['hunks', 'prHunks', 'yourHunks'])
+      if (Object.hasOwn(body, key)) copy[key] = diffHighlights(body[key]);
   return { ...value, body: copy };
 }

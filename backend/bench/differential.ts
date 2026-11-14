@@ -94,6 +94,33 @@ try {
   for (const path of ['', 'src', 'missing'])
     paths.push('api/outline?' + new URLSearchParams({ path }));
   const baseCases = paths.length;
+  await f.write('src/hello.go', 'package demo\n\nfunc Hello() string {\n\treturn "changed"\n}\n');
+  await f.write('binary.bin', Uint8Array.from([0, 1, 2, 0, 255]));
+  for (const route of [
+    'api/git/log',
+    'api/git/log?limit=1',
+    'api/git/log?limit=51',
+    'api/unpushed',
+    'api/unpushed?limit=-1',
+  ])
+    paths.push(route);
+  for (const path of [
+    'unstaged.txt',
+    'partial.txt',
+    'deleted.txt',
+    'rename-new.txt',
+    'untracked.txt',
+    'src/hello.go',
+    'binary.bin',
+    '../outside',
+  ])
+    for (const route of ['api/diff', 'api/gutter'])
+      paths.push(route + '?' + new URLSearchParams({ path }));
+  for (const sha of [f.first, f.head, 'deadbeef', 'HEAD~1', '--upload-pack=x'])
+    for (const route of ['api/commitfiles', 'api/commitdetail'])
+      paths.push(route + '?' + new URLSearchParams({ sha }));
+  for (const ref of [f.first, f.head, 'bad-ref'])
+    paths.push('api/diff?' + new URLSearchParams({ path: 'history.txt', ref, base: f.first }));
   const markdownCases = [
     '`"quoted" & <code>` and ![**bold** `code`](x.png "a & b")\n',
     '# [linked](x) `code` ![alt](x.png)\n',

@@ -1,7 +1,5 @@
 // Delete each entry when its service moves to Bun.
 export const legacyRoutes = [
-  '/api/diff',
-  '/api/gutter',
   '/api/stream',
   '/api/git/stream',
   '/api/git/refresh',
@@ -15,10 +13,6 @@ export const legacyRoutes = [
   '/api/git/sync-agent',
   '/api/git/sync-state',
   '/api/git/abort',
-  '/api/git/log',
-  '/api/unpushed',
-  '/api/commitfiles',
-  '/api/commitdetail',
   '/api/lsp/def',
   '/api/lsp/refs',
   '/api/lsp/calls',
