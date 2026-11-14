@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"faah/internal/textutil"
 	"fmt"
 	"io"
 	"net/url"
@@ -1309,7 +1310,7 @@ func (m *lspManager) resolve(c *lspClient, locs []lspLocation, markDef bool) []N
 					from = to
 				}
 			}
-			h := snip([]byte(text), from, to)
+			h := textutil.Snip([]byte(text), from, to)
 			out = append(out, NavHit{
 				Path: k.rel, Line: line, Pre: h.Pre, Mid: h.Mid, Post: h.Post,
 				Def: markDef, Ext: k.ext,

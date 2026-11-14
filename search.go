@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"faah/internal/textutil"
 	"io"
 	"os"
 	"path/filepath"
@@ -12,77 +13,11 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
-	"unicode/utf8"
 
 	"faah/internal/ignore"
 	"faah/internal/render"
 	"faah/internal/symbols"
 )
-
-const (
-	snipLead = 32  // start eliding once the match sits this far into the line
-	snipKeep = 16  // runes of lead-in kept when we do elide
-	snipMax  = 240 // cap on the whole snippet
-)
-
-// snip turns one raw line plus a byte range into a display-ready match,
-// dropping indentation and keeping the match itself in view.
-func snip(line []byte, from, to int) Match {
-	if from < 0 {
-		from = 0
-	}
-	if from > len(line) {
-		from = len(line)
-	}
-	if to < from {
-		to = from
-	}
-	if to > len(line) {
-		to = len(line)
-	}
-	preBytes := bytes.TrimLeft(line[:from], " \t")
-	midBytes := line[from:to]
-	postBytes := bytes.TrimRight(line[to:], " \t")
-
-	// Fast path: since utf8.RuneCount <= byte length, if byte lengths fit within
-	// snipLead and snipMax, no rune counting or []rune slicing is needed.
-	if len(preBytes) <= snipLead && len(preBytes)+len(midBytes)+len(postBytes) <= snipMax {
-		return Match{
-			Pre:  string(preBytes),
-			Mid:  string(midBytes),
-			Post: string(postBytes),
-		}
-	}
-
-	pre, mid, post := string(preBytes), string(midBytes), string(postBytes)
-	preRunes := len(pre)
-	if preRunes > snipLead {
-		preRunes = utf8.RuneCountInString(pre)
-		if preRunes > snipLead {
-			r := []rune(pre)
-			pre = "…" + string(r[preRunes-snipKeep:])
-			preRunes = 1 + snipKeep
-		}
-	}
-	midRunes := len(mid)
-	if midRunes > snipMax {
-		midRunes = utf8.RuneCountInString(mid)
-		if midRunes > snipMax {
-			mid = string([]rune(mid)[:snipMax]) + "…"
-			midRunes = snipMax + 1
-		}
-	} else if len(preBytes)+len(midBytes)+len(postBytes) > snipMax {
-		midRunes = utf8.RuneCountInString(mid)
-	}
-	if budget := snipMax - preRunes - midRunes; budget > 0 {
-		if len(post) > budget && utf8.RuneCountInString(post) > budget {
-			post = string([]rune(post)[:budget]) + "…"
-		}
-	} else {
-		post = ""
-	}
-	return Match{Pre: pre, Mid: mid, Post: strings.TrimRight(post, " \t")}
-}
 
 // SearchOpts specifies the configuration for a workspace text search query.
 type SearchOpts struct {
@@ -384,7 +319,7 @@ func (s *searcher) scan(data []byte, ext string, max int, w *workBuf) []Match {
 				re := getDefRe()
 				isDef := re != nil && re.Match(line)
 				for _, l := range locs {
-					m := snip(line, l[0], l[1])
+					m := textutil.Snip(line, l[0], l[1])
 					m.Line, m.Def = lineNo, isDef
 					out = append(out, m)
 					if len(out) >= max {
@@ -399,7 +334,7 @@ func (s *searcher) scan(data []byte, ext string, max int, w *workBuf) []Match {
 				re := getDefRe()
 				isDef := re != nil && re.Match(line)
 				for {
-					m := snip(line, off+i, off+i+len(s.lit))
+					m := textutil.Snip(line, off+i, off+i+len(s.lit))
 					m.Line, m.Def = lineNo, isDef
 					out = append(out, m)
 					if len(out) >= max {

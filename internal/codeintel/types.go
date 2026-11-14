@@ -2,6 +2,8 @@
 // code produce, so packages outside main can use it.
 package codeintel
 
+import "faah/internal/textutil"
+
 // NavHit is one navigation result, shaped exactly like a search Match so the
 // UI renders LSP answers and regex answers with the same code.
 type NavHit struct {
@@ -35,20 +37,11 @@ type CallNode struct {
 	Item     string `json:"item"`               // CallHierarchyItem, returned as-is to expand
 }
 
-// Match carries the hit already split into the text before it, the matched
-// text, and the text after. Sending offsets instead would force the client to
-// reconcile Go byte indexes with UTF-16 string indexes, and would not survive
-// the snipping we do to keep long lines readable in a narrow panel.
-type Match struct {
-	Line int    `json:"line"` // 1-based
-	Pre  string `json:"pre"`
-	Mid  string `json:"mid"`
-	Post string `json:"post"`
-	Def  bool   `json:"def,omitempty"` // line looks like a declaration
-}
-
 // FileMatches groups all search hits found within a single file.
 type FileMatches struct {
 	Path    string  `json:"path"`    // Workspace-relative path to the file
 	Matches []Match `json:"matches"` // List of snippet matches within this file
 }
+
+// Match is the shared display-ready text snippet.
+type Match = textutil.Match
