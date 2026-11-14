@@ -357,11 +357,6 @@ func (s *searcher) scan(data []byte, ext string, max int, w *workBuf) []textutil
 	return out
 }
 
-// search greps every indexed file in parallel.
-func search(ix *Index, o SearchOpts) ([]FileMatches, bool, error) {
-	return SearchContext(context.Background(), ix, o)
-}
-
 // SearchContext greps every indexed file in parallel, aborting worker goroutines
 // and returning immediately if ctx is cancelled.
 func SearchContext(ctx context.Context, ix *Index, o SearchOpts) ([]FileMatches, bool, error) {
