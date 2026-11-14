@@ -167,7 +167,7 @@ export class GitWorkspace {
   async subscribe(send: (payload: GitPayload) => void): Promise<() => void> {
     // Refresh before registering so a new client receives exactly one snapshot.
     const payload = await this.refresh();
-    if (this.closed) return () => {};
+    if (this.closed) return () => undefined;
     this.clients.add(send);
     send(
       payload.git

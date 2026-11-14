@@ -266,6 +266,7 @@ test('workspace streams own metrics and Git, ping after 15 seconds and cancel th
     expect(f.requests.length).toBe(0);
     await Bun.sleep(15500);
     expect(frames.some((frame) => frame === ': ping\n\n')).toBe(true);
+    expect(frames.some((frame) => frame === 'event: ping\ndata: {}\n\n')).toBe(true);
     expect(metrics).toBeGreaterThanOrEqual(6);
     const otherAbort = new AbortController();
     const other = streams.response(otherAbort.signal, new URLSearchParams('thread=a'), false);

@@ -19,7 +19,7 @@ export class WorkspaceStreams {
       const task = (async () => {
         if (this.closed) {
           sink.close();
-          return () => {};
+          return () => undefined;
         }
         this.clients.add(sink.close);
         const cleanups: (() => void)[] = [() => this.clients.delete(sink.close)];

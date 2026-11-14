@@ -4,7 +4,7 @@ import { RenderService } from '../render/service.ts';
 import { Files } from '../files/view.ts';
 import { FileMutations } from '../files/mutations.ts';
 import { LegacyFiles } from '../legacy/files.ts';
-import { primeGitCache } from '../legacy/cache.ts';
+import { primeGitCache } from '../git/cache.ts';
 import { basename, isAbsolute, join } from 'node:path';
 import { PathError, resolveFile, fileError } from '../files/service.ts';
 import { outline } from '../symbols/service.ts';
@@ -59,7 +59,10 @@ export class Navigation {
       rebuild: () => this.index.build(),
       touch: (path) => this.index.touch(path),
     });
-    const primed = options.gitEnabled === false ? Promise.resolve() : primeGitCache(options.root);
+    const primed =
+      options.gitEnabled === false
+        ? Promise.resolve()
+        : primeGitCache(options.root, this.gitCommands.processes);
     this.index = new Index({
       root: options.root,
       gitState: async () => {

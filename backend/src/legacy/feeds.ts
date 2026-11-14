@@ -53,7 +53,7 @@ export class LegacyFeeds {
   ) {}
   subscribe(query: URLSearchParams, sink: EventSink): () => void {
     const client = { keys: keys(query), sink };
-    if (this.closed || !client.keys.size) return () => {};
+    if (this.closed || !client.keys.size) return () => undefined;
     this.clients.add(client);
     let replayed = true;
     for (const key of client.keys) {
@@ -103,7 +103,7 @@ export class LegacyFeeds {
       this.task = this.run(query, controller).catch(() => {
         if (!controller.signal.aborted) {
           // A lost publisher closes the browser streams, matching Go's resync rule.
-          for (const client of [...this.clients]) client.sink.close();
+          for (const client of this.clients) client.sink.close();
         }
       });
     });
@@ -142,7 +142,7 @@ export class LegacyFeeds {
               }
             }
             if (cached) this.cache.set(kind.key, cached);
-            for (const client of [...this.clients])
+            for (const client of this.clients)
               if (client.keys.has(kind.key)) client.sink.send(frame);
           }
           if (++count % 64 === 0) await Bun.sleep(0);
@@ -156,7 +156,7 @@ export class LegacyFeeds {
   }
   async close(): Promise<void> {
     this.closed = true;
-    for (const client of [...this.clients]) client.sink.close();
+    for (const client of this.clients) client.sink.close();
     this.clients.clear();
     this.controller?.abort();
     await this.pending;

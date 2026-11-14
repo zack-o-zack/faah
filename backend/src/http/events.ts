@@ -49,7 +49,10 @@ export function eventResponse(
         close();
         return;
       }
-      ping = setInterval(() => send(': ping\n\n'), 15000);
+      ping = setInterval(() => {
+        send(': ping\n\n');
+        send(eventFrame('ping', {}));
+      }, 15000);
       void connect({ send, close })
         .then((stop) => {
           if (ended) stop();
