@@ -25,6 +25,7 @@ import (
 	"faah/internal/explain"
 	"faah/internal/explain/notes"
 	"faah/internal/git"
+	lsppkg "faah/internal/lsp"
 	"faah/internal/processio"
 	"faah/internal/render"
 	"faah/internal/settings"
@@ -142,7 +143,7 @@ func (s *lineStreamer) Flush() {
 // can review afterwards, so overlapping ranges are refused rather than queued.
 type agentManager struct {
 	root      string
-	lsp       *lspManager
+	lsp       *lsppkg.Manager
 	openAgent func(string) agents.Agent
 
 	mu       sync.Mutex
@@ -163,7 +164,7 @@ type agentManager struct {
 // value pins an agent for this run. This is
 // the only case that can fail: a bad -agent should stop startup, whereas a
 // stale settings file should just leave nothing selected.
-func newAgentManager(root, flagSpec string, lsp *lspManager) (*agentManager, error) {
+func newAgentManager(root, flagSpec string, lsp *lsppkg.Manager) (*agentManager, error) {
 	m := &agentManager{
 		root:      root,
 		openAgent: all.For,

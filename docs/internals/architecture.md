@@ -77,7 +77,7 @@ When hosted behind reverse proxies or multi-tenant review platforms, faah suppor
 
 faah is structured into decoupled core files and modular `internal/` packages:
 
-- **Root Package (`faah`)**: Contains the CLI entrypoint ([`main.go`](../../main.go)), HTTP routing and middleware ([`server.go`](../../server.go)), filesystem indexing and tree walk ([`internal/workspace/index.go`](../../internal/workspace/index.go)), search pipeline ([`internal/workspace/search.go`](../../internal/workspace/search.go)), Git operations and watcher ([`internal/workspace/watcher.go`](../../internal/workspace/watcher.go)), LSP client and supervisor ([`lsp.go`](../../lsp.go)), agent harnesses and multi-turn threads ([`agent.go`](../../agent.go)), PR review lifecycle ([`pr.go`](../../pr.go)), forge providers ([`forge.go`](../../forge.go)), and multi-repo workbench ([`workbench.go`](../../workbench.go)).
+- **Root Package (`faah`)**: Contains the CLI entrypoint ([`main.go`](../../main.go)), HTTP routing and middleware ([`server.go`](../../server.go)), filesystem indexing and tree walk ([`internal/workspace/index.go`](../../internal/workspace/index.go)), search pipeline ([`internal/workspace/search.go`](../../internal/workspace/search.go)), Git operations and watcher ([`internal/workspace/watcher.go`](../../internal/workspace/watcher.go)), LSP client and supervisor ([`internal/lsp`](../../internal/lsp)), agent harnesses and multi-turn threads ([`agent.go`](../../agent.go)), PR review lifecycle ([`pr.go`](../../pr.go)), forge providers ([`forge.go`](../../forge.go)), and multi-repo workbench ([`workbench.go`](../../workbench.go)).
 - **`internal/agents`**: Native `Agent`/`Open`/`Session` adapters, process hosts, protocol handling and Ask policies, listed in `internal/agents/all`. See [Native agent sessions](agents.md).
 - **`internal/mcp`**: Authenticated Streamable HTTP tools and the ACP stdio bridge.
 - **`internal/explain`**: Explain's selection checks, evidence gathering through the `Workspace` interface, prompt, and citation checks.
@@ -138,7 +138,7 @@ faah is structured into decoupled core files and modular `internal/` packages:
 | `/api/lsp/calls`      | `POST` | Incoming/outgoing call hierarchy tree expansion                         | JSON array of `CallNode` objects           |
 | `/api/lsp/symbols`    | `GET`  | Document symbols extracted via LSP                                      | JSON array of LSP symbols                  |
 | `/api/lsp/hover`      | `GET`  | Type signature and markdown doc hovercard info                          | JSON (`{contents: ...}`)                   |
-| `/api/lsp/diagnostics`| `GET`  | Diagnostics published for file (`?path=...`)                            | JSON array of `LSPDiagnostic` objects      |
+| `/api/lsp/diagnostics`| `GET`  | Diagnostics published for file (`?path=...`)                            | JSON array of `diagnostic` objects      |
 | `/api/lsp/warm`       | `POST` | Pre-warms or spawns language server for given file extension            | JSON (`{ok: true}`)                        |
 | `/api/lsp/setup`      | `GET`  | Reports install status and commands for current file language           | JSON (`{installed, recipes, ...}`)         |
 | `/api/lsp/install`    | `POST` | Executes user-level installer in background                             | JSON (`{ok: true}`)                        |
@@ -259,7 +259,7 @@ The `/api/lsp/install` and `/api/lsp/start` endpoints execute shell commands (e.
 1. The request method must be `POST`.
 1. The request `Origin` header must match the request `Host` header.
 1. The `Host` header is validated to ensure it is strictly an IP address (`127.0.0.1`, `[::1]`) or `localhost`. This prevents DNS-rebinding attacks.
-1. The executed command is never supplied by the client; it is looked up exclusively from the hard-coded internal `lspRegistry`, or, for agent edits, from the harness the user picked (only the instruction text comes from the client).
+1. The executed command is never supplied by the client; it is looked up exclusively from the hard-coded internal `registry`, or, for agent edits, from the harness the user picked (only the instruction text comes from the client).
 
 ### Content Security Policy (CSP)
 

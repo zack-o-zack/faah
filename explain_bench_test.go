@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"faah/internal/explain"
+	lsppkg "faah/internal/lsp"
 	"faah/internal/workspace"
 )
 
@@ -57,7 +58,7 @@ func TestExplainBenchmark(t *testing.T) {
 			}
 			ix := workspace.NewIndex(root)
 			ix.Build()
-			s := NewServer(ix, newLSPManager(root, true))
+			s := NewServer(ix, lsppkg.New(lsppkg.Options{Root: root, Enabled: true, Version: version}))
 			s.SetAgent(m)
 			s.threads.file = ""
 			defer func() {

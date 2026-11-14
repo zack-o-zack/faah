@@ -11,6 +11,7 @@ import (
 
 	"faah/internal/agents"
 	"faah/internal/explain"
+	lsppkg "faah/internal/lsp"
 	"faah/internal/symbols"
 	"faah/internal/ui"
 	"faah/internal/workspace"
@@ -34,7 +35,7 @@ var errHarnessNotReadOnly = agents.ErrNotReadOnly
 // explainWorkspace is the Server as Explain sees it. Code intelligence comes
 // straight from the language-server manager.
 type explainWorkspace struct {
-	*lspManager
+	*lsppkg.Manager
 	s *Server
 }
 
@@ -46,10 +47,10 @@ func (w explainWorkspace) Ready(ctx context.Context, abs, rel string) string {
 	deadline := time.Now().Add(explainServerWait)
 	for {
 		state, server := w.s.lsp.State(rel)
-		if state == lspReady {
+		if state == lsppkg.Ready {
 			return server
 		}
-		if (state != lspStarting && state != lspIndexing) || time.Now().After(deadline) {
+		if (state != lsppkg.Starting && state != lsppkg.Indexing) || time.Now().After(deadline) {
 			return ""
 		}
 		select {

@@ -1,0 +1,182 @@
+package lsp
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"path/filepath"
+	"sort"
+	"strings"
+
+	"faah/internal/codeintel"
+	"faah/internal/render"
+)
+
+// ---------------------------------------------------------------- call trails
+
+// hierarchyItem represents the LSP wire format for CallHierarchyItem
+// defined in the Language Server Protocol specification.
+type hierarchyItem struct {
+	Name           string        `json:"name"`
+	Kind           int           `json:"kind"`
+	Detail         string        `json:"detail"`
+	URI            string        `json:"uri"`
+	SelectionRange rangePosition `json:"selectionRange"`
+}
+
+// treePath maps an absolute path to what the UI shows and opens: relative
+// inside the indexed tree, absolute outside it. Only paths a language server
+// named may be allowlisted for opening; paths that arrived from the browser
+// must pass allow=false.
+func (m *Manager) treePath(abs string, allow bool) (rel string, ext bool) {
+	rel, err := filepath.Rel(m.root, abs)
+	if err != nil || strings.HasPrefix(rel, "..") {
+		// The standard library, or a dependency in the module cache.
+		if allow {
+			m.Allow(abs)
+		}
+		return filepath.ToSlash(abs), true
+	}
+	return filepath.ToSlash(rel), false
+}
+
+func (m *Manager) callNode(raw json.RawMessage, allow bool) (codeintel.CallNode, hierarchyItem, error) {
+	var it hierarchyItem
+	if err := json.Unmarshal(raw, &it); err != nil || it.URI == "" {
+		return codeintel.CallNode{}, it, fmt.Errorf("bad call hierarchy item")
+	}
+	abs, err := uriToPath(it.URI)
+	if err != nil {
+		return codeintel.CallNode{}, it, err
+	}
+	rel, ext := m.treePath(abs, allow)
+	kind := symbolKind[it.Kind]
+	if kind == "" {
+		kind = "sym"
+	}
+	return codeintel.CallNode{
+		Name: it.Name, Detail: it.Detail, Kind: kind,
+		Path: rel, Line: it.SelectionRange.Start.Line + 1, Ext: ext,
+		Item: string(raw),
+	}, it, nil
+}
+
+// PrepareCalls resolves the function at a position into the root(s) of a trail.
+func (m *Manager) PrepareCalls(ctx context.Context, abs, rel string, line, u16col int) ([]codeintel.CallNode, error) {
+	c, err := m.client(ctx, rel)
+	if err != nil {
+		return nil, err
+	}
+	if err := c.ensureOpen(abs, rel); err != nil {
+		return nil, err
+	}
+	d, err := render.Open(abs, rel)
+	if err != nil {
+		return nil, err
+	}
+	byteCol := codeintel.UTF16ToByte(d.Raw(line), u16col)
+
+	var raw []json.RawMessage
+	if err := c.call(ctx, "textDocument/prepareCallHierarchy", map[string]any{
+		"textDocument": map[string]any{"uri": pathToURI(abs)},
+		"position":     c.toLSP(d.Raw(line), line, byteCol),
+	}, &raw); err != nil {
+		return nil, err
+	}
+	out := make([]codeintel.CallNode, 0, len(raw))
+	for _, r := range raw {
+		if n, _, err := m.callNode(r, true); err == nil {
+			out = append(out, n)
+		}
+	}
+	return out, nil
+}
+
+// Calls expands one node of a trail: its callers, or with outgoing its callees.
+// rel picks the language server; item is a node's Item as the browser sent it.
+func (m *Manager) Calls(ctx context.Context, rel, item string, outgoing bool) ([]codeintel.CallNode, error) {
+	c, err := m.client(ctx, rel)
+	if err != nil {
+		return nil, err
+	}
+	_, parent, err := m.callNode(json.RawMessage(item), false)
+	if err != nil {
+		return nil, err
+	}
+	// Some servers only answer about documents they were handed. Only files in
+	// the tree are read for this: the item came from the browser.
+	if pabs, err := uriToPath(parent.URI); err == nil {
+		if prel, ext := m.treePath(pabs, false); !ext {
+			c.ensureOpen(pabs, prel)
+		}
+	}
+
+	method := "callHierarchy/incomingCalls"
+	if outgoing {
+		method = "callHierarchy/outgoingCalls"
+	}
+	var res []struct {
+		From       json.RawMessage `json:"from"`
+		To         json.RawMessage `json:"to"`
+		FromRanges []rangePosition `json:"fromRanges"`
+	}
+	if err := c.call(ctx, method, map[string]any{"item": json.RawMessage(item)}, &res); err != nil {
+		return nil, err
+	}
+
+	out := make([]codeintel.CallNode, 0, len(res))
+	for _, r := range res {
+		raw := r.From
+		if outgoing {
+			raw = r.To
+		}
+		n, it, err := m.callNode(raw, true)
+		if err != nil {
+			continue
+		}
+		// fromRanges sit inside the caller: the returned function for incoming
+		// calls, the function being expanded for outgoing ones.
+		siteURI := it.URI
+		if outgoing {
+			siteURI = parent.URI
+		}
+		if sabs, err := uriToPath(siteURI); err == nil {
+			n.SitePath, _ = m.treePath(sabs, false)
+		}
+		n.Sites = siteLines(r.FromRanges)
+		out = append(out, n)
+	}
+
+	sort.SliceStable(out, func(i, j int) bool {
+		a, b := out[i], out[j]
+		if outgoing {
+			return firstSite(a) < firstSite(b) // callees in the order they are called
+		}
+		if a.Path != b.Path {
+			return a.Path < b.Path
+		}
+		return a.Line < b.Line
+	})
+	return out, nil
+}
+
+func siteLines(rs []rangePosition) []int {
+	seen := map[int]bool{}
+	var out []int
+	for _, r := range rs {
+		l := r.Start.Line + 1
+		if !seen[l] {
+			seen[l] = true
+			out = append(out, l)
+		}
+	}
+	sort.Ints(out)
+	return out
+}
+
+func firstSite(n codeintel.CallNode) int {
+	if len(n.Sites) == 0 {
+		return 0
+	}
+	return n.Sites[0]
+}
