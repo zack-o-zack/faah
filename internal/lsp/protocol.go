@@ -47,9 +47,9 @@ var symbolKind = map[int]string{
 	26: "type",
 }
 
-// diagnostic represents a single compiler/linter diagnostic reported by a
+// Diagnostic represents a single compiler/linter diagnostic reported by a
 // language server via textDocument/publishDiagnostics.
-type diagnostic struct {
+type Diagnostic struct {
 	Line     int    `json:"line"`              // 1-based start line
 	EndLine  int    `json:"endLine,omitempty"` // 1-based end line
 	Col      int    `json:"col"`               // 0-based start character

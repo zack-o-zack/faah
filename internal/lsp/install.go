@@ -65,10 +65,10 @@ type setupOption struct {
 type setupServer struct {
 	Name    string        `json:"name"`
 	Options []setupOption `json:"options"`
-	Job     *job          `json:"job,omitempty"`
+	Job     *Job          `json:"job,omitempty"`
 }
 
-type setup struct {
+type Setup struct {
 	Enabled bool          `json:"enabled"`
 	Lang    string        `json:"lang"`
 	State   string        `json:"state"`
@@ -77,9 +77,9 @@ type setup struct {
 	Servers []setupServer `json:"servers"`
 }
 
-func (m *Manager) Setup(rel string) setup {
+func (m *Manager) Setup(rel string) Setup {
 	st, srv := m.State(rel)
-	s := setup{Enabled: m.enabled, State: string(st), Server: srv, Servers: []setupServer{}}
+	s := Setup{Enabled: m.enabled, State: string(st), Server: srv, Servers: []setupServer{}}
 	if st == failed {
 		s.Reason = srv
 		if def := m.defFor(rel); def != nil {
@@ -116,7 +116,7 @@ func (m *Manager) Rescan() {
 
 const installTimeout = 15 * time.Minute
 
-type job struct {
+type Job struct {
 	Server  string `json:"server"`
 	Cmd     string `json:"cmd"`
 	Running bool   `json:"running"`
@@ -126,7 +126,7 @@ type job struct {
 	out *processio.TailBuffer
 }
 
-func (m *Manager) job(name string) *job {
+func (m *Manager) job(name string) *Job {
 	m.jobMu.Lock()
 	defer m.jobMu.Unlock()
 	j := m.jobs[name]
@@ -138,7 +138,7 @@ func (m *Manager) job(name string) *job {
 	return &cp
 }
 
-func (m *Manager) Install(name string, option int) (*job, error) {
+func (m *Manager) Install(name string, option int) (*Job, error) {
 	if !m.enabled {
 		return nil, errors.New("language servers are turned off (-no-lsp)")
 	}
@@ -170,9 +170,9 @@ func (m *Manager) Install(name string, option int) (*job, error) {
 		m.jobMu.Unlock()
 		return m.job(name), nil
 	}
-	j := &job{Server: name, Cmd: strings.Join(in.Cmd, " "), Running: true, out: processio.NewTailBuffer(16 << 10)}
+	j := &Job{Server: name, Cmd: strings.Join(in.Cmd, " "), Running: true, out: processio.NewTailBuffer(16 << 10)}
 	if m.jobs == nil {
-		m.jobs = map[string]*job{}
+		m.jobs = map[string]*Job{}
 	}
 	m.jobs[name] = j
 	m.jobMu.Unlock()
@@ -181,7 +181,7 @@ func (m *Manager) Install(name string, option int) (*job, error) {
 	return m.job(name), nil
 }
 
-func (m *Manager) runInstall(def *serverDef, j *job, tool string, args []string) {
+func (m *Manager) runInstall(def *serverDef, j *Job, tool string, args []string) {
 	ctx, cancel := context.WithTimeout(context.Background(), installTimeout)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, tool, args...)

@@ -52,7 +52,7 @@ type client struct {
 	opened      map[string]int          // uri -> document version
 	openedText  map[string]string       // uri -> last text sent (unchanged skip + incremental diffs)
 	syncGen     map[string]uint64       // uri -> generation of the latest syncDoc read that applied
-	diagnostics map[string][]diagnostic // uri -> latest published diagnostics
+	diagnostics map[string][]Diagnostic // uri -> latest published diagnostics
 	syncGenNext atomic.Uint64           // dispenses syncDoc generations; no lock needed
 	lastUsed    atomic.Int64            // unix nanos of most recent client interaction
 	dead        error
@@ -104,7 +104,7 @@ func newClient(def serverDef, root string) *client {
 		opened:      map[string]int{},
 		openedText:  map[string]string{},
 		syncGen:     map[string]uint64{},
-		diagnostics: map[string][]diagnostic{},
+		diagnostics: map[string][]Diagnostic{},
 		encoding:    "utf-16",
 		writeCh:     make(chan writeReq, writeQueueCap),
 		deadCh:      make(chan struct{}),
@@ -328,7 +328,7 @@ func (c *client) onNotification(msg rpcMessage) {
 		if json.Unmarshal(msg.Params, &p) != nil || p.URI == "" {
 			return
 		}
-		diags := make([]diagnostic, 0, len(p.Diagnostics))
+		diags := make([]Diagnostic, 0, len(p.Diagnostics))
 		for _, d := range p.Diagnostics {
 			sev := d.Severity
 			if sev <= 0 {
@@ -338,7 +338,7 @@ func (c *client) onNotification(msg rpcMessage) {
 			if codeStr == "null" {
 				codeStr = ""
 			}
-			diags = append(diags, diagnostic{
+			diags = append(diags, Diagnostic{
 				Line:     d.Range.Start.Line + 1,
 				EndLine:  d.Range.End.Line + 1,
 				Col:      d.Range.Start.Character,
@@ -351,7 +351,7 @@ func (c *client) onNotification(msg rpcMessage) {
 		}
 		c.mu.Lock()
 		if c.diagnostics == nil {
-			c.diagnostics = map[string][]diagnostic{}
+			c.diagnostics = map[string][]Diagnostic{}
 		}
 		if len(diags) == 0 {
 			delete(c.diagnostics, p.URI)

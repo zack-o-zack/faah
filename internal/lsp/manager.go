@@ -14,14 +14,14 @@ import (
 	"faah/internal/metrics"
 )
 
-type state string
+type State string
 
 const (
-	off      state = "off"      // disabled, or no server installed for this type
-	Starting state = "starting" // process spawned, handshake in flight
-	Indexing state = "indexing" // up, but still chewing through the workspace
-	Ready    state = "ready"
-	failed   state = "failed"
+	off      State = "off"      // disabled, or no server installed for this type
+	Starting State = "starting" // process spawned, handshake in flight
+	Indexing State = "indexing" // up, but still chewing through the workspace
+	Ready    State = "ready"
+	failed   State = "failed"
 )
 
 // maxRestarts bounds how often one crashed language server is respawned.
@@ -50,7 +50,7 @@ type Manager struct {
 	discovered bool // the first discover() has finished
 
 	jobMu sync.Mutex
-	jobs  map[string]*job // install runs, by server name
+	jobs  map[string]*Job // install runs, by server name
 
 	// external holds absolute paths outside the indexed tree that a language
 	// server pointed us at. Only these are openable beyond the root, so a
@@ -59,6 +59,7 @@ type Manager struct {
 	external map[string]bool
 }
 
+// Allow permits opening the absolute path abs outside the workspace.
 func (m *Manager) Allow(abs string) {
 	m.extMu.Lock()
 	if m.external == nil {
@@ -280,7 +281,7 @@ func (m *Manager) defFor(rel string) *serverDef {
 	return m.byExt[strings.ToLower(filepath.Ext(rel))]
 }
 
-func (m *Manager) State(rel string) (state, string) {
+func (m *Manager) State(rel string) (State, string) {
 	ext := strings.ToLower(filepath.Ext(rel))
 	m.mu.RLock()
 	stoppedName := ""
@@ -538,21 +539,21 @@ func (m *Manager) ReapIdle(maxIdle time.Duration) {
 	}
 }
 
-func (m *Manager) Diagnostics(abs, rel string) []diagnostic {
+func (m *Manager) Diagnostics(abs, rel string) []Diagnostic {
 	def := m.defFor(rel)
 	if def == nil {
-		return []diagnostic{}
+		return []Diagnostic{}
 	}
 	m.mu.RLock()
 	c := m.clients[def.Name]
 	m.mu.RUnlock()
 	if c == nil || c.alive() != nil {
-		return []diagnostic{}
+		return []Diagnostic{}
 	}
 	uri := pathToURI(abs)
 	c.mu.RLock()
 	list := c.diagnostics[uri]
-	out := make([]diagnostic, len(list))
+	out := make([]Diagnostic, len(list))
 	copy(out, list)
 	c.mu.RUnlock()
 	return out
