@@ -3,7 +3,7 @@
 This document describes the design and implementation of faah's pull request review feature:
 - the `GitProvider` abstraction layer and its implementations for GitHub, GitLab, Gitea / Forgejo, and Bitbucket Cloud ([`forge.go`](../../forge.go));
 - connecting a forge token from the UI ([`forge.go`](../../forge.go), [`server.go`](../../server.go));
-- the checkout lifecycle, push/pull, merging and progress reporting ([`pr.go`](../../pr.go)), and merge-base diffing ([`git.go`](../../git.go));
+- the checkout lifecycle, push/pull, merging and progress reporting ([`pr.go`](../../pr.go)), and merge-base diffing ([`internal/git`](../../internal/git/));
 - the frontend, in [`web/src/pr/`](../../web/src/pr/): the review bar, comments and drafts (`store.js`, `PRBar`, `CommentsPanel`, `RowComments`, `PRComposer`), merging (`merge-store.js`, `MergePill`, `MergeControls`, `MergeDialog`), and the Connect dialog (`forge-store.js`, `ForgeConnectDialog`).
 
 For the user-facing behaviour, see [Pull Request Review](../features/github-pr-review.md) and [Getting Started](../features/pr-review-getting-started.md).
@@ -14,7 +14,7 @@ For the user-facing behaviour, see [Pull Request Review](../features/github-pr-r
 
 Two core faah tenets shape pull request reviews:
 
-- **Zero-dependency shell-out**: Like `git.go` (which links no Go git library), faah avoids external forge SDKs. Every provider uses standard Go `net/http` against its forge's REST API, plus an optional shell-out to the forge's CLI for a token (`gh auth token`, `glab config get token`). Checkout itself uses standard `git fetch`, `git worktree add`, or `git clone` via `exec.Command`.
+- **Zero-dependency shell-out**: Like `internal/git` (which links no Go git library), faah avoids external forge SDKs. Every provider uses standard Go `net/http` against its forge's REST API, plus an optional shell-out to the forge's CLI for a token (`gh auth token`, `glab config get token`). Checkout itself uses standard `git fetch`, `git worktree add`, or `git clone` via `exec.Command`.
 - **Stateless on disk**: faah maintains no persistent cache in `~/.faah`. A PR checkout is strictly process-scoped: `checkoutPR` (`pr.go`) places the worktree in `os.MkdirTemp("", "faah-pr-*")`, and `prSession.Close` removes it upon exit (`Ctrl+C` or normal shutdown). This ensures zero leftover disk clutter and prevents stale cache bugs.
 - **Persisted draft comments**: Draft comments live in `prSession.comments` as a thread-safe, mutex-guarded slice in server memory. Every add, delete and submit also writes them to the workspace session file (see [§6](#6-draft-comments-submission--batch-apply)), so unsubmitted drafts survive a restart of the same review.
 
@@ -34,7 +34,7 @@ type GitProvider interface {
     MatchRemote(remoteURL string) bool                // which forge a plain workspace's remote is on
     CloneURL(target PRTarget) string                  // https clone URL of the base repository
     PRHeadRef(target PRTarget) string                 // refs/pull/N/head, refs/merge-requests/N/head, or ""
-    GitAuth(target PRTarget, token string) gitAuth    // the https auth header git sends
+    GitAuth(target PRTarget, token string) git.Auth    // the https auth header git sends
     ResolveToken(cfg settings, target PRTarget) (token, source string)
     FetchPR(ctx context.Context, target PRTarget, token string) (PRMeta, error)
     CheckPushAccess(ctx context.Context, target PRTarget, token string) bool
@@ -49,7 +49,7 @@ Merging is forge-neutral by construction: `PRMergeStatus.State` is one of the `M
 
 ### Git Transport
 
-Nothing outside a provider names a forge host. `newForgeGit` turns the provider and target into a `forgeGit`: the clone URL, the PR head ref, and a `gitAuth`. A `gitAuth` is one https header scoped to the forge's URL prefix, for example `http.https://gitlab.example.com/.extraheader`. `gitAuthCmd` passes it to git through `GIT_CONFIG_*` environment variables, so the token never appears in argv, remote config, or URLs, and `gitAuth.redact` strips it from git's error text. Checkout, `Pull`, `Push`, `FetchBase`, and the workbench clone all go through it. A provider that returns no `PRHeadRef` gets the clone path, which clones the head branch itself.
+Nothing outside a provider names a forge host. `newForgeGit` turns the provider and target into a `forgeGit`: the clone URL, the PR head ref, and a `git.Auth`. A `git.Auth` is one https header scoped to the forge's URL prefix, for example `http.https://gitlab.example.com/.extraheader`. `git.AuthCmd` passes it to git through `GIT_CONFIG_*` environment variables, so the token never appears in argv, remote config, or URLs, and `git.Auth.Redact` strips it from git's error text. Checkout, `Pull`, `Push`, `FetchBase`, and the workbench clone all go through it. A provider that returns no `PRHeadRef` gets the clone path, which clones the head branch itself.
 
 `PRTarget.Host` carries the forge host, which a self-hosted GitLab needs. `PRTarget.Owner` may be a nested group path (`group/sub`), so `remoteMatchesRepo` compares a remote's whole repository path rather than its last two segments. Only a local-path remote matches by suffix.
 
@@ -189,12 +189,12 @@ A new forge is one file implementing `GitProvider`, plus its settings:
 Unlike standard working tree diffs that compare against `HEAD`, PR reviews compare against the commit where the PR branch diverged from the base branch (the merge-base):
 
 ```go
-func gitMergeBase(root, a, b string) string
+func MergeBase(root, a, b string) string
 ```
 
-- When the base branch ref is fetched, `diffBase` is set to `gitMergeBase(tmp, "HEAD", baseRef)`.
+- When the base branch ref is fetched, `diffBase` is set to `git.MergeBase(tmp, "HEAD", baseRef)`.
 - If base ref resolution fails, it gracefully falls back to `"HEAD"`.
-- `Server.diffBase` propagates this ref to `gitDiffAgainst` and `gitHunksAgainst`, ensuring both gutter markers and `Cmd/Ctrl+D` views display only what the PR changes.
+- `Server.diffBase` propagates this ref to `git.DiffAgainst` and `git.HunksAgainst`, ensuring both gutter markers and `Cmd/Ctrl+D` views display only what the PR changes.
 
 ---
 
@@ -231,7 +231,7 @@ The worktree `checkoutPR` produces sits on a **detached** `HEAD` at `refs/faah/p
 
 ### `prSession.Pull`: Fast-Forward Only, Same as Everywhere Else
 
-1. Refuses immediately if `gitHasUncommittedChanges(worktree)` — nothing here stashes.
+1. Refuses immediately if `git.HasUncommittedChanges(worktree)` — nothing here stashes.
 2. Re-fetches the PR head: `git fetch origin <PRHeadRef>:refs/faah/pr/<N>` in the worktree case (shared refs with `srcRepo`, same as the initial checkout), or a direct fetch of `meta.HeadRepoCloneURL`/`meta.HeadRef` into `FETCH_HEAD` in the bare-clone case.
 3. `git merge-base --is-ancestor <newRef> HEAD` — if the fetched ref is already an ancestor of the current checkout, it's a no-op ("already up to date"), not an error.
 4. `git merge-base --is-ancestor HEAD <newRef>` — if the current checkout is a clean ancestor of the fetched ref, `git reset --hard <newRef>` fast-forwards it (safe: step 1 already guaranteed a clean working tree).
@@ -252,14 +252,14 @@ Unlike a formal review submission, Push is not gated on `p.writeAccess` — that
 
 The git panel's agent rebase/merge flow ([git-integration internals](git-integration.md)) is reused for a PR's base branch rather than duplicated. `/api/git/sync-state`, `/api/git/sync-agent`, and `/api/git/abort` all check `s.pr`:
 
-- `prSyncState` builds the same `gitSyncState`, measured against `prBaseRef(N)` (`refs/faah/base/<N>`) instead of `@{u}`. `PR` carries the number, and `Rewritten` reports whether the checkout's `HEAD` no longer contains the remote PR head (`prSession.Rewritten`). `?fetch=1`, and every dispatch, refresh the base first through `prSession.FetchBase`, a forced fetch with the forge token (the same `fetchPRBase` helper `computeDiffBase` uses).
-- `gitSyncPrompt` gets the unexported `ontoRef` and tells the harness to rebase onto (or `git merge -m "Merge branch '<base>' into <head>"`) that ref, with an explicit "already fetched: do not fetch". The no-push and no-`--skip` rules still apply.
+- `prSyncState` builds the same `git.SyncState`, measured against `prBaseRef(N)` (`refs/faah/base/<N>`) instead of `@{u}`. `PR` carries the number, and `Rewritten` reports whether the checkout's `HEAD` no longer contains the remote PR head (`prSession.Rewritten`). `?fetch=1`, and every dispatch, refresh the base first through `prSession.FetchBase`, a forced fetch with the forge token (the same `fetchPRBase` helper `computeDiffBase` uses).
+- `gitSyncPrompt` gets `git.SyncState.OntoRef` and tells the harness to rebase onto (or `git merge -m "Merge branch '<base>' into <head>"`) that ref, with an explicit "already fetched: do not fetch". The no-push and no-`--skip` rules still apply.
 - A rewritten checkout can only reach the PR by a force-push. `/api/git/push` accepts `{"force": true}` in PR sessions only. `prSession.Push(true)` pushes with `--force-with-lease=refs/heads/<head>:<remoteHead>`, so commits pushed by someone else since the checkout cause a refusal instead of being lost. The frontend sends `force` only after the reviewer confirms in the git panel card. After any push, `refreshDiffBase` re-derives the merge-base from the fetched base ref, so a pushed rebase or base merge doesn't fold the base's own changes into "PR changes". `syncPRRefs` then propagates the change to the server and the index.
 - `GitStatusPayload.Rewritten` relabels the Push button to **Force-push**. Pull, Push, and Merge all refuse while a rebase or merge is in progress, and Merge also refuses a rewritten, unpushed checkout, because the forge would otherwise merge the old commits.
 
 ### Merging
 
-`/api/pr/merge-status` combines `MergeStatus` with what the dialog needs: `canMerge` (forge rights, `writeAccess`, and a token), `stale` (the forge head differs from the head this checkout reviewed), `rewritten`, `inProgress`, `unpushed`, the PR's commits (`diffBase..HeadSHA`), and `prMergeDefaults` (forge-neutral default titles and bodies). `/api/pr/merge` sends the reviewed `meta.HeadSHA` as the guard, then re-reads `FetchPR` so the bar flips to Merged. `/api/pr/merge-message` starts a text-only harness job built by `mergeMessagePrompt` from the PR's commits, diffstat, and diff (`gitRangeStat`/`gitRangeDiff`, trimmed like the staged diff), the `git.commitMessageInstruction` setting, the dialog's one-off instruction, and the current draft to rewrite.
+`/api/pr/merge-status` combines `MergeStatus` with what the dialog needs: `canMerge` (forge rights, `writeAccess`, and a token), `stale` (the forge head differs from the head this checkout reviewed), `rewritten`, `inProgress`, `unpushed`, the PR's commits (`diffBase..HeadSHA`), and `prMergeDefaults` (forge-neutral default titles and bodies). `/api/pr/merge` sends the reviewed `meta.HeadSHA` as the guard, then re-reads `FetchPR` so the bar flips to Merged. `/api/pr/merge-message` starts a text-only harness job built by `mergeMessagePrompt` from the PR's commits, diffstat, and diff (`git.RangeStat`/`git.RangeDiff`, trimmed like the staged diff), the `git.commitMessageInstruction` setting, the dialog's one-off instruction, and the current draft to rewrite.
 
 ---
 

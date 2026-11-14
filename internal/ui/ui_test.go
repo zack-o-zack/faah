@@ -170,4 +170,3 @@ func BenchmarkPaint(b *testing.B) {
 		_ = Paint("Sample Text", ColorAccent, true, &buf)
 	}
 }
-

@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"faah/internal/git/gittest"
 	"faah/internal/metrics"
 	"faah/internal/render"
 	"faah/internal/settings"
@@ -547,10 +548,10 @@ func TestResolveTarget(t *testing.T) {
 }
 
 func TestResolveTargetGitRepo(t *testing.T) {
-	if !gitInstalled() {
+	if !gittest.Installed() {
 		t.Skip("git not installed")
 	}
-	repo := gitRepo(t)
+	repo := gittest.Repo(t)
 	subFile := filepath.Join(repo, "pkg", "sub", "app.go")
 	if err := os.MkdirAll(filepath.Dir(subFile), 0o755); err != nil {
 		t.Fatal(err)

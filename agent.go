@@ -24,6 +24,7 @@ import (
 	"faah/internal/agents/all"
 	"faah/internal/explain"
 	"faah/internal/explain/notes"
+	"faah/internal/git"
 	"faah/internal/render"
 	"faah/internal/settings"
 	"faah/internal/ui"
@@ -418,7 +419,7 @@ func (m *agentManager) StartPrompt(label, prompt string) (*agentJob, error) {
 		Path:    label,
 		Running: true,
 		Changed: []string{},
-		Tracked: gitAvailable(m.root),
+		Tracked: git.Available(m.root),
 		out:     &tailBuffer{max: agentLogBytes},
 		stderr:  &tailBuffer{max: agentLogBytes},
 		start:   time.Now(),
@@ -595,7 +596,7 @@ func changedSince(root string, before map[string]string) []string {
 // already modified: it reads "M" before and after, so the edit would go unseen.
 // Files git lists as clean are left out, and those still surface through status.
 func worktreeSnapshot(root string) map[string]string {
-	st := gitStatus(root)
+	st := git.Status(root)
 	for rel, code := range st {
 		if fi, err := os.Stat(filepath.Join(root, filepath.FromSlash(rel))); err == nil {
 			st[rel] = code + " " + strconv.FormatInt(fi.Size(), 10) + " " + strconv.FormatInt(fi.ModTime().UnixNano(), 10)
@@ -688,12 +689,12 @@ func commitMessagePrompt(files []string, stat, diff, instruction string) string 
 // onto its upstream after a fast-forward-only pull was refused, or to finish
 // one a previous attempt left half-done. It may run git and edit conflicted
 // files, but must never push: what reaches the remote stays the user's call.
-func gitSyncPrompt(strategy string, st gitSyncState) string {
+func gitSyncPrompt(strategy string, st git.SyncState) string {
 	// A PR's base is fetched by faah itself, with the forge token, into a ref
 	// of its own; the harness works against that ref and must not fetch.
-	onto, prefetched := st.Upstream, st.ontoRef != ""
+	onto, prefetched := st.Upstream, st.OntoRef != ""
 	if prefetched {
-		onto = st.ontoRef
+		onto = st.OntoRef
 	}
 	remote, _, _ := strings.Cut(st.Upstream, "/")
 	var b strings.Builder
@@ -739,7 +740,7 @@ func gitSyncPrompt(strategy string, st gitSyncState) string {
 // commitMessagePrompt it only writes text: no files, no git. draft is the
 // message as it stands in the merge dialog, rewritten rather than ignored.
 // commits is newest first.
-func mergeMessagePrompt(method string, meta PRMeta, commits []UnpushedCommit, stat, diff, draft string, instructions []string) string {
+func mergeMessagePrompt(method string, meta PRMeta, commits []git.UnpushedCommit, stat, diff, draft string, instructions []string) string {
 	var b strings.Builder
 	if method == MergeMethodSquash {
 		fmt.Fprintf(&b, "Write the commit message for squash-merging pull request #%d (%q) into %s: its %d commit(s) become this one commit.\n", meta.Number, meta.Title, meta.BaseRef, len(commits))
@@ -1511,7 +1512,7 @@ func (tm *threadManager) Send(id, message string) (*thread, error) {
 		prior = append(prior, &c)
 	}
 	turn := &threadTurn{
-		ID: len(t.Turns) + 1, Prompt: message, Running: true, Tracked: gitAvailable(tm.root),
+		ID: len(t.Turns) + 1, Prompt: message, Running: true, Tracked: git.Available(tm.root),
 		Harness: name, Model: model, Started: time.Now().UnixMilli(),
 	}
 	t.Turns = append(t.Turns, turn)
@@ -1612,7 +1613,7 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 	}
 
 	before := worktreeSnapshot(tm.root)
-	beforeSHA := gitSnapshotWorktree(tm.root)
+	beforeSHA := git.SnapshotWorktree(tm.root)
 	started := time.Now()
 	sink := &threadSink{tm: tm, tid: r.tid, turn: r.turn, began: started}
 
@@ -1624,7 +1625,7 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 	changed := changedSince(tm.root, before)
 	afterSHA := ""
 	if len(changed) > 0 && beforeSHA != "" {
-		afterSHA = gitSnapshotWorktree(tm.root)
+		afterSHA = git.SnapshotWorktree(tm.root)
 	}
 	tm.agent.settle(changed)
 	var refs map[string]explain.Ref
@@ -1748,7 +1749,7 @@ func (tm *threadManager) RevertTurn(id string, turnID int) (*thread, []string, e
 	paths := append([]string(nil), target.Changed...)
 	tm.mu.Unlock()
 
-	if err := gitRestoreSnapshotPaths(tm.root, beforeSHA, paths); err != nil {
+	if err := git.RestoreSnapshotPaths(tm.root, beforeSHA, paths); err != nil {
 		return nil, nil, err
 	}
 	tm.agent.settle(paths)

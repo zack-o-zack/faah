@@ -22,6 +22,7 @@ import (
 	"syscall"
 	"time"
 
+	"faah/internal/git"
 	"faah/internal/mcp"
 	"faah/internal/settings"
 	"faah/internal/telemetry"
@@ -104,7 +105,7 @@ func main() {
 		ui.Verbose = true
 	}
 	if *noGit {
-		gitDisabled = true
+		git.SetDisabled(true)
 	}
 
 	if *showVer || *showVerShort || (flag.NArg() == 1 && flag.Arg(0) == "version") {
@@ -156,7 +157,7 @@ func main() {
 			target = arg0
 		}
 	}
-	if isPR && gitDisabled {
+	if isPR && git.Disabled() {
 		fatal(fmt.Errorf("faah: git is required for PR review; remove -no-git"))
 	}
 
@@ -336,7 +337,7 @@ func main() {
 		tel.Track("session_started", map[string]any{
 			"files_bucket": telemetry.FilesBucket(n),
 			"index_ms":     ms,
-			"has_git":      gitAvailable(root),
+			"has_git":      git.Available(root),
 			"has_lsp":      len(lsp.Available()) > 0,
 		})
 	}()
@@ -548,9 +549,9 @@ func resolveTarget(target string) (root, initialFile string, initialLine int, er
 	parentDir := filepath.Dir(resolved)
 
 	// If the file is inside a git repository, use the git repo root.
-	if info := gitProbe(parentDir); info.ok && info.toplevel != "" {
-		if rel, err := filepath.Rel(info.toplevel, resolved); err == nil && !strings.HasPrefix(rel, "..") && rel != "." {
-			return info.toplevel, filepath.ToSlash(rel), line, nil
+	if info := git.Probe(parentDir); info.OK() && info.Root() != "" {
+		if rel, err := filepath.Rel(info.Root(), resolved); err == nil && !strings.HasPrefix(rel, "..") && rel != "." {
+			return info.Root(), filepath.ToSlash(rel), line, nil
 		}
 	}
 

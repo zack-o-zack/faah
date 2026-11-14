@@ -20,6 +20,7 @@ import (
 
 	"faah/internal/agents"
 	"faah/internal/agents/all"
+	"faah/internal/git/gittest"
 )
 
 // isolateSettings points the settings file at a temp dir, so a test never reads
@@ -273,10 +274,10 @@ func TestAgentEditRefusedUntilHarnessChosen(t *testing.T) {
 }
 
 func TestAgentEditRunsHarnessAndReportsChange(t *testing.T) {
-	if !gitInstalled() {
+	if !gittest.Installed() {
 		t.Skip("git not installed")
 	}
-	root := gitRepo(t)
+	root := gittest.Repo(t)
 	out := t.TempDir()
 	// keep.go is committed and clean, so no force is needed.
 	s := fakeAgentServer(t, root, func(ctx context.Context, o agents.Open, prompt string, sink agents.Sink) error {
@@ -350,10 +351,10 @@ func TestAgentOutsideGitReportsUnknownChanges(t *testing.T) {
 }
 
 func TestAgentRefusesSecondEditWhileRunning(t *testing.T) {
-	if !gitInstalled() {
+	if !gittest.Installed() {
 		t.Skip("git not installed")
 	}
-	root := gitRepo(t)
+	root := gittest.Repo(t)
 	s := fakeAgentServer(t, root, fakeDelay(2*time.Second, nil))
 
 	if code, _ := agentPost(t, s, "/api/agent/edit?path=keep.go&l1=1&l2=1&instruction=one"); code != 200 {
@@ -372,11 +373,11 @@ func TestAgentRefusesSecondEditWhileRunning(t *testing.T) {
 }
 
 func TestAgentAllowsEditOverUncommittedFileWithoutForce(t *testing.T) {
-	if !gitInstalled() {
+	if !gittest.Installed() {
 		t.Skip("git not installed")
 	}
-	root := gitRepo(t)
-	// sub/mod.go is modified but not committed by gitRepo.
+	root := gittest.Repo(t)
+	// sub/mod.go is modified but not committed by gittest.Repo.
 	s := fakeAgentServer(t, root, fakeAppend("keep.go"))
 
 	code, _ := agentPost(t, s, "/api/agent/edit?path=sub/mod.go&l1=1&l2=1&instruction=hi")
@@ -443,10 +444,10 @@ func TestClaudeModelDiscovery(t *testing.T) {
 // Editing in the diff view means editing a file that is already modified. Its
 // git status reads M before and after, so the change has to be seen some other way.
 func TestAgentReportsEditToAlreadyModifiedFile(t *testing.T) {
-	if !gitInstalled() {
+	if !gittest.Installed() {
 		t.Skip("git not installed")
 	}
-	root := gitRepo(t)
+	root := gittest.Repo(t)
 	s := fakeAgentServer(t, root, fakeAppend("sub/mod.go"))
 
 	if code, _ := agentPost(t, s, "/api/agent/edit?path=sub/mod.go&l1=1&l2=1&instruction=hi&force=1"); code != 200 {
@@ -464,10 +465,10 @@ func TestAgentReportsEditToAlreadyModifiedFile(t *testing.T) {
 // Two edits on disjoint line ranges of the same file run at the same time;
 // only an overlapping range is refused.
 func TestAgentAllowsNonOverlappingEditsInParallel(t *testing.T) {
-	if !gitInstalled() {
+	if !gittest.Installed() {
 		t.Skip("git not installed")
 	}
-	root := gitRepo(t)
+	root := gittest.Repo(t)
 	s := fakeAgentServer(t, root, fakeDelay(150*time.Millisecond, nil))
 
 	code, first := agentPost(t, s, "/api/agent/edit?path=keep.go&l1=1&l2=1&instruction=one")
@@ -490,10 +491,10 @@ func TestAgentAllowsNonOverlappingEditsInParallel(t *testing.T) {
 }
 
 func TestAgentMutationsRejectCrossOriginPost(t *testing.T) {
-	if !gitInstalled() {
+	if !gittest.Installed() {
 		t.Skip("git not installed")
 	}
-	root := gitRepo(t)
+	root := gittest.Repo(t)
 	s := fakeAgentServer(t, root, fakeAppend("keep.go"))
 
 	for _, path := range []string{
@@ -517,10 +518,10 @@ func TestAgentMutationsRejectCrossOriginPost(t *testing.T) {
 }
 
 func TestAgentCancelJob(t *testing.T) {
-	if !gitInstalled() {
+	if !gittest.Installed() {
 		t.Skip("git not installed")
 	}
-	root := gitRepo(t)
+	root := gittest.Repo(t)
 	// Harness that sleeps to simulate a long-running edit
 	s := fakeAgentServer(t, root, fakeDelay(5*time.Second, nil))
 
@@ -663,10 +664,10 @@ func TestAgentBatchEditRejectsIntraBatchOverlap(t *testing.T) {
 }
 
 func TestAgentBatchEditRunsHarness(t *testing.T) {
-	if !gitInstalled() {
+	if !gittest.Installed() {
 		t.Skip("git not installed")
 	}
-	root := gitRepo(t)
+	root := gittest.Repo(t)
 
 	s := fakeAgentServer(t, root, fakeAppend("keep.go", "sub/mod.go"))
 
@@ -691,10 +692,10 @@ func TestAgentBatchEditRunsHarness(t *testing.T) {
 }
 
 func TestAgentAllowsIndividualAndBatchEditsConcurrently(t *testing.T) {
-	if !gitInstalled() {
+	if !gittest.Installed() {
 		t.Skip("git not installed")
 	}
-	root := gitRepo(t)
+	root := gittest.Repo(t)
 
 	s := fakeAgentServer(t, root, fakeDelay(200*time.Millisecond, nil))
 
@@ -740,10 +741,10 @@ func TestAgentAllowsIndividualAndBatchEditsConcurrently(t *testing.T) {
 }
 
 func TestAgentBatchEditPayloadVariations(t *testing.T) {
-	if !gitInstalled() {
+	if !gittest.Installed() {
 		t.Skip("git not installed")
 	}
-	root := gitRepo(t)
+	root := gittest.Repo(t)
 	s := fakeAgentServer(t, root, nil)
 
 	// 1. Direct array JSON body

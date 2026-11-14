@@ -52,4 +52,3 @@ func BenchmarkCollectMetrics(b *testing.B) {
 		_ = Collect(0, false)
 	}
 }
-

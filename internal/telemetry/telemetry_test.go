@@ -250,4 +250,3 @@ func BenchmarkTelemetryTrackDisabled(b *testing.B) {
 		tel.Track("action", props)
 	}
 }
-

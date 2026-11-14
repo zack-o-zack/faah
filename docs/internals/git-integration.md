@@ -1,6 +1,6 @@
 # Git Awareness, Diffing & Stage/Commit/Push/Pull
 
-This document describes the design and implementation of faah's git integration engine ([`git.go`](../../git.go)), its diff-rendering frontend ([`web/src/viewers/`](../../web/src/viewers/), `DiffViewer.tsx` and the `diff-*.js` modules), and the sidebar git panel that stages, commits, pushes, and pulls ([`web/src/git/`](../../web/src/git/), with the tree's stage ticks in [`web/src/workspace/`](../../web/src/workspace/)).
+This document describes the design and implementation of faah's git integration engine ([`internal/git`](../../internal/git/)), its diff-rendering frontend ([`web/src/viewers/`](../../web/src/viewers/), `DiffViewer.tsx` and the `diff-*.js` modules), and the sidebar git panel that stages, commits, pushes, and pulls ([`web/src/git/`](../../web/src/git/), with the tree's stage ticks in [`web/src/workspace/`](../../web/src/workspace/)).
 
 ## 1. Zero-Dependency Shell-Out Architecture
 
@@ -23,7 +23,7 @@ faah runs `git status` concurrently alongside the filesystem walk:
 
 ```go
 gsCh := make(chan map[string]string, 1)
-go func() { gsCh <- gitStatus(ix.root) }()
+go func() { gsCh <- git.Status(ix.root) }()
 
 // Walk directory tree concurrently...
 walk(ix.root, "", root)
@@ -88,7 +88,7 @@ The raw unified diff text is cached at that call site; everything downstream (li
 
 ### Gutter Change Indicators (`/api/gutter?path=...`)
 
-When viewing a file, the editor displays green, blue, and red markers in the line gutter indicating local edits. `gitHunks(root, relpath)` (`git.go`) runs `gitDiff` and walks its `@@ -l,s +l,s @@` hunk headers and `+`/`-` lines with a small state machine, bucketing every changed line into 1-based **new-file** line numbers:
+When viewing a file, the editor displays green, blue, and red markers in the line gutter indicating local edits. `git.HunksAgainst(root, relpath, base)` (`internal/git/diff.go`) runs `git.DiffAgainst` and walks its `@@ -l,s +l,s @@` hunk headers and `+`/`-` lines with a small state machine, bucketing every changed line into 1-based **new-file** line numbers:
 
 - `added`: Pure insertions.
 - `modified`: Lines replaced (a `-` run immediately followed by a `+` run).
@@ -145,7 +145,7 @@ To keep git statuses, sidebar badges, and editor gutter diff indicators in sync 
 
 4. **In-Memory Concurrency & Tree Updates (`UpdateGitStatus`)**
    - Refreshing git status does not re-walk the directory tree on disk.
-   - `Index.UpdateGitStatus()` executes `gitStatus(ix.root)` concurrently, compares the new status map against `ix.gitStatusMap`, and if changed, updates `Node.Status` and `Node.Dirty` in-place on existing `ix.children` nodes.
+   - `Index.UpdateGitStatus()` executes `git.Status(ix.root)` concurrently, compares the new status map against `ix.gitStatusMap`, and if changed, updates `Node.Status` and `Node.Dirty` in-place on existing `ix.children` nodes.
    - If the status map is identical, no memory allocations or broadcasts occur.
 
 5. **Server-Sent Events (SSE) Stream (`/api/stream` / `/api/git/stream`)**
@@ -251,7 +251,7 @@ When developers use faah to inspect AI agent changes or review git branches, the
 
 ## 8. Diffing Against an Arbitrary Base
 
-`gitDiff`/`gitHunks` above are thin `base="HEAD"` wrappers around `gitDiffAgainst`/`gitHunksAgainst`, which take an arbitrary base ref rather than assuming the working tree's `HEAD`. The one other caller is PR review (`faah <url>`), which diffs a checked-out PR against its merge-base with the target branch instead. See [Pull Request Review](github-pr-review.md).
+`gitDiff`/`gitHunks` above are thin `base="HEAD"` wrappers around `git.DiffAgainst`/`git.HunksAgainst`, which take an arbitrary base ref rather than assuming the working tree's `HEAD`. The one other caller is PR review (`faah <url>`), which diffs a checked-out PR against its merge-base with the target branch instead. See [Pull Request Review](github-pr-review.md).
 
 ## 9. Stage, Commit, Push, Pull
 
@@ -259,34 +259,34 @@ The sidebar git panel ([`web/src/git/`](../../web/src/git/): `GitPanel`, `Commit
 
 ### Staged-Path Tracking
 
-`gitStatusAndStagedAgainst` (`git.go`) extracts both working-tree status codes and staged paths (`xy[0] != '.'`) from a single `git status --porcelain=v2 -z -uall` invocation (with `gitStagedPaths` available as a standalone `git diff --name-only --cached -z` helper when only staged paths are needed), mapping each path through `repoRelKey` so staged state is keyed identically to status. `Index.gitStagedMap` and `Node.Staged` carry it alongside the existing `gitStatusMap`/`Node.Status`, populated in both `Index.Build()` and `Index.UpdateGitStatus()`. `UpdateGitStatus`'s "did anything change" check compares *both* maps — staging a file often leaves its collapsed status letter unchanged (a modified-and-unstaged `M` and a modified-and-staged `M` are the same letter), so comparing status alone would silently swallow a stage/unstage broadcast. `GitStatusPayload` (`git.go`) carries the resulting `Staged` map and the current `Branch` name (`gitCurrentBranch`) down the same SSE stream (`/api/stream`) that already pushes status; during worktree-only polls when `.git` control files have not changed, `GitWatcher` reuses the cached branch, ahead/behind, and recent-commit metadata from `lastSnap`.
+`git.StatusAndStagedAgainst` (`internal/git/status.go`) extracts both working-tree status codes and staged paths (`xy[0] != '.'`) from a single `git status --porcelain=v2 -z -uall` invocation (with `git.StagedPaths` available as a standalone `git diff --name-only --cached -z` helper when only staged paths are needed), mapping each path through `repoRelKey` so staged state is keyed identically to status. `Index.gitStagedMap` and `Node.Staged` carry it alongside the existing `gitStatusMap`/`Node.Status`, populated in both `Index.Build()` and `Index.UpdateGitStatus()`. `UpdateGitStatus`'s "did anything change" check compares *both* maps — staging a file often leaves its collapsed status letter unchanged (a modified-and-unstaged `M` and a modified-and-staged `M` are the same letter), so comparing status alone would silently swallow a stage/unstage broadcast. `GitStatusPayload` (`git.go`) carries the resulting `Staged` map and the current `Branch` name (`git.CurrentBranch`) down the same SSE stream (`/api/stream`) that already pushes status; during worktree-only polls when `.git` control files have not changed, `GitWatcher` reuses the cached branch, ahead/behind, and recent-commit metadata from `lastSnap`.
 
 ### Stage / Unstage / Commit & Auto-Staging
 
-`gitStage`/`gitUnstage`/`gitCommit` (`git.go`) are thin wrappers around `git add -- <path>`, `git reset -- <path>`, and `git commit -m <message>`. An empty path to `gitStage` means "the served root itself", so **Stage All** reuses the same `/api/git/stage` endpoint with `path: "."` instead of a dedicated route.
+`git.Stage`/`git.Unstage`/`git.Commit` (`internal/git/stage.go`, `internal/git/sync.go`) are thin wrappers around `git add -- <path>`, `git reset -- <path>`, and `git commit -m <message>`. An empty path to `git.Stage` means "the served root itself", so **Stage All** reuses the same `/api/git/stage` endpoint with `path: "."` instead of a dedicated route.
 
-When committing without explicitly staged files, `handleGitCommit` automatically checks `gitHasUncommittedChanges(root)`: if modified or untracked files exist, faah automatically stages them via `gitStage(root, ".")` before invoking `gitCommit`. If the working tree is completely clean, it fails fast with "nothing staged to commit". All three endpoints (`handleGitStage`, `handleGitUnstage`, `handleGitCommit` in `server.go`) validate `path` through `s.safePath` — the same traversal guard `handleFile`/`handleRaw` use — and call `s.gitWatcher.Trigger()` on success so the SSE stream broadcasts immediately instead of waiting for the next poll tick.
+When committing without explicitly staged files, `handleGitCommit` automatically checks `git.HasUncommittedChanges(root)`: if modified or untracked files exist, faah automatically stages them via `git.Stage(root, ".")` before invoking `git.Commit`. If the working tree is completely clean, it fails fast with "nothing staged to commit". All three endpoints (`handleGitStage`, `handleGitUnstage`, `handleGitCommit` in `server.go`) validate `path` through `s.safePath` — the same traversal guard `handleFile`/`handleRaw` use — and call `s.gitWatcher.Trigger()` on success so the SSE stream broadcasts immediately instead of waiting for the next poll tick.
 
 ### Single-Hunk Actions (`/api/git/hunk`)
 
-Beyond whole-file staging, faah allows staging, unstaging, or discarding individual diff hunks from the diff view. `gitApplyHunk(root, patch, action)` (`git.go`) pipes a zero-context unified patch (`--unidiff-zero`) directly into Git:
+Beyond whole-file staging, faah allows staging, unstaging, or discarding individual diff hunks from the diff view. `git.ApplyHunk(root, patch, action)` (`internal/git/stage.go`) pipes a zero-context unified patch (`--unidiff-zero`) directly into Git:
 - **`stage`**: Runs `git apply --cached --unidiff-zero -` to stage only the selected hunk.
 - **`unstage`**: Runs `git apply --reverse --cached --unidiff-zero -` to unstage that specific hunk from the index while keeping working-tree modifications.
 - **`discard`**: Runs `git apply --reverse --unidiff-zero -` to discard that hunk's changes from the working tree.
 
 ### Safe Repositories & Unborn HEAD Resilience
 
-`gitProbe` verifies whether the workspace root is a valid, accessible Git repository and handles `safe.directory` checks gracefully. When a repository is freshly initialized without any commits (an unborn `HEAD`), branch detection reads `ref: refs/heads/<name>` directly from `.git/HEAD`, diffing falls back safely without error, and staging/unstaging endpoints avoid failing on non-existent `HEAD` references.
+`git.Probe` verifies whether the workspace root is a valid, accessible Git repository and handles `safe.directory` checks gracefully. When a repository is freshly initialized without any commits (an unborn `HEAD`), branch detection reads `ref: refs/heads/<name>` directly from `.git/HEAD`, diffing falls back safely without error, and staging/unstaging endpoints avoid failing on non-existent `HEAD` references.
 
 ### Fast-Forward-Only Pull
 
-`gitFFOnlyPull(root, remote, ref)` fetches `ref` from `remote` and runs `git merge --ff-only FETCH_HEAD`. If that merge fails for any reason, it returns the sentinel `errNotFastForward` without having touched history — faah never falls back to a real merge, so there is never a conflicted state to clean up. `handleGitPull` (`server.go`) first refuses (409, `code: "in-progress"`) if a rebase or merge is already half-done (`gitOpInProgress`, which looks for `rebase-merge`/`rebase-apply`/`MERGE_HEAD` in the git dir), then refuses (409) if the working tree is dirty, then resolves the branch's upstream (`gitUpstream`, wrapping `git rev-parse --abbrev-ref <branch>@{u}`) and calls `gitFFOnlyPull`. On `errNotFastForward` it answers 409 through `failSync`, which carries a `gitSyncState` (`code: "diverged"`, branch, upstream, ahead/behind, in-progress op, dirty) next to the message. The fetch has already landed by then, so the counts describe the remote as it is now.
+`git.FFOnlyPull(root, remote, ref)` fetches `ref` from `remote` and runs `git merge --ff-only FETCH_HEAD`. If that merge fails for any reason, it returns the sentinel `git.ErrNotFastForward` without having touched history — faah never falls back to a real merge, so there is never a conflicted state to clean up. `handleGitPull` (`server.go`) first refuses (409, `code: "in-progress"`) if a rebase or merge is already half-done (`git.OpInProgress`, which looks for `rebase-merge`/`rebase-apply`/`MERGE_HEAD` in the git dir), then refuses (409) if the working tree is dirty, then resolves the branch's upstream (`git.Upstream`, wrapping `git rev-parse --abbrev-ref <branch>@{u}`) and calls `git.FFOnlyPull`. On `git.ErrNotFastForward` it answers 409 through `failSync`, which carries a `git.SyncState` (`code: "diverged"`, branch, upstream, ahead/behind, in-progress op, dirty) next to the message. The fetch has already landed by then, so the counts describe the remote as it is now.
 
 ### Agent Rebase / Merge
 
-A diverged pull is where faah's own git writes stop, but the panel can hand the rest to the selected coding harness, only on an explicit click. `POST /api/git/sync-agent` with `{strategy: "rebase" | "merge"}` (`handleGitSyncAgent`) re-reads the sync state, refuses a dirty tree or a mismatched in-progress op, and dispatches `gitSyncPrompt` (`agent.go`) through `agentManager.StartPrompt`, the same native prompt-session path Commit with AI uses. The prompt states the situation ("git pull is failing ... can't fast-forward ... Run rebase."), the exact commands, how to resolve conflicts, and the rules: never push or force-push, never `rebase --skip`, and `--abort` if a conflict can't be resolved with confidence. When a rebase or merge is already half-done, the prompt asks the harness to finish that one instead of starting over. Mid-rebase HEAD is detached, so `gitRebasingBranch` reads the branch from the rebase's `head-name`.
+A diverged pull is where faah's own git writes stop, but the panel can hand the rest to the selected coding harness, only on an explicit click. `POST /api/git/sync-agent` with `{strategy: "rebase" | "merge"}` (`handleGitSyncAgent`) re-reads the sync state, refuses a dirty tree or a mismatched in-progress op, and dispatches `gitSyncPrompt` (`agent.go`) through `agentManager.StartPrompt`, the same native prompt-session path Commit with AI uses. The prompt states the situation ("git pull is failing ... can't fast-forward ... Run rebase."), the exact commands, how to resolve conflicts, and the rules: never push or force-push, never `rebase --skip`, and `--abort` if a conflict can't be resolved with confidence. When a rebase or merge is already half-done, the prompt asks the harness to finish that one instead of starting over. Mid-rebase HEAD is detached, so `git.RebasingBranch` reads the branch from the rebase's `head-name`.
 
-The frontend checks Git state after the agent turn finishes. When the job ends it reads `GET /api/git/sync-state` and branches on where the branch actually is: an op still in progress (offer **Finish with AI** or **Abort**), still behind upstream (didn't complete), or caught up (done, offer **Push**). `POST /api/git/abort` (`gitAbortOp`) runs `git rebase --abort` or `git merge --abort`. PR review sessions don't offer any of this; their Pull keeps its own divergence handling.
+The frontend checks Git state after the agent turn finishes. When the job ends it reads `GET /api/git/sync-state` and branches on where the branch actually is: an op still in progress (offer **Finish with AI** or **Abort**), still behind upstream (didn't complete), or caught up (done, offer **Push**). `POST /api/git/abort` (`git.AbortOp`) runs `git rebase --abort` or `git merge --abort`. PR review sessions don't offer any of this; their Pull keeps its own divergence handling.
 
 ### Errors in the Panel, Not Toasts
 
@@ -296,11 +296,11 @@ In a PR review session, Pull instead re-syncs with the pull request's current he
 
 ### Push
 
-For a plain workspace, `handleGitPush` runs a bare `gitPush` (`git push`); if that fails specifically because the branch has no upstream, it retries once with `gitPushSetUpstream(root, "origin", branch)`. Neither path ever forces. In a PR review session, `s.pr.Push(force)` takes over instead (`force` only after a confirmed force-push of a rebased PR, as a lease) — see [Pull Request Review §7](github-pr-review.md).
+For a plain workspace, `handleGitPush` runs a bare `git.Push` (`git push`); if that fails specifically because the branch has no upstream, it retries once with `git.PushSetUpstream(root, "origin", branch)`. Neither path ever forces. In a PR review session, `s.pr.Push(force)` takes over instead (`force` only after a confirmed force-push of a rebased PR, as a lease) — see [Pull Request Review §7](github-pr-review.md).
 
 ### Commit with AI
 
-**Commit with AI** is a text-generation dispatch, not a file edit: `agentManager.StartPrompt(label, prompt)` (`agent.go`) is a sibling of `StartBatch` that skips every file-range concern — no snippet read, no overlap check, no target path — and reuses the same `run()` executor (spawn, stream stdout/stderr into `tailBuffer`s, `changedSince` diff). `handleGitCommitMessage` (`server.go`) builds the prompt from the staged file paths (`gitStagedFiles`), diffstat (`gitStagedStat`), capped staged diff (`gitStagedDiff`), and the `git.commitMessageInstruction` setting via `commitMessagePrompt` (`agent.go`), and refuses with 400 before ever dispatching a harness if nothing is staged. The frontend polls the returned job through the same `/api/agent/job` endpoint an inline edit uses, drops the (fence-stripped) `stdout` into the commit textarea, and immediately calls `/api/git/commit` with it — two endpoints, one user action.
+**Commit with AI** is a text-generation dispatch, not a file edit: `agentManager.StartPrompt(label, prompt)` (`agent.go`) is a sibling of `StartBatch` that skips every file-range concern — no snippet read, no overlap check, no target path — and reuses the same `run()` executor (spawn, stream stdout/stderr into `tailBuffer`s, `changedSince` diff). `handleGitCommitMessage` (`server.go`) builds the prompt from the staged file paths (`git.StagedFiles`), diffstat (`git.StagedStat`), capped staged diff (`git.StagedDiff`), and the `git.commitMessageInstruction` setting via `commitMessagePrompt` (`agent.go`), and refuses with 400 before ever dispatching a harness if nothing is staged. The frontend polls the returned job through the same `/api/agent/job` endpoint an inline edit uses, drops the (fence-stripped) `stdout` into the commit textarea, and immediately calls `/api/git/commit` with it — two endpoints, one user action.
 
 ### HTTP Surface
 
@@ -324,13 +324,13 @@ Every write endpoint is guarded by `localPost` ([`server.go`](../../server.go)),
 
 Everything above diffs against the working tree. The moment a change is committed it leaves that view entirely — the tree goes clean, the gutter empties, the diff tab closes — even though a local commit is exactly the thing most likely to still need reading. Section 10 is the read path for those commits, from `git commit` until `git push`.
 
-It is strictly read-only: no endpoint here writes to the index, a ref, or a remote. Every call fails quiet the way the rest of `git.go` does — no upstream, no git, or an unknown SHA all yield an empty result rather than an error, and the sidebar section simply doesn't appear.
+It is strictly read-only: no endpoint here writes to the index, a ref, or a remote. Every call fails quiet the way the rest of `internal/git` does — no upstream, no git, or an unknown SHA all yield an empty result rather than an error, and the sidebar section simply doesn't appear.
 
 ### Which Commits, and Against What
 
-`gitUpstreamRef(root)` runs `git rev-parse --abbrev-ref --symbolic-full-name @{u}` and returns the tracking branch as git names it (`origin/master`). `gitUnpushedCommits(root, limit)` then logs `@{u}..HEAD`, newest first.
+`git.upstreamRef(root)` runs `git rev-parse --abbrev-ref --symbolic-full-name @{u}` and returns the tracking branch as git names it (`origin/master`). `git.UnpushedCommits(root, limit)` then logs `@{u}..HEAD`, newest first.
 
-Unlike `gitAheadBehind`, there is **no `origin/<branch>` fallback and no "count every local commit" fallback**. Those exist so the Push button can still light up on an unpublished branch, where being approximately right is better than being dead. A list of commits is different: measuring it against a branch git does not consider upstream would show a confident, wrong answer. With no upstream configured, `/api/unpushed` reports `available: false` and the section is hidden.
+Unlike `git.AheadBehind`, there is **no `origin/<branch>` fallback and no "count every local commit" fallback**. Those exist so the Push button can still light up on an unpublished branch, where being approximately right is better than being dead. A list of commits is different: measuring it against a branch git does not consider upstream would show a confident, wrong answer. With no upstream configured, `/api/unpushed` reports `available: false` and the section is hidden.
 
 The upstream ref name travels with the list and is rendered beside the section title, because "unpushed" alone doesn't say *unpushed where* — a branch can be ahead of `origin/master` and behind a fork's.
 
@@ -340,20 +340,20 @@ Three reads share one set of `git diff-tree` flags (`commitDiffArgs`): `--no-com
 
 | Function | Shell-out | Returns |
 | --- | --- | --- |
-| `gitCommitFiles(root, sha)` | `git diff-tree --name-status -z …` + `gitCommitNumstat` (`git show --numstat -z -m --first-parent`) | Paths the commit touched, with git's status letter (`M`/`A`/`D`/`R`/`C`/`T`) and each path's `add`/`del` line counts (`binary` when numstat reports `-`), mapped through `repoRelKey` so a repo served from a subdirectory lists only what it can open. |
-| `gitCommitDetail(root, sha)` | `git show -s --format=…` + `git diff-tree --numstat …` | Author, email, relative and ISO dates, the full message, and the files/insertions/deletions diffstat. |
-| `gitDiffCommit(root, relpath, sha)` | `git diff-tree -p --no-color …` | The unified diff that commit alone made to one file. |
+| `git.CommitFiles(root, sha)` | `git diff-tree --name-status -z …` + `git.commitNumstat` (`git show --numstat -z -m --first-parent`) | Paths the commit touched, with git's status letter (`M`/`A`/`D`/`R`/`C`/`T`) and each path's `add`/`del` line counts (`binary` when numstat reports `-`), mapped through `repoRelKey` so a repo served from a subdirectory lists only what it can open. |
+| `git.ReadCommitDetail(root, sha)` | `git show -s --format=…` + `git diff-tree --numstat …` | Author, email, relative and ISO dates, the full message, and the files/insertions/deletions diffstat. |
+| `git.DiffCommit(root, relpath, sha)` | `git diff-tree -p --no-color …` | The unified diff that commit alone made to one file. |
 
-`gitHunksCommit` feeds `gitDiffCommit`'s output to `parseDiffHunks` — the same state machine `gitHunksAgainst` uses, split out of it so a commit's gutter and the working tree's are parsed by one piece of code.
+`git.HunksCommit` feeds `git.DiffCommit`'s output to `parseDiffHunks` — the same state machine `git.HunksAgainst` uses, split out of it so a commit's gutter and the working tree's are parsed by one piece of code.
 
-Every SHA that reaches `exec.Command` as a bare revision passes `validSHA` (`^[0-9a-fA-F]{4,40}$`) first. The only way a SHA reaches these endpoints is from a list faah itself produced, so anything else is a bug or a probe; refusing it keeps a crafted `--upload-pack=…` out of an argument list.
+Every SHA that reaches `exec.Command` as a bare revision passes `git.ValidSHA` (`^[0-9a-fA-F]{4,40}$`) first. The only way a SHA reaches these endpoints is from a list faah itself produced, so anything else is a bug or a probe; refusing it keeps a crafted `--upload-pack=…` out of an argument list.
 
 ### The `ref` Parameter on `/api/diff` and `/api/gutter`
 
 Rather than add two more endpoints, the existing diff and gutter endpoints take an optional `ref`:
 
 - **`ref` empty** — unchanged: the working tree against `s.diffBase` (`HEAD`, or a PR merge-base in review mode).
-- **`ref=<sha>`** — that commit's own diff, via `gitDiffCommit`/`gitHunksCommit`. The working tree is not consulted at all, so the result is frozen no matter what is edited afterwards.
+- **`ref=<sha>`** — that commit's own diff, via `git.DiffCommit`/`git.HunksCommit`. The working tree is not consulted at all, so the result is frozen no matter what is edited afterwards.
 
 `/api/file` takes the same parameter, for one reason: a file the commit **deleted** has nothing on disk, so the existing "does the working tree have a diff for it" check can't vouch for it and the open would 404. With a `ref`, `handleFile` asks whether that commit touched the path instead, and returns the same zero-line `deleted: true` document a working-tree deletion produces.
 

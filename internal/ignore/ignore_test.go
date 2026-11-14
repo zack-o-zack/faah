@@ -209,4 +209,3 @@ func BenchmarkCompilePattern(b *testing.B) {
 		_, _ = CompilePattern(p)
 	}
 }
-

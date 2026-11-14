@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"faah/internal/fuzzy"
+	"faah/internal/git"
 	"faah/internal/ignore"
 )
 
@@ -90,7 +91,7 @@ func (ix *Index) SetPRHead(head string) {
 	ix.mu.Unlock()
 	// The PR's own file set only moves with the head or the base, so it is
 	// worked out here once rather than on every git-status tick.
-	files := gitFilesBetween(ix.root, base, head)
+	files := git.FilesBetween(ix.root, base, head)
 	ix.mu.Lock()
 	ix.prHead = head
 	ix.prFiles = files
@@ -424,7 +425,7 @@ func (ix *Index) Build() {
 	}
 	gsCh := make(chan gitRes, 1)
 	go func() {
-		gs, staged, partial, yourStatuses := gitStatusAndStagedAgainst(ix.root, base, head)
+		gs, staged, partial, yourStatuses := git.StatusAndStagedAgainst(ix.root, base, head)
 		dirtyDirs, yourDirtyDirs, gitFiles := computeDirtyState(gs, yourStatuses)
 		gsCh <- gitRes{
 			gs:           gs,
@@ -718,13 +719,13 @@ func (ix *Index) GitPartial() map[string]bool {
 // anything changed (status, staged, or yourStatus), and the raw status/staged/dirty-dir
 // maps.
 func (ix *Index) UpdateGitStatus() (count int, files []string, changed bool, statuses map[string]string, dirtyDirs map[string]bool, staged map[string]bool, yourStatuses map[string]string, yourDirtyDirs map[string]bool) {
-	if !ix.Ready() || gitDisabled || !gitAvailable(ix.root) {
+	if !ix.Ready() || git.Disabled() || !git.Available(ix.root) {
 		return 0, nil, false, nil, nil, nil, nil, nil
 	}
 
 	base := ix.DiffBase()
 	head := ix.PRHead()
-	gs, sg, pt, ys := gitStatusAndStagedAgainst(ix.root, base, head)
+	gs, sg, pt, ys := git.StatusAndStagedAgainst(ix.root, base, head)
 	if gs == nil {
 		gs = map[string]string{}
 	}

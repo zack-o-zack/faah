@@ -31,6 +31,7 @@ import (
 	"time"
 
 	"faah/internal/fuzzy"
+	"faah/internal/git"
 	"faah/internal/metrics"
 	"faah/internal/render"
 	"faah/internal/settings"
@@ -588,14 +589,14 @@ func (s *Server) prThreadContext(scope string) string {
 			break
 		}
 		fmt.Fprintf(&b, "Those are exactly `git diff %s` (working tree against the PR head, staged and unstaged) and `git log --stat %s..HEAD` (their commits)", headSHA, headSHA)
-		if un := gitUntracked(root); len(un) > 0 {
+		if un := git.Untracked(root); len(un) > 0 {
 			if len(un) > 40 {
 				un = append(un[:40], fmt.Sprintf("(+%d more)", len(un)-40))
 			}
 			fmt.Fprintf(&b, ", plus untracked files: %s", strings.Join(un, ", "))
 		}
 		b.WriteString(". ")
-		if f := p.writeScopeFile("your-changes.diff", gitDiffFull(root, diffFileMax, headSHA)); f != "" {
+		if f := p.writeScopeFile("your-changes.diff", git.DiffFull(root, diffFileMax, headSHA)); f != "" {
 			fmt.Fprintf(&b, "That diff is also saved at %s. ", f)
 		}
 		if prRange != "" {
@@ -613,7 +614,7 @@ func (s *Server) prThreadContext(scope string) string {
 			break
 		}
 		fmt.Fprintf(&b, " The PR is exactly %s: read it with that and `git log --stat %s..%s`; do not review from `git show HEAD` or `git diff HEAD~1`.", prRange, mb, headSHA)
-		if f := p.writeScopeFile("pr.diff", gitDiffFull(root, diffFileMax, mb, headSHA)); f != "" {
+		if f := p.writeScopeFile("pr.diff", git.DiffFull(root, diffFileMax, mb, headSHA)); f != "" {
 			fmt.Fprintf(&b, " The full diff is also saved at %s.", f)
 		}
 		if files := s.ix.PRFiles(); len(files) > 0 {
@@ -958,7 +959,7 @@ func (s *Server) handleStatic(sub fs.FS, prefix string) http.Handler {
 
 func (s *Server) handleMeta(w http.ResponseWriter, r *http.Request) {
 	n, at, ms := s.ix.Stats()
-	inGit := gitAvailable(s.ix.Root())
+	inGit := git.Available(s.ix.Root())
 	if inGit && s.ix.Ready() {
 		s.ix.mu.RLock()
 		noStatus := s.ix.gitStatusMap == nil
@@ -1313,20 +1314,20 @@ func (s *Server) handleFile(w http.ResponseWriter, r *http.Request) {
 	}
 	st, err := os.Stat(abs)
 	if err != nil {
-		if os.IsNotExist(err) && gitAvailable(s.ix.Root()) {
+		if os.IsNotExist(err) && git.Available(s.ix.Root()) {
 			diffAvail := false
 			// A file a local commit deleted has nothing on disk, so the normal
 			// working-tree check below can't vouch for it. Its commit diff can.
 			if ref := q.Get("ref"); ref != "" {
-				diffAvail = gitDiffCommit(s.ix.Root(), rel, ref) != ""
+				diffAvail = git.DiffCommit(s.ix.Root(), rel, ref) != ""
 			} else if avail, ok := s.ix.HasDiffAvailable(rel, s.diffBase, s.pr != nil); ok {
 				diffAvail = avail
 			} else if s.pr != nil {
-				diffAvail = gitDiffAgainst(s.ix.Root(), rel, s.diffBase) != "" ||
-					gitDiffBetween(s.ix.Root(), rel, s.diffBase, s.prHeadSHA) != "" ||
-					gitDiffAgainst(s.ix.Root(), rel, s.prHeadSHA) != ""
+				diffAvail = git.DiffAgainst(s.ix.Root(), rel, s.diffBase) != "" ||
+					git.DiffBetween(s.ix.Root(), rel, s.diffBase, s.prHeadSHA) != "" ||
+					git.DiffAgainst(s.ix.Root(), rel, s.prHeadSHA) != ""
 			} else {
-				diffAvail = gitDiffAgainst(s.ix.Root(), rel, s.diffBase) != ""
+				diffAvail = git.DiffAgainst(s.ix.Root(), rel, s.diffBase) != ""
 			}
 			if diffAvail {
 				d := render.NewDoc("", rel)
@@ -1379,23 +1380,23 @@ func (s *Server) handleFile(w http.ResponseWriter, r *http.Request) {
 	lines, exact := d.Lines(start, start+count)
 	_, coming := d.Exact()
 	diffAvail := false
-	if gitAvailable(s.ix.Root()) {
+	if git.Available(s.ix.Root()) {
 		if ref := q.Get("ref"); ref != "" {
-			if base := q.Get("base"); base != "" && validSHA(base) && validSHA(ref) {
-				diffAvail = gitDiffBetween(s.ix.Root(), rel, base, ref) != ""
+			if base := q.Get("base"); base != "" && git.ValidSHA(base) && git.ValidSHA(ref) {
+				diffAvail = git.DiffBetween(s.ix.Root(), rel, base, ref) != ""
 			} else {
 				// Pinned to one commit: what matters is whether that commit touched
 				// the file, not whether the working tree has since diverged.
-				diffAvail = gitDiffCommit(s.ix.Root(), rel, ref) != ""
+				diffAvail = git.DiffCommit(s.ix.Root(), rel, ref) != ""
 			}
 		} else if avail, ok := s.ix.HasDiffAvailable(rel, s.diffBase, s.pr != nil); ok {
 			diffAvail = avail
 		} else if s.pr != nil {
-			diffAvail = gitDiffAgainst(s.ix.Root(), rel, s.diffBase) != "" ||
-				gitDiffBetween(s.ix.Root(), rel, s.diffBase, s.prHeadSHA) != "" ||
-				gitDiffAgainst(s.ix.Root(), rel, s.prHeadSHA) != ""
+			diffAvail = git.DiffAgainst(s.ix.Root(), rel, s.diffBase) != "" ||
+				git.DiffBetween(s.ix.Root(), rel, s.diffBase, s.prHeadSHA) != "" ||
+				git.DiffAgainst(s.ix.Root(), rel, s.prHeadSHA) != ""
 		} else {
-			diffAvail = gitDiffAgainst(s.ix.Root(), rel, s.diffBase) != ""
+			diffAvail = git.DiffAgainst(s.ix.Root(), rel, s.diffBase) != ""
 		}
 	}
 	resp := map[string]any{
@@ -1674,10 +1675,10 @@ func (s *Server) handleDiff(w http.ResponseWriter, r *http.Request) {
 	if ref := r.URL.Query().Get("ref"); ref != "" {
 		base := r.URL.Query().Get("base")
 		var diff string
-		if base != "" && validSHA(base) && validSHA(ref) {
-			diff = gitDiffBetween(s.ix.Root(), rel, base, ref)
+		if base != "" && git.ValidSHA(base) && git.ValidSHA(ref) {
+			diff = git.DiffBetween(s.ix.Root(), rel, base, ref)
 		} else {
-			diff = gitDiffCommit(s.ix.Root(), rel, ref)
+			diff = git.DiffCommit(s.ix.Root(), rel, ref)
 		}
 		writeJSON(w, map[string]any{
 			"path":      rel,
@@ -1689,7 +1690,7 @@ func (s *Server) handleDiff(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	diff := gitDiffAgainst(s.ix.Root(), rel, s.diffBase)
+	diff := git.DiffAgainst(s.ix.Root(), rel, s.diffBase)
 	if ui.Verbose {
 		status := "clean"
 		if diff != "" {
@@ -1705,8 +1706,8 @@ func (s *Server) handleDiff(w http.ResponseWriter, r *http.Request) {
 		"hunks": render.HighlightDiff(rel, diff),
 	}
 	if s.pr != nil {
-		prDiff := gitDiffBetween(s.ix.Root(), rel, s.diffBase, s.prHeadSHA)
-		yourDiff := gitDiffAgainst(s.ix.Root(), rel, s.prHeadSHA)
+		prDiff := git.DiffBetween(s.ix.Root(), rel, s.diffBase, s.prHeadSHA)
+		yourDiff := git.DiffAgainst(s.ix.Root(), rel, s.prHeadSHA)
 		resp["prDiff"] = prDiff
 		resp["yourDiff"] = yourDiff
 		resp["prHunks"] = render.HighlightDiff(rel, prDiff)
@@ -1728,9 +1729,9 @@ func (s *Server) handleGutter(w http.ResponseWriter, r *http.Request) {
 	}
 	var added, modified, deleted []int
 	if ref := r.URL.Query().Get("ref"); ref != "" {
-		added, modified, deleted = gitHunksCommit(s.ix.Root(), rel, ref)
+		added, modified, deleted = git.HunksCommit(s.ix.Root(), rel, ref)
 	} else {
-		added, modified, deleted = gitHunksAgainst(s.ix.Root(), rel, s.diffBase)
+		added, modified, deleted = git.HunksAgainst(s.ix.Root(), rel, s.diffBase)
 	}
 	nz := func(v []int) []int { // marshal as [] not null
 		if v == nil {
@@ -1988,7 +1989,7 @@ func (s *Server) handleGitRefresh(w http.ResponseWriter, r *http.Request) {
 	}
 	count, files := s.ix.GitChanges()
 	writeJSON(w, map[string]any{
-		"git":        gitAvailable(s.ix.Root()),
+		"git":        git.Available(s.ix.Root()),
 		"gitChanges": count,
 		"gitFiles":   files,
 		"statuses":   s.ix.GitStatusMap(),
@@ -2020,7 +2021,7 @@ func (s *Server) handleGitStage(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if err := gitStage(s.ix.Root(), rel); err != nil {
+	if err := git.Stage(s.ix.Root(), rel); err != nil {
 		fail(w, http.StatusBadGateway, err.Error())
 		return
 	}
@@ -2043,7 +2044,7 @@ func (s *Server) handleGitUnstage(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if err := gitUnstage(s.ix.Root(), rel); err != nil {
+	if err := git.Unstage(s.ix.Root(), rel); err != nil {
 		fail(w, http.StatusBadGateway, err.Error())
 		return
 	}
@@ -2076,7 +2077,7 @@ func (s *Server) handleGitHunk(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, "bad path")
 		return
 	}
-	if err := gitApplyHunk(s.ix.Root(), rel, body.Hunk, body.Action); err != nil {
+	if err := git.ApplyHunk(s.ix.Root(), rel, body.Hunk, body.Action); err != nil {
 		fail(w, http.StatusBadGateway, err.Error())
 		return
 	}
@@ -2107,10 +2108,10 @@ func (s *Server) handleGitCommit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	root := s.ix.Root()
-	if len(gitStagedPaths(root)) == 0 && gitHasUncommittedChanges(root) {
-		_ = gitStage(root, ".")
+	if len(git.StagedPaths(root)) == 0 && git.HasUncommittedChanges(root) {
+		_ = git.Stage(root, ".")
 	}
-	if err := gitCommit(root, strings.TrimSpace(body.Message)); err != nil {
+	if err := git.Commit(root, strings.TrimSpace(body.Message)); err != nil {
 		fail(w, http.StatusBadGateway, err.Error())
 		return
 	}
@@ -2133,12 +2134,12 @@ func (s *Server) handleGitCommitMessage(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	root := s.ix.Root()
-	files := gitStagedFiles(root)
+	files := git.StagedFiles(root)
 	if len(files) == 0 {
 		// Auto-stage all uncommitted changes if nothing is staged
-		if gitHasUncommittedChanges(root) {
-			_ = gitStage(root, ".")
-			files = gitStagedFiles(root)
+		if git.HasUncommittedChanges(root) {
+			_ = git.Stage(root, ".")
+			files = git.StagedFiles(root)
 			if s.gitWatcher != nil {
 				s.gitWatcher.Trigger()
 			}
@@ -2148,8 +2149,8 @@ func (s *Server) handleGitCommitMessage(w http.ResponseWriter, r *http.Request) 
 		fail(w, http.StatusBadRequest, "nothing staged to generate a message for")
 		return
 	}
-	stat := gitStagedStat(root)
-	diff := gitStagedDiff(root)
+	stat := git.StagedStat(root)
+	diff := git.StagedDiff(root)
 	instruction := ""
 	if cfg := settings.Read(); cfg.GitCommitMessageInstruction != nil {
 		instruction = strings.TrimSpace(*cfg.GitCommitMessageInstruction)
@@ -2180,7 +2181,7 @@ func (s *Server) handleGitPush(w http.ResponseWriter, r *http.Request) {
 			Force bool `json:"force"`
 		}
 		_ = json.NewDecoder(io.LimitReader(r.Body, 1<<10)).Decode(&body)
-		if op := gitOpInProgress(s.ix.Root()); op != "" {
+		if op := git.OpInProgress(s.ix.Root()); op != "" {
 			fail(w, http.StatusConflict, "a "+op+" is in progress; finish or abort it before pushing")
 			return
 		}
@@ -2195,10 +2196,10 @@ func (s *Server) handleGitPush(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	root := s.ix.Root()
-	out, err := gitPush(root)
+	out, err := git.Push(root)
 	if err != nil && strings.Contains(out, "has no upstream branch") {
-		if branch := gitCurrentBranch(root); branch != "" && branch != "HEAD" {
-			out, err = gitPushSetUpstream(root, "origin", branch)
+		if branch := git.CurrentBranch(root); branch != "" && branch != "HEAD" {
+			out, err = git.PushSetUpstream(root, "origin", branch)
 		}
 	}
 	if err != nil {
@@ -2219,7 +2220,7 @@ func (s *Server) handleGitPull(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if s.pr != nil {
-		if op := gitOpInProgress(s.ix.Root()); op != "" {
+		if op := git.OpInProgress(s.ix.Root()); op != "" {
 			st, _ := s.prSyncState(false)
 			failSync(w, st, "a "+op+" is already in progress")
 			return
@@ -2239,26 +2240,26 @@ func (s *Server) handleGitPull(w http.ResponseWriter, r *http.Request) {
 	}
 
 	root := s.ix.Root()
-	if op := gitOpInProgress(root); op != "" {
+	if op := git.OpInProgress(root); op != "" {
 		failSync(w, s.gitSyncState(root), "a "+op+" is already in progress")
 		return
 	}
-	if gitHasUncommittedChanges(root) {
+	if git.HasUncommittedChanges(root) {
 		fail(w, http.StatusConflict, "commit or discard your local changes before pulling")
 		return
 	}
-	branch := gitCurrentBranch(root)
+	branch := git.CurrentBranch(root)
 	if branch == "" || branch == "HEAD" {
 		fail(w, http.StatusBadRequest, "not on a branch")
 		return
 	}
-	remote, remoteBranch, ok := gitUpstream(root, branch)
+	remote, remoteBranch, ok := git.Upstream(root, branch)
 	if !ok {
 		fail(w, http.StatusBadRequest, "no upstream branch configured for "+branch)
 		return
 	}
-	if err := gitFFOnlyPull(root, remote, remoteBranch); err != nil {
-		if errors.Is(err, errNotFastForward) {
+	if err := git.FFOnlyPull(root, remote, remoteBranch); err != nil {
+		if errors.Is(err, git.ErrNotFastForward) {
 			// The fetch already landed, so the counts reflect the remote as
 			// it is now. The panel offers a rebase or merge from here.
 			st := s.gitSyncState(root)
@@ -2273,26 +2274,6 @@ func (s *Server) handleGitPull(w http.ResponseWriter, r *http.Request) {
 		s.gitWatcher.Trigger()
 	}
 	writeJSON(w, map[string]any{"ok": true, "message": "pulled the latest changes"})
-}
-
-// gitSyncState is where the current branch stands against its upstream:
-// what the git panel needs to offer (or follow up on) a rebase or merge.
-type gitSyncState struct {
-	Code       string `json:"code,omitempty"` // "diverged" or "in-progress" on a refused pull
-	Branch     string `json:"branch"`
-	Upstream   string `json:"upstream"` // e.g. "origin/main"; empty when none is configured; a PR's base branch name
-	Ahead      int    `json:"ahead"`
-	Behind     int    `json:"behind"`
-	InProgress string `json:"inProgress,omitempty"` // "rebase" or "merge" left half-done
-	Dirty      bool   `json:"dirty"`
-
-	// PR review sessions only: the PR number, and whether the checkout was
-	// rewritten (rebased) past the PR head on the remote, so only a
-	// force-push can update the PR.
-	PR        int  `json:"pr,omitempty"`
-	Rewritten bool `json:"rewritten,omitempty"`
-
-	ontoRef string // the ref faah fetched the PR's base into; the harness rebases onto it and never fetches
 }
 
 // syncPRRefs copies the PR session's head and merge-base into the server and
@@ -2313,17 +2294,17 @@ func (s *Server) syncPRRefs() {
 	}
 }
 
-// prSyncState is gitSyncState for a PR review: the detached checkout
+// prSyncState is git.SyncState for a PR review: the detached checkout
 // against the PR's base branch rather than an upstream. With fetch it
 // refreshes the base first (a network call), as a rebase must start from
 // the base as it is now.
-func (s *Server) prSyncState(fetch bool) (gitSyncState, error) {
+func (s *Server) prSyncState(fetch bool) (git.SyncState, error) {
 	p := s.pr
 	root := s.ix.Root()
 	p.mu.Lock()
-	st := gitSyncState{PR: p.meta.Number, Branch: p.meta.HeadRef, Upstream: p.meta.BaseRef, ontoRef: prBaseRef(p.meta.Number)}
+	st := git.SyncState{PR: p.meta.Number, Branch: p.meta.HeadRef, Upstream: p.meta.BaseRef, OntoRef: prBaseRef(p.meta.Number)}
 	p.mu.Unlock()
-	st.InProgress = gitOpInProgress(root)
+	st.InProgress = git.OpInProgress(root)
 	if st.InProgress != "" {
 		st.Code = "in-progress"
 	}
@@ -2331,40 +2312,40 @@ func (s *Server) prSyncState(fetch bool) (gitSyncState, error) {
 	if fetch && st.InProgress == "" {
 		_, err = p.FetchBase()
 	}
-	st.Ahead, st.Behind = gitAheadBehindRef(root, st.ontoRef)
+	st.Ahead, st.Behind = git.AheadBehindRef(root, st.OntoRef)
 	st.Rewritten = p.Rewritten()
-	st.Dirty = gitHasUncommittedChanges(root)
+	st.Dirty = git.HasUncommittedChanges(root)
 	return st, err
 }
 
-func (s *Server) gitSyncState(root string) gitSyncState {
-	st := gitSyncState{Branch: gitCurrentBranch(root), InProgress: gitOpInProgress(root)}
+func (s *Server) gitSyncState(root string) git.SyncState {
+	st := git.SyncState{Branch: git.CurrentBranch(root), InProgress: git.OpInProgress(root)}
 	if st.InProgress != "" {
 		st.Code = "in-progress"
 	}
 	if st.InProgress == "rebase" {
-		if b := gitRebasingBranch(root); b != "" {
+		if b := git.RebasingBranch(root); b != "" {
 			st.Branch = b
 		}
 	}
 	if st.Branch != "" && st.Branch != "HEAD" {
-		if remote, rb, ok := gitUpstream(root, st.Branch); ok {
+		if remote, rb, ok := git.Upstream(root, st.Branch); ok {
 			st.Upstream = remote + "/" + rb
 		}
 	}
-	st.Ahead, st.Behind, _ = gitAheadBehind(root)
-	st.Dirty = gitHasUncommittedChanges(root)
+	st.Ahead, st.Behind, _ = git.AheadBehind(root)
+	st.Dirty = git.HasUncommittedChanges(root)
 	return st
 }
 
 // failSync is a 409 that carries the sync state alongside the message, so
 // the panel can render the next step instead of just the refusal.
-func failSync(w http.ResponseWriter, st gitSyncState, msg string) {
+func failSync(w http.ResponseWriter, st git.SyncState, msg string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusConflict)
 	json.NewEncoder(w).Encode(struct {
 		Error string `json:"error"`
-		gitSyncState
+		git.SyncState
 	}{msg, st})
 }
 
@@ -2384,8 +2365,8 @@ func (s *Server) handleGitSyncState(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, st)
 		return
 	}
-	if !gitAvailable(s.ix.Root()) {
-		writeJSON(w, gitSyncState{})
+	if !git.Available(s.ix.Root()) {
+		writeJSON(w, git.SyncState{})
 		return
 	}
 	writeJSON(w, s.gitSyncState(s.ix.Root()))
@@ -2413,7 +2394,7 @@ func (s *Server) handleGitSyncAgent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	root := s.ix.Root()
-	var st gitSyncState
+	var st git.SyncState
 	if s.pr != nil {
 		// In a PR review, the branch is brought up to date with the PR's
 		// base: fetched here, fresh, so the harness never fetches itself.
@@ -2458,7 +2439,7 @@ func (s *Server) handleGitAbort(w http.ResponseWriter, r *http.Request) {
 	if !localPost(w, r) {
 		return
 	}
-	if err := gitAbortOp(s.ix.Root()); err != nil {
+	if err := git.AbortOp(s.ix.Root()); err != nil {
 		fail(w, http.StatusConflict, err.Error())
 		return
 	}
@@ -2480,9 +2461,9 @@ func (s *Server) handleGitLog(w http.ResponseWriter, r *http.Request) {
 			limit = n
 		}
 	}
-	branch := gitCurrentBranch(s.ix.Root())
-	commits := gitRecentCommits(s.ix.Root(), limit)
-	commitsURL := gitCommitsWebURL(s.ix.Root(), branch)
+	branch := git.CurrentBranch(s.ix.Root())
+	commits := git.RecentCommits(s.ix.Root(), limit)
+	commitsURL := git.CommitsWebURL(s.ix.Root(), branch)
 	writeJSON(w, map[string]any{
 		"commits":    commits,
 		"commitsUrl": commitsURL,
@@ -2507,19 +2488,19 @@ func (s *Server) handleUnpushed(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	var upstream string
-	var commits []UnpushedCommit
+	var commits []git.UnpushedCommit
 	if s.pr != nil {
 		// Detached PR checkout: your commits are everything past the PR head.
 		s.pr.mu.Lock()
 		head, branch := s.pr.remoteHead(), s.pr.meta.HeadRef
 		s.pr.mu.Unlock()
-		commits = gitCommitsSince(s.ix.Root(), head, limit)
+		commits = git.CommitsSince(s.ix.Root(), head, limit)
 		upstream = fmt.Sprintf("PR #%d head (%s)", s.pr.meta.Number, branch)
 	} else {
-		upstream, commits = gitUnpushedCommits(s.ix.Root(), limit)
+		upstream, commits = git.UnpushedCommits(s.ix.Root(), limit)
 	}
 	if commits == nil {
-		commits = []UnpushedCommit{}
+		commits = []git.UnpushedCommit{}
 	}
 	writeJSON(w, map[string]any{
 		"available": upstream != "" && len(commits) > 0,
@@ -2538,9 +2519,9 @@ func (s *Server) handleCommitFiles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sha := r.URL.Query().Get("sha")
-	files := gitCommitFiles(s.ix.Root(), sha)
+	files := git.CommitFiles(s.ix.Root(), sha)
 	if files == nil {
-		files = []CommitFile{}
+		files = []git.CommitFile{}
 	}
 	writeJSON(w, map[string]any{"sha": sha, "files": files})
 }
@@ -2553,7 +2534,7 @@ func (s *Server) handleCommitDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sha := r.URL.Query().Get("sha")
-	d, ok := gitCommitDetail(s.ix.Root(), sha)
+	d, ok := git.ReadCommitDetail(s.ix.Root(), sha)
 	if !ok {
 		fail(w, http.StatusNotFound, "unknown commit")
 		return
