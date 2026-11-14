@@ -467,15 +467,6 @@ func TestInstallRefusals(t *testing.T) {
 	}
 }
 
-func TestTailBufferKeepsTheEnd(t *testing.T) {
-	b := &tailBuffer{max: 8}
-	b.Write([]byte("0123456789"))
-	b.Write([]byte("ab"))
-	if got := b.String(); got != "456789ab" {
-		t.Errorf("tail = %q, want %q", got, "456789ab")
-	}
-}
-
 func TestLSPServersEndpoint(t *testing.T) {
 	s, root := newTestServer(t)
 	s.lsp = newLSPManager(root, true)

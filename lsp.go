@@ -24,6 +24,7 @@ import (
 	"unicode/utf8"
 
 	"faah/internal/metrics"
+	"faah/internal/processio"
 	"faah/internal/render"
 	"faah/internal/symbols"
 	"faah/internal/textutil"
@@ -2819,7 +2820,7 @@ type lspJob struct {
 	Error   string `json:"error,omitempty"`
 	Log     string `json:"log"`
 
-	out *tailBuffer
+	out *processio.TailBuffer
 }
 
 func (m *lspManager) job(name string) *lspJob {
@@ -2866,7 +2867,7 @@ func (m *lspManager) Install(name string, option int) (*lspJob, error) {
 		m.jobMu.Unlock()
 		return m.job(name), nil
 	}
-	j := &lspJob{Server: name, Cmd: strings.Join(in.Cmd, " "), Running: true, out: &tailBuffer{max: 16 << 10}}
+	j := &lspJob{Server: name, Cmd: strings.Join(in.Cmd, " "), Running: true, out: processio.NewTailBuffer(16 << 10)}
 	if m.jobs == nil {
 		m.jobs = map[string]*lspJob{}
 	}
@@ -2904,26 +2905,4 @@ func (m *lspManager) runInstall(def *lspServerDef, j *lspJob, tool string, args 
 		j.Error = err.Error()
 	}
 	m.jobMu.Unlock()
-}
-
-type tailBuffer struct {
-	mu  sync.Mutex
-	b   []byte
-	max int
-}
-
-func (t *tailBuffer) Write(p []byte) (int, error) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	t.b = append(t.b, p...)
-	if len(t.b) > t.max {
-		t.b = append([]byte(nil), t.b[len(t.b)-t.max:]...)
-	}
-	return len(p), nil
-}
-
-func (t *tailBuffer) String() string {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	return string(t.b)
 }

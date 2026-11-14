@@ -25,6 +25,7 @@ import (
 	"faah/internal/explain"
 	"faah/internal/explain/notes"
 	"faah/internal/git"
+	"faah/internal/processio"
 	"faah/internal/render"
 	"faah/internal/settings"
 	"faah/internal/ui"
@@ -78,8 +79,8 @@ type agentJob struct {
 	Items      []agentBatchItem `json:"items,omitempty"`      // Detailed batch items if multi-file edit
 
 	cancel context.CancelFunc
-	out    *tailBuffer
-	stderr *tailBuffer
+	out    *processio.TailBuffer
+	stderr *processio.TailBuffer
 	start  time.Time
 }
 
@@ -91,16 +92,16 @@ var (
 )
 
 // lineStreamer forwards complete lines to w with a prefix in real time,
-// while also storing the raw bytes into a tailBuffer.
+// while also storing the raw bytes into a processio.TailBuffer.
 type lineStreamer struct {
 	mu     sync.Mutex
-	buf    *tailBuffer
+	buf    *processio.TailBuffer
 	prefix string
 	line   []byte
 	w      io.Writer
 }
 
-func newLineStreamer(buf *tailBuffer, prefix string, w io.Writer) *lineStreamer {
+func newLineStreamer(buf *processio.TailBuffer, prefix string, w io.Writer) *lineStreamer {
 	return &lineStreamer{buf: buf, prefix: prefix, w: w}
 }
 
@@ -420,8 +421,8 @@ func (m *agentManager) StartPrompt(label, prompt string) (*agentJob, error) {
 		Running: true,
 		Changed: []string{},
 		Tracked: git.Available(m.root),
-		out:     &tailBuffer{max: agentLogBytes},
-		stderr:  &tailBuffer{max: agentLogBytes},
+		out:     processio.NewTailBuffer(agentLogBytes),
+		stderr:  processio.NewTailBuffer(agentLogBytes),
 		start:   time.Now(),
 		cancel:  cancel,
 	}
@@ -1559,7 +1560,7 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 	tm.mu.Lock()
 	liveSession := tm.sessions[r.tid]
 	tm.mu.Unlock()
-	stderr := &tailBuffer{max: agentLogBytes}
+	stderr := processio.NewTailBuffer(agentLogBytes)
 	replay := len(r.prior) > 0 && sessionID == "" && liveSession == nil
 	var openErr error
 	if liveSession == nil {
