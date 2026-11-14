@@ -1,11 +1,12 @@
 package workspace
 
 import (
-	"faah/internal/git"
-	"faah/internal/git/gittest"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"faah/internal/git"
+	"faah/internal/git/gittest"
 )
 
 func TestGitWatcherCLICommitDetection(t *testing.T) {

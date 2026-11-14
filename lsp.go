@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"faah/internal/textutil"
 	"fmt"
 	"io"
 	"net/url"
@@ -27,6 +26,7 @@ import (
 	"faah/internal/metrics"
 	"faah/internal/render"
 	"faah/internal/symbols"
+	"faah/internal/textutil"
 )
 
 // A minimal LSP client: enough of the protocol to answer navigation questions

@@ -3,7 +3,6 @@
 package main
 
 import (
-	"faah/internal/workspace"
 	"net/http/httptest"
 	"os"
 	"os/exec"
@@ -11,6 +10,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"faah/internal/workspace"
 )
 
 // Runs each installed read-only harness through a real explanation and then

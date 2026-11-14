@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"faah/internal/workspace"
 	"fmt"
 	"net/http"
 	"os"
@@ -14,6 +13,7 @@ import (
 	"faah/internal/explain"
 	"faah/internal/symbols"
 	"faah/internal/ui"
+	"faah/internal/workspace"
 )
 
 // Explain This. A reader selects code and gets a short explanation grounded in

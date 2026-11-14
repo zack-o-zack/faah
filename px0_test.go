@@ -6,12 +6,6 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/json"
-	"faah/internal/git/gittest"
-	"faah/internal/metrics"
-	"faah/internal/render"
-	"faah/internal/settings"
-	"faah/internal/ui"
-	"faah/internal/workspace"
 	"io"
 	"net"
 	"net/http"
@@ -23,6 +17,13 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"faah/internal/git/gittest"
+	"faah/internal/metrics"
+	"faah/internal/render"
+	"faah/internal/settings"
+	"faah/internal/ui"
+	"faah/internal/workspace"
 )
 
 func newTestServer(t *testing.T) (*Server, string) {

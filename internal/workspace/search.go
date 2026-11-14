@@ -3,10 +3,6 @@ package workspace
 import (
 	"bytes"
 	"context"
-	"faah/internal/ignore"
-	"faah/internal/render"
-	"faah/internal/symbols"
-	"faah/internal/textutil"
 	"io"
 	"os"
 	"path/filepath"
@@ -16,6 +12,11 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+
+	"faah/internal/ignore"
+	"faah/internal/render"
+	"faah/internal/symbols"
+	"faah/internal/textutil"
 )
 
 // SearchOpts specifies the configuration for a workspace text search query.

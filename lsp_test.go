@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"faah/internal/workspace"
 	"fmt"
 	"io"
 	"math/rand"
@@ -21,6 +20,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"faah/internal/workspace"
 )
 
 // Position encodings are the classic source of off-by-N bugs in LSP clients:

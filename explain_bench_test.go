@@ -3,7 +3,6 @@
 package main
 
 import (
-	"faah/internal/workspace"
 	"fmt"
 	"os"
 	"strings"
@@ -12,6 +11,7 @@ import (
 	"time"
 
 	"faah/internal/explain"
+	"faah/internal/workspace"
 )
 
 // Times real explanations of fixed selections in this repository, once per

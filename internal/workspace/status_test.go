@@ -1,12 +1,13 @@
 package workspace
 
 import (
-	"faah/internal/git"
-	"faah/internal/git/gittest"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"faah/internal/git"
+	"faah/internal/git/gittest"
 )
 
 func TestGitStatus(t *testing.T) {

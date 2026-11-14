@@ -1,9 +1,10 @@
 package workspace
 
 import (
-	"faah/internal/fuzzy"
 	"sync"
 	"time"
+
+	"faah/internal/fuzzy"
 )
 
 // FileEntry represents a single indexed file in the workspace,

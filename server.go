@@ -11,7 +11,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"faah/internal/workspace"
 	"fmt"
 	"io"
 	"io/fs"
@@ -40,6 +39,7 @@ import (
 	"faah/internal/table"
 	"faah/internal/telemetry"
 	"faah/internal/ui"
+	"faah/internal/workspace"
 )
 
 //go:embed web/index.html web/workbench.html web/dist web/themes web/vendor

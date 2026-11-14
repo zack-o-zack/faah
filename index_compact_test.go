@@ -1,10 +1,11 @@
 package main
 
 import (
-	"faah/internal/workspace"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"faah/internal/workspace"
 )
 
 func TestCompactChildrenJoinsSingleFolderChains(t *testing.T) {

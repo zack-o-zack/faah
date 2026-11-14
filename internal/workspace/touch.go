@@ -1,11 +1,12 @@
 package workspace
 
 import (
-	"faah/internal/ignore"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"faah/internal/ignore"
 )
 
 // TouchPath incrementally inserts or updates a single relative file or directory

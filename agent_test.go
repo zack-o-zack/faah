@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"faah/internal/workspace"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -22,6 +21,7 @@ import (
 	"faah/internal/agents"
 	"faah/internal/agents/all"
 	"faah/internal/git/gittest"
+	"faah/internal/workspace"
 )
 
 // isolateSettings points the settings file at a temp dir, so a test never reads

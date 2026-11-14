@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"faah/internal/workspace"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -16,6 +15,7 @@ import (
 	"faah/internal/agents"
 	"faah/internal/explain"
 	"faah/internal/settings"
+	"faah/internal/workspace"
 )
 
 const explainGoSource = "package main\n\nfunc main() {\n\thelper()\n}\n\nfunc helper() {}\n"

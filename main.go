@@ -5,7 +5,6 @@ package main
 import (
 	"context"
 	_ "embed"
-	"faah/internal/workspace"
 	"flag"
 	"fmt"
 	"io"
@@ -29,6 +28,7 @@ import (
 	"faah/internal/telemetry"
 	"faah/internal/ui"
 	"faah/internal/update"
+	"faah/internal/workspace"
 )
 
 //go:embed VERSION

@@ -1,8 +1,6 @@
 package workspace
 
 import (
-	"faah/internal/git"
-	"faah/internal/ignore"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -10,6 +8,9 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"faah/internal/git"
+	"faah/internal/ignore"
 )
 
 func toLowerIfNeeded(s string) string {

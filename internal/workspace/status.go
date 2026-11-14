@@ -1,11 +1,12 @@
 package workspace
 
 import (
-	"faah/internal/git"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"faah/internal/git"
 )
 
 // SetDiffBase sets the git ref or commit against which working tree diffs and statuses are computed.

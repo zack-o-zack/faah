@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"faah/internal/workspace"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -14,6 +13,7 @@ import (
 	"time"
 
 	"faah/internal/render"
+	"faah/internal/workspace"
 )
 
 func TestReviewWorkflowDefaults(t *testing.T) {
