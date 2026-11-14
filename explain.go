@@ -11,6 +11,7 @@ import (
 
 	"faah/internal/agents"
 	"faah/internal/explain"
+	"faah/internal/httpx"
 	lsppkg "faah/internal/lsp"
 	"faah/internal/symbols"
 	"faah/internal/ui"
@@ -104,17 +105,17 @@ func (s *Server) explainTarget(req *explain.Request) (explain.Target, []string, 
 
 // handleExplain serves POST /api/explain: classify, gather, then reopen or start.
 func (s *Server) handleExplain(w http.ResponseWriter, r *http.Request) {
-	if !localPost(w, r) || !s.threadsOrFail(w) {
+	if !httpx.LocalPost(w, r) || !s.threadsOrFail(w) {
 		return
 	}
 	var req explain.Request
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		fail(w, 400, "bad request")
+		httpx.Fail(w, 400, "bad request")
 		return
 	}
 	target, lines, key, code, err := s.explainTarget(&req)
 	if err != nil {
-		fail(w, code, err.Error())
+		httpx.Fail(w, code, err.Error())
 		return
 	}
 
@@ -134,10 +135,10 @@ func (s *Server) handleExplain(w http.ResponseWriter, r *http.Request) {
 
 	res, err := s.threads.explain(target, req, ev)
 	if err != nil {
-		fail(w, threadStatus(err), err.Error())
+		httpx.Fail(w, threadStatus(err), err.Error())
 		return
 	}
-	writeJSON(w, map[string]any{
+	httpx.WriteJSON(w, map[string]any{
 		"thread": res.Thread, "cached": res.Cached,
 		"stale": res.Stale, "staleReason": res.StaleReason,
 	})

@@ -24,6 +24,7 @@ import (
 
 	"faah/internal/forge"
 	"faah/internal/git"
+	"faah/internal/httpx"
 	lsppkg "faah/internal/lsp"
 	"faah/internal/mcp"
 	prpkg "faah/internal/pr"
@@ -222,9 +223,9 @@ func main() {
 
 	configuredBasePath := "/"
 	if *basePathFlag != "" {
-		configuredBasePath = cleanBasePath(*basePathFlag)
+		configuredBasePath = httpx.CleanBasePath(*basePathFlag)
 	} else if cfg := settings.Read(); cfg.ServerBasePath != nil && *cfg.ServerBasePath != "" {
-		configuredBasePath = cleanBasePath(*cfg.ServerBasePath)
+		configuredBasePath = httpx.CleanBasePath(*cfg.ServerBasePath)
 	}
 
 	pxSrv := NewServer(ix, lsp, configuredBasePath)
@@ -431,9 +432,9 @@ func runWorkbench(host string, port int, basePathFlag string, open, doAutoUpdate
 	}
 	basePath := "/"
 	if basePathFlag != "" {
-		basePath = cleanBasePath(basePathFlag)
+		basePath = httpx.CleanBasePath(basePathFlag)
 	} else if cfg := settings.Read(); cfg.ServerBasePath != nil && *cfg.ServerBasePath != "" {
-		basePath = cleanBasePath(*cfg.ServerBasePath)
+		basePath = httpx.CleanBasePath(*cfg.ServerBasePath)
 	}
 
 	ln, addr, err := listen(host, port)
@@ -616,7 +617,7 @@ func viewerURL(addr, initialFile string, initialLine int, basePath ...string) st
 	u := url.URL{Scheme: "http", Host: addr}
 	bp := "/"
 	if len(basePath) > 0 && basePath[0] != "" {
-		bp = cleanBasePath(basePath[0])
+		bp = httpx.CleanBasePath(basePath[0])
 	}
 	if bp != "/" {
 		u.Path = bp

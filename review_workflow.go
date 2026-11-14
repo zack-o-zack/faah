@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"faah/internal/git"
+	"faah/internal/httpx"
 	"faah/internal/render"
 )
 
@@ -577,34 +578,34 @@ func (m *ReviewWorkflowManager) subscribe() (chan reviewWorkflowEvent, func()) {
 
 func (s *Server) handleReviewWorkflowConfig(w http.ResponseWriter, r *http.Request) {
 	if s.reviewFlow == nil {
-		fail(w, http.StatusServiceUnavailable, "review workflow unavailable")
+		httpx.Fail(w, http.StatusServiceUnavailable, "review workflow unavailable")
 		return
 	}
 	if r.Method == http.MethodGet {
-		writeJSON(w, s.reviewFlow.getConfig())
+		httpx.WriteJSON(w, s.reviewFlow.getConfig())
 		return
 	}
 	if r.Method == http.MethodPost {
-		if !localPost(w, r) {
+		if !httpx.LocalPost(w, r) {
 			return
 		}
 		var cfg ReviewWorkflowConfig
 		if err := json.NewDecoder(r.Body).Decode(&cfg); err != nil {
-			fail(w, http.StatusBadRequest, "invalid json: "+err.Error())
+			httpx.Fail(w, http.StatusBadRequest, "invalid json: "+err.Error())
 			return
 		}
 		if err := s.reviewFlow.saveConfig(cfg); err != nil {
-			fail(w, http.StatusBadRequest, err.Error())
+			httpx.Fail(w, http.StatusBadRequest, err.Error())
 			return
 		}
-		writeJSON(w, map[string]any{"ok": true, "config": s.reviewFlow.getConfig()})
+		httpx.WriteJSON(w, map[string]any{"ok": true, "config": s.reviewFlow.getConfig()})
 		return
 	}
-	fail(w, http.StatusMethodNotAllowed, "method not allowed")
+	httpx.Fail(w, http.StatusMethodNotAllowed, "method not allowed")
 }
 
 func (s *Server) handleReviewWorkflowRun(w http.ResponseWriter, r *http.Request) {
-	if !localPost(w, r) || s.reviewFlow == nil {
+	if !httpx.LocalPost(w, r) || s.reviewFlow == nil {
 		return
 	}
 	var body struct {
@@ -616,30 +617,30 @@ func (s *Server) handleReviewWorkflowRun(w http.ResponseWriter, r *http.Request)
 	}
 	run, err := s.reviewFlow.Run(body.WorkflowID, body.StageIndex)
 	if err != nil {
-		fail(w, http.StatusBadRequest, err.Error())
+		httpx.Fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	writeJSON(w, map[string]any{"ok": true, "run": run})
+	httpx.WriteJSON(w, map[string]any{"ok": true, "run": run})
 }
 
 func (s *Server) handleReviewWorkflowStop(w http.ResponseWriter, r *http.Request) {
-	if !localPost(w, r) || s.reviewFlow == nil {
+	if !httpx.LocalPost(w, r) || s.reviewFlow == nil {
 		return
 	}
 	run, err := s.reviewFlow.Stop()
 	if err != nil {
-		fail(w, http.StatusBadRequest, err.Error())
+		httpx.Fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	writeJSON(w, map[string]any{"ok": true, "run": run})
+	httpx.WriteJSON(w, map[string]any{"ok": true, "run": run})
 }
 
 func (s *Server) handleReviewWorkflowStatus(w http.ResponseWriter, r *http.Request) {
 	if s.reviewFlow == nil {
-		fail(w, http.StatusServiceUnavailable, "review workflow unavailable")
+		httpx.Fail(w, http.StatusServiceUnavailable, "review workflow unavailable")
 		return
 	}
-	writeJSON(w, map[string]any{
+	httpx.WriteJSON(w, map[string]any{
 		"run":    s.reviewFlow.getRun(),
 		"config": s.reviewFlow.getConfig(),
 	})
@@ -647,7 +648,7 @@ func (s *Server) handleReviewWorkflowStatus(w http.ResponseWriter, r *http.Reque
 
 func (s *Server) handleReviewWorkflowStream(w http.ResponseWriter, r *http.Request) {
 	if s.reviewFlow == nil {
-		fail(w, http.StatusServiceUnavailable, "review workflow unavailable")
+		httpx.Fail(w, http.StatusServiceUnavailable, "review workflow unavailable")
 		return
 	}
 	flusher, ok := w.(http.Flusher)
@@ -937,7 +938,7 @@ func extractCodeUnderstanding(rel string, hunks []render.DiffHunk) *ReviewUnders
 // handleReviewWalkthrough delivers file diffs and extracted understanding for the Review Walkthrough.
 func (s *Server) handleReviewWalkthrough(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		fail(w, http.StatusMethodNotAllowed, "method not allowed")
+		httpx.Fail(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
 
@@ -1036,7 +1037,7 @@ func (s *Server) handleReviewWalkthrough(w http.ResponseWriter, r *http.Request)
 		})
 	}
 
-	writeJSON(w, ReviewWalkthroughResponse{
+	httpx.WriteJSON(w, ReviewWalkthroughResponse{
 		Files:          walkthroughFiles,
 		TotalFiles:     len(walkthroughFiles),
 		TotalAdditions: totalAdditions,

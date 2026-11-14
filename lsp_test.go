@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"faah/internal/httpx"
 	lsppkg "faah/internal/lsp"
 	"faah/internal/workspace"
 )
@@ -57,7 +58,7 @@ func TestLocalPost(t *testing.T) {
 		if c.origin != "" {
 			r.Header.Set("Origin", c.origin)
 		}
-		if got := localPost(httptest.NewRecorder(), r); got != c.want {
+		if got := httpx.LocalPost(httptest.NewRecorder(), r); got != c.want {
 			t.Errorf("%s: localPost = %v, want %v", c.name, got, c.want)
 		}
 	}

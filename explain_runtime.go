@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"faah/internal/explain"
+	"faah/internal/httpx"
 	"faah/internal/settings"
 	"faah/internal/ui"
 )
@@ -173,23 +174,23 @@ func (s *Server) preparedExplain(ctx context.Context, key string) (explain.Evide
 // when a selection settles, so the evidence is ready by the time the reader
 // asks. It never waits on the language server.
 func (s *Server) handleExplainPrepare(w http.ResponseWriter, r *http.Request) {
-	if !localPost(w, r) || !s.threadsOrFail(w) {
+	if !httpx.LocalPost(w, r) || !s.threadsOrFail(w) {
 		return
 	}
 	if cfg := settings.Read(); cfg.ExplainPrefetch != nil && !*cfg.ExplainPrefetch {
-		writeJSON(w, map[string]any{"prepared": false})
+		httpx.WriteJSON(w, map[string]any{"prepared": false})
 		return
 	}
 	var req explain.Request
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		fail(w, 400, "bad request")
+		httpx.Fail(w, 400, "bad request")
 		return
 	}
 	target, lines, key, _, err := s.explainTarget(&req)
 	if err != nil { // nothing to prepare; Explain itself reports why
-		writeJSON(w, map[string]any{"prepared": false})
+		httpx.WriteJSON(w, map[string]any{"prepared": false})
 		return
 	}
 	s.prepareExplain(key, target, lines)
-	writeJSON(w, map[string]any{"prepared": true})
+	httpx.WriteJSON(w, map[string]any{"prepared": true})
 }
