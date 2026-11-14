@@ -6,6 +6,7 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/json"
+	"faah/internal/session"
 	"io"
 	"net"
 	"net/http"
@@ -1340,7 +1341,7 @@ func TestSessionAPIEndpoints(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("GET /rev-999/api/session failed: code %d, body %s", rec.Code, rec.Body.String())
 	}
-	var initResp WorkspaceSession
+	var initResp session.Workspace
 	if err := json.Unmarshal(rec.Body.Bytes(), &initResp); err != nil {
 		t.Fatalf("unmarshal session failed: %v", err)
 	}
@@ -1482,7 +1483,7 @@ func TestPRDraftsSurviveNewCheckoutRoot(t *testing.T) {
 func TestPRDraftsMigrateFromBasePathFile(t *testing.T) {
 	t.Setenv("XDG_STATE_HOME", t.TempDir())
 	root := t.TempDir()
-	newSessionManager("/w/abc/", root).Update(func(ws *WorkspaceSession) {
+	session.New("/w/abc/", root).Update(func(ws *session.Workspace) {
 		ws.Drafts = []forge.DraftComment{{ID: 3, Path: "a.go", Line: 1, Side: "RIGHT", Body: "old"}}
 	})
 
@@ -1492,10 +1493,10 @@ func TestPRDraftsMigrateFromBasePathFile(t *testing.T) {
 	if len(pr.comments) != 1 || pr.comments[0].Body != "old" || pr.nextID != 3 {
 		t.Fatalf("expected the migrated draft, got %+v (nextID %d)", pr.comments, pr.nextID)
 	}
-	if got := newPRSessionManager(pt).Get().Drafts; len(got) != 1 {
+	if got := session.NewPR(pt).Get().Drafts; len(got) != 1 {
 		t.Fatalf("expected the draft in the PR session file, got %+v", got)
 	}
-	if got := newSessionManager("/w/abc/", root).Get().Drafts; len(got) != 0 {
+	if got := session.New("/w/abc/", root).Get().Drafts; len(got) != 0 {
 		t.Fatalf("expected the base-path file's drafts cleared, got %+v", got)
 	}
 }

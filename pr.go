@@ -1,6 +1,7 @@
 package main
 
 import (
+"faah/internal/session"
 	"context"
 	"encoding/json"
 	"errors"
@@ -772,7 +773,7 @@ func (s *Server) handlePRComments(w http.ResponseWriter, r *http.Request) {
 		c := forge.DraftComment{ID: p.nextID, Path: body.Path, Line: body.Line, Side: side, Body: strings.TrimSpace(body.Body)}
 		p.comments = append(p.comments, c)
 		if s.session != nil {
-			s.session.Update(func(ws *WorkspaceSession) { ws.Drafts = p.comments })
+			s.session.Update(func(ws *session.Workspace) { ws.Drafts = p.comments })
 		}
 		p.mu.Unlock()
 		writeJSON(w, c)
@@ -799,7 +800,7 @@ func (s *Server) handlePRCommentDelete(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if s.session != nil {
-		s.session.Update(func(ws *WorkspaceSession) { ws.Drafts = p.comments })
+		s.session.Update(func(ws *session.Workspace) { ws.Drafts = p.comments })
 	}
 	writeJSON(w, map[string]any{"ok": true})
 }
@@ -846,7 +847,7 @@ func (s *Server) handlePRSubmit(w http.ResponseWriter, r *http.Request) {
 	p.mu.Lock()
 	p.comments = nil
 	if s.session != nil {
-		s.session.Update(func(ws *WorkspaceSession) { ws.Drafts = nil })
+		s.session.Update(func(ws *session.Workspace) { ws.Drafts = nil })
 	}
 	p.mu.Unlock()
 	writeJSON(w, map[string]any{"ok": true})

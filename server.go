@@ -5,12 +5,11 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"crypto/sha256"
 	"embed"
 	"encoding/csv"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"faah/internal/session"
 	"fmt"
 	"io"
 	"io/fs"
@@ -92,7 +91,7 @@ type Server struct {
 	gitWatcher *workspace.Watcher
 	mux        *http.ServeMux
 	basePath   string
-	session    *sessionManager
+	session    *session.Manager
 
 	workbenchURL string // the workbench's base path, when this faah is one of its workspaces
 
@@ -258,7 +257,7 @@ func NewServer(ix *workspace.Index, lsp *lsppkg.Manager, basePaths ...string) *S
 		bp = cleanBasePath(basePaths[0])
 	}
 	s := &Server{ix: ix, lsp: lsp, diffBase: "HEAD", basePath: bp, mux: http.NewServeMux(), streamsDone: make(chan struct{})}
-	s.session = newSessionManager(s.basePath, ix.Root())
+	s.session = session.New(s.basePath, ix.Root())
 	s.gitWatcher = workspace.NewWatcher(ix)
 	s.gitWatcher.Start(context.Background())
 	s.reviewFlow = newReviewWorkflowManager(s)
@@ -660,11 +659,11 @@ func (s *Server) SetPR(p *prSession) {
 		if p.target.Owner != "" && p.target.Repo != "" && p.target.Number > 0 {
 			// Drafts are keyed on the PR, not the base path. Carry over any
 			// drafts an older faah saved under the base-path file.
-			prs := newPRSessionManager(p.target)
+			prs := session.NewPR(p.target)
 			if old := s.session; old != nil && len(prs.Get().Drafts) == 0 && len(old.Get().Drafts) > 0 {
 				drafts := old.Get().Drafts
-				prs.Update(func(ws *WorkspaceSession) { ws.Drafts = drafts })
-				old.Update(func(ws *WorkspaceSession) { ws.Drafts = nil })
+				prs.Update(func(ws *session.Workspace) { ws.Drafts = drafts })
+				old.Update(func(ws *session.Workspace) { ws.Drafts = nil })
 			}
 			s.session = prs
 		}
@@ -2960,139 +2959,6 @@ func (s *Server) lspBrief(rel string) map[string]any {
 
 // ---------------------------------------------------------------- Workspace Session
 
-// SessionTab represents an open editor tab pointing to a file path. Ref, when
-// set, is the commit SHA the tab is pinned to -- a tab opened from the
-// Unpushed sidebar section, showing that commit's own diff rather than the
-// working tree's. A commit that no longer exists simply restores as an
-// ordinary tab.
-type SessionTab struct {
-	Path string `json:"path"`
-	Ref  string `json:"ref,omitempty"`
-}
-
-// WorkspaceSession stores the persistent UI state for a workspace:
-// the list of open tabs, the currently active tab index, expanded directory tree paths,
-// and any unsaved PR review comment drafts.
-type WorkspaceSession struct {
-	Tabs     []SessionTab         `json:"tabs"`
-	Active   int                  `json:"active"`
-	OpenDirs []string             `json:"openDirs"`
-	Drafts   []forge.DraftComment `json:"drafts,omitempty"`
-}
-
-// sessionDir returns the directory holding session files: XDG_STATE_HOME/faah/sessions
-// if available, falling back to ~/.faah/sessions or os.TempDir()/faah-sessions.
-func sessionDir() string {
-	if xdg := os.Getenv("XDG_STATE_HOME"); xdg != "" {
-		return filepath.Join(xdg, "faah", "sessions")
-	}
-	if home, err := os.UserHomeDir(); err == nil && home != "" {
-		return filepath.Join(home, ".faah", "sessions")
-	}
-	return filepath.Join(os.TempDir(), "faah-sessions")
-}
-
-// sessionFilePath returns the path to the JSON file where workspace session state is saved.
-// The file name is derived from the base path or an 8-byte SHA-256 hash of the cleaned
-// workspace root path.
-func sessionFilePath(basePath, root string) string {
-	key := ""
-	if basePath != "" && basePath != "/" {
-		clean := strings.Trim(basePath, "/")
-		clean = strings.ReplaceAll(clean, "/", "_")
-		key = clean
-	} else {
-		h := sha256.Sum256([]byte(filepath.Clean(root)))
-		key = hex.EncodeToString(h[:8])
-	}
-	return filepath.Join(sessionDir(), key+".json")
-}
-
-// prSessionFilePath returns the session file for a pull request, keyed on the PR
-// itself (the workbench item ID) rather than the base path or checkout root. Every
-// opening checks the PR out into a new temporary directory, so a root-keyed file
-// would never be found again.
-func prSessionFilePath(pt forge.PRTarget) string {
-	return filepath.Join(sessionDir(), "pr-"+wbPRItem(pt).ID+".json")
-}
-
-// newPRSessionManager opens the session file for a pull request.
-func newPRSessionManager(pt forge.PRTarget) *sessionManager {
-	sm := &sessionManager{
-		path: prSessionFilePath(pt),
-		data: WorkspaceSession{Tabs: []SessionTab{}, OpenDirs: []string{}},
-	}
-	sm.load()
-	return sm
-}
-
-// sessionManager coordinates concurrent thread-safe access and persistence
-// for workspace session data on disk.
-type sessionManager struct {
-	mu   sync.Mutex
-	path string
-	data WorkspaceSession
-}
-
-// newSessionManager initializes a session manager for the given workspace,
-// loading any existing session JSON file from disk.
-func newSessionManager(basePath, root string) *sessionManager {
-	p := sessionFilePath(basePath, root)
-	sm := &sessionManager{
-		path: p,
-		data: WorkspaceSession{
-			Tabs:     []SessionTab{},
-			OpenDirs: []string{},
-		},
-	}
-	sm.load()
-	return sm
-}
-
-// load reads the session state from disk into memory, initializing empty slices if nil.
-func (sm *sessionManager) load() {
-	if sm.path == "" {
-		return
-	}
-	data, err := os.ReadFile(sm.path)
-	if err != nil {
-		return
-	}
-	var s WorkspaceSession
-	if err := json.Unmarshal(data, &s); err == nil {
-		if s.Tabs == nil {
-			s.Tabs = []SessionTab{}
-		}
-		if s.OpenDirs == nil {
-			s.OpenDirs = []string{}
-		}
-		sm.data = s
-	}
-}
-
-// Get returns a snapshot of the current workspace session.
-func (sm *sessionManager) Get() WorkspaceSession {
-	sm.mu.Lock()
-	defer sm.mu.Unlock()
-	return sm.data
-}
-
-// Update executes a mutation function on the session state under mutex protection
-// and persists the resulting state formatted as JSON to disk.
-func (sm *sessionManager) Update(fn func(*WorkspaceSession)) WorkspaceSession {
-	sm.mu.Lock()
-	defer sm.mu.Unlock()
-	fn(&sm.data)
-	if sm.path != "" {
-		if err := os.MkdirAll(filepath.Dir(sm.path), 0o755); err == nil {
-			if b, err := json.MarshalIndent(sm.data, "", "  "); err == nil {
-				_ = os.WriteFile(sm.path, append(b, '\n'), 0o644)
-			}
-		}
-	}
-	return sm.data
-}
-
 // handleSession handles GET and POST requests for /api/session.
 // GET returns the current workspace session state.
 // POST updates tab list, active tab, and open directories, saving changes to disk.
@@ -3105,15 +2971,15 @@ func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		var payload struct {
-			Tabs     *[]SessionTab `json:"tabs"`
-			Active   *int          `json:"active"`
-			OpenDirs *[]string     `json:"openDirs"`
+			Tabs     *[]session.Tab `json:"tabs"`
+			Active   *int           `json:"active"`
+			OpenDirs *[]string      `json:"openDirs"`
 		}
 		if err := json.NewDecoder(io.LimitReader(r.Body, 1<<20)).Decode(&payload); err != nil {
 			fail(w, http.StatusBadRequest, "invalid JSON: "+err.Error())
 			return
 		}
-		updated := s.session.Update(func(ws *WorkspaceSession) {
+		updated := s.session.Update(func(ws *session.Workspace) {
 			if payload.Tabs != nil {
 				ws.Tabs = *payload.Tabs
 			}
