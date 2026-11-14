@@ -110,7 +110,7 @@ test('legacy feeds share one union subscription, deduplicate ids, filter events 
         lost++;
       },
     });
-    expect(third).toEqual(second);
+    expect(third.join('')).toEqual(second.join(''));
     await Bun.sleep(20);
     expect(f.requests.length).toBe(1);
     const reviews: string[] = [];
@@ -215,7 +215,17 @@ test('thread replay stops at 256 frames and obtains a fresh snapshot after overf
     for (let i = 0; i < 255; i++) f.emit('thread:delta', { id: 'a', data: { i } });
     await until(() => first.length === 256);
     const two = feeds.subscribe(new URLSearchParams('thread=a'), sink(second));
-    expect(second.length).toBe(256);
+    expect(second.length).toBe(1);
+    expect(second.join('').split('event:').length - 1).toBe(256);
+    const response = eventResponse(new AbortController().signal, async (sink) =>
+      feeds.subscribe(new URLSearchParams('thread=a'), sink),
+    );
+    if (!response.body) throw new Error('missing replay body');
+    const reader = response.body.getReader();
+    const replay = await reader.read();
+    expect(replay.done).toBe(false);
+    expect(new TextDecoder().decode(replay.value).split('event:').length - 1).toBe(256);
+    await reader.cancel();
     two();
     for (let i = 0; i < 50; i++) f.emit('thread:delta', { id: 'a', data: { i } });
     await until(() => first.length === 306);

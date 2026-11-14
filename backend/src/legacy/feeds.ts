@@ -56,14 +56,18 @@ export class LegacyFeeds {
     if (this.closed || !client.keys.size) return () => undefined;
     this.clients.add(client);
     let replayed = true;
+    const replay: string[] = [];
     for (const key of client.keys) {
       const cached = this.cache.get(key);
       if (!cached?.valid) {
         replayed = false;
         continue;
       }
-      for (const frame of cached.frames) if (!sink.send(frame)) break;
+      replay.push(...cached.frames);
     }
+    // Go writes initial feed snapshots together. Replay as one bounded batch so
+    // a healthy reconnect does not overflow fan-in before its first body pull.
+    if (replay.length) sink.send(replay.join(''));
     this.reconcile(!replayed);
     return () => {
       this.clients.delete(client);
