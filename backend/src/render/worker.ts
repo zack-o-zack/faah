@@ -1,8 +1,13 @@
 import { engine } from './engine.ts';
 import { record, number, string } from '../decode.ts';
 let ready: ReturnType<typeof engine> | undefined;
+let warmGeneration = 0;
 self.onmessage = (event: MessageEvent<unknown>) => {
   const value = record(event.data);
+  if (value.type === 'cancel-warm') {
+    warmGeneration++;
+    return;
+  }
   if (value.type === 'init') {
     const assets = Object.fromEntries(
       Object.entries(record(value.assets)).map(([id, v]) => [id, string(v)]),
@@ -26,7 +31,12 @@ self.onmessage = (event: MessageEvent<unknown>) => {
     const highlight = await ready;
     if (value.type === 'warm') {
       if (!Array.isArray(value.langs)) throw new Error('invalid warm languages');
-      await highlight.warm(value.langs.map((v) => string(v)));
+      const generation = warmGeneration;
+      for (const lang of value.langs) {
+        if (generation !== warmGeneration) break;
+        await highlight.warm([string(lang)]);
+        await Bun.sleep(0);
+      }
       return [];
     }
     return highlight(string(value.source), string(value.lang), number(value.want));

@@ -1,6 +1,6 @@
 import grammars from '../src/render/grammars.json';
 import languageVectors from './render-languages.json';
-import { test, expect } from 'bun:test';
+import { test, expect, spyOn } from 'bun:test';
 import { mkdtemp, rm, writeFile, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -241,6 +241,48 @@ test('deferred cache writes drain at close and invalidation drops queued stale d
     expect(disk.get(fresh, 'a.go')).toEqual(['fresh']);
   } finally {
     disk.close();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('closing immediately cancels warm-up silently and cannot restart a closed pool', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'faah-render-cancel-'));
+  const service = new RenderService(new RenderDisk(join(dir, 'cache.sqlite')));
+  const stderr = spyOn(process.stderr, 'write').mockImplementation(() => true);
+  try {
+    const warm = service.warm(['main.go', 'app.py', 'index.ts']);
+    const close = service.close();
+    await expect(warm).resolves.toBeUndefined();
+    await close;
+    await expect(service.warm(['after.go'])).resolves.toBeUndefined();
+    await service.close();
+    await Bun.sleep(10);
+    expect(stderr).not.toHaveBeenCalled();
+    expect(() => service.pool.prepare()).toThrow('render cancelled');
+  } finally {
+    stderr.mockRestore();
+    await service.close();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('shutdown settles a scheduled exact pass and drains L2 writes without logging', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'faah-render-exact-cancel-'));
+  const service = new RenderService(new RenderDisk(join(dir, 'cache.sqlite')));
+  const stderr = spyOn(process.stderr, 'write').mockImplementation(() => true);
+  try {
+    const file = join(dir, 'large.go');
+    await writeFile(file, 'package main\n' + '// line\n'.repeat(2200));
+    const doc = await service.open(file, 'large.go');
+    await doc.lines(0, 10);
+    await service.close();
+    await expect(doc.settled()).resolves.toBeUndefined();
+    service.invalidate(file);
+    await Bun.sleep(10);
+    expect(stderr).not.toHaveBeenCalled();
+  } finally {
+    stderr.mockRestore();
+    await service.close();
     await rm(dir, { recursive: true, force: true });
   }
 });

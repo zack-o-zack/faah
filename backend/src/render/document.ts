@@ -1,6 +1,7 @@
 import { goString } from './text.ts';
 import { language, filenameLanguage } from './language.ts';
 import { plain, visualWidth } from './html.ts';
+import { RenderCancelled } from './cancel.ts';
 export const chunkLines = 1000,
   windowBytes = 512 << 10,
   backgroundBytes = 2 << 20;
@@ -84,7 +85,9 @@ export class Document {
           setTimeout(() => {
             void this.fullPass().then(resolve, reject);
           }, 0),
-        );
+        ).catch((error: unknown) => {
+          if (!(error instanceof RenderCancelled)) throw error;
+        });
         this.observeBackground(this.background);
         void this.background.catch((error) =>
           process.stderr.write('faah render full pass: ' + String(error) + '\n'),

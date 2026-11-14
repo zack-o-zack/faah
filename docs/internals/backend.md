@@ -155,7 +155,11 @@ plain text. Multi-chunk sources at most 2 MiB receive an asynchronous full pass;
 larger files remain window-only. Requests share opening, chunk and render work.
 The `exact` and `refine` flags retain Go's behavior, including oversized
 single-chunk files that cannot become exact. Background work remains tracked
-through L1 eviction and shutdown.
+through L1 eviction and shutdown. Warm-ups are tracked too. Shutdown cancels
+warm-up requests, settles exact passes and drains queued L2 writes before
+terminating Workers. Closing a render pool is permanent; cancellation does not
+log to stderr or escape a background task, preserving the workbench child exit
+diagnostic.
 
 The L1 LRU charges source bytes, line tables and rendered growth against
 64 MiB. Every 10 seconds, after 15 seconds without a non-stream/non-metrics

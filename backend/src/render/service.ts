@@ -6,6 +6,7 @@ import { RenderDisk } from './disk.ts';
 import { LRU } from './lru.ts';
 import { RenderWrites } from './writes.ts';
 import { filenameLanguage } from './language.ts';
+import { RenderCancelled } from './cancel.ts';
 export class RenderService {
   readonly cache = new LRU<Document>();
   readonly pool = new RenderPool();
@@ -16,12 +17,14 @@ export class RenderService {
   private rendering = new Map<string, Promise<string[]>>();
   private revisions = new Map<string, number>();
   private closed = false;
+  private closing: Promise<void> | undefined;
   private backgrounds = new Set<Promise<void>>();
   constructor(disk?: RenderDisk) {
     this.disk = disk ?? new RenderDisk();
     this.writes = new RenderWrites(this.disk.path, this.disk.budget);
   }
   async highlight(source: string, lang: string, want: number, path = ''): Promise<string[]> {
+    if (this.closed) throw new RenderCancelled();
     const key = this.disk.key(source, lang, want),
       revision = this.revisions.get(path) ?? 0;
     const memo = this.memo.get(key);
@@ -38,6 +41,7 @@ export class RenderService {
       this.rendering.set(key, task);
     }
     const lines = await task;
+    if (this.closed) throw new RenderCancelled();
     if (!this.closed && (this.revisions.get(path) ?? 0) === revision)
       this.writes.put(key, path, lines);
     this.remember(key, lines);
@@ -47,7 +51,19 @@ export class RenderService {
     const size = sizeOfLines(lines);
     if (size <= this.memo.budget) this.memo.put(key, lines, size);
   }
-  async warm(paths: readonly string[]): Promise<void> {
+  warm(paths: readonly string[]): Promise<void> {
+    if (this.closed) return Promise.resolve();
+    const task = this.warmLanguages(paths).catch((error: unknown) => {
+      if (!this.closed && !(error instanceof RenderCancelled)) throw error;
+    });
+    this.observe(task);
+    return task;
+  }
+  private observe(task: Promise<void>): void {
+    this.backgrounds.add(task);
+    void task.finally(() => this.backgrounds.delete(task)).catch(() => undefined);
+  }
+  private async warmLanguages(paths: readonly string[]): Promise<void> {
     const counts = new Map<string, number>(),
       names = new Map<string, string | undefined>();
     for (const path of paths) {
@@ -64,6 +80,7 @@ export class RenderService {
     );
   }
   async open(abs: string, rel: string): Promise<Document> {
+    if (this.closed) throw new RenderCancelled();
     const info = await stat(abs, { bigint: true });
     if (info.isDirectory()) throw new Error('is a directory');
     if (info.size > 64n * 1024n * 1024n) throw new Error(`file too large (${info.size} bytes)`);
@@ -81,10 +98,7 @@ export class RenderService {
           rel,
           (source, lang, want) => this.highlight(source, lang, want, abs),
           (delta) => this.cache.grow(key, delta),
-          (task) => {
-            this.backgrounds.add(task);
-            void task.finally(() => this.backgrounds.delete(task)).catch(() => undefined);
-          },
+          (task) => this.observe(task),
         );
         if (!this.closed && (this.revisions.get(abs) ?? 0) === revision)
           this.cache.put(key, doc, doc.initialBytes);
@@ -95,6 +109,7 @@ export class RenderService {
     return task;
   }
   invalidate(abs: string): void {
+    if (this.closed) return;
     this.revisions.set(abs, (this.revisions.get(abs) ?? 0) + 1);
     this.cache.remove(abs);
     this.disk.invalidate(abs);
@@ -106,8 +121,12 @@ export class RenderService {
     this.pool.scavenge();
     Bun.gc(true);
   }
-  async close(): Promise<void> {
+  close(): Promise<void> {
+    return (this.closing ??= this.finish());
+  }
+  private async finish(): Promise<void> {
     this.closed = true;
+    this.pool.cancelWarm();
     await Promise.allSettled(this.opening.values());
     await Promise.allSettled(this.backgrounds);
     await Promise.allSettled(this.rendering.values());
