@@ -95,8 +95,10 @@ export class GitWorkspace {
 
   ensure(): Promise<GitPayload> {
     return this.queue(async () => {
-      // Without filesystem observation, each read must obtain a fresh snapshot.
-      if (this.fallback) this.invalidate(true);
+      // Active fallback streams already poll. Reads share that snapshot instead
+      // of repeating repository-wide Git work for every concurrent request.
+      // Without subscribers there is no poller, so reads still refresh on demand.
+      if (this.fallback && !this.clients.size) this.invalidate(true);
       if (!this.payload || this.dirty || this.metaDirty || this.lastReady !== this.index.ready)
         return (await this.update()).payload;
       return this.payload;

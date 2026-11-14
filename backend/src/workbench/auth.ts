@@ -1,4 +1,5 @@
 import { Settings } from '../settings/service.ts';
+import { childEnvironment } from '../cli/environment.ts';
 import type { PR } from '../cli/target.ts';
 
 export interface CloneAuth {
@@ -16,7 +17,7 @@ function host(text: string, fallback: string): string {
 }
 
 function cli(args: string[]): string {
-  const result = Bun.spawnSync(args, { stderr: 'ignore', timeout: 5000 });
+  const result = Bun.spawnSync(args, { env: childEnvironment(), stderr: 'ignore', timeout: 5000 });
   return result.exitCode === 0 ? result.stdout.toString().trim() : '';
 }
 

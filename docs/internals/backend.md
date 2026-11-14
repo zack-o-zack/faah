@@ -656,3 +656,32 @@ AIslop reports zero new findings with no baseline changes. Source under Go,
 `web/`, `desktop/`, contract goldens and `bench/results/` is unchanged. Benchmark
 numbers remain external artifacts, since this is an early signal during the
 migration rather than a new baseline.
+
+### Headless Linux child processes
+
+`cli/environment.ts` prepares the environment for legacy children and forge CLI
+lookups. On headless Linux without an explicit D-Bus address it points keyring
+clients at the existing user runtime bus. If the socket is absent, lookup fails
+without auto-launching a session daemon. Explicit bus addresses and graphical
+sessions keep their discovery behavior; settings, environment and CLI file
+credentials remain available.
+
+Codespace tracing found `/api/meta` → legacy `forgeMeta` → `gh auth token` →
+`dbus-launch` → an orphaned `dbus-daemon --session`. Each daemon opens an inotify
+instance. Thousands of lookups can therefore exhaust the per-user instance limit
+(`max_user_instances=1024`) even with plenty of watches (`max_user_watches=524288`).
+The original exhausted process state was cleared by a Codespace restart; the
+causal chain from instance exhaustion to the earlier watcher hang is inferred
+from those limits and traces, rather than reproduced by exhausting the host again.
+Thirty metadata requests with the child environment override produced 34 `gh`
+executions and zero D-Bus launches in strace.
+
+On the restarted Codespace the unchanged `54e2f1d` binary's warm tree p50 was
+0.385 ms on Kubernetes and 0.404 ms on Flask; README windows were 0.648 ms and
+0.595 ms (20 sequential requests, Python HTTP client, no load). This isolates the
+large tree/window regression to the failed-watcher state, rather than an inherent
+Linux request cost. These are diagnostic samples, not replacement benchmarks.
+When native watching fails, active streams now share their poller's Git snapshot;
+ordinary reads do not each enqueue another repository-wide status/index overlay.
+With no stream subscriber, reads still refresh on demand. Explicit refreshes and
+mutation invalidations remain authoritative.

@@ -1,4 +1,4 @@
-import { test, expect } from 'bun:test';
+import { test, expect, spyOn } from 'bun:test';
 import { join } from 'node:path';
 import { rm } from 'node:fs/promises';
 import { gitFixture } from './git-fixture.ts';
@@ -278,6 +278,25 @@ test('unavailable watcher polls active subscribers and refreshes on demand witho
     await context.close();
   }
 }, 10000);
+
+test('fallback stream readers reuse snapshots and explicit refresh still observes edits', async () => {
+  const context = await setup();
+  const runs = spyOn(context.f.processes, 'run');
+  try {
+    context.git.watching(false);
+    const stop = await context.git.subscribe(() => undefined);
+    runs.mockClear();
+    await Promise.all(Array.from({ length: 30 }, () => context.git.ensure()));
+    expect(runs).not.toHaveBeenCalled();
+    await context.f.write('a.txt', 'explicit refresh\n');
+    expect((await context.git.refresh()).statuses).toEqual({ 'a.txt': 'M' });
+    expect(runs).toHaveBeenCalled();
+    stop();
+  } finally {
+    runs.mockRestore();
+    await context.close();
+  }
+});
 
 test('subscription before index readiness publishes ready status and rebuild invalidation stays authoritative', async () => {
   const context = await setup();
