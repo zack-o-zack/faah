@@ -29,7 +29,10 @@ class Shard {
         this.fail(error);
       }
     };
-    this.worker.onerror = (error) => this.fail(error);
+    this.worker.onerror = (error) => {
+      error.preventDefault();
+      this.fail(this.closed ? new RenderCancelled() : error);
+    };
     this.worker.postMessage({ type: 'init', assets: grammarAssets, groups: grammarGroups });
   }
   private fail(error: unknown): void {

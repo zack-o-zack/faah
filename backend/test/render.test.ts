@@ -286,3 +286,38 @@ test('shutdown settles a scheduled exact pass and drains L2 writes without loggi
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test('a Worker failure arriving during shutdown is silent cancellation for the exact pass', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'faah-render-worker-cancel-'));
+  const service = new RenderService(new RenderDisk(join(dir, 'cache.sqlite')));
+  const stderr = spyOn(process.stderr, 'write').mockImplementation(() => true);
+  let started = () => {},
+    fail = (_error: Error) => {};
+  const ready = new Promise<void>((resolve) => {
+    started = resolve;
+  });
+  const rendering = spyOn(service.pool, 'render').mockImplementation((source, _lang, want) => {
+    if (want <= 1000) return Promise.resolve(plain(source, want));
+    return new Promise<string[]>((_resolve, reject) => {
+      fail = reject;
+      started();
+    });
+  });
+  try {
+    const file = join(dir, 'large.go');
+    await writeFile(file, '// line\n'.repeat(2200));
+    const doc = await service.open(file, 'large.go');
+    await doc.lines(0, 10);
+    await ready;
+    const close = service.close();
+    fail(new Error('Worker stopped during shutdown'));
+    await close;
+    await expect(doc.settled()).resolves.toBeUndefined();
+    expect(stderr).not.toHaveBeenCalled();
+  } finally {
+    rendering.mockRestore();
+    stderr.mockRestore();
+    await service.close();
+    await rm(dir, { recursive: true, force: true });
+  }
+});

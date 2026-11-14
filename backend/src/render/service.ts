@@ -40,7 +40,13 @@ export class RenderService {
       task = this.pool.render(source, lang, want).finally(() => this.rendering.delete(key));
       this.rendering.set(key, task);
     }
-    const lines = await task;
+    let lines: string[];
+    try {
+      lines = await task;
+    } catch (error) {
+      if (this.closed) throw new RenderCancelled();
+      throw error;
+    }
     if (this.closed) throw new RenderCancelled();
     if (!this.closed && (this.revisions.get(path) ?? 0) === revision)
       this.writes.put(key, path, lines);

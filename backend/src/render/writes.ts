@@ -60,6 +60,7 @@ export class RenderWrites {
         else call?.resolve();
       };
       this.worker.onerror = (error) => {
+        error.preventDefault();
         this.failure = error;
         for (const p of this.pending.values())
           p.reject(this.closed ? new RenderCancelled() : error);
