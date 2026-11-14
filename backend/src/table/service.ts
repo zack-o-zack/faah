@@ -21,18 +21,23 @@ export function sniffDelimiter(head: string, extension: string): string {
     }
     line = line.slice(i + 1);
   }
-  const counts = new Map<string, number>();
+  const separators = [',', '\t', ';', '|'];
+  const counts = [0, 0, 0, 0];
   let quoted = false;
-  for (const c of line) {
-    if (c === '"') quoted = !quoted;
-    else if (!quoted && [',', '\t', ';', '|'].includes(c)) counts.set(c, (counts.get(c) ?? 0) + 1);
+  for (let i = 0; i < line.length; i++) {
+    const code = line.charCodeAt(i);
+    if (code === 34) quoted = !quoted;
+    else if (!quoted) {
+      const index = code === 44 ? 0 : code === 9 ? 1 : code === 59 ? 2 : code === 124 ? 3 : -1;
+      if (index >= 0) counts[index] = (counts[index] ?? 0) + 1;
+    }
   }
   let best = extension,
-    n = counts.get(extension) ?? 0;
-  for (const c of [',', '\t', ';', '|'])
-    if ((counts.get(c) ?? 0) > n) {
-      best = c;
-      n = counts.get(c) ?? 0;
+    n = counts[separators.indexOf(extension)] ?? 0;
+  for (let i = 0; i < separators.length; i++)
+    if ((counts[i] ?? 0) > n) {
+      best = separators[i] ?? extension;
+      n = counts[i] ?? 0;
     }
   return best;
 }
@@ -99,16 +104,14 @@ export class CSVReader {
           return { line, cells };
         }
       } else {
-        while (this.offset < s.length) {
-          const c = s[this.offset];
-          if (c === this.separator || c === '\n') break;
-          cell += c;
-          this.offset++;
-        }
-        cells.push(cell);
-        const end = s[this.offset++];
-        if (end === this.separator) continue;
-        if (end === '\n') this.line++;
+        const start = this.offset;
+        let end = start;
+        while (end < s.length && s[end] !== this.separator && s[end] !== '\n') end++;
+        cells.push(s.slice(start, end));
+        this.offset = end;
+        const delimiter = s[this.offset++];
+        if (delimiter === this.separator) continue;
+        if (delimiter === '\n') this.line++;
         return { line, cells };
       }
     }

@@ -43,16 +43,20 @@ const ordered = lexers
     fallback: lexer.secondary.map(glob),
   }))
   .sort((a, b) => b.priority - a.priority || a.order - b.order);
+const filenameCache = new Map<string, (typeof ordered)[number] | undefined>();
 function filenameLexer(path: string) {
-  const name = basename(path),
-    names = [
-      name,
-      ...suffixes.filter((s) => s && name.endsWith(s)).map((s) => name.slice(0, -s.length)),
-    ];
-  return (
+  const name = basename(path);
+  if (filenameCache.has(name)) return filenameCache.get(name);
+  const names = [
+    name,
+    ...suffixes.filter((s) => s && name.endsWith(s)).map((s) => name.slice(0, -s.length)),
+  ];
+  const lexer =
     ordered.find((l) => l.primary.some((p) => names.some((n) => p.test(n)))) ??
-    ordered.find((l) => l.fallback.some((p) => names.some((n) => p.test(n))))
-  );
+    ordered.find((l) => l.fallback.some((p) => names.some((n) => p.test(n))));
+  if (filenameCache.size >= 4096) filenameCache.clear();
+  if (name.length <= 512) filenameCache.set(name, lexer);
+  return lexer;
 }
 export function filenameLanguage(path: string): string | undefined {
   return filenameLexer(path)?.name;
