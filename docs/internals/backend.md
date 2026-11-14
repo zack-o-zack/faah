@@ -18,6 +18,7 @@ services until phase 8. The ACP stdio bridge also delegates to Go during the por
 | `http/`                       | Bun listener, router, route tables, error mapping, guards, assets, gzip, CSP, ranges, SSE and streaming proxy |
 | `workbench/`                  | Recents, pins, stable IDs, clone discovery/preparation, children, holding pages, routes                       |
 | `settings/`                   | Schema/defaults, raw JSON, aliases and atomic temp/rename saves                                               |
+| `session/`                    | Typed UI session updates, review draft storage and transactional SQLite persistence                           |
 | `metrics/`                    | Own process APIs, child RSS, CPU samples at least 200 ms apart, workbench aggregation                         |
 | `store/db.ts`                 | SQLite WAL, foreign keys, busy timeout, versioned transactional migrations                                    |
 | `ignore/`                     | Hierarchical Go ignore rules, scoped negation and segment/path/suffix fast paths                              |
@@ -110,7 +111,15 @@ floating promises, type-only imports, exhaustive switches, padding between
 declarations, no one-letter names), Prettier and the backend tests.
 
 SQLite lives at `$XDG_STATE_HOME/faah/faah.db`, otherwise `~/.faah/faah.db`.
-Schema version 1 contains workbench items and clone mappings. Every connection
+Schema version 1 contains workbench items and clone mappings; version 2 adds
+`workspace_sessions` keyed by the workspace base path or the first eight SHA-256
+bytes of its cleaned root. Session mutations read and write inside one immediate
+transaction, so separate workspace processes preserve each other's partial
+updates. Review drafts have a separate service operation; `/api/session` only
+accepts tabs, active index and expanded directories. Large active indexes retain
+Go's signed 64-bit JSON digits through SQLite and response encoding. Legacy JSON
+session files are not imported. PR URL workspaces still use Go sessions until
+native PR checkout is implemented. Every connection
 sets WAL, `busy_timeout=5000` and foreign keys. Mutations use immediate
 transactions so workbench and workspace processes can share it. Old workbench
 JSON is not imported. Settings remain at `$XDG_CONFIG_HOME/faah/settings.json`,
@@ -126,7 +135,7 @@ Bun owns `/`, normalized base redirects, `/static/*`, `/api/settings`,
 `/api/diff`, `/api/gutter`, `/api/git/log`, `/api/unpushed`, `/api/commitfiles`,
 `/api/commitdetail`, `/api/git/refresh`, `/api/git/stage`, `/api/git/unstage`,
 `/api/git/hunk`, `/api/git/commit`, `/api/git/push`, `/api/git/pull`,
-`/api/git/sync-state`, `/api/git/abort`, `/api/stream`, `/api/git/stream`,
+`/api/git/sync-state`, `/api/git/abort`, `/api/stream`, `/api/git/stream`, `/api/session`,
 all `/api/wb/*` and
 `/w/<id>/*` routing. The last forwards to a
 Bun workspace, which forwards unported routes to its hidden Go child. Host and
@@ -135,7 +144,7 @@ buffering. Active streams prevent idle eviction. Children use the same feature
 flags, ready protocol and stdin lifetime as Go.
 
 `backend/src/legacy/routes.ts` lists every remaining Go route explicitly:
-session, Git commit-message/sync-agent, LSP, agents, threads, Explain, MCP,
+Git commit-message/sync-agent, LSP, agents, threads, Explain, MCP,
 PR/forge and review workflow. Remove each entry when its service moves to
 Bun. Metrics include the legacy process's RSS and its reported LSP memory.
 
@@ -460,6 +469,18 @@ Promise timeout on the HTTP thread cannot run while that native call is blocked.
 A Worker also cannot terminate the blocked native wait, so the helper must be a
 process. Linux selects inotify explicitly; other platforms retain their native
 backend. Workspace metrics include the helper's RSS while it is running.
+
+A Codespace recheck on 2026-11-14 found the earlier trace failed at
+`inotify_init1(IN_NONBLOCK|IN_CLOEXEC)` with `EMFILE`, before adding any watches.
+`max_user_watches=524288` therefore does not explain that failure: initialization
+can exhaust the per-user instance limit or the process's descriptor limit.
+The instance limit was 1024. A fresh ctypes initialization and direct Node/Bun
+addon probes subsequently succeeded; both runtimes received file-create events.
+The original exhausted resource could not be distinguished from the retained
+trace. This is evidence of a transient resource failure, not proof that increasing
+the watch count fixes it. The existing helper deadline and polling fallback
+remain necessary; no kernel settings were changed. Backend tests exercise helper
+timeouts, process cleanup, polling refresh and event invalidation.
 
 Changes to any `.gitignore` rebuild the index and fuzzy shards so existing
 files enter or leave search immediately. These notifications are retained even

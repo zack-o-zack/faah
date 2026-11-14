@@ -53,5 +53,4 @@ export const legacyRoutes = [
   '/api/pr/merge',
   '/api/pr/merge-message',
   '/api/forge/connect',
-  '/api/session',
 ];

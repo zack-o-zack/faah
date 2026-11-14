@@ -16,10 +16,14 @@ export function openDB(path = join(stateDir(), 'faah.db')): Database {
   db.transaction(() => {
     const version =
       db.query<{ user_version: number }, []>('PRAGMA user_version').get()?.user_version ?? 0;
-    if (version > 1) throw new Error('database schema is newer than this backend');
+    if (version > 2) throw new Error('database schema is newer than this backend');
     if (version < 1)
       db.run(
         'CREATE TABLE workbench_items (id TEXT PRIMARY KEY, data TEXT NOT NULL); CREATE TABLE workbench_clones (repo TEXT PRIMARY KEY, path TEXT NOT NULL); PRAGMA user_version=1;',
+      );
+    if (version < 2)
+      db.run(
+        'CREATE TABLE workspace_sessions (key TEXT PRIMARY KEY, data TEXT NOT NULL); PRAGMA user_version=2;',
       );
   }).immediate();
   return db;

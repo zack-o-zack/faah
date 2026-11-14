@@ -27,6 +27,10 @@ import { RenderService } from '../render/service.ts';
 import { searchRoutes } from '../search/routes.ts';
 import { Search } from '../search/service.ts';
 import { SymbolLookup } from '../symbols/lookup.ts';
+import { openDB } from '../store/db.ts';
+import { Session } from '../session/service.ts';
+import { SessionStore, sessionKey } from '../session/store.ts';
+import { sessionRoutes } from '../session/routes.ts';
 import { symbolRoutes } from '../symbols/routes.ts';
 import { WorkspaceWatch, ignoreEvent } from '../watch/service.ts';
 import { WorkspaceMeta } from './meta.ts';
@@ -62,6 +66,7 @@ export class Workspace {
   private readonly streams: WorkspaceStreams;
   private readonly watcher: WorkspaceWatch;
   private readonly mutations: FileMutations;
+  private readonly db = openDB();
 
   constructor(private readonly options: WorkspaceOptions) {
     const { root, base, legacy: child } = options;
@@ -142,6 +147,9 @@ export class Workspace {
       ),
       ...searchRoutes(search),
       ...symbolRoutes(new SymbolLookup({ root, search, legacy: this.legacy })),
+      ...sessionRoutes(
+        new Session({ store: new SessionStore(this.db), key: sessionKey(base, root) }),
+      ),
       ...legacyProxyRoutes(child.origin, consistency),
     ];
   }
@@ -166,6 +174,7 @@ export class Workspace {
     this.fuzzy.close();
     await this.commands.processes.close();
     await this.render.close();
+    this.db.close();
   }
 
   private createIndex(): Index {

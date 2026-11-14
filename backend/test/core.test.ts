@@ -76,7 +76,7 @@ test('SQLite migration, stable IDs, pins and two-process writes', async () => {
     expect(await Promise.all(procs.map((child) => child.exited))).toEqual([0, 0]);
     expect(store.items()).toHaveLength(3);
     expect(db.query<{ user_version: number }, []>('PRAGMA user_version').get()?.user_version).toBe(
-      1,
+      2,
     );
   } finally {
     db.close();

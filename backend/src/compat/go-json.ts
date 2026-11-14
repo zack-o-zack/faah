@@ -11,9 +11,18 @@ export class GoObject {
   constructor(readonly entries: [string, unknown][]) {}
 }
 
+/** Numeric source text for struct decoders that must distinguish 1, 1.0 and 1e0. */
+export class GoNumber {
+  constructor(readonly source: string) {}
+}
+
 class GoJSONReader {
   private pos = 0;
-  constructor(readonly source: string) {}
+  constructor(
+    readonly source: string,
+    readonly preserveNumbers = false,
+  ) {}
+
   private fail(message: string): never {
     throw new Error(message);
   }
@@ -93,7 +102,7 @@ class GoJSONReader {
     return this.fail('unexpected EOF');
   }
 
-  private numeric(): number {
+  private numeric(): number | GoNumber {
     const start = this.pos;
     if (this.source[this.pos] === '-') this.pos++;
     if (this.source[this.pos] === '0') this.pos++;
@@ -114,7 +123,8 @@ class GoJSONReader {
         this.invalid('in exponent of numeric literal');
       while (/[0-9]/.test(this.source[this.pos] ?? 'x')) this.pos++;
     }
-    return Number(this.source.slice(start, this.pos));
+    const source = this.source.slice(start, this.pos);
+    return this.preserveNumbers ? new GoNumber(source) : Number(source);
   }
 
   private container(array: boolean): unknown {
@@ -152,21 +162,23 @@ class GoJSONReader {
 
 /** The kind word Go's json errors use for a decoded value. */
 export function goJSONKind(value: unknown): string {
-  return value instanceof GoObject
-    ? 'object'
-    : Array.isArray(value)
-      ? 'array'
-      : typeof value === 'boolean'
-        ? 'bool'
-        : typeof value;
+  return value instanceof GoNumber
+    ? 'number'
+    : value instanceof GoObject
+      ? 'object'
+      : Array.isArray(value)
+        ? 'array'
+        : typeof value === 'boolean'
+          ? 'bool'
+          : typeof value;
 }
 
 /** Decode the first JSON value in `input`; throws Go's decoder messages (`unexpected EOF`, …). */
-export function parseGoJSON(input: string | Uint8Array): unknown {
+export function parseGoJSON(input: string | Uint8Array, preserveNumbers = false): unknown {
   const text =
     typeof input === 'string'
       ? Buffer.from(input).toString('latin1')
       : Buffer.from(input.buffer, input.byteOffset, input.byteLength).toString('latin1');
   if (/^[ \t\r\n]*$/.test(text)) throw new Error('EOF');
-  return new GoJSONReader(text).value();
+  return new GoJSONReader(text, preserveNumbers).value();
 }

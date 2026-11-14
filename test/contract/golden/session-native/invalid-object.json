@@ -1,0 +1,16 @@
+{
+  "status": 400,
+  "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    "content-disposition": null,
+    "content-encoding": null,
+    "location": null,
+    "x-content-type-options": null,
+    "connection": "close",
+    "x-accel-buffering": null
+  },
+  "body": {
+    "error": "invalid JSON: json: cannot unmarshal array into Go value of type struct { Tabs *[]main.SessionTab \"json:\\\"tabs\\\"\"; Active *int \"json:\\\"active\\\"\"; OpenDirs *[]string \"json:\\\"openDirs\\\"\" }"
+  }
+}
