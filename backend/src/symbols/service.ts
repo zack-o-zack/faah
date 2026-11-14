@@ -80,5 +80,11 @@ export function outlineText(text: string, rel: string): Symbol[] {
   return out;
 }
 export async function outline(abs: string, rel: string): Promise<Symbol[]> {
-  return outlineText(await readFile(abs, 'utf8'), rel);
+  try {
+    return outlineText(await readFile(abs, 'utf8'), rel);
+  } catch (error) {
+    // Go opens directories successfully and ignores the scanner's read error.
+    if (error instanceof Error && 'code' in error && error.code === 'EISDIR') return [];
+    throw error;
+  }
 }

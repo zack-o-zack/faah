@@ -6,6 +6,7 @@ import { declPatterns } from '../symbols/service.ts';
 import { compare, trimSpace, lower } from '../text.ts';
 import { pattern, regexError, asciiLower, type SearchOptions } from './pattern.ts';
 import { runRG, type RGMatch } from './rg.ts';
+import { walkGlobs, type Excluded } from './walk.ts';
 import { nullable } from './compat.ts';
 import { finishNullable } from './empty.ts';
 import { snip, type Snippet } from './snip.ts';
@@ -40,7 +41,12 @@ export async function unindexedTarget(
 }
 export class Search {
   constructor(
-    readonly options: { root: string; files: () => Item[]; strategy?: 'explicit' | 'walk' },
+    readonly options: {
+      root: string;
+      files: () => Item[];
+      strategy?: 'explicit' | 'walk';
+      excluded?: () => Excluded[];
+    },
   ) {}
   async search(
     opts: SearchOptions,
@@ -66,6 +72,7 @@ export class Search {
     const stopped = new AbortController();
     const runSignal = AbortSignal.any([signal, stopped.signal]);
     const complete = (rawPath: string) => {
+      if (stopped.signal.aborted) return;
       const path = rawPath.replace(/^\.\//, '');
       if (results.has(path)) completed.add(path);
       if (completed.size >= maxFiles) stopped.abort();
@@ -87,11 +94,9 @@ export class Search {
           const buffer = Buffer.alloc(8000);
           const { bytesRead } = await file.read(buffer, 0, 8000, 0);
           let okay = !buffer.subarray(0, bytesRead).includes(0);
-          if (okay && opts.word && !opts.regex) {
+          if (okay && opts.word && !opts.regex && !opts.case) {
             const data = await readFile(join(this.options.root, path));
-            okay = (opts.case ? data.toString() : asciiLower(data.toString())).includes(
-              opts.case ? opts.query : asciiLower(opts.query),
-            );
+            okay = asciiLower(data.toString()).includes(asciiLower(opts.query));
           }
           valid.set(path, okay);
         } finally {
@@ -130,8 +135,19 @@ export class Search {
       '--',
     ];
     let batches: string[][] = [];
-    if (this.options.strategy === 'walk' && !extra) batches = [['.']];
-    else {
+    const strategy = this.options.strategy ?? (files.length >= 4000 ? 'walk' : 'explicit');
+    const globs =
+      strategy === 'walk' && !extra && files.every((f) => f.walked)
+        ? walkGlobs({
+            files,
+            source: this.options.files(),
+            excluded: this.options.excluded?.() ?? [],
+          })
+        : undefined;
+    if (globs) {
+      args.splice(args.length - 1, 0, ...globs);
+      batches = [['.']];
+    } else {
       let batch: string[] = [],
         size = 0;
       for (const file of files) {

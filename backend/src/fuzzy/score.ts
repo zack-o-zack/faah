@@ -7,6 +7,7 @@ export interface Item {
   nameStart: number;
   bytes: Buffer;
   lowerBytes: Buffer;
+  walked: boolean;
 }
 export interface Result {
   path: string;
@@ -14,7 +15,7 @@ export interface Result {
   pos: number[] | null;
   score: number;
 }
-export function newItem(path: string, size = 0): Item {
+export function newItem(path: string, size = 0, walked = false): Item {
   const index = path.lastIndexOf('/');
   return {
     path,
@@ -24,6 +25,7 @@ export function newItem(path: string, size = 0): Item {
     nameStart: Buffer.byteLength(path.slice(0, index + 1)),
     bytes: Buffer.from(path),
     lowerBytes: Buffer.from(lower(path)),
+    walked,
   };
 }
 export function isBoundary(byte: number): boolean {

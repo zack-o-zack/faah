@@ -130,6 +130,18 @@ test('legacy file writes touch and refresh; agent/thread/workflow routes rebuild
     for (const route of fileMutations)
       await f.legacy.after({ route, response: Response.json({ ok: true }) });
     expect(f.rebuilds).toBe(fileMutations.size);
+    await f.legacy.after({
+      route: 'api/review-workflow/config',
+      method: 'GET',
+      response: Response.json({}),
+    });
+    expect(f.touched.length).toBe(2);
+    await f.legacy.after({
+      route: 'api/review-workflow/config',
+      method: 'POST',
+      response: Response.json({ ok: true }),
+    });
+    expect(f.touched.at(-1)).toBe('.faah/workflows.json');
     const previous = f.rebuilds;
     await f.legacy.after({
       route: 'api/threads/revert',

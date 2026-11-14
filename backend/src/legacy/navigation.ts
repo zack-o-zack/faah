@@ -1,3 +1,4 @@
+import { extname } from 'node:path';
 import { record, object, string } from '../decode.ts';
 import { PathError } from '../files/service.ts';
 import { decodeSymbols } from '../symbols/decode.ts';
@@ -138,13 +139,21 @@ export class LegacyNavigation {
     return { path: string(value.path), symbols: decodeSymbols(value.symbols) };
   }
   async lsp(path: string): Promise<{ state: string; server: string }> {
-    const value = record(await this.value('api/lsp/setup?path=' + encodeURIComponent(path)));
+    // Go State uses only the extension, without resolvePath's containment check.
+    const value = record(
+      await this.value('api/lsp/setup?path=' + encodeURIComponent('state' + extname(path))),
+    );
     return {
       state: string(value.state),
       server: value.state === 'failed' ? string(value.reason) : string(value.server),
     };
   }
-  async after(options: { route: string; response: Response; path?: string }): Promise<void> {
+  async after(options: {
+    route: string;
+    response: Response;
+    path?: string;
+    method?: string;
+  }): Promise<void> {
     const { route, response, path } = options;
     if (route === 'api/git/refresh' || gitMutations.has(route)) {
       const value: unknown = await response
@@ -159,6 +168,10 @@ export class LegacyNavigation {
     if (!response.ok) return;
     if (route === 'api/file/save' || route === 'api/fs/new') {
       if (path) await this.options.touch(path);
+      await this.apply(await this.refresh());
+    }
+    if (route === 'api/review-workflow/config' && options.method === 'POST') {
+      await this.options.touch('.faah/workflows.json');
       await this.apply(await this.refresh());
     }
     if (fileMutations.has(route)) {

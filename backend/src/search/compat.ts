@@ -1,25 +1,41 @@
 import { quote } from '../text.ts';
+import { characterClass, escape } from './classes.ts';
 import type { SearchOptions } from './pattern.ts';
 
 // The Go scanner evaluates each line independently; rg treats \A as a file anchor.
 export function linePattern(text: string): string {
-  let out = '',
-    inClass = false;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i] ?? '';
-    if (c === '\\') {
-      const next = text[++i] ?? '';
+  let out = '';
+  for (let i = 0; i < text.length;) {
+    const c = text[i];
+    if (c === '[') {
+      const cls = characterClass(text, i);
+      out += cls.text;
+      i = cls.end;
+    } else if (c === '\\') {
+      const next = text[i + 1];
       if (next === 'Q') {
-        const end = text.indexOf('\\E', i + 1);
-        out += linePattern(quote(text.slice(i + 1, end < 0 ? undefined : end)));
-        i = end < 0 ? text.length : end + 1;
-      } else if (!inClass && (next === 'A' || next === 'z')) out += next === 'A' ? '^' : '$';
-      else if (!inClass && next === 'n') out += '[a&&b]';
-      else out += '\\' + next;
+        const end = text.indexOf('\\E', i + 2);
+        out += linePattern(quote(text.slice(i + 2, end < 0 ? undefined : end)));
+        i = end < 0 ? text.length : end + 2;
+      } else if (next && 'AzbB'.includes(next)) {
+        out += next === 'A' ? '^' : next === 'z' ? '$' : '\\' + next;
+        i += 2;
+      } else {
+        const escaped = escape(text, i);
+        out += escaped.value === 10 ? '[a&&b]' : escaped.text;
+        i = escaped.end;
+      }
+    } else if (c === '(' && /^\(\?P?<([A-Za-z0-9_]+)>/.test(text.slice(i))) {
+      const name = /^\(\?P?<([A-Za-z0-9_]+)>/.exec(text.slice(i))?.[0] ?? '';
+      out += '(';
+      i += name.length;
+    } else if (c === '{' && !/^\{(0|[1-9]\d*)(?:,(0|[1-9]\d*)?)?\}/.test(text.slice(i))) {
+      // Go treats malformed counted repeats, including leading zeros, literally.
+      out += '\\{';
+      i++;
     } else {
-      if (c === '[') inClass = true;
-      if (c === ']') inClass = false;
-      out += c === '\n' && !inClass ? '[a&&b]' : c;
+      out += c === '\n' ? '[a&&b]' : c;
+      i++;
     }
   }
   return out;
@@ -47,8 +63,10 @@ export function goExpression(options: SearchOptions): string {
 }
 
 export function checkRepeats(query: string): void {
-  // RE2 caps counted repetitions at 1000; Rust's engine has a higher limit.
-  let inClass = false;
+  let previous = '',
+    current = 1,
+    maximum = 1;
+  const groups: { current: number; maximum: number }[] = [];
   for (let i = 0; i < query.length; i++) {
     const c = query[i];
     if (c === '\\') {
@@ -56,16 +74,73 @@ export function checkRepeats(query: string): void {
         const end = query.indexOf('\\E', i + 2);
         i = end < 0 ? query.length : end + 1;
       } else i++;
+      previous = '';
+      current = 1;
       continue;
     }
-    if (c === '[') inClass = true;
-    if (c === ']') inClass = false;
-    if (c !== '{' || inClass) continue;
-    const match = /^\{(\d+)(?:,(\d*))?\}/.exec(query.slice(i));
-    if (!match) continue;
-    const min = Number(match[1]),
-      max = match[2] ? Number(match[2]) : undefined;
-    if (min > 1000 || (max !== undefined && (max > 1000 || max < min)))
-      throw new Error('error parsing regexp: invalid repeat count: `' + match[0] + '`');
+    if (c === '[') {
+      i = characterClass(query, i).end - 1;
+      current = 1;
+      previous = '';
+      continue;
+    }
+    if (c === '(') {
+      const flags = /^\(\?(?:[imsU-]+[:)]|:|P?<[^>]*>)/.exec(query.slice(i))?.[0];
+      if (flags?.endsWith(')')) {
+        i += flags.length - 1;
+        continue;
+      }
+      groups.push({ current, maximum });
+      current = maximum = 1;
+      if (flags) i += flags.length - 1;
+      previous = '';
+      continue;
+    }
+    if (c === ')') {
+      const parent = groups.pop();
+      current = Math.max(current, maximum);
+      maximum = Math.max(parent?.maximum ?? 1, parent?.current ?? 1);
+      previous = '';
+      continue;
+    }
+    if (c === '|') {
+      maximum = Math.max(maximum, current);
+      current = 1;
+      previous = '';
+      continue;
+    }
+    let token = '',
+      copies = 1;
+    if (c === '*' || c === '+' || c === '?') token = c;
+    else if (c === '{') {
+      const match = /^\{(0|[1-9]\d*)(?:,(0|[1-9]\d*)?)?\}/.exec(query.slice(i));
+      if (match) {
+        const min = Number(match[1]);
+        const max = match[2] === undefined ? min : Number(match[2]);
+        if (min > 1000 || max > 1000 || max < min)
+          throw new Error('error parsing regexp: invalid repeat count: `' + match[0] + '`');
+        token = match[0];
+        copies = max;
+      }
+    }
+    if (!token) {
+      maximum = Math.max(maximum, current);
+      current = 1;
+      previous = '';
+      continue;
+    }
+    i += token.length - 1;
+    if (query[i + 1] === '?') {
+      token += '?';
+      i++;
+    }
+    if (previous)
+      throw new Error(
+        'error parsing regexp: invalid nested repetition operator: `' + previous + token + '`',
+      );
+    if (copies >= 2 && current * copies > 1000)
+      throw new Error('error parsing regexp: invalid repeat count: `' + token + '`');
+    current *= copies;
+    previous = token;
   }
 }

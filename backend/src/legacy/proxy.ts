@@ -19,6 +19,6 @@ export async function legacyProxy(options: {
     }
   }
   const response = await proxy(request, origin);
-  if (navigation) await navigation.legacy.after({ route, response, path });
+  if (navigation) await navigation.legacy.after({ route, response, path, method: request.method });
   return response;
 }

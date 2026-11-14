@@ -48,6 +48,7 @@ test('Go language families, identifiers and declaration patterns', () => {
 
 test('Go outline vectors for Go, Markdown, Python, TypeScript, Rust and shell', async () => {
   await expect(outline('/nonexistent-path-px0/missing.go', 'missing.go')).rejects.toThrow();
+  expect(await outline(import.meta.dir, 'test')).toEqual([]);
   expect(outlineText('hello world\n', 'test.txt')).toEqual([]);
   expect(outlineText(goOutline, 'bench.go').map((s) => s.name)).toEqual([
     'Client',

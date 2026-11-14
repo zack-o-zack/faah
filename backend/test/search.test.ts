@@ -4,6 +4,7 @@ import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { walk } from '../src/index/walk.ts';
 import { Search, unindexedTarget } from '../src/search/service.ts';
+import { newItem } from '../src/fuzzy/score.ts';
 import { snip } from '../src/search/snip.ts';
 
 async function workspace() {
@@ -83,6 +84,39 @@ test('search uses indexed set, literal ASCII folding, Unicode regex and Go word 
   }
 });
 
+test('ripgrep walk filters to the indexed set and falls back for TouchPath symlinks', async () => {
+  const f = await workspace();
+  const signal = AbortSignal.timeout(10000);
+  try {
+    let files = f.files;
+    const walking = new Search({
+      root: f.root,
+      files: () => files,
+      strategy: 'walk',
+      excluded: () => [{ path: 'ignored', dir: true }],
+    });
+    for (const query of ['needle', 'Hello', '你好', 'zzNO_HIT'])
+      expect(await walking.search({ query }, signal)).toEqual(
+        await f.search.search({ query }, signal),
+      );
+    expect(await walking.search({ query: 'needle', glob: 'ignored/secret.txt' }, signal)).toEqual(
+      await f.search.search({ query: 'needle', glob: 'ignored/secret.txt' }, signal),
+    );
+    files = [
+      ...f.files,
+      newItem(
+        'link.txt',
+        Buffer.byteLength('needle NEEDLE needles\n你好 needle\nK k K S s ſ É é İ i\n'),
+      ),
+    ];
+    expect(
+      (await walking.search({ query: 'needle', glob: 'link.txt' }, signal)).results[0]?.path,
+    ).toBe('link.txt');
+  } finally {
+    await f.close();
+  }
+});
+
 test('search caps matches per file and returns 200 complete files without claiming per-file truncation', async () => {
   const f = await workspace();
   try {
@@ -92,8 +126,9 @@ test('search caps matches per file and returns 200 complete files without claimi
     const perFile = await search.search({ query: 'capneedle' }, AbortSignal.timeout(10000));
     expect(perFile.results[0]?.matches.length).toBe(50);
     expect(perFile.truncated).toBe(false);
-    for (let i = 0; i < 201; i++)
-      await f.write(`caps/${String(i).padStart(3, '0')}.txt`, 'filecapneedle\n'.repeat(60));
+    const prefix = ('segment'.repeat(8) + '/').repeat(12);
+    for (let i = 0; i < 400; i++)
+      await f.write(`${prefix}${String(i).padStart(3, '0')}.txt`, 'filecapneedle\n'.repeat(60));
     state.files = (await walk({ root: f.root, publish: () => {} })).files;
     const cap = await search.search({ query: 'filecapneedle' }, AbortSignal.timeout(10000));
     expect(cap.results.length).toBe(200);
@@ -150,6 +185,36 @@ test('Go line anchors, empty matches, quoted literals and newline expressions', 
       (await f.search.search({ query: '[a\\n]', regex: true, glob: 'plain.txt' }, signal)).results
         .length,
     ).toBe(0);
+    for (const query of ['[a&&b]', '[a~~b]', '[a[b]', '[]a]']) {
+      expect(
+        (await f.search.search({ query, regex: true, glob: 'src/hello.go' }, signal)).results
+          .length,
+      ).toBe(1);
+    }
+    expect(
+      (await f.search.search({ query: '[[:alpha:]\\d]+', regex: true, glob: 'plain.txt' }, signal))
+        .results[0]?.matches[0]?.mid,
+    ).toBe('needle');
+    for (const query of ['\\110ello', '(?P<x>Hel)(?P<x>lo)', 'Hello|\\x0a', 'Hello|\\012'])
+      expect(
+        (await f.search.search({ query, regex: true, glob: 'src/hello.go' }, signal)).results[0]
+          ?.matches.length,
+      ).toBe(4);
+    for (const query of ['[[:alpha:]{1001}]', '[]a{1001}]', '[a-z--]', '[--0]'])
+      await expect(f.search.search({ query, regex: true }, signal)).resolves.toBeDefined();
+    for (const query of ['Hello{01}', 'Hello{1,01}', 'Hello{,2}'])
+      expect((await f.search.search({ query, regex: true }, signal)).results).toEqual([]);
+    for (const [query, error] of [
+      ['a**', 'invalid nested repetition operator: `**`'],
+      ['a*?+', 'invalid nested repetition operator: `*?+`'],
+      ['(a{100}){100}', 'invalid repeat count: `{100}`'],
+      ['[a--b]', 'invalid character class range: `a--`'],
+      ['[z-a]', 'invalid character class range: `z-a`'],
+      ['abc\\q', 'invalid escape sequence: `\\q`'],
+    ])
+      await expect(f.search.search({ query: query ?? '', regex: true }, signal)).rejects.toThrow(
+        error,
+      );
     await expect(f.search.search({ query: '(', regex: true }, signal)).rejects.toThrow(
       'missing closing ): `(?i)(`',
     );

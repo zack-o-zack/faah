@@ -35,7 +35,12 @@ export class Navigation {
       gitState: () => this.legacy.refresh(),
       updated: (items) => this.fuzzy.set(items),
     });
-    this.search = new Search({ root: options.root, files: () => this.index.files });
+    this.search = new Search({
+      root: options.root,
+      files: () => this.index.files,
+      excluded: () =>
+        [...this.index.children.values()].flatMap((kids) => kids.filter((n) => n.ignored)),
+    });
     this.options = options;
     this.building = this.index.build().then(() => {
       this.legacy.start();

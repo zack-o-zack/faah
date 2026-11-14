@@ -64,7 +64,7 @@ export async function walk(options: {
         try {
           const info = await stat(join(options.root, rel));
           kids.push({ name: entry.name, path: rel, dir: false, size: info.size });
-          files.push(newItem(rel, info.size));
+          files.push(newItem(rel, info.size, true));
         } catch {
           continue;
         }

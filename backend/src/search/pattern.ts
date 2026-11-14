@@ -49,25 +49,29 @@ export function regexError(stderr: string, options: SearchOptions): Error {
     reason = 'invalid or unsupported Perl syntax';
     expr = /\(\?[=!]|\(\?</.exec(query)?.[0] ?? query;
   }
+  if (reason.includes('unrecognized escape sequence')) {
+    reason = 'invalid escape sequence';
+    expr = /\\[A-Za-z]/.exec(query)?.[0] ?? query;
+  }
   return new Error('error parsing regexp: ' + reason + ': `' + expr + '`');
 }
 
 function asciiClasses(text: string): string {
   let out = '',
-    inClass = false;
+    depth = 0;
   const positive: Record<string, string> = { d: '0-9', w: 'A-Za-z0-9_', s: '\\t\\n\\f\\r ' };
   for (let i = 0; i < text.length; i++) {
     const c = text[i] ?? '';
     if (c !== '\\') {
-      if (c === '[') inClass = true;
-      if (c === ']') inClass = false;
+      if (c === '[') depth++;
+      if (c === ']') depth--;
       out += c;
       continue;
     }
     const next = text[++i] ?? '';
     const cls = positive[next.toLowerCase()];
     if (cls)
-      out += next === next.toUpperCase() ? '[^' + cls + ']' : inClass ? cls : '[' + cls + ']';
+      out += next === next.toUpperCase() ? '[^' + cls + ']' : depth > 0 ? cls : '[' + cls + ']';
     else if (next === 'b' || next === 'B') out += '(?-u:\\' + next + ')';
     else out += '\\' + next;
   }
