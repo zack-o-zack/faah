@@ -2,7 +2,7 @@ import { resolve } from 'node:path';
 import { reply } from './protocol.ts';
 import type { Callback } from './binding.ts';
 import { readRecords } from '../git/records.ts';
-import { message } from '../decode.ts';
+import { errorMessage } from '../errors.ts';
 
 interface Pending {
   resolve: () => void;
@@ -58,7 +58,7 @@ export class WatcherProcess {
         }
       }
     }).catch((error: unknown) => {
-      if (this.child === child) this.stop(new Error(message(error)), true);
+      if (this.child === child) this.stop(new Error(errorMessage(error)), true);
     });
     void child.exited.then((code) => {
       if (this.child === child) this.stop(new Error('watcher helper exited: ' + code), true);
@@ -98,7 +98,7 @@ export class WatcherProcess {
       try {
         void child.stdin.write(JSON.stringify({ id, root, type }) + '\n');
       } catch (error) {
-        this.stop(new Error(message(error)), true);
+        this.stop(new Error(errorMessage(error)), true);
       }
     });
   }

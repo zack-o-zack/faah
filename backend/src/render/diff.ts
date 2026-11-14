@@ -1,7 +1,7 @@
 import { filenameLanguage } from './language.ts';
 import { escape } from './html.ts';
 import type { Highlight } from './document.ts';
-import { atoi } from '../git/commands.ts';
+import { atoi } from '../compat/go-numbers.ts';
 
 export interface RenderDiffRow {
   type: string;

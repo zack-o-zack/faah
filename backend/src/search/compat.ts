@@ -1,4 +1,4 @@
-import { quote } from '../text.ts';
+import { quoteMeta } from '../compat/go-strings.ts';
 import { characterClass, escape } from './classes.ts';
 import type { SearchOptions } from './pattern.ts';
 
@@ -15,7 +15,7 @@ export function linePattern(text: string): string {
       const next = text[i + 1];
       if (next === 'Q') {
         const end = text.indexOf('\\E', i + 2);
-        out += linePattern(quote(text.slice(i + 2, end < 0 ? undefined : end)));
+        out += linePattern(quoteMeta(text.slice(i + 2, end < 0 ? undefined : end)));
         i = end < 0 ? text.length : end + 2;
       } else if (next && 'AzbB'.includes(next)) {
         out += next === 'A' ? '^' : next === 'z' ? '$' : '\\' + next;
@@ -57,7 +57,7 @@ export function nullable(pattern: string): boolean | undefined {
 }
 
 export function goExpression(options: SearchOptions): string {
-  let expr = options.regex ? options.query : quote(options.query);
+  let expr = options.regex ? options.query : quoteMeta(options.query);
   if (options.word) expr = '\\b(?:' + expr + ')\\b';
   return options.case ? expr : '(?i)' + expr;
 }

@@ -4,7 +4,7 @@ import { join, extname, posix } from 'node:path';
 import { compilePattern } from '../ignore/service.ts';
 import { newItem, type Item } from '../fuzzy/score.ts';
 import { declPatterns } from '../symbols/service.ts';
-import { compare, trimSpace, lower } from '../text.ts';
+import { compare, trimSpace, lower } from '../compat/go-strings.ts';
 import { pattern, regexError, asciiLower, type SearchOptions } from './pattern.ts';
 import { runRG, type RGMatch } from './rg.ts';
 import { walkGlobs, type Excluded } from './walk.ts';

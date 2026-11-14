@@ -1,11 +1,12 @@
+import { ServiceError } from '../errors.ts';
 import { LRU } from '../render/lru.ts';
 import type { Highlight } from '../render/document.ts';
 import { fileWindow } from './window.ts';
-import { goString } from '../render/text.ts';
+import { goString } from '../compat/go-utf8.ts';
 import { stat } from 'node:fs/promises';
 import type { Stats } from 'node:fs';
 import { isAbsolute, normalize } from 'node:path';
-import { PathError, fileError, resolveFile } from './service.ts';
+import { fileError, resolveFile } from './service.ts';
 import type { RenderService } from '../render/service.ts';
 import { language } from '../render/language.ts';
 import { isMarkdown, renderMarkdown } from '../markdown/service.ts';
@@ -66,7 +67,7 @@ export class Files {
           deleted: true,
           lsp: metadata.lsp,
         };
-      throw new PathError(404, fileError(error, abs).replace(/^open /, 'stat '));
+      throw new ServiceError('not-found', fileError(error, abs).replace(/^open /, 'stat '));
     }
     return this.existing(query, abs, rel, info);
   }
@@ -80,7 +81,7 @@ export class Files {
     if (/\.(png|jpe?g|gif|webp|svg|ico|bmp|avif)$/i.test(rel))
       return { path: rel, image: true, size: info.size };
     const document = this.render.open(abs, rel).catch((error: unknown) => {
-      throw new PathError(415, fileError(error, abs));
+      throw new ServiceError('unsupported', fileError(error, abs));
     });
     const metadata = this.legacy.metadata(query);
     const own = document.then(async (doc) => {
@@ -109,16 +110,16 @@ export class Files {
 
   async markdown(path: string): Promise<{ path: string; html: string }> {
     const { abs, rel } = await this.resolve(path);
-    if (!isMarkdown(rel)) throw new PathError(415, 'not a Markdown file');
+    if (!isMarkdown(rel)) throw new ServiceError('unsupported', 'not a Markdown file');
     const info = await stat(abs).catch((error: unknown) => {
-      throw new PathError(404, fileError(error, abs).replace(/^open /, 'stat '));
+      throw new ServiceError('not-found', fileError(error, abs).replace(/^open /, 'stat '));
     });
-    if (info.isDirectory()) throw new PathError(415, 'is a directory');
-    if (info.size > 4 << 20) throw new PathError(413, 'too large to preview');
+    if (info.isDirectory()) throw new ServiceError('unsupported', 'is a directory');
+    if (info.size > 4 << 20) throw new ServiceError('too-large', 'too large to preview');
     const data = await Bun.file(abs)
       .bytes()
       .catch((error: unknown) => {
-        throw new PathError(404, fileError(error, abs));
+        throw new ServiceError('not-found', fileError(error, abs));
       });
     return {
       path: rel,
@@ -129,16 +130,16 @@ export class Files {
   async table(path: string) {
     const { abs, rel } = await this.resolve(path),
       fallback = delimiter(rel);
-    if (!fallback) throw new PathError(415, 'not a CSV or TSV file');
+    if (!fallback) throw new ServiceError('unsupported', 'not a CSV or TSV file');
     const info = await stat(abs).catch((error: unknown) => {
-      throw new PathError(404, fileError(error, abs));
+      throw new ServiceError('not-found', fileError(error, abs));
     });
-    if (info.isDirectory()) throw new PathError(415, 'is a directory');
+    if (info.isDirectory()) throw new ServiceError('unsupported', 'is a directory');
     const bytes = await Bun.file(abs)
       .slice(0, maxBytes)
       .bytes()
       .catch((error: unknown) => {
-        throw new PathError(404, fileError(error, abs));
+        throw new ServiceError('not-found', fileError(error, abs));
       });
     return renderTable(bytes, info.size, fallback);
   }

@@ -1,106 +1,158 @@
-import { holding } from './holding.ts';
+import { parse, string } from '../decode.ts';
 import { themeName } from '../http/assets.ts';
-import type { Workbench } from './service.ts';
-import { ServiceError } from './service.ts';
 import { localPost, trustedGet } from '../http/guards.ts';
-import { json, fail, missing, redirect } from '../http/response.ts';
 import { proxy } from '../http/proxy.ts';
-import { parse, string, message } from '../decode.ts';
+import { fail, json, missing, redirect } from '../http/response.ts';
+import type { RouteDef } from '../http/routes.ts';
 import type { Settings } from '../settings/service.ts';
+import { holding } from './holding.ts';
+import { workbenchMetrics } from './metrics.ts';
+import type { Workbench } from './service.ts';
 
-export async function workbenchRoute(options: {
-  wb: Workbench;
-  request: Request;
-  path: string;
+interface WorkbenchRouteOptions {
+  workbench: Workbench;
   version: string;
   settings: Settings;
-}): Promise<Response | undefined> {
-  const { wb, request, path, version, settings } = options;
-  if (path.startsWith('w/')) {
-    const rest = path.slice(2);
-    const id = rest.split('/')[0] ?? '';
-    if (!id) return redirect(wb.base, request.method, 302);
-    if (!rest.includes('/')) return redirect(wb.childBase(id), request.method, 302);
-    let ws = wb.children.get(id);
-    if (ws?.state === 'running' && ws.child) {
-      ws.active++;
-      const active = ws;
-      return proxy(request, ws.child.origin, () => {
-        active.active--;
-        active.lastActive = Date.now();
-      });
-    }
-    if (rest !== id + '/' || request.method !== 'GET')
-      return fail(503, 'workspace is not running; reload the page to start it');
-    const guard = trustedGet(request.headers.get('host') ?? '');
-    if (guard) return fail(guard.status, guard.error);
-    const item = wb.store.get(id);
-    const retry = Boolean(new URL(request.url).searchParams.get('retry'));
-    if (item && (ws?.state !== 'failed' || retry)) {
-      if (ws?.state !== 'starting') {
-        wb.store.record(item);
-        ws = wb.start(item);
-      }
-    }
-    return holding({
-      base: wb.base,
-      theme: await themeName(settings),
-      self: wb.childBase(id),
-      item,
-      workspace: ws,
-      retry,
+}
+
+/** `/w/<id>/…`: proxy to a running child, or show its holding page while it starts. */
+async function childRoute(
+  { workbench, settings }: WorkbenchRouteOptions,
+  request: Request,
+  route: string,
+): Promise<Response> {
+  const rest = route.slice(2);
+  const id = rest.split('/')[0] ?? '';
+  if (!id) return redirect(workbench.base, request.method, 302);
+  if (!rest.includes('/')) return redirect(workbench.childBase(id), request.method, 302);
+  let child = workbench.children.get(id);
+  if (child?.state === 'running' && child.child) {
+    child.active++;
+    const active = child;
+    return proxy(request, child.child.origin, () => {
+      active.active--;
+      active.lastActive = Date.now();
     });
   }
-  if (path === 'api/wb/ping') return json({ workbench: true, version });
-  if (!path.startsWith('api/wb/') && path !== 'api/settings') return;
-  const action = path.slice('api/wb/'.length);
-  const url = new URL(request.url);
-  const host = request.headers.get('host') ?? '';
-  const guard = ['state', 'browse', 'complete'].includes(action)
-    ? trustedGet(host)
-    : localPost(request.method, host, request.headers.get('origin') ?? '');
-  if (guard) return fail(guard.status, guard.error);
-  try {
-    if (action === 'state') return json({ ...wb.state(), version });
-    if (action === 'browse')
-      return json(
-        wb.browse(url.searchParams.get('path') ?? '', url.searchParams.get('hidden') === '1'),
-      );
-    if (action === 'complete') return json(wb.complete(url.searchParams.get('q') ?? ''));
-    let body: Record<string, unknown>;
-    try {
-      body = parse((await request.text()).slice(0, 16384));
-    } catch {
-      return fail(
-        400,
-        action === 'mkdir'
-          ? 'folder name is required'
-          : ['stop', 'pin', 'remove'].includes(action)
-            ? 'id is required'
-            : 'bad request',
-      );
-    }
-    if (path === 'api/settings') {
-      if (typeof body['workbench.colorTheme'] !== 'string' || Object.keys(body).length !== 1)
-        return fail(400, 'only workbench.colorTheme can be set here');
-      settings.update(body);
-      return json({ ok: true });
-    }
-    if (action === 'open')
-      return json(wb.open(string(body.target), string(body.id), string(body.clone)));
-    if (action === 'mkdir') {
-      const path = string(body.path);
-      if (!path.trim()) return fail(400, 'folder name is required');
-      return json(wb.mkdir(path, string(body.base)));
-    }
-    const id = string(body.id);
-    if (!id) return fail(400, 'id is required');
-    if (action === 'stop') await wb.stop(id);
-    else if (action === 'remove') await wb.remove(id);
-    else if (action === 'pin') wb.store.pin(id, body.pinned === true);
-    else return missing();
-    return json({ ok: true });
-  } catch (error) {
-    return fail(error instanceof ServiceError ? error.status : 400, message(error));
+  if (rest !== id + '/' || request.method !== 'GET')
+    return fail(503, 'workspace is not running; reload the page to start it');
+  const denied = trustedGet(request);
+  if (denied) return denied;
+  const item = workbench.store.get(id);
+  const retry = Boolean(new URL(request.url).searchParams.get('retry'));
+  if (item && (child?.state !== 'failed' || retry) && child?.state !== 'starting') {
+    workbench.store.record(item);
+    child = workbench.start(item);
   }
+  return holding({
+    base: workbench.base,
+    theme: await themeName(settings),
+    self: workbench.childBase(id),
+    item,
+    workspace: child,
+    retry,
+  });
+}
+
+const bodyErrors: Record<string, string> = {
+  mkdir: 'folder name is required',
+  stop: 'id is required',
+  pin: 'id is required',
+  remove: 'id is required',
+};
+
+/** Read Go's 16 KiB JSON body, or the action-specific "required" message. */
+async function body(request: Request, action: string): Promise<Record<string, unknown>> {
+  try {
+    return parse((await request.text()).slice(0, 16384));
+  } catch {
+    throw new BodyError(bodyErrors[action] ?? 'bad request');
+  }
+}
+
+class BodyError extends Error {}
+
+async function action(
+  { workbench, version }: WorkbenchRouteOptions,
+  request: Request,
+  name: string,
+): Promise<Response> {
+  const url = new URL(request.url);
+  if (name === 'state') return json({ ...workbench.state(), version });
+  if (name === 'browse')
+    return json(
+      workbench.browse(url.searchParams.get('path') ?? '', url.searchParams.get('hidden') === '1'),
+    );
+  if (name === 'complete') return json(workbench.complete(url.searchParams.get('q') ?? ''));
+  const fields = await body(request, name);
+  if (name === 'open')
+    return json(workbench.open(string(fields.target), string(fields.id), string(fields.clone)));
+  if (name === 'mkdir') {
+    const path = string(fields.path);
+    if (!path.trim()) return fail(400, 'folder name is required');
+    return json(workbench.mkdir(path, string(fields.base)));
+  }
+  const id = string(fields.id);
+  if (!id) return fail(400, 'id is required');
+  if (name === 'stop') await workbench.stop(id);
+  else if (name === 'remove') await workbench.remove(id);
+  else if (name === 'pin') workbench.store.pin(id, fields.pinned === true);
+  else return missing();
+  return json({ ok: true });
+}
+
+const trustedReads = new Set(['state', 'browse', 'complete']);
+
+/**
+ * The workbench process: child workspaces under `w/`, the `api/wb/*` actions,
+ * aggregate metrics and the theme-only settings writer.
+ */
+export function workbenchRoutes(options: WorkbenchRouteOptions): RouteDef[] {
+  const { workbench, version, settings } = options;
+  return [
+    {
+      path: 'w/',
+      prefix: true,
+      passthrough: true,
+      handle: ({ request, route }) => childRoute(options, request, route),
+    },
+    { path: 'api/wb/ping', handle: () => json({ workbench: true, version }) },
+    {
+      path: 'api/wb/',
+      prefix: true,
+      fallbackStatus: 400,
+      async handle({ request, route }) {
+        const name = route.slice('api/wb/'.length);
+        const denied = trustedReads.has(name) ? trustedGet(request) : localPost(request);
+        if (denied) return denied;
+        try {
+          return await action(options, request, name);
+        } catch (error) {
+          if (error instanceof BodyError) return fail(400, error.message);
+          throw error;
+        }
+      },
+    },
+    {
+      // Theme picks only: the workbench has no settings page of its own.
+      path: 'api/settings',
+      fallbackStatus: 400,
+      async handle({ request }) {
+        const denied = localPost(request);
+        if (denied) return denied;
+        let fields: Record<string, unknown>;
+        try {
+          fields = await body(request, '');
+        } catch (error) {
+          if (error instanceof BodyError) return fail(400, error.message);
+          throw error;
+        }
+        if (typeof fields['workbench.colorTheme'] !== 'string' || Object.keys(fields).length !== 1)
+          return fail(400, 'only workbench.colorTheme can be set here');
+        settings.update(fields);
+        return json({ ok: true });
+      },
+    },
+    { path: 'api/metrics', handle: async () => json(await workbenchMetrics(workbench)) },
+  ];
 }

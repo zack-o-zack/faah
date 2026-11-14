@@ -1,4 +1,4 @@
-import { goString } from '../render/text.ts';
+import { goString } from '../compat/go-utf8.ts';
 
 // Split bytes before decoding so UTF-8 spanning pipe reads and invalid bytes
 // have the same replacement behavior as Go's JSON encoder.

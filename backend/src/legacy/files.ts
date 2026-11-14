@@ -1,6 +1,5 @@
 import { record, string } from '../decode.ts';
-import { PathError } from '../files/service.ts';
-import type { LegacyNavigation } from './navigation.ts';
+import type { LegacyClient } from './client.ts';
 
 export interface FileMetadata {
   diffAvailable: boolean;
@@ -8,32 +7,28 @@ export interface FileMetadata {
   diagnostics: Record<string, unknown>[];
 }
 
-function boolean(value: unknown): boolean {
+function flag(value: unknown): boolean {
   if (typeof value !== 'boolean') throw new Error('invalid legacy flag');
   return value;
 }
 
-// The migration boundary for git and LSP file fields. Rendering never calls
-// legacy /api/file: only subsystem metadata is fetched, concurrently.
+/**
+ * The migration boundary for Git and LSP fields of a file response. Rendering
+ * never calls legacy `/api/file`: Bun reads and highlights the file while this
+ * adapter asks Go for LSP state concurrently and Bun's Git for diff availability.
+ */
 export class LegacyFiles {
   private disabledLSP: Pick<FileMetadata, 'lsp' | 'diagnostics'> | undefined;
+
   constructor(
-    readonly navigation: LegacyNavigation,
-    readonly available: (query: URLSearchParams) => Promise<boolean>,
+    private readonly client: LegacyClient,
+    private readonly diffAvailable: (query: URLSearchParams) => Promise<boolean>,
+    private readonly refreshGit: () => Promise<void>,
   ) {}
 
-  private async object(route: string): Promise<Record<string, unknown>> {
-    const response = await fetch(
-      this.navigation.options.origin + this.navigation.options.base + route,
-    );
-    const value: unknown = await response.json(),
-      fields = record(value);
-    if (!response.ok) throw new PathError(response.status, string(fields.error));
-    return fields;
-  }
-
+  /** Go's LSP manager decides whether an absolute path outside the workspace may be read. */
   async allow(path: string): Promise<void> {
-    await this.object('api/lsp/diagnostics?' + new URLSearchParams({ path }).toString());
+    await this.client.object('api/lsp/diagnostics?' + new URLSearchParams({ path }).toString());
   }
 
   async metadata(query: URLSearchParams, missing = false): Promise<FileMetadata> {
@@ -41,33 +36,34 @@ export class LegacyFiles {
       suffix = '?' + new URLSearchParams({ path }).toString();
     const diffQuery = new URLSearchParams(query);
     if (missing) diffQuery.delete('base');
-    const diff = this.available(diffQuery).then((available) => ({ available }));
-    if (this.disabledLSP)
-      return { ...this.disabledLSP, diffAvailable: boolean((await diff).available) };
-    const [difference, diagnostics, setup, servers] = await Promise.all([
+    const diff = this.diffAvailable(diffQuery);
+    if (this.disabledLSP) return { ...this.disabledLSP, diffAvailable: flag(await diff) };
+    const [available, diagnostics, setup, servers] = await Promise.all([
       diff,
-      this.object('api/lsp/diagnostics' + suffix),
-      this.object('api/lsp/setup' + suffix),
-      this.object('api/lsp/servers'),
+      this.client.object('api/lsp/diagnostics' + suffix),
+      this.client.object('api/lsp/setup' + suffix),
+      this.client.object('api/lsp/servers'),
     ]);
     if (!Array.isArray(diagnostics.diagnostics)) throw new Error('invalid legacy diagnostics');
     const lsp: FileMetadata['lsp'] = {
       state: string(diagnostics.state),
       server: string(diagnostics.server),
-      anyRunning: boolean(servers.anyRunning),
+      anyRunning: flag(servers.anyRunning),
     };
     if (setup.enabled === true && setup.state === 'off' && !setup.server && setup.lang)
       lsp.missing = string(setup.lang);
+    // A disabled-LSP reply cannot change for the child's lifetime.
     if (setup.enabled === false) this.disabledLSP = { lsp, diagnostics: [] };
     return {
-      diffAvailable: boolean(difference.available),
+      diffAvailable: flag(available),
       lsp,
       diagnostics: diagnostics.diagnostics.map(record),
     };
   }
 
+  /** Tell Go a path changed so it drops cached render/LSP state, then refresh Git. */
   async changed(path: string): Promise<void> {
-    await this.navigation.value('api/close?' + new URLSearchParams({ path }).toString());
-    await this.navigation.refreshAndApply();
+    await this.client.closeFile(path);
+    await this.refreshGit();
   }
 }

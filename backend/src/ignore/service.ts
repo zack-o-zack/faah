@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { quote, trimSpace } from '../text.ts';
+import { quoteMeta, trimSpace } from '../compat/go-strings.ts';
 
 export const defaultIgnores = [
   '.git/',
@@ -112,7 +112,7 @@ export function compilePattern(pattern: string, fast = true): Rule | undefined {
         }
       } else body += '[^/]*';
     } else if (character === '?') body += '[^/]';
-    else body += quote(character);
+    else body += quoteMeta(character);
   }
   const re = new RegExp(body + '(?![\\s\\S])', 'u'),
     sub = new RegExp(body + '/[^\\n]*(?![\\s\\S])', 'u');

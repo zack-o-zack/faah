@@ -1,4 +1,4 @@
-import { goString } from '../render/text.ts';
+import { goString } from '../compat/go-utf8.ts';
 
 function unescape(value: string, host = false): string {
   const input = Buffer.from(value),

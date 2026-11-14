@@ -1,4 +1,4 @@
-import { atoi } from './commands.ts';
+import { atoi } from '../compat/go-numbers.ts';
 
 export class GutterParser {
   readonly added: number[] = [];

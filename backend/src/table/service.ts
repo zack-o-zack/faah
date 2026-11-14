@@ -1,6 +1,6 @@
-import { goString } from '../render/text.ts';
+import { goString } from '../compat/go-utf8.ts';
 import { extname } from 'node:path';
-import { trimSpace } from '../text.ts';
+import { trimSpace } from '../compat/go-strings.ts';
 
 export const maxRows = 1000,
   maxBytes = 1 << 20;

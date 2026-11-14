@@ -47,13 +47,6 @@ export class GitCommands {
   }
 }
 
-export function atoi(value: string): number | undefined {
-  if (!/^[+-]?\d+$/.test(value)) return;
-  const integer = BigInt(value);
-  if (integer < -9223372036854775808n || integer > 9223372036854775807n) return;
-  return Number(integer);
-}
-
 export function validSHA(value: string): boolean {
   return /^[0-9a-fA-F]{4,40}$/.test(value);
 }

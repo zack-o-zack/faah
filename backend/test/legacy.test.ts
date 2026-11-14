@@ -1,58 +1,54 @@
 import { test, expect } from 'bun:test';
-import { LegacyNavigation, fileMutations } from '../src/legacy/navigation.ts';
+import { LegacyConsistency } from '../src/legacy/consistency.ts';
 
-test('proxied writers refresh native Git without requesting legacy status or streams', async () => {
-  const requests: string[] = [],
-    touched: string[] = [];
+const treeWriters = [
+  'api/agent/edit',
+  'api/agent/batch',
+  'api/agent/job',
+  'api/agent/cancel',
+  'api/threads/send',
+  'api/threads/cancel',
+  'api/threads/revert',
+  'api/review-workflow/run',
+  'api/review-workflow/status',
+  'api/review-workflow/stop',
+];
+
+test('proxied writers refresh native Git and rebuild the index', async () => {
+  const touched: string[] = [];
   let refreshes = 0,
-    rebuilds = 0;
-  const server = Bun.serve({
-    port: 0,
-    fetch(request) {
-      requests.push(new URL(request.url).pathname);
-      return Response.json({ ready: true });
-    },
-  });
-  const legacy = new LegacyNavigation({
-    origin: server.url.origin,
-    base: '/',
-    refresh: async () => {
+    rebuilds = 0,
+    metas = 0;
+  const consistency = new LegacyConsistency({
+    refreshGit: async () => {
       refreshes++;
     },
-    rebuild: async () => {
+    rebuildIndex: async () => {
       rebuilds++;
     },
     touch: async (path) => {
       touched.push(path);
     },
+    refreshMeta: async () => {
+      metas++;
+    },
   });
-  try {
-    for (const route of ['api/git/commit-message', 'api/git/sync-agent']) {
-      await legacy.after({ route, response: Response.json({ error: 'failed' }, { status: 502 }) });
-    }
-    expect(refreshes).toBe(2);
-    expect(rebuilds).toBe(1);
-    for (const route of fileMutations)
-      await legacy.after({ route, response: Response.json({ ok: true }) });
-    expect(rebuilds).toBe(1 + fileMutations.size);
-    for (const route of ['api/file/save', 'api/fs/new'])
-      await legacy.after({ route, path: 'sub/new.go', response: Response.json({ ok: true }) });
-    expect(touched).toEqual(['sub/new.go', 'sub/new.go']);
-    await legacy.after({
-      route: 'api/review-workflow/config',
-      method: 'POST',
-      response: Response.json({}),
-    });
-    expect(touched.at(-1)).toBe('.faah/workflows.json');
-    const before = refreshes;
-    await legacy.after({
-      route: 'api/threads/revert',
-      response: Response.json({}, { status: 404 }),
-    });
-    expect(refreshes).toBe(before + 1);
-    expect(requests.every((path) => path === '/api/meta')).toBe(true);
-  } finally {
-    await legacy.close();
-    await server.stop(true);
-  }
+  const get = new Request('http://localhost/');
+  const post = new Request('http://localhost/', { method: 'POST' });
+  for (const route of ['api/git/commit-message', 'api/git/sync-agent'])
+    await consistency.after(route, post, Response.json({ error: 'failed' }, { status: 502 }));
+  expect(refreshes).toBe(2);
+  expect(rebuilds).toBe(1);
+  for (const route of treeWriters)
+    await consistency.after(route, post, Response.json({ ok: true }));
+  expect(rebuilds).toBe(1 + treeWriters.length);
+  await consistency.after('api/review-workflow/config', post, Response.json({}));
+  expect(touched).toEqual(['.faah/workflows.json']);
+  await consistency.after('api/review-workflow/config', get, Response.json({}));
+  expect(touched).toHaveLength(1);
+  const before = refreshes;
+  await consistency.after('api/threads/revert', post, Response.json({}, { status: 404 }));
+  expect(refreshes).toBe(before + 1);
+  await consistency.after('api/lsp/start', post, Response.json({}));
+  expect(metas).toBe(8);
 });

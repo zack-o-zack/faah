@@ -2,7 +2,7 @@ import { readdir, stat } from 'node:fs/promises';
 import { join, posix } from 'node:path';
 import { IgnoreSet, readGitignore } from '../ignore/service.ts';
 import { newItem, type Item } from '../fuzzy/score.ts';
-import { compare } from '../text.ts';
+import { compare } from '../compat/go-strings.ts';
 import { walk, walkable, sortNodes, vcs } from './walk.ts';
 import { mergeGit, applyFlags, gitFiles } from './git.ts';
 import { emptyGit, type Node, type GitState } from './types.ts';

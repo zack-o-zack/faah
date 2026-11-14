@@ -1,7 +1,8 @@
 import patterns from './patterns.json';
 import { extname } from 'node:path';
 import { readFile } from 'node:fs/promises';
-import { quote, goPattern } from '../text.ts';
+import { quoteMeta } from '../compat/go-strings.ts';
+import { re2Pattern } from '../compat/re2.ts';
 const extensions: Record<string, string> = patterns.extensions;
 const templates: Record<string, string> = patterns.decls;
 const rules: Record<string, { kind: string; pattern: string }[]> = patterns.outline;
@@ -23,7 +24,7 @@ export function compileDeclFamily(family: string, query: string): RegExp | undef
   const template = templates[family];
   if (!template) return;
   try {
-    return new RegExp(goPattern(template.replaceAll('NAME', query)));
+    return new RegExp(re2Pattern(template.replaceAll('NAME', query)));
   } catch {
     return;
   }
@@ -33,7 +34,7 @@ export function declPatterns(ident: string): Map<string, RegExp> | undefined {
   if (!identRe.test(ident)) return;
   const byFamily = new Map<string, RegExp>();
   for (const family of Object.keys(templates)) {
-    const re = compileDeclFamily(family, quote(ident));
+    const re = compileDeclFamily(family, quoteMeta(ident));
     if (re) byFamily.set(family, re);
   }
   const out = new Map<string, RegExp>();
@@ -62,7 +63,7 @@ export function indentCols(text: string): number {
 const compiled = Object.fromEntries(
   Object.entries(rules).map(([family, rules]) => [
     family,
-    rules.map((rule) => ({ kind: rule.kind, re: new RegExp(goPattern(rule.pattern)) })),
+    rules.map((rule) => ({ kind: rule.kind, re: new RegExp(re2Pattern(rule.pattern)) })),
   ]),
 );
 

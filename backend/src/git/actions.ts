@@ -1,5 +1,6 @@
-import { PathError, resolveFile } from '../files/service.ts';
-import { trimSpace } from '../text.ts';
+import { ServiceError, errorMessage } from '../errors.ts';
+import { resolveFile } from '../files/service.ts';
+import { trimSpace } from '../compat/go-strings.ts';
 import { GitMutations, NotFastForward } from './mutations.ts';
 import type { GitWorkspace } from './workspace.ts';
 
@@ -13,12 +14,10 @@ export interface SyncState {
   dirty: boolean;
 }
 
-export class SyncConflict extends PathError {
-  constructor(
-    readonly state: SyncState,
-    message: string,
-  ) {
-    super(409, message);
+/** A refused pull or abort; the response carries the sync state so the panel can offer the next step. */
+export class SyncConflict extends ServiceError {
+  constructor(state: SyncState, message: string) {
+    super('conflict', message, { ...state });
   }
 }
 
@@ -41,18 +40,18 @@ export class GitActions {
       if (unstage) await this.mutations.unstage(this.root, rel);
       else await this.mutations.stage(this.root, rel);
     } catch (error) {
-      throw new PathError(502, error instanceof Error ? error.message : String(error));
+      throw new ServiceError('upstream', errorMessage(error));
     }
     return this.workspace.refresh();
   }
 
   async hunk(path: string, hunk: string, action: string) {
     const { rel } = resolveFile(this.root, path);
-    if (!rel) throw new PathError(400, 'bad path');
+    if (!rel) throw new ServiceError('invalid', 'bad path');
     try {
       await this.mutations.hunk(this.root, rel, hunk, action);
     } catch (error) {
-      throw new PathError(502, error instanceof Error ? error.message : String(error));
+      throw new ServiceError('upstream', errorMessage(error));
     }
     if (action === 'discard') await this.changed(rel);
     await this.workspace.refresh();
@@ -77,7 +76,7 @@ export class GitActions {
       if (branch && branch !== 'HEAD')
         result = await this.mutations.push(this.root, 'origin', branch);
     }
-    if (result.code !== 0) throw new PathError(502, trimSpace(result.output));
+    if (result.code !== 0) throw new ServiceError('upstream', trimSpace(result.output));
     await this.workspace.refresh();
     return { ok: true };
   }
@@ -108,11 +107,11 @@ export class GitActions {
     const op = await sync.operation(this.root);
     if (op) throw new SyncConflict(await this.syncState(), 'a ' + op + ' is already in progress');
     if (await sync.dirty(this.root))
-      throw new PathError(409, 'commit or discard your local changes before pulling');
+      throw new ServiceError('conflict', 'commit or discard your local changes before pulling');
     const branch = await sync.branch(this.root);
-    if (!branch || branch === 'HEAD') throw new PathError(400, 'not on a branch');
+    if (!branch || branch === 'HEAD') throw new ServiceError('invalid', 'not on a branch');
     const upstream = await sync.upstream(this.root, branch);
-    if (!upstream) throw new PathError(400, 'no upstream branch configured for ' + branch);
+    if (!upstream) throw new ServiceError('invalid', 'no upstream branch configured for ' + branch);
     try {
       await this.mutations.pull(this.root, upstream.remote, upstream.branch);
     } catch (error) {
@@ -132,7 +131,7 @@ export class GitActions {
     try {
       await this.mutations.abort(this.root);
     } catch (error) {
-      throw new PathError(409, error instanceof Error ? error.message : String(error));
+      throw new ServiceError('conflict', errorMessage(error));
     }
     await this.changed();
     await this.workspace.refresh();

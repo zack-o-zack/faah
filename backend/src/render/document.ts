@@ -1,4 +1,4 @@
-import { goString } from './text.ts';
+import { goString } from '../compat/go-utf8.ts';
 import { language, filenameLanguage } from './language.ts';
 import { plain, visualWidth } from './html.ts';
 import { RenderCancelled } from './cancel.ts';

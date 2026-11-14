@@ -1,5 +1,5 @@
 import type { Item } from '../fuzzy/score.ts';
-import { compare } from '../text.ts';
+import { compare } from '../compat/go-strings.ts';
 
 export interface Excluded {
   path: string;

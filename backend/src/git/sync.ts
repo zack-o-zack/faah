@@ -1,8 +1,9 @@
 import { readFile, stat } from 'node:fs/promises';
 import { join } from 'node:path';
-import { trimSpace } from '../text.ts';
+import { trimSpace } from '../compat/go-strings.ts';
 import type { GitCommands } from './commands.ts';
-import { atoi, validSHA } from './commands.ts';
+import { atoi } from '../compat/go-numbers.ts';
+import { validSHA } from './commands.ts';
 
 export interface AheadBehind {
   ahead: number;

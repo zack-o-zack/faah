@@ -1,4 +1,4 @@
-import { lower, compare, trimSpace } from '../text.ts';
+import { lower, compare, trimSpace } from '../compat/go-strings.ts';
 
 export interface Item {
   path: string;

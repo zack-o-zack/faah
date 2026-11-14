@@ -5,7 +5,8 @@ import { gitFixture } from './git-fixture.ts';
 import { Index } from '../src/index/service.ts';
 import { GitWorkspace, type GitPayload } from '../src/git/workspace.ts';
 import { GitActions } from '../src/git/actions.ts';
-import { gitActionRoute } from '../src/git/action-routes.ts';
+import { gitActionRoutes } from '../src/git/routes.ts';
+import { RouteTable, runRoute } from '../src/http/routes.ts';
 import { WorkspaceWatch, gitEvent } from '../src/watch/service.ts';
 import { emptyGit } from '../src/index/types.ts';
 
@@ -99,17 +100,22 @@ test('filesystem events update native status, branch and index overlays without 
 test('native Git mutation routes preserve guards, ordered JSON, staging, hunk errors and sync state', async () => {
   const context = await setup();
   const actions = new GitActions(context.git, async () => {});
+  const table = new RouteTable([gitActionRoutes(actions)]);
   const route = async (name: string, body: string, method = 'POST') => {
-    const response = await gitActionRoute(
-      actions,
-      new Request('http://localhost/api/git/' + name, {
-        method,
-        headers: { host: 'localhost', origin: 'http://localhost' },
-        ...(method === 'GET' ? {} : { body }),
-      }),
-      'api/git/' + name,
-    );
-    if (!response) throw new Error('missing native Git route');
+    const request = new Request('http://localhost/api/git/' + name, {
+      method,
+      headers: { host: 'localhost', origin: 'http://localhost' },
+      ...(method === 'GET' ? {} : { body }),
+    });
+    const url = new URL(request.url);
+    const def = table.find('api/git/' + name);
+    if (!def) throw new Error('missing native Git route');
+    const response = await runRoute(def, {
+      request,
+      url,
+      query: url.searchParams,
+      route: 'api/git/' + name,
+    });
     const value: unknown = await response.json();
     return { status: response.status, value };
   };

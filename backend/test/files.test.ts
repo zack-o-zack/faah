@@ -1,7 +1,7 @@
 import { test, expect } from 'bun:test';
 import { decodeFileInput } from '../src/files/decode.ts';
 import { LegacyFiles } from '../src/legacy/files.ts';
-import { LegacyNavigation } from '../src/legacy/navigation.ts';
+import { LegacyClient } from '../src/legacy/client.ts';
 import { emptyGit } from '../src/index/types.ts';
 test('file request decoding preserves Go zero values, field folding, duplicate order and trailing input', () => {
   expect(decodeFileInput('{"Path":"one","path":"two","Content":"😀"} ignored', true)).toEqual({
@@ -42,20 +42,15 @@ test('file adapter fetches only LSP metadata and delegates diff availability to 
   });
   const git = emptyGit();
   git.git = true;
-  const nav = new LegacyNavigation({
-    origin: server.url.origin,
-    base: '/',
-    refresh: async () => {},
-    rebuild: async () => {},
-    touch: async () => {},
-  });
+  const client = new LegacyClient(server.url.origin, '/');
   const adapter = new LegacyFiles(
-    nav,
+    client,
     async (query) =>
       query.has('ref') ||
       Boolean(
         git.statuses[query.get('path') ?? ''] && git.statuses[query.get('path') ?? ''] !== 'U',
       ),
+    async () => {},
   );
   try {
     expect((await adapter.metadata(new URLSearchParams({ path: 'x.go' }))).diffAvailable).toBe(
@@ -78,13 +73,14 @@ test('file adapter fetches only LSP metadata and delegates diff availability to 
     ).toBe(true);
     expect(seen).toEqual([]);
   } finally {
-    await nav.close();
+    client.close();
     await server.stop(true);
   }
 });
 
 test('file windows preserve Go integer saturation and signed overflow', async () => {
-  const { fileWindow, goInteger } = await import('../src/files/window.ts');
+  const { fileWindow } = await import('../src/files/window.ts');
+  const { goInteger } = await import('../src/compat/go-numbers.ts');
   expect(fileWindow(6, '9007199254740992', '1')).toEqual({ start: 6, end: 7 });
   expect(fileWindow(6, '1', '9223372036854775807').end).toBeLessThan(0);
   expect(goInteger('9223372036854775808')).toBe(9223372036854775807n);

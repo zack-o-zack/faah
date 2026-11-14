@@ -1,6 +1,7 @@
+import { ServiceError } from '../errors.ts';
 import { mkdir, stat, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
-import { PathError, resolveFile, fileError } from './service.ts';
+import { resolveFile, fileError } from './service.ts';
 import type { RenderService } from '../render/service.ts';
 import type { LegacyFiles } from '../legacy/files.ts';
 
@@ -16,7 +17,7 @@ export class FileMutations {
 
   private target(path: string): { abs: string; rel: string } {
     const file = resolveFile(this.options.root, path);
-    if (!file.rel) throw new PathError(400, 'bad path');
+    if (!file.rel) throw new ServiceError('invalid', 'bad path');
     return file;
   }
 
@@ -24,7 +25,7 @@ export class FileMutations {
     try {
       await mkdir(path, { recursive: true, mode: 0o755 });
     } catch (error) {
-      throw new PathError(500, prefix + fileError(error, path));
+      throw new ServiceError('internal', prefix + fileError(error, path));
     }
   }
 
@@ -37,11 +38,11 @@ export class FileMutations {
     const { abs, rel } = this.target(path);
     await this.directories(dirname(abs), 'failed to create directory: ');
     if ((await stat(abs).catch(() => undefined))?.isDirectory())
-      throw new PathError(400, 'target is a directory');
+      throw new ServiceError('invalid', 'target is a directory');
     try {
       await writeFile(abs, content, { mode: 0o644 });
     } catch (error) {
-      throw new PathError(500, 'failed to write file: ' + fileError(error, abs));
+      throw new ServiceError('internal', 'failed to write file: ' + fileError(error, abs));
     }
     await this.changed(abs, rel);
     return { ok: true, path: rel, size: Buffer.byteLength(content) };
@@ -49,14 +50,15 @@ export class FileMutations {
 
   async create(path: string, type: string) {
     const { abs, rel } = this.target(path);
-    if (await stat(abs).catch(() => undefined)) throw new PathError(409, 'already exists: ' + rel);
+    if (await stat(abs).catch(() => undefined))
+      throw new ServiceError('conflict', 'already exists: ' + rel);
     if (type === 'dir') await this.directories(abs, 'failed to create directory: ');
     else {
       await this.directories(dirname(abs), 'failed to create parent directory: ');
       try {
         await writeFile(abs, '', { mode: 0o644 });
       } catch (error) {
-        throw new PathError(500, 'failed to create file: ' + fileError(error, abs));
+        throw new ServiceError('internal', 'failed to create file: ' + fileError(error, abs));
       }
     }
     await this.changed(abs, rel);

@@ -1,19 +1,11 @@
+import { ServiceError } from '../errors.ts';
 import { stat } from 'node:fs/promises';
 import { relative, basename, extname } from 'node:path';
 import { safePath } from '../http/paths.ts';
 
-export class PathError extends Error {
-  constructor(
-    readonly status: number,
-    message: string,
-  ) {
-    super(message);
-  }
-}
-
 export function resolveFile(root: string, path: string): { abs: string; rel: string } {
   const abs = safePath(root, path);
-  if (!abs) throw new PathError(400, 'bad path');
+  if (!abs) throw new ServiceError('invalid', 'bad path');
   return { abs, rel: relative(root, abs) };
 }
 

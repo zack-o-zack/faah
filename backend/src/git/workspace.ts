@@ -2,7 +2,7 @@ import { stat, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Index } from '../index/service.ts';
 import { dirtyPaths } from '../index/git.ts';
-import { compare } from '../text.ts';
+import { compare } from '../compat/go-strings.ts';
 import type { GitCommands } from './commands.ts';
 import { GitStatus } from './status.ts';
 import { GitHistory } from './history.ts';

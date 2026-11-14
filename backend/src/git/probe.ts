@@ -1,6 +1,6 @@
 import { lstat } from 'node:fs/promises';
 import { isAbsolute, join, relative, sep } from 'node:path';
-import { trimSpace } from '../text.ts';
+import { trimSpace } from '../compat/go-strings.ts';
 import type { GitProcesses } from './process.ts';
 
 export interface GitInfo {

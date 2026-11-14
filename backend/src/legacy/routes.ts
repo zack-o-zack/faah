@@ -1,4 +1,5 @@
-// Delete each entry when its service moves to Bun.
+// Every route the hidden Go server still owns. Delete each entry when its
+// service moves to Bun.
 export const legacyRoutes = [
   '/api/git/commit-message',
   '/api/git/sync-agent',
@@ -54,7 +55,3 @@ export const legacyRoutes = [
   '/api/forge/connect',
   '/api/session',
 ];
-
-export function legacyOwned(path: string): boolean {
-  return legacyRoutes.includes(path);
-}

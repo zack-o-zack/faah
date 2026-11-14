@@ -1,9 +1,9 @@
 import { isIP } from 'node:net';
+import { fail } from './response.ts';
 
-export interface Failure {
-  status: number;
-  error: string;
-}
+// Go's guards: loopback-style hosts only, and mutations must carry a matching
+// Origin. Numeric non-loopback hosts and Origin scheme mismatches are accepted,
+// as Go accepts them (see "Preserved Go oddities" in docs/internals/backend.md).
 
 function trustedHost(host: string): boolean {
   const name = host.startsWith('[')
@@ -14,21 +14,25 @@ function trustedHost(host: string): boolean {
   return name === 'localhost' || isIP(name) !== 0;
 }
 
-export function trustedGet(host: string): Failure | undefined {
-  if (!trustedHost(host)) return { status: 403, error: 'open faah by IP address or localhost' };
+function requestHost(request: Request): string {
+  return request.headers.get('host') ?? new URL(request.url).host;
 }
 
-export function localPost(method: string, host: string, origin: string): Failure | undefined {
-  if (method !== 'POST') return { status: 405, error: 'POST only' };
+/** A 403 response unless the request names the server by IP address or localhost. */
+export function trustedGet(request: Request): Response | undefined {
+  if (!trustedHost(requestHost(request))) return fail(403, 'open faah by IP address or localhost');
+}
+
+/** Go's `localPost`: a same-origin POST to a trusted host, or the error response. */
+export function localPost(request: Request): Response | undefined {
+  if (request.method !== 'POST') return fail(405, 'POST only');
+  const host = requestHost(request);
   if (!trustedHost(host))
-    return {
-      status: 403,
-      error: 'open faah by IP address or localhost to set up language servers',
-    };
+    return fail(403, 'open faah by IP address or localhost to set up language servers');
   try {
-    if (new URL(origin).host === host) return;
+    if (new URL(request.headers.get('origin') ?? '').host === host) return;
   } catch {
     /* Invalid or absent Origin is rejected below. */
   }
-  return { status: 403, error: 'request did not come from faah' };
+  return fail(403, 'request did not come from faah');
 }

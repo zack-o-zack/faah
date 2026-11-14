@@ -1,5 +1,5 @@
 import { record } from '../decode.ts';
-import { compare } from '../text.ts';
+import { compare } from '../compat/go-strings.ts';
 import type { EventSink } from '../http/events.ts';
 
 interface FeedClient {

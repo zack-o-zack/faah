@@ -1,5 +1,5 @@
 import { relative, join, sep } from 'node:path';
-import { trimSpace } from '../text.ts';
+import { trimSpace } from '../compat/go-strings.ts';
 import type { GitCommands } from './commands.ts';
 import { GitSync } from './sync.ts';
 

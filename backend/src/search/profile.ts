@@ -27,11 +27,3 @@ export interface SearchProfile {
   totalMs: number;
   rg: RGProfile[];
 }
-
-export function searchProfiler(): ((profile: SearchProfile) => void) | undefined {
-  const path = process.env.FAAH_PROFILE_SEARCH;
-  if (path)
-    return (profile) => {
-      appendFileSync(path, JSON.stringify(profile) + '\n');
-    };
-}

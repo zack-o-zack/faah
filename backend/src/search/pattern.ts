@@ -1,5 +1,5 @@
 import { linePattern, goExpression, checkRepeats } from './compat.ts';
-import { quote } from '../text.ts';
+import { quoteMeta } from '../compat/go-strings.ts';
 
 export interface SearchOptions {
   query: string;
@@ -19,7 +19,7 @@ export function asciiLower(text: string): string {
 export function pattern(options: SearchOptions): string {
   const { query } = options;
   if (options.regex) checkRepeats(query);
-  let pat = options.regex ? query : quote(query);
+  let pat = options.regex ? query : quoteMeta(query);
   const asciiLiteral = !options.regex && !options.word && !options.case;
   if (options.word) pat = '\\b(?:' + pat + ')\\b';
   if (!options.case && (options.regex || options.word)) pat = '(?i)' + pat;

@@ -25,12 +25,14 @@ test('base paths and lexical containment', () => {
   expect(safePath('/root', '../bad')).toBeUndefined();
   expect(safePath('/root', 'a/../b')).toBe('/root/b');
 });
-test('guards preserve numeric Host and scheme oddities', () => {
-  expect(trustedGet('example.com:80')?.status).toBe(403);
-  expect(trustedGet('192.0.2.1:80')).toBeUndefined();
-  expect(localPost('GET', 'localhost', '')).toEqual({ status: 405, error: 'POST only' });
-  expect(localPost('POST', '127.0.0.1:80', 'https://127.0.0.1:80')).toBeUndefined();
-  expect(localPost('POST', 'localhost', '')?.status).toBe(403);
+test('guards preserve numeric Host and scheme oddities', async () => {
+  const request = (host: string, method = 'GET', origin = '') =>
+    new Request('http://' + host + '/', { method, headers: origin ? { host, origin } : { host } });
+  expect(trustedGet(request('example.com:80'))?.status).toBe(403);
+  expect(trustedGet(request('192.0.2.1:80'))).toBeUndefined();
+  expect(await localPost(request('localhost'))?.json()).toEqual({ error: 'POST only' });
+  expect(localPost(request('127.0.0.1:80', 'POST', 'https://127.0.0.1:80'))).toBeUndefined();
+  expect(localPost(request('localhost', 'POST'))?.status).toBe(403);
 });
 test('static priority and traversal', () => {
   expect(staticCandidates('app.js')).toEqual(['web/dist/app.js', 'web/app.js.gz', 'web/app.js']);

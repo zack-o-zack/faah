@@ -1,139 +1,109 @@
-import { Navigation } from './index/navigation.ts';
-import { detectPR, resolveTarget } from './cli/target.ts';
-import { bridge, recordTarget, viewerURL } from './cli/workspace.ts';
-import { handler } from './http/router.ts';
-import { listen } from './http/listen.ts';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { flags, featureArgs, type Flags } from './cli/flags.ts';
 import { lifetime } from './cli/lifetime.ts';
 import { output } from './cli/output.ts';
-import { realpathSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { flags, featureArgs } from './cli/flags.ts';
-import { startLegacy } from './legacy/start.ts';
-import { basePath } from './http/paths.ts';
+import { bridge, recordTarget, viewerURL } from './cli/workspace.ts';
+import { parse } from './decode.ts';
+import { errorMessage } from './errors.ts';
 import { asset } from './http/assets.ts';
-import type { Child } from './legacy/child.ts';
+import { listen } from './http/listen.ts';
+import { basePath } from './http/paths.ts';
+import { createRouter } from './http/router.ts';
+import type { ServerProcess } from './http/server-process.ts';
 import { Settings, atomicWrite } from './settings/service.ts';
 import { openDB, stateDir } from './store/db.ts';
-import { WorkbenchStore } from './workbench/store.ts';
-import { Workbench } from './workbench/service.ts';
-import { parse, message } from './decode.ts';
 import { watchHelper } from './watch/helper.ts';
+import { workbenchProcess } from './workbench/process.ts';
+import { WorkbenchStore } from './workbench/store.ts';
+import { workspaceProcess } from './workspace/process.ts';
 
 async function main(): Promise<void> {
-  if (bridge(process.argv.slice(2))) return;
-  const parsed = flags(process.argv.slice(2));
-  const features = featureArgs(parsed);
+  const args = process.argv.slice(2);
+  if (bridge(args)) return;
+  const parsed = flags(args);
   const version = new TextDecoder().decode(await asset('VERSION')).trim() || 'dev';
-  if (
-    parsed.bool.has('version') ||
-    parsed.bool.has('v') ||
-    (parsed.targets.length === 1 && parsed.targets[0] === 'version')
-  ) {
-    output(
-      `faah ${version} (${process.platform === 'darwin' ? 'darwin' : process.platform}/${process.arch === 'x64' ? 'amd64' : process.arch})`,
-    );
+  if (wantsVersion(parsed)) {
+    const platform = process.platform;
+    const arch = process.arch === 'x64' ? 'amd64' : process.arch;
+    output(`faah ${version} (${platform}/${arch})`);
     return;
   }
   if (parsed.bool.has('update')) return;
   const settings = new Settings();
-  const raw = settings.raw();
-  const base = basePath(
-    parsed.basePath ||
-      (typeof raw['server.basePath'] === 'string'
-        ? raw['server.basePath']
-        : typeof raw.basePath === 'string'
-          ? raw.basePath
-          : '/'),
-  );
-  const workspace = parsed.targets.length > 0 || parsed.bool.has('workbench-child');
+  const base = basePath(parsed.basePath || configuredBasePath(settings));
+  const isWorkspace = parsed.targets.length > 0 || parsed.bool.has('workbench-child');
+  const desktop = parsed.bool.has('desktop-host');
   const lock = join(stateDir(), 'workbench.lock');
-  if (
-    !workspace &&
-    !parsed.bool.has('desktop-host') &&
-    (await reuse(lock, !parsed.bool.has('no-open')))
-  )
+  if (!isWorkspace && !desktop && (await reuseRunningWorkbench(lock, !parsed.bool.has('no-open'))))
     return;
   const db = openDB();
-  const store = new WorkbenchStore(db);
-  let legacy: Child | undefined;
-  let wb: Workbench | undefined;
-  const self =
-    Bun.embeddedFiles.length === 0 ? [process.execPath, import.meta.path] : [process.execPath];
-  if (workspace) legacy = await startLegacy(parsed, base);
-  else
-    wb = new Workbench({ store, base, cwd: realpathSync(process.cwd()), command: self, features });
-  const pr = Boolean(detectPR(parsed.targets[0] ?? ''));
-  const navigation = workspaceNavigation({
-    legacy,
-    base,
-    version,
-    target: parsed.targets[0] ?? '.',
-    workbench: parsed.bool.has('workbench-child'),
-    gitEnabled: !parsed.bool.has('no-git'),
-  });
-  const handle = handler({
-    base,
-    workspace,
-    version,
-    settings,
-    wb,
-    legacy,
-    lspEnabled: !parsed.bool.has('no-lsp') && workspace,
-    navigation,
-    pr,
-  });
-  const server = listen(parsed.host, parsed.port, handle);
-  if (workspace && !parsed.bool.has('workbench-child'))
-    recordTarget(store, parsed.targets[0] ?? '.');
+  const served: ServerProcess = isWorkspace
+    ? await workspaceProcess({ flags: parsed, base, version, settings })
+    : workbenchProcess({
+        db,
+        base,
+        version,
+        settings,
+        command: selfCommand(),
+        features: featureArgs(parsed),
+      });
+  const server = listen(
+    parsed.host,
+    parsed.port,
+    createRouter({
+      base,
+      gzip: served.gzip,
+      routes: served.routes,
+      onRequest: (route, request) => served.onRequest?.(route, request),
+    }),
+  );
+  if (isWorkspace && !parsed.bool.has('workbench-child'))
+    recordTarget(new WorkbenchStore(db), parsed.targets[0] ?? '.');
   const url = viewerURL(
     `http://${parsed.host}:${server.port}`,
     base,
-    workspace ? parsed.targets[0] : undefined,
+    isWorkspace ? parsed.targets[0] : undefined,
   );
   if (parsed.bool.has('workbench-child')) output(`faah-ready ${parsed.host}:${server.port}`);
-  else if (parsed.bool.has('desktop-host')) output('faah-desktop-ready ' + url);
+  else if (desktop) output('faah-desktop-ready ' + url);
   else output('faah ' + version + '\n' + url);
-  if (wb && !parsed.bool.has('desktop-host'))
-    atomicWrite(lock, JSON.stringify({ pid: process.pid, url }) + '\n');
+  if (!isWorkspace && !desktop) atomicWrite(lock, JSON.stringify({ pid: process.pid, url }) + '\n');
   if (!parsed.bool.has('no-open')) openBrowser(url);
   lifetime({
-    desktop: parsed.bool.has('desktop-host'),
-    stdinLifetime: parsed.bool.has('workbench-child') || parsed.bool.has('desktop-host'),
+    desktop,
+    stdinLifetime: parsed.bool.has('workbench-child') || desktop,
     lock,
     close: async () => {
-      await navigation?.close();
-      await Promise.all([legacy?.stop(1500), wb?.close()]);
+      await served.close();
       await server.stop(true);
       db.close();
     },
   });
 }
 
-function workspaceNavigation(options: {
-  legacy: Child | undefined;
-  base: string;
-  version: string;
-  target: string;
-  workbench: boolean;
-  gitEnabled: boolean;
-}): Navigation | undefined {
-  const { legacy, base, version, target, workbench } = options;
-  if (!legacy || detectPR(target)) return;
-  return new Navigation({
-    child: legacy,
-    gitEnabled: options.gitEnabled,
-    base,
-    root: resolveTarget(target).root,
-    version,
-    workbench: workbench
-      ? base.includes('/w/')
-        ? base.slice(0, base.lastIndexOf('/w/') + 1)
-        : '/'
-      : '',
-  });
+function wantsVersion(parsed: Flags): boolean {
+  return (
+    parsed.bool.has('version') ||
+    parsed.bool.has('v') ||
+    (parsed.targets.length === 1 && parsed.targets[0] === 'version')
+  );
 }
 
-async function reuse(lock: string, open: boolean): Promise<boolean> {
+function configuredBasePath(settings: Settings): string {
+  const raw = settings.raw();
+  if (typeof raw['server.basePath'] === 'string') return raw['server.basePath'];
+  if (typeof raw.basePath === 'string') return raw.basePath;
+  return '/';
+}
+
+/** How a workbench starts its children: the compiled binary, or `bun main.ts` in development. */
+function selfCommand(): string[] {
+  return Bun.embeddedFiles.length === 0 ? [process.execPath, import.meta.path] : [process.execPath];
+}
+
+/** A second `faah` without a target opens the running workbench instead of starting one. */
+async function reuseRunningWorkbench(lock: string, open: boolean): Promise<boolean> {
   try {
     const value = parse(readFileSync(lock, 'utf8'));
     if (typeof value.url !== 'string') return false;
@@ -171,6 +141,6 @@ function openBrowser(url: string): void {
 }
 
 (process.argv[2] === '--internal-watcher' ? watchHelper() : main()).catch((error: unknown) => {
-  console.error('faah: ' + message(error));
+  console.error('faah: ' + errorMessage(error));
   process.exit(1);
 });

@@ -4,7 +4,8 @@ import { NumstatParser, recentCommit, unpushedCommit } from '../src/git/history-
 import { readRecords } from '../src/git/records.ts';
 import { parseGutter } from '../src/git/gutter.ts';
 import { remoteHostPath } from '../src/git/remote.ts';
-import { validSHA, atoi } from '../src/git/commands.ts';
+import { atoi } from '../src/compat/go-numbers.ts';
+import { validSHA } from '../src/git/commands.ts';
 import { highlightDiff } from '../src/render/diff.ts';
 import { plain } from '../src/render/html.ts';
 import captured from './git-fixtures.json';

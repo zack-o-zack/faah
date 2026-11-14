@@ -1,42 +1,27 @@
-import type { Settings } from './service.ts';
-import { defaults } from './service.ts';
-import { schema } from './schema.ts';
-import { json, fail } from '../http/response.ts';
+import { errorMessage } from '../errors.ts';
 import { localPost } from '../http/guards.ts';
+import { fail, json } from '../http/response.ts';
+import type { RouteDef } from '../http/routes.ts';
 import { parseSettings } from './json.ts';
-import { message } from '../decode.ts';
+import { schema } from './schema.ts';
+import { defaults, type Settings } from './service.ts';
 
-export async function settingsRoute(settings: Settings, request: Request): Promise<Response> {
-  if (request.method === 'GET')
-    return json({
-      settings: settings.merged(),
-      defaults: defaults(),
-      schema,
-      raw: settings.rawJSON(),
-      path: settings.path,
-    });
-  if (request.method !== 'POST') return fail(405, 'method not allowed');
-  const guard = localPost(
-    request.method,
-    request.headers.get('host') ?? '',
-    request.headers.get('origin') ?? '',
-  );
-  if (guard) return fail(guard.status, guard.error);
+async function update(settings: Settings, request: Request): Promise<Response> {
   const text = (await request.text()).slice(0, 1 << 20);
   let body: Record<string, unknown>;
   try {
     body = text ? parseSettings(text) : Object.fromEntries(new URL(request.url).searchParams);
   } catch (error) {
-    return fail(400, 'invalid JSON: ' + message(error));
+    return fail(400, 'invalid JSON: ' + errorMessage(error));
   }
+  const raw = typeof body.raw === 'string' ? body.raw : undefined;
   try {
-    if (typeof body.raw === 'string') settings.saveRaw(body.raw);
-    else settings.update(body);
+    if (raw === undefined) settings.update(body);
+    else settings.saveRaw(raw);
   } catch (error) {
-    return fail(
-      typeof body.raw === 'string' ? 400 : 500,
-      (typeof body.raw === 'string' ? 'invalid JSON in settings: ' : '') + message(error),
-    );
+    return raw === undefined
+      ? fail(500, errorMessage(error))
+      : fail(400, 'invalid JSON in settings: ' + errorMessage(error));
   }
   return json({
     settings: settings.merged(),
@@ -44,4 +29,24 @@ export async function settingsRoute(settings: Settings, request: Request): Promi
     path: settings.path,
     ok: true,
   });
+}
+
+export function settingsRoutes(settings: Settings): RouteDef[] {
+  return [
+    {
+      path: 'api/settings',
+      methods: ['GET', 'POST'],
+      handle({ request }) {
+        if (request.method === 'GET')
+          return json({
+            settings: settings.merged(),
+            defaults: defaults(),
+            schema,
+            raw: settings.rawJSON(),
+            path: settings.path,
+          });
+        return localPost(request) ?? update(settings, request);
+      },
+    },
+  ];
 }

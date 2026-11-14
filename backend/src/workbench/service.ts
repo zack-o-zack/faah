@@ -1,3 +1,4 @@
+import { ServiceError, errorMessage } from '../errors.ts';
 import { existsSync, statSync, readdirSync, mkdirSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { homedir } from 'node:os';
@@ -6,7 +7,6 @@ import { dirItem, itemID, type Item } from './store.ts';
 import { resolveTarget, detectPR, prURLExamples } from '../cli/target.ts';
 import { Child } from '../legacy/child.ts';
 import { managedClone, findClone, cloneOf, prepareClone } from './clones.ts';
-import { message } from '../decode.ts';
 
 export interface Entry {
   name: string;
@@ -14,7 +14,7 @@ export interface Entry {
   git?: boolean;
 }
 
-export interface Workspace {
+export interface WorkspaceChild {
   child?: Child;
   controller: AbortController;
   done: Promise<void>;
@@ -28,7 +28,7 @@ export interface Workspace {
 }
 
 export class Workbench {
-  readonly children = new Map<string, Workspace>();
+  readonly children = new Map<string, WorkspaceChild>();
   private readonly reap: ReturnType<typeof setInterval>;
   readonly store: WorkbenchStore;
   readonly base: string;
@@ -153,22 +153,23 @@ export class Workbench {
 
   mkdir(path: string, base: string) {
     const dir = this.expand(path, base || this.cwd);
-    if (existsSync(dir)) throw new ServiceError(409, dir + ' already exists');
+    if (existsSync(dir)) throw new ServiceError('conflict', dir + ' already exists');
     mkdirSync(dir, { recursive: true });
     return { path: dir };
   }
 
   open(target: string, id: string, clone: string) {
     let item = this.store.get(id);
-    if (id && !item) throw new ServiceError(404, 'unknown workspace');
+    if (id && !item) throw new ServiceError('not-found', 'unknown workspace');
     if (!item) {
       target = target.trim();
-      if (!target) throw new ServiceError(400, 'enter a directory path or a pull request URL');
+      if (!target)
+        throw new ServiceError('invalid', 'enter a directory path or a pull request URL');
       const pr = detectPR(target);
       if (pr) {
         if (this.features.includes('-no-git'))
           throw new ServiceError(
-            400,
+            'invalid',
             'git is required for PR review; restart faah without -no-git',
           );
         item = {
@@ -182,7 +183,7 @@ export class Workbench {
       } else {
         if (/^https?:\/\//.test(target))
           throw new ServiceError(
-            400,
+            'invalid',
             'not a pull or merge request URL (e.g. ' + prURLExamples + ')',
           );
         const root = resolveTarget(this.expand(target)).root;
@@ -197,7 +198,7 @@ export class Workbench {
         const path = clone === 'managed' ? managed : cloneOf(this.expand(clone), item.repo);
         if (!path)
           throw new ServiceError(
-            400,
+            'invalid',
             `${this.expand(clone).replace(homedir(), '~')} is not a clone of ${item.repo}: none of its remotes points there`,
           );
         this.store.rememberClone(item.repo, path);
@@ -209,10 +210,10 @@ export class Workbench {
     return { id: item.id, href: this.childBase(item.id) };
   }
 
-  start(item: Item, forget = false): Workspace {
+  start(item: Item, forget = false): WorkspaceChild {
     const existing = this.children.get(item.id);
     if (existing && ['running', 'starting'].includes(existing.state)) return existing;
-    const ws: Workspace = {
+    const workspace: WorkspaceChild = {
       controller: new AbortController(),
       done: Promise.resolve(),
       progress: '',
@@ -223,12 +224,12 @@ export class Workbench {
       active: 0,
       lastActive: Date.now(),
     };
-    this.children.set(item.id, ws);
-    ws.done = this.run(ws, item, forget);
-    return ws;
+    this.children.set(item.id, workspace);
+    workspace.done = this.run(workspace, item, forget);
+    return workspace;
   }
 
-  private async run(ws: Workspace, item: Item, forget: boolean): Promise<void> {
+  private async run(workspace: WorkspaceChild, item: Item, forget: boolean): Promise<void> {
     try {
       const cwd =
         item.kind === 'pr'
@@ -236,14 +237,14 @@ export class Workbench {
               store: this.store,
               item,
               cwd: this.cwd,
-              signal: ws.controller.signal,
+              signal: workspace.controller.signal,
               progress: (message) => {
-                ws.progress = message;
+                workspace.progress = message;
               },
             })
           : this.cwd;
-      if (ws.controller.signal.aborted) {
-        ws.state = 'stopped';
+      if (workspace.controller.signal.aborted) {
+        workspace.state = 'stopped';
         return;
       }
       const child = new Child(
@@ -264,26 +265,26 @@ export class Workbench {
         ],
         cwd,
       );
-      ws.child = child;
-      ws.progress = '';
+      workspace.child = child;
+      workspace.progress = '';
       await child.ready;
-      ws.state = 'running';
+      workspace.state = 'running';
       if (item.kind === 'pr') void this.learnTitle(item, child.origin);
       await child.exited;
-      ws.state = 'stopped';
+      workspace.state = 'stopped';
       if (child.process.exitCode !== 0)
-        ws.error =
+        workspace.error =
           child.log
             .filter((line) => line.trim())
             .at(-1)
             ?.trim() || 'faah exited unexpectedly';
     } catch (error) {
-      ws.progress = '';
-      ws.state = ws.controller.signal.aborted ? 'stopped' : 'failed';
-      ws.error = message(error);
-      ws.noClone = ws.error.startsWith('no local clone');
-      if (forget && ws.state === 'failed') {
-        ws.gone = true;
+      workspace.progress = '';
+      workspace.state = workspace.controller.signal.aborted ? 'stopped' : 'failed';
+      workspace.error = errorMessage(error);
+      workspace.noClone = workspace.error.startsWith('no local clone');
+      if (forget && workspace.state === 'failed') {
+        workspace.gone = true;
         this.store.remove(item.id);
       }
     }
@@ -318,11 +319,11 @@ export class Workbench {
   }
 
   async stop(id: string): Promise<void> {
-    const ws = this.children.get(id);
-    if (!ws) return;
-    ws.controller.abort();
-    await ws.child?.stop();
-    await ws.done;
+    const workspace = this.children.get(id);
+    if (!workspace) return;
+    workspace.controller.abort();
+    await workspace.child?.stop();
+    await workspace.done;
   }
 
   async remove(id: string): Promise<void> {
@@ -343,13 +344,4 @@ function compare(a: Entry, b: Entry): number {
     : a.name.toLowerCase() > b.name.toLowerCase()
       ? 1
       : 0;
-}
-
-export class ServiceError extends Error {
-  constructor(
-    readonly status: number,
-    message: string,
-  ) {
-    super(message);
-  }
 }

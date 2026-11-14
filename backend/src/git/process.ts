@@ -1,4 +1,4 @@
-import { goString } from '../render/text.ts';
+import { goString } from '../compat/go-utf8.ts';
 import { readRecords } from './records.ts';
 
 export interface GitResult {

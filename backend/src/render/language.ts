@@ -1,6 +1,6 @@
 import { basename } from 'node:path';
 import lexers from './lexers.json';
-import { trimSpace } from '../text.ts';
+import { trimSpace } from '../compat/go-strings.ts';
 // Configs exported, in registry order, from pinned Chroma v2.27.0. Filename
 // matching is case-sensitive even for lexers whose token rules ignore case.
 const suffixes = [

@@ -2,7 +2,7 @@ import { stat } from 'node:fs/promises';
 import { join, posix } from 'node:path';
 import type { Node, GitState } from './types.ts';
 import { sortNodes } from './walk.ts';
-import { compare } from '../text.ts';
+import { compare } from '../compat/go-strings.ts';
 
 export function dirtyPaths(statuses: Record<string, string>): Set<string> {
   const dirty = new Set<string>();

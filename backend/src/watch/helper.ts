@@ -1,7 +1,7 @@
 import { subscribe } from './binding.ts';
 import { request } from './protocol.ts';
 import { readRecords } from '../git/records.ts';
-import { message } from '../decode.ts';
+import { errorMessage } from '../errors.ts';
 
 export async function watchHelper(): Promise<void> {
   const subscriptions = new Map<number, () => Promise<void>>();
@@ -12,7 +12,7 @@ export async function watchHelper(): Promise<void> {
     try {
       if (value.type === 'subscribe') {
         const stop = await subscribe(value.root, (error, events) =>
-          send(error ? { id, error: message(error) } : { id, events }),
+          send(error ? { id, error: errorMessage(error) } : { id, events }),
         );
         subscriptions.set(id, stop);
       } else {
@@ -21,7 +21,7 @@ export async function watchHelper(): Promise<void> {
       }
       send({ id });
     } catch (error) {
-      send({ id, error: message(error) });
+      send({ id, error: errorMessage(error) });
     }
   };
   try {

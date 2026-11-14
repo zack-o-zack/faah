@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { availableParallelism } from 'node:os';
 import { IgnoreSet, readGitignore } from '../ignore/service.ts';
 import { newItem, type Item } from '../fuzzy/score.ts';
-import { compare, lower } from '../text.ts';
+import { compare, lower } from '../compat/go-strings.ts';
 import type { Node } from './types.ts';
 
 export const vcs = new Set(['.git', '.hg', '.svn']);

@@ -1,5 +1,5 @@
 import type { Item } from './store.ts';
-import type { Workspace } from './service.ts';
+import type { WorkspaceChild } from './service.ts';
 
 export function escapeHTML(text: string): string {
   return text
@@ -16,7 +16,7 @@ export function holding(options: {
   theme: string;
   self: string;
   item: Item | undefined;
-  workspace: Workspace | undefined;
+  workspace: WorkspaceChild | undefined;
   retry: boolean;
 }): Response {
   const { base, theme, self, item, workspace, retry } = options;

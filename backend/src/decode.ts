@@ -22,7 +22,3 @@ export function parse(text: string): Record<string, unknown> {
   const value: unknown = JSON.parse(text);
   return record(value);
 }
-
-export function message(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}

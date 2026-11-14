@@ -1,6 +1,7 @@
-import { trimSpace } from '../text.ts';
+import { trimSpace } from '../compat/go-strings.ts';
 import type { GitCommands } from './commands.ts';
-import { atoi, commitDiffArgs, validSHA } from './commands.ts';
+import { atoi } from '../compat/go-numbers.ts';
+import { commitDiffArgs, validSHA } from './commands.ts';
 import { repoKey } from './probe.ts';
 import { NameStatusParser, splitFields } from './status-parser.ts';
 import { recentCommit, unpushedCommit, NumstatParser } from './history-parser.ts';

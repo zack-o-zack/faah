@@ -1,4 +1,4 @@
-import { trimSpace } from '../text.ts';
+import { trimSpace } from '../compat/go-strings.ts';
 import { posix, join } from 'node:path';
 
 export function basePath(value: string): string {
