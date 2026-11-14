@@ -6,7 +6,6 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/json"
-	"faah/internal/session"
 	"io"
 	"net"
 	"net/http"
@@ -23,7 +22,9 @@ import (
 	"faah/internal/git/gittest"
 	lsppkg "faah/internal/lsp"
 	"faah/internal/metrics"
+	prpkg "faah/internal/pr"
 	"faah/internal/render"
+	"faah/internal/session"
 	"faah/internal/settings"
 	"faah/internal/ui"
 	"faah/internal/workspace"
@@ -1400,9 +1401,7 @@ func TestPRDraftSessionPersistence(t *testing.T) {
 	root := t.TempDir()
 	ix := workspace.NewIndex(root)
 	s := NewServer(ix, nil, "/rev-42/")
-	pr := &prSession{
-		diffBase: "HEAD",
-	}
+	pr := prpkg.New(nil, forge.PRTarget{}, forge.PRMeta{}, "", "HEAD")
 	s.SetPR(pr)
 
 	// Add a draft comment via POST /rev-42/api/pr/comments
@@ -1425,20 +1424,18 @@ func TestPRDraftSessionPersistence(t *testing.T) {
 
 	// Create a second server instance simulating a restart
 	s2 := NewServer(ix, nil, "/rev-42/")
-	pr2 := &prSession{
-		diffBase: "HEAD",
-	}
+	pr2 := prpkg.New(nil, forge.PRTarget{}, forge.PRMeta{}, "", "HEAD")
 	s2.SetPR(pr2)
 
 	// Verify drafts were restored in pr2
-	pr2.mu.Lock()
-	defer pr2.mu.Unlock()
-	if len(pr2.comments) != 1 {
-		t.Fatalf("expected 1 restored draft comment, got %d", len(pr2.comments))
-	}
-	if pr2.comments[0].Path != "main.go" || pr2.comments[0].Body != "Check this line" {
-		t.Errorf("unexpected restored comment: %+v", pr2.comments[0])
-	}
+	pr2.WithDrafts(func(drafts *[]forge.DraftComment, nextID *int64) {
+		if len((*drafts)) != 1 {
+			t.Fatalf("expected 1 restored draft comment, got %d", len((*drafts)))
+		}
+		if (*drafts)[0].Path != "main.go" || (*drafts)[0].Body != "Check this line" {
+			t.Errorf("unexpected restored comment: %+v", (*drafts)[0])
+		}
+	})
 }
 
 func postDraft(t *testing.T, s *Server, prefix, body string) {
@@ -1462,21 +1459,25 @@ func TestPRDraftsSurviveNewCheckoutRoot(t *testing.T) {
 	pt := forge.PRTarget{Provider: "github", Owner: "acme", Repo: "widget", Number: 7}
 
 	s := NewServer(workspace.NewIndex(t.TempDir()), nil)
-	s.SetPR(&prSession{diffBase: "HEAD", target: pt})
+	s.SetPR(prpkg.New(nil, pt, forge.PRMeta{}, "", "HEAD"))
 	postDraft(t, s, "", "first run")
 
 	s2 := NewServer(workspace.NewIndex(t.TempDir()), nil)
-	pr2 := &prSession{diffBase: "HEAD", target: pt}
+	pr2 := prpkg.New(nil, pt, forge.PRMeta{}, "", "HEAD")
 	s2.SetPR(pr2)
-	if len(pr2.comments) != 1 || pr2.comments[0].Body != "first run" {
-		t.Fatalf("expected the draft from the earlier run, got %+v", pr2.comments)
-	}
+	pr2.WithDrafts(func(drafts *[]forge.DraftComment, nextID *int64) {
+		if len((*drafts)) != 1 || (*drafts)[0].Body != "first run" {
+			t.Fatalf("expected the draft from the earlier run, got %+v", (*drafts))
+		}
+	})
 
-	other := &prSession{diffBase: "HEAD", target: forge.PRTarget{Provider: "github", Owner: "acme", Repo: "widget", Number: 8}}
+	other := prpkg.New(nil, forge.PRTarget{Provider: "github", Owner: "acme", Repo: "widget", Number: 8}, forge.PRMeta{}, "", "HEAD")
 	NewServer(workspace.NewIndex(t.TempDir()), nil).SetPR(other)
-	if len(other.comments) != 0 {
-		t.Fatalf("another PR must not see these drafts, got %+v", other.comments)
-	}
+	other.WithDrafts(func(drafts *[]forge.DraftComment, nextID *int64) {
+		if len((*drafts)) != 0 {
+			t.Fatalf("another PR must not see these drafts, got %+v", (*drafts))
+		}
+	})
 }
 
 // Drafts an older faah saved under the base-path file move to the PR's file.
@@ -1488,11 +1489,13 @@ func TestPRDraftsMigrateFromBasePathFile(t *testing.T) {
 	})
 
 	pt := forge.PRTarget{Provider: "github", Owner: "acme", Repo: "widget", Number: 7}
-	pr := &prSession{diffBase: "HEAD", target: pt}
+	pr := prpkg.New(nil, pt, forge.PRMeta{}, "", "HEAD")
 	NewServer(workspace.NewIndex(root), nil, "/w/abc/").SetPR(pr)
-	if len(pr.comments) != 1 || pr.comments[0].Body != "old" || pr.nextID != 3 {
-		t.Fatalf("expected the migrated draft, got %+v (nextID %d)", pr.comments, pr.nextID)
-	}
+	pr.WithDrafts(func(drafts *[]forge.DraftComment, nextID *int64) {
+		if len((*drafts)) != 1 || (*drafts)[0].Body != "old" || (*nextID) != 3 {
+			t.Fatalf("expected the migrated draft, got %+v (nextID %d)", (*drafts), (*nextID))
+		}
+	})
 	if got := session.NewPR(pt).Get().Drafts; len(got) != 1 {
 		t.Fatalf("expected the draft in the PR session file, got %+v", got)
 	}

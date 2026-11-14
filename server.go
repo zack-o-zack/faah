@@ -9,7 +9,6 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"errors"
-	"faah/internal/session"
 	"fmt"
 	"io"
 	"io/fs"
@@ -34,7 +33,9 @@ import (
 	"faah/internal/git"
 	lsppkg "faah/internal/lsp"
 	"faah/internal/metrics"
+	prpkg "faah/internal/pr"
 	"faah/internal/render"
+	"faah/internal/session"
 	"faah/internal/settings"
 	"faah/internal/symbols"
 	"faah/internal/table"
@@ -83,7 +84,7 @@ type Server struct {
 	agent      *agentManager      // nil unless main wires editing for this session
 	threads    *threadManager     // nil unless editing is wired: threads run on the same harness
 	explainPre explainPrefetch    // evidence gathered ahead of an Explain click
-	pr         *prSession         // nil unless main launched this process as `faah pr ...`
+	pr         *prpkg.Session     // nil unless main launched this process as `faah pr ...`
 	diffBase   string             // ref /api/diff and /api/gutter diff against; "HEAD" unless in PR mode
 	prHeadSHA  string             // PR mode only: the checked-out PR head commit. Frozen boundary between
 	// the PR's own diff (diffBase..prHeadSHA) and the reviewer's local edits
@@ -561,10 +562,9 @@ func (s *Server) prThreadContext(scope string) string {
 	if p == nil {
 		return ""
 	}
-	p.mu.Lock()
-	num, title, base, head := p.meta.Number, p.meta.Title, p.meta.BaseRef, p.meta.HeadRef
-	mb, headSHA, url := p.diffBase, p.meta.HeadSHA, p.target.URL
-	p.mu.Unlock()
+	snap := p.Snapshot()
+	num, title, base, head := snap.Meta.Number, snap.Meta.Title, snap.Meta.BaseRef, snap.Meta.HeadRef
+	mb, headSHA, url := snap.DiffBase, snap.Meta.HeadSHA, snap.Target.URL
 	root := s.ix.Root()
 	short := func(x string) string { return x[:min(12, len(x))] }
 	haveRange := mb != "" && mb != "HEAD" && headSHA != ""
@@ -598,7 +598,7 @@ func (s *Server) prThreadContext(scope string) string {
 			fmt.Fprintf(&b, ", plus untracked files: %s", strings.Join(un, ", "))
 		}
 		b.WriteString(". ")
-		if f := p.writeScopeFile("your-changes.diff", git.DiffFull(root, diffFileMax, headSHA)); f != "" {
+		if f := p.WriteScopeFile("your-changes.diff", git.DiffFull(root, diffFileMax, headSHA)); f != "" {
 			fmt.Fprintf(&b, "That diff is also saved at %s. ", f)
 		}
 		if prRange != "" {
@@ -616,7 +616,7 @@ func (s *Server) prThreadContext(scope string) string {
 			break
 		}
 		fmt.Fprintf(&b, " The PR is exactly %s: read it with that and `git log --stat %s..%s`; do not review from `git show HEAD` or `git diff HEAD~1`.", prRange, mb, headSHA)
-		if f := p.writeScopeFile("pr.diff", git.DiffFull(root, diffFileMax, mb, headSHA)); f != "" {
+		if f := p.WriteScopeFile("pr.diff", git.DiffFull(root, diffFileMax, mb, headSHA)); f != "" {
 			fmt.Fprintf(&b, " The full diff is also saved at %s.", f)
 		}
 		if files := s.ix.PRFiles(); len(files) > 0 {
@@ -640,26 +640,27 @@ func (s *Server) prThreadContext(scope string) string {
 // SetPR marks this process as a PR review session: diffs are computed
 // against the PR's merge-base instead of HEAD, and the /api/pr/* endpoints
 // become live. Unset (nil) for a normal workspace.
-func (s *Server) SetPR(p *prSession) {
+func (s *Server) SetPR(p *prpkg.Session) {
 	s.pr = p
 	if s.threads != nil {
 		s.threads.prContext = s.prThreadContext
 	}
 	if p != nil {
-		s.diffBase = p.diffBase
-		s.prHeadSHA = p.meta.HeadSHA
+		snap := p.Snapshot()
+		s.diffBase = snap.DiffBase
+		s.prHeadSHA = snap.Meta.HeadSHA
 		if s.ix != nil {
-			s.ix.SetDiffBase(p.diffBase)
-			s.ix.SetPRHead(p.meta.HeadSHA)
-			s.ix.SetPushedHead(p.meta.HeadSHA)
+			s.ix.SetDiffBase(snap.DiffBase)
+			s.ix.SetPRHead(snap.Meta.HeadSHA)
+			s.ix.SetPushedHead(snap.Meta.HeadSHA)
 		}
 		if s.gitWatcher != nil {
 			s.gitWatcher.Trigger()
 		}
-		if p.target.Owner != "" && p.target.Repo != "" && p.target.Number > 0 {
+		if snap.Target.Owner != "" && snap.Target.Repo != "" && snap.Target.Number > 0 {
 			// Drafts are keyed on the PR, not the base path. Carry over any
 			// drafts an older faah saved under the base-path file.
-			prs := session.NewPR(p.target)
+			prs := session.NewPR(snap.Target)
 			if old := s.session; old != nil && len(prs.Get().Drafts) == 0 && len(old.Get().Drafts) > 0 {
 				drafts := old.Get().Drafts
 				prs.Update(func(ws *session.Workspace) { ws.Drafts = drafts })
@@ -668,16 +669,16 @@ func (s *Server) SetPR(p *prSession) {
 			s.session = prs
 		}
 		if s.session != nil {
-			p.mu.Lock()
-			if len(p.comments) == 0 && len(s.session.Get().Drafts) > 0 {
-				p.comments = append([]forge.DraftComment(nil), s.session.Get().Drafts...)
-				for _, c := range p.comments {
-					if c.ID > p.nextID {
-						p.nextID = c.ID
+			p.WithDrafts(func(drafts *[]forge.DraftComment, nextID *int64) {
+				if len((*drafts)) == 0 && len(s.session.Get().Drafts) > 0 {
+					(*drafts) = append([]forge.DraftComment(nil), s.session.Get().Drafts...)
+					for _, c := range *drafts {
+						if c.ID > (*nextID) {
+							(*nextID) = c.ID
+						}
 					}
 				}
-			}
-			p.mu.Unlock()
+			})
 		}
 	}
 }
@@ -987,7 +988,7 @@ func (s *Server) handleMeta(w http.ResponseWriter, r *http.Request) {
 		"agents":         []agentHarness{},
 	}
 	if s.pr != nil {
-		meta["pr"] = s.pr.metaMap(s.ix.PRFiles())
+		meta["pr"] = s.pr.MetaMap(s.ix.PRFiles())
 	}
 	writeJSON(w, meta)
 }
@@ -2170,7 +2171,7 @@ func (s *Server) handleGitPush(w http.ResponseWriter, r *http.Request) {
 	}
 	if s.pr != nil {
 		// force is only sent after the reviewer confirmed pushing a rebased
-		// PR branch; it is a lease, never a blind overwrite (prSession.Push).
+		// PR branch; it is a lease, never a blind overwrite (pr.Session.Push).
 		var body struct {
 			Force bool `json:"force"`
 		}
@@ -2222,7 +2223,7 @@ func (s *Server) handleGitPull(w http.ResponseWriter, r *http.Request) {
 		info, err := s.pr.Pull()
 		if err != nil {
 			status := http.StatusBadGateway
-			if errors.Is(err, errPRDiverged) {
+			if errors.Is(err, prpkg.ErrDiverged) {
 				status = http.StatusConflict
 			}
 			fail(w, status, err.Error())
@@ -2274,10 +2275,9 @@ func (s *Server) handleGitPull(w http.ResponseWriter, r *http.Request) {
 // index after anything moved them (push, pull), so diffs, the file tree and
 // the ahead count all measure from the new boundary.
 func (s *Server) syncPRRefs() {
-	s.pr.mu.Lock()
-	s.diffBase = s.pr.diffBase
-	s.prHeadSHA = s.pr.meta.HeadSHA
-	s.pr.mu.Unlock()
+	snap := s.pr.Snapshot()
+	s.diffBase = snap.DiffBase
+	s.prHeadSHA = snap.Meta.HeadSHA
 	if s.ix != nil {
 		s.ix.SetDiffBase(s.diffBase)
 		s.ix.SetPRHead(s.prHeadSHA)
@@ -2295,9 +2295,8 @@ func (s *Server) syncPRRefs() {
 func (s *Server) prSyncState(fetch bool) (git.SyncState, error) {
 	p := s.pr
 	root := s.ix.Root()
-	p.mu.Lock()
-	st := git.SyncState{PR: p.meta.Number, Branch: p.meta.HeadRef, Upstream: p.meta.BaseRef, OntoRef: prBaseRef(p.meta.Number)}
-	p.mu.Unlock()
+	snap := p.Snapshot()
+	st := git.SyncState{PR: snap.Meta.Number, Branch: snap.Meta.HeadRef, Upstream: snap.Meta.BaseRef, OntoRef: prpkg.BaseRef(snap.Meta.Number)}
 	st.InProgress = git.OpInProgress(root)
 	if st.InProgress != "" {
 		st.Code = "in-progress"
@@ -2485,11 +2484,13 @@ func (s *Server) handleUnpushed(w http.ResponseWriter, r *http.Request) {
 	var commits []git.UnpushedCommit
 	if s.pr != nil {
 		// Detached PR checkout: your commits are everything past the PR head.
-		s.pr.mu.Lock()
-		head, branch := s.pr.remoteHead(), s.pr.meta.HeadRef
-		s.pr.mu.Unlock()
+		snap := s.pr.Snapshot()
+		head, branch := snap.PushedSHA, snap.Meta.HeadRef
+		if head == "" {
+			head = snap.Meta.HeadSHA
+		}
 		commits = git.CommitsSince(s.ix.Root(), head, limit)
-		upstream = fmt.Sprintf("PR #%d head (%s)", s.pr.meta.Number, branch)
+		upstream = fmt.Sprintf("PR #%d head (%s)", snap.Meta.Number, branch)
 	} else {
 		upstream, commits = git.UnpushedCommits(s.ix.Root(), limit)
 	}

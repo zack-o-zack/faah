@@ -41,6 +41,7 @@ import (
 	"faah/internal/forge"
 	"faah/internal/git"
 	"faah/internal/metrics"
+	prpkg "faah/internal/pr"
 	"faah/internal/settings"
 	"faah/internal/ui"
 )
@@ -1436,7 +1437,7 @@ func managedCloneDir(repo string) string {
 // is repo ("owner/name"), or "".
 func cloneOf(dir, repo string) string {
 	owner, name := splitRepo(repo)
-	top, _ := findPRRemote(dir, owner, name)
+	top, _ := prpkg.FindRemote(dir, owner, name)
 	return top
 }
 

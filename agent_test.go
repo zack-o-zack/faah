@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/px0-ai/harness"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -16,12 +17,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/px0-ai/harness"
-
 	"faah/internal/agents"
 	"faah/internal/agents/all"
 	"faah/internal/forge"
 	"faah/internal/git/gittest"
+	prpkg "faah/internal/pr"
 	"faah/internal/workspace"
 )
 
@@ -1053,11 +1053,7 @@ func TestInlineEditOverlapStillRefused(t *testing.T) {
 func TestThreadPromptCarriesPRScope(t *testing.T) {
 	root := t.TempDir()
 	th := &thread{Kind: "ask"}
-	s := &Server{ix: workspace.NewIndex(root), pr: &prSession{
-		target:   forge.PRTarget{URL: "https://github.com/o/r/pull/7"},
-		meta:     forge.PRMeta{Number: 7, Title: "Add thing", BaseRef: "main", HeadRef: "feat", HeadSHA: "abcdef1234567890"},
-		diffBase: "1234567890abcdef",
-	}}
+	s := &Server{ix: workspace.NewIndex(root), pr: prpkg.New(nil, forge.PRTarget{URL: "https://github.com/o/r/pull/7"}, forge.PRMeta{Number: 7, Title: "Add thing", BaseRef: "main", HeadRef: "feat", HeadSHA: "abcdef1234567890"}, "", "1234567890abcdef")}
 	defer s.pr.Close()
 
 	whole := s.prThreadContext("pr")
