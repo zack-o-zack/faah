@@ -9,6 +9,7 @@ import (
 )
 
 func TestThreadSessionIdleResumes(t *testing.T) {
+	isolateSettings(t)
 	root := t.TempDir()
 	fakeCLI(t, "claude")
 	m := testJobs(root, "claude")
