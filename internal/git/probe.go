@@ -8,9 +8,9 @@ import (
 	"sync"
 )
 
-// gitDisabled turns off all git awareness (the -no-git flag). Like uiQuiet, a
+// disabled turns off all git awareness (the -no-git flag). Like uiQuiet, a
 // process-wide switch set once in main before anything reads it.
-var gitDisabled bool
+var disabled bool
 
 type Info struct {
 	ok       bool
@@ -19,8 +19,8 @@ type Info struct {
 }
 
 var (
-	gitMu    sync.Mutex
-	gitCache = map[string]Info{}
+	mu    sync.Mutex
+	cache = map[string]Info{}
 )
 
 // Available reports whether the git binary is on PATH and root sits inside a
@@ -32,18 +32,18 @@ func Available(root string) bool { return Probe(root).ok }
 func Dir(root string) string { return Probe(root).gitdir }
 
 func Probe(root string) Info {
-	if gitDisabled {
+	if disabled {
 		return Info{}
 	}
-	gitMu.Lock()
-	defer gitMu.Unlock()
-	if info, ok := gitCache[root]; ok {
+	mu.Lock()
+	defer mu.Unlock()
+	if info, ok := cache[root]; ok {
 		if info.ok && info.gitdir != "" {
 			if _, err := os.Lstat(info.gitdir); err == nil {
 				return info
 			}
 		}
-		delete(gitCache, root)
+		delete(cache, root)
 	}
 	var info Info
 	if _, err := exec.LookPath("git"); err == nil {
@@ -73,14 +73,14 @@ func Probe(root string) Info {
 				}
 			}
 			info = Info{ok: true, toplevel: top, gitdir: gd}
-			gitCache[root] = info
+			cache[root] = info
 		}
 	}
 	return info
 }
 
-func SetDisabled(value bool)   { gitDisabled = value }
-func Disabled() bool           { return gitDisabled }
+func SetDisabled(value bool)   { disabled = value }
+func Disabled() bool           { return disabled }
 func (info Info) OK() bool     { return info.ok }
 func (info Info) Root() string { return info.toplevel }
 func (info Info) Dir() string  { return info.gitdir }
