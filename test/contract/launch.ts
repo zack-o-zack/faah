@@ -24,7 +24,14 @@ export async function launch(f: Fixture, basePath = '/', workbench = false): Pro
     '-no-telemetry',
   ];
   if (!workbench) args.push('-base-path', basePath, f.root);
-  const child = spawn(bin, args, { cwd: f.root, env: f.env, stdio: ['pipe', 'pipe', 'pipe'] });
+  const child = spawn(bin, args, {
+    cwd: f.root,
+    env: {
+      ...f.env,
+      ...(process.env.FAAH_LEGACY_BIN ? { FAAH_LEGACY_BIN: process.env.FAAH_LEGACY_BIN } : {}),
+    },
+    stdio: ['pipe', 'pipe', 'pipe'],
+  });
   let output = '';
   let stdout = '';
   child.stdout.on('data', (chunk: Buffer) => {
