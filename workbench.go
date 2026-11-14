@@ -38,6 +38,7 @@ import (
 	"sync"
 	"time"
 
+	"faah/internal/forge"
 	"faah/internal/git"
 	"faah/internal/metrics"
 	"faah/internal/settings"
@@ -103,7 +104,7 @@ func wbDirItem(root string) wbItem {
 	return wbItem{ID: wbItemID("dir", root), Kind: "dir", Path: root, Title: filepath.Base(root)}
 }
 
-func wbPRItem(pt PRTarget) wbItem {
+func wbPRItem(pt forge.PRTarget) wbItem {
 	key := strings.ToLower(fmt.Sprintf("%s/%s/%s#%d", pt.Provider, pt.Owner, pt.Repo, pt.Number))
 	return wbItem{
 		ID:     wbItemID("pr", key),
@@ -1098,14 +1099,14 @@ func (wb *workbench) resolveTarget(target string) (wbItem, error) {
 	if target == "" {
 		return wbItem{}, errors.New("enter a directory path or a pull request URL")
 	}
-	if _, pt, ok := DetectPRURL(target); ok {
+	if _, pt, ok := forge.DetectPRURL(target); ok {
 		if git.Disabled() {
 			return wbItem{}, errors.New("git is required for PR review; restart faah without -no-git")
 		}
 		return wbPRItem(pt), nil
 	}
 	if strings.HasPrefix(target, "http://") || strings.HasPrefix(target, "https://") {
-		return wbItem{}, errors.New("not a pull or merge request URL (e.g. " + prURLExamples + ")")
+		return wbItem{}, errors.New("not a pull or merge request URL (e.g. " + forge.PRURLExamples + ")")
 	}
 	p, err := expandPath(target, wb.cwd)
 	if err != nil {
@@ -1596,7 +1597,7 @@ func (wb *workbench) makeClone(c *wbChild, it wbItem) (string, error) {
 	if top := cloneOf(dest, it.Repo); top != "" {
 		return top, nil // made while this one waited
 	}
-	provider, pt, ok := DetectPRURL(it.URL)
+	provider, pt, ok := forge.DetectPRURL(it.URL)
 	if !ok {
 		return "", fmt.Errorf("not a pull request URL: %s", it.URL)
 	}

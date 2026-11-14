@@ -24,6 +24,7 @@ import (
 	"faah/internal/agents/all"
 	"faah/internal/explain"
 	"faah/internal/explain/notes"
+	"faah/internal/forge"
 	"faah/internal/git"
 	lsppkg "faah/internal/lsp"
 	"faah/internal/processio"
@@ -742,9 +743,9 @@ func gitSyncPrompt(strategy string, st git.SyncState) string {
 // commitMessagePrompt it only writes text: no files, no git. draft is the
 // message as it stands in the merge dialog, rewritten rather than ignored.
 // commits is newest first.
-func mergeMessagePrompt(method string, meta PRMeta, commits []git.UnpushedCommit, stat, diff, draft string, instructions []string) string {
+func mergeMessagePrompt(method string, meta forge.PRMeta, commits []git.UnpushedCommit, stat, diff, draft string, instructions []string) string {
 	var b strings.Builder
-	if method == MergeMethodSquash {
+	if method == forge.MergeMethodSquash {
 		fmt.Fprintf(&b, "Write the commit message for squash-merging pull request #%d (%q) into %s: its %d commit(s) become this one commit.\n", meta.Number, meta.Title, meta.BaseRef, len(commits))
 		b.WriteString("Rules: imperative mood, a concise summary line under 72 characters, a blank line, then a body explaining why the change was made and what it does overall. Describe the end result, not the PR's history: leave out fixups, review rounds and reverted attempts.\n")
 	} else {

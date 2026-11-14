@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"faah/internal/forge"
 	"faah/internal/git"
 	"faah/internal/git/gittest"
 	lsppkg "faah/internal/lsp"
@@ -574,8 +575,8 @@ func TestHandleDiffPRSplitsPRAndYourChanges(t *testing.T) {
 	ix.Build()
 	srv := NewServer(ix, lsppkg.New(lsppkg.Options{Root: root, Enabled: false, Version: version}))
 	srv.SetPR(&prSession{
-		target: PRTarget{Owner: "o", Repo: "r"},
-		meta:   PRMeta{Number: 1, BaseRef: "main", HeadRef: "feature", HeadSHA: prHead},
+		target: forge.PRTarget{Owner: "o", Repo: "r"},
+		meta:   forge.PRMeta{Number: 1, BaseRef: "main", HeadRef: "feature", HeadSHA: prHead},
 		// checkoutPR would have set this to the real merge-base; a plain
 		// commit SHA works identically as a diff boundary in this test.
 		diffBase: mergeBase,

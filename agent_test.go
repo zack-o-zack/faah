@@ -20,6 +20,7 @@ import (
 
 	"faah/internal/agents"
 	"faah/internal/agents/all"
+	"faah/internal/forge"
 	"faah/internal/git/gittest"
 	"faah/internal/workspace"
 )
@@ -1053,8 +1054,8 @@ func TestThreadPromptCarriesPRScope(t *testing.T) {
 	root := t.TempDir()
 	th := &thread{Kind: "ask"}
 	s := &Server{ix: workspace.NewIndex(root), pr: &prSession{
-		target:   PRTarget{URL: "https://github.com/o/r/pull/7"},
-		meta:     PRMeta{Number: 7, Title: "Add thing", BaseRef: "main", HeadRef: "feat", HeadSHA: "abcdef1234567890"},
+		target:   forge.PRTarget{URL: "https://github.com/o/r/pull/7"},
+		meta:     forge.PRMeta{Number: 7, Title: "Add thing", BaseRef: "main", HeadRef: "feat", HeadSHA: "abcdef1234567890"},
 		diffBase: "1234567890abcdef",
 	}}
 	defer s.pr.Close()
