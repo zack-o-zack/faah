@@ -17,11 +17,13 @@ import { cloneWorkspace, stats } from '../../bench/util.ts';
 import { fixtures } from '../../bench/scenarios.ts';
 
 const output = process.env.FAAH_PROFILE_REPORT ?? '/tmp/faah-perf-profile.jsonl';
+
 function report(value: Record<string, unknown>): void {
   const text = JSON.stringify(value) + '\n';
   appendFileSync(output, text);
   process.stdout.write(text);
 }
+
 const option = (name: string) => {
   const i = process.argv.indexOf(name);
   return i < 0 ? undefined : process.argv[i + 1];
@@ -36,7 +38,9 @@ for (const name of (option('--repos') ?? 'flask,kubernetes').split(',')) {
     const index = await walk({
       root: workspace.dir,
       publish: () => {},
-      profile: (profile) => report({ type: 'walk-body', name, ...profile }),
+      profile: (profile) => {
+        report({ type: 'walk-body', name, ...profile });
+      },
     });
     report({
       type: 'walk',
@@ -50,13 +54,15 @@ for (const name of (option('--repos') ?? 'flask,kubernetes').split(',')) {
       root: workspace.dir,
       files: () => index.files,
       excluded: () => excluded,
-      profile: (profile) => report({ type: 'service', name, ...profile }),
+      profile: (profile) => {
+        report({ type: 'service', name, ...profile });
+      },
     });
     for (let i = 0; i < 3; i++) {
       await search.search({ query: 'zzFAAH_NO_MATCH_9c71zz' }, signal);
       await search.definitions(name === 'flask' ? '__init__' : 'SwaggerDoc', signal);
     }
-    const files = index.files.filter((f) => f.size > 0 && f.size <= 8 * 1024 * 1024);
+    const files = index.files.filter((file) => file.size > 0 && file.size <= 8 * 1024 * 1024);
     const globs = walkGlobs({ files, source: index.files, excluded }) ?? [];
     const expressions = [
       { label: 'current', expression: pattern({ query: 'zzFAAH_NO_MATCH_9c71zz' }) },
@@ -84,8 +90,9 @@ for (const name of (option('--repos') ?? 'flask,kubernetes').split(',')) {
             ],
             signal,
             match: async () => {},
-            profile: (profile) =>
-              report({ type: 'rg', name, variant: variant.label, threads, ...profile }),
+            profile: (profile) => {
+              report({ type: 'rg', name, variant: variant.label, threads, ...profile });
+            },
           });
         }
     if (binary) {
@@ -104,8 +111,12 @@ for (const name of (option('--repos') ?? 'flask,kubernetes').split(',')) {
                 route: 'api/file',
                 params: { path: fixture.large, start: '0', count: '1000' },
               });
-              for (const q of fixture.findQueries)
-                await request(server.baseUrl, { name: 'find', route: 'api/find', params: { q } });
+              for (const query of fixture.findQueries)
+                await request(server.baseUrl, {
+                  name: 'find',
+                  route: 'api/find',
+                  params: { q: query },
+                });
             }
             for (let i = 0; i < 3; i++) {
               const nohit = await request(server.baseUrl, {
@@ -140,7 +151,7 @@ for (const name of (option('--repos') ?? 'flask,kubernetes').split(',')) {
         await httpWorkspace.cleanup();
       }
     }
-    const small = index.files.find((f) => f.size > 4000 && f.size < 24000);
+    const small = index.files.find((file) => file.size > 4000 && file.size < 24000);
     if (small) {
       const phases = { read: 0, headers: 0, response: 0 };
       const request = new Request('http://localhost/api/raw');
@@ -159,7 +170,7 @@ for (const name of (option('--repos') ?? 'flask,kubernetes').split(',')) {
       report({
         type: 'raw',
         name,
-        perCallMs: Object.fromEntries(Object.entries(phases).map(([k, v]) => [k, v / 100])),
+        perCallMs: Object.fromEntries(Object.entries(phases).map(([k, total]) => [k, total / 100])),
       });
     }
   } finally {
@@ -192,5 +203,7 @@ for (let i = 0; i < 20; i++)
     args: ['--json', '-e', 'zz-no-hit', '--', '-'],
     signal,
     match: async () => {},
-    profile: (profile) => report({ type: 'spawn-floor', ...profile }),
+    profile: (profile) => {
+      report({ type: 'spawn-floor', ...profile });
+    },
   });

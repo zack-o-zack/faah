@@ -1,6 +1,7 @@
 const maxUnsigned = (1n << 64n) - 1n,
   maxSigned = (1n << 63n) - 1n,
   minSigned = -(1n << 63n);
+
 // strconv.Atoi returns a saturated value on range errors; callers ignore the
 // error. ParseUint's overflow also wins over invalid suffixes encountered later.
 export function goInteger(text: string | null): bigint {
@@ -8,8 +9,8 @@ export function goInteger(text: string | null): bigint {
   let pos = 0,
     negative = false,
     value = 0n;
-  if (text[0] === '-' || text[0] === '+') {
-    negative = text[0] === '-';
+  if (text.startsWith('-') || text.startsWith('+')) {
+    negative = text.startsWith('-');
     pos++;
   }
   if (pos === text.length) return 0n;
@@ -27,6 +28,7 @@ export function goInteger(text: string | null): bigint {
       ? maxSigned
       : value;
 }
+
 export function fileWindow(
   total: number,
   startText: string | null,

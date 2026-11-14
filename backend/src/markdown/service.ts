@@ -10,12 +10,15 @@ import { headingID, fenceLanguage } from '../render/language.ts';
 import { escape } from '../render/html.ts';
 import type { Highlight } from '../render/document.ts';
 import { record, number } from '../decode.ts';
+
 export function isMarkdown(path: string): boolean {
   return /\.(md|markdown)$/i.test(path);
 }
+
 function attr(text: string): string {
   return escape(text).replace(/"/g, '&#34;').replace(/'/g, '&#39;');
 }
+
 const markerTypes = new Set([
   'heading_open',
   'paragraph_open',
@@ -27,6 +30,7 @@ const markerTypes = new Set([
   'fence',
   'code_block',
 ]);
+
 function firstLine(tokens: Token[], index: number): number | undefined {
   const token = tokens[index];
   if (!token) return;
@@ -44,10 +48,12 @@ function firstLine(tokens: Token[], index: number): number | undefined {
   if (token.type === 'fence') return token.content ? token.map[0] + 2 : undefined;
   return token.map[0] + 1;
 }
+
 function footID(token: Token | undefined): { id: number; sub: number } {
   const meta = record(token?.meta);
   return { id: number(meta.id) + 1, sub: typeof meta.subId === 'number' ? meta.subId : 0 };
 }
+
 export async function renderMarkdown(input: string, highlight: Highlight): Promise<string> {
   const source = input.replaceAll('\r\n', '\n');
   const env = new MarkdownEnvironment();
@@ -68,8 +74,8 @@ export async function renderMarkdown(input: string, highlight: Highlight): Promi
       token.attrs = token.attrs.filter(
         ([name]) =>
           name !== 'class' ||
-          !['task-list-item', 'contains-task-list'].some((c) =>
-            token.attrGet('class')?.includes(c),
+          !['task-list-item', 'contains-task-list'].some((className) =>
+            token.attrGet('class')?.includes(className),
           ),
       );
     if (token.children)
@@ -82,7 +88,7 @@ export async function renderMarkdown(input: string, highlight: Highlight): Promi
   }
   await Promise.all(
     tokens
-      .filter((t) => t.type === 'fence' || t.type === 'code_block')
+      .filter((token) => token.type === 'fence' || token.type === 'code_block')
       .map(async (token) => {
         const lang = token.type === 'fence' ? (token.info.trim().split(/\s+/)[0] ?? '') : '';
         const code = token.content.replace(/\n$/, ''),
@@ -103,10 +109,12 @@ export async function renderMarkdown(input: string, highlight: Highlight): Promi
 class MarkdownEnvironment {
   readonly rendered = new Map<Token, string>();
 }
+
 function environment(value: unknown): MarkdownEnvironment {
   if (!(value instanceof MarkdownEnvironment)) throw new Error('invalid Markdown environment');
   return value;
 }
+
 function createParser() {
   const md = new MarkdownIt({ html: true, linkify: true, breaks: false, typographer: false })
     .use(footnotes)
@@ -148,4 +156,5 @@ function createParser() {
   };
   return md;
 }
+
 const md = createParser();

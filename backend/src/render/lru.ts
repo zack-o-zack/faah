@@ -9,12 +9,14 @@ export class LRU<T> {
     this.entries.set(key, entry);
     return entry.value;
   }
+
   put(key: string, value: T, bytes: number): void {
     if (this.get(key) !== undefined) return;
     this.entries.set(key, { value, bytes });
     this.used += bytes;
     this.trim(this.budget);
   }
+
   grow(key: string, delta: number): void {
     const entry = this.entries.get(key);
     if (!entry) return;
@@ -22,6 +24,7 @@ export class LRU<T> {
     this.used += delta;
     this.trim(this.budget);
   }
+
   remove(prefix: string): boolean {
     let removed = false;
     for (const [key, entry] of this.entries)
@@ -32,6 +35,7 @@ export class LRU<T> {
       }
     return removed;
   }
+
   trim(budget = 8 << 20): void {
     for (const [key, entry] of this.entries) {
       if (this.used <= budget || this.entries.size <= 1) break;
@@ -39,6 +43,7 @@ export class LRU<T> {
       this.used -= entry.bytes;
     }
   }
+
   clear(): void {
     this.entries.clear();
     this.used = 0;

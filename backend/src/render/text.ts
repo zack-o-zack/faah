@@ -1,4 +1,5 @@
 import { isUtf8 } from 'node:buffer';
+
 // Go's JSON encoder replaces each invalid UTF-8 byte. TextDecoder instead
 // consumes a truncated sequence as one error, changing raw lines and widths.
 export function goString(input: Uint8Array): string {
@@ -43,6 +44,7 @@ export function goString(input: Uint8Array): string {
   }
   return text;
 }
+
 export function normalizeCRLF(input: Uint8Array): Buffer {
   const bytes = Buffer.from(input.buffer, input.byteOffset, input.byteLength),
     parts: Buffer[] = [];

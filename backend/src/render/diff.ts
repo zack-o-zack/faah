@@ -11,6 +11,7 @@ export interface RenderDiffRow {
   text: string;
   html?: string;
 }
+
 export interface RenderDiffHunk {
   oldStart: number;
   newStart: number;
@@ -44,7 +45,7 @@ export async function highlightDiff(
       };
       hunks.push(current);
     } else if (current && line && !line.startsWith('\\')) {
-      const type = line[0] === '+' ? 'add' : line[0] === '-' ? 'del' : 'ctx';
+      const type = line.startsWith('+') ? 'add' : line.startsWith('-') ? 'del' : 'ctx';
       current.rows.push({
         type,
         text: line.slice(1),
@@ -66,8 +67,8 @@ export async function highlightDiff(
       }
       continue;
     }
-    const oldRows = hunk.rows.filter((r) => r.type !== 'add').map((r) => r.text),
-      newRows = hunk.rows.filter((r) => r.type !== 'del').map((r) => r.text);
+    const oldRows = hunk.rows.filter((row) => row.type !== 'add').map((row) => row.text),
+      newRows = hunk.rows.filter((row) => row.type !== 'del').map((row) => row.text);
     const oldHTML = oldRows.length ? await highlight(oldRows.join('\n'), lang, oldRows.length) : [];
     const newHTML = newRows.length ? await highlight(newRows.join('\n'), lang, newRows.length) : [];
     let oldIndex = 0,

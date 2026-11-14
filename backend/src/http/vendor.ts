@@ -1,12 +1,14 @@
 import { join, basename } from 'node:path';
 import { homedir } from 'node:os';
 import { mkdir, rename, writeFile, readFile } from 'node:fs/promises';
+
 export function vendorCacheDir(): string {
   return process.env.XDG_CACHE_HOME
     ? join(process.env.XDG_CACHE_HOME, 'faah/vendor')
     : join(homedir(), '.faah/cache/vendor');
 }
 const pending = new Map<string, Promise<Uint8Array | undefined>>();
+
 export async function vendorAsset(rel: string): Promise<Uint8Array | undefined> {
   const path = join(vendorCacheDir(), basename(rel) + '.gz');
   try {

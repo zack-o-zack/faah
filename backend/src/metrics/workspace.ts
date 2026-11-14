@@ -1,6 +1,7 @@
 import type { Child } from '../legacy/child.ts';
 import { decodeMetrics } from './decode.ts';
-import { MetricsCollector } from './service.ts';
+import type { MetricsCollector } from './service.ts';
+
 export async function workspaceMetrics(options: {
   collector: MetricsCollector;
   child: Child | undefined;

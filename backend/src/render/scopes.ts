@@ -27,6 +27,7 @@ export const classes = new Set([
   'c',
   'g',
 ]);
+
 export const scopeClasses: readonly (readonly [string, string])[] = [
   ['invalid', 'err'],
   ['comment.line.preprocessor', 'cp'],
@@ -97,13 +98,14 @@ const rustBuiltins = new Set(
     ' ',
   ),
 );
+
 function rustClass(
   scopes: readonly string[],
   text: string,
   line: string,
   offset: number,
 ): string | undefined {
-  const has = (prefix: string) => scopes.some((s) => s.startsWith(prefix));
+  const has = (prefix: string) => scopes.some((scope) => scope.startsWith(prefix));
   if (has('comment') && /^\s*\/\/[!/]/.test(line)) return 's';
   if (has('meta.attribute') && !has('string')) return 'cp';
   if (has('meta.use') && (has('entity.name.namespace') || has('entity.name.type'))) return '';
@@ -135,6 +137,7 @@ function rustClass(
   if (has('punctuation.brackets.angle')) return 'o';
   return;
 }
+
 function contextClass(
   scopes: readonly string[],
   language: string,
@@ -144,16 +147,16 @@ function contextClass(
 ): string | undefined {
   if (language === 'Rust') return rustClass(scopes, text, line, offset);
   if (language === 'Bash') {
-    if (line.startsWith('#!') && scopes.some((s) => s.startsWith('comment'))) return 'cp';
+    if (line.startsWith('#!') && scopes.some((scope) => scope.startsWith('comment'))) return 'cp';
     if (
-      scopes.some((s) => s.startsWith('entity.name.function')) &&
-      !scopes.some((s) => s.startsWith('support.function.builtin'))
+      scopes.some((scope) => scope.startsWith('entity.name.function')) &&
+      !scopes.some((scope) => scope.startsWith('support.function.builtin'))
     )
       return '';
   }
 
   if (language === 'markdown') {
-    const has = (prefix: string) => scopes.some((s) => s.startsWith(prefix));
+    const has = (prefix: string) => scopes.some((scope) => scope.startsWith(prefix));
     if (has('markup.underline.link')) return 'na';
     if (has('meta.link') && (has('string.other.link.title') || has('punctuation.definition.link')))
       return 'nt';
@@ -179,18 +182,22 @@ function contextClass(
       return 'nc';
   }
   if (language === 'TypeScript' || language === 'JavaScript' || language === 'react') {
-    if (scopes.some((s) => s.startsWith('keyword.operator.type.annotation'))) return '';
-    if (scopes.some((s) => s.startsWith('support.type.primitive')))
+    if (scopes.some((scope) => scope.startsWith('keyword.operator.type.annotation'))) return '';
+    if (scopes.some((scope) => scope.startsWith('support.type.primitive')))
       return ['void', 'boolean'].includes(text) ? 'k' : 'kt';
-    if (scopes.some((s) => s.startsWith('entity.name.type')))
-      return scopes.some((s) => s.startsWith('meta.type.annotation')) ? 'kt' : '';
+    if (scopes.some((scope) => scope.startsWith('entity.name.type')))
+      return scopes.some((scope) => scope.startsWith('meta.type.annotation')) ? 'kt' : '';
     if (
-      scopes.some((s) => s.startsWith('entity.name.function') || s.startsWith('variable.parameter'))
+      scopes.some(
+        (scope) =>
+          scope.startsWith('entity.name.function') || scope.startsWith('variable.parameter'),
+      )
     )
       return '';
   }
   return;
 }
+
 export function classFor(
   scopes: readonly string[],
   language = '',
@@ -211,9 +218,10 @@ export function classFor(
   return cls;
 }
 const scopeCache = new Map<string, string>();
+
 function scopeClass(scopes: readonly string[], language: string): string {
   for (const [prefix, cls] of languageScopes[language] ?? [])
-    if (scopes.some((s) => s.startsWith(prefix))) return cls;
+    if (scopes.some((scope) => scope.startsWith(prefix))) return cls;
   for (let i = scopes.length - 1; i >= 0; i--) {
     const scope = scopes[i] ?? '';
     for (const [prefix, cls] of scopeClasses)

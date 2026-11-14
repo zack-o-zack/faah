@@ -10,10 +10,12 @@ import { runRG } from '../src/search/rg.ts';
 
 async function workspace() {
   const root = await mkdtemp(join(tmpdir(), 'faah-search-'));
+
   async function write(path: string, content: string | Uint8Array) {
     await mkdir(dirname(join(root, path)), { recursive: true });
     await writeFile(join(root, path), content);
   }
+
   await write('.gitignore', 'ignored/\n');
   await write('plain.txt', 'needle NEEDLE needles\n你好 needle\nK k K S s ſ É é İ i\n');
   await write('ignored/secret.txt', 'needle\n');
@@ -35,16 +37,16 @@ async function workspace() {
 }
 
 test('search uses indexed set, literal ASCII folding, Unicode regex and Go word boundaries', async () => {
-  const f = await workspace();
+  const tree = await workspace();
   const signal = AbortSignal.timeout(10000);
   try {
     const search = (
       query: string,
       opts: { case?: boolean; word?: boolean; regex?: boolean; glob?: string } = {},
-    ) => f.search.search({ query, ...opts }, signal);
+    ) => tree.search.search({ query, ...opts }, signal);
     const literal = await search('needle');
-    expect(literal.results.map((r) => r.path)).toEqual(['late-null.txt', 'plain.txt']);
-    expect(literal.results.find((r) => r.path === 'plain.txt')?.matches.length).toBe(4);
+    expect(literal.results.map((result) => result.path)).toEqual(['late-null.txt', 'plain.txt']);
+    expect(literal.results.find((result) => result.path === 'plain.txt')?.matches.length).toBe(4);
     expect(
       (await search('needle', { case: true, glob: 'plain.txt' })).results[0]?.matches.length,
     ).toBe(3);
@@ -52,20 +54,22 @@ test('search uses indexed set, literal ASCII folding, Unicode regex and Go word 
       (await search('needle', { word: true, glob: 'plain.txt' })).results[0]?.matches.length,
     ).toBe(3);
     expect(
-      (await search('k', { glob: 'plain.txt' })).results[0]?.matches.map((m) => m.mid),
+      (await search('k', { glob: 'plain.txt' })).results[0]?.matches.map((match) => match.mid),
     ).toEqual(['K', 'k']);
     expect(
       (await search('k|s|é', { regex: true, glob: 'plain.txt' })).results[0]?.matches.map(
-        (m) => m.mid,
+        (match) => match.mid,
       ),
     ).toEqual(['s', 'K', 'k', 'K', 'S', 's', 'ſ', 'É', 'é']);
     expect((await search('你好', { glob: 'plain.txt' })).results[0]?.matches[0]?.mid).toBe('你好');
     for (const literal of ['é', 'É', 'İ', 'ſ', 'K'])
       expect(
-        (await search(literal, { glob: 'plain.txt' })).results[0]?.matches.map((m) => m.mid),
+        (await search(literal, { glob: 'plain.txt' })).results[0]?.matches.map(
+          (match) => match.mid,
+        ),
       ).toEqual([literal]);
     expect(
-      (await search('needle', { glob: 'ignored/secret.txt' })).results.map((f) => f.path),
+      (await search('needle', { glob: 'ignored/secret.txt' })).results.map((file) => file.path),
     ).toEqual(['ignored/secret.txt']);
     for (const glob of [
       'ignored/*',
@@ -74,41 +78,41 @@ test('search uses indexed set, literal ASCII folding, Unicode regex and Go word 
       'ignored//secret.txt',
     ])
       expect((await search('needle', { glob })).results).toEqual([]);
-    expect((await search('Hello', { glob: 'src/*.go' })).results.map((f) => f.path)).toEqual([
+    expect((await search('Hello', { glob: 'src/*.go' })).results.map((file) => file.path)).toEqual([
       'src/hello.go',
     ]);
     expect((await search('   ')).results).toEqual([]);
-    expect(await unindexedTarget(f.root, f.files, '/ignored/secret.txt')).toBeDefined();
-    expect(await f.search.definitions('Hello', signal)).toMatchObject({
+    expect(await unindexedTarget(tree.root, tree.files, '/ignored/secret.txt')).toBeDefined();
+    expect(await tree.search.definitions('Hello', signal)).toMatchObject({
       symbol: 'Hello',
       refCount: 1,
       defs: [{ path: 'src/hello.go', line: 2, def: true }],
     });
   } finally {
-    await f.close();
+    await tree.close();
   }
 });
 
 test('ripgrep walk filters to the indexed set and falls back for TouchPath symlinks', async () => {
-  const f = await workspace();
+  const tree = await workspace();
   const signal = AbortSignal.timeout(10000);
   try {
-    let files = f.files;
+    let files = tree.files;
     const walking = new Search({
-      root: f.root,
+      root: tree.root,
       files: () => files,
       strategy: 'walk',
       excluded: () => [{ path: 'ignored', dir: true }],
     });
     for (const query of ['needle', 'Hello', '你好', 'zzNO_HIT'])
       expect(await walking.search({ query }, signal)).toEqual(
-        await f.search.search({ query }, signal),
+        await tree.search.search({ query }, signal),
       );
     expect(await walking.search({ query: 'needle', glob: 'ignored/secret.txt' }, signal)).toEqual(
-      await f.search.search({ query: 'needle', glob: 'ignored/secret.txt' }, signal),
+      await tree.search.search({ query: 'needle', glob: 'ignored/secret.txt' }, signal),
     );
     files = [
-      ...f.files,
+      ...tree.files,
       newItem(
         'link.txt',
         Buffer.byteLength('needle NEEDLE needles\n你好 needle\nK k K S s ſ É é İ i\n'),
@@ -118,53 +122,53 @@ test('ripgrep walk filters to the indexed set and falls back for TouchPath symli
       (await walking.search({ query: 'needle', glob: 'link.txt' }, signal)).results[0]?.path,
     ).toBe('link.txt');
   } finally {
-    await f.close();
+    await tree.close();
   }
 });
 
 test('search caps matches per file and returns 200 complete files without claiming per-file truncation', async () => {
-  const f = await workspace();
+  const tree = await workspace();
   try {
-    await f.write('caps.txt', 'capneedle '.repeat(100));
-    const state = await walk({ root: f.root, publish: () => {} });
-    const search = new Search({ root: f.root, files: () => state.files });
+    await tree.write('caps.txt', 'capneedle '.repeat(100));
+    const state = await walk({ root: tree.root, publish: () => {} });
+    const search = new Search({ root: tree.root, files: () => state.files });
     const perFile = await search.search({ query: 'capneedle' }, AbortSignal.timeout(10000));
     expect(perFile.results[0]?.matches.length).toBe(50);
     expect(perFile.truncated).toBe(false);
     const prefix = ('segment'.repeat(8) + '/').repeat(12);
     for (let i = 0; i < 400; i++)
-      await f.write(`${prefix}${String(i).padStart(3, '0')}.txt`, 'filecapneedle\n'.repeat(60));
-    state.files = (await walk({ root: f.root, publish: () => {} })).files;
+      await tree.write(`${prefix}${String(i).padStart(3, '0')}.txt`, 'filecapneedle\n'.repeat(60));
+    state.files = (await walk({ root: tree.root, publish: () => {} })).files;
     const cap = await search.search({ query: 'filecapneedle' }, AbortSignal.timeout(10000));
     expect(cap.results.length).toBe(200);
-    expect(cap.results.every((f) => f.matches.length === 50)).toBe(true);
+    expect(cap.results.every((file) => file.matches.length === 50)).toBe(true);
   } finally {
-    await f.close();
+    await tree.close();
   }
 });
 
 test('search aborts ripgrep and rejects invalid expressions', async () => {
-  const f = await workspace();
+  const tree = await workspace();
   try {
     await expect(
-      f.search.search({ query: '[', regex: true }, AbortSignal.timeout(10000)),
+      tree.search.search({ query: '[', regex: true }, AbortSignal.timeout(10000)),
     ).rejects.toThrow('error parsing regexp: missing closing ]: `[`');
     const controller = new AbortController();
     controller.abort();
-    await expect(f.search.search({ query: 'needle' }, controller.signal)).rejects.toThrow();
-    const pending = f.search.search({ query: 'needle' }, AbortSignal.timeout(1));
+    await expect(tree.search.search({ query: 'needle' }, controller.signal)).rejects.toThrow();
+    const pending = tree.search.search({ query: 'needle' }, AbortSignal.timeout(1));
     await expect(pending).rejects.toThrow();
   } finally {
-    await f.close();
+    await tree.close();
   }
 });
 
 test('parallel rg delivery awaits ordered file matches without an end callback', async () => {
-  const f = await workspace();
+  const tree = await workspace();
   try {
     const lines: number[] = [];
     const result = await runRG({
-      root: f.root,
+      root: tree.root,
       args: ['--json', '--text', '-e', 'needle', '--', 'plain.txt'],
       signal: AbortSignal.timeout(10000),
       concurrency: 4,
@@ -176,60 +180,64 @@ test('parallel rg delivery awaits ordered file matches without an end callback',
     expect(result.code).toBe(0);
     expect(lines).toEqual([1, 2]);
   } finally {
-    await f.close();
+    await tree.close();
   }
 });
 
 test('Go line anchors, empty matches, quoted literals and newline expressions', async () => {
-  const f = await workspace();
+  const tree = await workspace();
   const signal = AbortSignal.timeout(10000);
   try {
     for (const query of ['^', '$', '\\A', '\\z']) {
-      const result = await f.search.search({ query, regex: true, glob: 'plain.txt' }, signal);
-      expect(result.results[0]?.matches.map((m) => m.line)).toEqual([1, 2, 3, 4]);
+      const result = await tree.search.search({ query, regex: true, glob: 'plain.txt' }, signal);
+      expect(result.results[0]?.matches.map((match) => match.line)).toEqual([1, 2, 3, 4]);
     }
     for (const query of ['a*', 'a?', '\\B']) {
-      const result = await f.search.search({ query, regex: true, glob: 'plain.txt' }, signal);
+      const result = await tree.search.search({ query, regex: true, glob: 'plain.txt' }, signal);
       expect(
         result.results
-          .flatMap((f) => f.matches)
-          .every((m) => !m.pre.includes('�') && !m.post.includes('�')),
+          .flatMap((file) => file.matches)
+          .every((match) => !match.pre.includes('�') && !match.post.includes('�')),
       ).toBe(true);
     }
     for (const query of ['a\\nb', 'a\nb', '\\Q[a]\\E'])
       expect(
-        (await f.search.search({ query, regex: true, glob: 'plain.txt' }, signal)).results,
+        (await tree.search.search({ query, regex: true, glob: 'plain.txt' }, signal)).results,
       ).toEqual([]);
-    expect((await f.search.search({ query: 'a\nb', glob: 'plain.txt' }, signal)).results).toEqual(
-      [],
-    );
     expect(
-      (await f.search.search({ query: '[\\w]+', regex: true, glob: 'plain.txt' }, signal))
+      (await tree.search.search({ query: 'a\nb', glob: 'plain.txt' }, signal)).results,
+    ).toEqual([]);
+    expect(
+      (await tree.search.search({ query: '[\\w]+', regex: true, glob: 'plain.txt' }, signal))
         .results[0]?.matches[0]?.mid,
     ).toBe('needle');
     expect(
-      (await f.search.search({ query: '[a\\n]', regex: true, glob: 'plain.txt' }, signal)).results
-        .length,
+      (await tree.search.search({ query: '[a\\n]', regex: true, glob: 'plain.txt' }, signal))
+        .results.length,
     ).toBe(0);
     for (const query of ['[a&&b]', '[a~~b]', '[a[b]', '[]a]']) {
       expect(
-        (await f.search.search({ query, regex: true, glob: 'src/hello.go' }, signal)).results
+        (await tree.search.search({ query, regex: true, glob: 'src/hello.go' }, signal)).results
           .length,
       ).toBe(1);
     }
     expect(
-      (await f.search.search({ query: '[[:alpha:]\\d]+', regex: true, glob: 'plain.txt' }, signal))
-        .results[0]?.matches[0]?.mid,
+      (
+        await tree.search.search(
+          { query: '[[:alpha:]\\d]+', regex: true, glob: 'plain.txt' },
+          signal,
+        )
+      ).results[0]?.matches[0]?.mid,
     ).toBe('needle');
     for (const query of ['\\110ello', '(?P<x>Hel)(?P<x>lo)', 'Hello|\\x0a', 'Hello|\\012'])
       expect(
-        (await f.search.search({ query, regex: true, glob: 'src/hello.go' }, signal)).results[0]
+        (await tree.search.search({ query, regex: true, glob: 'src/hello.go' }, signal)).results[0]
           ?.matches.length,
       ).toBe(4);
     for (const query of ['[[:alpha:]{1001}]', '[]a{1001}]', '[a-z--]', '[--0]'])
-      await expect(f.search.search({ query, regex: true }, signal)).resolves.toBeDefined();
+      await expect(tree.search.search({ query, regex: true }, signal)).resolves.toBeDefined();
     for (const query of ['Hello{01}', 'Hello{1,01}', 'Hello{,2}'])
-      expect((await f.search.search({ query, regex: true }, signal)).results).toEqual([]);
+      expect((await tree.search.search({ query, regex: true }, signal)).results).toEqual([]);
     for (const [query, error] of [
       ['a**', 'invalid nested repetition operator: `**`'],
       ['a*?+', 'invalid nested repetition operator: `*?+`'],
@@ -238,20 +246,20 @@ test('Go line anchors, empty matches, quoted literals and newline expressions', 
       ['[z-a]', 'invalid character class range: `z-a`'],
       ['abc\\q', 'invalid escape sequence: `\\q`'],
     ])
-      await expect(f.search.search({ query: query ?? '', regex: true }, signal)).rejects.toThrow(
+      await expect(tree.search.search({ query: query ?? '', regex: true }, signal)).rejects.toThrow(
         error,
       );
-    await expect(f.search.search({ query: '(', regex: true }, signal)).rejects.toThrow(
+    await expect(tree.search.search({ query: '(', regex: true }, signal)).rejects.toThrow(
       'missing closing ): `(?i)(`',
     );
-    await expect(f.search.search({ query: '(?=a)', regex: true }, signal)).rejects.toThrow(
+    await expect(tree.search.search({ query: '(?=a)', regex: true }, signal)).rejects.toThrow(
       'invalid or unsupported Perl syntax: `(?=`',
     );
-    await expect(f.search.search({ query: 'a{1001}', regex: true }, signal)).rejects.toThrow(
+    await expect(tree.search.search({ query: 'a{1001}', regex: true }, signal)).rejects.toThrow(
       'invalid repeat count: `{1001}`',
     );
   } finally {
-    await f.close();
+    await tree.close();
   }
 });
 

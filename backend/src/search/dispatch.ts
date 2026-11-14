@@ -13,11 +13,13 @@ export class FileDispatch {
       complete?: (path: string) => void;
     },
   ) {}
+
   match(hit: RGMatch): void {
     const hits = this.files.get(hit.path) ?? [];
     hits.push(hit);
     this.files.set(hit.path, hits);
   }
+
   async complete(path: string): Promise<void> {
     const hits = this.files.get(path) ?? [];
     this.files.delete(path);
@@ -29,10 +31,12 @@ export class FileDispatch {
     this.running.add(task);
     void task.then(() => this.running.delete(task));
   }
+
   private async run(path: string, hits: RGMatch[]): Promise<void> {
     for (const hit of hits) await this.options.match(hit);
     this.options.complete?.(path);
   }
+
   async finish(): Promise<void> {
     await Promise.all(this.running);
     this.files.clear();

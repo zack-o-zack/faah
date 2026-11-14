@@ -18,9 +18,9 @@ test('workbench folder service and clone recognition', async () => {
     mkdirSync(join(temp, 'Alpha'));
     mkdirSync(join(temp, 'alpha2'));
     mkdirSync(join(temp, '.hidden'));
-    expect(wb.browse('', false).entries.map((e) => e.name)).toEqual(['Alpha', 'alpha2']);
+    expect(wb.browse('', false).entries.map((entry) => entry.name)).toEqual(['Alpha', 'alpha2']);
     expect(wb.browse('', true).entries).toHaveLength(3);
-    expect(wb.complete('a').entries.map((e) => e.name)).toEqual(['alpha2', 'Alpha']);
+    expect(wb.complete('a').entries.map((entry) => entry.name)).toEqual(['alpha2', 'Alpha']);
     expect(wb.mkdir('nested/deep', '').path).toBe(join(temp, 'nested/deep'));
     expect(() => wb.mkdir('nested/deep', '')).toThrow('already exists');
     expect(Bun.spawnSync(['git', 'init', '-q', join(temp, 'Alpha')]).exitCode).toBe(0);

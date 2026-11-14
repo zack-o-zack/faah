@@ -10,10 +10,12 @@ import { cloneWorkspace, stats, now, command } from '../../bench/util.ts';
 
 const args = process.argv.slice(2);
 const rawOnly = args.includes('--raw-only');
+
 function option(name: string) {
   const i = args.indexOf(name);
   return i < 0 ? undefined : args[i + 1];
 }
+
 const path = option('--bin'),
   out = option('--out'),
   label = option('--label');
@@ -34,7 +36,7 @@ const environment = {
   flags,
 };
 for (const repo of (await corpus()).filter(
-  (r) => !option('--repos') || option('--repos')?.split(',').includes(r.name),
+  (corpusRepo) => !option('--repos') || option('--repos')?.split(',').includes(corpusRepo.name),
 )) {
   const startup = [];
   for (let i = 0; i < (rawOnly ? 0 : 5); i++) {
@@ -58,10 +60,10 @@ for (const repo of (await corpus()).filter(
       await ready(server.baseUrl, server.started);
       const latency = [];
       const owned = scenarios(fixture).filter(
-        (s) =>
-          ['meta', 'tree.root', 'tree.deep', 'outline', 'def'].includes(s.name) ||
-          s.name.startsWith('find.') ||
-          s.name.startsWith('search.'),
+        (scenario) =>
+          ['meta', 'tree.root', 'tree.deep', 'outline', 'def'].includes(scenario.name) ||
+          scenario.name.startsWith('find.') ||
+          scenario.name.startsWith('search.'),
       );
       for (const spec of rawOnly ? [] : owned) {
         process.stdout.write(repo.name + ': ' + spec.name + '\n');
@@ -94,10 +96,10 @@ for (const repo of (await corpus()).filter(
         name: 'raw',
         route: 'api/raw',
         params: { path: fixture.typical },
-        latency: stats(rawSamples.map((s) => s.ms)),
+        latency: stats(rawSamples.map((sample) => sample.ms)),
         samples: rawSamples,
       });
-      const heavy = owned.find((s) => s.name === 'search.regex');
+      const heavy = owned.find((scenario) => scenario.name === 'search.regex');
       if (!heavy) throw new Error('missing search workload');
       if (!rawOnly) process.stdout.write(repo.name + ': responsiveness\n');
       const underLoad = rawOnly ? undefined : await responsiveness(server.baseUrl, heavy, 10);
@@ -109,7 +111,7 @@ for (const repo of (await corpus()).filter(
         fixture: { ...fixture, original: undefined },
         startup: rawOnly
           ? undefined
-          : { samples: startup, ready: stats(startup.map((s) => s.readyMs)) },
+          : { samples: startup, ready: stats(startup.map((sample) => sample.readyMs)) },
         latency,
         responsiveness: underLoad,
       });

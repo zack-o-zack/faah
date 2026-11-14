@@ -1,11 +1,13 @@
 import { holding } from './holding.ts';
 import { themeName } from '../http/assets.ts';
-import { Workbench, ServiceError } from './service.ts';
+import type { Workbench } from './service.ts';
+import { ServiceError } from './service.ts';
 import { localPost, trustedGet } from '../http/guards.ts';
 import { json, fail, missing, redirect } from '../http/response.ts';
 import { proxy } from '../http/proxy.ts';
 import { parse, string, message } from '../decode.ts';
-import { Settings } from '../settings/service.ts';
+import type { Settings } from '../settings/service.ts';
+
 export async function workbenchRoute(options: {
   wb: Workbench;
   request: Request;

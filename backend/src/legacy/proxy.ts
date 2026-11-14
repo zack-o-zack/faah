@@ -2,6 +2,7 @@ import type { Navigation } from '../index/navigation.ts';
 import { proxy } from '../http/proxy.ts';
 import { resolveFile } from '../files/service.ts';
 import { record, string } from '../decode.ts';
+
 export async function legacyProxy(options: {
   request: Request;
   origin: string;

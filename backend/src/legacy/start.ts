@@ -1,6 +1,7 @@
 import { featureArgs, type Flags } from '../cli/flags.ts';
 import { detectPR, resolveTarget } from '../cli/target.ts';
 import { Child } from './child.ts';
+
 export async function startLegacy(flags: Flags, base: string): Promise<Child> {
   const target = flags.targets[0] ?? '.';
   if (target === 'pr')

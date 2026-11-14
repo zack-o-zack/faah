@@ -12,14 +12,17 @@ import { nullable } from './compat.ts';
 import { finishNullable } from './empty.ts';
 import { snip, type Snippet } from './snip.ts';
 import type { SearchProfile, RGProfile } from './profile.ts';
+
 export interface Match extends Snippet {
   line: number;
   def?: boolean;
 }
+
 export interface FileMatches {
   path: string;
   matches: Match[];
 }
+
 export async function unindexedTarget(
   root: string,
   files: Item[],
@@ -30,8 +33,8 @@ export async function unindexedTarget(
     !rel ||
     /[*?[!\\]/.test(rel) ||
     rel.endsWith('/') ||
-    rel.split('/').some((s) => !s || s === '.' || s === '..') ||
-    files.some((f) => f.path === rel)
+    rel.split('/').some((segment) => !segment || segment === '.' || segment === '..') ||
+    files.some((file) => file.path === rel)
   )
     return;
   try {
@@ -41,6 +44,7 @@ export async function unindexedTarget(
     return;
   }
 }
+
 export class Search {
   constructor(
     readonly options: {
@@ -51,6 +55,7 @@ export class Search {
       profile?: (profile: SearchProfile) => void;
     },
   ) {}
+
   async search(
     opts: SearchOptions,
     signal: AbortSignal,
@@ -65,14 +70,16 @@ export class Search {
     const empty = opts.regex
       ? (nullable(expression) ?? (await this.emptyMatch(expression, signal)))
       : false;
-    const maxFiles = opts.maxFiles || 200,
-      maxPerFile = opts.maxPerFile || 50;
+    // Go treats a zero cap as unset.
+    const maxFiles = opts.maxFiles === undefined || opts.maxFiles === 0 ? 200 : opts.maxFiles,
+      maxPerFile = opts.maxPerFile === undefined || opts.maxPerFile === 0 ? 50 : opts.maxPerFile;
     const extra = await unindexedTarget(this.options.root, this.options.files(), opts.glob ?? '');
     const glob = compilePattern(opts.glob ?? '');
     const files = (extra ? [extra] : this.options.files()).filter(
-      (f) => f.size > 0 && f.size <= 8 * 1024 * 1024 && (!glob || glob.hit(f.path, false)),
+      (file) =>
+        file.size > 0 && file.size <= 8 * 1024 * 1024 && (!glob || glob.hit(file.path, false)),
     );
-    const allowed = new Set(files.map((f) => f.path));
+    const allowed = new Set(files.map((file) => file.path));
     const valid = new Map<string, boolean>();
     const results = new Map<string, Match[]>();
     const completed = new Set<string>();
@@ -130,7 +137,7 @@ export class Search {
     let batches: string[][] = [];
     const strategy = this.options.strategy ?? (files.length >= 4000 ? 'walk' : 'explicit');
     const globs =
-      strategy === 'walk' && !extra && files.every((f) => f.walked)
+      strategy === 'walk' && !extra && files.every((file) => file.walked)
         ? walkGlobs({
             files,
             source: this.options.files(),
@@ -224,6 +231,7 @@ export class Search {
     });
     return { results: out.slice(0, maxFiles), truncated: out.length > maxFiles };
   }
+
   private async emptyMatch(expression: string, signal: AbortSignal): Promise<boolean> {
     let empty = false;
     await runRG({
@@ -231,12 +239,14 @@ export class Search {
       args: ['--json', '--text', '-e', expression, '--', '-'],
       signal,
       input: '\n',
-      match: async (hit) => {
-        empty = hit.matches.some((m) => m.start === m.end);
+      match: (hit) => {
+        empty = hit.matches.some((match) => match.start === match.end);
+        return Promise.resolve();
       },
     });
     return empty;
   }
+
   async definitions(symbol: string, signal: AbortSignal) {
     const { results } = await this.search(
       { query: symbol, word: true, case: true, maxFiles: 400, maxPerFile: 20, classifyDefs: true },

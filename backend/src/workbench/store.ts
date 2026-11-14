@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { basename, normalize } from 'node:path';
 import { type Database } from 'bun:sqlite';
 import { parse, string, number } from '../decode.ts';
+
 export interface Item {
   id: string;
   kind: string;
@@ -13,40 +14,50 @@ export interface Item {
   pinned?: boolean;
   lastOpened: number;
 }
+
 export function itemID(kind: string, key: string): string {
   return createHash('sha256')
     .update(kind + '\0' + key)
     .digest('hex')
     .slice(0, 12);
 }
+
 export function dirItem(path: string): Item {
   path = normalize(path);
   return { id: itemID('dir', path), kind: 'dir', path, title: basename(path), lastOpened: 0 };
 }
+
 function decode(text: string): Item {
-  const v = parse(text);
-  const result: Item = { id: string(v.id), kind: string(v.kind), lastOpened: number(v.lastOpened) };
+  const fields = parse(text);
+  const result: Item = {
+    id: string(fields.id),
+    kind: string(fields.kind),
+    lastOpened: number(fields.lastOpened),
+  };
   for (const key of ['path', 'url', 'title', 'repo'] as const)
-    if (v[key] !== undefined) result[key] = string(v[key]);
-  if (v.number !== undefined) result.number = number(v.number);
-  if (v.pinned === true) result.pinned = true;
+    if (fields[key] !== undefined) result[key] = string(fields[key]);
+  if (fields.number !== undefined) result.number = number(fields.number);
+  if (fields.pinned === true) result.pinned = true;
   return result;
 }
+
 export class WorkbenchStore {
   constructor(readonly db: Database) {}
   items(): Item[] {
     return this.db
       .query<{ data: string }, []>('SELECT data FROM workbench_items')
       .all()
-      .map((r) => decode(r.data))
+      .map((row) => decode(row.data))
       .sort((a, b) => b.lastOpened - a.lastOpened);
   }
+
   get(id: string): Item | undefined {
     const row = this.db
       .query<{ data: string }, [string]>('SELECT data FROM workbench_items WHERE id=?')
       .get(id);
     return row ? decode(row.data) : undefined;
   }
+
   record(item: Item): void {
     this.db
       .transaction(() => {
@@ -64,14 +75,17 @@ export class WorkbenchStore {
       })
       .immediate();
   }
+
   put(item: Item): void {
     this.db
       .query('INSERT OR REPLACE INTO workbench_items VALUES (?,?)')
       .run(item.id, JSON.stringify(item));
   }
+
   remove(id: string): void {
     this.db.query('DELETE FROM workbench_items WHERE id=?').run(id);
   }
+
   pin(id: string, pinned: boolean): void {
     this.db
       .transaction(() => {
@@ -84,6 +98,7 @@ export class WorkbenchStore {
       })
       .immediate();
   }
+
   clone(repo: string): string {
     return (
       this.db
@@ -91,6 +106,7 @@ export class WorkbenchStore {
         .get(repo.toLowerCase())?.path ?? ''
     );
   }
+
   rememberClone(repo: string, path: string): void {
     this.db
       .query('INSERT OR REPLACE INTO workbench_clones VALUES (?,?)')

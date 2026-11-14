@@ -4,8 +4,10 @@ import { PathError } from '../files/service.ts';
 import { decodeStringFields } from '../files/decode.ts';
 import { trimSpace } from '../text.ts';
 import { message } from '../decode.ts';
-import { GitActions, SyncConflict } from './actions.ts';
+import type { GitActions } from './actions.ts';
+import { SyncConflict } from './actions.ts';
 const actions = new Set(['stage', 'unstage', 'hunk', 'commit', 'push', 'pull', 'abort']);
+
 async function input(
   request: Request,
   cap: number,
@@ -35,6 +37,7 @@ async function input(
     reader?.releaseLock();
   }
 }
+
 export async function gitActionRoute(
   git: GitActions,
   request: Request,

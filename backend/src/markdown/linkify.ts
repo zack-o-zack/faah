@@ -9,22 +9,24 @@ const email =
 const allowedURL = new Set(
   "!#$&'()*+,-./0123456789:;=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~",
 );
+
 export function escapeURL(value: string): string {
   let result = '';
   for (let i = 0; i < value.length;) {
     const point = value.codePointAt(i);
     if (point === undefined) break;
-    const c = String.fromCodePoint(point);
-    if (c === '%' && /^[0-9a-fA-F]{2}/.test(value.slice(i + 1, i + 3))) {
+    const character = String.fromCodePoint(point);
+    if (character === '%' && /^[0-9a-fA-F]{2}/.test(value.slice(i + 1, i + 3))) {
       result += value.slice(i, i + 3);
       i += 3;
       continue;
     }
-    result += allowedURL.has(c) ? c : encodeURIComponent(c);
-    i += c.length;
+    result += allowedURL.has(character) ? character : encodeURIComponent(character);
+    i += character.length;
   }
   return result;
 }
+
 function candidate(text: string): { label: string; href: string } | undefined {
   let raw = protocol.exec(text)?.[0],
     prefix = '';
@@ -46,13 +48,16 @@ function candidate(text: string): { label: string; href: string } | undefined {
   } else if (label.endsWith(';')) label = label.replace(/&[A-Za-z0-9]+;$/, '');
   return { label, href: prefix + label };
 }
+
 function boundary(source: string, pos: number): boolean {
   return pos === 0 || /[ \t\r\n\f*_~(]/.test(source[pos - 1] ?? '');
 }
+
 const terminator = /[\n!#$%&*+\-:<=>@[\\\]^_`{}~]/;
 // Markdown-it tracks raw <a> tags in linkLevel too. Goldmark only suppresses
 // automatic links within Markdown link labels, so subtract raw HTML nesting.
 const htmlLevels = new WeakMap<StateInline, { seen: number; html: number }>();
+
 function linkLabel(state: StateInline): boolean {
   const level = 'linkLevel' in state && typeof state.linkLevel === 'number' ? state.linkLevel : 0;
   const cached = htmlLevels.get(state);
@@ -70,6 +75,7 @@ function linkLabel(state: StateInline): boolean {
   htmlLevels.set(state, { seen: state.tokens.length, html });
   return level > html;
 }
+
 export function goldmarkLinks(md: MarkdownIt): void {
   md.inline.ruler.disable('linkify');
   md.core.ruler.disable('linkify');

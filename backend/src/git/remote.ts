@@ -28,9 +28,10 @@ function unescape(value: string, host = false): string {
   }
   return goString(Uint8Array.from(bytes));
 }
+
 function httpRemote(raw: string): { host: string; path: string } | undefined {
   try {
-    if (/[\x00-\x1f\x7f]/.test(raw)) return;
+    if (hasControlCharacter(raw)) return;
     const match = /^https?:\/\/([^/?#]*)([^?#]*)/.exec(raw);
     if (!match) return;
     const authority = match[1] ?? '',
@@ -53,6 +54,7 @@ function httpRemote(raw: string): { host: string; path: string } | undefined {
     return;
   }
 }
+
 export function remoteHostPath(raw: string): { host: string; path: string } | undefined {
   raw = raw.replace(/\.git$/, '');
   if (raw.startsWith('git@')) {
@@ -69,4 +71,13 @@ export function remoteHostPath(raw: string): { host: string; path: string } | un
     return slash < 0 ? undefined : { host: clean.slice(0, slash), path: clean.slice(slash + 1) };
   }
   if (raw.startsWith('http://') || raw.startsWith('https://')) return httpRemote(raw);
+}
+
+// Go's url.Parse rejects ASCII control bytes anywhere in the URL.
+function hasControlCharacter(text: string): boolean {
+  for (const character of text) {
+    const code = character.charCodeAt(0);
+    if (code < 0x20 || code === 0x7f) return true;
+  }
+  return false;
 }

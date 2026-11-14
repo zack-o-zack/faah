@@ -4,6 +4,7 @@ import { atoi } from './commands.ts';
 import type { GitReads } from './reads.ts';
 
 const reads = new Set(['api/git/log', 'api/unpushed', 'api/commitfiles', 'api/commitdetail']);
+
 export async function gitReadRoute(
   git: GitReads,
   request: Request,

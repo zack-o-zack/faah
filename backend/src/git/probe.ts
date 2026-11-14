@@ -1,12 +1,13 @@
 import { lstat } from 'node:fs/promises';
 import { isAbsolute, join, relative, sep } from 'node:path';
 import { trimSpace } from '../text.ts';
-import { GitProcesses } from './process.ts';
+import type { GitProcesses } from './process.ts';
 
 export interface GitInfo {
   top: string;
   dir: string;
 }
+
 export class GitProbe {
   private readonly cache = new Map<string, GitInfo>();
   private readonly pending = new Map<string, Promise<GitInfo | undefined>>();
@@ -14,6 +15,7 @@ export class GitProbe {
     readonly processes: GitProcesses,
     readonly enabled = true,
   ) {}
+
   async get(root: string): Promise<GitInfo | undefined> {
     if (!this.enabled) return;
     const cached = this.cache.get(root);
@@ -28,6 +30,7 @@ export class GitProbe {
     }
     return task;
   }
+
   private async detect(root: string): Promise<GitInfo | undefined> {
     try {
       let result = await this.processes.run(root, ['rev-parse', '--show-toplevel']);
@@ -56,6 +59,7 @@ export class GitProbe {
     }
   }
 }
+
 export function repoKey(info: GitInfo, root: string): (path: string) => string | undefined {
   const rel = relative(info.top, root).split(sep).join('/');
   const prefix = rel && rel !== '.' ? rel + '/' : '';

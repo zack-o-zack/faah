@@ -11,11 +11,11 @@ import { openDB } from '../src/store/db.ts';
 import { WorkbenchStore, dirItem, itemID } from '../src/workbench/store.ts';
 import { proxy } from '../src/http/proxy.ts';
 test('Go flag parsing stops at first target and supports bool equals', () => {
-  const f = flags(['--port=0', '-no-open=false', '--no-lsp', 'target', '-quiet']);
-  expect(f.port).toBe(0);
-  expect(f.bool.has('no-open')).toBe(false);
-  expect(f.bool.has('no-lsp')).toBe(true);
-  expect(f.targets).toEqual(['target', '-quiet']);
+  const parsed = flags(['--port=0', '-no-open=false', '--no-lsp', 'target', '-quiet']);
+  expect(parsed.port).toBe(0);
+  expect(parsed.bool.has('no-open')).toBe(false);
+  expect(parsed.bool.has('no-lsp')).toBe(true);
+  expect(parsed.targets).toEqual(['target', '-quiet']);
   expect(() => flags(['-desktop-host', '.'])).toThrow();
   expect(() => flags(['-port', 'bad'])).toThrow();
 });
@@ -39,16 +39,18 @@ test('static priority and traversal', () => {
 test('settings preserve unknown keys, synchronize bridges and save raw atomically', () => {
   const dir = mkdtempSync(join(tmpdir(), 'faah-settings-'));
   try {
-    const s = new Settings(join(dir, 'settings.json'));
-    s.update({ agent: 'codex', unknown: 42 });
-    expect(s.merged()['agent.harness']).toBe('codex');
-    s.update({ agent: null });
-    expect(s.raw().unknown).toBe(42);
-    expect(s.raw()['agent.harness']).toBeUndefined();
-    s.saveRaw('{"workbench.colorTheme":"dark"}');
-    expect(s.merged()['workbench.colorTheme']).toBe('dark');
-    expect(readFileSync(s.path, 'utf8')).toBe('{\n  "workbench.colorTheme": "dark"\n}\n');
-    expect(() => s.saveRaw('[]')).toThrow();
+    const settings = new Settings(join(dir, 'settings.json'));
+    settings.update({ agent: 'codex', unknown: 42 });
+    expect(settings.merged()['agent.harness']).toBe('codex');
+    settings.update({ agent: null });
+    expect(settings.raw().unknown).toBe(42);
+    expect(settings.raw()['agent.harness']).toBeUndefined();
+    settings.saveRaw('{"workbench.colorTheme":"dark"}');
+    expect(settings.merged()['workbench.colorTheme']).toBe('dark');
+    expect(readFileSync(settings.path, 'utf8')).toBe('{\n  "workbench.colorTheme": "dark"\n}\n');
+    expect(() => {
+      settings.saveRaw('[]');
+    }).toThrow();
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -69,7 +71,7 @@ test('SQLite migration, stable IDs, pins and two-process writes', async () => {
     const procs = [0, 1].map((n) =>
       Bun.spawn([process.execPath, worker, path, String(n)], { stdout: 'pipe', stderr: 'pipe' }),
     );
-    expect(await Promise.all(procs.map((p) => p.exited))).toEqual([0, 0]);
+    expect(await Promise.all(procs.map((child) => child.exited))).toEqual([0, 0]);
     expect(store.items()).toHaveLength(3);
     expect(db.query<{ user_version: number }, []>('PRAGMA user_version').get()?.user_version).toBe(
       1,
@@ -87,10 +89,10 @@ test('proxy forwards Host and flushes first SSE frame before stream ends', async
       received = req.headers.get('host') ?? '';
       return new Response(
         new ReadableStream({
-          start(c) {
-            c.enqueue(new TextEncoder().encode('event: ready\ndata: {}\n\n'));
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode('event: ready\ndata: {}\n\n'));
           },
-          cancel() {},
+          cancel: () => undefined,
         }),
         { headers: { 'Content-Type': 'text/event-stream' } },
       );

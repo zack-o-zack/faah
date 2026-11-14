@@ -11,6 +11,7 @@ export function request(line: string): {
     throw new Error('invalid watcher request');
   return { id: number(value.id), root: string(value.root), type: value.type };
 }
+
 export function reply(line: string): { id: number; events?: WatchEvent[]; error?: string } {
   const value = parse(line),
     id = number(value.id);

@@ -1,15 +1,18 @@
 import { record, string } from '../decode.ts';
 import { PathError } from '../files/service.ts';
 import type { LegacyNavigation } from './navigation.ts';
+
 export interface FileMetadata {
   diffAvailable: boolean;
   lsp: { state: string; server: string; anyRunning: boolean; missing?: string };
   diagnostics: Record<string, unknown>[];
 }
+
 function boolean(value: unknown): boolean {
   if (typeof value !== 'boolean') throw new Error('invalid legacy flag');
   return value;
 }
+
 // The migration boundary for git and LSP file fields. Rendering never calls
 // legacy /api/file: only subsystem metadata is fetched, concurrently.
 export class LegacyFiles {
@@ -18,21 +21,24 @@ export class LegacyFiles {
     readonly navigation: LegacyNavigation,
     readonly available: (query: URLSearchParams) => Promise<boolean>,
   ) {}
+
   private async object(route: string): Promise<Record<string, unknown>> {
     const response = await fetch(
       this.navigation.options.origin + this.navigation.options.base + route,
     );
     const value: unknown = await response.json(),
-      v = record(value);
-    if (!response.ok) throw new PathError(response.status, string(v.error));
-    return v;
+      fields = record(value);
+    if (!response.ok) throw new PathError(response.status, string(fields.error));
+    return fields;
   }
+
   async allow(path: string): Promise<void> {
-    await this.object('api/lsp/diagnostics?' + new URLSearchParams({ path }));
+    await this.object('api/lsp/diagnostics?' + new URLSearchParams({ path }).toString());
   }
+
   async metadata(query: URLSearchParams, missing = false): Promise<FileMetadata> {
     const path = query.get('path') ?? '',
-      suffix = '?' + new URLSearchParams({ path });
+      suffix = '?' + new URLSearchParams({ path }).toString();
     const diffQuery = new URLSearchParams(query);
     if (missing) diffQuery.delete('base');
     const diff = this.available(diffQuery).then((available) => ({ available }));
@@ -59,8 +65,9 @@ export class LegacyFiles {
       diagnostics: diagnostics.diagnostics.map(record),
     };
   }
+
   async changed(path: string): Promise<void> {
-    await this.navigation.value('api/close?' + new URLSearchParams({ path }));
+    await this.navigation.value('api/close?' + new URLSearchParams({ path }).toString());
     await this.navigation.refreshAndApply();
   }
 }

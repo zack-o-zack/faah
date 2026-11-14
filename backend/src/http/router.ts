@@ -15,6 +15,7 @@ import { workbenchMetrics } from '../workbench/metrics.ts';
 import { workbenchRoute } from '../workbench/routes.ts';
 import { gitActionRoute } from '../git/action-routes.ts';
 import { gitReadRoute } from '../git/routes.ts';
+
 export interface HandlerOptions {
   base: string;
   workspace: boolean;
@@ -26,6 +27,7 @@ export interface HandlerOptions {
   navigation?: Navigation;
   pr?: boolean;
 }
+
 export function handler(options: HandlerOptions): (request: Request) => Promise<Response> {
   const { base, workspace, version, settings, wb, legacy, lspEnabled, navigation, pr } = options;
   const metrics = new MetricsCollector();

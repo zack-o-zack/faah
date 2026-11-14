@@ -1,5 +1,6 @@
 import { record, string, number } from '../decode.ts';
 import type { Symbol } from './service.ts';
+
 export function decodeSymbols(value: unknown): Symbol[] {
   if (!Array.isArray(value)) throw new Error('invalid symbols');
   return value.map((row) => {

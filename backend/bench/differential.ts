@@ -9,11 +9,14 @@ import { parse } from '../src/decode.ts';
 const go = process.env.FAAH_LEGACY_BIN,
   bun = process.env.FAAH_BIN;
 if (!go || !bun) throw new Error('Set FAAH_LEGACY_BIN and FAAH_BIN');
-const f = await fixture();
+const workspace = await fixture();
 try {
-  await f.write('parity.txt', 'a ab aaa\n A\tB 123 _é é_\n你好 needle\nK k K S s ſ É é İ i\n\n');
-  await f.write('invalid.txt', Buffer.from([0xe2, 0x82, 10, 0xf0, 0x9f, 0x98, 0x80]));
-  await f.write('icon.ico', Buffer.from([0, 0, 1, 0]));
+  await workspace.write(
+    'parity.txt',
+    'a ab aaa\n A\tB 123 _é é_\n你好 needle\nK k K S s ſ É é İ i\n\n',
+  );
+  await workspace.write('invalid.txt', Buffer.from([0xe2, 0x82, 10, 0xf0, 0x9f, 0x98, 0x80]));
+  await workspace.write('icon.ico', Buffer.from([0, 0, 1, 0]));
   const queries = [
     'a*',
     'a?',
@@ -84,18 +87,22 @@ try {
     'a{,2}',
   ];
   const paths = queries.map(
-    (q) => 'api/search?' + new URLSearchParams({ q, re: '1', glob: 'parity.txt' }),
+    (query) =>
+      'api/search?' + new URLSearchParams({ q: query, re: '1', glob: 'parity.txt' }).toString(),
   );
-  paths.push('api/search?' + new URLSearchParams({ q: 'a\nb', glob: 'parity.txt' }));
+  paths.push('api/search?' + new URLSearchParams({ q: 'a\nb', glob: 'parity.txt' }).toString());
   for (const path of ['icon.ico', 'src', '', 'missing'])
-    paths.push('api/raw?' + new URLSearchParams({ path }));
+    paths.push('api/raw?' + new URLSearchParams({ path }).toString());
   for (const path of ['', '..', '../../outside.go', '/outside.go', 'src/hello.go'])
-    paths.push('api/def?' + new URLSearchParams({ sym: 'Hello', path }));
+    paths.push('api/def?' + new URLSearchParams({ sym: 'Hello', path }).toString());
   for (const path of ['', 'src', 'missing'])
-    paths.push('api/outline?' + new URLSearchParams({ path }));
+    paths.push('api/outline?' + new URLSearchParams({ path }).toString());
   const baseCases = paths.length;
-  await f.write('src/hello.go', 'package demo\n\nfunc Hello() string {\n\treturn "changed"\n}\n');
-  await f.write('binary.bin', Uint8Array.from([0, 1, 2, 0, 255]));
+  await workspace.write(
+    'src/hello.go',
+    'package demo\n\nfunc Hello() string {\n\treturn "changed"\n}\n',
+  );
+  await workspace.write('binary.bin', Uint8Array.from([0, 1, 2, 0, 255]));
   for (const route of [
     'api/git/log',
     'api/git/log?limit=1',
@@ -117,12 +124,15 @@ try {
     '../outside',
   ])
     for (const route of ['api/diff', 'api/gutter'])
-      paths.push(route + '?' + new URLSearchParams({ path }));
-  for (const sha of [f.first, f.head, 'deadbeef', 'HEAD~1', '--upload-pack=x'])
+      paths.push(route + '?' + new URLSearchParams({ path }).toString());
+  for (const sha of [workspace.first, workspace.head, 'deadbeef', 'HEAD~1', '--upload-pack=x'])
     for (const route of ['api/commitfiles', 'api/commitdetail'])
-      paths.push(route + '?' + new URLSearchParams({ sha }));
-  for (const ref of [f.first, f.head, 'bad-ref'])
-    paths.push('api/diff?' + new URLSearchParams({ path: 'history.txt', ref, base: f.first }));
+      paths.push(route + '?' + new URLSearchParams({ sha }).toString());
+  for (const ref of [workspace.first, workspace.head, 'bad-ref'])
+    paths.push(
+      'api/diff?' +
+        new URLSearchParams({ path: 'history.txt', ref, base: workspace.first }).toString(),
+    );
   const markdownCases = [
     '`"quoted" & <code>` and ![**bold** `code`](x.png "a & b")\n',
     '# [linked](x) `code` ![alt](x.png)\n',
@@ -156,12 +166,12 @@ try {
     '> ```js\n> const x=1\n> ```\n',
     '- ```go\n  package main\n  ```\n',
     'heading\n=======\n\ntext  \nnext\n',
-    'a \'quote\' & \"double\" <x>\n',
+    'a \'quote\' & "double" <x>\n',
   ];
   for (const [i, source] of markdownCases.entries()) {
     const path = `parity-${i}.md`;
-    await f.write(path, source);
-    paths.push('api/markdown?' + new URLSearchParams({ path }));
+    await workspace.write(path, source);
+    paths.push('api/markdown?' + new URLSearchParams({ path }).toString());
   }
   const csvCases = [
     'a,b\n"a",',
@@ -175,8 +185,8 @@ try {
   ];
   for (const [i, source] of csvCases.entries()) {
     const path = `parity-${i}.csv`;
-    await f.write(path, source);
-    paths.push('api/table?' + new URLSearchParams({ path }));
+    await workspace.write(path, source);
+    paths.push('api/table?' + new URLSearchParams({ path }).toString());
   }
   for (const path of [
     'invalid.txt',
@@ -192,7 +202,7 @@ try {
     'src',
     '',
   ])
-    paths.push('api/file?' + new URLSearchParams({ path, raw: '1' }));
+    paths.push('api/file?' + new URLSearchParams({ path, raw: '1' }).toString());
   for (const [start, count] of [
     ['9007199254740992', '1'],
     ['1', '9223372036854775807'],
@@ -205,11 +215,11 @@ try {
           start: start ?? '',
           count: count ?? '',
           raw: '1',
-        }),
+        }).toString(),
     );
   const outputs = [];
   for (const binary of [go, bun]) {
-    const server = await launch(binary, f.root);
+    const server = await launch(binary, workspace.root);
     try {
       await ready(server.baseUrl, server.started);
       const results = [];
@@ -284,7 +294,7 @@ try {
           const value: unknown = await response.json();
           results.push({ path: route + '#' + i, status: response.status, body: value });
         }
-      await rm(join(f.root, 'requests'), { recursive: true, force: true });
+      await rm(join(workspace.root, 'requests'), { recursive: true, force: true });
       outputs.push(results);
     } finally {
       await server.stop();
@@ -302,5 +312,5 @@ try {
   if (mismatches.length)
     throw new Error('Go/Bun differential mismatches; see /tmp/faah-phase3-differential.json');
 } finally {
-  await f.cleanup();
+  await workspace.cleanup();
 }

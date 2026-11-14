@@ -1,20 +1,23 @@
 import { goString } from '../render/text.ts';
 import { PathError } from './service.ts';
+
 // Go's handlers decode one JSON value, ignoring trailing input. Keep ordered
 // object entries so differently cased duplicates still have last-value wins.
 class OrderedObject {
   constructor(readonly entries: [string, unknown][]) {}
 }
+
 class JSONInput {
   private pos = 0;
   constructor(readonly source: string) {}
   private fail(message: string): never {
     throw new Error(message);
   }
-  private character(c: string): string {
+
+  private character(character: string): string {
     return (
       "'" +
-      c
+      character
         .replace(/\\/g, '\\\\')
         .replace(/'/g, "\\'")
         .replace(/\n/g, '\\n')
@@ -23,22 +26,25 @@ class JSONInput {
       "'"
     );
   }
+
   private invalid(context: string): never {
-    const c = this.source[this.pos];
-    if (c === undefined) return this.fail('unexpected EOF');
-    return this.fail('invalid character ' + this.character(c) + ' ' + context);
+    const character = this.source[this.pos];
+    if (character === undefined) return this.fail('unexpected EOF');
+    return this.fail('invalid character ' + this.character(character) + ' ' + context);
   }
+
   private whitespace(): void {
     while (/[ \t\r\n]/.test(this.source[this.pos] ?? 'x')) this.pos++;
   }
+
   value(): unknown {
     this.whitespace();
-    const c = this.source[this.pos];
-    if (c === '"') return this.text();
-    if (c === '{') return this.container(false);
-    if (c === '[') return this.container(true);
-    if (c === 't' || c === 'f' || c === 'n') {
-      const word = c === 't' ? 'true' : c === 'f' ? 'false' : 'null';
+    const character = this.source[this.pos];
+    if (character === '"') return this.text();
+    if (character === '{') return this.container(false);
+    if (character === '[') return this.container(true);
+    if (character === 't' || character === 'f' || character === 'n') {
+      const word = character === 't' ? 'true' : character === 'f' ? 'false' : 'null';
       for (const expected of word) {
         if (this.source[this.pos] !== expected)
           this.invalid('in literal ' + word + ' (expecting ' + this.character(expected) + ')');
@@ -46,25 +52,26 @@ class JSONInput {
       }
       return word === 'true' ? true : word === 'false' ? false : null;
     }
-    if (c === '-' || (c && /[0-9]/.test(c))) return this.numeric();
+    if (character === '-' || (character && /[0-9]/.test(character))) return this.numeric();
     return this.invalid('looking for beginning of value');
   }
+
   private text(): string {
     const start = this.pos++;
     while (this.pos < this.source.length) {
-      const c = this.source[this.pos++] ?? '';
-      if (c === '"') {
+      const character = this.source[this.pos++] ?? '';
+      if (character === '"') {
         const value: unknown = JSON.parse(
           goString(Buffer.from(this.source.slice(start, this.pos), 'latin1')),
         );
         if (typeof value !== 'string') throw new Error('invalid JSON string');
         return value.toWellFormed();
       }
-      if (c.charCodeAt(0) < 32) {
+      if (character.charCodeAt(0) < 32) {
         this.pos--;
         this.invalid('in string literal');
       }
-      if (c === '\\') {
+      if (character === '\\') {
         const escape = this.source[this.pos];
         if (escape === 'u') {
           this.pos++;
@@ -81,6 +88,7 @@ class JSONInput {
     }
     return this.fail('unexpected EOF');
   }
+
   private numeric(): number {
     const start = this.pos;
     if (this.source[this.pos] === '-') this.pos++;
@@ -104,6 +112,7 @@ class JSONInput {
     }
     return Number(this.source.slice(start, this.pos));
   }
+
   private container(array: boolean): unknown {
     this.pos++;
     this.whitespace();
@@ -126,9 +135,9 @@ class JSONInput {
         entries.push([key, this.value()]);
       }
       this.whitespace();
-      const c = this.source[this.pos++];
-      if (c === end) return array ? values : new OrderedObject(entries);
-      if (c !== ',') {
+      const character = this.source[this.pos++];
+      if (character === end) return array ? values : new OrderedObject(entries);
+      if (character !== ',') {
         this.pos--;
         this.invalid(array ? 'after array element' : 'after object key:value pair');
       }
@@ -136,6 +145,7 @@ class JSONInput {
     }
   }
 }
+
 function kind(value: unknown): string {
   return value instanceof OrderedObject
     ? 'object'
@@ -145,6 +155,7 @@ function kind(value: unknown): string {
         ? 'bool'
         : typeof value;
 }
+
 export function decodeFileInput(
   input: string | Uint8Array,
   save: boolean,

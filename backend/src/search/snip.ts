@@ -3,6 +3,7 @@ export interface Snippet {
   mid: string;
   post: string;
 }
+
 export function snip(options: { line: Uint8Array; from: number; to: number }): Snippet {
   const line = Buffer.from(options.line.buffer, options.line.byteOffset, options.line.byteLength),
     from = Math.min(line.length, Math.max(0, options.from)),

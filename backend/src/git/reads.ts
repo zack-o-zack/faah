@@ -1,7 +1,8 @@
 import { resolveFile } from '../files/service.ts';
 import { highlightDiff } from '../render/diff.ts';
 import type { RenderService } from '../render/service.ts';
-import { GitCommands, validSHA } from './commands.ts';
+import type { GitCommands } from './commands.ts';
+import { validSHA } from './commands.ts';
 import { GitHistory } from './history.ts';
 import { GitDiff } from './diff.ts';
 import { GitLinks } from './links.ts';
@@ -24,6 +25,7 @@ export class GitReads {
     this.links = new GitLinks(commands);
     this.sync = new GitSync(commands);
   }
+
   async diffAvailable(query: URLSearchParams, state: GitState): Promise<boolean> {
     const path = query.get('path') ?? '',
       ref = query.get('ref') ?? '',
@@ -38,6 +40,7 @@ export class GitReads {
     const status = state.statuses[rel];
     return state.git && Boolean(status && status !== 'U');
   }
+
   async fileDiff(options: { path: string; ref: string; base: string }) {
     const { abs, rel } = resolveFile(this.root, options.path);
     const { ref, base } = options;
@@ -51,6 +54,7 @@ export class GitReads {
     );
     return { path: rel, ...(ref ? { ref, base } : {}), diff, hunks, available: Boolean(diff) };
   }
+
   async gutter(path: string, ref: string) {
     const { rel } = resolveFile(this.root, path);
     const diff = ref
@@ -63,6 +67,7 @@ export class GitReads {
       ...gutter,
     };
   }
+
   async log(limit: number) {
     const branch = await this.sync.branch(this.root);
     return {
@@ -70,13 +75,16 @@ export class GitReads {
       commitsUrl: await this.links.commits(this.root, branch),
     };
   }
+
   async unpushed(limit: number) {
     const result = await this.history.unpushed(this.root, limit);
     return { available: Boolean(result.upstream && result.commits.length), ...result };
   }
+
   async files(sha: string) {
     return { sha, files: await this.history.files(this.root, sha) };
   }
+
   detail(sha: string) {
     return this.history.detail(this.root, sha);
   }

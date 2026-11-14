@@ -4,6 +4,7 @@ import { homedir } from 'node:os';
 import { parse, object } from '../decode.ts';
 import { parseSettings } from './json.ts';
 import { schema } from './schema.ts';
+
 export function settingsPath(): string {
   return join(
     process.env.XDG_CONFIG_HOME
@@ -12,6 +13,7 @@ export function settingsPath(): string {
     'settings.json',
   );
 }
+
 export function atomicWrite(path: string, text: string): void {
   mkdirSync(dirname(path), { recursive: true });
   const temp = path + '.' + process.pid + '.' + crypto.randomUUID() + '.tmp';
@@ -26,25 +28,28 @@ export function atomicWrite(path: string, text: string): void {
     }
   }
 }
+
 export function defaults(): Record<string, unknown> {
   return {
-    ...Object.fromEntries(schema.map((s) => [s.key, s.default])),
+    ...Object.fromEntries(schema.map((entry) => [entry.key, entry.default])),
     agent: '',
     models: {},
     'explorer.autoRelveal': true,
   };
 }
+
 function validate(values: Record<string, unknown>): void {
   for (const key of ['agent', 'agent.harness', 'explain.agent']) {
-    const v = values[key];
-    if (v === undefined || v === null) continue;
-    if (typeof v !== 'string') throw new Error(key + ' must be an agent name');
-    if (v && !['claude', 'codex', 'agy', 'opencode', 'cursor-agent'].includes(v))
+    const value = values[key];
+    if (value === undefined || value === null) continue;
+    if (typeof value !== 'string') throw new Error(key + ' must be an agent name');
+    if (value && !['claude', 'codex', 'agy', 'opencode', 'cursor-agent'].includes(value))
       throw new Error(
-        `unknown agent ${v}; choose one of: claude, codex, agy, opencode, cursor-agent`,
+        `unknown agent ${value}; choose one of: claude, codex, agy, opencode, cursor-agent`,
       );
   }
 }
+
 export class Settings {
   constructor(readonly path = settingsPath()) {}
   raw(): Record<string, unknown> {
@@ -54,6 +59,7 @@ export class Settings {
       return {};
     }
   }
+
   rawJSON(): string {
     try {
       const text = readFileSync(this.path, 'utf8');
@@ -67,6 +73,7 @@ export class Settings {
       return '{\n}\n';
     }
   }
+
   merged(): Record<string, unknown> {
     const raw = this.raw();
     const result = { ...defaults(), ...raw };
@@ -91,16 +98,17 @@ export class Settings {
         raw['explorer.autoRelveal'],
         raw.autoReveal,
         raw.autoRelveal,
-      ].find((v) => typeof v === 'boolean') ?? true;
+      ].find((value) => typeof value === 'boolean') ?? true;
     result['explorer.autoReveal'] = auto;
     result['explorer.autoRelveal'] = auto;
     return result;
   }
+
   update(values: Record<string, unknown>): void {
     validate(values);
     const raw = this.raw();
     for (const [key, value] of Object.entries(values)) {
-      if (value === null) delete raw[key];
+      if (value === null) Reflect.deleteProperty(raw, key);
       else raw[key] = value;
       for (const [a, b] of [
         ['agent', 'agent.harness'],
@@ -109,7 +117,7 @@ export class Settings {
         if (!a || !b) continue;
         const other = key === a ? b : key === b ? a : '';
         if (other) {
-          if (value === null || (a === 'agent' && value === '')) delete raw[other];
+          if (value === null || (a === 'agent' && value === '')) Reflect.deleteProperty(raw, other);
           else raw[other] = value;
         }
       }
@@ -129,7 +137,7 @@ export class Settings {
             'autoReveal',
             'autoRelveal',
           ])
-            delete raw[k];
+            Reflect.deleteProperty(raw, k);
         } else {
           raw['explorer.autoReveal'] = value;
           raw['explorer.autoRelveal'] = value;
@@ -138,6 +146,7 @@ export class Settings {
     }
     atomicWrite(this.path, format(raw));
   }
+
   saveRaw(text: string): void {
     const raw = parseSettings(text);
     validate(raw);
@@ -147,6 +156,7 @@ export class Settings {
     atomicWrite(this.path, format(raw));
   }
 }
+
 function sorted(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(sorted);
   if (object(value))
@@ -157,6 +167,7 @@ function sorted(value: unknown): unknown {
     );
   return value;
 }
+
 function format(value: unknown): string {
   return JSON.stringify(sorted(value), null, 2) + '\n';
 }

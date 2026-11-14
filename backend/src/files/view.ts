@@ -6,11 +6,12 @@ import { stat } from 'node:fs/promises';
 import type { Stats } from 'node:fs';
 import { isAbsolute, normalize } from 'node:path';
 import { PathError, fileError, resolveFile } from './service.ts';
-import { RenderService } from '../render/service.ts';
+import type { RenderService } from '../render/service.ts';
 import { language } from '../render/language.ts';
 import { isMarkdown, renderMarkdown } from '../markdown/service.ts';
 import { delimiter, renderTable, maxBytes } from '../table/service.ts';
 import type { LegacyFiles } from '../legacy/files.ts';
+
 export class Files {
   private readonly markdownHighlights = new LRU<Highlight>(128);
   private markdownHighlight(abs: string): Highlight {
@@ -21,11 +22,13 @@ export class Files {
     this.markdownHighlights.put(abs, highlight, 1);
     return highlight;
   }
+
   constructor(
     readonly root: string,
     readonly render: RenderService,
     readonly legacy: LegacyFiles,
   ) {}
+
   async resolve(path: string): Promise<{ abs: string; rel: string }> {
     if (isAbsolute(path)) {
       await this.legacy.allow(path);
@@ -34,6 +37,7 @@ export class Files {
     const result = resolveFile(this.root, path);
     return result;
   }
+
   async file(query: URLSearchParams): Promise<Record<string, unknown>> {
     const { abs, rel } = await this.resolve(query.get('path') ?? '');
     query = new URLSearchParams(query);
@@ -66,6 +70,7 @@ export class Files {
     }
     return this.existing(query, abs, rel, info);
   }
+
   private async existing(
     query: URLSearchParams,
     abs: string,
@@ -101,6 +106,7 @@ export class Files {
     const [body, fields] = await Promise.all([own, metadata]);
     return { ...body, ...fields };
   }
+
   async markdown(path: string): Promise<{ path: string; html: string }> {
     const { abs, rel } = await this.resolve(path);
     if (!isMarkdown(rel)) throw new PathError(415, 'not a Markdown file');
@@ -119,6 +125,7 @@ export class Files {
       html: await renderMarkdown(goString(data), this.markdownHighlight(abs)),
     };
   }
+
   async table(path: string) {
     const { abs, rel } = await this.resolve(path),
       fallback = delimiter(rel);

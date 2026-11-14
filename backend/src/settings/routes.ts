@@ -1,9 +1,11 @@
-import { Settings, defaults } from './service.ts';
+import type { Settings } from './service.ts';
+import { defaults } from './service.ts';
 import { schema } from './schema.ts';
 import { json, fail } from '../http/response.ts';
 import { localPost } from '../http/guards.ts';
 import { parseSettings } from './json.ts';
 import { message } from '../decode.ts';
+
 export async function settingsRoute(settings: Settings, request: Request): Promise<Response> {
   if (request.method === 'GET')
     return json({

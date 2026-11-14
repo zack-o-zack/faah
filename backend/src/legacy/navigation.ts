@@ -2,6 +2,7 @@ import { extname } from 'node:path';
 import { record, string } from '../decode.ts';
 import { PathError } from '../files/service.ts';
 import { decodeSymbols } from '../symbols/decode.ts';
+
 export class LegacyNavigation {
   private snapshot: Record<string, unknown> = {};
   private controller = new AbortController();
@@ -14,6 +15,7 @@ export class LegacyNavigation {
       touch: (path: string) => Promise<void>;
     },
   ) {}
+
   async value(route: string): Promise<unknown> {
     const response = await fetch(this.options.origin + this.options.base + route, {
       signal: this.controller.signal,
@@ -22,16 +24,20 @@ export class LegacyNavigation {
     const value: unknown = await response.json();
     return value;
   }
+
   async meta(): Promise<Record<string, unknown>> {
     await this.updateMeta();
     return this.snapshot;
   }
+
   async updateMeta(): Promise<void> {
     this.snapshot = record(await this.value('api/meta'));
   }
+
   async refreshAndApply(): Promise<void> {
     await this.options.refresh();
   }
+
   async outline(path: string) {
     const response = await fetch(
       this.options.origin + this.options.base + 'api/outline?path=' + encodeURIComponent(path),
@@ -41,6 +47,7 @@ export class LegacyNavigation {
     if (!response.ok) throw new PathError(response.status, string(value.error));
     return { path: string(value.path), symbols: decodeSymbols(value.symbols) };
   }
+
   async lsp(path: string): Promise<{ state: string; server: string }> {
     // Go State uses only the extension, without resolvePath's containment check.
     const value = record(
@@ -51,6 +58,7 @@ export class LegacyNavigation {
       server: value.state === 'failed' ? string(value.reason) : string(value.server),
     };
   }
+
   async after(options: {
     route: string;
     response: Response;
@@ -83,10 +91,12 @@ export class LegacyNavigation {
     )
       await this.updateMeta();
   }
-  async close(): Promise<void> {
+
+  close(): void {
     this.controller.abort();
   }
 }
+
 export const fileMutations = new Set([
   'api/agent/edit',
   'api/agent/batch',

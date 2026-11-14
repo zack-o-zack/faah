@@ -80,7 +80,7 @@ test('native watcher observes an external edit and unsubscribes cleanly', async 
   const warnings: string[] = [];
   const watcher = new WorkspaceWatch({
     root,
-    warn: (s) => warnings.push(s),
+    warn: (message) => warnings.push(message),
     changed: async (paths) => {
       if (paths.includes('proof.txt')) done();
     },
@@ -114,7 +114,7 @@ test('watcher subscription failures warn and leave a usable no-watcher fallback'
       throw new Error('too many open files');
     },
     changed: async () => {},
-    warn: (s) => warnings.push(s),
+    warn: (message) => warnings.push(message),
   });
   try {
     await watcher.start();

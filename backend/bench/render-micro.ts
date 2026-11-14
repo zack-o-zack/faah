@@ -11,12 +11,13 @@ const baseline = record(
 );
 if (!Array.isArray(baseline.benchmarks)) throw new Error('invalid baseline');
 const go = new Map(
-  baseline.benchmarks.map((v) => {
-    const r = record(v);
-    return [string(r.name).split('/').at(-1) ?? '', number(r.nsPerOp)];
+  baseline.benchmarks.map((entry) => {
+    const fields = record(entry);
+    return [string(fields.name).split('/').at(-1) ?? '', number(fields.nsPerOp)];
   }),
 );
 const results: { name: string; nsPerOp: number; goNsPerOp: number; samples: number[] }[] = [];
+
 function report(name: string, samples: number[]): void {
   const goNsPerOp = go.get(name);
   if (goNsPerOp === undefined) throw new Error('missing baseline ' + name);
@@ -24,6 +25,7 @@ function report(name: string, samples: number[]): void {
   results.push(result);
   process.stdout.write(JSON.stringify(result) + '\n');
 }
+
 function measure(name: string, run: () => unknown): void {
   for (let i = 0; i < 100; i++) run();
   const start = performance.now();
@@ -40,6 +42,7 @@ function measure(name: string, run: () => unknown): void {
   }
   report(name, samples);
 }
+
 async function measureAsync(name: string, run: () => Promise<unknown>): Promise<void> {
   for (let i = 0; i < 10; i++) await run();
   const samples: number[] = [];
@@ -54,8 +57,9 @@ async function measureAsync(name: string, run: () => Promise<unknown>): Promise<
   }
   report(name, samples);
 }
+
 const pool = new RenderPool(),
-  highlight = (s: string, l: string, n: number) => pool.render(s, l, n);
+  highlight = (source: string, language: string, n: number) => pool.render(source, language, n);
 const goSource = `package main
 
 import (

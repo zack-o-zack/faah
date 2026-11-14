@@ -1,8 +1,9 @@
-import { Navigation } from '../index/navigation.ts';
+import type { Navigation } from '../index/navigation.ts';
 import { PathError, rawFile, rawHeaders } from '../files/service.ts';
 import { content } from './content.ts';
 import { json, fail, missing } from './response.ts';
 import { message } from '../decode.ts';
+
 async function raw(nav: Navigation, request: Request): Promise<Response> {
   const query = new URL(request.url).searchParams;
   const file = await rawFile(nav.index.root, query.get('path') ?? '');
@@ -19,6 +20,7 @@ async function raw(nav: Navigation, request: Request): Promise<Response> {
   }
   return content({ bytes: file.bytes, request, headers, modified: file.modified });
 }
+
 export async function navigationRoute(options: {
   nav: Navigation;
   request: Request;
@@ -53,7 +55,7 @@ export async function navigationRoute(options: {
       return json({
         ...result,
         files: result.results.length,
-        total: result.results.reduce((n, f) => n + f.matches.length, 0),
+        total: result.results.reduce((n, file) => n + file.matches.length, 0),
       });
     }
     if (route === 'api/def') {

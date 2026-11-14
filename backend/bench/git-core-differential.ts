@@ -20,8 +20,8 @@ import { highlightedText } from '../../test/contract/highlight.ts';
 
 const binary = process.env.FAAH_LEGACY_BIN;
 if (!binary) throw new Error('Set FAAH_LEGACY_BIN to the Go reference');
-const f = await fixture(),
-  processes = new GitProcesses(4, ['git'], f.env);
+const workspace = await fixture(),
+  processes = new GitProcesses(4, ['git'], workspace.env);
 const commands = new GitCommands(processes),
   status = new GitStatus(commands.probe);
 const history = new GitHistory(commands),
@@ -29,18 +29,21 @@ const history = new GitHistory(commands),
   mutations = new GitMutations(commands);
 const sync = new GitSync(commands),
   links = new GitLinks(commands);
-const render = new RenderService(new RenderDisk(join(f.temp, 'native-render.sqlite')));
+const render = new RenderService(new RenderDisk(join(workspace.temp, 'native-render.sqlite')));
 const mismatches: { name: string; expected: unknown; actual: unknown }[] = [];
 let cases = 0;
+
 function plain(value: unknown): unknown {
   const decoded: unknown = JSON.parse(JSON.stringify(value));
   return decoded;
 }
+
 function equal(name: string, expected: unknown, actual: unknown): void {
   cases++;
   if (!isDeepStrictEqual(plain(expected), plain(actual)))
     mismatches.push({ name, expected, actual });
 }
+
 function hunks(value: unknown): unknown {
   if (value === null) return null;
   if (!Array.isArray(value)) throw new Error('invalid hunks');
@@ -56,8 +59,9 @@ function hunks(value: unknown): unknown {
     };
   });
 }
+
 try {
-  const server = await launch(binary, f.root);
+  const server = await launch(binary, workspace.root);
   try {
     await ready(server.baseUrl, server.started);
     const get = async (route: string, params: Record<string, string> = {}) => {
@@ -67,31 +71,35 @@ try {
     };
     const compareStatus = async (name: string) => {
       const expected = await get('api/git/refresh'),
-        actual = await status.read(f.root);
+        actual = await status.read(workspace.root);
       for (const key of ['statuses', 'staged', 'partial', 'yourStatuses'])
         equal(name + ':' + key, expected[key] ?? {}, record(actual)[key]);
     };
     await compareStatus('initial');
     const log = await get('api/git/log');
-    equal('recent', log.commits, await history.recent(f.root));
-    equal('commits-url', log.commitsUrl, await links.commits(f.root, await sync.branch(f.root)));
-    const unpushed = await history.unpushed(f.root);
+    equal('recent', log.commits, await history.recent(workspace.root));
+    equal(
+      'commits-url',
+      log.commitsUrl,
+      await links.commits(workspace.root, await sync.branch(workspace.root)),
+    );
+    const unpushed = await history.unpushed(workspace.root);
     equal('unpushed', await get('api/unpushed'), {
       ...unpushed,
       available: Boolean(unpushed.upstream && unpushed.commits.length),
     });
-    for (const sha of [f.first, f.head, 'HEAD~1', 'deadbeef']) {
+    for (const sha of [workspace.first, workspace.head, 'HEAD~1', 'deadbeef']) {
       equal(
         'files:' + sha,
         (await get('api/commitfiles', { sha })).files,
-        await history.files(f.root, sha),
+        await history.files(workspace.root, sha),
       );
-      const detail = await history.detail(f.root, sha),
+      const detail = await history.detail(workspace.root, sha),
         expected = await get('api/commitdetail', { sha });
       equal(
         'detail:' + sha,
         detail === undefined ? 'unknown commit' : expected,
-        detail === undefined ? expected.error : detail,
+        detail ?? expected.error,
       );
     }
     for (const path of [
@@ -103,7 +111,7 @@ try {
       'src/hello.go',
     ]) {
       const expected = await get('api/diff', { path }),
-        raw = await diff.against(f.root, path);
+        raw = await diff.against(workspace.root, path);
       equal('diff:' + path, expected.diff, raw);
       equal(
         'hunks:' + path,
@@ -121,10 +129,10 @@ try {
         available: Boolean(gutter.added.length || gutter.modified.length || gutter.deleted.length),
       });
     }
-    for (const ref of [f.first, f.head, 'bad-ref']) {
+    for (const ref of [workspace.first, workspace.head, 'bad-ref']) {
       const path = 'history.txt',
         expected = await get('api/diff', { path, ref });
-      equal('commit-diff:' + ref, expected.diff, await diff.commit(f.root, path, ref));
+      equal('commit-diff:' + ref, expected.diff, await diff.commit(workspace.root, path, ref));
     }
     for (const remote of [
       'git@github.com:alice/repo.git',
@@ -137,18 +145,18 @@ try {
       'https://user name@github.com/alice/repo.git',
       'https://你好@github.com/alice/repo.git',
     ]) {
-      f.git('remote', 'set-url', 'origin', remote);
+      workspace.git('remote', 'set-url', 'origin', remote);
       equal(
         'remote-detail:' + remote,
-        await get('api/commitdetail', { sha: f.head }),
-        await history.detail(f.root, f.head),
+        await get('api/commitdetail', { sha: workspace.head }),
+        await history.detail(workspace.root, workspace.head),
       );
     }
-    await mutations.stage(f.root, 'partial.txt');
+    await mutations.stage(workspace.root, 'partial.txt');
     await compareStatus('staged');
-    await f.write('partial.txt', 'changed after staging\n');
+    await workspace.write('partial.txt', 'changed after staging\n');
     await compareStatus('partial');
-    await mutations.unstage(f.root, 'partial.txt');
+    await mutations.unstage(workspace.root, 'partial.txt');
     await compareStatus('unstaged');
   } finally {
     await server.stop();
@@ -163,5 +171,5 @@ try {
 } finally {
   await render.close();
   await processes.close();
-  await f.cleanup();
+  await workspace.cleanup();
 }

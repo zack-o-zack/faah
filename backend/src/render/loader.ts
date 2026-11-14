@@ -2,17 +2,20 @@ import type { LanguageRegistration } from 'shiki';
 import grammars from './grammars.json';
 import { decodeGrammars } from './grammar.ts';
 import { record, string } from '../decode.ts';
+
 export interface GrammarStore {
   assets: Record<string, string>;
   groups: Record<string, string[]>;
 }
 const grammarIDs: Record<string, string> = grammars;
+
 export function grammarLoader(
   register: (...languages: LanguageRegistration[]) => Promise<void>,
   store?: GrammarStore,
 ) {
   const loading = new Map<string, Promise<void>>();
   let sourceStore = store;
+
   async function assets(): Promise<GrammarStore> {
     if (sourceStore) return sourceStore;
     const value: unknown = await Bun.file(import.meta.dir + '/grammar-groups.json').json();
@@ -33,6 +36,7 @@ export function grammarLoader(
     sourceStore = { assets: paths, groups };
     return sourceStore;
   }
+
   return async (lang: string): Promise<void> => {
     const id = grammarIDs[lang];
     if (!id || id === 'text') return;

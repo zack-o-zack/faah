@@ -10,6 +10,7 @@ interface FeedCache {
   frames: string[];
   valid: boolean;
 }
+
 function keys(query: URLSearchParams): Set<string> {
   const result = new Set<string>();
   if (query.get('threads') === '1') result.add('threads');
@@ -17,6 +18,7 @@ function keys(query: URLSearchParams): Set<string> {
   if (query.get('review') === '1') result.add('review');
   return result;
 }
+
 function classify(frame: string): { key: string; snapshot: boolean } | undefined {
   const lines = frame.split('\n');
   const event = lines
@@ -36,6 +38,7 @@ function classify(frame: string): { key: string; snapshot: boolean } | undefined
   if (typeof id !== 'string') throw new Error('invalid legacy thread id');
   return { key: 'thread:' + id, snapshot: event === 'thread:thread' || event === 'thread:deleted' };
 }
+
 // One upstream holds the union of all browser subscriptions. Its Go publishers
 // retain the 256-event thread buffers; each browser has a 64-frame fan-in queue.
 export class LegacyFeeds {
@@ -51,6 +54,7 @@ export class LegacyFeeds {
     readonly origin: string,
     readonly base: string,
   ) {}
+
   subscribe(query: URLSearchParams, sink: EventSink): () => void {
     const client = { keys: keys(query), sink };
     if (this.closed || !client.keys.size) return () => undefined;
@@ -74,6 +78,7 @@ export class LegacyFeeds {
       this.reconcile();
     };
   }
+
   private query(): string {
     const union = new Set<string>();
     for (const client of this.clients) for (const key of client.keys) union.add(key);
@@ -85,6 +90,7 @@ export class LegacyFeeds {
     }
     return query.toString();
   }
+
   private reconcile(force = false): void {
     this.pending = this.pending.then(async () => {
       const query = this.closed ? '' : this.query();
@@ -112,6 +118,7 @@ export class LegacyFeeds {
       });
     });
   }
+
   private async run(query: string, controller: AbortController): Promise<void> {
     const response = await fetch(this.origin + this.base + 'api/stream?' + query, {
       signal: controller.signal,
@@ -158,6 +165,7 @@ export class LegacyFeeds {
       reader.releaseLock();
     }
   }
+
   async close(): Promise<void> {
     this.closed = true;
     for (const client of this.clients) client.sink.close();

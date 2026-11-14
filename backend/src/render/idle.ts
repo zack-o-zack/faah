@@ -3,9 +3,12 @@ export class IdleScavenger {
   private done = true;
   private timer: ReturnType<typeof setInterval>;
   constructor(readonly scavenge: () => void) {
-    this.timer = setInterval(() => this.tick(), 10000);
+    this.timer = setInterval(() => {
+      this.tick();
+    }, 10000);
     this.timer.unref();
   }
+
   request(route: string, accept: string | null): void {
     if (
       route === 'api/metrics' ||
@@ -17,12 +20,14 @@ export class IdleScavenger {
     this.last = Date.now();
     this.done = false;
   }
+
   tick(now = Date.now()): void {
     if (now - this.last < 15000) return;
     if (this.done) return;
     this.scavenge();
     this.done = true;
   }
+
   close(): void {
     clearInterval(this.timer);
   }

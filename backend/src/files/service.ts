@@ -1,6 +1,7 @@
 import { stat } from 'node:fs/promises';
 import { relative, basename, extname } from 'node:path';
 import { safePath } from '../http/paths.ts';
+
 export class PathError extends Error {
   constructor(
     readonly status: number,
@@ -9,11 +10,13 @@ export class PathError extends Error {
     super(message);
   }
 }
+
 export function resolveFile(root: string, path: string): { abs: string; rel: string } {
   const abs = safePath(root, path);
   if (!abs) throw new PathError(400, 'bad path');
   return { abs, rel: relative(root, abs) };
 }
+
 export async function rawFile(root: string, path: string) {
   const { abs, rel } = resolveFile(root, path);
   const info = await stat(abs).catch(() => undefined);
@@ -38,6 +41,7 @@ const image: Record<string, string> = {
   '.bmp': 'image/bmp',
   '.avif': 'image/avif',
 };
+
 export function rawHeaders(rel: string): Headers {
   const name = basename(rel || '.'),
     ext = extname(rel).toLowerCase();
@@ -47,7 +51,7 @@ export function rawHeaders(rel: string): Headers {
       "filename*=utf-8''" +
       encodeURIComponent(name).replace(
         /[!'()*]/g,
-        (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase(),
+        (character) => '%' + character.charCodeAt(0).toString(16).toUpperCase(),
       );
   else
     filename =
@@ -61,6 +65,7 @@ export function rawHeaders(rel: string): Headers {
     'X-Content-Type-Options': 'nosniff',
   });
 }
+
 export function fileError(error: unknown, abs: string, operation = 'open'): string {
   const messages: Record<string, string> = {
     ENOENT: 'no such file or directory',

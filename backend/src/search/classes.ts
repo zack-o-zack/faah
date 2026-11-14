@@ -4,9 +4,11 @@ interface Atom {
   end: number;
   value?: number;
 }
+
 function rune(value: number, end: number): Atom {
   return { text: '\\x{' + value.toString(16) + '}', value, end };
 }
+
 export function escape(text: string, start: number): Atom {
   const next = text[start + 1] ?? '';
   if (!next) throw new Error('error parsing regexp: trailing backslash at end of expression: ``');
@@ -26,6 +28,7 @@ export function escape(text: string, start: number): Atom {
     'error parsing regexp: invalid escape sequence: `' + text.slice(start, start + 2) + '`',
   );
 }
+
 function atom(text: string, start: number): Atom {
   if (text[start] === '\\') return escape(text, start);
   const named = /^\[:[^\]]*:\]/.exec(text.slice(start))?.[0];
@@ -35,6 +38,7 @@ function atom(text: string, start: number): Atom {
     throw new Error('error parsing regexp: missing closing ]: `' + text + '`');
   return rune(value, start + (value > 0xffff ? 2 : 1));
 }
+
 export function characterClass(text: string, start: number): { text: string; end: number } {
   const negated = text[start + 1] === '^';
   let i = start + (negated ? 2 : 1),

@@ -11,6 +11,7 @@ import {
   type Item,
   type Result,
 } from './score.ts';
+
 class Shard {
   readonly worker = new Worker(workerAsset);
   private next = 0;
@@ -18,24 +19,26 @@ class Shard {
     number,
     { resolve: (r: Int32Array) => void; reject: (e: unknown) => void }
   >();
+
   constructor() {
     this.worker.onmessage = (event: MessageEvent<unknown>) => {
       try {
-        const v = record(event.data),
-          id = number(v.id);
+        const message = record(event.data),
+          id = number(message.id);
         const pending = this.pending.get(id);
         this.pending.delete(id);
-        pending?.resolve(candidates(v.candidates));
+        pending?.resolve(candidates(message.candidates));
       } catch (error) {
-        for (const p of this.pending.values()) p.reject(error);
+        for (const request of this.pending.values()) request.reject(error);
         this.pending.clear();
       }
     };
     this.worker.onerror = (error) => {
-      for (const p of this.pending.values()) p.reject(error);
+      for (const request of this.pending.values()) request.reject(error);
       this.pending.clear();
     };
   }
+
   call(value: Record<string, unknown>): Promise<Int32Array> {
     const id = ++this.next;
     return new Promise((resolve, reject) => {
@@ -43,12 +46,14 @@ class Shard {
       this.worker.postMessage({ ...value, id });
     });
   }
+
   close(): void {
     this.worker.terminate();
-    for (const p of this.pending.values()) p.reject(new Error('fuzzy pool closed'));
+    for (const request of this.pending.values()) request.reject(new Error('fuzzy pool closed'));
     this.pending.clear();
   }
 }
+
 export class FuzzyPool {
   private shards: Shard[] = [];
   private items: Item[] = [];
@@ -57,10 +62,12 @@ export class FuzzyPool {
   get workerCount(): number {
     return this.shards.length;
   }
+
   set(items: Item[]): Promise<unknown> {
     this.updated = this.updated.catch(() => undefined).then(() => this.install(items));
     return this.updated;
   }
+
   private async install(items: Item[]): Promise<void> {
     this.items = items;
     if (items.length < 4000) {
@@ -81,6 +88,7 @@ export class FuzzyPool {
       ),
     );
   }
+
   async find(query: string, limit: number): Promise<Result[]> {
     await this.updated;
     if (!this.shards.length || !query.trim().replace(/ /g, ''))
@@ -88,7 +96,9 @@ export class FuzzyPool {
     // IDs refer to the snapshot installed when these messages were sent.
     const items = this.items,
       shardSize = this.shardSize;
-    const parts = await Promise.all(this.shards.map((s) => s.call({ type: 'find', query, limit })));
+    const parts = await Promise.all(
+      this.shards.map((shard) => shard.call({ type: 'find', query, limit })),
+    );
     const winners: Candidate[] = [];
     for (const [shard, packed] of parts.entries())
       for (let i = 0; i < packed.length; i += 2) {
@@ -106,6 +116,7 @@ export class FuzzyPool {
       prepareQuery(query),
     );
   }
+
   close(): void {
     for (const shard of this.shards) shard.close();
     this.shards = [];

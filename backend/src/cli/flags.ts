@@ -16,6 +16,7 @@ const booleans = [
   'workbench-child',
   'desktop-host',
 ];
+
 export interface Flags {
   bool: Set<string>;
   host: string;
@@ -24,6 +25,7 @@ export interface Flags {
   agent: string;
   targets: string[];
 }
+
 export function flags(args: string[]): Flags {
   const result: Flags = {
     bool: new Set(),
@@ -86,10 +88,11 @@ export function flags(args: string[]): Flags {
   }
   return result;
 }
-export function featureArgs(f: Flags): string[] {
+
+export function featureArgs(parsed: Flags): string[] {
   const args = ['no-lsp', 'no-git', 'no-agent', 'no-telemetry']
-    .filter((k) => f.bool.has(k))
+    .filter((k) => parsed.bool.has(k))
     .map((k) => `-${k}`);
-  if (f.agent) args.push('-agent', f.agent);
+  if (parsed.agent) args.push('-agent', parsed.agent);
   return args;
 }

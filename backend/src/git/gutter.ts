@@ -16,6 +16,7 @@ export class GutterParser {
     this.dels = 0;
     this.adds = [];
   }
+
   record(line: string): void {
     if (line.startsWith('@@')) {
       this.flush();
@@ -34,11 +35,13 @@ export class GutterParser {
       this.newLine++;
     }
   }
+
   finish(): { added: number[]; modified: number[]; deleted: number[] } {
     this.flush();
     return { added: this.added, modified: this.modified, deleted: this.deleted };
   }
 }
+
 export function parseGutter(diff: string) {
   const parser = new GutterParser();
   for (const line of diff.split('\n')) parser.record(line);

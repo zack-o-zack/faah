@@ -7,6 +7,7 @@ import { LRU } from './lru.ts';
 import { RenderWrites } from './writes.ts';
 import { filenameLanguage } from './language.ts';
 import { RenderCancelled } from './cancel.ts';
+
 export class RenderService {
   readonly cache = new LRU<Document>();
   readonly pool = new RenderPool();
@@ -23,6 +24,7 @@ export class RenderService {
     this.disk = disk ?? new RenderDisk();
     this.writes = new RenderWrites(this.disk.path, this.disk.budget);
   }
+
   async highlight(source: string, lang: string, want: number, path = ''): Promise<string[]> {
     if (this.closed) throw new RenderCancelled();
     const key = this.disk.key(source, lang, want),
@@ -44,19 +46,20 @@ export class RenderService {
     try {
       lines = await task;
     } catch (error) {
-      if (this.closed) throw new RenderCancelled();
+      if (this.isClosed()) throw new RenderCancelled();
       throw error;
     }
-    if (this.closed) throw new RenderCancelled();
-    if (!this.closed && (this.revisions.get(path) ?? 0) === revision)
-      this.writes.put(key, path, lines);
+    if (this.isClosed()) throw new RenderCancelled();
+    if ((this.revisions.get(path) ?? 0) === revision) this.writes.put(key, path, lines);
     this.remember(key, lines);
     return lines;
   }
+
   private remember(key: string, lines: string[]): void {
     const size = sizeOfLines(lines);
     if (size <= this.memo.budget) this.memo.put(key, lines, size);
   }
+
   warm(paths: readonly string[]): Promise<void> {
     if (this.closed) return Promise.resolve();
     const task = this.warmLanguages(paths).catch((error: unknown) => {
@@ -65,10 +68,12 @@ export class RenderService {
     this.observe(task);
     return task;
   }
+
   private observe(task: Promise<void>): void {
     this.backgrounds.add(task);
     void task.finally(() => this.backgrounds.delete(task)).catch(() => undefined);
   }
+
   private async warmLanguages(paths: readonly string[]): Promise<void> {
     const counts = new Map<string, number>(),
       names = new Map<string, string | undefined>();
@@ -85,6 +90,7 @@ export class RenderService {
         .map(([lang]) => lang),
     );
   }
+
   async open(abs: string, rel: string): Promise<Document> {
     if (this.closed) throw new RenderCancelled();
     const info = await stat(abs, { bigint: true });
@@ -103,8 +109,12 @@ export class RenderService {
           normalizeCRLF(data),
           rel,
           (source, lang, want) => this.highlight(source, lang, want, abs),
-          (delta) => this.cache.grow(key, delta),
-          (task) => this.observe(task),
+          (delta) => {
+            this.cache.grow(key, delta);
+          },
+          (task) => {
+            this.observe(task);
+          },
         );
         if (!this.closed && (this.revisions.get(abs) ?? 0) === revision)
           this.cache.put(key, doc, doc.initialBytes);
@@ -114,6 +124,7 @@ export class RenderService {
     }
     return task;
   }
+
   invalidate(abs: string): void {
     if (this.closed) return;
     this.revisions.set(abs, (this.revisions.get(abs) ?? 0) + 1);
@@ -121,15 +132,23 @@ export class RenderService {
     this.disk.invalidate(abs);
     this.writes.invalidate(abs);
   }
+
   scavenge(): void {
     this.cache.trim();
     this.memo.clear();
     this.pool.scavenge();
     Bun.gc(true);
   }
+
   close(): Promise<void> {
     return (this.closing ??= this.finish());
   }
+
+  // A method, not a field read, because close() can flip the flag during an await.
+  private isClosed(): boolean {
+    return this.closed;
+  }
+
   private async finish(): Promise<void> {
     this.closed = true;
     this.pool.cancelWarm();

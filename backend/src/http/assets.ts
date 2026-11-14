@@ -7,6 +7,7 @@ import type { Settings } from '../settings/service.ts';
 import { escapeHTML } from '../workbench/holding.ts';
 import { vendorAsset } from './vendor.ts';
 import { missing } from './response.ts';
+
 export async function asset(name: string): Promise<Uint8Array | undefined> {
   try {
     if (process.env.FAAH_DEV_ROOT) return await readFile(join(process.env.FAAH_DEV_ROOT, name));
@@ -16,6 +17,7 @@ export async function asset(name: string): Promise<Uint8Array | undefined> {
     return undefined;
   }
 }
+
 export async function assetNames(): Promise<string[]> {
   if (process.env.FAAH_DEV_ROOT)
     return (await readdir(join(process.env.FAAH_DEV_ROOT, 'web/themes'))).map(
@@ -23,12 +25,14 @@ export async function assetNames(): Promise<string[]> {
     );
   return Object.keys(assets);
 }
+
 export async function themes(): Promise<string> {
   let css = '';
   for (const name of (await assetNames()).filter((n) => /^web\/themes\/[^/]+\.css$/.test(n)).sort())
     css += `/* ${name.slice(4)} */\n${new TextDecoder().decode(await asset(name))}\n`;
   return css;
 }
+
 export function mime(name: string): string {
   const ext = posix.extname(name).toLowerCase();
   const types: Record<string, string> = {
@@ -48,6 +52,7 @@ export function mime(name: string): string {
   };
   return types[ext] ?? 'application/octet-stream';
 }
+
 export async function staticAsset(rel: string, request: Request): Promise<Response> {
   for (const name of staticCandidates(rel)) {
     let bytes = await asset(name);
@@ -76,6 +81,7 @@ export async function staticAsset(rel: string, request: Request): Promise<Respon
   response.headers.set('X-Static-Missing', '1');
   return response;
 }
+
 export async function index(
   base: string,
   workbench: boolean,

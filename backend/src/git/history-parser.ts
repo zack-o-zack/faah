@@ -8,6 +8,7 @@ export interface GitCommit {
   author: string;
   date: string;
 }
+
 export interface GitUnpushedCommit {
   hash: string;
   short: string;
@@ -15,6 +16,7 @@ export interface GitUnpushedCommit {
   author: string;
   date: string;
 }
+
 export interface CommitFile {
   path: string;
   status: string;
@@ -23,11 +25,13 @@ export interface CommitFile {
   del: number;
   binary?: boolean;
 }
+
 export interface Numstat {
   add: number;
   del: number;
   binary: boolean;
 }
+
 export interface CommitDetail {
   hash: string;
   short: string;
@@ -43,6 +47,7 @@ export interface CommitDetail {
   authorUrl?: string;
   commitUrl?: string;
 }
+
 export function recentCommit(line: string): GitCommit {
   const fields = line.split('\x1f');
   return {
@@ -53,6 +58,7 @@ export function recentCommit(line: string): GitCommit {
     full: fields[4] ?? '',
   };
 }
+
 export function unpushedCommit(line: string): GitUnpushedCommit {
   const fields = line.split('\x1f');
   return {
@@ -63,6 +69,7 @@ export function unpushedCommit(line: string): GitUnpushedCommit {
     date: fields[4] ?? '',
   };
 }
+
 export class NumstatParser {
   readonly stats = new Map<string, Numstat>();
   private pending: Numstat | undefined;

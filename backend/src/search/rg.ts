@@ -6,6 +6,7 @@ import { record, number } from '../decode.ts';
 import type { RGProfile } from './profile.ts';
 import { FileDispatch } from './dispatch.ts';
 let extracting: Promise<string> | undefined;
+
 export function rgPath(): Promise<string> {
   extracting ??= (async () => {
     const dir = join(
@@ -16,7 +17,7 @@ export function rgPath(): Promise<string> {
     );
     const path = join(dir, 'rg');
     try {
-      if ((await stat(path)).size === (await Bun.file(rgAsset).size)) return path;
+      if ((await stat(path)).size === Bun.file(rgAsset).size) return path;
     } catch {
       /* Install the pinned embedded executable into a versioned cache. */
     }
@@ -29,37 +30,42 @@ export function rgPath(): Promise<string> {
   })();
   return extracting;
 }
+
 export interface RGMatch {
   path: string;
   line: Uint8Array;
   lineNumber: number;
   matches: { start: number; end: number }[];
 }
+
 function bytes(value: unknown): Uint8Array {
-  const v = record(value);
-  if (typeof v.text === 'string') return Buffer.from(v.text);
-  if (typeof v.bytes === 'string') return Buffer.from(v.bytes, 'base64');
+  const fields = record(value);
+  if (typeof fields.text === 'string') return Buffer.from(fields.text);
+  if (typeof fields.bytes === 'string') return Buffer.from(fields.bytes, 'base64');
   throw new Error('invalid rg text');
 }
+
 function pathText(value: unknown): string {
-  const v = record(value);
-  return typeof v.text === 'string' ? v.text : Buffer.from(bytes(v)).toString();
+  const fields = record(value);
+  return typeof fields.text === 'string' ? fields.text : Buffer.from(bytes(fields)).toString();
 }
+
 export function decodeMatch(value: unknown): RGMatch | undefined {
-  const v = record(value);
-  if (v.type !== 'match') return;
-  const d = record(v.data);
-  if (!Array.isArray(d.submatches)) throw new Error('invalid submatches');
+  const fields = record(value);
+  if (fields.type !== 'match') return;
+  const data = record(fields.data);
+  if (!Array.isArray(data.submatches)) throw new Error('invalid submatches');
   return {
-    path: pathText(d.path),
-    line: bytes(d.lines),
-    lineNumber: number(d.line_number),
-    matches: d.submatches.map((v) => {
-      const m = record(v);
-      return { start: number(m.start), end: number(m.end) };
+    path: pathText(data.path),
+    line: bytes(data.lines),
+    lineNumber: number(data.line_number),
+    matches: data.submatches.map((submatch) => {
+      const fields = record(submatch);
+      return { start: number(fields.start), end: number(fields.end) };
     }),
   };
 }
+
 export async function runRG(options: {
   root: string;
   args: string[];
@@ -112,7 +118,7 @@ export async function runRG(options: {
     while (true) {
       const chunk = await reader.read();
       if (chunk.done) break;
-      if (timing.firstByteMs === null) timing.firstByteMs = performance.now() - spawned;
+      timing.firstByteMs ??= performance.now() - spawned;
       timing.bytes += chunk.value.byteLength;
       buffer += decoder.decode(chunk.value, { stream: true });
       let start = 0;
@@ -162,10 +168,15 @@ export async function runRG(options: {
   if (options.profile) {
     const usage = child.resourceUsage();
     if (usage) {
-      timing.cpuUserMs = Number(usage.cpuTime.user) / 1000;
-      timing.cpuSystemMs = Number(usage.cpuTime.system) / 1000;
+      timing.cpuUserMs = microseconds(usage.cpuTime.user) / 1000;
+      timing.cpuSystemMs = microseconds(usage.cpuTime.system) / 1000;
     }
   }
   options.profile?.(timing);
   return result;
+}
+
+// Bun's types declare resource-usage times as numbers, but the runtime returns bigint.
+function microseconds(value: number | bigint): number {
+  return typeof value === 'bigint' ? Number(value) : value;
 }

@@ -8,6 +8,7 @@ import { GitActions } from '../src/git/actions.ts';
 import { gitActionRoute } from '../src/git/action-routes.ts';
 import { WorkspaceWatch, gitEvent } from '../src/watch/service.ts';
 import { emptyGit } from '../src/index/types.ts';
+
 async function until(check: () => boolean) {
   const deadline = performance.now() + 5000;
   while (!check()) {
@@ -15,87 +16,89 @@ async function until(check: () => boolean) {
     await Bun.sleep(10);
   }
 }
+
 async function setup() {
-  const f = await gitFixture();
-  await f.write('a.txt', 'old\n');
-  await f.run('add', '.');
-  await f.run('commit', '-qm', 'Initial');
+  const repo = await gitFixture();
+  await repo.write('a.txt', 'old\n');
+  await repo.run('add', '.');
+  await repo.run('commit', '-qm', 'Initial');
   const index = new Index({
-    root: f.root,
-    gitState: () => f.status.read(f.root),
+    root: repo.root,
+    gitState: () => repo.status.read(repo.root),
     updated: async () => {},
   });
   await index.build();
-  const git = new GitWorkspace(index, f.commands);
+  const git = new GitWorkspace(index, repo.commands);
   return {
-    f,
+    f: repo,
     index,
     git,
     close: async () => {
       await git.close();
-      await f.cleanup();
+      await repo.cleanup();
     },
   };
 }
+
 test('native Git refresh is lazy without subscribers and suppresses unchanged snapshots', async () => {
-  const t = await setup();
+  const context = await setup();
   try {
-    const initial = await t.git.refresh();
+    const initial = await context.git.refresh();
     expect(initial.gitFiles).toEqual([]);
     expect(initial.statuses).toEqual({});
-    await t.f.write('sub/new.txt', 'new\n');
-    await t.git.changed();
-    expect(t.index.git.statuses).toEqual({});
-    expect((await t.git.ensure()).dirtyDirs).toEqual({ sub: true });
+    await context.f.write('sub/new.txt', 'new\n');
+    await context.git.changed();
+    expect(context.index.git.statuses).toEqual({});
+    expect((await context.git.ensure()).dirtyDirs).toEqual({ sub: true });
     const events: GitPayload[] = [];
-    const stop = await t.git.subscribe((payload) => events.push(payload));
+    const stop = await context.git.subscribe((payload) => events.push(payload));
     expect(events.length).toBe(1);
-    await t.git.refresh();
+    await context.git.refresh();
     expect(events.length).toBe(1);
-    await t.f.run('add', '.');
-    await t.git.changed(true);
+    await context.f.run('add', '.');
+    await context.git.changed(true);
     expect(events.at(-1)?.staged).toEqual({ 'sub/new.txt': true });
-    await t.f.write('sub/new.txt', 'again\n');
-    await t.git.changed();
+    await context.f.write('sub/new.txt', 'again\n');
+    await context.git.changed();
     expect(events.at(-1)?.partial).toEqual({ 'sub/new.txt': true });
     stop();
   } finally {
-    await t.close();
+    await context.close();
   }
 });
 test('filesystem events update native status, branch and index overlays without legacy Git', async () => {
-  const t = await setup();
+  const context = await setup();
   const watch = new WorkspaceWatch({
-    root: t.f.root,
+    root: context.f.root,
     delay: 1,
     changed: async (paths, metadata) => {
-      for (const path of paths) await t.index.touch(path);
-      await t.git.changed(metadata);
+      for (const path of paths) await context.index.touch(path);
+      await context.git.changed(metadata);
     },
   });
   try {
     const events: GitPayload[] = [];
-    const stop = await t.git.subscribe((payload) => events.push(payload));
-    await t.f.write('a.txt', 'modified\n');
-    watch.receive([{ path: join(t.f.root, 'a.txt'), type: 'update' }]);
+    const stop = await context.git.subscribe((payload) => events.push(payload));
+    await context.f.write('a.txt', 'modified\n');
+    watch.receive([{ path: join(context.f.root, 'a.txt'), type: 'update' }]);
     await Bun.sleep(20);
     await watch.settled();
     expect(events.at(-1)?.statuses).toEqual({ 'a.txt': 'M' });
-    expect((await t.index.list(''))?.[0]?.status).toBe('M');
-    await t.f.run('checkout', '-qb', 'other');
-    watch.receive([{ path: join(t.f.root, '.git/HEAD'), type: 'update' }]);
+    expect((await context.index.list(''))?.[0]?.status).toBe('M');
+    await context.f.run('checkout', '-qb', 'other');
+    watch.receive([{ path: join(context.f.root, '.git/HEAD'), type: 'update' }]);
     await Bun.sleep(20);
     await watch.settled();
     expect(events.at(-1)?.branch).toBe('other');
     stop();
   } finally {
     await watch.close();
-    await t.close();
+    await context.close();
   }
 });
 test('native Git mutation routes preserve guards, ordered JSON, staging, hunk errors and sync state', async () => {
-  const t = await setup();
-  const actions = new GitActions(t.git, async () => {});
+  const context = await setup();
+  const actions = new GitActions(context.git, async () => {});
   const route = async (name: string, body: string, method = 'POST') => {
     const response = await gitActionRoute(
       actions,
@@ -107,7 +110,8 @@ test('native Git mutation routes preserve guards, ordered JSON, staging, hunk er
       'api/git/' + name,
     );
     if (!response) throw new Error('missing native Git route');
-    return { status: response.status, value: await response.json() };
+    const value: unknown = await response.json();
+    return { status: response.status, value };
   };
   try {
     expect((await route('stage', '', 'GET')).status).toBe(405);
@@ -116,11 +120,11 @@ test('native Git mutation routes preserve guards, ordered JSON, staging, hunk er
       value: { error: 'path is required' },
     });
     expect((await route('stage', '{"path":"../outside"}')).status).toBe(400);
-    await t.f.write('a.txt', 'modified\n');
+    await context.f.write('a.txt', 'modified\n');
     expect((await route('stage', '{"Path":"missing","path":"a.txt"} trailing')).status).toBe(200);
-    expect(t.index.git.staged).toEqual({ 'a.txt': true });
+    expect(context.index.git.staged).toEqual({ 'a.txt': true });
     expect((await route('unstage', '{"path":"a.txt"}')).status).toBe(200);
-    expect(t.index.git.staged).toEqual({});
+    expect(context.index.git.staged).toEqual({});
     expect(await route('hunk', '{"path":"a.txt","hunk":"bad","action":"stage"}')).toEqual({
       status: 502,
       value: { error: 'hunk must start with @@ header' },
@@ -130,7 +134,7 @@ test('native Git mutation routes preserve guards, ordered JSON, staging, hunk er
       value: { error: 'message is required' },
     });
     expect((await route('commit', '{"message":"  Committed  "}')).status).toBe(200);
-    expect(await t.f.run('log', '-1', '--format=%s')).toBe('Committed');
+    expect(await context.f.run('log', '-1', '--format=%s')).toBe('Committed');
     expect((await route('sync-state', '', 'GET')).value).toEqual({
       branch: 'main',
       upstream: '',
@@ -140,15 +144,15 @@ test('native Git mutation routes preserve guards, ordered JSON, staging, hunk er
     });
     expect((await route('pull', '{}')).status).toBe(400);
   } finally {
-    await t.close();
+    await context.close();
   }
 });
 test('Git-disabled and not-ready payloads preserve null maps and empty subscription snapshots', async () => {
-  const t = await setup();
+  const context = await setup();
   try {
-    t.index.ready = false;
-    t.index.git = emptyGit();
-    const payload = await t.git.refresh();
+    context.index.ready = false;
+    context.index.git = emptyGit();
+    const payload = await context.git.refresh();
     expect(payload.git).toBe(true);
     expect(payload.gitFiles).toBeNull();
     expect(payload.statuses).toBeNull();
@@ -164,126 +168,130 @@ test('Git-disabled and not-ready payloads preserve null maps and empty subscript
       expect(gitEvent(path ? '.git/' + path : '.git')).toBe(true);
     expect(gitEvent('.git/objects/aa/bb')).toBe(false);
   } finally {
-    await t.close();
+    await context.close();
   }
 });
 
 test('ignored filesystem paths still invalidate Git because tracked files can match ignore rules', async () => {
-  const t = await setup();
+  const context = await setup();
   const watch = new WorkspaceWatch({
-    root: t.f.root,
+    root: context.f.root,
     delay: 1,
-    ignored: () => t.git.changed(),
+    ignored: () => context.git.changed(),
     changed: async (paths, metadata) => {
-      for (const path of paths) await t.index.touch(path);
-      await t.git.changed(metadata);
+      for (const path of paths) await context.index.touch(path);
+      await context.git.changed(metadata);
     },
   });
   try {
-    await t.f.write('.gitignore', 'a.txt\n');
-    await t.f.run('add', '.gitignore');
-    await t.f.run('commit', '-qm', 'Ignore tracked name');
-    await t.index.build();
+    await context.f.write('.gitignore', 'a.txt\n');
+    await context.f.run('add', '.gitignore');
+    await context.f.run('commit', '-qm', 'Ignore tracked name');
+    await context.index.build();
     const events: GitPayload[] = [];
-    const stop = await t.git.subscribe((payload) => events.push(payload));
-    await t.f.write('a.txt', 'tracked but ignored\n');
-    watch.receive([{ path: join(t.f.root, 'a.txt'), type: 'update' }]);
+    const stop = await context.git.subscribe((payload) => events.push(payload));
+    await context.f.write('a.txt', 'tracked but ignored\n');
+    watch.receive([{ path: join(context.f.root, 'a.txt'), type: 'update' }]);
     await Bun.sleep(20);
     await watch.settled();
     expect(events.at(-1)?.statuses?.['a.txt']).toBe('M');
     stop();
   } finally {
     await watch.close();
-    await t.close();
+    await context.close();
   }
 });
 
 test('native watcher detects CLI commits, new edits and deletes, then removes committed deletion overlays', async () => {
-  const t = await setup();
+  const context = await setup();
   const watch = new WorkspaceWatch({
-    root: t.f.root,
-    gitDirectory: async () => (await t.f.commands.probe.get(t.f.root))?.dir,
-    availability: (available) => t.git.watching(available),
+    root: context.f.root,
+    gitDirectory: async () => (await context.f.commands.probe.get(context.f.root))?.dir,
+    availability: (available) => {
+      context.git.watching(available);
+    },
     changed: async (paths, metadata) => {
-      for (const path of paths) await t.index.touch(path);
-      await t.git.changed(metadata);
+      for (const path of paths) await context.index.touch(path);
+      await context.git.changed(metadata);
     },
   });
   try {
-    await t.f.write('sub/inner/deleted.txt', 'deleted\n');
-    await t.f.run('add', '.');
-    await t.f.run('commit', '-qm', 'Nested');
-    await t.index.build();
+    await context.f.write('sub/inner/deleted.txt', 'deleted\n');
+    await context.f.run('add', '.');
+    await context.f.run('commit', '-qm', 'Nested');
+    await context.index.build();
     const events: GitPayload[] = [];
-    const stop = await t.git.subscribe((payload) => events.push(payload));
+    const stop = await context.git.subscribe((payload) => events.push(payload));
     await watch.start();
-    await t.f.write('a.txt', 'cli commit\n');
-    await t.f.run('commit', '-qam', 'From CLI');
+    await context.f.write('a.txt', 'cli commit\n');
+    await context.f.run('commit', '-qam', 'From CLI');
     await until(() => events.at(-1)?.recentCommits?.[0]?.subject === 'From CLI');
     expect(events.at(-1)?.statuses).toEqual({});
-    await t.f.write('brand_new.txt', 'new\n');
-    await t.f.write('a.txt', 'after commit\n');
+    await context.f.write('brand_new.txt', 'new\n');
+    await context.f.write('a.txt', 'after commit\n');
     await until(() => events.at(-1)?.gitChanges === 2);
-    expect((await t.index.list(''))?.find((n) => n.path === 'brand_new.txt')?.status).toBe('U');
-    await rm(join(t.f.root, 'sub'), { recursive: true });
+    expect((await context.index.list(''))?.find((n) => n.path === 'brand_new.txt')?.status).toBe(
+      'U',
+    );
+    await rm(join(context.f.root, 'sub'), { recursive: true });
     await until(() => events.at(-1)?.statuses?.['sub/inner/deleted.txt'] === 'D');
-    expect((await t.index.list('sub/inner'))?.[0]?.status).toBe('D');
-    expect((await t.index.list(''))?.find((n) => n.path === 'sub')?.dirty).toBe(true);
-    await t.f.run('add', '-A');
-    await t.f.run('commit', '-qm', 'Remove nested');
+    expect((await context.index.list('sub/inner'))?.[0]?.status).toBe('D');
+    expect((await context.index.list(''))?.find((n) => n.path === 'sub')?.dirty).toBe(true);
+    await context.f.run('add', '-A');
+    await context.f.run('commit', '-qm', 'Remove nested');
     await until(() => events.at(-1)?.recentCommits?.[0]?.subject === 'Remove nested');
-    expect(await t.index.list('sub/inner')).toBeUndefined();
-    expect((await t.index.list(''))?.some((n) => n.path === 'sub')).toBe(false);
+    expect(await context.index.list('sub/inner')).toBeUndefined();
+    expect((await context.index.list(''))?.some((n) => n.path === 'sub')).toBe(false);
     stop();
   } finally {
     await watch.close();
-    await t.close();
+    await context.close();
   }
 }, 15000);
 
 test('unavailable watcher polls active subscribers and refreshes on demand without subscribers', async () => {
-  const t = await setup();
+  const context = await setup();
   try {
-    t.git.watching(false);
-    await t.git.ensure();
-    await t.f.write('a.txt', 'no subscriber\n');
-    expect((await t.git.ensure()).statuses).toEqual({ 'a.txt': 'M' });
+    context.git.watching(false);
+    await context.git.ensure();
+    await context.f.write('a.txt', 'no subscriber\n');
+    expect((await context.git.ensure()).statuses).toEqual({ 'a.txt': 'M' });
     const events: GitPayload[] = [];
-    const stop = await t.git.subscribe((payload) => events.push(payload));
-    await t.f.run('add', '.');
-    await t.f.run('commit', '-qm', 'Polled');
+    const stop = await context.git.subscribe((payload) => events.push(payload));
+    await context.f.run('add', '.');
+    await context.f.run('commit', '-qm', 'Polled');
     await until(() => events.at(-1)?.recentCommits?.[0]?.subject === 'Polled');
     expect(events.at(-1)?.statuses).toEqual({});
     stop();
     const count = events.length;
-    await t.f.write('a.txt', 'unobserved\n');
+    await context.f.write('a.txt', 'unobserved\n');
     await Bun.sleep(1100);
     expect(events.length).toBe(count);
-    expect((await t.git.ensure()).statuses).toEqual({ 'a.txt': 'M' });
+    expect((await context.git.ensure()).statuses).toEqual({ 'a.txt': 'M' });
   } finally {
-    await t.close();
+    await context.close();
   }
 }, 10000);
 
 test('subscription before index readiness publishes ready status and rebuild invalidation stays authoritative', async () => {
-  const t = await setup();
+  const context = await setup();
   try {
-    t.index.ready = false;
+    context.index.ready = false;
     const events: GitPayload[] = [];
-    const stop = await t.git.subscribe((payload) => events.push(payload));
+    const stop = await context.git.subscribe((payload) => events.push(payload));
     expect(events[0]?.statuses).toBeNull();
-    await t.f.write('new.txt', 'new\n');
-    await t.index.build();
-    await t.git.changed(true);
+    await context.f.write('new.txt', 'new\n');
+    await context.index.build();
+    await context.git.changed(true);
     expect(events.at(-1)?.statuses).toEqual({ 'new.txt': 'U' });
-    await t.f.run('add', '.');
-    await t.f.run('commit', '-qm', 'Rebuilt');
-    await t.index.build();
-    t.git.invalidate(true);
-    expect((await t.git.ensure()).recentCommits?.[0]?.subject).toBe('Rebuilt');
-    expect(t.index.git.statuses).toEqual({});
+    await context.f.run('add', '.');
+    await context.f.run('commit', '-qm', 'Rebuilt');
+    await context.index.build();
+    context.git.invalidate(true);
+    expect((await context.git.ensure()).recentCommits?.[0]?.subject).toBe('Rebuilt');
+    expect(context.index.git.statuses).toEqual({});
     stop();
   } finally {
-    await t.close();
+    await context.close();
   }
 });

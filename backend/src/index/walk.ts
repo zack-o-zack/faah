@@ -5,7 +5,9 @@ import { IgnoreSet, readGitignore } from '../ignore/service.ts';
 import { newItem, type Item } from '../fuzzy/score.ts';
 import { compare, lower } from '../text.ts';
 import type { Node } from './types.ts';
+
 export const vcs = new Set(['.git', '.hg', '.svn']);
+
 export async function walkable(root: string, path: string): Promise<boolean> {
   const parts = path.split('/');
   for (let i = 1; i <= parts.length; i++) {
@@ -14,6 +16,7 @@ export async function walkable(root: string, path: string): Promise<boolean> {
   }
   return true;
 }
+
 export function sortNodes(kids: Node[]): Node[] {
   return kids.sort(
     (a, b) => Number(b.dir) - Number(a.dir) || compare(lower(a.name), lower(b.name)),
@@ -23,6 +26,7 @@ interface Job {
   rel: string;
   ignore: IgnoreSet;
 }
+
 export interface WalkProfile {
   wallMs: number;
   bodyMs: number;
@@ -30,6 +34,7 @@ export interface WalkProfile {
   cpuUserMs: number;
   cpuSystemMs: number;
 }
+
 export async function walk(options: {
   root: string;
   publish: (nodes: Node[]) => void;

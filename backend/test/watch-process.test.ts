@@ -13,15 +13,18 @@ function helper(mode: string, timeout = 500) {
     timeout,
   );
 }
+
 function reaped(pid: number | undefined) {
   if (!pid) throw new Error('helper never started');
   expect(() => process.kill(pid, 0)).toThrow();
 }
+
 async function started(watcher: WatcherProcess): Promise<number | undefined> {
   const deadline = performance.now() + 1000;
   while (!watcher.pid && performance.now() < deadline) await Bun.sleep(1);
   return watcher.pid;
 }
+
 test('watcher helper shares one process across roots, forwards typed events and reaps on last unsubscribe', async () => {
   const watcher = helper('healthy'),
     events: WatchEvent[] = [];
@@ -37,7 +40,7 @@ test('watcher helper shares one process across roots, forwards typed events and 
     });
     expect(watcher.pid).toBe(pid);
     await Bun.sleep(10);
-    expect(events.map((e) => e.path)).toEqual(['one/proof.txt', 'two/proof.txt']);
+    expect(events.map((change) => change.path)).toEqual(['one/proof.txt', 'two/proof.txt']);
     await first();
     expect(watcher.pid).toBe(pid);
     await second();

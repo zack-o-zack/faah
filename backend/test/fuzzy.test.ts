@@ -4,7 +4,7 @@ import { FuzzyPool } from '../src/fuzzy/pool.ts';
 import { generateItems, fuzzyPaths } from '../bench/vectors.ts';
 
 test('Go fuzzy ranking, case, empty queries and top-K', () => {
-  const items = fuzzyPaths.slice(0, 6).map((p) => newItem(p));
+  const items = fuzzyPaths.slice(0, 6).map((path) => newItem(path));
   const results = find(items, 'httpserver', 10);
   expect(results[0]?.path).toBe('httpserver.go');
   for (const result of results) {
@@ -15,17 +15,17 @@ test('Go fuzzy ranking, case, empty queries and top-K', () => {
   expect(find(items, 'appjs', 10)[0]?.path).toBe('web/app.js');
   expect(
     find(
-      ['src/HTTPServer.go', 'src/httpserver.go'].map((p) => newItem(p)),
+      ['src/HTTPServer.go', 'src/httpserver.go'].map((path) => newItem(path)),
       'HTTPServer',
       10,
     )[0]?.path,
   ).toBe('src/HTTPServer.go');
   expect(
     find(
-      ['a.go', 'b.go', 'c.go'].map((p) => newItem(p)),
+      ['a.go', 'b.go', 'c.go'].map((path) => newItem(path)),
       '',
       2,
-    ).map((r) => r.path),
+    ).map((result) => result.path),
   ).toEqual(['a.go', 'b.go']);
   expect(find(items, '  http server  ', 10)).toEqual(results);
   expect(find([], 'test', 10)).toEqual([]);
@@ -37,21 +37,21 @@ test('Go fuzzy ranking, case, empty queries and top-K', () => {
     'cmd/server/server.go',
     'internal/server.go',
     'vendor/server.go',
-  ].map((p) => newItem(p));
+  ].map((path) => newItem(path));
   expect(find(servers, 'server', 3)[0]?.path).toBe('server.go');
   expect(find(servers, 'server', 3)).toEqual(find(servers, 'server', 0).slice(0, 3));
-  for (const c of '/_-. @') expect(isBoundary(c.charCodeAt(0))).toBe(true);
-  for (const c of 'aZ0!:') expect(isBoundary(c.charCodeAt(0))).toBe(false);
+  for (const character of '/_-. @') expect(isBoundary(character.charCodeAt(0))).toBe(true);
+  for (const character of 'aZ0!:') expect(isBoundary(character.charCodeAt(0))).toBe(false);
   expect(
     score({ item: newItem('fooBarBaz.go'), query: Buffer.from('bb'), original: Buffer.from('bb') })
       ?.score,
   ).toBeGreaterThan(0);
   const tied = find(
-    ['z.go', 'a.go'].map((p) => newItem(p)),
+    ['z.go', 'a.go'].map((path) => newItem(path)),
     'go',
     10,
   );
-  expect(tied.map((r) => r.path)).toEqual(['a.go', 'z.go']);
+  expect(tied.map((result) => result.path)).toEqual(['a.go', 'z.go']);
   expect(
     rank(
       { path: 'z.go', name: 'z.go', pos: [], score: 10 },
@@ -94,7 +94,7 @@ test('allocation-free scoring retains Go scores, tightened byte positions and UT
   }
   expect(
     find(
-      ['😀.go', '\uE000.go'].map((p) => newItem(p)),
+      ['😀.go', '\uE000.go'].map((path) => newItem(path)),
       'go',
       1,
     )[0]?.path,
@@ -118,7 +118,7 @@ test('persistent sharded pool agrees with Go top-K merge and survives updates', 
     expect((await pool.find('handler', 1))[0]?.path).toBe('handler');
     await pool.set([newItem('one.go')]);
     expect(pool.workerCount).toBe(0);
-    expect((await pool.find('', 50)).map((r) => r.path)).toEqual(['one.go']);
+    expect((await pool.find('', 50)).map((result) => result.path)).toEqual(['one.go']);
   } finally {
     pool.close();
   }

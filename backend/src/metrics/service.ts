@@ -6,6 +6,7 @@ export interface Metrics {
   lspEnabled: boolean;
   lspMemBytes: number;
 }
+
 export class MetricsCollector {
   private time = performance.now();
   private cpu = process.cpuUsage();
@@ -33,12 +34,13 @@ export class MetricsCollector {
     };
   }
 }
+
 export async function rss(pid: number): Promise<number> {
-  const p = Bun.spawn(['ps', '-o', 'rss=', '-p', String(pid)], {
+  const child = Bun.spawn(['ps', '-o', 'rss=', '-p', String(pid)], {
     stdout: 'pipe',
     stderr: 'ignore',
   });
-  const text = (await new Response(p.stdout).text()).trim();
-  await p.exited;
+  const text = (await new Response(child.stdout).text()).trim();
+  await child.exited;
   return /^\d+$/.test(text) ? Number(text) * 1024 : 0;
 }

@@ -1,9 +1,11 @@
 import { Settings } from '../settings/service.ts';
 import type { PR } from '../cli/target.ts';
+
 export interface CloneAuth {
   env: Record<string, string | undefined>;
   redact(text: string): string;
 }
+
 function host(text: string, fallback: string): string {
   return (
     text
@@ -12,16 +14,18 @@ function host(text: string, fallback: string): string {
       .replace(/\/+$/, '') || fallback
   ).toLowerCase();
 }
+
 function cli(args: string[]): string {
   const result = Bun.spawnSync(args, { stderr: 'ignore', timeout: 5000 });
   return result.exitCode === 0 ? result.stdout.toString().trim() : '';
 }
+
 export function cloneAuth(pr: PR): CloneAuth {
   const settings = new Settings().raw();
   const get = (key: string) => (typeof settings[key] === 'string' ? settings[key].trim() : '');
   const target = new URL(pr.url.includes('://') ? pr.url : 'https://' + pr.url).host.toLowerCase();
   let token = '',
-    user = '';
+    user: string;
   if (pr.provider === 'github') {
     token =
       get('github.token') ||

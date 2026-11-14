@@ -12,6 +12,7 @@ export interface SyncState {
   inProgress?: string;
   dirty: boolean;
 }
+
 export class SyncConflict extends PathError {
   constructor(
     readonly state: SyncState,
@@ -20,6 +21,7 @@ export class SyncConflict extends PathError {
     super(409, message);
   }
 }
+
 export class GitActions {
   readonly mutations: GitMutations;
   constructor(
@@ -28,9 +30,11 @@ export class GitActions {
   ) {
     this.mutations = new GitMutations(workspace.commands, workspace.sync);
   }
+
   private get root(): string {
     return this.workspace.index.root;
   }
+
   async stage(path: string, unstage: boolean) {
     const { rel } = resolveFile(this.root, path);
     try {
@@ -41,6 +45,7 @@ export class GitActions {
     }
     return this.workspace.refresh();
   }
+
   async hunk(path: string, hunk: string, action: string) {
     const { rel } = resolveFile(this.root, path);
     if (!rel) throw new PathError(400, 'bad path');
@@ -53,6 +58,7 @@ export class GitActions {
     await this.workspace.refresh();
     return { ok: true, path: rel, action };
   }
+
   async commit(message: string) {
     if (
       !(await this.mutations.staged(this.root)).length &&
@@ -63,6 +69,7 @@ export class GitActions {
     await this.workspace.refresh();
     return { ok: true };
   }
+
   async push() {
     let result = await this.mutations.push(this.root);
     if (result.code !== 0 && result.output.includes('has no upstream branch')) {
@@ -74,6 +81,7 @@ export class GitActions {
     await this.workspace.refresh();
     return { ok: true };
   }
+
   async syncState(): Promise<SyncState> {
     const sync = this.workspace.sync;
     const empty = { branch: '', upstream: '', ahead: 0, behind: 0, dirty: false };
@@ -94,6 +102,7 @@ export class GitActions {
       ...(op ? { code: 'in-progress', inProgress: op } : {}),
     };
   }
+
   async pull() {
     const sync = this.workspace.sync;
     const op = await sync.operation(this.root);
@@ -118,6 +127,7 @@ export class GitActions {
     await this.workspace.refresh();
     return { ok: true, message: 'pulled the latest changes' };
   }
+
   async abort() {
     try {
       await this.mutations.abort(this.root);

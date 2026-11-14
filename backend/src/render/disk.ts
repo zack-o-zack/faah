@@ -4,7 +4,9 @@ import { dirname, join } from 'node:path';
 import { homedir } from 'node:os';
 import { createHash } from 'node:crypto';
 import { string } from '../decode.ts';
+
 export const rendererVersion = 'shiki-3.22.0-scopes-4';
+
 export class RenderDisk {
   private readonly db: Database;
   constructor(
@@ -17,16 +19,18 @@ export class RenderDisk {
   ) {
     mkdirSync(dirname(path), { recursive: true });
     this.db = new Database(path, { create: true, strict: true });
-    this.db.exec(
+    this.db.run(
       'PRAGMA busy_timeout=5000; PRAGMA journal_mode=WAL; CREATE TABLE IF NOT EXISTS chunks (key TEXT PRIMARY KEY, lines TEXT NOT NULL, bytes INTEGER NOT NULL, touched INTEGER NOT NULL); CREATE TABLE IF NOT EXISTS paths (path TEXT NOT NULL, key TEXT NOT NULL, PRIMARY KEY(path,key)); CREATE INDEX IF NOT EXISTS chunks_lru ON chunks(touched);',
     );
   }
+
   key(source: string, lang: string, want: number): string {
     return createHash('sha256')
       .update(rendererVersion + '\0' + lang + '\0' + want + '\0')
       .update(source)
       .digest('hex');
   }
+
   get(key: string, path: string, touch = true): string[] | undefined {
     const row = this.db
       .query<{ lines: string }, [string]>('SELECT lines FROM chunks WHERE key=?')
@@ -43,6 +47,7 @@ export class RenderDisk {
       return;
     }
   }
+
   touch(key: string, path: string): void {
     this.db
       .query(
@@ -51,6 +56,7 @@ export class RenderDisk {
       .run(key);
     this.attach(key, path);
   }
+
   private attach(key: string, path: string): void {
     if (path)
       this.db
@@ -59,6 +65,7 @@ export class RenderDisk {
         )
         .run(path, key, key);
   }
+
   put(key: string, path: string, lines: string[]): void {
     const data = JSON.stringify(lines),
       bytes = Buffer.byteLength(data);
@@ -75,6 +82,7 @@ export class RenderDisk {
       })
       .immediate();
   }
+
   trim(): void {
     let used =
       this.db
@@ -93,6 +101,7 @@ export class RenderDisk {
       used -= row.bytes;
     }
   }
+
   invalidate(path: string): void {
     this.db
       .transaction(() => {
@@ -109,6 +118,7 @@ export class RenderDisk {
       })
       .immediate();
   }
+
   close(): void {
     this.db.close();
   }

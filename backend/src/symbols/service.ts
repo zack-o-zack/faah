@@ -5,16 +5,20 @@ import { quote, goPattern } from '../text.ts';
 const extensions: Record<string, string> = patterns.extensions;
 const templates: Record<string, string> = patterns.decls;
 const rules: Record<string, { kind: string; pattern: string }[]> = patterns.outline;
+
 export interface Symbol {
   name: string;
   kind: string;
   line: number;
   indent: number;
 }
+
 export const identRe = /^[A-Za-z_$][\w$]*(?![\s\S])/;
+
 export function familyFor(ext: string): string {
   return extensions[ext] ?? '';
 }
+
 export function compileDeclFamily(family: string, query: string): RegExp | undefined {
   const template = templates[family];
   if (!template) return;
@@ -24,6 +28,7 @@ export function compileDeclFamily(family: string, query: string): RegExp | undef
     return;
   }
 }
+
 export function declPatterns(ident: string): Map<string, RegExp> | undefined {
   if (!identRe.test(ident)) return;
   const byFamily = new Map<string, RegExp>();
@@ -38,12 +43,13 @@ export function declPatterns(ident: string): Map<string, RegExp> | undefined {
   }
   return out;
 }
+
 export function indentCols(text: string): number {
   let cols = text.length;
   for (let i = 0; i < text.length; i++) {
-    const c = text.charCodeAt(i);
-    if (c === 9) cols += 3;
-    else if (c >= 0xd800 && c <= 0xdbff) {
+    const code = text.charCodeAt(i);
+    if (code === 9) cols += 3;
+    else if (code >= 0xd800 && code <= 0xdbff) {
       const next = text.charCodeAt(i + 1);
       if (next >= 0xdc00 && next <= 0xdfff) {
         cols--;
@@ -56,9 +62,10 @@ export function indentCols(text: string): number {
 const compiled = Object.fromEntries(
   Object.entries(rules).map(([family, rules]) => [
     family,
-    rules.map((r) => ({ kind: r.kind, re: new RegExp(goPattern(r.pattern)) })),
+    rules.map((rule) => ({ kind: rule.kind, re: new RegExp(goPattern(rule.pattern)) })),
   ]),
 );
+
 export function outlineText(text: string, rel: string): Symbol[] {
   const ext = extname(rel).toLowerCase();
   const md = ext === '.md' || ext === '.markdown';
@@ -68,16 +75,16 @@ export function outlineText(text: string, rel: string): Symbol[] {
     if (Buffer.byteLength(line) >= 256 * 1024) break;
     const text = line.replace(/\r$/, '');
     if (md) {
-      const m = /^(#{1,6})[\t\f\r ]+(.+?)[\t\f\r ]*#*[\t\f\r ]*$/.exec(text);
-      if (m?.[1] && m[2])
-        out.push({ name: m[2], kind: 'heading', line: index + 1, indent: m[1].length - 1 });
+      const match = /^(#{1,6})[\t\f\r ]+(.+?)[\t\f\r ]*#*[\t\f\r ]*$/.exec(text);
+      if (match?.[1] && match[2])
+        out.push({ name: match[2], kind: 'heading', line: index + 1, indent: match[1].length - 1 });
       continue;
     }
     for (const rule of rules) {
-      const m = rule.re.exec(text);
-      if (!m) continue;
-      const name = m.at(-1) || m.at(-2) || '';
-      const indent = m.length >= 3 ? indentCols(m[1] ?? '') : 0;
+      const match = rule.re.exec(text);
+      if (!match) continue;
+      const name = match.at(-1) || match.at(-2) || '';
+      const indent = match.length >= 3 ? indentCols(match[1] ?? '') : 0;
       out.push({
         name,
         kind: indent > 0 && ['func', 'def', 'fn'].includes(rule.kind) ? 'method' : rule.kind,
@@ -89,6 +96,7 @@ export function outlineText(text: string, rel: string): Symbol[] {
   }
   return out;
 }
+
 export async function outline(abs: string, rel: string): Promise<Symbol[]> {
   try {
     return outlineText(await readFile(abs, 'utf8'), rel);

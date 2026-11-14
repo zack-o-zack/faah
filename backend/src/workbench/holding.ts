@@ -1,5 +1,6 @@
 import type { Item } from './store.ts';
 import type { Workspace } from './service.ts';
+
 export function escapeHTML(text: string): string {
   return text
     .replace(/&/g, '&amp;')
@@ -9,6 +10,7 @@ export function escapeHTML(text: string): string {
     .replace(/'/g, '&#39;')
     .replace(/\+/g, '&#43;');
 }
+
 export function holding(options: {
   base: string;
   theme: string;

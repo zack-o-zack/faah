@@ -1,5 +1,6 @@
 import { emptyGit, type GitState } from '../index/types.ts';
-import { GitProbe, repoKey } from './probe.ts';
+import type { GitProbe } from './probe.ts';
+import { repoKey } from './probe.ts';
 import { StatusParser, NameStatusParser } from './status-parser.ts';
 import { dictionary } from './maps.ts';
 
@@ -15,7 +16,9 @@ export class GitStatus {
         root,
         ['status', '--porcelain=v2', '-z', '-uall'],
         {
-          consume: (field) => parser.record(field),
+          consume: (field) => {
+            parser.record(field);
+          },
         },
       );
       if (result.code !== 0) return { ...emptyGit(), git: true };
@@ -28,6 +31,7 @@ export class GitStatus {
       return { ...emptyGit(), git: true };
     }
   }
+
   private async overlay(
     root: string,
     key: (path: string) => string | undefined,
@@ -43,7 +47,9 @@ export class GitStatus {
       if (mapped !== undefined) extra[mapped] = status;
     });
     const result = await this.probe.processes.run(root, ['diff', '--name-status', '-z', ref], {
-      consume: (field) => parser.record(field),
+      consume: (field) => {
+        parser.record(field);
+      },
     });
     if (result.code === 0)
       for (const [path, status] of Object.entries(extra))

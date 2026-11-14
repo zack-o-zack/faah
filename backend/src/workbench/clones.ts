@@ -5,15 +5,18 @@ import { stateDir } from '../store/db.ts';
 import type { WorkbenchStore, Item } from './store.ts';
 import { cloneAuth } from './auth.ts';
 import { detectPR } from '../cli/target.ts';
+
 export function managedClone(repo: string): string {
   return join(stateDir(), 'repos', repo);
 }
+
 function git(dir: string, args: string[]): string {
-  const p = Bun.spawnSync(['git', '-C', dir, ...args], {
+  const child = Bun.spawnSync(['git', '-C', dir, ...args], {
     env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
   });
-  return p.exitCode === 0 ? p.stdout.toString().trim() : '';
+  return child.exitCode === 0 ? child.stdout.toString().trim() : '';
 }
+
 export function cloneOf(dir: string, repo: string): string {
   const top = git(dir, ['rev-parse', '--show-toplevel']);
   if (!top) return '';
@@ -28,6 +31,7 @@ export function cloneOf(dir: string, repo: string): string {
   }
   return '';
 }
+
 export function findClone(store: WorkbenchStore, repo: string, cwd: string): string {
   const dirs = [
     store.clone(repo),
@@ -59,7 +63,7 @@ export function findClone(store: WorkbenchStore, repo: string, cwd: string): str
     'Documents/GitHub',
     'go/src/github.com',
     '',
-  ].map((p) => join(homedir(), p));
+  ].map((relative) => join(homedir(), relative));
   roots.push(...dirs.filter(Boolean).map(dirname), cwd);
   const queue = roots.map((path) => ({ path, depth: 0 }));
   const seen = new Set<string>();
@@ -105,6 +109,7 @@ export function findClone(store: WorkbenchStore, repo: string, cwd: string): str
   return '';
 }
 const pending = new Map<string, Promise<string>>();
+
 export async function prepareClone(options: {
   store: WorkbenchStore;
   item: Item;
@@ -131,7 +136,7 @@ export async function prepareClone(options: {
     const top = cloneOf(dest, repo);
     if (top) return top;
     const pr = detectPR(item.url ?? '');
-    if (!pr) throw new Error('not a pull request URL: ' + item.url);
+    if (!pr) throw new Error('not a pull request URL: ' + (item.url ?? ''));
     const auth = cloneAuth(pr);
     const url = new URL(pr.url.includes('://') ? pr.url : 'https://' + pr.url);
     const cloneURL = 'https://' + url.host + '/' + repo + '.git';

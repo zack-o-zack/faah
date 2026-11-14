@@ -28,8 +28,9 @@ const go = new Map(
     return [string(b.name).split('/').at(-1) ?? '', number(b.nsPerOp)];
   }),
 );
+
 // Three timed samples; calibration and setup are outside the measured loops.
-async function measure(name: string, run: (i: number) => unknown) {
+function measure(name: string, run: (i: number) => unknown) {
   for (let i = 0; i < 100; i++) run(i);
   const start = performance.now();
   for (let i = 0; i < 1000; i++) run(i);
@@ -46,6 +47,7 @@ async function measure(name: string, run: (i: number) => unknown) {
   benchmarks.push(result);
   process.stdout.write(JSON.stringify(result) + '\n');
 }
+
 async function measureAsync(name: string, run: () => Promise<unknown>) {
   for (let i = 0; i < 10; i++) await run();
   const samples: number[] = [];
@@ -67,12 +69,13 @@ async function measureAsync(name: string, run: () => Promise<unknown>) {
   benchmarks.push(result);
   process.stdout.write(JSON.stringify(result) + '\n');
 }
+
 try {
-  const items = fuzzyPaths.map((p) => newItem(p));
-  await measure('BenchmarkFuzzyFind', () => find(items, 'httpserver', 5));
+  const items = fuzzyPaths.map((path) => newItem(path));
+  measure('BenchmarkFuzzyFind', () => find(items, 'httpserver', 5));
   const item = newItem('internal/server/http_server.go'),
     query = Buffer.from('httpserver');
-  await measure('BenchmarkScore', () => score({ item, query, original: query }));
+  measure('BenchmarkScore', () => score({ item, query, original: query }));
   for (const [name, n, query] of [
     ['BenchmarkFuzzyFind_1K', 1000, 'handler'],
     ['BenchmarkFuzzyFind_10K', 10000, 'handler'],
@@ -99,19 +102,17 @@ try {
     'sub/only-root.txt',
     'vendor/pkg/foo.go',
   ];
-  await measure('BenchmarkIgnoreMatch', (i) => ignore.match(paths[i % paths.length] ?? '', false));
+  measure('BenchmarkIgnoreMatch', (i) => ignore.match(paths[i % paths.length] ?? '', false));
   const patterns = ['build/', '*.tmp', 'docs/**/draft.md', '/only-root.txt', 'node_modules/'];
-  await measure('BenchmarkCompilePattern', (i) =>
-    compilePattern(patterns[i % patterns.length] ?? ''),
-  );
+  measure('BenchmarkCompilePattern', (i) => compilePattern(patterns[i % patterns.length] ?? ''));
   const exts = ['.go', '.py', '.ts', '.rs', '.c', '.rb', '.java', '.sh', '.php', '.txt'];
-  await measure('BenchmarkFamilyFor', (i) => familyFor(exts[i % exts.length] ?? ''));
-  await measure('BenchmarkDeclPatterns', () => declPatterns('ProcessRequest'));
+  measure('BenchmarkFamilyFor', (i) => familyFor(exts[i % exts.length] ?? ''));
+  measure('BenchmarkDeclPatterns', () => declPatterns('ProcessRequest'));
   await writeFile(join(root, 'bench.go'), goOutline);
   await writeFile(join(root, 'bench.md'), markdownOutline);
   await measureAsync('BenchmarkOutlineGo', () => outline(join(root, 'bench.go'), 'bench.go'));
   await measureAsync('BenchmarkOutlineMarkdown', () => outline(join(root, 'bench.md'), 'bench.md'));
-  await measure('BenchmarkIndentCols', () => indentCols('    \t  \t'));
+  measure('BenchmarkIndentCols', () => indentCols('    \t  \t'));
   await Bun.write(
     process.env.FAAH_MICRO_REPORT ?? '/tmp/faah-phase2-micro.json',
     JSON.stringify(

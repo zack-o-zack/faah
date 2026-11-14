@@ -9,6 +9,7 @@ export class GitCommands {
   ) {
     this.probe = new GitProbe(processes, enabled);
   }
+
   async text(root: string, args: readonly string[], gate = false): Promise<string> {
     if (gate && !(await this.probe.get(root))) return '';
     try {
@@ -18,6 +19,7 @@ export class GitCommands {
       return '';
     }
   }
+
   async records(
     root: string,
     args: readonly string[],
@@ -30,6 +32,7 @@ export class GitCommands {
       return false;
     }
   }
+
   async paths(root: string, args: readonly string[]): Promise<string[]> {
     const info = await this.probe.get(root);
     if (!info) return [];
@@ -43,13 +46,16 @@ export class GitCommands {
     return ok ? paths : [];
   }
 }
+
 export function atoi(value: string): number | undefined {
   if (!/^[+-]?\d+$/.test(value)) return;
   const integer = BigInt(value);
   if (integer < -9223372036854775808n || integer > 9223372036854775807n) return;
   return Number(integer);
 }
+
 export function validSHA(value: string): boolean {
   return /^[0-9a-fA-F]{4,40}$/.test(value);
 }
+
 export const commitDiffArgs = ['--no-commit-id', '-r', '-m', '--first-parent', '--root'];

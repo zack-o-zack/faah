@@ -4,6 +4,7 @@ function view(bytes: Uint8Array): Uint8Array<ArrayBuffer> {
     ? new Uint8Array(buffer, bytes.byteOffset, bytes.byteLength)
     : new Uint8Array(bytes);
 }
+
 export function content(options: {
   bytes: Uint8Array;
   request: Request;

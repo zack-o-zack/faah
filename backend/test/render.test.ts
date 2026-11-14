@@ -68,7 +68,7 @@ test('scope classes use the fixed theme vocabulary with specific scopes overridi
   expect(highlightedText('<i class=k>&lt;x&gt;</i>')).toBe('&lt;x&gt;');
 });
 test('document windows, source bytes, tabs, final empty lines and width clamp match Go', async () => {
-  const doc = new Document('😀\tA\n<&>\n', 'x.unknown', async (s, _, n) => plain(s, n));
+  const doc = new Document('😀\tA\n<&>\n', 'x.unknown', async (source, _, n) => plain(source, n));
   expect(doc.total).toBe(3);
   expect(doc.maxCols).toBe(5);
   expect(visualWidth('😀\tA')).toBe(5);
@@ -77,7 +77,9 @@ test('document windows, source bytes, tabs, final empty lines and width clamp ma
   expect(doc.raw(0)).toBe('');
   expect(await doc.lines(-1, 999)).toEqual({ lines: ['😀\tA', '&lt;&amp;&gt;', ''], exact: true });
   expect(await doc.lines(999, 1000)).toEqual({ lines: [], exact: true });
-  expect(new Document('x'.repeat(21000), 'x', async (s, _, n) => plain(s, n)).maxCols).toBe(20000);
+  expect(
+    new Document('x'.repeat(21000), 'x', async (source, _, n) => plain(source, n)).maxCols,
+  ).toBe(20000);
 });
 test('multi-chunk requests share window work and refine to the exact background pass', async () => {
   const calls: { lines: number; bytes: number }[] = [];
@@ -86,16 +88,16 @@ test('multi-chunk requests share window work and refine to the exact background 
     release = resolve;
   });
   const src = Array.from({ length: 2300 }, (_, i) => String(i)).join('\n');
-  const doc = new Document(src, 'x.txt', async (s, _, n) => {
-    calls.push({ lines: n, bytes: Buffer.byteLength(s) });
+  const doc = new Document(src, 'x.txt', async (source, _, n) => {
+    calls.push({ lines: n, bytes: Buffer.byteLength(source) });
     if (n === 2300) await gate;
-    return plain(s, n);
+    return plain(source, n);
   });
   const [a, b] = await Promise.all([doc.lines(1000, 1020), doc.lines(1000, 1020)]);
   expect(a).toEqual(b);
   expect(a.exact).toBe(false);
   expect(a.lines[0]).toBe('1000');
-  expect(calls.filter((c) => c.lines === 1400).length).toBe(1);
+  expect(calls.filter((call) => call.lines === 1400).length).toBe(1);
   release();
   await doc.settled();
   expect(doc.exact).toBe(true);
@@ -135,12 +137,12 @@ test('disk cache persists, separates languages and renderer inputs, evicts LRU a
     let cache = new RenderDisk(path, 40);
     const a = cache.key('a', 'Go', 1),
       b = cache.key('b', 'Go', 1),
-      c = cache.key('c', 'Go', 1);
+      third = cache.key('c', 'Go', 1);
     expect(cache.key('a', 'Python', 1)).not.toBe(a);
     cache.put(a, '/a', ['1234567890']);
     cache.put(b, '/b', ['1234567890']);
     cache.get(a, '/a');
-    cache.put(c, '/c', ['1234567890']);
+    cache.put(third, '/c', ['1234567890']);
     expect(cache.get(b, '/b')).toBeUndefined();
     expect(cache.get(a, '/a')).toEqual(['1234567890']);
     cache.close();
@@ -204,7 +206,7 @@ test('invalid UTF-8 replaces each bad byte without changing byte-based window ac
   const doc = new Document(
     Buffer.from([0xe2, 0x82, 10, 0xf0, 0x9f, 0x98, 0x80]),
     'unknown',
-    async (s, _, n) => plain(s, n),
+    async (source, _, n) => plain(source, n),
   );
   expect(doc.raw(1)).toBe('��');
   expect(doc.raw(2)).toBe('😀');
@@ -258,7 +260,9 @@ test('closing immediately cancels warm-up silently and cannot restart a closed p
     await service.close();
     await Bun.sleep(10);
     expect(stderr).not.toHaveBeenCalled();
-    expect(() => service.pool.prepare()).toThrow('render cancelled');
+    expect(() => {
+      service.pool.prepare();
+    }).toThrow('render cancelled');
   } finally {
     stderr.mockRestore();
     await service.close();

@@ -3,13 +3,16 @@ import type { Callback } from './binding.ts';
 import { relative, join, dirname, resolve } from 'node:path';
 import { stat, realpath, readFile } from 'node:fs/promises';
 import { IgnoreSet, readGitignore } from '../ignore/service.ts';
+
 export interface WatchEvent {
   path: string;
   type?: 'create' | 'update' | 'delete';
 }
+
 export function ignoreEvent(path: string): boolean {
   return path === '.gitignore' || path.endsWith('/.gitignore');
 }
+
 export function gitEvent(path: string): boolean {
   return (
     path === '.git' ||
@@ -26,11 +29,13 @@ export function gitEvent(path: string): boolean {
     path.startsWith('.git/refs/')
   );
 }
+
 export class WorkspaceWatch {
   private readonly native = new NativeWatcher();
   get pid(): number | undefined {
     return this.native.pid;
   }
+
   private timer: ReturnType<typeof setTimeout> | undefined;
   private events = new Map<string, WatchEvent>();
   private work = Promise.resolve();
@@ -50,12 +55,14 @@ export class WorkspaceWatch {
       connect?: (root: string, callback: Callback) => Promise<() => Promise<void>>;
     },
   ) {}
+
   private warn(error: unknown): void {
     this.options.availability?.(false);
-    (this.options.warn ?? ((s) => process.stderr.write(s + '\n')))(
+    (this.options.warn ?? ((message) => process.stderr.write(message + '\n')))(
       'faah watcher disabled: ' + String(error),
     );
   }
+
   private callback = (error: Error | null, events: WatchEvent[]): void => {
     if (error) {
       this.warn(error);
@@ -64,6 +71,7 @@ export class WorkspaceWatch {
     }
     this.receive(events);
   };
+
   async start(): Promise<void> {
     if (this.stopped) return;
     const stops: (() => Promise<void>)[] = [];
@@ -101,18 +109,19 @@ export class WorkspaceWatch {
         }
       }
       const stop = async () => {
-        await Promise.all(stops.map((s) => s()));
+        await Promise.all(stops.map((unsubscribe) => unsubscribe()));
       };
-      if (this.stopped) await stop();
+      if (this.isStopped()) await stop();
       else {
         this.unsubscribe = stop;
         this.options.availability?.(true);
       }
     } catch (error) {
-      await Promise.allSettled(stops.map((s) => s()));
-      if (!this.stopped) this.warn(error);
+      await Promise.allSettled(stops.map((unsubscribe) => unsubscribe()));
+      if (!this.isStopped()) this.warn(error);
     }
   }
+
   receive(events: WatchEvent[]): void {
     if (this.stopped) return;
     for (const event of events) {
@@ -130,9 +139,12 @@ export class WorkspaceWatch {
       this.work = this.work
         .catch(() => undefined)
         .then(() => this.flush(batch))
-        .catch((error) => this.warn(error));
+        .catch((error: unknown) => {
+          this.warn(error);
+        });
     }, this.options.delay ?? 50);
   }
+
   private async ignore(dir: string): Promise<IgnoreSet> {
     const cached = this.ignores.get(dir);
     if (cached) return cached;
@@ -143,6 +155,7 @@ export class WorkspaceWatch {
     this.ignores.set(dir, rules);
     return rules;
   }
+
   private async included(rel: string, event: WatchEvent): Promise<boolean> {
     let prefix = '';
     const parts = rel.split('/');
@@ -158,6 +171,12 @@ export class WorkspaceWatch {
     }
     return true;
   }
+
+  // A method, not a field read, because close() can flip the flag during an await.
+  private isStopped(): boolean {
+    return this.stopped;
+  }
+
   private async flush(events: Map<string, WatchEvent>): Promise<void> {
     if (this.stopped) return;
     if ([...events.keys()].some(ignoreEvent)) this.ignores.clear();
@@ -173,9 +192,11 @@ export class WorkspaceWatch {
     if (paths.length || git) await this.options.changed(paths, git);
     else await this.options.ignored?.();
   }
+
   async settled(): Promise<void> {
     await this.work;
   }
+
   async close(): Promise<void> {
     this.stopped = true;
     await this.native.close();

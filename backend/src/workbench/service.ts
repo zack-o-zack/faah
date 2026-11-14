@@ -1,16 +1,19 @@
 import { existsSync, statSync, readdirSync, mkdirSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { homedir } from 'node:os';
-import { WorkbenchStore, dirItem, itemID, type Item } from './store.ts';
+import type { WorkbenchStore } from './store.ts';
+import { dirItem, itemID, type Item } from './store.ts';
 import { resolveTarget, detectPR, prURLExamples } from '../cli/target.ts';
 import { Child } from '../legacy/child.ts';
 import { managedClone, findClone, cloneOf, prepareClone } from './clones.ts';
 import { message } from '../decode.ts';
+
 export interface Entry {
   name: string;
   path: string;
   git?: boolean;
 }
+
 export interface Workspace {
   child?: Child;
   controller: AbortController;
@@ -23,6 +26,7 @@ export interface Workspace {
   active: number;
   lastActive: number;
 }
+
 export class Workbench {
   readonly children = new Map<string, Workspace>();
   private readonly reap: ReturnType<typeof setInterval>;
@@ -44,13 +48,15 @@ export class Workbench {
     this.command = options.command;
     this.features = options.features;
     this.reap = setInterval(() => {
-      for (const [id, c] of this.children)
-        if (!c.active && Date.now() - c.lastActive > 1800000) void this.stop(id);
+      for (const [id, workspace] of this.children)
+        if (!workspace.active && Date.now() - workspace.lastActive > 1800000) void this.stop(id);
     }, 60000);
   }
+
   childBase(id: string): string {
     return this.base + 'w/' + id + '/';
   }
+
   state() {
     return {
       cwd: this.cwd,
@@ -69,18 +75,21 @@ export class Workbench {
       }),
     };
   }
+
   expand(path: string, base = this.cwd): string {
     path = path.trim();
     if (path === '~' || /^~[/\\]/.test(path)) path = join(homedir(), path.slice(1));
     return resolve(base, path || base);
   }
+
   git(dir: string): boolean {
     return existsSync(join(dir, '.git'));
   }
+
   browse(path: string, hidden: boolean) {
     const dir = this.expand(path);
     const entries = this.entries(dir)
-      .filter((e) => hidden || !e.name.startsWith('.'))
+      .filter((entry) => hidden || !entry.name.startsWith('.'))
       .slice(0, 5000)
       .sort(compare);
     const probe = Bun.spawnSync(['git', '-C', dir, 'rev-parse', '--show-toplevel']);
@@ -91,6 +100,7 @@ export class Workbench {
       entries,
     };
   }
+
   entries(dir: string): Entry[] {
     return readdirSync(dir)
       .filter((name) => {
@@ -106,30 +116,31 @@ export class Workbench {
         ...(this.git(join(dir, name)) ? { git: true } : {}),
       }));
   }
-  complete(q: string) {
-    if (!q.trim() || q.includes('://')) return { entries: [] };
-    let typed = q,
+
+  complete(query: string) {
+    if (!query.trim() || query.includes('://')) return { entries: [] };
+    let typed = query,
       prefix = '';
-    if (!q.endsWith('/')) {
-      const i = q.lastIndexOf('/');
+    if (!query.endsWith('/')) {
+      const i = query.lastIndexOf('/');
       if (i >= 0) {
-        typed = q.slice(0, i + 1);
-        prefix = q.slice(i + 1);
-      } else if (q === '~') typed = '~/';
+        typed = query.slice(0, i + 1);
+        prefix = query.slice(i + 1);
+      } else if (query === '~') typed = '~/';
       else {
         typed = '';
-        prefix = q;
+        prefix = query;
       }
     }
     const dir = this.expand(typed);
     try {
       const entries = this.entries(dir)
         .filter(
-          (e) =>
-            e.name.toLowerCase().startsWith(prefix.toLowerCase()) &&
-            (!e.name.startsWith('.') || prefix.startsWith('.')),
+          (entry) =>
+            entry.name.toLowerCase().startsWith(prefix.toLowerCase()) &&
+            (!entry.name.startsWith('.') || prefix.startsWith('.')),
         )
-        .map((e) => ({ ...e, path: typed + e.name + '/' }));
+        .map((entry) => ({ ...entry, path: typed + entry.name + '/' }));
       entries.sort(
         (a, b) =>
           Number(b.name.startsWith(prefix)) - Number(a.name.startsWith(prefix)) || compare(a, b),
@@ -139,12 +150,14 @@ export class Workbench {
       return { entries: [] };
     }
   }
+
   mkdir(path: string, base: string) {
     const dir = this.expand(path, base || this.cwd);
     if (existsSync(dir)) throw new ServiceError(409, dir + ' already exists');
     mkdirSync(dir, { recursive: true });
     return { path: dir };
   }
+
   open(target: string, id: string, clone: string) {
     let item = this.store.get(id);
     if (id && !item) throw new ServiceError(404, 'unknown workspace');
@@ -195,6 +208,7 @@ export class Workbench {
     this.start(item, !known);
     return { id: item.id, href: this.childBase(item.id) };
   }
+
   start(item: Item, forget = false): Workspace {
     const existing = this.children.get(item.id);
     if (existing && ['running', 'starting'].includes(existing.state)) return existing;
@@ -213,6 +227,7 @@ export class Workbench {
     ws.done = this.run(ws, item, forget);
     return ws;
   }
+
   private async run(ws: Workspace, item: Item, forget: boolean): Promise<void> {
     try {
       const cwd =
@@ -222,8 +237,8 @@ export class Workbench {
               item,
               cwd: this.cwd,
               signal: ws.controller.signal,
-              progress: (p) => {
-                ws.progress = p;
+              progress: (message) => {
+                ws.progress = message;
               },
             })
           : this.cwd;
@@ -273,6 +288,7 @@ export class Workbench {
       }
     }
   }
+
   private async learnTitle(item: Item, origin: string): Promise<void> {
     try {
       const response = await fetch(origin + this.childBase(item.id) + 'api/meta', {
@@ -300,6 +316,7 @@ export class Workbench {
       return;
     }
   }
+
   async stop(id: string): Promise<void> {
     const ws = this.children.get(id);
     if (!ws) return;
@@ -307,16 +324,19 @@ export class Workbench {
     await ws.child?.stop();
     await ws.done;
   }
+
   async remove(id: string): Promise<void> {
     await this.stop(id);
     this.children.delete(id);
     this.store.remove(id);
   }
+
   async close(): Promise<void> {
     clearInterval(this.reap);
     await Promise.all([...this.children.keys()].map((id) => this.stop(id)));
   }
 }
+
 function compare(a: Entry, b: Entry): number {
   return a.name.toLowerCase() < b.name.toLowerCase()
     ? -1
@@ -324,6 +344,7 @@ function compare(a: Entry, b: Entry): number {
       ? 1
       : 0;
 }
+
 export class ServiceError extends Error {
   constructor(
     readonly status: number,

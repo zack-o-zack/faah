@@ -26,7 +26,7 @@ test('Go ignore patterns, negation and directory rules', () => {
   expect(ig.child([])).toBe(ig);
   expect(ig.child(['*.subtmp']).match('test.subtmp', false)).toBe(true);
   expect(ig.match('test.subtmp', false)).toBe(false);
-  for (const p of ['', '   ', '# a comment']) expect(compilePattern(p)).toBeUndefined();
+  for (const pattern of ['', '   ', '# a comment']) expect(compilePattern(pattern)).toBeUndefined();
   expect(compilePattern('[')?.hit('[', false)).toBe(true);
   expect(compilePattern('!')?.negate).toBe(true);
 });

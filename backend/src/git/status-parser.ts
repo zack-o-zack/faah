@@ -2,6 +2,7 @@ import type { GitState } from '../index/types.ts';
 import { dictionary } from './maps.ts';
 
 export type PathKey = (path: string) => string | undefined;
+
 export function splitFields(text: string, separator: string, count: number): string[] {
   const fields: string[] = [];
   let start = 0;
@@ -14,10 +15,12 @@ export function splitFields(text: string, separator: string, count: number): str
   fields.push(text.slice(start));
   return fields;
 }
+
 export function mapXY(xy: string): string {
-  const code = xy.length < 2 ? 'M' : xy[0] === '.' ? xy[1] : xy[0];
+  const code = xy.length < 2 ? 'M' : xy.startsWith('.') ? xy[1] : xy[0];
   return code === 'U' ? '!' : code && 'ADRC'.includes(code) ? code : 'M';
 }
+
 export class StatusParser {
   readonly state: GitState = {
     git: true,
@@ -26,6 +29,7 @@ export class StatusParser {
     partial: dictionary<boolean>(),
     yourStatuses: dictionary<string>(),
   };
+
   private original = false;
   constructor(private readonly key: PathKey) {}
   record(field: string): void {
@@ -49,16 +53,18 @@ export class StatusParser {
     const path = this.key(raw);
     if (path === undefined) return;
     this.state.statuses[path] = type === 'u' ? '!' : mapXY(xy);
-    if (type === 'u' || (xy.length === 2 && xy[0] !== '.')) this.state.staged[path] = true;
-    if (type !== 'u' && xy.length === 2 && xy[0] !== '.' && xy[1] !== '.')
+    if (type === 'u' || (xy.length === 2 && !xy.startsWith('.'))) this.state.staged[path] = true;
+    if (type !== 'u' && xy.length === 2 && !xy.startsWith('.') && xy[1] !== '.')
       this.state.partial[path] = true;
   }
 }
+
 export interface NameStatus {
   path: string;
   status: string;
   from?: string;
 }
+
 export class NameStatusParser {
   private status = '';
   private from: string | undefined;

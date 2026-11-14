@@ -2,9 +2,11 @@ export interface EventSink {
   send: (frame: string) => boolean;
   close: () => void;
 }
+
 export function eventFrame(event: string, data: unknown): string {
   return 'event: ' + event + '\ndata: ' + JSON.stringify(data) + '\n\n';
 }
+
 // The fan-in queue matches Go's 64-frame buffer. A stalled client must reconnect
 // for fresh snapshots rather than accumulate an unbounded response body.
 export function eventResponse(

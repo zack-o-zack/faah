@@ -6,8 +6,10 @@ export class NativeWatcher {
   get pid(): number | undefined {
     return this.helper?.pid;
   }
+
   subscribe = (root: string, callback: Callback): Promise<() => Promise<void>> =>
     this.helper ? this.helper.subscribe(root, callback) : subscribe(root, callback);
+
   async close(): Promise<void> {
     await this.helper?.close();
   }

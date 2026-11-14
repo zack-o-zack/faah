@@ -1,4 +1,5 @@
 import { join } from 'node:path';
+
 // Keep the native dependency literal so Bun embeds the target's Node-API
 // binary. Its package's dynamic require wrapper is not compiler discoverable.
 export async function prepareWatcher(): Promise<void> {

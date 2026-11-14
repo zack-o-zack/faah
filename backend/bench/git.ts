@@ -10,7 +10,7 @@ import { record, string, number } from '../src/decode.ts';
 const go = process.env.FAAH_LEGACY_BIN,
   bun = process.env.FAAH_BIN;
 if (!go || !bun) throw new Error('Set FAAH_LEGACY_BIN and FAAH_BIN');
-const f = await fixture();
+const workspace = await fixture();
 const rows: { runtime: string; round: number; name: string; samples: number[] }[] = [];
 const streams: {
   runtime: string;
@@ -19,20 +19,20 @@ const streams: {
 }[] = [];
 try {
   for (let i = 0; i < 500; i++)
-    await f.write(
+    await workspace.write(
       `generated/group-${i % 10}/file-${i}.ts`,
       `export function benchmarkFunction${i}() {\n` +
         '  return 42; // benchmark needle\n'.repeat(40) +
         '}\n',
     );
-  f.git('add', '-A');
-  f.git('commit', '-qm', 'Benchmark baseline');
-  const head = f.git('rev-parse', 'HEAD');
-  const selected = await fixtures(f.root);
-  const original = await Bun.file(join(f.root, 'src/hello.go')).text();
+  workspace.git('add', '-A');
+  workspace.git('commit', '-qm', 'Benchmark baseline');
+  const head = workspace.git('rev-parse', 'HEAD');
+  const selected = await fixtures(workspace.root);
+  const original = await Bun.file(join(workspace.root, 'src/hello.go')).text();
   const streamFixture = { ...selected, modified: 'src/hello.go', original };
   const dirty = 'unstaged.txt';
-  await f.write(dirty, 'benchmark change\n');
+  await workspace.write(dirty, 'benchmark change\n');
   const specs = [
     { name: 'git.refresh', route: 'api/git/refresh' },
     { name: 'diff', route: 'api/diff?path=' + dirty },
@@ -50,7 +50,7 @@ try {
       ['Go', go],
       ['Bun', bun],
     ] as const) {
-      const server = await launch(binary, f.root);
+      const server = await launch(binary, workspace.root);
       try {
         await ready(server.baseUrl, server.started);
         const get = async (route: string, body?: unknown) => {
@@ -109,9 +109,9 @@ try {
         }
         rows.push({ runtime, round, name: 'stage.unstage', samples });
         // propagation() synchronizes on a dirty-to-clean transition before timing.
-        await f.write(streamFixture.modified, original + '\n// initial dirty state\n');
+        await workspace.write(streamFixture.modified, original + '\n// initial dirty state\n');
         await get('api/git/refresh');
-        const sse = await propagation(server.baseUrl, f.root, streamFixture, 4);
+        const sse = await propagation(server.baseUrl, workspace.root, streamFixture, 4);
         if (sse.some((entry) => entry.timeouts)) throw new Error('SSE timeout');
         streams.push({ runtime, round, results: sse });
         process.stdout.write(JSON.stringify({ runtime, round, measured: rows.length, sse }) + '\n');
@@ -121,23 +121,29 @@ try {
     }
   }
   const summary = specs
-    .map((s) => s.name)
+    .map((sample) => sample.name)
     .concat('stage.unstage')
     .map((name) => {
       const go = stats(
-        rows.filter((r) => r.name === name && r.runtime === 'Go').flatMap((r) => r.samples),
+        rows
+          .filter((row) => row.name === name && row.runtime === 'Go')
+          .flatMap((row) => row.samples),
       );
       const bun = stats(
-        rows.filter((r) => r.name === name && r.runtime === 'Bun').flatMap((r) => r.samples),
+        rows
+          .filter((row) => row.name === name && row.runtime === 'Bun')
+          .flatMap((row) => row.samples),
       );
       return { name, go, bun, ratio: bun.p50 / go.p50 };
     });
   const sse = ['save', 'external'].map((mode) => {
     const values = (runtime: string) =>
       streams
-        .filter((r) => r.runtime === runtime)
-        .flatMap((r) =>
-          r.results.filter((s) => s.mode === mode).flatMap((s) => s.samples.map((v) => v.ms)),
+        .filter((row) => row.runtime === runtime)
+        .flatMap((row) =>
+          row.results
+            .filter((runResult) => runResult.mode === mode)
+            .flatMap((runResult) => runResult.samples.map((sample) => sample.ms)),
         );
     const go = stats(values('Go')),
       bun = stats(values('Bun'));
@@ -146,7 +152,7 @@ try {
   const result = {
     source: Bun.spawnSync(['git', 'rev-parse', 'HEAD']).stdout.toString().trim(),
     fixture: '500 generated files + contract repo',
-    trackedFiles: f.git('ls-files').split('\n').length,
+    trackedFiles: workspace.git('ls-files').split('\n').length,
     rounds: 3,
     warmups: 5,
     requestsPerRound: 15,
@@ -161,5 +167,5 @@ try {
   );
   process.stdout.write(JSON.stringify({ summary, sse }) + '\n');
 } finally {
-  await f.cleanup();
+  await workspace.cleanup();
 }

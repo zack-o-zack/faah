@@ -50,14 +50,20 @@ test('Go outline vectors for Go, Markdown, Python, TypeScript, Rust and shell', 
   await expect(outline('/nonexistent-path-px0/missing.go', 'missing.go')).rejects.toThrow();
   expect(await outline(import.meta.dir, 'test')).toEqual([]);
   expect(outlineText('hello world\n', 'test.txt')).toEqual([]);
-  expect(outlineText(goOutline, 'bench.go').map((s) => s.name)).toEqual([
+  expect(outlineText(goOutline, 'bench.go').map((symbol) => symbol.name)).toEqual([
     'Client',
     'Version',
     'DefaultClient',
     'NewClient',
     'Send',
   ]);
-  expect(outlineText(markdownOutline, 'README.md').map((s) => [s.name, s.kind, s.indent])).toEqual([
+  expect(
+    outlineText(markdownOutline, 'README.md').map((symbol) => [
+      symbol.name,
+      symbol.kind,
+      symbol.indent,
+    ]),
+  ).toEqual([
     ['Title', 'heading', 0],
     ['Section 1', 'heading', 1],
     ['Subsection 1.1', 'heading', 2],
@@ -65,7 +71,9 @@ test('Go outline vectors for Go, Markdown, Python, TypeScript, Rust and shell', 
   ]);
   const python =
     'class Worker:\n    def __init__(self):\n        pass\n\n    async def execute(self):\n        pass\n\ndef global_helper():\n    pass\n';
-  expect(outlineText(python, 'sample.py').map((s) => [s.name, s.kind, s.indent])).toEqual([
+  expect(
+    outlineText(python, 'sample.py').map((symbol) => [symbol.name, symbol.kind, symbol.indent]),
+  ).toEqual([
     ['Worker', 'class', 0],
     ['__init__', 'method', 2],
     ['execute', 'method', 2],
@@ -73,7 +81,7 @@ test('Go outline vectors for Go, Markdown, Python, TypeScript, Rust and shell', 
   ]);
   const ts =
     'export interface User {\n id: string;\n}\nexport type ID = string;\nexport enum Role { Admin, User }\nexport class AppService {}\nexport const helper = async () => {};\nexport function main() {}\n';
-  expect(outlineText(ts, 'sample.ts').map((s) => s.name)).toEqual([
+  expect(outlineText(ts, 'sample.ts').map((symbol) => symbol.name)).toEqual([
     'User',
     'ID',
     'Role',
@@ -83,7 +91,7 @@ test('Go outline vectors for Go, Markdown, Python, TypeScript, Rust and shell', 
   ]);
   const rust =
     'pub mod config;\npub struct Client;\npub enum Status { Active }\npub trait Service {}\nimpl Service for Client {\n    pub fn connect() {}\n}\npub type Result<T> = std::result::Result<T, ()>;\npub const MAX_RETRIES: usize = 3;\n';
-  expect(outlineText(rust, 'sample.rs').map((s) => s.name)).toEqual([
+  expect(outlineText(rust, 'sample.rs').map((symbol) => symbol.name)).toEqual([
     'config',
     'Client',
     'Status',
@@ -97,7 +105,7 @@ test('Go outline vectors for Go, Markdown, Python, TypeScript, Rust and shell', 
     outlineText(
       '#!/usr/bin/env bash\nfunction build_all {\n echo "building"\n}\ncleanup() {\n echo "clean"\n}\n',
       'script.sh',
-    ).map((s) => s.name),
+    ).map((symbol) => symbol.name),
   ).toEqual(['build_all', 'cleanup']);
   for (const [ws, n] of [
     ['', 0],
@@ -113,7 +121,7 @@ test('Go outline vectors for Go, Markdown, Python, TypeScript, Rust and shell', 
     outlineText(
       'func Before() {}\n' + 'x'.repeat(256 * 1024) + '\nfunc After() {}',
       'sample.go',
-    ).map((s) => s.name),
+    ).map((symbol) => symbol.name),
   ).toEqual(['Before']);
   expect(outlineText('func\u00a0Wrong() {}', 'sample.go')).toEqual([]);
 });

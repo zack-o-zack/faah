@@ -11,12 +11,12 @@ const roots = process.argv.includes('--fixture-only')
       name,
       root: join(homedir(), '.cache/faah-bench/repos', name),
     }));
-const f = await fixture();
+const workspace = await fixture();
 const capped = await fixture();
 for (let i = 0; i < 200; i++)
   await capped.write(`file-cap/${String(i).padStart(3, '0')}.txt`, 'filecapneedle\n');
 roots.unshift({ name: 'contract-file-cap', root: capped.root });
-roots.unshift({ name: 'contract', root: f.root });
+roots.unshift({ name: 'contract', root: workspace.root });
 const output = [];
 try {
   for (const { name, root } of roots) {
@@ -37,17 +37,17 @@ try {
       '-0',
     ];
     for (const pattern of defaultIgnores) {
-      const p = pattern.endsWith('/') ? '**/' + pattern + '**' : pattern;
-      args.push('-g', '!' + p);
+      const glob = pattern.endsWith('/') ? '**/' + pattern + '**' : pattern;
+      args.push('-g', '!' + glob);
     }
     const rg = Bun.spawn([await rgPath(), ...args], { cwd: root, stdout: 'pipe', stderr: 'pipe' });
     const list = (await new Response(rg.stdout).text()).split('\0').filter(Boolean);
     const errors = await new Response(rg.stderr).text();
     if ((await rg.exited) > 1) throw new Error(errors);
-    const ours = new Set(index.files.map((f) => f.path)),
+    const ours = new Set(index.files.map((file) => file.path)),
       theirs = new Set(list);
-    const missing = [...ours].filter((p) => !theirs.has(p)),
-      extra = list.filter((p) => !ours.has(p));
+    const missing = [...ours].filter((path) => !theirs.has(path)),
+      extra = list.filter((path) => !ours.has(path));
     const parity = {
       name,
       walkerFiles: ours.size,
@@ -105,7 +105,7 @@ try {
             const result = await search.search(query, AbortSignal.timeout(180000));
             timings[strategy]?.[query.name]?.push(performance.now() - start);
             counts[strategy]?.[query.name]?.push(
-              result.results.reduce((n, f) => n + f.matches.length, 0),
+              result.results.reduce((n, file) => n + file.matches.length, 0),
             );
           }
         }
@@ -116,7 +116,7 @@ try {
     process.stdout.write(JSON.stringify(result) + '\n');
   }
 } finally {
-  await f.cleanup();
+  await workspace.cleanup();
   await capped.cleanup();
 }
 await Bun.write(

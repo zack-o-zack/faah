@@ -1,4 +1,5 @@
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
+
 export class Child {
   readonly process: ChildProcessWithoutNullStreams;
   readonly ready: Promise<string>;
@@ -16,7 +17,11 @@ export class Child {
     this.process.stdin.on('error', () => {
       /* A failed child may close stdin before shutdown. */
     });
-    this.exited = new Promise((resolve) => this.process.once('close', () => resolve()));
+    this.exited = new Promise((resolve) =>
+      this.process.once('close', () => {
+        resolve();
+      }),
+    );
     this.ready = new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         this.process.kill('SIGKILL');
@@ -53,6 +58,7 @@ export class Child {
       });
     });
   }
+
   async stop(grace = 5000): Promise<void> {
     this.process.stdin.end();
     const timer = setTimeout(() => this.process.kill('SIGKILL'), grace);

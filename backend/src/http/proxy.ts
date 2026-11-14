@@ -1,5 +1,6 @@
 import { trackStream } from './stream.ts';
 import { fail } from './response.ts';
+
 export async function proxy(
   request: Request,
   origin: string,

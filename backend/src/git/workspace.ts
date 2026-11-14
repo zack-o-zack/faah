@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import type { Index } from '../index/service.ts';
 import { dirtyPaths } from '../index/git.ts';
 import { compare } from '../text.ts';
-import { GitCommands } from './commands.ts';
+import type { GitCommands } from './commands.ts';
 import { GitStatus } from './status.ts';
 import { GitHistory } from './history.ts';
 import { GitLinks } from './links.ts';
@@ -27,14 +27,17 @@ export interface GitPayload {
   ahead: number;
   behind: number;
 }
+
 function flags(paths: Set<string>): Record<string, boolean> {
   const out = dictionary<boolean>();
   for (const path of paths) out[path] = true;
   return out;
 }
+
 function nonempty<T>(map: Record<string, T>): Record<string, T> | undefined {
   return Object.keys(map).length ? map : undefined;
 }
+
 // Dates and commitsUrl do not participate in Go's changed-payload decision.
 function identity(payload: GitPayload): string {
   const map = (value: Record<string, unknown> | null | undefined) =>
@@ -51,6 +54,7 @@ function identity(payload: GitPayload): string {
     payload.behind,
   ]);
 }
+
 export class GitWorkspace {
   private readonly status: GitStatus;
   private readonly history: GitHistory;
@@ -77,11 +81,13 @@ export class GitWorkspace {
     this.links = new GitLinks(commands);
     this.sync = new GitSync(commands);
   }
+
   private queue<T>(action: () => Promise<T>): Promise<T> {
     const result = this.pending.then(action);
     this.pending = result.catch(() => undefined);
     return result;
   }
+
   ensure(): Promise<GitPayload> {
     return this.queue(async () => {
       // Without filesystem observation, each read must obtain a fresh snapshot.
@@ -91,14 +97,17 @@ export class GitWorkspace {
       return this.payload;
     });
   }
+
   refresh(): Promise<GitPayload> {
     this.invalidate(true);
     return this.ensure();
   }
+
   invalidate(metadata = false): void {
     this.dirty = true;
     this.metaDirty ||= metadata;
   }
+
   changed(metadata = false): Promise<void> {
     this.invalidate(metadata);
     this.streak = 0;
@@ -108,6 +117,7 @@ export class GitWorkspace {
     }
     return this.clients.size ? this.ensure().then(() => undefined) : Promise.resolve();
   }
+
   private async update(): Promise<{ payload: GitPayload; changed: boolean }> {
     const ready = this.index.ready;
     const metadata = this.metaDirty || !this.payload || this.lastReady !== ready;
@@ -164,6 +174,7 @@ export class GitWorkspace {
     if (changed && !this.closed) for (const client of this.clients) client(payload);
     return { payload, changed };
   }
+
   async subscribe(send: (payload: GitPayload) => void): Promise<() => void> {
     // Refresh before registering so a new client receives exactly one snapshot.
     const payload = await this.refresh();
@@ -180,10 +191,12 @@ export class GitWorkspace {
       this.polling();
     };
   }
+
   watching(available: boolean): void {
     this.fallback = !available;
     this.polling();
   }
+
   private polling(): void {
     const needed = this.fallback && this.clients.size > 0 && !this.closed;
     if (!needed) {
@@ -192,12 +205,12 @@ export class GitWorkspace {
       this.metaTimer = this.statusTimer = undefined;
       return;
     }
-    if (!this.metaTimer)
-      this.metaTimer = setInterval(() => {
-        void this.pollMeta();
-      }, 1000);
+    this.metaTimer ??= setInterval(() => {
+      void this.pollMeta();
+    }, 1000);
     if (!this.statusTimer) this.scheduleStatus(1000);
   }
+
   private async pollMeta(): Promise<void> {
     try {
       const info = await this.commands.probe.get(this.index.root);
@@ -217,8 +230,8 @@ export class GitWorkspace {
       ];
       const times = await Promise.all(
         paths.map(async (path) => {
-          const s = await stat(join(info.dir, path)).catch(() => undefined);
-          return s ? [path, s.mtimeMs, s.size] : [path];
+          const stats = await stat(join(info.dir, path)).catch(() => undefined);
+          return stats ? [path, stats.mtimeMs, stats.size] : [path];
         }),
       );
       const fingerprint = JSON.stringify(times);
@@ -230,11 +243,13 @@ export class GitWorkspace {
       /* A closing or disappearing repository is retried on demand. */
     }
   }
+
   private scheduleStatus(delay: number): void {
     this.statusTimer = setTimeout(() => {
       void this.pollStatus();
     }, delay);
   }
+
   private async pollStatus(): Promise<void> {
     const start = performance.now();
     let changed = false;
@@ -252,6 +267,7 @@ export class GitWorkspace {
         );
     }
   }
+
   async close(): Promise<void> {
     this.closed = true;
     this.clients.clear();

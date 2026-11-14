@@ -19,22 +19,24 @@ const suffixes = [
   '.rpmsave',
   '.in',
 ];
+
 function glob(pattern: string): RegExp {
   let result = '^';
   for (let i = 0; i < pattern.length; i++) {
-    const c = pattern[i] ?? '';
-    if (c === '*') result += '.*';
-    else if (c === '?') result += '.';
-    else if (c === '[') {
+    const character = pattern[i] ?? '';
+    if (character === '*') result += '.*';
+    else if (character === '?') result += '.';
+    else if (character === '[') {
       const end = pattern.indexOf(']', i + 1);
       if (end < 0) throw new Error('invalid lexer filename');
       result += pattern.slice(i, end + 1);
       i = end;
-    } else if (c === '\\') result += '\\' + (pattern[++i] ?? '');
-    else result += c.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&');
+    } else if (character === '\\') result += '\\' + (pattern[++i] ?? '');
+    else result += character.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&');
   }
   return new RegExp(result + '$', 'u');
 }
+
 const ordered = lexers
   .map((lexer, order) => ({
     ...lexer,
@@ -44,20 +46,28 @@ const ordered = lexers
   }))
   .sort((a, b) => b.priority - a.priority || a.order - b.order);
 const filenameCache = new Map<string, (typeof ordered)[number] | undefined>();
+
 function filenameLexer(path: string) {
   const name = basename(path);
   if (filenameCache.has(name)) return filenameCache.get(name);
   const names = [
     name,
-    ...suffixes.filter((s) => s && name.endsWith(s)).map((s) => name.slice(0, -s.length)),
+    ...suffixes
+      .filter((suffix) => suffix && name.endsWith(suffix))
+      .map((suffix) => name.slice(0, -suffix.length)),
   ];
   const lexer =
-    ordered.find((l) => l.primary.some((p) => names.some((n) => p.test(n)))) ??
-    ordered.find((l) => l.fallback.some((p) => names.some((n) => p.test(n))));
+    ordered.find((candidate) =>
+      candidate.primary.some((pattern) => names.some((n) => pattern.test(n))),
+    ) ??
+    ordered.find((candidate) =>
+      candidate.fallback.some((pattern) => names.some((n) => pattern.test(n))),
+    );
   if (filenameCache.size >= 4096) filenameCache.clear();
   if (name.length <= 512) filenameCache.set(name, lexer);
   return lexer;
 }
+
 export function filenameLanguage(path: string): string | undefined {
   return filenameLexer(path)?.name;
 }
@@ -71,6 +81,7 @@ for (const lexer of lexers) {
     byAlias.set(alias.toLowerCase(), lexer.name);
   }
 }
+
 export function fenceLanguage(alias: string): string | undefined {
   const exact =
     byName.get(alias) ??
@@ -82,6 +93,7 @@ export function fenceLanguage(alias: string): string | undefined {
     file = filenameLexer(alias);
   return extension && (!file || extension.priority >= file.priority) ? extension.name : file?.name;
 }
+
 function analyse(source: string): string | undefined {
   let best: string | undefined,
     score = 0;
@@ -117,10 +129,17 @@ function analyse(source: string): string | undefined {
               : 0;
     }
     if (lexer.name === 'Zed') {
-      const d = source.includes('definition '),
-        r = source.includes('relation '),
-        p = source.includes('permission ');
-      value = d && r && p ? 0.9 : d || r ? 0.5 : p ? 0.25 : 0;
+      const definitions = source.includes('definition '),
+        relations = source.includes('relation '),
+        permissions = source.includes('permission ');
+      value =
+        definitions && relations && permissions
+          ? 0.9
+          : definitions || relations
+            ? 0.5
+            : permissions
+              ? 0.25
+              : 0;
     }
     value = Math.fround(Math.min(value, 1));
     if (value > score) {
@@ -130,6 +149,7 @@ function analyse(source: string): string | undefined {
   }
   return best;
 }
+
 export function language(path: string, source: string): string {
   return (
     filenameLanguage(path) ??
@@ -137,10 +157,17 @@ export function language(path: string, source: string): string {
     'plain text'
   );
 }
+
 export function headingID(text: string, seen: Set<string>): string {
   let id =
-    Array.from(trimSpace(text), (c) =>
-      /[\p{L}\p{N}_-]/u.test(c) ? (c === 'İ' ? 'i' : c.toLowerCase()) : c === ' ' ? '-' : '',
+    Array.from(trimSpace(text), (character) =>
+      /[\p{L}\p{N}_-]/u.test(character)
+        ? character === 'İ'
+          ? 'i'
+          : character.toLowerCase()
+        : character === ' '
+          ? '-'
+          : '',
     ).join('') || 'section';
   const base = id;
   for (let i = 1; seen.has(id); i++) id = base + '-' + i;

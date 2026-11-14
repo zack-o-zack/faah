@@ -6,6 +6,7 @@ import { WorkspaceStreams } from '../src/http/workspace-streams.ts';
 import { GitWorkspace } from '../src/git/workspace.ts';
 import { Index } from '../src/index/service.ts';
 import { gitFixture } from './git-fixture.ts';
+
 async function until(check: () => boolean) {
   const deadline = performance.now() + 3000;
   while (!check()) {
@@ -13,6 +14,7 @@ async function until(check: () => boolean) {
     await Bun.sleep(5);
   }
 }
+
 function upstream() {
   const requests: URLSearchParams[] = [];
   const open = new Set<ReadableStreamDefaultController<Uint8Array>>();
@@ -29,8 +31,9 @@ function upstream() {
             current = controller;
             open.add(controller);
             peak = Math.max(peak, open.size);
-            const send = (event: string, data: unknown) =>
+            const send = (event: string, data: unknown) => {
               controller.enqueue(Buffer.from(eventFrame(event, data)));
+            };
             send('metrics', { legacy: true });
             send('git-status', { legacy: true });
             controller.enqueue(Buffer.from(': ping\n\n'));
@@ -63,9 +66,10 @@ function upstream() {
     },
   };
 }
+
 test('legacy feeds share one union subscription, deduplicate ids, filter events and replay bounded state', async () => {
-  const f = upstream(),
-    feeds = new LegacyFeeds(f.server.url.origin, '/');
+  const legacy = upstream(),
+    feeds = new LegacyFeeds(legacy.server.url.origin, '/');
   const first: string[] = [],
     second: string[] = [];
   let lost = 0;
@@ -89,16 +93,16 @@ test('legacy feeds share one union subscription, deduplicate ids, filter events 
   });
   try {
     await until(() => second.length === 1 && first.length === 2);
-    expect(f.requests.length).toBe(1);
-    expect(f.requests[0]?.getAll('thread')).toEqual(['a']);
+    expect(legacy.requests.length).toBe(1);
+    expect(legacy.requests[0]?.getAll('thread')).toEqual(['a']);
     expect(
       first.some(
         (frame) =>
           frame.includes('metrics') || frame.includes('git-status') || frame.startsWith(':'),
       ),
     ).toBe(false);
-    f.emit('thread:delta', { id: 'a', data: { turn: 'x', text: 'hello' } });
-    f.emit('thread:delta', { id: 'other', data: { text: 'hidden' } });
+    legacy.emit('thread:delta', { id: 'a', data: { turn: 'x', text: 'hello' } });
+    legacy.emit('thread:delta', { id: 'other', data: { text: 'hidden' } });
     await until(() => second.length === 2);
     const third: string[] = [];
     const three = feeds.subscribe(new URLSearchParams('thread=a'), {
@@ -112,7 +116,7 @@ test('legacy feeds share one union subscription, deduplicate ids, filter events 
     });
     expect(third.join('')).toEqual(second.join(''));
     await Bun.sleep(20);
-    expect(f.requests.length).toBe(1);
+    expect(legacy.requests.length).toBe(1);
     const reviews: string[] = [];
     const four = feeds.subscribe(new URLSearchParams('review=1&thread=b'), {
       send: (frame) => {
@@ -124,10 +128,10 @@ test('legacy feeds share one union subscription, deduplicate ids, filter events 
       },
     });
     await until(() => reviews.length === 2);
-    expect(f.requests.length).toBe(2);
-    expect(f.requests.at(-1)?.getAll('thread')).toEqual(['a', 'b']);
+    expect(legacy.requests.length).toBe(2);
+    expect(legacy.requests.at(-1)?.getAll('thread')).toEqual(['a', 'b']);
     expect(reviews.some((frame) => frame.includes('"id":"a"'))).toBe(false);
-    f.lose();
+    legacy.lose();
     await until(() => lost === 4);
     four();
     three();
@@ -135,34 +139,34 @@ test('legacy feeds share one union subscription, deduplicate ids, filter events 
     one();
     two();
     await feeds.close();
-    await f.server.stop(true);
+    await legacy.server.stop(true);
   }
 });
 test('legacy upstream closes when the final optional subscriber leaves, including while connecting', async () => {
-  const f = upstream(),
-    feeds = new LegacyFeeds(f.server.url.origin, '/');
+  const legacy = upstream(),
+    feeds = new LegacyFeeds(legacy.server.url.origin, '/');
   try {
     const none = feeds.subscribe(new URLSearchParams(), { send: () => true, close: () => {} });
     none();
     await Bun.sleep(10);
-    expect(f.requests.length).toBe(0);
+    expect(legacy.requests.length).toBe(0);
     const stop = feeds.subscribe(new URLSearchParams('thread=a'), {
       send: () => true,
       close: () => {},
     });
-    await until(() => f.open.size === 1);
+    await until(() => legacy.open.size === 1);
     stop();
-    await until(() => f.open.size === 0);
+    await until(() => legacy.open.size === 0);
     const cancel = feeds.subscribe(new URLSearchParams('thread=b'), {
       send: () => true,
       close: () => {},
     });
     cancel();
     await feeds.close();
-    expect(f.open.size).toBe(0);
+    expect(legacy.open.size).toBe(0);
   } finally {
     await feeds.close();
-    await f.server.stop(true);
+    await legacy.server.stop(true);
   }
 });
 test('native SSE bounds slow clients, cleans up aborts and never gzip-buffers event responses', async () => {
@@ -198,8 +202,8 @@ test('native SSE bounds slow clients, cleans up aborts and never gzip-buffers ev
 });
 
 test('thread replay stops at 256 frames and obtains a fresh snapshot after overflow', async () => {
-  const f = upstream(),
-    feeds = new LegacyFeeds(f.server.url.origin, '/');
+  const legacy = upstream(),
+    feeds = new LegacyFeeds(legacy.server.url.origin, '/');
   const first: string[] = [],
     second: string[] = [];
   const sink = (frames: string[]) => ({
@@ -212,7 +216,7 @@ test('thread replay stops at 256 frames and obtains a fresh snapshot after overf
   const one = feeds.subscribe(new URLSearchParams('thread=a'), sink(first));
   try {
     await until(() => first.length === 1);
-    for (let i = 0; i < 255; i++) f.emit('thread:delta', { id: 'a', data: { i } });
+    for (let i = 0; i < 255; i++) legacy.emit('thread:delta', { id: 'a', data: { i } });
     await until(() => first.length === 256);
     const two = feeds.subscribe(new URLSearchParams('thread=a'), sink(second));
     expect(second.length).toBe(1);
@@ -227,24 +231,24 @@ test('thread replay stops at 256 frames and obtains a fresh snapshot after overf
     expect(new TextDecoder().decode(replay.value).split('event:').length - 1).toBe(256);
     await reader.cancel();
     two();
-    for (let i = 0; i < 50; i++) f.emit('thread:delta', { id: 'a', data: { i } });
+    for (let i = 0; i < 50; i++) legacy.emit('thread:delta', { id: 'a', data: { i } });
     await until(() => first.length === 306);
     const fresh: string[] = [];
     const three = feeds.subscribe(new URLSearchParams('thread=a'), sink(fresh));
     await until(() => fresh.length === 1);
     expect(fresh[0]).toContain('event: thread:thread');
-    expect(f.requests.length).toBe(2);
-    expect(f.peak).toBe(1);
+    expect(legacy.requests.length).toBe(2);
+    expect(legacy.peak).toBe(1);
     three();
   } finally {
     one();
     await feeds.close();
-    await f.server.stop(true);
+    await legacy.server.stop(true);
   }
 });
 
 test('workspace streams own metrics and Git, ping after 15 seconds and cancel the shared feed', async () => {
-  const f = upstream(),
+  const legacy = upstream(),
     repo = await gitFixture();
   const index = new Index({
     root: repo.root,
@@ -254,7 +258,7 @@ test('workspace streams own metrics and Git, ping after 15 seconds and cancel th
   await index.build();
   const git = new GitWorkspace(index, repo.commands);
   let metrics = 0;
-  const streams = new WorkspaceStreams(git, f.server.url.origin, '/', async () => ({
+  const streams = new WorkspaceStreams(git, legacy.server.url.origin, '/', async () => ({
     native: ++metrics,
   }));
   const abort = new AbortController();
@@ -273,7 +277,7 @@ test('workspace streams own metrics and Git, ping after 15 seconds and cancel th
     await until(() => frames.length === 2);
     expect(frames[0]).toContain('event: metrics\ndata: {"native":1}');
     expect(frames[1]).toContain('event: git-status');
-    expect(f.requests.length).toBe(0);
+    expect(legacy.requests.length).toBe(0);
     await Bun.sleep(15500);
     expect(frames.some((frame) => frame === ': ping\n\n')).toBe(true);
     expect(frames.some((frame) => frame === 'event: ping\ndata: {}\n\n')).toBe(true);
@@ -285,9 +289,9 @@ test('workspace streams own metrics and Git, ping after 15 seconds and cancel th
     expect(new TextDecoder().decode((await otherReader.read()).value)).toContain(
       'event: git-status',
     );
-    await until(() => f.open.size === 1);
+    await until(() => legacy.open.size === 1);
     await otherReader.cancel();
-    await until(() => f.open.size === 0);
+    await until(() => legacy.open.size === 0);
   } finally {
     abort.abort();
     await consume;
@@ -295,6 +299,6 @@ test('workspace streams own metrics and Git, ping after 15 seconds and cancel th
     await streams.close();
     await git.close();
     await repo.cleanup();
-    await f.server.stop(true);
+    await legacy.server.stop(true);
   }
 }, 20000);

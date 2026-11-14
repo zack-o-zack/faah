@@ -11,6 +11,7 @@ export interface Node {
   yourStatus?: string;
   yourDirty?: boolean;
 }
+
 export interface GitState {
   git: boolean;
   statuses: Record<string, string>;
@@ -18,6 +19,7 @@ export interface GitState {
   partial: Record<string, boolean>;
   yourStatuses: Record<string, string>;
 }
+
 export const emptyGit = (): GitState => ({
   git: false,
   statuses: {},

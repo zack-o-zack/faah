@@ -1,8 +1,10 @@
 import { goString } from '../render/text.ts';
 import { extname } from 'node:path';
 import { trimSpace } from '../text.ts';
+
 export const maxRows = 1000,
   maxBytes = 1 << 20;
+
 export function delimiter(path: string): string | undefined {
   return extname(path).toLowerCase() === '.csv'
     ? ','
@@ -10,6 +12,7 @@ export function delimiter(path: string): string | undefined {
       ? '\t'
       : undefined;
 }
+
 export function sniffDelimiter(head: string, extension: string): string {
   let line = head;
   while (line.length) {
@@ -41,6 +44,7 @@ export function sniffDelimiter(head: string, extension: string): string {
     }
   return best;
 }
+
 export interface Table {
   header: string[];
   headerLine: number;
@@ -48,6 +52,7 @@ export interface Table {
   cols: number;
   truncated: boolean;
 }
+
 // encoding/csv's LazyQuotes mode accepts bare quotes and unterminated quoted
 // fields. Only empty physical lines are skipped; CRLF becomes LF even inside
 // quoted cells, while a lone final CR is dropped by readLine.
@@ -58,24 +63,25 @@ export class CSVReader {
     readonly source: string,
     readonly separator: string,
   ) {}
+
   read(): { line: number; cells: string[] } | undefined {
-    const s = this.source;
-    while (s[this.offset] === '\n') {
+    const source = this.source;
+    while (source[this.offset] === '\n') {
       this.offset++;
       this.line++;
     }
-    if (this.offset >= s.length) return;
+    if (this.offset >= source.length) return;
     const line = this.line,
       cells: string[] = [];
     while (true) {
       let cell = '',
         separated = false;
-      if (s[this.offset] === '"') {
+      if (source[this.offset] === '"') {
         this.offset++;
-        while (this.offset < s.length) {
-          const c = s[this.offset++] ?? '';
-          if (c === '"') {
-            const next = s[this.offset];
+        while (this.offset < source.length) {
+          const character = source[this.offset++] ?? '';
+          if (character === '"') {
+            const next = source[this.offset];
             if (next === '"') {
               cell += '"';
               this.offset++;
@@ -94,22 +100,22 @@ export class CSVReader {
               return { line, cells };
             } else cell += '"';
           } else {
-            cell += c;
-            if (c === '\n') this.line++;
+            cell += character;
+            if (character === '\n') this.line++;
           }
         }
         if (separated) continue;
-        if (this.offset >= s.length) {
+        if (this.offset >= source.length) {
           cells.push(cell);
           return { line, cells };
         }
       } else {
         const start = this.offset;
         let end = start;
-        while (end < s.length && s[end] !== this.separator && s[end] !== '\n') end++;
-        cells.push(s.slice(start, end));
+        while (end < source.length && source[end] !== this.separator && source[end] !== '\n') end++;
+        cells.push(source.slice(start, end));
         this.offset = end;
-        const delimiter = s[this.offset++];
+        const delimiter = source[this.offset++];
         if (delimiter === this.separator) continue;
         if (delimiter === '\n') this.line++;
         return { line, cells };
@@ -117,6 +123,7 @@ export class CSVReader {
     }
   }
 }
+
 export function renderTable(input: Uint8Array, size: number, fallback: string): Table {
   const data = Buffer.from(input.buffer, input.byteOffset, Math.min(input.byteLength, maxBytes));
   const comma = sniffDelimiter(data.subarray(0, 64 << 10).toString(), fallback);

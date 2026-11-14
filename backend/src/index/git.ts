@@ -3,22 +3,25 @@ import { join, posix } from 'node:path';
 import type { Node, GitState } from './types.ts';
 import { sortNodes } from './walk.ts';
 import { compare } from '../text.ts';
+
 export function dirtyPaths(statuses: Record<string, string>): Set<string> {
   const dirty = new Set<string>();
-  for (let p of Object.keys(statuses)) {
-    while (p.includes('/')) {
-      p = p.slice(0, p.lastIndexOf('/'));
-      dirty.add(p);
+  for (let path of Object.keys(statuses)) {
+    while (path.includes('/')) {
+      path = path.slice(0, path.lastIndexOf('/'));
+      dirty.add(path);
     }
   }
   return dirty;
 }
+
 export function gitFiles(state: GitState): string[] {
   return Object.keys(state.statuses).sort(
     (a, b) =>
       Number(state.statuses[a] === 'U') - Number(state.statuses[b] === 'U') || compare(a, b),
   );
 }
+
 export function applyFlags(node: Node, state: GitState): void {
   delete node.status;
   delete node.staged;
@@ -30,13 +33,14 @@ export function applyFlags(node: Node, state: GitState): void {
     if (dirtyPaths(state.statuses).has(node.path)) node.dirty = true;
     if (dirtyPaths(state.yourStatuses).has(node.path)) node.yourDirty = true;
   } else {
-    const p = node.path;
-    if (state.statuses[p]) node.status = state.statuses[p];
-    if (state.staged[p]) node.staged = true;
-    if (state.partial[p]) node.partial = true;
-    if (state.yourStatuses[p]) node.yourStatus = state.yourStatuses[p];
+    const path = node.path;
+    if (state.statuses[path]) node.status = state.statuses[path];
+    if (state.staged[path]) node.staged = true;
+    if (state.partial[path]) node.partial = true;
+    if (state.yourStatuses[path]) node.yourStatus = state.yourStatuses[path];
   }
 }
+
 export async function mergeGit(options: {
   children: Map<string, Node[]>;
   state: GitState;
@@ -75,18 +79,21 @@ export async function mergeGit(options: {
         if (dirty.has(node.path)) node.dirty = true;
         if (yourDirty.has(node.path)) node.yourDirty = true;
       } else {
-        const p = node.path;
-        if (state.statuses[p]) node.status = state.statuses[p];
-        if (state.staged[p]) node.staged = true;
-        if (state.partial[p]) node.partial = true;
-        if (state.yourStatuses[p]) node.yourStatus = state.yourStatuses[p];
+        const path = node.path;
+        if (state.statuses[path]) node.status = state.statuses[path];
+        if (state.staged[path]) node.staged = true;
+        if (state.partial[path]) node.partial = true;
+        if (state.yourStatuses[path]) node.yourStatus = state.yourStatuses[path];
       }
       out.push(node);
     }
     children.set(dir, out);
   }
-  for (const p of new Set([...Object.keys(state.statuses), ...Object.keys(state.yourStatuses)])) {
-    const parts = p.split('/');
+  for (const path of new Set([
+    ...Object.keys(state.statuses),
+    ...Object.keys(state.yourStatuses),
+  ])) {
+    const parts = path.split('/');
     for (let i = 0; i < parts.length - 1; i++) {
       const parent = parts.slice(0, i).join('/'),
         sub = parts.slice(0, i + 1).join('/');
@@ -101,11 +108,11 @@ export async function mergeGit(options: {
       }
       if (!children.has(sub)) children.set(sub, []);
     }
-    const dir = posix.dirname(p) === '.' ? '' : posix.dirname(p);
+    const dir = posix.dirname(path) === '.' ? '' : posix.dirname(path);
     const kids = children.get(dir) ?? [];
-    let node = kids.find((n) => n.path === p && !n.dir);
+    let node = kids.find((n) => n.path === path && !n.dir);
     if (!node) {
-      node = { name: posix.basename(p), path: p, dir: false, size: 0 };
+      node = { name: posix.basename(path), path: path, dir: false, size: 0 };
       kids.push(node);
       children.set(dir, sortNodes(kids));
     }

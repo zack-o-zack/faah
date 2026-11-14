@@ -1,16 +1,16 @@
 import { test, expect } from 'bun:test';
 import { renderTable, sniffDelimiter, delimiter, maxBytes } from '../src/table/service.ts';
-const table = (s: string, fallback = ',', size = Buffer.byteLength(s)) =>
-  renderTable(Buffer.from(s), size, fallback);
+const table = (source: string, fallback = ',', size = Buffer.byteLength(source)) =>
+  renderTable(Buffer.from(source), size, fallback);
 test('Go CSV vectors retain physical lines, quoted cells, ragged fields, BOM and LazyQuotes', () => {
-  const r = table('repo,note\nchromium,"monorepo,\ndepot_tools excluded"\nvscode,warm\n');
-  expect(r.rows).toEqual([
+  const parsed = table('repo,note\nchromium,"monorepo,\ndepot_tools excluded"\nvscode,warm\n');
+  expect(parsed.rows).toEqual([
     { line: 2, cells: ['chromium', 'monorepo,\ndepot_tools excluded'] },
     { line: 4, cells: ['vscode', 'warm'] },
   ]);
   expect(table('a,b,c\n1\n1,2,3,4\n').cols).toBe(4);
   expect(table('\uFEFFid,name\n1,x\n').header).toEqual(['id', 'name']);
-  expect(table('a,b\n\n1,2\n\n\n3,4\n').rows.map((r) => r.line)).toEqual([3, 6]);
+  expect(table('a,b\n\n1,2\n\n\n3,4\n').rows.map((row) => row.line)).toEqual([3, 6]);
   expect(table('a,b\n5" pipe,x\n').rows[0]?.cells).toEqual(['5" pipe', 'x']);
   expect(table('a,b\n"unfinished')).toMatchObject({
     rows: [{ line: 2, cells: ['unfinished'] }],
@@ -41,8 +41,8 @@ test('Go record and byte caps distinguish exact bounds and drop the final cut re
   expect(table('n\n' + rows + '\n').truncated).toBe(false);
   expect(table('n\n' + rows + '\nextra\n')).toMatchObject({
     truncated: true,
-    rows: expect.arrayContaining([{ line: 1001, cells: ['999'] }]),
   });
+  expect(table('n\n' + rows + '\nextra\n').rows).toContainEqual({ line: 1001, cells: ['999'] });
   const source = 'a,b\n' + ('x'.repeat(10000) + ',end\n').repeat(200);
   const result = table(source);
   expect(result.truncated).toBe(true);

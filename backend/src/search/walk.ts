@@ -1,5 +1,6 @@
 import type { Item } from '../fuzzy/score.ts';
 import { compare } from '../text.ts';
+
 export interface Excluded {
   path: string;
   dir: boolean;
@@ -17,6 +18,7 @@ function hasPath(files: Item[], entry: Excluded): boolean {
   const path = files[lo]?.path;
   return entry.dir ? Boolean(path?.startsWith(prefix)) : path === prefix;
 }
+
 function literal(path: string): string {
   return path.replace(/[\\*?[\]{}!]/g, '\\$&');
 }
@@ -31,8 +33,8 @@ export function walkGlobs(options: {
     ...['.git', '.hg', '.svn'].map((path) => ({ path, dir: true })),
     ...options.excluded,
     ...options.source
-      .filter((f) => f.size === 0 || f.size > 8 * 1024 * 1024)
-      .map((f) => ({ path: f.path, dir: false })),
+      .filter((file) => file.size === 0 || file.size > 8 * 1024 * 1024)
+      .map((file) => ({ path: file.path, dir: false })),
   ];
   const args: string[] = [];
   let bytes = 0;

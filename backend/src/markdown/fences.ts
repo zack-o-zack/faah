@@ -2,6 +2,7 @@ import type { Highlight } from '../render/document.ts';
 import { LRU } from '../render/lru.ts';
 import { sizeOfLines } from '../render/document.ts';
 const caches = new WeakMap<Highlight, LRU<string[]>>();
+
 export async function highlightedFence(
   highlight: Highlight,
   code: string,

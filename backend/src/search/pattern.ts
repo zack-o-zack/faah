@@ -1,5 +1,6 @@
 import { linePattern, goExpression, checkRepeats } from './compat.ts';
 import { quote } from '../text.ts';
+
 export interface SearchOptions {
   query: string;
   regex?: boolean;
@@ -10,9 +11,11 @@ export interface SearchOptions {
   maxPerFile?: number;
   classifyDefs?: boolean;
 }
+
 export function asciiLower(text: string): string {
-  return text.replace(/[A-Z]/g, (c) => c.toLowerCase());
+  return text.replace(/[A-Z]/g, (letter) => letter.toLowerCase());
 }
+
 export function pattern(options: SearchOptions): string {
   const { query } = options;
   if (options.regex) checkRepeats(query);
@@ -25,6 +28,7 @@ export function pattern(options: SearchOptions): string {
   // rg uses a bytes regex: disabling Unicode folding preserves non-ASCII bytes.
   return asciiLiteral ? '(?i-u)' + pat : pat;
 }
+
 export function regexError(stderr: string, options: SearchOptions): Error {
   const query = options.query;
   let expr = query;
@@ -59,11 +63,11 @@ function asciiClasses(text: string): string {
     depth = 0;
   const positive: Record<string, string> = { d: '0-9', w: 'A-Za-z0-9_', s: '\\t\\n\\f\\r ' };
   for (let i = 0; i < text.length; i++) {
-    const c = text[i] ?? '';
-    if (c !== '\\') {
-      if (c === '[') depth++;
-      if (c === ']') depth--;
-      out += c;
+    const character = text[i] ?? '';
+    if (character !== '\\') {
+      if (character === '[') depth++;
+      if (character === ']') depth--;
+      out += character;
       continue;
     }
     const next = text[++i] ?? '';

@@ -7,6 +7,7 @@ export interface GitResult {
   stderr: string;
   output: string;
 }
+
 export interface GitRun {
   globalArgs?: readonly string[];
   input?: string;
@@ -32,9 +33,11 @@ export class GitProcesses {
   ) {
     if (!Number.isInteger(limit) || limit < 1) throw new Error('invalid Git process limit');
   }
+
   get active(): number {
     return this.used;
   }
+
   private async acquire(signal: AbortSignal): Promise<void> {
     signal.throwIfAborted();
     if (this.used < this.limit) {
@@ -48,13 +51,14 @@ export class GitProcesses {
         abort: () => {
           const index = this.queue.indexOf(waiter);
           if (index >= 0) this.queue.splice(index, 1);
-          reject(signal.reason);
+          reject(abortReason(signal));
         },
       };
       this.queue.push(waiter);
       signal.addEventListener('abort', waiter.abort, { once: true });
     });
   }
+
   private release(): void {
     const next = this.queue.shift();
     if (next) {
@@ -62,6 +66,7 @@ export class GitProcesses {
       next.ready();
     } else this.used--;
   }
+
   run(root: string, args: readonly string[], options: GitRun = {}): Promise<GitResult> {
     const signal = options.signal
       ? AbortSignal.any([this.controller.signal, options.signal])
@@ -71,6 +76,7 @@ export class GitProcesses {
     void task.finally(() => this.tasks.delete(task)).catch(() => undefined);
     return task;
   }
+
   private async execute(
     root: string,
     args: readonly string[],
@@ -85,6 +91,7 @@ export class GitProcesses {
       this.release();
     }
   }
+
   private async spawn(
     root: string,
     args: readonly string[],
@@ -97,7 +104,9 @@ export class GitProcesses {
       stdout: 'pipe',
       stderr: 'pipe',
     });
-    const abort = () => child.kill();
+    const abort = () => {
+      child.kill();
+    };
     signal.addEventListener('abort', abort, { once: true });
     if (signal.aborted) abort();
     const stdout: Uint8Array[] = [],
@@ -117,7 +126,7 @@ export class GitProcesses {
       child.exited,
     ];
     try {
-      if (options.input !== undefined) child.stdin?.write(options.input);
+      if (options.input !== undefined) void child.stdin?.write(options.input);
       tasks.push(Promise.resolve(child.stdin?.end()).then(() => undefined));
       await Promise.all(tasks);
       signal.throwIfAborted();
@@ -137,8 +146,13 @@ export class GitProcesses {
       signal.removeEventListener('abort', abort);
     }
   }
+
   async close(): Promise<void> {
     this.controller.abort(new Error('Git process pool closed'));
     await Promise.allSettled(this.tasks);
   }
+}
+
+function abortReason(signal: AbortSignal): Error {
+  return signal.reason instanceof Error ? signal.reason : new Error('Git command aborted');
 }

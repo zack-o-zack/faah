@@ -4,6 +4,7 @@ import { mkdir, readdir, rm } from 'node:fs/promises';
 await buildWorkers();
 const root = resolve(import.meta.dir, '../..');
 const names: string[] = ['VERSION'];
+
 async function walk(dir: string): Promise<void> {
   for (const ent of await readdir(join(root, dir), { withFileTypes: true })) {
     const path = dir + '/' + ent.name;
@@ -11,6 +12,7 @@ async function walk(dir: string): Promise<void> {
     else names.push(path);
   }
 }
+
 for (const dir of ['web/dist', 'web/themes', 'web/vendor']) await walk(dir);
 for (const name of await readdir(join(root, 'web')))
   if (/\.(html|svg|png|ico)$/.test(name)) names.push('web/' + name);

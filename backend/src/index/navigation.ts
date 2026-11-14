@@ -24,6 +24,7 @@ import { GitWorkspace } from '../git/workspace.ts';
 import { GitActions } from '../git/actions.ts';
 import { WorkspaceStreams } from '../http/workspace-streams.ts';
 import { workspaceMetrics } from '../metrics/workspace.ts';
+
 export class Navigation {
   readonly gitCommands: GitCommands;
   readonly gitReads: GitReads;
@@ -31,7 +32,10 @@ export class Navigation {
   readonly gitActions: GitActions;
   readonly streams: WorkspaceStreams;
   readonly watcher: WorkspaceWatch;
-  readonly idle = new IdleScavenger(() => this.render.scavenge());
+  readonly idle = new IdleScavenger(() => {
+    this.render.scavenge();
+  });
+
   readonly render = new RenderService();
   readonly files: Files;
   readonly fileMutations: FileMutations;
@@ -115,7 +119,9 @@ export class Navigation {
     this.watcher = new WorkspaceWatch({
       root: options.root,
       gitDirectory: async () => (await this.gitCommands.probe.get(options.root))?.dir,
-      availability: (available) => this.git.watching(available),
+      availability: (available) => {
+        this.git.watching(available);
+      },
       ignored: () => this.git.changed(),
       changed: async (paths, metadata) => {
         const rebuild = paths.some(ignoreEvent);
@@ -129,15 +135,18 @@ export class Navigation {
     });
     this.building = this.index.build().then(async () => {
       void this.render
-        .warm(this.index.files.map((f) => f.path))
-        .catch((error) => process.stderr.write('faah render warm: ' + String(error) + '\n'));
+        .warm(this.index.files.map((file) => file.path))
+        .catch((error: unknown) =>
+          process.stderr.write('faah render warm: ' + String(error) + '\n'),
+        );
       await this.watcher.start();
       await this.git.changed(true);
     });
-    void this.building.catch((error) => {
+    void this.building.catch((error: unknown) => {
       process.stderr.write('faah index: ' + String(error) + '\n');
     });
   }
+
   private readonly options: {
     child: Child;
     base: string;
@@ -145,6 +154,7 @@ export class Navigation {
     version: string;
     workbench: string;
   };
+
   async meta(): Promise<Record<string, unknown>> {
     await this.git.ensure();
     const legacy = await this.legacy.meta();
@@ -174,20 +184,20 @@ export class Navigation {
       workbench: this.options.workbench,
     };
   }
+
   async tree(options: { dir: string; compact: string }) {
     await this.git.ensure();
     const dir = options.dir.replace(/^\/+|\/+$/g, '');
     let kids = await this.index.list(dir);
-    if (!kids && !this.index.ready) {
-      for (let i = 0; i < 30; i++) {
-        await Bun.sleep(10);
-        kids = await this.index.list(dir);
-        if (kids || this.index.ready) break;
-      }
+    // The first walk publishes the root early; give nested listings up to 300 ms.
+    for (let attempt = 0; !kids && !this.index.ready && attempt < 30; attempt++) {
+      await Bun.sleep(10);
+      kids = await this.index.list(dir);
     }
     if (!kids) throw new PathError(404, 'not indexed: ' + dir);
     return { dir, children: (await this.index.compact(dir, options.compact)) ?? kids };
   }
+
   async find(options: { query: string; limit: number }) {
     const limit = options.limit <= 0 || options.limit > 500 ? 100 : options.limit;
     if (!this.index.ready) await Promise.race([this.building, Bun.sleep(300)]);
@@ -197,6 +207,7 @@ export class Navigation {
       indexing: !this.index.ready,
     };
   }
+
   async outline(path: string) {
     // The Go LSP manager still owns permission to read absolute definition targets.
     if (isAbsolute(path)) return this.legacy.outline(path);
@@ -207,6 +218,7 @@ export class Navigation {
       throw new PathError(404, fileError(error, abs));
     }
   }
+
   async definitions(options: { symbol: string; path: string }, signal: AbortSignal) {
     const symbol = trimSpace(options.symbol);
     if (!symbol) throw new PathError(400, 'no symbol');
@@ -215,6 +227,7 @@ export class Navigation {
       lsp: await this.legacy.lsp(options.path),
     };
   }
+
   async reindex(): Promise<Record<string, unknown>> {
     await this.legacy.value('api/reindex');
     await this.index.build();
@@ -226,11 +239,12 @@ export class Navigation {
       gitFiles: this.index.gitFiles,
     };
   }
+
   async close(): Promise<void> {
     this.idle.close();
     await this.streams.close();
     await this.watcher.close();
-    await this.legacy.close();
+    this.legacy.close();
     await this.git.close();
     await this.building.catch(() => undefined);
     this.fuzzy.close();

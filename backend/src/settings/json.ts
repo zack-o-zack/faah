@@ -1,4 +1,5 @@
 import { parse } from '../decode.ts';
+
 // Go's decoder wording is part of the existing settings HTTP response.
 export function parseSettings(text: string): Record<string, unknown> {
   try {
@@ -8,7 +9,7 @@ export function parseSettings(text: string): Record<string, unknown> {
       error instanceof SyntaxError &&
       (/end|EOF|unterminated/i.test(error.message) || /[{[,]\s*$/.test(text))
     )
-      throw new Error('unexpected end of JSON input');
+      throw new Error('unexpected end of JSON input', { cause: error });
     throw error;
   }
 }

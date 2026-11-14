@@ -1,18 +1,21 @@
 import { readFile, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { trimSpace } from '../text.ts';
-import { GitCommands, atoi, validSHA } from './commands.ts';
+import type { GitCommands } from './commands.ts';
+import { atoi, validSHA } from './commands.ts';
 
 export interface AheadBehind {
   ahead: number;
   behind: number;
   hasUpstream: boolean;
 }
+
 function counts(text: string): AheadBehind | undefined {
   const parts = trimSpace(text).split(/\s+/);
   if (parts.length < 2) return;
   return { ahead: atoi(parts[0] ?? '') ?? 0, behind: atoi(parts[1] ?? '') ?? 0, hasUpstream: true };
 }
+
 export class GitSync {
   constructor(readonly commands: GitCommands) {}
   async branch(root: string): Promise<string> {
@@ -22,9 +25,11 @@ export class GitSync {
       trimSpace(await this.commands.text(root, ['symbolic-ref', '--quiet', '--short', 'HEAD']))
     );
   }
+
   async head(root: string): Promise<string> {
     return trimSpace(await this.commands.text(root, ['rev-parse', '--short', 'HEAD']));
   }
+
   async upstream(
     root: string,
     branch: string,
@@ -35,6 +40,7 @@ export class GitSync {
     const slash = text.indexOf('/');
     return slash < 0 ? undefined : { remote: text.slice(0, slash), branch: text.slice(slash + 1) };
   }
+
   async remote(root: string, branch = ''): Promise<string> {
     if (branch) {
       const upstream = await this.upstream(root, branch);
@@ -47,6 +53,7 @@ export class GitSync {
     }
     return trimSpace(await this.commands.text(root, ['config', '--get', 'remote.origin.url']));
   }
+
   async aheadBehind(root: string): Promise<AheadBehind> {
     const empty = { ahead: 0, behind: 0, hasUpstream: false };
     if (!(await this.commands.probe.get(root))) return empty;
@@ -70,6 +77,7 @@ export class GitSync {
       atoi(trimSpace(await this.commands.text(root, ['rev-list', '--count', 'HEAD']))) ?? 0;
     return ahead > 0 ? { ahead, behind: 0, hasUpstream: false } : empty;
   }
+
   async countSince(root: string, base: string): Promise<number> {
     return validSHA(base)
       ? (atoi(
@@ -77,6 +85,7 @@ export class GitSync {
         ) ?? 0)
       : 0;
   }
+
   async aheadBehindRef(root: string, ref: string): Promise<AheadBehind> {
     return (
       counts(
@@ -84,6 +93,7 @@ export class GitSync {
       ) ?? { ahead: 0, behind: 0, hasUpstream: false }
     );
   }
+
   async operation(root: string): Promise<string> {
     const info = await this.commands.probe.get(root);
     if (!info) return '';
@@ -92,6 +102,7 @@ export class GitSync {
     if ((await exists('rebase-merge')) || (await exists('rebase-apply'))) return 'rebase';
     return (await exists('MERGE_HEAD')) ? 'merge' : '';
   }
+
   async rebasingBranch(root: string): Promise<string> {
     const info = await this.commands.probe.get(root);
     if (!info) return '';
@@ -101,6 +112,7 @@ export class GitSync {
     }
     return '';
   }
+
   async dirty(root: string): Promise<boolean> {
     return Boolean(
       trimSpace(await this.commands.text(root, ['status', '--porcelain', '-uall'], true)),

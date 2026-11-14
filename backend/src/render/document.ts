@@ -2,13 +2,17 @@ import { goString } from './text.ts';
 import { language, filenameLanguage } from './language.ts';
 import { plain, visualWidth } from './html.ts';
 import { RenderCancelled } from './cancel.ts';
+
 export const chunkLines = 1000,
   windowBytes = 512 << 10,
   backgroundBytes = 2 << 20;
+
 export function sizeOfLines(lines: readonly string[]): number {
-  return lines.reduce((n, l) => n + Buffer.byteLength(l), lines.length * 16);
+  return lines.reduce((n, line) => n + Buffer.byteLength(line), lines.length * 16);
 }
+
 export type Highlight = (source: string, lang: string, want: number) => Promise<string[]>;
+
 export class Document {
   readonly lang: string;
   readonly total: number;
@@ -31,7 +35,7 @@ export class Document {
     this.source = typeof source === 'string' ? Buffer.from(source) : Buffer.from(source);
     this.lang = filenameLanguage(path) ?? language(path, goString(this.source.subarray(0, 4096)));
     let total = 1;
-    for (let i = 0; i < this.source.length; i++) if (this.source[i] === 10) total++;
+    for (const byte of this.source) if (byte === 10) total++;
     this.total = total;
     this.offsets = new Uint32Array(total + 1);
     let offset = 0,
@@ -44,10 +48,10 @@ export class Document {
       // Once a line cannot exceed the known width, its contents need no width scan.
       if (width < 20000 && (end - offset) * 4 > width) {
         let columns = 0;
-        for (let p = offset; p < end; p++) {
-          const byte = this.source[p] ?? 0;
+        for (let position = offset; position < end; position++) {
+          const byte = this.source[position] ?? 0;
           if (byte >= 128) {
-            columns = visualWidth(goString(this.source.subarray(p, end)), columns);
+            columns = visualWidth(goString(this.source.subarray(position, end)), columns);
             break;
           }
           columns += byte === 9 ? 4 - (columns % 4) : 1;
@@ -60,6 +64,7 @@ export class Document {
     this.maxCols = Math.min(width, 20000);
     this.initialBytes = this.source.length + total * 32;
   }
+
   raw(line: number): string {
     if (line < 1 || line > this.total) return '';
     const start = this.offsets[line - 1] ?? 0;
@@ -67,12 +72,15 @@ export class Document {
     if (end > start && this.source[end - 1] === 10) end--;
     return goString(this.source.subarray(start, end));
   }
+
   get coming(): boolean {
     return this.source.length <= backgroundBytes;
   }
+
   get exact(): boolean {
     return this.full;
   }
+
   async lines(start: number, end: number): Promise<{ lines: string[]; exact: boolean }> {
     if (this.full && start === 0 && end === this.total && this.total <= chunkLines)
       return { lines: (this.chunks.get(0) ?? []).slice(), exact: true };
@@ -89,7 +97,7 @@ export class Document {
           if (!(error instanceof RenderCancelled)) throw error;
         });
         this.observeBackground(this.background);
-        void this.background.catch((error) =>
+        void this.background.catch((error: unknown) =>
           process.stderr.write('faah render full pass: ' + String(error) + '\n'),
         );
       }
@@ -100,34 +108,37 @@ export class Document {
     }
     const lines: string[] = [];
     let exact = true;
-    for (let c = Math.floor(start / chunkLines); c * chunkLines < end; c++) {
-      const result = await this.chunk(c);
+    for (let chunk = Math.floor(start / chunkLines); chunk * chunkLines < end; chunk++) {
+      const result = await this.chunk(chunk);
       exact = exact && result.exact;
       lines.push(
         ...result.lines.slice(
-          Math.max(0, start - c * chunkLines),
-          Math.min(result.lines.length, end - c * chunkLines),
+          Math.max(0, start - chunk * chunkLines),
+          Math.min(result.lines.length, end - chunk * chunkLines),
         ),
       );
     }
     schedule();
     return { lines, exact };
   }
+
   async settled(): Promise<void> {
     await this.background;
   }
-  private chunk(c: number): Promise<{ lines: string[]; exact: boolean }> {
-    const cached = this.chunks.get(c);
+
+  private chunk(chunk: number): Promise<{ lines: string[]; exact: boolean }> {
+    const cached = this.chunks.get(chunk);
     if (cached) return Promise.resolve({ lines: cached, exact: this.full });
-    let task = this.pending.get(c);
+    let task = this.pending.get(chunk);
     if (!task) {
-      task = this.renderChunk(c).finally(() => this.pending.delete(c));
-      this.pending.set(c, task);
+      task = this.renderChunk(chunk).finally(() => this.pending.delete(chunk));
+      this.pending.set(chunk, task);
     }
     return task;
   }
-  private async renderChunk(c: number): Promise<{ lines: string[]; exact: boolean }> {
-    const start = c * chunkLines,
+
+  private async renderChunk(chunk: number): Promise<{ lines: string[]; exact: boolean }> {
+    const start = chunk * chunkLines,
       end = Math.min(start + chunkLines, this.total);
     let from = Math.max(0, start - 400),
       to = Math.min(this.total, end + 400);
@@ -146,20 +157,21 @@ export class Document {
       segment.length > windowBytes
         ? plain(goString(segment), to - from)
         : await this.highlight(goString(segment), this.lang, end - from);
-    if (this.full) return { lines: this.chunks.get(c) ?? [], exact: true };
+    if (this.full) return { lines: this.chunks.get(chunk) ?? [], exact: true };
     const lines = all.slice(start - from, end - from);
-    if (c === 0 && this.total <= chunkLines && segment.length <= windowBytes) this.full = true;
-    if (!this.chunks.has(c)) this.grow(sizeOfLines(lines));
-    this.chunks.set(c, lines);
+    if (chunk === 0 && this.total <= chunkLines && segment.length <= windowBytes) this.full = true;
+    if (!this.chunks.has(chunk)) this.grow(sizeOfLines(lines));
+    this.chunks.set(chunk, lines);
     return { lines, exact: this.full };
   }
+
   private async fullPass(): Promise<void> {
     const all = await this.highlight(goString(this.source), this.lang, this.total);
-    const before = [...this.chunks.values()].reduce((n, v) => n + sizeOfLines(v), 0);
+    const before = [...this.chunks.values()].reduce((n, lines) => n + sizeOfLines(lines), 0);
     let after = 0;
-    for (let c = 0; c * chunkLines < this.total; c++) {
-      const lines = all.slice(c * chunkLines, Math.min((c + 1) * chunkLines, this.total));
-      this.chunks.set(c, lines);
+    for (let chunk = 0; chunk * chunkLines < this.total; chunk++) {
+      const lines = all.slice(chunk * chunkLines, Math.min((chunk + 1) * chunkLines, this.total));
+      this.chunks.set(chunk, lines);
       after += sizeOfLines(lines);
     }
     this.full = true;

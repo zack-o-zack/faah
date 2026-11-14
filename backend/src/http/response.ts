@@ -1,20 +1,24 @@
 export const csp =
   "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https: http:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'none';";
+
 export function json(value: unknown, status = 200): Response {
   return new Response(JSON.stringify(value) + '\n', {
     status,
     headers: { 'Content-Type': 'application/json' },
   });
 }
+
 export function fail(status: number, error: string): Response {
   return json({ error }, status);
 }
+
 export function missing(): Response {
   return new Response('404 page not found\n', {
     status: 404,
     headers: { 'Content-Type': 'text/plain; charset=utf-8', 'X-Content-Type-Options': 'nosniff' },
   });
 }
+
 export async function headers(
   response: Response,
   request: Request,
@@ -45,6 +49,7 @@ export async function headers(
   }
   return response;
 }
+
 export function redirect(location: string, method: string, status = 301): Response {
   const body =
     method === 'GET'

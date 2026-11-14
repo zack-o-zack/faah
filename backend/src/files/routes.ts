@@ -3,6 +3,7 @@ import { PathError } from './service.ts';
 import { message } from '../decode.ts';
 import { decodeFileInput } from './decode.ts';
 import type { Navigation } from '../index/navigation.ts';
+
 export async function fileRoute(
   nav: Navigation,
   request: Request,

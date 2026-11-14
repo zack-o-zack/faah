@@ -9,6 +9,7 @@ interface Pending {
   reject: (error: Error) => void;
   timer: ReturnType<typeof setTimeout>;
 }
+
 function command(): string[] {
   return [
     process.execPath,
@@ -17,6 +18,7 @@ function command(): string[] {
       : [resolve(import.meta.dir, 'helper.ts')]),
   ];
 }
+
 export class WatcherProcess {
   private child: Bun.Subprocess<'pipe', 'pipe', 'ignore'> | undefined;
   private readonly pending = new Map<number, Pending>();
@@ -28,9 +30,11 @@ export class WatcherProcess {
     readonly argv: string[] = command(),
     readonly timeout = 5000,
   ) {}
+
   get pid(): number | undefined {
     return this.child?.pid;
   }
+
   private start() {
     if (this.closed) throw new Error('watcher closed');
     if (this.child) return this.child;
@@ -61,6 +65,7 @@ export class WatcherProcess {
     });
     return child;
   }
+
   private stop(error: Error, notify: boolean): void {
     const child = this.child;
     this.child = undefined;
@@ -82,21 +87,22 @@ export class WatcherProcess {
     }
     if (notify) for (const callback of active) callback(error, []);
   }
+
   private call(id: number, root: string, type: 'subscribe' | 'unsubscribe'): Promise<void> {
     const child = this.start();
     return new Promise((resolve, reject) => {
-      const timer = setTimeout(
-        () => this.stop(new Error('watcher ' + type + ' timed out'), true),
-        this.timeout,
-      );
+      const timer = setTimeout(() => {
+        this.stop(new Error('watcher ' + type + ' timed out'), true);
+      }, this.timeout);
       this.pending.set(id, { resolve, reject, timer });
       try {
-        child.stdin.write(JSON.stringify({ id, root, type }) + '\n');
+        void child.stdin.write(JSON.stringify({ id, root, type }) + '\n');
       } catch (error) {
         this.stop(new Error(message(error)), true);
       }
     });
   }
+
   async subscribe(root: string, callback: Callback): Promise<() => Promise<void>> {
     const id = ++this.next;
     this.callbacks.set(id, callback);
@@ -113,6 +119,7 @@ export class WatcherProcess {
       if (!this.callbacks.size && !this.pending.size) this.stop(new Error('watcher idle'), false);
     };
   }
+
   async close(): Promise<void> {
     this.closed = true;
     this.stop(new Error('watcher closed'), false);

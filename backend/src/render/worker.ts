@@ -10,12 +10,12 @@ self.onmessage = (event: MessageEvent<unknown>) => {
   }
   if (value.type === 'init') {
     const assets = Object.fromEntries(
-      Object.entries(record(value.assets)).map(([id, v]) => [id, string(v)]),
+      Object.entries(record(value.assets)).map(([id, asset]) => [id, string(asset)]),
     );
     const groups = Object.fromEntries(
-      Object.entries(record(value.groups)).map(([id, v]) => {
-        if (!Array.isArray(v)) throw new Error('invalid grammar group');
-        return [id, v.map((v) => string(v))];
+      Object.entries(record(value.groups)).map(([id, group]) => {
+        if (!Array.isArray(group)) throw new Error('invalid grammar group');
+        return [id, group.map((member) => string(member))];
       }),
     );
     ready = engine({ assets, groups });
@@ -42,7 +42,11 @@ self.onmessage = (event: MessageEvent<unknown>) => {
     return highlight(string(value.source), string(value.lang), number(value.want));
   })();
   void task.then(
-    (lines) => self.postMessage({ id, lines }),
-    (error: unknown) => self.postMessage({ id, error: String(error) }),
+    (lines) => {
+      self.postMessage({ id, lines });
+    },
+    (error: unknown) => {
+      self.postMessage({ id, error: String(error) });
+    },
   );
 };

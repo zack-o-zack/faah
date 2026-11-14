@@ -54,6 +54,7 @@ export const legacyRoutes = [
   '/api/forge/connect',
   '/api/session',
 ];
+
 export function legacyOwned(path: string): boolean {
   return legacyRoutes.includes(path);
 }

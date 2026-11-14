@@ -1,5 +1,6 @@
 import { trimSpace } from '../text.ts';
-import { GitCommands, atoi, commitDiffArgs, validSHA } from './commands.ts';
+import type { GitCommands } from './commands.ts';
+import { atoi, commitDiffArgs, validSHA } from './commands.ts';
 import { repoKey } from './probe.ts';
 import { NameStatusParser, splitFields } from './status-parser.ts';
 import { recentCommit, unpushedCommit, NumstatParser } from './history-parser.ts';
@@ -28,6 +29,7 @@ export class GitHistory {
     );
     return ok ? commits : [];
   }
+
   async range(root: string, range: string, limit = 100): Promise<GitUnpushedCommit[]> {
     if (limit <= 0 || limit > 200) limit = 100;
     const commits: GitUnpushedCommit[] = [];
@@ -41,6 +43,7 @@ export class GitHistory {
     );
     return ok ? commits : [];
   }
+
   async upstream(root: string): Promise<string> {
     return trimSpace(
       await this.commands.text(
@@ -50,19 +53,24 @@ export class GitHistory {
       ),
     );
   }
+
   async unpushed(root: string, limit = 100) {
     const upstream = await this.upstream(root);
     return { upstream, commits: upstream ? await this.range(root, '@{u}..HEAD', limit) : [] };
   }
+
   async numstat(root: string, sha: string): Promise<Map<string, Numstat>> {
     const parser = new NumstatParser();
     const ok = await this.commands.records(
       root,
       ['show', '--numstat', '-z', '--format=', '-m', '--first-parent', '--no-color', sha],
-      (field) => parser.record(field),
+      (field) => {
+        parser.record(field);
+      },
     );
     return ok ? parser.stats : new Map();
   }
+
   async files(root: string, sha: string): Promise<CommitFile[]> {
     const info = await this.commands.probe.get(root);
     if (!info || !validSHA(sha)) return [];
@@ -71,7 +79,9 @@ export class GitHistory {
     const ok = await this.commands.records(
       root,
       ['diff-tree', '--name-status', '-z', ...commitDiffArgs, sha],
-      (field) => parser.record(field),
+      (field) => {
+        parser.record(field);
+      },
     );
     if (!ok) return [];
     const stats = await this.numstat(root, sha),
@@ -95,6 +105,7 @@ export class GitHistory {
     }
     return files;
   }
+
   async stat(root: string, sha: string) {
     const stat = { files: 0, insertions: 0, deletions: 0 };
     if (!validSHA(sha)) return stat;
@@ -112,6 +123,7 @@ export class GitHistory {
     );
     return ok ? stat : { files: 0, insertions: 0, deletions: 0 };
   }
+
   async detail(root: string, sha: string): Promise<CommitDetail | undefined> {
     if (!validSHA(sha)) return;
     const raw = await this.commands.text(

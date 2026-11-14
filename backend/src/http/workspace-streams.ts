@@ -1,6 +1,7 @@
 import type { GitWorkspace } from '../git/workspace.ts';
 import { LegacyFeeds } from '../legacy/feeds.ts';
 import { eventResponse, eventFrame } from './events.ts';
+
 export class WorkspaceStreams {
   private readonly clients = new Set<() => void>();
   private readonly opening = new Set<Promise<unknown>>();
@@ -14,6 +15,7 @@ export class WorkspaceStreams {
   ) {
     this.feeds = new LegacyFeeds(origin, base);
   }
+
   response(signal: AbortSignal, query: URLSearchParams, metrics: boolean): Response {
     return eventResponse(signal, (sink) => {
       const task = (async () => {
@@ -28,11 +30,11 @@ export class WorkspaceStreams {
         };
         try {
           if (metrics && !sink.send(eventFrame('metrics', await this.metrics()))) return stop;
-          if (signal.aborted || this.closed) return stop;
+          if (this.ended(signal)) return stop;
           cleanups.push(
             await this.git.subscribe((value) => sink.send(eventFrame('git-status', value))),
           );
-          if (signal.aborted || this.closed) return stop;
+          if (this.ended(signal)) return stop;
           cleanups.push(this.feeds.subscribe(query, sink));
           let collecting = false;
           if (metrics) {
@@ -46,7 +48,9 @@ export class WorkspaceStreams {
                   collecting = false;
                 });
             }, 2500);
-            cleanups.push(() => clearInterval(timer));
+            cleanups.push(() => {
+              clearInterval(timer);
+            });
           }
           return stop;
         } catch (error) {
@@ -59,6 +63,12 @@ export class WorkspaceStreams {
       return task;
     });
   }
+
+  // A method, not a field read, because close() can flip the flag during an await.
+  private ended(signal: AbortSignal): boolean {
+    return signal.aborted || this.closed;
+  }
+
   async close(): Promise<void> {
     this.closed = true;
     for (const close of this.clients) close();

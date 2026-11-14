@@ -1,9 +1,10 @@
 import type MarkdownIt from 'markdown-it';
 import type StateInline from 'markdown-it/lib/rules_inline/state_inline.mjs';
+
 function finish(state: StateInline, delimiters: StateInline['delimiters']): void {
   for (let i = delimiters.length - 1; i >= 0; i--) {
     const open = delimiters[i];
-    if (!open || open.marker !== 126 || open.end < 0) continue;
+    if (open?.marker !== 126 || open.end < 0) continue;
     const close = delimiters[open.end],
       previous = delimiters[i - 1],
       after = delimiters[open.end + 1];
@@ -26,7 +27,7 @@ function finish(state: StateInline, delimiters: StateInline['delimiters']): void
     right.nesting = -1;
     right.content = '';
     right.markup = left.markup;
-    if (paired && previous && after) {
+    if (paired) {
       const before = state.tokens[previous.token],
         end = state.tokens[after.token];
       if (before) before.content = '';
@@ -35,6 +36,7 @@ function finish(state: StateInline, delimiters: StateInline['delimiters']): void
     }
   }
 }
+
 // Goldmark accepts one or two tildes and rejects longer runs. Retain the
 // Markdown parser's flanking/balancing rules, then emit one del per pair.
 export function goldmarkStrike(md: MarkdownIt): void {
@@ -42,7 +44,7 @@ export function goldmarkStrike(md: MarkdownIt): void {
     if (silent || state.src[state.pos] !== '~' || state.src[state.pos - 1] === '~') return false;
     const scan = state.scanDelims(state.pos, true);
     if (scan.length > 2) return false;
-    for (let i = 0; i < scan.length; i++) {
+    for (let remaining = scan.length; remaining > 0; remaining--) {
       state.push('text', '', 0).content = '~';
       state.delimiters.push({
         marker: 126,

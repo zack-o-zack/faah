@@ -28,18 +28,21 @@ interface Agreement {
   styledBytes: number;
   styledMatched: number;
 }
+
 function tokens(html: string): { text: string; classes: string[] } {
   const classes: string[] = [];
   let cls = '',
     offset = 0,
     text = '';
+
   function append(value: string): void {
     const decoded = value.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
     text += decoded;
-    for (const c of decoded)
-      for (let i = 0; i < Buffer.byteLength(c); i++)
-        classes.push(/\s/u.test(c) ? 'whitespace' : cls);
+    for (const character of decoded)
+      for (let i = 0; i < Buffer.byteLength(character); i++)
+        classes.push(/\s/u.test(character) ? 'whitespace' : cls);
   }
+
   for (const match of html.matchAll(/<i class=([a-z]+)>|<\/i>/g)) {
     append(html.slice(offset, match.index));
     cls = match[1] ?? '';
@@ -48,8 +51,10 @@ function tokens(html: string): { text: string; classes: string[] } {
   append(html.slice(offset));
   return { text, classes };
 }
+
 const report: Agreement[] = [];
 const markdownDifferences: { path: string; expected: string; actual: string }[] = [];
+
 async function compare(root: string, paths: string[], kind: string): Promise<void> {
   if (selected.size) paths = paths.filter((path) => selected.has(filenameLanguage(path) ?? ''));
   if (!paths.length) return;
@@ -70,7 +75,7 @@ async function compare(root: string, paths: string[], kind: string): Promise<voi
         if (!Array.isArray(value.lines)) throw new Error(path + ': ' + JSON.stringify(value));
         const captured: FileTokens = {
           lang: string(value.lang),
-          lines: value.lines.map((v) => string(v)),
+          lines: value.lines.map((line) => string(line)),
         };
         if (/\.md$/i.test(path)) {
           const markdownURL = new URL('api/markdown', server.baseUrl);
@@ -87,7 +92,7 @@ async function compare(root: string, paths: string[], kind: string): Promise<voi
   for (const path of paths) {
     const reference = captures[0]?.get(path),
       candidate = captures[1]?.get(path);
-    if (!reference || !candidate || reference.lang !== candidate.lang)
+    if (!reference || candidate?.lang !== reference.lang)
       throw new Error('language mismatch ' + path);
     if (
       reference.markdown !== undefined &&
@@ -95,7 +100,7 @@ async function compare(root: string, paths: string[], kind: string): Promise<voi
       markdownHighlights(reference.markdown) !== markdownHighlights(candidate.markdown)
     )
       markdownDifferences.push({ path, expected: reference.markdown, actual: candidate.markdown });
-    let row = report.find((r) => r.kind === kind && r.lang === reference.lang);
+    let row = report.find((entry) => entry.kind === kind && entry.lang === reference.lang);
     if (!row) {
       row = {
         kind,
@@ -116,11 +121,11 @@ async function compare(root: string, paths: string[], kind: string): Promise<voi
         b = candidate.lines[i] ?? '';
       if (highlightedText(a) !== highlightedText(b))
         throw new Error('escaped text mismatch ' + path + ':' + (i + 1));
-      const x = tokens(a),
-        y = tokens(b);
-      for (let j = 0; j < x.classes.length; j++) {
-        const left = x.classes[j],
-          right = y.classes[j];
+      const leftTokens = tokens(a),
+        rightTokens = tokens(b);
+      for (let j = 0; j < leftTokens.classes.length; j++) {
+        const left = leftTokens.classes[j],
+          right = rightTokens.classes[j];
         if (left === 'whitespace') continue;
         row.bytes++;
         if (left === right) row.matched++;
@@ -133,7 +138,7 @@ async function compare(root: string, paths: string[], kind: string): Promise<voi
             confusion.set(key, {
               bytes: 1,
               path,
-              text: Buffer.from(x.text)
+              text: Buffer.from(leftTokens.text)
                 .subarray(Math.max(0, j - 24), j + 48)
                 .toString(),
             });
@@ -146,6 +151,7 @@ async function compare(root: string, paths: string[], kind: string): Promise<voi
     }
   }
 }
+
 const contract = await fixture();
 try {
   const paths = [
@@ -220,15 +226,15 @@ for (const repo of ['flask', 'redis', 'react', 'kubernetes']) {
     await workspace.cleanup();
   }
 }
-const results = report.map((r) => ({
-  ...r,
-  agreement: r.bytes ? (100 * r.matched) / r.bytes : 100,
-  styledAgreement: r.styledBytes ? (100 * r.styledMatched) / r.styledBytes : 100,
+const results = report.map((row) => ({
+  ...row,
+  agreement: row.bytes ? (100 * row.matched) / row.bytes : 100,
+  styledAgreement: row.styledBytes ? (100 * row.styledMatched) / row.styledBytes : 100,
 }));
 await Bun.write(
   process.env.FAAH_TOKEN_DIFF_REPORT ?? '/tmp/faah-token-diffs.json',
   JSON.stringify(
-    [...confusion].map(([key, v]) => ({ key, ...v })).sort((a, b) => b.bytes - a.bytes),
+    [...confusion].map(([key, counts]) => ({ key, ...counts })).sort((a, b) => b.bytes - a.bytes),
     null,
     2,
   ) + '\n',

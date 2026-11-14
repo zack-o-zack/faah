@@ -1,5 +1,6 @@
 import { readFileSync, unlinkSync } from 'node:fs';
 import { parse } from '../decode.ts';
+
 export function lifetime(options: {
   desktop: boolean;
   stdinLifetime: boolean;

@@ -1,10 +1,12 @@
 import { realpathSync, statSync } from 'node:fs';
 import { resolve, dirname, relative, basename, isAbsolute } from 'node:path';
+
 export interface Target {
   root: string;
   file: string;
   line: number;
 }
+
 export function resolveTarget(target: string): Target {
   let path = target;
   let line = 0;
@@ -32,6 +34,7 @@ export function resolveTarget(target: string): Target {
   if (!isAbsolute(path) && !rel.startsWith('..')) return { root: cwd, file: rel, line };
   return { root: dirname(root), file: basename(root), line };
 }
+
 export interface PR {
   provider: string;
   owner: string;
@@ -39,8 +42,10 @@ export interface PR {
   number: number;
   url: string;
 }
+
 export const prURLExamples =
   'https://github.com/owner/repo/pull/123, https://gitlab.com/group/project/-/merge_requests/45, https://codeberg.org/owner/repo/pulls/7, or https://bitbucket.org/workspace/repo/pull-requests/9';
+
 export function detectPR(text: string): PR | undefined {
   text = text.trim();
   const github = /^(?:https?:\/\/)?github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/.exec(text);
@@ -49,13 +54,13 @@ export function detectPR(text: string): PR | undefined {
       text,
     );
   if (github || bitbucket) {
-    const m = github ?? bitbucket;
-    if (!m?.[1] || !m[2] || !m[3]) return;
+    const match = github ?? bitbucket;
+    if (!match?.[1] || !match[2] || !match[3]) return;
     return {
       provider: github ? 'github' : 'bitbucket',
-      owner: m[1],
-      repo: m[2].replace(/\.git$/, ''),
-      number: Number(m[3]),
+      owner: match[1],
+      repo: match[2].replace(/\.git$/, ''),
+      number: Number(match[3]),
       url: text,
     };
   }
@@ -63,14 +68,20 @@ export function detectPR(text: string): PR | undefined {
     text,
   );
   const gitea = /^(?:https?:\/\/)?([^/\s]+)\/([^/\s]+)\/([^/\s]+?)\/pulls\/(\d+)/.exec(text);
-  const m = gitlab ?? gitea;
-  if (!m?.[1] || !m[2] || !m[3] || !m[4] || (!gitlab && m[1].toLowerCase() === 'github.com'))
+  const match = gitlab ?? gitea;
+  if (
+    !match?.[1] ||
+    !match[2] ||
+    !match[3] ||
+    !match[4] ||
+    (!gitlab && match[1].toLowerCase() === 'github.com')
+  )
     return;
   return {
     provider: gitlab ? 'gitlab' : 'gitea',
-    owner: m[2],
-    repo: m[3].replace(/\.git$/, ''),
-    number: Number(m[4]),
+    owner: match[2],
+    repo: match[3].replace(/\.git$/, ''),
+    number: Number(match[4]),
     url: text,
   };
 }

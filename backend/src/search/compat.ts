@@ -6,12 +6,12 @@ import type { SearchOptions } from './pattern.ts';
 export function linePattern(text: string): string {
   let out = '';
   for (let i = 0; i < text.length;) {
-    const c = text[i];
-    if (c === '[') {
+    const character = text[i];
+    if (character === '[') {
       const cls = characterClass(text, i);
       out += cls.text;
       i = cls.end;
-    } else if (c === '\\') {
+    } else if (character === '\\') {
       const next = text[i + 1];
       if (next === 'Q') {
         const end = text.indexOf('\\E', i + 2);
@@ -25,16 +25,16 @@ export function linePattern(text: string): string {
         out += escaped.value === 10 ? '[a&&b]' : escaped.text;
         i = escaped.end;
       }
-    } else if (c === '(' && /^\(\?P?<([A-Za-z0-9_]+)>/.test(text.slice(i))) {
+    } else if (character === '(' && /^\(\?P?<([A-Za-z0-9_]+)>/.test(text.slice(i))) {
       const name = /^\(\?P?<([A-Za-z0-9_]+)>/.exec(text.slice(i))?.[0] ?? '';
       out += '(';
       i += name.length;
-    } else if (c === '{' && !/^\{(0|[1-9]\d*)(?:,(0|[1-9]\d*)?)?\}/.test(text.slice(i))) {
+    } else if (character === '{' && !/^\{(0|[1-9]\d*)(?:,(0|[1-9]\d*)?)?\}/.test(text.slice(i))) {
       // Go treats malformed counted repeats, including leading zeros, literally.
       out += '\\{';
       i++;
     } else {
-      out += c === '\n' ? '[a&&b]' : c;
+      out += character === '\n' ? '[a&&b]' : (character ?? '');
       i++;
     }
   }
@@ -68,8 +68,8 @@ export function checkRepeats(query: string): void {
     maximum = 1;
   const groups: { current: number; maximum: number }[] = [];
   for (let i = 0; i < query.length; i++) {
-    const c = query[i];
-    if (c === '\\') {
+    const character = query[i];
+    if (character === '\\') {
       if (query[i + 1] === 'Q') {
         const end = query.indexOf('\\E', i + 2);
         i = end < 0 ? query.length : end + 1;
@@ -78,13 +78,13 @@ export function checkRepeats(query: string): void {
       current = 1;
       continue;
     }
-    if (c === '[') {
+    if (character === '[') {
       i = characterClass(query, i).end - 1;
       current = 1;
       previous = '';
       continue;
     }
-    if (c === '(') {
+    if (character === '(') {
       const flags = /^\(\?(?:[imsU-]+[:)]|:|P?<[^>]*>)/.exec(query.slice(i))?.[0];
       if (flags?.endsWith(')')) {
         i += flags.length - 1;
@@ -96,14 +96,14 @@ export function checkRepeats(query: string): void {
       previous = '';
       continue;
     }
-    if (c === ')') {
+    if (character === ')') {
       const parent = groups.pop();
       current = Math.max(current, maximum);
       maximum = Math.max(parent?.maximum ?? 1, parent?.current ?? 1);
       previous = '';
       continue;
     }
-    if (c === '|') {
+    if (character === '|') {
       maximum = Math.max(maximum, current);
       current = 1;
       previous = '';
@@ -111,8 +111,8 @@ export function checkRepeats(query: string): void {
     }
     let token = '',
       copies = 1;
-    if (c === '*' || c === '+' || c === '?') token = c;
-    else if (c === '{') {
+    if (character === '*' || character === '+' || character === '?') token = character;
+    else if (character === '{') {
       const match = /^\{(0|[1-9]\d*)(?:,(0|[1-9]\d*)?)?\}/.exec(query.slice(i));
       if (match) {
         const min = Number(match[1]);

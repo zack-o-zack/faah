@@ -17,6 +17,7 @@ const embeddedNames: Record<string, string> = {
   'source.rust': 'Rust',
 };
 const grammarIDs: Record<string, string> = grammars;
+
 export async function engine(store?: GrammarStore) {
   const started = performance.now();
   const highlighter = await createHighlighterCore({

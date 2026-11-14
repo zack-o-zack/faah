@@ -6,6 +6,7 @@ import { compare } from '../text.ts';
 import { walk, walkable, sortNodes, vcs } from './walk.ts';
 import { mergeGit, applyFlags, gitFiles } from './git.ts';
 import { emptyGit, type Node, type GitState } from './types.ts';
+
 export class Index {
   files: Item[] = [];
   children = new Map<string, Node[]>();
@@ -21,6 +22,7 @@ export class Index {
     this.pending = result.catch(() => undefined);
     return result;
   }
+
   constructor(
     readonly options: {
       root: string;
@@ -28,12 +30,15 @@ export class Index {
       updated: (items: Item[]) => Promise<unknown>;
     },
   ) {}
+
   get root(): string {
     return this.options.root;
   }
+
   get gitFiles(): string[] {
     return gitFiles(this.git);
   }
+
   build(): Promise<void> {
     if (this.building) return this.building;
     this.building = this.runBuild().finally(() => {
@@ -41,6 +46,7 @@ export class Index {
     });
     return this.building;
   }
+
   private async runBuild(): Promise<void> {
     const start = performance.now(),
       revision = this.gitRevision;
@@ -48,11 +54,12 @@ export class Index {
       walk({
         root: this.root,
         publish: (nodes) => {
-          void this.edit(async () => {
+          void this.edit(() => {
             this.children.set(
               '',
               nodes.map((n) => ({ ...n })),
             );
+            return Promise.resolve();
           });
         },
       }),
@@ -71,6 +78,7 @@ export class Index {
       this.ready = true;
     });
   }
+
   applyGit(state: GitState): Promise<void> {
     return this.edit(async () => {
       await mergeGit({ children: this.children, state, root: this.root, build: false });
@@ -78,32 +86,37 @@ export class Index {
       this.gitRevision++;
     });
   }
+
   async list(dir: string): Promise<Node[] | undefined> {
     const kids = this.children.get(dir);
     if (kids) return kids.map((n) => ({ ...n }));
-    if (!dir || dir.includes('\\') || dir.split('/').some((s) => !s || s === '.' || s === '..'))
+    if (
+      !dir ||
+      dir.includes('\\') ||
+      dir.split('/').some((segment) => !segment || segment === '.' || segment === '..')
+    )
       return;
-    let p = dir;
-    while (p) {
-      const parent = posix.dirname(p) === '.' ? '' : posix.dirname(p);
+    let current = dir;
+    while (current) {
+      const parent = posix.dirname(current) === '.' ? '' : posix.dirname(current);
       const entries = this.children.get(parent);
       if (entries) {
-        const node = entries.find((n) => n.name === p.slice(parent ? parent.length + 1 : 0));
+        const node = entries.find((n) => n.name === current.slice(parent ? parent.length + 1 : 0));
         if (!node?.dir || !node.ignored) return;
         break;
       }
-      p = parent;
+      current = parent;
     }
-    if (!p) return;
+    if (!current) return;
     try {
       const ents = await readdir(join(this.root, dir), { withFileTypes: true });
       return sortNodes(
         ents
-          .filter((e) => !e.isSymbolicLink())
-          .map((e) => ({
-            name: e.name,
-            path: dir + '/' + e.name,
-            dir: e.isDirectory(),
+          .filter((entry) => !entry.isSymbolicLink())
+          .map((entry) => ({
+            name: entry.name,
+            path: dir + '/' + entry.name,
+            dir: entry.isDirectory(),
             size: 0,
             ignored: true,
           })),
@@ -112,6 +125,7 @@ export class Index {
       return;
     }
   }
+
   async compact(dir: string, mode: string): Promise<Node[] | undefined> {
     const kids = await this.list(dir);
     if (!kids || !['all', 'changed', 'yours'].includes(mode)) return kids;
@@ -133,6 +147,7 @@ export class Index {
     }
     return kids;
   }
+
   async touch(path: string): Promise<void> {
     if (!this.ready) {
       await this.build();
@@ -140,15 +155,19 @@ export class Index {
     }
     await this.edit(() => this.touchReady(path));
   }
+
   private async touchReady(path: string): Promise<void> {
     const rel = path.replace(/^\/+|\/+$/g, '');
-    if (!rel || rel.split('/').some((p) => p === '..' || p === '.' || !p)) return;
+    if (!rel || rel.split('/').some((segment) => segment === '..' || segment === '.' || !segment))
+      return;
     let info;
     try {
       info = await stat(join(this.root, rel));
     } catch (error) {
       if (!(error instanceof Error) || !('code' in error) || error.code !== 'ENOENT') return;
-      this.files = this.files.filter((f) => f.path !== rel && !f.path.startsWith(rel + '/'));
+      this.files = this.files.filter(
+        (file) => file.path !== rel && !file.path.startsWith(rel + '/'),
+      );
       for (const dir of this.children.keys())
         if (dir.startsWith(rel + '/')) this.children.delete(dir);
       const parent = posix.dirname(rel) === '.' ? '' : posix.dirname(rel);
@@ -200,9 +219,9 @@ export class Index {
       return;
     }
     if (!dir && !ignored) {
-      const previous = this.files.find((f) => f.path === rel);
+      const previous = this.files.find((file) => file.path === rel);
       const walked = previous?.walked === true && info.isFile() && (await walkable(this.root, rel));
-      this.files = this.files.filter((f) => f.path !== rel);
+      this.files = this.files.filter((file) => file.path !== rel);
       this.files.push(newItem(rel, info.size, walked));
       this.files.sort((a, b) => compare(a.path, b.path));
       await this.options.updated(this.files);

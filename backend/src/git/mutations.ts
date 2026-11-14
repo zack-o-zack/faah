@@ -1,6 +1,6 @@
 import { relative, join, sep } from 'node:path';
 import { trimSpace } from '../text.ts';
-import { GitCommands } from './commands.ts';
+import type { GitCommands } from './commands.ts';
 import { GitSync } from './sync.ts';
 
 export class NotFastForward extends Error {
@@ -8,11 +8,13 @@ export class NotFastForward extends Error {
     super('not a fast-forward');
   }
 }
+
 export class GitMutations {
   constructor(
     readonly commands: GitCommands,
     readonly sync = new GitSync(commands),
   ) {}
+
   private async checked(
     root: string,
     args: string[],
@@ -23,9 +25,11 @@ export class GitMutations {
     if (result.code !== 0)
       throw new Error(label + ': exit status ' + result.code + ': ' + trimSpace(result.output));
   }
+
   stage(root: string, path: string): Promise<void> {
     return this.checked(root, ['add', '-A', '--', path || '.'], 'git add');
   }
+
   async unstage(root: string, path: string): Promise<void> {
     path ||= '.';
     const result = await this.commands.processes.run(root, ['reset', 'HEAD', '--', path]);
@@ -34,13 +38,16 @@ export class GitMutations {
       return;
     throw new Error('git reset: exit status ' + result.code + ': ' + trimSpace(result.output));
   }
+
   staged(root: string): Promise<string[]> {
     return this.commands.paths(root, ['diff', '--name-only', '--cached', '-z']);
   }
+
   async commit(root: string, message: string): Promise<void> {
     if (!(await this.staged(root)).length) throw new Error('nothing staged to commit');
     await this.checked(root, ['commit', '-m', message], 'git commit');
   }
+
   async hunk(root: string, path: string, hunk: string, action: string): Promise<void> {
     const info = await this.commands.probe.get(root);
     if (!info) throw new Error('git repository not available');
@@ -81,17 +88,20 @@ export class GitMutations {
     if (result.code !== 0)
       throw new Error(label + ': exit status ' + result.code + ': ' + trimSpace(result.output));
   }
+
   async pull(root: string, remote: string, ref: string): Promise<void> {
     await this.checked(root, ['fetch', '--no-tags', remote, ref], 'git fetch');
     if ((await this.commands.processes.run(root, ['merge', '--ff-only', 'FETCH_HEAD'])).code !== 0)
       throw new NotFastForward();
   }
+
   push(root: string, remote?: string, branch?: string) {
     return this.commands.processes.run(
       root,
       remote === undefined ? ['push'] : ['push', '-u', remote, branch ?? ''],
     );
   }
+
   async abort(root: string): Promise<void> {
     const op = await this.sync.operation(root);
     if (!op) throw new Error('no rebase or merge in progress');

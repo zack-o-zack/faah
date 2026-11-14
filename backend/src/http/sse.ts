@@ -12,10 +12,12 @@ export function sse(
       const write = (value: string) => {
         if (!ended) controller.enqueue(encoder.encode(value));
       };
-      const unsubscribe = subscribe((event, value) =>
-        write(`event: ${event}\ndata: ${JSON.stringify(value)}\n\n`),
-      );
-      const ping = setInterval(() => write(': ping\n\n'), 15000);
+      const unsubscribe = subscribe((event, value) => {
+        write(`event: ${event}\ndata: ${JSON.stringify(value)}\n\n`);
+      });
+      const ping = setInterval(() => {
+        write(': ping\n\n');
+      }, 15000);
       close = () => {
         if (ended) return;
         ended = true;

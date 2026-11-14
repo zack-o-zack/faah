@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { detectPR, resolveTarget } from './target.ts';
 import { dirItem, itemID, type WorkbenchStore } from '../workbench/store.ts';
+
 export function bridge(args: string[]): boolean {
   if (args[0] !== 'acp-mcp-bridge') return false;
   const binary = process.env.FAAH_LEGACY_BIN;
@@ -10,6 +11,7 @@ export function bridge(args: string[]): boolean {
   process.exitCode = result.status ?? 1;
   return true;
 }
+
 export function recordTarget(store: WorkbenchStore, target: string): void {
   const pr = detectPR(target);
   if (pr)
@@ -23,6 +25,7 @@ export function recordTarget(store: WorkbenchStore, target: string): void {
     });
   else store.record(dirItem(resolveTarget(target).root));
 }
+
 export function viewerURL(origin: string, base: string, target?: string): string {
   let result = origin + (base === '/' ? '' : base);
   if (target && !detectPR(target)) {
