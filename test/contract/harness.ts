@@ -1,3 +1,4 @@
+import { comparableHighlight } from './highlight.ts';
 import { beforeAll, afterAll, test, expect } from 'bun:test';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
@@ -10,14 +11,19 @@ export interface Context {
   f: Fixture;
   server: Server;
 }
-export async function golden(area: string, name: string, value: unknown): Promise<void> {
+export async function golden(
+  area: string,
+  name: string,
+  value: unknown,
+  route = '',
+): Promise<void> {
   const path = join(import.meta.dirname, 'golden', area, `${name}.json`);
   if (process.env.FAAH_CONTRACT_RECORD === '1') {
     await mkdir(dirname(path), { recursive: true });
     await writeFile(path, JSON.stringify(value, null, 2) + '\n');
   } else {
     const expected: unknown = JSON.parse(await readFile(path, 'utf8'));
-    expect(value).toEqual(expected);
+    expect(comparableHighlight(value, route)).toEqual(comparableHighlight(expected, route));
   }
 }
 export async function capture(
@@ -36,6 +42,7 @@ export async function capture(
     area,
     name,
     normalize(response, route, { fixture: c.f, baseUrl: c.server.baseUrl, workspaceId }),
+    route,
   );
   return response;
 }

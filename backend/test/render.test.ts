@@ -1,0 +1,189 @@
+import { test, expect } from 'bun:test';
+import { mkdtemp, rm, writeFile, stat } from 'node:fs/promises';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { Document, windowBytes } from '../src/render/document.ts';
+import { plain, visualWidth } from '../src/render/html.ts';
+import { language, filenameLanguage, fenceLanguage } from '../src/render/language.ts';
+import { classFor, classes } from '../src/render/scopes.ts';
+import { LRU } from '../src/render/lru.ts';
+import { RenderDisk } from '../src/render/disk.ts';
+import { RenderService } from '../src/render/service.ts';
+import { IdleScavenger } from '../src/render/idle.ts';
+import { highlightedText } from '../../test/contract/highlight.ts';
+test('Chroma filename names, aliases, priorities, backups, and content analysis', () => {
+  for (const [path, name] of [
+    ['x.go', 'Go'],
+    ['x.ts', 'TypeScript'],
+    ['x.tsx', 'TypeScript'],
+    ['x.py', 'Python'],
+    ['x.rs', 'Rust'],
+    ['x.c', 'C'],
+    ['x.h', 'C'],
+    ['x.cpp', 'C++'],
+    ['Makefile', 'Makefile'],
+    ['Dockerfile', 'Docker'],
+    ['x.json', 'JSON'],
+    ['x.yaml', 'YAML'],
+    ['x.md', 'markdown'],
+    ['x.sh', 'Bash'],
+    ['x.css', 'CSS'],
+    ['x.go.bak', 'Go'],
+    ['x.GO', 'plain text'],
+  ])
+    expect(language(path ?? '', '')).toBe(name ?? '');
+  expect(filenameLanguage('unknown.zzzz')).toBeUndefined();
+  expect(language('unknown', 'package main\nfunc main(){fmt.Println()}')).toBe('Go');
+  expect(language('unknown', '#!/bin/bash\necho hi')).toBe('Bash');
+  expect(fenceLanguage('golang')).toBe('Go');
+  expect(fenceLanguage('unknown')).toBeUndefined();
+});
+test('scope classes use the fixed theme vocabulary with specific scopes overriding containers', () => {
+  expect(classFor(['source.ts', 'string.quoted', 'constant.character.escape.ts'])).toBe('s');
+  expect(classFor(['source.python', 'entity.name.function.python'])).toBe('nf');
+  expect(classFor(['source.ts', 'variable.other.readwrite.ts'])).toBe('');
+  expect(classFor(['source.ts', 'keyword.control.ts'])).toBe('k');
+  for (const scope of [
+    'invalid.illegal',
+    'comment.line',
+    'keyword.operator',
+    'constant.numeric',
+    'entity.name.tag',
+  ])
+    expect(classes.has(classFor([scope]))).toBe(true);
+  expect(() => highlightedText('<i class=k>x</span>')).toThrow();
+  expect(() => highlightedText('<i class=unknown>x</i>')).toThrow();
+  expect(highlightedText('<i class=k>&lt;x&gt;</i>')).toBe('&lt;x&gt;');
+});
+test('document windows, source bytes, tabs, final empty lines and width clamp match Go', async () => {
+  const doc = new Document('😀\tA\n<&>\n', 'x.unknown', async (s, _, n) => plain(s, n));
+  expect(doc.total).toBe(3);
+  expect(doc.maxCols).toBe(5);
+  expect(visualWidth('😀\tA')).toBe(5);
+  expect(doc.raw(1)).toBe('😀\tA');
+  expect(doc.raw(3)).toBe('');
+  expect(doc.raw(0)).toBe('');
+  expect(await doc.lines(-1, 999)).toEqual({ lines: ['😀\tA', '&lt;&amp;&gt;', ''], exact: true });
+  expect(await doc.lines(999, 1000)).toEqual({ lines: [], exact: true });
+  expect(new Document('x'.repeat(21000), 'x', async (s, _, n) => plain(s, n)).maxCols).toBe(20000);
+});
+test('multi-chunk requests share window work and refine to the exact background pass', async () => {
+  const calls: { lines: number; bytes: number }[] = [];
+  let release: () => void = () => {};
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const src = Array.from({ length: 2300 }, (_, i) => String(i)).join('\n');
+  const doc = new Document(src, 'x.txt', async (s, _, n) => {
+    calls.push({ lines: n, bytes: Buffer.byteLength(s) });
+    if (n === 2300) await gate;
+    return plain(s, n);
+  });
+  const [a, b] = await Promise.all([doc.lines(1000, 1020), doc.lines(1000, 1020)]);
+  expect(a).toEqual(b);
+  expect(a.exact).toBe(false);
+  expect(a.lines[0]).toBe('1000');
+  expect(calls.filter((c) => c.lines === 1700).length).toBe(1);
+  release();
+  await doc.settled();
+  expect(doc.exact).toBe(true);
+  expect((await doc.lines(1000, 1020)).exact).toBe(true);
+});
+test('oversized windows drop context then fall back without sending giant input to a lexer', async () => {
+  let calls = 0;
+  const doc = new Document('x'.repeat((2 << 20) + 1) + '\n', 'x.go', async () => {
+    calls++;
+    return [];
+  });
+  const result = await doc.lines(0, 2);
+  expect(calls).toBe(0);
+  expect(result.exact).toBe(false);
+  expect(doc.coming).toBe(false);
+  expect(result.lines[0]?.length).toBeGreaterThan(windowBytes);
+});
+test('LRU charges rendered growth and always retains its newest document, including idle trim', () => {
+  const cache = new LRU<string>(100);
+  cache.put('a|1', 'a', 40);
+  cache.put('b|1', 'b', 40);
+  cache.get('a|1');
+  cache.grow('a|1', 40);
+  expect(cache.get('b|1')).toBeUndefined();
+  expect(cache.used).toBe(80);
+  cache.put('c|1', 'c', 120);
+  expect(cache.entries.size).toBe(1);
+  cache.trim(1);
+  expect(cache.get('c|1')).toBe('c');
+  expect(cache.remove('c')).toBe(true);
+  expect(cache.used).toBe(0);
+});
+test('disk cache persists, separates languages and renderer inputs, evicts LRU and invalidates paths', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'faah-render-disk-'));
+  try {
+    const path = join(dir, 'cache.sqlite');
+    let cache = new RenderDisk(path, 40);
+    const a = cache.key('a', 'Go', 1),
+      b = cache.key('b', 'Go', 1),
+      c = cache.key('c', 'Go', 1);
+    expect(cache.key('a', 'Python', 1)).not.toBe(a);
+    cache.put(a, '/a', ['1234567890']);
+    cache.put(b, '/b', ['1234567890']);
+    cache.get(a, '/a');
+    cache.put(c, '/c', ['1234567890']);
+    expect(cache.get(b, '/b')).toBeUndefined();
+    expect(cache.get(a, '/a')).toEqual(['1234567890']);
+    cache.close();
+    cache = new RenderDisk(path, 40);
+    expect(cache.get(a, '/alias')).toEqual(['1234567890']);
+    cache.invalidate('/a');
+    expect(cache.get(a, '/alias')).toEqual(['1234567890']);
+    cache.invalidate('/alias');
+    expect(cache.get(a, '/a')).toBeUndefined();
+    cache.close();
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+test('file open shares work, keys nanosecond stats, normalizes CRLF and rejects binary', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'faah-render-open-'));
+  const service = new RenderService(new RenderDisk(join(dir, 'cache.sqlite')));
+  try {
+    const path = join(dir, 'file.txt');
+    await writeFile(path, 'a\r\nb\r\n');
+    const [a, b] = await Promise.all([
+      service.open(path, 'file.txt'),
+      service.open(path, 'file.txt'),
+    ]);
+    expect(a).toBe(b);
+    expect(a.raw(1)).toBe('a');
+    expect(a.total).toBe(3);
+    const info = await stat(path, { bigint: true });
+    expect(service.cache.entries.has(`${path}|${info.mtimeNs}|${info.size}`)).toBe(true);
+    await writeFile(path, 'changed');
+    service.invalidate(path);
+    expect(await service.open(path, 'file.txt')).not.toBe(a);
+    await writeFile(path, Buffer.from([0, 1]));
+    service.invalidate(path);
+    expect(service.open(path, 'file.txt')).rejects.toThrow('binary file');
+  } finally {
+    await service.close();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+test('idle scavenging ignores metrics and streams, runs once per burst after 15 seconds', () => {
+  let count = 0;
+  const idle = new IdleScavenger(() => count++);
+  try {
+    idle.tick(Date.now() + 30000);
+    expect(count).toBe(0);
+    idle.request('api/meta', null);
+    idle.tick(Date.now() + 16000);
+    expect(count).toBe(1);
+    idle.tick(Date.now() + 40000);
+    expect(count).toBe(1);
+    idle.request('api/metrics', null);
+    idle.tick(Date.now() + 50000);
+    expect(count).toBe(1);
+  } finally {
+    idle.close();
+  }
+});

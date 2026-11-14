@@ -1,0 +1,2942 @@
+[
+  {
+    "name": "ABAP",
+    "aliases": ["abap"],
+    "filenames": ["*.abap", "*.ABAP"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "ABNF",
+    "aliases": ["abnf"],
+    "filenames": ["*.abnf"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "ActionScript",
+    "aliases": ["as", "actionscript"],
+    "filenames": ["*.as"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "ActionScript 3",
+    "aliases": ["as3", "actionscript3"],
+    "filenames": ["*.as"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Ada",
+    "aliases": ["ada", "ada95", "ada2005"],
+    "filenames": ["*.adb", "*.ads", "*.ada"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "Agda",
+    "aliases": ["agda"],
+    "filenames": ["*.agda"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "AL",
+    "aliases": ["al"],
+    "filenames": ["*.al", "*.dal"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "Alloy",
+    "aliases": ["alloy"],
+    "filenames": ["*.als"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "AMPL",
+    "aliases": ["ampl"],
+    "filenames": ["*.mod", "*.run"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Angular2",
+    "aliases": ["ng2"],
+    "filenames": [],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "ANTLR",
+    "aliases": ["antlr"],
+    "filenames": [],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "ApacheConf",
+    "aliases": ["apacheconf", "aconf", "apache"],
+    "filenames": [".htaccess", "apache.conf", "apache2.conf"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "APL",
+    "aliases": ["apl"],
+    "filenames": ["*.apl"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "AppleScript",
+    "aliases": ["applescript"],
+    "filenames": ["*.applescript"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "ArangoDB AQL",
+    "aliases": ["aql"],
+    "filenames": ["*.aql"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "Arduino",
+    "aliases": ["arduino"],
+    "filenames": ["*.ino"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "ArmAsm",
+    "aliases": ["armasm"],
+    "filenames": ["*.s", "*.S"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Arturo",
+    "aliases": ["arturo", "art"],
+    "filenames": ["*.art"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "ATL",
+    "aliases": ["atl"],
+    "filenames": ["*.atl"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "AutoHotkey",
+    "aliases": ["autohotkey", "ahk"],
+    "filenames": ["*.ahk", "*.ahkl"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "AutoIt",
+    "aliases": ["autoit"],
+    "filenames": ["*.au3"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Awk",
+    "aliases": ["awk", "gawk", "mawk", "nawk"],
+    "filenames": ["*.awk"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Ballerina",
+    "aliases": ["ballerina"],
+    "filenames": ["*.bal"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Bash",
+    "aliases": ["bash", "sh", "ksh", "zsh", "shell"],
+    "filenames": [
+      "*.sh",
+      "*.ksh",
+      "*.bash",
+      "*.ebuild",
+      "*.eclass",
+      ".env",
+      ".env.*",
+      "*.env",
+      "*.exheres-0",
+      "*.exlib",
+      "*.zsh",
+      "*.zshrc",
+      ".bashrc",
+      "bashrc",
+      ".bash_*",
+      "bash_*",
+      "zshrc",
+      ".zshrc",
+      "APKBUILD",
+      "PKGBUILD"
+    ],
+    "secondary": [],
+    "priority": 1,
+    "analyse": {
+      "Regexes": [
+        {
+          "Pattern": "(?m)^#!.*/bin/(?:env |)(?:bash|zsh|sh|ksh)",
+          "Score": 1
+        }
+      ],
+      "First": true
+    },
+    "ignoreCase": false
+  },
+  {
+    "name": "Bash Session",
+    "aliases": ["bash-session", "console", "shell-session"],
+    "filenames": ["*.sh-session"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Batchfile",
+    "aliases": ["bat", "batch", "dosbatch", "winbatch"],
+    "filenames": ["*.bat", "*.cmd"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "Beef",
+    "aliases": ["beef"],
+    "filenames": ["*.bf"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "BibTeX",
+    "aliases": ["bib", "bibtex"],
+    "filenames": ["*.bib"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "Bicep",
+    "aliases": ["bicep"],
+    "filenames": ["*.bicep"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "BlitzBasic",
+    "aliases": ["blitzbasic", "b3d", "bplus"],
+    "filenames": ["*.bb", "*.decls"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "BNF",
+    "aliases": ["bnf"],
+    "filenames": ["*.bnf"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "BQN",
+    "aliases": ["bqn"],
+    "filenames": ["*.bqn"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Brainfuck",
+    "aliases": ["brainfuck", "bf"],
+    "filenames": ["*.bf", "*.b"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "C#",
+    "aliases": ["csharp", "c#"],
+    "filenames": ["*.cs"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "C++",
+    "aliases": ["cpp", "c++"],
+    "filenames": [
+      "*.cpp",
+      "*.hpp",
+      "*.c++",
+      "*.h++",
+      "*.cc",
+      "*.hh",
+      "*.cxx",
+      "*.hxx",
+      "*.C",
+      "*.H",
+      "*.cp",
+      "*.CPP",
+      "*.tpp"
+    ],
+    "secondary": [],
+    "priority": 1,
+    "analyse": {
+      "Regexes": [
+        {
+          "Pattern": "#include <[a-z_]+>",
+          "Score": 0.2
+        },
+        {
+          "Pattern": "using namespace ",
+          "Score": 0.4
+        }
+      ],
+      "First": true
+    },
+    "ignoreCase": false
+  },
+  {
+    "name": "C",
+    "aliases": ["c"],
+    "filenames": ["*.c", "*.h", "*.idc", "*.x[bp]m"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": {
+      "Regexes": [
+        {
+          "Pattern": "(?m)^\\s*#include <",
+          "Score": 0.1
+        },
+        {
+          "Pattern": "(?m)^\\s*#ifn?def ",
+          "Score": 0.1
+        }
+      ],
+      "First": true
+    },
+    "ignoreCase": false
+  },
+  {
+    "name": "C3",
+    "aliases": ["c3"],
+    "filenames": ["*.c3", "*.c3i", "*.c3t"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Cap'n Proto",
+    "aliases": ["capnp"],
+    "filenames": ["*.capnp"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Cassandra CQL",
+    "aliases": ["cassandra", "cql"],
+    "filenames": ["*.cql"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "Ceylon",
+    "aliases": ["ceylon"],
+    "filenames": ["*.ceylon"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "CFEngine3",
+    "aliases": ["cfengine3", "cf3"],
+    "filenames": ["*.cf"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "cfstatement",
+    "aliases": ["cfs"],
+    "filenames": [],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "ChaiScript",
+    "aliases": ["chai", "chaiscript"],
+    "filenames": ["*.chai"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Chapel",
+    "aliases": ["chapel", "chpl"],
+    "filenames": ["*.chpl"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Cheetah",
+    "aliases": ["cheetah", "spitfire"],
+    "filenames": ["*.tmpl", "*.spt"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Clojure",
+    "aliases": ["clojure", "clj", "edn"],
+    "filenames": ["*.clj", "*.edn"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "CMake",
+    "aliases": ["cmake"],
+    "filenames": ["*.cmake", "CMakeLists.txt"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "COBOL",
+    "aliases": ["cobol"],
+    "filenames": ["*.cob", "*.COB", "*.cpy", "*.CPY"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "CoffeeScript",
+    "aliases": ["coffee-script", "coffeescript", "coffee"],
+    "filenames": ["*.coffee"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Common Lisp",
+    "aliases": ["common-lisp", "cl", "lisp"],
+    "filenames": ["*.cl", "*.lisp"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "Coq",
+    "aliases": ["coq"],
+    "filenames": ["*.v"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Core",
+    "aliases": ["core"],
+    "filenames": ["*.core"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Crystal",
+    "aliases": ["cr", "crystal"],
+    "filenames": ["*.cr"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "CSS",
+    "aliases": ["css"],
+    "filenames": ["*.css"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "CSV",
+    "aliases": ["csv"],
+    "filenames": ["*.csv"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "CUE",
+    "aliases": ["cue"],
+    "filenames": ["*.cue"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Cython",
+    "aliases": ["cython", "pyx", "pyrex"],
+    "filenames": ["*.pyx", "*.pxd", "*.pxi"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "D",
+    "aliases": ["d"],
+    "filenames": ["*.d", "*.di"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Dart",
+    "aliases": ["dart"],
+    "filenames": ["*.dart"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Dax",
+    "aliases": ["dax"],
+    "filenames": ["*.dax"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Desktop file",
+    "aliases": ["desktop", "desktop_entry"],
+    "filenames": ["*.desktop"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Devicetree",
+    "aliases": ["devicetree", "dts"],
+    "filenames": ["*.dts", "*.dtsi"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Diff",
+    "aliases": ["diff", "udiff"],
+    "filenames": ["*.diff", "*.patch"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Django/Jinja",
+    "aliases": ["django", "jinja"],
+    "filenames": [],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "dns",
+    "aliases": ["zone", "bind"],
+    "filenames": ["*.zone"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Docker",
+    "aliases": ["docker", "dockerfile", "containerfile"],
+    "filenames": [
+      "Dockerfile",
+      "Dockerfile.*",
+      "*.Dockerfile",
+      "*.docker",
+      "Containerfile",
+      "Containerfile.*",
+      "*.Containerfile"
+    ],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "DTD",
+    "aliases": ["dtd"],
+    "filenames": ["*.dtd"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Dylan",
+    "aliases": ["dylan"],
+    "filenames": ["*.dylan", "*.dyl", "*.intr"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "EBNF",
+    "aliases": ["ebnf"],
+    "filenames": ["*.ebnf"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Elixir",
+    "aliases": ["elixir", "ex", "exs"],
+    "filenames": ["*.ex", "*.eex", "*.exs"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Elm",
+    "aliases": ["elm"],
+    "filenames": ["*.elm"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "EmacsLisp",
+    "aliases": ["emacs", "elisp", "emacs-lisp"],
+    "filenames": ["*.el"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "ERB",
+    "aliases": ["erb", "html+erb", "html+ruby", "rhtml"],
+    "filenames": ["*.erb", "*.html.erb", "*.xml.erb", "*.rhtml"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Erlang",
+    "aliases": ["erlang"],
+    "filenames": ["*.erl", "*.hrl", "*.es", "*.escript"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Factor",
+    "aliases": ["factor"],
+    "filenames": ["*.factor"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Fennel",
+    "aliases": ["fennel", "fnl"],
+    "filenames": ["*.fennel"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Fish",
+    "aliases": ["fish", "fishshell"],
+    "filenames": ["*.fish", "*.load"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Forth",
+    "aliases": ["forth"],
+    "filenames": ["*.frt", "*.fth", "*.fs"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "Fortran",
+    "aliases": ["fortran", "f90"],
+    "filenames": ["*.f03", "*.f90", "*.f95", "*.F03", "*.F90", "*.F95"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "FortranFixed",
+    "aliases": ["fortranfixed"],
+    "filenames": ["*.f", "*.F"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "FSharp",
+    "aliases": ["fsharp"],
+    "filenames": ["*.fs", "*.fsi"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "GAS",
+    "aliases": ["gas", "asm"],
+    "filenames": ["*.s", "*.S"],
+    "secondary": [],
+    "priority": 0.1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "GDScript",
+    "aliases": ["gdscript", "gd"],
+    "filenames": ["*.gd"],
+    "secondary": [],
+    "priority": 0.1,
+    "analyse": {
+      "Regexes": [
+        {
+          "Pattern": "^export",
+          "Score": 0.1
+        }
+      ],
+      "First": false
+    },
+    "ignoreCase": false
+  },
+  {
+    "name": "GDScript3",
+    "aliases": ["gdscript3", "gd3"],
+    "filenames": ["*.gd"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": {
+      "Regexes": [
+        {
+          "Pattern": "func (_ready|_init|_input|_process|_unhandled_input)",
+          "Score": 0.8
+        },
+        {
+          "Pattern": "(extends |class_name |onready |preload|load|setget|func [^_])",
+          "Score": 0.4
+        },
+        {
+          "Pattern": "(var|const|enum|export|signal|tool)",
+          "Score": 0.2
+        }
+      ],
+      "First": false
+    },
+    "ignoreCase": false
+  },
+  {
+    "name": "Gemfile.lock",
+    "aliases": ["gemfile-lock", "gemfilelock"],
+    "filenames": ["Gemfile.lock", "*.gemfile.lock"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Gettext",
+    "aliases": ["pot", "po"],
+    "filenames": ["*.pot", "*.po"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Gherkin",
+    "aliases": ["cucumber", "Cucumber", "gherkin", "Gherkin"],
+    "filenames": ["*.feature", "*.FEATURE"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Gleam",
+    "aliases": ["gleam"],
+    "filenames": ["*.gleam"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "GLSL",
+    "aliases": ["glsl"],
+    "filenames": ["*.vert", "*.frag", "*.geo"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Gnuplot",
+    "aliases": ["gnuplot"],
+    "filenames": ["*.plot", "*.plt"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Go Template",
+    "aliases": ["go-template"],
+    "filenames": ["*.gotmpl", "*.go.tmpl"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "GraphQL",
+    "aliases": ["graphql", "graphqls", "gql"],
+    "filenames": ["*.graphql", "*.graphqls"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Groff",
+    "aliases": ["groff", "nroff", "man"],
+    "filenames": ["*.[1-9]", "*.1p", "*.3pm", "*.man"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Groovy",
+    "aliases": ["groovy"],
+    "filenames": ["*.groovy", "*.gradle"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Handlebars",
+    "aliases": ["handlebars", "hbs"],
+    "filenames": ["*.handlebars", "*.hbs"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Hare",
+    "aliases": ["hare"],
+    "filenames": ["*.ha"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Haskell",
+    "aliases": ["haskell", "hs"],
+    "filenames": ["*.hs"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "HCL",
+    "aliases": ["hcl"],
+    "filenames": ["*.hcl"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Hexdump",
+    "aliases": ["hexdump"],
+    "filenames": [],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "HLB",
+    "aliases": ["hlb"],
+    "filenames": ["*.hlb"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "HLSL",
+    "aliases": ["hlsl"],
+    "filenames": ["*.hlsl", "*.hlsli", "*.cginc", "*.fx", "*.fxh"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "HolyC",
+    "aliases": ["holyc"],
+    "filenames": ["*.HC", "*.hc", "*.HH", "*.hh", "*.hc.z", "*.HC.Z"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "HTML",
+    "aliases": ["html"],
+    "filenames": ["*.html", "*.htm", "*.xhtml", "*.xslt"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "Hy",
+    "aliases": ["hylang"],
+    "filenames": ["*.hy"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Idris",
+    "aliases": ["idris", "idr"],
+    "filenames": ["*.idr"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Igor",
+    "aliases": ["igor", "igorpro"],
+    "filenames": ["*.ipf"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "INI",
+    "aliases": ["ini", "cfg", "dosini"],
+    "filenames": [
+      "*.ini",
+      "*.cfg",
+      "*.inf",
+      "*.service",
+      "*.socket",
+      "*.container",
+      "*.network",
+      "*.build",
+      "*.pod",
+      "*.kube",
+      "*.volume",
+      "*.image",
+      ".gitconfig",
+      ".editorconfig",
+      "pylintrc",
+      ".pylintrc"
+    ],
+    "secondary": [],
+    "priority": 0.1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Io",
+    "aliases": ["io"],
+    "filenames": ["*.io"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "ISCdhcpd",
+    "aliases": ["iscdhcpd"],
+    "filenames": ["dhcpd.conf"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "J",
+    "aliases": ["j"],
+    "filenames": ["*.ijs"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Janet",
+    "aliases": ["janet"],
+    "filenames": ["*.janet", "*.jdn"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Java",
+    "aliases": ["java"],
+    "filenames": ["*.java"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "JavaScript",
+    "aliases": ["js", "javascript"],
+    "filenames": ["*.js", "*.jsm", "*.mjs", "*.cjs"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "JSON",
+    "aliases": ["json", "jsonl"],
+    "filenames": ["*.json", "*.jsonl", "*.jsonc", "*.json5", "*.avsc", ".luaurc"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "JSONata",
+    "aliases": ["jsonata"],
+    "filenames": ["*.jsonata"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Jsonnet",
+    "aliases": ["jsonnet"],
+    "filenames": ["*.jsonnet", "*.libsonnet"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Julia",
+    "aliases": ["julia", "jl"],
+    "filenames": ["*.jl"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Jungle",
+    "aliases": ["jungle"],
+    "filenames": ["*.jungle"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Kakoune",
+    "aliases": ["kak", "kakoune", "kakrc", "kakscript"],
+    "filenames": ["*.kak", "kakrc"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "KDL",
+    "aliases": ["kdl"],
+    "filenames": ["*.kdl"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Kotlin",
+    "aliases": ["kotlin"],
+    "filenames": ["*.kt", "*.kts"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Lateralus",
+    "aliases": ["lateralus", "ltl"],
+    "filenames": ["*.ltl"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Lean4",
+    "aliases": ["lean4", "lean"],
+    "filenames": ["*.lean"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Lighttpd configuration file",
+    "aliases": ["lighty", "lighttpd"],
+    "filenames": [],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "LilyPond",
+    "aliases": ["lilypond"],
+    "filenames": ["*.ly"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "LLVM",
+    "aliases": ["llvm"],
+    "filenames": ["*.ll"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "lox",
+    "aliases": [],
+    "filenames": ["*.lox"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Lua",
+    "aliases": ["lua"],
+    "filenames": ["*.lua", "*.wlua"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Luau",
+    "aliases": ["luau"],
+    "filenames": ["*.luau"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Makefile",
+    "aliases": ["make", "makefile", "mf", "bsdmake"],
+    "filenames": [
+      "*.mak",
+      "*.mk",
+      "Makefile",
+      "makefile",
+      "Makefile.*",
+      "GNUmakefile",
+      "BSDmakefile",
+      "Justfile",
+      "justfile",
+      ".justfile"
+    ],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Mako",
+    "aliases": ["mako"],
+    "filenames": ["*.mao"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Mason",
+    "aliases": ["mason"],
+    "filenames": ["*.m", "*.mhtml", "*.mc", "*.mi", "autohandler", "dhandler"],
+    "secondary": [],
+    "priority": 0.1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Materialize SQL dialect",
+    "aliases": ["materialize", "mzsql"],
+    "filenames": [],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "Mathematica",
+    "aliases": ["mathematica", "mma", "nb"],
+    "filenames": ["*.cdf", "*.m", "*.ma", "*.mt", "*.mx", "*.nb", "*.nbp", "*.wl"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Matlab",
+    "aliases": ["matlab"],
+    "filenames": ["*.m"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "MCFunction",
+    "aliases": ["mcfunction", "mcf"],
+    "filenames": ["*.mcfunction"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Meson",
+    "aliases": ["meson", "meson.build"],
+    "filenames": ["meson.build", "meson.options", "meson_options.txt"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Metal",
+    "aliases": ["metal"],
+    "filenames": ["*.metal"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "microcad",
+    "aliases": ["µcad"],
+    "filenames": ["*.µcad", "*.ucad", "*.mcad"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "MiniZinc",
+    "aliases": ["minizinc", "MZN", "mzn"],
+    "filenames": ["*.mzn", "*.dzn", "*.fzn"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "MLIR",
+    "aliases": ["mlir"],
+    "filenames": ["*.mlir"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Modelica",
+    "aliases": ["modelica"],
+    "filenames": ["*.mo"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Modula-2",
+    "aliases": ["modula2", "m2"],
+    "filenames": ["*.def", "*.mod"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Mojo",
+    "aliases": ["mojo", "🔥"],
+    "filenames": ["*.mojo", "*.🔥"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "MonkeyC",
+    "aliases": ["monkeyc"],
+    "filenames": ["*.mc"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "MoonBit",
+    "aliases": ["moonbit", "mbt"],
+    "filenames": ["*.mbt"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "MoonScript",
+    "aliases": ["moonscript", "moon"],
+    "filenames": ["*.moon"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "MorrowindScript",
+    "aliases": ["morrowind", "mwscript"],
+    "filenames": [],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Myghty",
+    "aliases": ["myghty"],
+    "filenames": ["*.myt", "autodelegate"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "MySQL",
+    "aliases": ["mysql", "mariadb"],
+    "filenames": ["*.sql"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "NASM",
+    "aliases": ["nasm"],
+    "filenames": ["*.asm", "*.ASM", "*.nasm"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "Natural",
+    "aliases": ["natural"],
+    "filenames": [
+      "*.NSN",
+      "*.NSP",
+      "*.NSS",
+      "*.NSH",
+      "*.NSG",
+      "*.NSL",
+      "*.NSA",
+      "*.NSM",
+      "*.NSC",
+      "*.NS7"
+    ],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "NDISASM",
+    "aliases": ["ndisasm"],
+    "filenames": [],
+    "secondary": [],
+    "priority": 0.5,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "Newspeak",
+    "aliases": ["newspeak"],
+    "filenames": ["*.ns2"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Nginx configuration file",
+    "aliases": ["nginx"],
+    "filenames": ["nginx.conf"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Nim",
+    "aliases": ["nim", "nimrod"],
+    "filenames": ["*.nim", "*.nimrod"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "Nix",
+    "aliases": ["nixos", "nix"],
+    "filenames": ["*.nix"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "NSIS",
+    "aliases": ["nsis", "nsi", "nsh"],
+    "filenames": ["*.nsi", "*.nsh"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "Nu",
+    "aliases": ["nu"],
+    "filenames": ["*.nu"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": {
+      "Regexes": [
+        {
+          "Pattern": "(?m)^#!.*/bin/(?:env(?: -[a-zA-Z0-9]+)*(?: --[a-zA-Z0-9-=]+)* |)nu",
+          "Score": 1
+        }
+      ],
+      "First": true
+    },
+    "ignoreCase": false
+  },
+  {
+    "name": "Objective-C",
+    "aliases": ["objective-c", "objectivec", "obj-c", "objc"],
+    "filenames": ["*.m", "*.h"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "ObjectPascal",
+    "aliases": ["objectpascal"],
+    "filenames": ["*.pas", "*.pp", "*.inc", "*.dpr", "*.dpk", "*.lpr", "*.lpk"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "OCaml",
+    "aliases": ["ocaml"],
+    "filenames": ["*.ml", "*.mli", "*.mll", "*.mly"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Octave",
+    "aliases": ["octave"],
+    "filenames": ["*.m"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Odin",
+    "aliases": ["odin"],
+    "filenames": ["*.odin"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "OnesEnterprise",
+    "aliases": ["ones", "onesenterprise", "1S", "1S:Enterprise"],
+    "filenames": ["*.EPF", "*.epf", "*.ERF", "*.erf"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "OpenEdge ABL",
+    "aliases": ["openedge", "abl", "progress", "openedgeabl"],
+    "filenames": ["*.p", "*.cls", "*.w", "*.i"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "OpenSCAD",
+    "aliases": ["openscad"],
+    "filenames": ["*.scad"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Org Mode",
+    "aliases": ["org", "orgmode"],
+    "filenames": ["*.org"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "PacmanConf",
+    "aliases": ["pacmanconf"],
+    "filenames": ["pacman.conf"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Perl",
+    "aliases": ["perl", "pl"],
+    "filenames": ["*.pl", "*.pm", "*.t"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "PHP",
+    "aliases": ["php", "php3", "php4", "php5"],
+    "filenames": ["*.php", "*.php[345]", "*.inc"],
+    "secondary": [],
+    "priority": 3,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "Pig",
+    "aliases": ["pig"],
+    "filenames": ["*.pig"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "PkgConfig",
+    "aliases": ["pkgconfig"],
+    "filenames": ["*.pc"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "PL/pgSQL",
+    "aliases": ["plpgsql"],
+    "filenames": [],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "plaintext",
+    "aliases": ["text", "plain", "no-highlight"],
+    "filenames": ["*.txt"],
+    "secondary": [],
+    "priority": -1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Plutus Core",
+    "aliases": ["plutus-core", "plc"],
+    "filenames": ["*.plc"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Pony",
+    "aliases": ["pony"],
+    "filenames": ["*.pony"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "PostgreSQL SQL dialect",
+    "aliases": ["postgresql", "postgres"],
+    "filenames": [],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "PostScript",
+    "aliases": ["postscript", "postscr"],
+    "filenames": ["*.ps", "*.eps", "*.epsf", "*.epsi", "*.pfa", "*.t42"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "POVRay",
+    "aliases": ["pov"],
+    "filenames": ["*.pov", "*.inc"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "PowerQuery",
+    "aliases": ["powerquery", "pq"],
+    "filenames": ["*.pq"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "PowerShell",
+    "aliases": ["powershell", "posh", "ps1", "psm1", "psd1", "pwsh"],
+    "filenames": ["*.ps1", "*.psm1", "*.psd1"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "Prolog",
+    "aliases": ["prolog"],
+    "filenames": ["*.ecl", "*.prolog", "*.pro", "*.pl"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Promela",
+    "aliases": ["promela"],
+    "filenames": ["*.pml", "*.prom", "*.prm", "*.promela", "*.pr", "*.pm"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "PromQL",
+    "aliases": ["promql"],
+    "filenames": ["*.promql"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "properties",
+    "aliases": ["java-properties"],
+    "filenames": ["*.properties"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Protocol Buffer",
+    "aliases": ["protobuf", "proto"],
+    "filenames": ["*.proto"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "PRQL",
+    "aliases": ["prql"],
+    "filenames": ["*.prql"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "PSL",
+    "aliases": ["psl"],
+    "filenames": ["*.psl", "*.BATCH", "*.TRIG", "*.PROC"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Puppet",
+    "aliases": ["puppet"],
+    "filenames": ["*.pp"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Python",
+    "aliases": ["python", "py", "sage", "python3", "py3", "starlark"],
+    "filenames": [
+      "*.py",
+      "*.pyi",
+      "*.pyw",
+      "*.jy",
+      "*.sage",
+      "*.sc",
+      "SConstruct",
+      "SConscript",
+      "*.bzl",
+      "BUCK",
+      "BUILD",
+      "BUILD.bazel",
+      "WORKSPACE",
+      "WORKSPACE.bzlmod",
+      "WORKSPACE.bazel",
+      "MODULE.bazel",
+      "REPO.bazel",
+      "*.star",
+      "*.tac"
+    ],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Python 2",
+    "aliases": ["python2", "py2"],
+    "filenames": [],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "QBasic",
+    "aliases": ["qbasic", "basic"],
+    "filenames": ["*.BAS", "*.bas"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "QML",
+    "aliases": ["qml", "qbs"],
+    "filenames": ["*.qml", "*.qbs"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "R",
+    "aliases": ["splus", "s", "r"],
+    "filenames": ["*.S", "*.R", "*.r", ".Rhistory", ".Rprofile", ".Renviron"],
+    "secondary": [],
+    "priority": 0.1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Racket",
+    "aliases": ["racket", "rkt"],
+    "filenames": ["*.rkt", "*.rktd", "*.rktl"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Ragel",
+    "aliases": ["ragel"],
+    "filenames": [],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "react",
+    "aliases": ["jsx", "react"],
+    "filenames": ["*.jsx", "*.react"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "ReasonML",
+    "aliases": ["reason", "reasonml"],
+    "filenames": ["*.re", "*.rei"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "reg",
+    "aliases": ["registry"],
+    "filenames": ["*.reg"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Rego",
+    "aliases": ["rego"],
+    "filenames": ["*.rego"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Rexx",
+    "aliases": ["rexx", "arexx"],
+    "filenames": ["*.rexx", "*.rex", "*.rx", "*.arexx"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "RGBDS Assembly",
+    "aliases": ["rgbasm"],
+    "filenames": ["*.asm"],
+    "secondary": [],
+    "priority": 0.5,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "Ring",
+    "aliases": ["ring"],
+    "filenames": ["*.ring", "*.rh", "*.rform"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "RPGLE",
+    "aliases": ["SQLRPGLE", "RPG IV"],
+    "filenames": ["*.RPGLE", "*.rpgle", "*.SQLRPGLE", "*.sqlrpgle"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": {
+      "Regexes": [
+        {
+          "Pattern": "\\*\\*free",
+          "Score": 0.9
+        },
+        {
+          "Pattern": "ctl-opt",
+          "Score": 0.9
+        },
+        {
+          "Pattern": "dcl-(ds|s|f|proc|pr|pi)",
+          "Score": 0.9
+        },
+        {
+          "Pattern": "\\*in[0-9][0-9]",
+          "Score": 0.5
+        }
+      ],
+      "First": false
+    },
+    "ignoreCase": true
+  },
+  {
+    "name": "RPMSpec",
+    "aliases": ["spec"],
+    "filenames": ["*.spec"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Ruby",
+    "aliases": ["rb", "ruby", "duby"],
+    "filenames": [
+      "*.rb",
+      "*.rbw",
+      "Rakefile",
+      "*.rake",
+      "*.gemspec",
+      "*.rbx",
+      "*.duby",
+      "Gemfile",
+      "*.gemfile",
+      "Vagrantfile",
+      "Appraisals",
+      ".pryrc",
+      "*.json.jbuilder"
+    ],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Rust",
+    "aliases": ["rust", "rs"],
+    "filenames": ["*.rs", "*.rs.in"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "SAS",
+    "aliases": ["sas"],
+    "filenames": ["*.SAS", "*.sas"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "Sass",
+    "aliases": ["sass"],
+    "filenames": ["*.sass"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "Scala",
+    "aliases": ["scala"],
+    "filenames": ["*.scala"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "scdoc",
+    "aliases": ["scdoc"],
+    "filenames": ["*.scd", "*.scdoc"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Scheme",
+    "aliases": ["scheme", "scm"],
+    "filenames": ["*.scm", "*.ss"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Scilab",
+    "aliases": ["scilab"],
+    "filenames": ["*.sci", "*.sce", "*.tst"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "SCSS",
+    "aliases": ["scss"],
+    "filenames": ["*.scss"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "Sed",
+    "aliases": ["sed", "gsed", "ssed"],
+    "filenames": ["*.sed", "*.[gs]sed"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Sieve",
+    "aliases": ["sieve"],
+    "filenames": ["*.siv", "*.sieve"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Smali",
+    "aliases": ["smali"],
+    "filenames": ["*.smali"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Smalltalk",
+    "aliases": ["smalltalk", "squeak", "st"],
+    "filenames": ["*.st"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Smarty",
+    "aliases": ["smarty"],
+    "filenames": ["*.tpl"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "SNBT",
+    "aliases": ["snbt"],
+    "filenames": ["*.snbt"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Snobol",
+    "aliases": ["snobol"],
+    "filenames": ["*.snobol"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Solidity",
+    "aliases": ["sol", "solidity"],
+    "filenames": ["*.sol"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "SourcePawn",
+    "aliases": ["sp"],
+    "filenames": ["*.sp", "*.inc"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Spade",
+    "aliases": ["spade"],
+    "filenames": ["*.spade"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "SPARQL",
+    "aliases": ["sparql"],
+    "filenames": ["*.rq", "*.sparql"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "SQL",
+    "aliases": ["sql"],
+    "filenames": ["*.sql"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "SquidConf",
+    "aliases": ["squidconf", "squid.conf", "squid"],
+    "filenames": ["squid.conf"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "Standard ML",
+    "aliases": ["sml"],
+    "filenames": ["*.sml", "*.sig", "*.fun"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "stas",
+    "aliases": [],
+    "filenames": ["*.stas"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Stylus",
+    "aliases": ["stylus"],
+    "filenames": ["*.styl"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "Swift",
+    "aliases": ["swift"],
+    "filenames": ["*.swift"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "SYSTEMD",
+    "aliases": ["systemd"],
+    "filenames": [
+      "*.automount",
+      "*.device",
+      "*.dnssd",
+      "*.link",
+      "*.mount",
+      "*.netdev",
+      "*.network",
+      "*.path",
+      "*.scope",
+      "*.service",
+      "*.slice",
+      "*.socket",
+      "*.swap",
+      "*.target",
+      "*.timer"
+    ],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "systemverilog",
+    "aliases": ["systemverilog", "sv"],
+    "filenames": ["*.sv", "*.svh"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "TableGen",
+    "aliases": ["tablegen"],
+    "filenames": ["*.td"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Tal",
+    "aliases": ["tal", "uxntal"],
+    "filenames": ["*.tal"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "TASM",
+    "aliases": ["tasm"],
+    "filenames": ["*.asm", "*.ASM", "*.tasm"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "Tcl",
+    "aliases": ["tcl"],
+    "filenames": ["*.tcl", "*.rvt"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Tcsh",
+    "aliases": ["tcsh", "csh"],
+    "filenames": ["*.tcsh", "*.csh"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Templ",
+    "aliases": ["templ"],
+    "filenames": ["*.templ"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": {
+      "Regexes": [
+        {
+          "Pattern": "(?m)^\\s*templ\\s+[A-Za-z_]\\w*\\s*\\(",
+          "Score": 0.7
+        },
+        {
+          "Pattern": "(?m)^\\s*package\\s+\\w+[\\s\\S]*^\\s*templ\\s+",
+          "Score": 0.5
+        }
+      ],
+      "First": false
+    },
+    "ignoreCase": false
+  },
+  {
+    "name": "Termcap",
+    "aliases": ["termcap"],
+    "filenames": ["termcap", "termcap.src"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Terminfo",
+    "aliases": ["terminfo"],
+    "filenames": ["terminfo", "terminfo.src"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Terraform",
+    "aliases": ["terraform", "tf", "hcl"],
+    "filenames": ["*.tf", "*.hcl"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "TeX",
+    "aliases": ["tex", "latex"],
+    "filenames": ["*.tex", "*.aux", "*.toc"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Thrift",
+    "aliases": ["thrift"],
+    "filenames": ["*.thrift"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "TOML",
+    "aliases": ["toml"],
+    "filenames": ["*.toml", "Pipfile", "poetry.lock", "uv.lock"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "TradingView",
+    "aliases": ["tradingview", "tv"],
+    "filenames": ["*.tv"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Transact-SQL",
+    "aliases": ["tsql", "t-sql"],
+    "filenames": [],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "Turing",
+    "aliases": ["turing"],
+    "filenames": ["*.turing", "*.tu"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Turtle",
+    "aliases": ["turtle"],
+    "filenames": ["*.ttl"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "Twig",
+    "aliases": ["twig"],
+    "filenames": ["*.twig"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Protocol Buffer Text Format",
+    "aliases": ["txtpb"],
+    "filenames": ["*.txtpb", "*.textproto", "*.textpb", "*.pbtxt"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "TypeScript",
+    "aliases": ["ts", "tsx", "typescript"],
+    "filenames": ["*.ts", "*.tsx", "*.mts", "*.cts"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "TypoScript",
+    "aliases": ["typoscript"],
+    "filenames": ["*.ts"],
+    "secondary": [],
+    "priority": 0.1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "TypoScriptCssData",
+    "aliases": ["typoscriptcssdata"],
+    "filenames": [],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "TypoScriptHtmlData",
+    "aliases": ["typoscripthtmldata"],
+    "filenames": [],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Typst",
+    "aliases": ["typst"],
+    "filenames": ["*.typ"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "ucode",
+    "aliases": [],
+    "filenames": ["*.uc"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "V",
+    "aliases": ["v", "vlang"],
+    "filenames": ["*.v", "*.vv", "v.mod"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "V shell",
+    "aliases": ["vsh", "vshell"],
+    "filenames": ["*.vsh"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Vala",
+    "aliases": ["vala", "vapi"],
+    "filenames": ["*.vala", "*.vapi"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "VB.net",
+    "aliases": ["vb.net", "vbnet"],
+    "filenames": ["*.vb", "*.bas"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "verilog",
+    "aliases": ["verilog", "v"],
+    "filenames": ["*.v"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "VHDL",
+    "aliases": ["vhdl"],
+    "filenames": ["*.vhdl", "*.vhd"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "VHS",
+    "aliases": ["vhs", "tape", "cassette"],
+    "filenames": ["*.tape"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "VimL",
+    "aliases": ["vim"],
+    "filenames": [
+      "*.vim",
+      ".vimrc",
+      ".exrc",
+      ".gvimrc",
+      "_vimrc",
+      "_exrc",
+      "_gvimrc",
+      "vimrc",
+      "gvimrc"
+    ],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "vue",
+    "aliases": ["vue", "vuejs"],
+    "filenames": ["*.vue"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "WebAssembly Text Format",
+    "aliases": ["wast", "wat"],
+    "filenames": ["*.wat", "*.wast"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "WDTE",
+    "aliases": [],
+    "filenames": ["*.wdte"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "WebGPU Shading Language",
+    "aliases": ["wgsl"],
+    "filenames": ["*.wgsl"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "WebVTT",
+    "aliases": ["vtt"],
+    "filenames": ["*.vtt"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Whiley",
+    "aliases": ["whiley"],
+    "filenames": ["*.whiley"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "XML",
+    "aliases": ["xml"],
+    "filenames": [
+      "*.xml",
+      "*.xsl",
+      "*.rss",
+      "*.xslt",
+      "*.xsd",
+      "*.wsdl",
+      "*.wsf",
+      "*.svg",
+      "*.qrc",
+      "*.csproj",
+      "*.vcxproj",
+      "*.fsproj"
+    ],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Xorg",
+    "aliases": ["xorg.conf"],
+    "filenames": ["xorg.conf"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "YAML",
+    "aliases": ["yaml"],
+    "filenames": ["*.yaml", "*.yml"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "YANG",
+    "aliases": ["yang"],
+    "filenames": ["*.yang"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Z80 Assembly",
+    "aliases": ["z80"],
+    "filenames": ["*.z80", "*.asm"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "Zed",
+    "aliases": ["zed"],
+    "filenames": ["*.zed"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Zig",
+    "aliases": ["zig"],
+    "filenames": ["*.zig", "*.zon"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Caddyfile",
+    "aliases": ["caddyfile", "caddy"],
+    "filenames": ["Caddyfile*"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Caddyfile Directives",
+    "aliases": ["caddyfile-directives", "caddyfile-d", "caddy-d"],
+    "filenames": [],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Gemtext",
+    "aliases": ["gemtext", "gmi", "gmni", "gemini"],
+    "filenames": ["*.gmi", "*.gmni", "*.gemini"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Genshi Text",
+    "aliases": ["genshitext"],
+    "filenames": [],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Genshi HTML",
+    "aliases": ["html+genshi", "html+kid"],
+    "filenames": [],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Genshi",
+    "aliases": ["genshi", "kid", "xml+genshi", "xml+kid"],
+    "filenames": ["*.kid"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Go HTML Template",
+    "aliases": ["go-html-template"],
+    "filenames": [],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Go Text Template",
+    "aliases": ["go-text-template"],
+    "filenames": [],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Go",
+    "aliases": ["go", "golang"],
+    "filenames": ["*.go"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Haxe",
+    "aliases": ["hx", "haxe", "hxsl"],
+    "filenames": ["*.hx", "*.hxsl"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "HTTP",
+    "aliases": ["http"],
+    "filenames": [],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "markdown",
+    "aliases": ["md", "mkd"],
+    "filenames": ["*.md", "*.mkd", "*.markdown"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Markless",
+    "aliases": ["mess"],
+    "filenames": ["*.mess", "*.markless"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "PHTML",
+    "aliases": ["phtml"],
+    "filenames": ["*.phtml", "*.php", "*.php[345]", "*.inc"],
+    "secondary": [],
+    "priority": 2,
+    "analyse": null,
+    "ignoreCase": true
+  },
+  {
+    "name": "Raku",
+    "aliases": ["perl6", "pl6", "raku"],
+    "filenames": [
+      "*.pl",
+      "*.pm",
+      "*.nqp",
+      "*.p6",
+      "*.6pl",
+      "*.p6l",
+      "*.pl6",
+      "*.6pm",
+      "*.p6m",
+      "*.pm6",
+      "*.t",
+      "*.raku",
+      "*.rakumod",
+      "*.rakutest",
+      "*.rakudoc"
+    ],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "reStructuredText",
+    "aliases": ["rst", "rest", "restructuredtext"],
+    "filenames": ["*.rst", "*.rest"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "Svelte",
+    "aliases": ["svelte"],
+    "filenames": ["*.svelte"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  },
+  {
+    "name": "YAML+Jinja",
+    "aliases": ["yaml+jinja", "salt", "sls", "ansible"],
+    "filenames": ["*.sls"],
+    "secondary": [],
+    "priority": 1,
+    "analyse": null,
+    "ignoreCase": false
+  }
+]

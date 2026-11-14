@@ -5,3 +5,5 @@
 /spike/worker.bundle
 
 /src/fuzzy/worker.bundle
+
+/src/render/worker.bundle
