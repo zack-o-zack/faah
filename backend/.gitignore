@@ -7,5 +7,9 @@
 /src/fuzzy/worker.bundle
 
 /src/render/worker.bundle
+/src/render/cache-worker.bundle
+/src/render/grammar-data/
+/src/render/grammar-assets.js
+/src/render/grammar-groups.json
 
 /src/watch/native-binding.js

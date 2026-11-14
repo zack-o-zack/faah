@@ -89,6 +89,9 @@ export class Navigation {
       },
     });
     this.building = this.index.build().then(async () => {
+      void this.render
+        .warm(this.index.files.map((f) => f.path))
+        .catch((error) => process.stderr.write('faah render warm: ' + String(error) + '\n'));
       this.legacy.start();
       await this.watcher.start();
     });

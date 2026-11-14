@@ -1,3 +1,4 @@
+import grammars from '../src/render/grammars.json';
 import languageVectors from './render-languages.json';
 import { test, expect } from 'bun:test';
 import { mkdtemp, rm, writeFile, stat } from 'node:fs/promises';
@@ -210,4 +211,36 @@ test('invalid UTF-8 replaces each bad byte without changing byte-based window ac
   expect(doc.maxCols).toBe(2);
   expect(doc.initialBytes).toBe(7 + 2 * 32);
   expect((await doc.lines(0, 2)).lines).toEqual(['��', '😀']);
+});
+
+// Exercise the embedded assets through the same lazy decoder used by Workers.
+test('every mapped grammar loads and preserves source text', async () => {
+  const highlight = await engine();
+  const source = 'example = "value"\n\nfunction example(x) { return 42; }';
+  for (const [language, grammar] of Object.entries(grammars)) {
+    if (grammar === 'text') continue;
+    const lines = await highlight(source, language, 3);
+    expect(lines.map(highlightedText).join('\n')).toBe(source);
+  }
+}, 30000);
+
+test('deferred cache writes drain at close and invalidation drops queued stale data', async () => {
+  const { RenderWrites } = await import('../src/render/writes.ts');
+  const dir = await mkdtemp(join(tmpdir(), 'faah-render-write-'));
+  const path = join(dir, 'cache.sqlite');
+  const disk = new RenderDisk(path);
+  const writes = new RenderWrites(path, disk.budget);
+  try {
+    const stale = disk.key('old', 'Go', 1);
+    writes.put(stale, 'a.go', ['old']);
+    writes.invalidate('a.go');
+    const fresh = disk.key('fresh', 'Go', 1);
+    writes.put(fresh, 'a.go', ['fresh']);
+    await writes.close();
+    expect(disk.get(stale, 'a.go')).toBeUndefined();
+    expect(disk.get(fresh, 'a.go')).toEqual(['fresh']);
+  } finally {
+    disk.close();
+    await rm(dir, { recursive: true, force: true });
+  }
 });

@@ -1,4 +1,5 @@
 import { goldmarkStrike } from './strike.ts';
+import { highlightedFence } from './fences.ts';
 import { goldmarkText } from './text.ts';
 import { goldmarkLinks } from './linkify.ts';
 import MarkdownIt from 'markdown-it';
@@ -49,18 +50,10 @@ function footID(token: Token | undefined): { id: number; sub: number } {
 }
 export async function renderMarkdown(input: string, highlight: Highlight): Promise<string> {
   const source = input.replaceAll('\r\n', '\n');
-  const md = new MarkdownIt({ html: true, linkify: true, breaks: false, typographer: false })
-    .use(footnotes)
-    .use(tasks, { enabled: false, label: false })
-    .use(goldmarkLinks)
-    .use(goldmarkText)
-    .use(goldmarkStrike);
-  // Goldmark accepts raw HTML and unsafe link destinations; browser sanitizing
-  // remains the existing boundary. markdown-it's default URL policy is stricter.
-  md.validateLink = () => true;
-  const tokens = md.parse(source, {}),
+  const env = new MarkdownEnvironment();
+  const tokens = md.parse(source, env),
     seen = new Set<string>();
-  const rendered = new Map<Token, string>();
+  const rendered = env.rendered;
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i];
     if (!token) continue;
@@ -95,7 +88,7 @@ export async function renderMarkdown(input: string, highlight: Highlight): Promi
         const code = token.content.replace(/\n$/, ''),
           grammar = lang && Buffer.byteLength(code) <= 256 << 10 ? fenceLanguage(lang) : undefined;
         const html = grammar
-          ? (await highlight(code, grammar, code.split('\n').length)).join('\n')
+          ? (await highlightedFence(highlight, code, grammar)).join('\n')
           : escape(code);
         const line = token.attrGet('data-line');
         rendered.set(
@@ -104,6 +97,26 @@ export async function renderMarkdown(input: string, highlight: Highlight): Promi
         );
       }),
   );
+  return md.renderer.render(tokens, md.options, env);
+}
+
+class MarkdownEnvironment {
+  readonly rendered = new Map<Token, string>();
+}
+function environment(value: unknown): MarkdownEnvironment {
+  if (!(value instanceof MarkdownEnvironment)) throw new Error('invalid Markdown environment');
+  return value;
+}
+function createParser() {
+  const md = new MarkdownIt({ html: true, linkify: true, breaks: false, typographer: false })
+    .use(footnotes)
+    .use(tasks, { enabled: false, label: false })
+    .use(goldmarkLinks)
+    .use(goldmarkText)
+    .use(goldmarkStrike);
+  // Goldmark accepts raw HTML and unsafe link destinations; browser sanitizing
+  // remains the existing boundary. markdown-it's default URL policy is stricter.
+  md.validateLink = () => true;
   md.renderer.rules.s_open = () => '<del>';
   md.renderer.rules.s_close = () => '</del>';
   md.renderer.rules.blockquote_open = (ts, i) => {
@@ -112,9 +125,9 @@ export async function renderMarkdown(input: string, highlight: Highlight): Promi
       ? '<blockquote' + md.renderer.renderAttrs(token) + '>' + (token.attrs?.length ? '' : '\n')
       : '';
   };
-  const fence = (ts: Token[], i: number) => {
+  const fence = (ts: Token[], i: number, _options: unknown, env: unknown) => {
     const token = ts[i];
-    return token ? (rendered.get(token) ?? '') : '';
+    return token ? (environment(env).rendered.get(token) ?? '') : '';
   };
   md.renderer.rules.fence = fence;
   md.renderer.rules.code_block = fence;
@@ -133,5 +146,6 @@ export async function renderMarkdown(input: string, highlight: Highlight): Promi
       ref = sub > 0 ? `${sub}:${id}` : `:${id}`;
     return `&#160;<a href="#fnref${ref}" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a>`;
   };
-  return md.renderer.render(tokens, md.options, {});
+  return md;
 }
+const md = createParser();

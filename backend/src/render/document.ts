@@ -1,5 +1,5 @@
 import { goString } from './text.ts';
-import { language } from './language.ts';
+import { language, filenameLanguage } from './language.ts';
 import { plain, visualWidth } from './html.ts';
 export const chunkLines = 1000,
   windowBytes = 512 << 10,
@@ -28,9 +28,9 @@ export class Document {
     readonly observeBackground: (task: Promise<void>) => void = () => {},
   ) {
     this.source = typeof source === 'string' ? Buffer.from(source) : Buffer.from(source);
-    this.lang = language(path, goString(this.source));
+    this.lang = filenameLanguage(path) ?? language(path, goString(this.source.subarray(0, 4096)));
     let total = 1;
-    for (const byte of this.source) if (byte === 10) total++;
+    for (let i = 0; i < this.source.length; i++) if (this.source[i] === 10) total++;
     this.total = total;
     this.offsets = new Uint32Array(total + 1);
     let offset = 0,
@@ -39,7 +39,16 @@ export class Document {
       this.offsets[i] = offset;
       const newline = this.source.indexOf(10, offset),
         end = newline < 0 ? this.source.length : newline;
-      width = Math.max(width, visualWidth(goString(this.source.subarray(offset, end))));
+      let columns = 0;
+      for (let p = offset; p < end; p++) {
+        const byte = this.source[p] ?? 0;
+        if (byte >= 128) {
+          columns = visualWidth(goString(this.source.subarray(p, end)), columns);
+          break;
+        }
+        columns += byte === 9 ? 4 - (columns % 4) : 1;
+      }
+      width = Math.max(width, columns);
       offset = newline < 0 ? this.source.length : end + 1;
     }
     this.offsets[total] = this.source.length;
@@ -60,21 +69,28 @@ export class Document {
     return this.full;
   }
   async lines(start: number, end: number): Promise<{ lines: string[]; exact: boolean }> {
+    if (this.full && start === 0 && end === this.total && this.total <= chunkLines)
+      return { lines: (this.chunks.get(0) ?? []).slice(), exact: true };
     start = Math.max(0, start);
     end = Math.min(this.total, end);
-    if (this.total > chunkLines && this.coming && !this.scheduled) {
-      this.scheduled = true;
-      this.background = new Promise<void>((resolve, reject) =>
-        setTimeout(() => {
-          void this.fullPass().then(resolve, reject);
-        }, 0),
-      );
-      this.observeBackground(this.background);
-      void this.background.catch((error) =>
-        process.stderr.write('faah render full pass: ' + String(error) + '\n'),
-      );
+    const schedule = () => {
+      if (this.total > chunkLines && this.coming && !this.scheduled) {
+        this.scheduled = true;
+        this.background = new Promise<void>((resolve, reject) =>
+          setTimeout(() => {
+            void this.fullPass().then(resolve, reject);
+          }, 0),
+        );
+        this.observeBackground(this.background);
+        void this.background.catch((error) =>
+          process.stderr.write('faah render full pass: ' + String(error) + '\n'),
+        );
+      }
+    };
+    if (start >= end) {
+      schedule();
+      return { lines: [], exact: true };
     }
-    if (start >= end) return { lines: [], exact: true };
     const lines: string[] = [];
     let exact = true;
     for (let c = Math.floor(start / chunkLines); c * chunkLines < end; c++) {
@@ -87,6 +103,7 @@ export class Document {
         ),
       );
     }
+    schedule();
     return { lines, exact };
   }
   async settled(): Promise<void> {

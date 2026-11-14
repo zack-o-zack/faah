@@ -4,11 +4,11 @@ import { dirname, join } from 'node:path';
 import { homedir } from 'node:os';
 import { createHash } from 'node:crypto';
 import { string } from '../decode.ts';
-export const rendererVersion = 'shiki-3.22.0-scopes-3-cr-1';
+export const rendererVersion = 'shiki-3.22.0-scopes-4';
 export class RenderDisk {
   private readonly db: Database;
   constructor(
-    path = join(
+    readonly path = join(
       process.env.XDG_CACHE_HOME ?? join(homedir(), '.faah/cache'),
       'faah',
       'render.sqlite',
@@ -27,7 +27,7 @@ export class RenderDisk {
       .update(source)
       .digest('hex');
   }
-  get(key: string, path: string): string[] | undefined {
+  get(key: string, path: string, touch = true): string[] | undefined {
     const row = this.db
       .query<{ lines: string }, [string]>('SELECT lines FROM chunks WHERE key=?')
       .get(key);
@@ -36,17 +36,20 @@ export class RenderDisk {
       const value: unknown = JSON.parse(row.lines);
       if (!Array.isArray(value)) throw new Error('invalid cached lines');
       const lines = value.map((line) => string(line));
-      this.db
-        .query(
-          'UPDATE chunks SET touched=(SELECT COALESCE(MAX(touched),0)+1 FROM chunks) WHERE key=?',
-        )
-        .run(key);
-      this.attach(key, path);
+      if (touch) this.touch(key, path);
       return lines;
     } catch {
       this.db.query('DELETE FROM chunks WHERE key=?').run(key);
       return;
     }
+  }
+  touch(key: string, path: string): void {
+    this.db
+      .query(
+        'UPDATE chunks SET touched=(SELECT COALESCE(MAX(touched),0)+1 FROM chunks) WHERE key=?',
+      )
+      .run(key);
+    this.attach(key, path);
   }
   private attach(key: string, path: string): void {
     if (path)

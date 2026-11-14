@@ -68,7 +68,15 @@ export const scopeClasses: readonly (readonly [string, string])[] = [
 // property or a CSS hex color belongs to the surrounding token in Chroma.
 const languageScopes: Record<string, readonly (readonly [string, string])[]> = {
   JSON: [['support.type.property-name.json', 'nt']],
+  C: [
+    ['meta.preprocessor', 'cp'],
+    ['storage.type', 'kt'],
+    ['variable.parameter', ''],
+    ['constant.language', 'nb'],
+    ['punctuation.separator.pointer-access', 'o'],
+  ],
   CSS: [
+    ['entity.other.attribute-name.class', 'nc'],
     ['variable.css', 'nv'],
     ['constant.other.color.rgb-value', 'm'],
     ['entity.other.attribute-name.pseudo', 'nd'],
@@ -139,11 +147,23 @@ function contextClass(
     if (line.startsWith('#!') && scopes.some((s) => s.startsWith('comment'))) return 'cp';
     if (
       scopes.some((s) => s.startsWith('entity.name.function')) &&
-      !scopes.some((s) => s.startsWith('meta.function'))
+      !scopes.some((s) => s.startsWith('support.function.builtin'))
     )
       return '';
   }
 
+  if (language === 'markdown') {
+    const has = (prefix: string) => scopes.some((s) => s.startsWith(prefix));
+    if (has('markup.underline.link')) return 'na';
+    if (has('meta.link') && (has('string.other.link.title') || has('punctuation.definition.link')))
+      return 'nt';
+    if (has('markup.heading')) return 'gh';
+    if (has('markup.bold')) return 'gs';
+    if (has('markup.italic')) return 'ge';
+    if (has('markup.inline.raw')) return 's';
+    if (has('punctuation.definition.metadata')) return 'nt';
+    if (has('punctuation') && !has('source.')) return '';
+  }
   if (language === 'Python') {
     const from = /^\s*from\s+([.\p{L}\p{N}_]+)/u.exec(line);
     if (from?.[1]) {
@@ -180,12 +200,22 @@ export function classFor(
 ): string {
   const contextual = contextClass(scopes, language, text, line, offset);
   if (contextual !== undefined) return contextual;
+  if (language === 'Go' && scopes.some((scope) => scope.startsWith('comment.line.double-slash')))
+    return /^\/\/[^\s]/.test(text) ? 'cp' : 'c';
+  const key = language + '\0' + scopes.join('\0'),
+    cached = scopeCache.get(key);
+  if (cached !== undefined) return cached;
+  const cls = scopeClass(scopes, language);
+  if (scopeCache.size > 16384) scopeCache.clear();
+  scopeCache.set(key, cls);
+  return cls;
+}
+const scopeCache = new Map<string, string>();
+function scopeClass(scopes: readonly string[], language: string): string {
   for (const [prefix, cls] of languageScopes[language] ?? [])
     if (scopes.some((s) => s.startsWith(prefix))) return cls;
   for (let i = scopes.length - 1; i >= 0; i--) {
     const scope = scopes[i] ?? '';
-    if (language === 'Go' && scope.startsWith('comment.line.double-slash'))
-      return /^\/\/[^\s]/.test(text) ? 'cp' : 'c';
     for (const [prefix, cls] of scopeClasses)
       if (scope === prefix || scope.startsWith(prefix + '.')) return cls;
   }

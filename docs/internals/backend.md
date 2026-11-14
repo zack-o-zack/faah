@@ -166,6 +166,9 @@ evicted in LRU order shared across connections. Keys hash source content,
 language, requested line count and `rendererVersion`; path associations allow
 save/close/watcher invalidation without dropping another path's identical
 content. Increment `rendererVersion` whenever grammar or scope mapping changes.
+SQLite inserts and cache-hit recency/path updates run in a separate cache
+Worker after the response path. Per-path revisions discard queued writes after
+invalidation, and shutdown drains queued work before closing that Worker.
 Shutdown keeps L2 content so a fresh process can reuse rendered chunks. The
 budget counts stored payload bytes; SQLite pages, indexes and WAL add overhead.
 
@@ -175,7 +178,11 @@ priorities, editor backup suffixes and content analysers preserve Go's language
 names, including `TypeScript` for TSX and lowercase `markdown`/`plaintext`.
 The generated filename test vectors compare primary/alias/backup matches with
 Go. `render/grammars.json` separately selects Shiki grammars, loaded lazily by
-up to four Workers. Names with no matching bundled grammar retain escaped plain
+up to four Workers. The build embeds individual grammar JSON assets; a Worker
+loads and decodes only requested grammars and their dependencies. After the index
+builds, the render pool warms the three most common filename languages in the
+background. `render/grammar-coverage.json` lists added compatible mappings and
+languages without a bundled grammar. Names with no matching bundled grammar retain escaped plain
 text; detection does not substitute a different language name.
 
 `render/scopes.ts` is the explicit TextMate-to-theme mapping. Specific language
@@ -192,7 +199,8 @@ remain exact; see `test/contract/README.md`.
 Markdown uses pinned markdown-it, footnote and task-list plugins with GFM table,
 strikethrough and linkification rules. Custom renderers preserve heading ids,
 duplicate tracking, container source markers, code wrappers, footnote ids and
-raw HTML. Fences use the same render pool; unlabelled or oversized fences stay
+raw HTML. The Markdown parser is shared, with per-request rendering state. Highlighted
+fences use a bounded cache scoped to the highlight callback. Fences use the same render pool; unlabelled or oversized fences stay
 plain. Preview limits and statuses remain 4 MiB / 413 / 415. CSV/TSV uses a
 hand-written LazyQuotes parser with variable records, BOM stripping, delimiter
 sniffing, physical line numbers, a 1 MiB read cap and 1,000 data rows. A byte-cut

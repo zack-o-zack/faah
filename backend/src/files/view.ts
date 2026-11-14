@@ -1,3 +1,5 @@
+import { LRU } from '../render/lru.ts';
+import type { Highlight } from '../render/document.ts';
 import { fileWindow } from './window.ts';
 import { goString } from '../render/text.ts';
 import { stat } from 'node:fs/promises';
@@ -10,6 +12,15 @@ import { isMarkdown, renderMarkdown } from '../markdown/service.ts';
 import { delimiter, renderTable, maxBytes } from '../table/service.ts';
 import type { LegacyFiles } from '../legacy/files.ts';
 export class Files {
+  private readonly markdownHighlights = new LRU<Highlight>(128);
+  private markdownHighlight(abs: string): Highlight {
+    const cached = this.markdownHighlights.get(abs);
+    if (cached) return cached;
+    const highlight: Highlight = (source, lang, want) =>
+      this.render.highlight(source, lang, want, abs);
+    this.markdownHighlights.put(abs, highlight, 1);
+    return highlight;
+  }
   constructor(
     readonly root: string,
     readonly render: RenderService,
@@ -105,9 +116,7 @@ export class Files {
       });
     return {
       path: rel,
-      html: await renderMarkdown(goString(data), (source, lang, want) =>
-        this.render.highlight(source, lang, want, abs),
-      ),
+      html: await renderMarkdown(goString(data), this.markdownHighlight(abs)),
     };
   }
   async table(path: string) {

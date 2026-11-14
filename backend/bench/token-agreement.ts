@@ -7,6 +7,9 @@ import { ready } from '../../bench/http.ts';
 import { cloneWorkspace, command } from '../../bench/util.ts';
 import { record, string } from '../src/decode.ts';
 import { markdownHighlights, highlightedText } from '../../test/contract/highlight.ts';
+import { filenameLanguage } from '../src/render/language.ts';
+const selected = new Set((process.env.FAAH_TOKEN_LANGUAGES ?? '').split(',').filter(Boolean));
+const confusion = new Map<string, { bytes: number; path: string; text: string }>();
 const go = process.env.FAAH_LEGACY_BIN,
   bun = process.env.FAAH_BIN;
 if (!go || !bun) throw new Error('Set FAAH_LEGACY_BIN and FAAH_BIN');
@@ -48,6 +51,8 @@ function tokens(html: string): { text: string; classes: string[] } {
 const report: Agreement[] = [];
 const markdownDifferences: { path: string; expected: string; actual: string }[] = [];
 async function compare(root: string, paths: string[], kind: string): Promise<void> {
+  if (selected.size) paths = paths.filter((path) => selected.has(filenameLanguage(path) ?? ''));
+  if (!paths.length) return;
   const captures: Map<string, FileTokens>[] = [];
   for (const binary of binaries) {
     const server = await launch(binary, root),
@@ -119,6 +124,20 @@ async function compare(root: string, paths: string[], kind: string): Promise<voi
         if (left === 'whitespace') continue;
         row.bytes++;
         if (left === right) row.matched++;
+        else {
+          const key =
+            kind + ':' + reference.lang + ':' + (left || 'plain') + '→' + (right || 'plain');
+          const entry = confusion.get(key);
+          if (entry) entry.bytes++;
+          else
+            confusion.set(key, {
+              bytes: 1,
+              path,
+              text: Buffer.from(x.text)
+                .subarray(Math.max(0, j - 24), j + 48)
+                .toString(),
+            });
+        }
         if (left || right) {
           row.styledBytes++;
           if (left === right) row.styledMatched++;
@@ -206,6 +225,14 @@ const results = report.map((r) => ({
   agreement: r.bytes ? (100 * r.matched) / r.bytes : 100,
   styledAgreement: r.styledBytes ? (100 * r.styledMatched) / r.styledBytes : 100,
 }));
+await Bun.write(
+  process.env.FAAH_TOKEN_DIFF_REPORT ?? '/tmp/faah-token-diffs.json',
+  JSON.stringify(
+    [...confusion].map(([key, v]) => ({ key, ...v })).sort((a, b) => b.bytes - a.bytes),
+    null,
+    2,
+  ) + '\n',
+);
 await Bun.write(
   process.env.FAAH_TOKEN_REPORT ?? '/tmp/faah-phase3-token-agreement.json',
   JSON.stringify(results, null, 2) + '\n',

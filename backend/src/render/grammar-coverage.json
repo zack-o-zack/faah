@@ -1,0 +1,217 @@
+{
+  "shikiVersion": "3.22.0",
+  "added": [
+    {
+      "name": "Angular2",
+      "grammar": "angular-ts"
+    },
+    {
+      "name": "Arduino",
+      "grammar": "cpp"
+    },
+    {
+      "name": "Cython",
+      "grammar": "python"
+    },
+    {
+      "name": "DTD",
+      "grammar": "xml"
+    },
+    {
+      "name": "FortranFixed",
+      "grammar": "fortran-fixed-form"
+    },
+    {
+      "name": "GDScript3",
+      "grammar": "gdscript"
+    },
+    {
+      "name": "Materialize SQL dialect",
+      "grammar": "sql"
+    },
+    {
+      "name": "Mathematica",
+      "grammar": "wolfram"
+    },
+    {
+      "name": "MySQL",
+      "grammar": "sql"
+    },
+    {
+      "name": "ObjectPascal",
+      "grammar": "pascal"
+    },
+    {
+      "name": "Octave",
+      "grammar": "matlab"
+    },
+    {
+      "name": "OnesEnterprise",
+      "grammar": "bsl"
+    },
+    {
+      "name": "PL/pgSQL",
+      "grammar": "sql"
+    },
+    {
+      "name": "PostgreSQL SQL dialect",
+      "grammar": "sql"
+    },
+    {
+      "name": "Python 2",
+      "grammar": "python"
+    },
+    {
+      "name": "Transact-SQL",
+      "grammar": "sql"
+    },
+    {
+      "name": "VB.net",
+      "grammar": "vb"
+    },
+    {
+      "name": "WebAssembly Text Format",
+      "grammar": "wasm"
+    }
+  ],
+  "unavailable": [
+    "ABNF",
+    "Agda",
+    "AL",
+    "Alloy",
+    "AMPL",
+    "ANTLR",
+    "ArangoDB AQL",
+    "ArmAsm",
+    "Arturo",
+    "ATL",
+    "AutoHotkey",
+    "AutoIt",
+    "Beef",
+    "BlitzBasic",
+    "BNF",
+    "BQN",
+    "Brainfuck",
+    "Cap'n Proto",
+    "Ceylon",
+    "CFEngine3",
+    "cfstatement",
+    "ChaiScript",
+    "Chapel",
+    "Cheetah",
+    "Core",
+    "Devicetree",
+    "dns",
+    "Dylan",
+    "EBNF",
+    "Factor",
+    "Forth",
+    "Gemfile.lock",
+    "Go Template",
+    "Groff",
+    "Hare",
+    "Hexdump",
+    "HLB",
+    "HolyC",
+    "Idris",
+    "Igor",
+    "Io",
+    "ISCdhcpd",
+    "J",
+    "Janet",
+    "JSONata",
+    "Jungle",
+    "Kakoune",
+    "Lateralus",
+    "Lighttpd configuration file",
+    "LilyPond",
+    "lox",
+    "Mako",
+    "Mason",
+    "MCFunction",
+    "Meson",
+    "Metal",
+    "microcad",
+    "MiniZinc",
+    "MLIR",
+    "Modelica",
+    "Modula-2",
+    "MonkeyC",
+    "MoonScript",
+    "MorrowindScript",
+    "Myghty",
+    "NASM",
+    "Natural",
+    "NDISASM",
+    "Newspeak",
+    "NSIS",
+    "OpenEdge ABL",
+    "Org Mode",
+    "PacmanConf",
+    "Pig",
+    "PkgConfig",
+    "Plutus Core",
+    "Pony",
+    "PostScript",
+    "POVRay",
+    "Promela",
+    "PromQL",
+    "PRQL",
+    "PSL",
+    "QBasic",
+    "Ragel",
+    "ReasonML",
+    "Rego",
+    "Rexx",
+    "RGBDS Assembly",
+    "Ring",
+    "RPGLE",
+    "RPMSpec",
+    "scdoc",
+    "Scilab",
+    "Sed",
+    "Sieve",
+    "Smali",
+    "Smarty",
+    "SNBT",
+    "Snobol",
+    "SourcePawn",
+    "Spade",
+    "SquidConf",
+    "Standard ML",
+    "stas",
+    "TableGen",
+    "Tal",
+    "TASM",
+    "Tcsh",
+    "Termcap",
+    "Terminfo",
+    "Thrift",
+    "TradingView",
+    "Turing",
+    "Protocol Buffer Text Format",
+    "TypoScript",
+    "TypoScriptCssData",
+    "TypoScriptHtmlData",
+    "ucode",
+    "V shell",
+    "VHS",
+    "WDTE",
+    "WebVTT",
+    "Whiley",
+    "Xorg",
+    "YANG",
+    "Z80 Assembly",
+    "Zed",
+    "Caddyfile",
+    "Caddyfile Directives",
+    "Gemtext",
+    "Genshi Text",
+    "Genshi HTML",
+    "Genshi",
+    "Go HTML Template",
+    "Go Text Template",
+    "Markless",
+    "YAML+Jinja"
+  ]
+}

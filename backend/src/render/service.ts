@@ -1,13 +1,17 @@
 import { normalizeCRLF } from './text.ts';
 import { stat } from 'node:fs/promises';
-import { Document } from './document.ts';
+import { Document, sizeOfLines } from './document.ts';
 import { RenderPool } from './pool.ts';
 import { RenderDisk } from './disk.ts';
 import { LRU } from './lru.ts';
+import { RenderWrites } from './writes.ts';
+import { filenameLanguage } from './language.ts';
 export class RenderService {
   readonly cache = new LRU<Document>();
   readonly pool = new RenderPool();
   readonly disk: RenderDisk;
+  private readonly writes: RenderWrites;
+  private readonly memo = new LRU<string[]>(1 << 20);
   private opening = new Map<string, Promise<Document>>();
   private rendering = new Map<string, Promise<string[]>>();
   private revisions = new Map<string, number>();
@@ -15,12 +19,19 @@ export class RenderService {
   private backgrounds = new Set<Promise<void>>();
   constructor(disk?: RenderDisk) {
     this.disk = disk ?? new RenderDisk();
+    this.writes = new RenderWrites(this.disk.path, this.disk.budget);
   }
   async highlight(source: string, lang: string, want: number, path = ''): Promise<string[]> {
     const key = this.disk.key(source, lang, want),
       revision = this.revisions.get(path) ?? 0;
-    const cached = this.disk.get(key, path);
-    if (cached) return cached;
+    const memo = this.memo.get(key);
+    if (memo) return memo;
+    const cached = this.disk.get(key, path, false);
+    if (cached) {
+      this.writes.touch(key, path);
+      this.remember(key, cached);
+      return cached;
+    }
     let task = this.rendering.get(key);
     if (!task) {
       task = this.pool.render(source, lang, want).finally(() => this.rendering.delete(key));
@@ -28,8 +39,29 @@ export class RenderService {
     }
     const lines = await task;
     if (!this.closed && (this.revisions.get(path) ?? 0) === revision)
-      this.disk.put(key, path, lines);
+      this.writes.put(key, path, lines);
+    this.remember(key, lines);
     return lines;
+  }
+  private remember(key: string, lines: string[]): void {
+    const size = sizeOfLines(lines);
+    if (size <= this.memo.budget) this.memo.put(key, lines, size);
+  }
+  async warm(paths: readonly string[]): Promise<void> {
+    const counts = new Map<string, number>(),
+      names = new Map<string, string | undefined>();
+    for (const path of paths) {
+      const suffix = /\.[^/.]+$/.exec(path)?.[0] ?? path.split('/').at(-1) ?? path;
+      if (!names.has(suffix)) names.set(suffix, filenameLanguage(path));
+      const lang = names.get(suffix);
+      if (lang) counts.set(lang, (counts.get(lang) ?? 0) + 1);
+    }
+    await this.pool.warm(
+      [...counts]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([lang]) => lang),
+    );
   }
   async open(abs: string, rel: string): Promise<Document> {
     const info = await stat(abs, { bigint: true });
@@ -66,9 +98,11 @@ export class RenderService {
     this.revisions.set(abs, (this.revisions.get(abs) ?? 0) + 1);
     this.cache.remove(abs);
     this.disk.invalidate(abs);
+    this.writes.invalidate(abs);
   }
   scavenge(): void {
     this.cache.trim();
+    this.memo.clear();
     this.pool.scavenge();
     Bun.gc(true);
   }
@@ -78,6 +112,7 @@ export class RenderService {
     await Promise.allSettled(this.backgrounds);
     await Promise.allSettled(this.rendering.values());
     this.pool.close();
+    await this.writes.close();
     this.cache.clear();
     this.disk.close();
   }
