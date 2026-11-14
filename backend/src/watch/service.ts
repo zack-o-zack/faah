@@ -1,4 +1,5 @@
-import { subscribe } from './native.ts';
+import { NativeWatcher } from './native.ts';
+import type { Callback } from './binding.ts';
 import { relative, join, dirname, resolve } from 'node:path';
 import { stat, realpath, readFile } from 'node:fs/promises';
 import { IgnoreSet, readGitignore } from '../ignore/service.ts';
@@ -26,6 +27,10 @@ export function gitEvent(path: string): boolean {
   );
 }
 export class WorkspaceWatch {
+  private readonly native = new NativeWatcher();
+  get pid(): number | undefined {
+    return this.native.pid;
+  }
   private timer: ReturnType<typeof setTimeout> | undefined;
   private events = new Map<string, WatchEvent>();
   private work = Promise.resolve();
@@ -42,7 +47,7 @@ export class WorkspaceWatch {
       ignored?: () => Promise<void>;
       delay?: number;
       warn?: (message: string) => void;
-      connect?: typeof subscribe;
+      connect?: (root: string, callback: Callback) => Promise<() => Promise<void>>;
     },
   ) {}
   private warn(error: unknown): void {
@@ -62,7 +67,7 @@ export class WorkspaceWatch {
   async start(): Promise<void> {
     if (this.stopped) return;
     const stops: (() => Promise<void>)[] = [];
-    const connect = this.options.connect ?? subscribe;
+    const connect = this.options.connect ?? this.native.subscribe;
     try {
       this.root = await realpath(this.options.root);
       stops.push(await connect(this.root, this.callback));
@@ -105,7 +110,7 @@ export class WorkspaceWatch {
       }
     } catch (error) {
       await Promise.allSettled(stops.map((s) => s()));
-      this.warn(error);
+      if (!this.stopped) this.warn(error);
     }
   }
   receive(events: WatchEvent[]): void {
@@ -173,6 +178,7 @@ export class WorkspaceWatch {
   }
   async close(): Promise<void> {
     this.stopped = true;
+    await this.native.close();
     if (this.timer) clearTimeout(this.timer);
     this.events.clear();
     if (this.unsubscribe) {

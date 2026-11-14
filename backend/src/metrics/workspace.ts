@@ -6,10 +6,11 @@ export async function workspaceMetrics(options: {
   child: Child | undefined;
   base: string;
   lspEnabled: boolean;
+  extraPids?: number[];
 }) {
   const { collector, child, base, lspEnabled } = options;
   const metrics = await collector.collect(
-    child?.process.pid ? [child.process.pid] : [],
+    [...(child?.process.pid ? [child.process.pid] : []), ...(options.extraPids ?? [])],
     lspEnabled,
   );
   if (child) {

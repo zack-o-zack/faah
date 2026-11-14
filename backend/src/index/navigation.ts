@@ -90,6 +90,7 @@ export class Navigation {
         child: options.child,
         base: options.base,
         lspEnabled: false,
+        extraPids: this.watcher.pid ? [this.watcher.pid] : [],
       }),
     );
     this.search = new Search({
@@ -149,7 +150,10 @@ export class Navigation {
     const legacy = await this.legacy.meta();
     const oldMetrics = decodeMetrics(legacy.metrics);
     const metrics = await this.metrics.collect(
-      this.options.child.process.pid ? [this.options.child.process.pid] : [],
+      [
+        ...(this.options.child.process.pid ? [this.options.child.process.pid] : []),
+        ...(this.watcher.pid ? [this.watcher.pid] : []),
+      ],
       oldMetrics.lspEnabled,
     );
     metrics.lspMemBytes = oldMetrics.lspMemBytes;

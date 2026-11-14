@@ -381,6 +381,17 @@ unsubscribes before stopping the child. The build generates a literal native
 `.node` dependency for its platform. Linux builds default to glibc; set
 `FAAH_WATCHER_LIBC=musl` for musl.
 
+Linux native subscriptions run in one helper process per workspace, shared by
+the workspace and external Git/common-directory watches. Startup and unsubscribe
+have a 5 s deadline. A timed-out helper is killed and reaped, and the workspace
+uses its existing polling fallback. Shutdown cancels pending startup immediately.
+This isolates a Parcel 2.5.6 failure: if `inotify_init1` returns `EMFILE`, its
+initialization thread exits without notifying the synchronous startup wait. A
+Promise timeout on the HTTP thread cannot run while that native call is blocked.
+A Worker also cannot terminate the blocked native wait, so the helper must be a
+process. Linux selects inotify explicitly; other platforms retain their native
+backend. Workspace metrics include the helper's RSS while it is running.
+
 Changes to any `.gitignore` rebuild the index and fuzzy shards so existing
 files enter or leave search immediately. These notifications are retained even
 when the new rules ignore `.gitignore` itself.

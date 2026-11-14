@@ -73,7 +73,13 @@ export function handler(options: HandlerOptions): (request: Request) => Promise<
     else if (route === 'api/metrics' && wb) response = json(await workbenchMetrics(wb));
     else if (route === 'api/metrics')
       response = json(
-        await workspaceMetrics({ collector: metrics, child: legacy, base, lspEnabled }),
+        await workspaceMetrics({
+          collector: metrics,
+          child: legacy,
+          base,
+          lspEnabled,
+          extraPids: navigation?.watcher.pid ? [navigation.watcher.pid] : [],
+        }),
       );
     else if (legacy && legacyOwned('/' + route))
       return legacyProxy({ request, origin: legacy.origin, route, navigation });

@@ -17,6 +17,7 @@ import { openDB, stateDir } from './store/db.ts';
 import { WorkbenchStore } from './workbench/store.ts';
 import { Workbench } from './workbench/service.ts';
 import { parse, message } from './decode.ts';
+import { watchHelper } from './watch/helper.ts';
 async function main(): Promise<void> {
   if (bridge(process.argv.slice(2))) return;
   const f = flags(process.argv.slice(2));
@@ -160,7 +161,7 @@ function openBrowser(url: string): void {
   }
 }
 
-main().catch((error) => {
+(process.argv[2] === '--internal-watcher' ? watchHelper() : main()).catch((error) => {
   console.error('faah: ' + message(error));
   process.exit(1);
 });
