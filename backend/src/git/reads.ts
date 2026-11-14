@@ -7,6 +7,7 @@ import { GitDiff } from './diff.ts';
 import { GitLinks } from './links.ts';
 import { GitSync } from './sync.ts';
 import { parseGutter } from './gutter.ts';
+import type { GitState } from '../index/types.ts';
 
 export class GitReads {
   private readonly history: GitHistory;
@@ -22,6 +23,20 @@ export class GitReads {
     this.diffs = new GitDiff(commands);
     this.links = new GitLinks(commands);
     this.sync = new GitSync(commands);
+  }
+  async diffAvailable(query: URLSearchParams, state: GitState): Promise<boolean> {
+    const path = query.get('path') ?? '',
+      ref = query.get('ref') ?? '',
+      base = query.get('base') ?? '';
+    const { rel } = resolveFile(this.root, path);
+    if (ref)
+      return Boolean(
+        base && validSHA(base) && validSHA(ref)
+          ? await this.diffs.between(this.root, rel, base, ref)
+          : await this.diffs.commit(this.root, rel, ref),
+      );
+    const status = state.statuses[rel];
+    return state.git && Boolean(status && status !== 'U');
   }
   async fileDiff(options: { path: string; ref: string; base: string }) {
     const { abs, rel } = resolveFile(this.root, options.path);

@@ -22,7 +22,7 @@ test('file request decoding preserves Go zero values, field folding, duplicate o
     "invalid character 'p' looking for beginning of object key string",
   );
 });
-test('legacy file adapter fetches LSP in parallel, ports cached diff flags, and never asks Go to render', async () => {
+test('file adapter fetches only LSP metadata and delegates diff availability to native Git', async () => {
   const seen: string[] = [];
   const server = Bun.serve({
     port: 0,
@@ -45,14 +45,17 @@ test('legacy file adapter fetches LSP in parallel, ports cached diff flags, and 
   const nav = new LegacyNavigation({
     origin: server.url.origin,
     base: '/',
-    apply: async () => {},
+    refresh: async () => {},
     rebuild: async () => {},
     touch: async () => {},
   });
   const adapter = new LegacyFiles(
     nav,
-    () => git,
-    () => true,
+    async (query) =>
+      query.has('ref') ||
+      Boolean(
+        git.statuses[query.get('path') ?? ''] && git.statuses[query.get('path') ?? ''] !== 'U',
+      ),
   );
   try {
     expect((await adapter.metadata(new URLSearchParams({ path: 'x.go' }))).diffAvailable).toBe(
@@ -73,7 +76,7 @@ test('legacy file adapter fetches LSP in parallel, ports cached diff flags, and 
       (await adapter.metadata(new URLSearchParams({ path: 'x.go', ref: '123', base: '456' })))
         .diffAvailable,
     ).toBe(true);
-    expect(seen).toEqual(['/api/diff']);
+    expect(seen).toEqual([]);
   } finally {
     await nav.close();
     await server.stop(true);

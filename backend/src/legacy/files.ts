@@ -1,4 +1,3 @@
-import type { GitState } from '../index/types.ts';
 import { record, string } from '../decode.ts';
 import { PathError } from '../files/service.ts';
 import type { LegacyNavigation } from './navigation.ts';
@@ -17,8 +16,7 @@ export class LegacyFiles {
   private disabledLSP: Pick<FileMetadata, 'lsp' | 'diagnostics'> | undefined;
   constructor(
     readonly navigation: LegacyNavigation,
-    readonly git: () => GitState,
-    readonly ready: () => boolean,
+    readonly available: (query: URLSearchParams) => Promise<boolean>,
   ) {}
   private async object(route: string): Promise<Record<string, unknown>> {
     const response = await fetch(
@@ -37,14 +35,7 @@ export class LegacyFiles {
       suffix = '?' + new URLSearchParams({ path });
     const diffQuery = new URLSearchParams(query);
     if (missing) diffQuery.delete('base');
-    const state = this.git(),
-      status = state.statuses[path];
-    // Port of Index.HasDiffAvailable: normal workspace indexes use HEAD.
-    // Explicit refs still ask Go, including the deleted-file base oddity.
-    const diff =
-      !query.get('ref') && this.ready()
-        ? Promise.resolve({ available: state.git && Boolean(status && status !== 'U') })
-        : this.object('api/diff?' + diffQuery);
+    const diff = this.available(diffQuery).then((available) => ({ available }));
     if (this.disabledLSP)
       return { ...this.disabledLSP, diffAvailable: boolean((await diff).available) };
     const [difference, diagnostics, setup, servers] = await Promise.all([

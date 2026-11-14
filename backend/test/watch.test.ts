@@ -103,9 +103,13 @@ test('native watcher observes an external edit and unsubscribes cleanly', async 
 
 test('watcher subscription failures warn and leave a usable no-watcher fallback', async () => {
   const root = await mkdtemp(join(tmpdir(), 'faah-watch-fail-')),
-    warnings: string[] = [];
+    warnings: string[] = [],
+    availability: boolean[] = [];
   const watcher = new WorkspaceWatch({
     root,
+    availability: (value) => {
+      availability.push(value);
+    },
     connect: async () => {
       throw new Error('too many open files');
     },
@@ -115,6 +119,7 @@ test('watcher subscription failures warn and leave a usable no-watcher fallback'
   try {
     await watcher.start();
     expect(warnings).toEqual(['faah watcher disabled: Error: too many open files']);
+    expect(availability).toEqual([false]);
   } finally {
     await watcher.close();
     await rm(root, { recursive: true, force: true });
@@ -151,3 +156,45 @@ test('linked worktree watchers observe the external git directory', async () => 
     await rm(temp, { recursive: true, force: true });
   }
 }, 10000);
+
+// A linked worktree has private HEAD/index files and shared refs in commondir.
+test('linked worktree observes shared refs and cleans partial subscriptions on failure', async () => {
+  const temp = await mkdtemp(join(tmpdir(), 'faah-watch-common-'));
+  const root = join(temp, 'repo'),
+    git = join(temp, 'private'),
+    common = join(temp, 'common');
+  for (const dir of [root, git, common]) await mkdir(dir);
+  await writeFile(join(root, '.git'), 'gitdir: ' + git + '\n');
+  await writeFile(join(git, 'commondir'), '../common\n');
+  const stops: string[] = [],
+    connected: string[] = [],
+    availability: boolean[] = [];
+  const watcher = new WorkspaceWatch({
+    root,
+    availability: (value) => {
+      availability.push(value);
+    },
+    warn: () => {},
+    changed: async () => {},
+    connect: async (dir) => {
+      connected.push(dir);
+      if (dir.endsWith('/common')) throw new Error('shared refs unavailable');
+      return async () => {
+        stops.push(dir);
+      };
+    },
+  });
+  try {
+    await watcher.start();
+    expect(connected.map((dir) => dir.slice(dir.lastIndexOf('/') + 1))).toEqual([
+      'repo',
+      'private',
+      'common',
+    ]);
+    expect(stops.length).toBe(2);
+    expect(availability).toEqual([false]);
+  } finally {
+    await watcher.close();
+    await rm(temp, { recursive: true, force: true });
+  }
+});

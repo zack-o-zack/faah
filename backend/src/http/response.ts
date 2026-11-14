@@ -34,7 +34,7 @@ export async function headers(
     gzip &&
     request.headers.get('accept-encoding')?.includes('gzip') &&
     !response.headers.has('Content-Encoding') &&
-    request.headers.get('accept') !== 'text/event-stream'
+    !response.headers.get('Content-Type')?.startsWith('text/event-stream')
   ) {
     response.headers.set('Content-Encoding', 'gzip');
     response.headers.set('Vary', 'Accept-Encoding');

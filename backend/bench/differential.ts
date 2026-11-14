@@ -102,6 +102,8 @@ try {
     'api/git/log?limit=51',
     'api/unpushed',
     'api/unpushed?limit=-1',
+    'api/git/refresh',
+    'api/git/sync-state',
   ])
     paths.push(route);
   for (const path of [
@@ -252,6 +254,30 @@ try {
         '{"path":"a",}',
         '{"path" "x"}',
       ];
+      const gitCases = [
+        ...bodies.map((body) => ({ route: 'api/git/stage', body })),
+        { route: 'api/git/stage', body: '{"Path":"missing","path":"unstaged.txt"} trailing' },
+        { route: 'api/git/unstage', body: '{"path":"unstaged.txt"}' },
+        { route: 'api/git/stage', body: '{"path":"../outside"}' },
+        { route: 'api/git/stage', body: '{"path":"' + 'x'.repeat(4096) + '"}' },
+        { route: 'api/git/hunk', body: '{"path":"unstaged.txt","hunk":"bad","action":"stage"}' },
+        {
+          route: 'api/git/hunk',
+          body: '{"path":"unstaged.txt","hunk":"@@ -1 +1 @@\\n-before\\n+after\\n","action":"invalid"}',
+        },
+        { route: 'api/git/commit', body: '{"message":"  "}' },
+        { route: 'api/git/commit', body: '{"message":"' + 'x'.repeat(65536) + '"}' },
+      ];
+      for (const [i, { route, body }] of gitCases.entries()) {
+        const url = new URL(route, server.baseUrl);
+        const response = await fetch(url, {
+          method: 'POST',
+          body,
+          headers: { Origin: url.origin },
+        });
+        const value: unknown = await response.json();
+        results.push({ path: route + '#git-' + i, status: response.status, body: value });
+      }
       for (const route of ['api/file/save', 'api/fs/new'])
         for (const [i, body] of bodies.entries()) {
           const response = await fetch(new URL(route, server.baseUrl), { method: 'POST', body });

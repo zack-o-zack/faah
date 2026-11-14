@@ -14,6 +14,12 @@ export function gitEvent(path: string): boolean {
     path === '.git/HEAD' ||
     path === '.git/index' ||
     path === '.git/packed-refs' ||
+    path === '.git/FETCH_HEAD' ||
+    path === '.git/MERGE_HEAD' ||
+    path === '.git/rebase-merge' ||
+    path === '.git/rebase-apply' ||
+    path.startsWith('.git/rebase-merge/') ||
+    path.startsWith('.git/rebase-apply/') ||
     path.startsWith('.git/refs/')
   );
 }
@@ -28,6 +34,8 @@ export class WorkspaceWatch {
   constructor(
     readonly options: {
       root: string;
+      availability?: (available: boolean) => void;
+      gitDirectory?: () => Promise<string | undefined>;
       changed: (paths: string[], git: boolean) => Promise<void>;
       delay?: number;
       warn?: (message: string) => void;
@@ -35,6 +43,7 @@ export class WorkspaceWatch {
     },
   ) {}
   private warn(error: unknown): void {
+    this.options.availability?.(false);
     (this.options.warn ?? ((s) => process.stderr.write(s + '\n')))(
       'faah watcher disabled: ' + String(error),
     );
@@ -55,12 +64,16 @@ export class WorkspaceWatch {
       this.root = await realpath(this.options.root);
       stops.push(await connect(this.root, this.callback));
       const pointer = await readFile(join(this.root, '.git'), 'utf8').catch(() => undefined);
-      if (pointer?.startsWith('gitdir:')) {
-        const gitdir = await realpath(resolve(this.root, pointer.slice(7).trim()));
+      const discovered = pointer?.startsWith('gitdir:')
+        ? resolve(this.root, pointer.slice(7).trim())
+        : await this.options.gitDirectory?.();
+      if (discovered) {
+        const gitdir = await realpath(discovered);
         const common = await readFile(join(gitdir, 'commondir'), 'utf8').catch(() => undefined);
         const dirs = new Set([gitdir]);
         if (common) dirs.add(await realpath(resolve(gitdir, common.trim())));
-        for (const dir of dirs)
+        for (const dir of dirs) {
+          if (dir === this.root || dir.startsWith(this.root + '/')) continue;
           stops.push(
             await connect(dir, (error, events) => {
               if (error) {
@@ -77,12 +90,16 @@ export class WorkspaceWatch {
                 );
             }),
           );
+        }
       }
       const stop = async () => {
         await Promise.all(stops.map((s) => s()));
       };
       if (this.stopped) await stop();
-      else this.unsubscribe = stop;
+      else {
+        this.unsubscribe = stop;
+        this.options.availability?.(true);
+      }
     } catch (error) {
       await Promise.allSettled(stops.map((s) => s()));
       this.warn(error);

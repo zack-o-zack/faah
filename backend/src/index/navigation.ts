@@ -19,9 +19,17 @@ import { LegacyNavigation } from '../legacy/navigation.ts';
 import type { Child } from '../legacy/child.ts';
 import { GitCommands } from '../git/commands.ts';
 import { GitReads } from '../git/reads.ts';
+import { GitStatus } from '../git/status.ts';
+import { GitWorkspace } from '../git/workspace.ts';
+import { GitActions } from '../git/actions.ts';
+import { WorkspaceStreams } from '../http/workspace-streams.ts';
+import { workspaceMetrics } from '../metrics/workspace.ts';
 export class Navigation {
   readonly gitCommands: GitCommands;
   readonly gitReads: GitReads;
+  readonly git: GitWorkspace;
+  readonly gitActions: GitActions;
+  readonly streams: WorkspaceStreams;
   readonly watcher: WorkspaceWatch;
   readonly idle = new IdleScavenger(() => this.render.scavenge());
   readonly render = new RenderService();
@@ -47,7 +55,7 @@ export class Navigation {
     this.legacy = new LegacyNavigation({
       origin: options.child.origin,
       base: options.base,
-      apply: (state) => this.index.applyGit(state),
+      refresh: () => this.git.refresh().then(() => undefined),
       rebuild: () => this.index.build(),
       touch: (path) => this.index.touch(path),
     });
@@ -56,10 +64,31 @@ export class Navigation {
       root: options.root,
       gitState: async () => {
         await primed;
-        return this.legacy.refresh();
+        return new GitStatus(this.gitCommands.probe).read(options.root);
       },
-      updated: (items) => this.fuzzy.set(items),
+      updated: async (items) => {
+        await this.fuzzy.set(items);
+        // A rebuild or TouchPath can publish a newer index than the Git cache.
+        this.git.invalidate();
+      },
     });
+    this.git = new GitWorkspace(this.index, this.gitCommands);
+    this.gitActions = new GitActions(this.git, async (path) => {
+      if (path) await this.fileMutations.changed(join(options.root, path), path);
+      else {
+        for (const file of this.index.files) this.render.invalidate(join(options.root, file.path));
+        await this.legacy.value('api/reindex');
+        await this.index.build();
+      }
+    });
+    this.streams = new WorkspaceStreams(this.git, options.child.origin, options.base, () =>
+      workspaceMetrics({
+        collector: this.metrics,
+        child: options.child,
+        base: options.base,
+        lspEnabled: false,
+      }),
+    );
     this.search = new Search({
       root: options.root,
       files: () => this.index.files,
@@ -67,11 +96,10 @@ export class Navigation {
       excluded: () =>
         [...this.index.children.values()].flatMap((kids) => kids.filter((n) => n.ignored)),
     });
-    const legacyFiles = new LegacyFiles(
-      this.legacy,
-      () => this.index.git,
-      () => this.index.ready,
-    );
+    const legacyFiles = new LegacyFiles(this.legacy, async (query) => {
+      await this.git.ensure();
+      return this.gitReads.diffAvailable(query, this.index.git);
+    });
     this.files = new Files(options.root, this.render, legacyFiles);
     this.fileMutations = new FileMutations({
       root: options.root,
@@ -82,25 +110,24 @@ export class Navigation {
     this.options = options;
     this.watcher = new WorkspaceWatch({
       root: options.root,
-      changed: async (paths) => {
+      gitDirectory: async () => (await this.gitCommands.probe.get(options.root))?.dir,
+      availability: (available) => this.git.watching(available),
+      changed: async (paths, metadata) => {
         const rebuild = paths.some(ignoreEvent);
-        const refresh = this.legacy.refreshAndApply();
-        const touch = (async () => {
-          for (const path of paths) {
-            this.render.invalidate(join(options.root, path));
-            if (!rebuild) await this.index.touch(path);
-          }
-          if (rebuild) await this.index.build();
-        })();
-        await Promise.all([touch, refresh]);
+        for (const path of paths) {
+          this.render.invalidate(join(options.root, path));
+          if (!rebuild) await this.index.touch(path);
+        }
+        if (rebuild) await this.index.build();
+        await this.git.changed(metadata);
       },
     });
     this.building = this.index.build().then(async () => {
       void this.render
         .warm(this.index.files.map((f) => f.path))
         .catch((error) => process.stderr.write('faah render warm: ' + String(error) + '\n'));
-      this.legacy.start();
       await this.watcher.start();
+      await this.git.changed(true);
     });
     void this.building.catch((error) => {
       process.stderr.write('faah index: ' + String(error) + '\n');
@@ -114,6 +141,7 @@ export class Navigation {
     workbench: string;
   };
   async meta(): Promise<Record<string, unknown>> {
+    await this.git.ensure();
     const legacy = await this.legacy.meta();
     const oldMetrics = decodeMetrics(legacy.metrics);
     const metrics = await this.metrics.collect(
@@ -139,6 +167,7 @@ export class Navigation {
     };
   }
   async tree(options: { dir: string; compact: string }) {
+    await this.git.ensure();
     const dir = options.dir.replace(/^\/+|\/+$/g, '');
     let kids = await this.index.list(dir);
     if (!kids && !this.index.ready) {
@@ -181,6 +210,7 @@ export class Navigation {
   async reindex(): Promise<Record<string, unknown>> {
     await this.legacy.value('api/reindex');
     await this.index.build();
+    await this.git.refresh();
     return {
       files: this.index.files.length,
       indexMs: this.index.indexMs,
@@ -190,8 +220,10 @@ export class Navigation {
   }
   async close(): Promise<void> {
     this.idle.close();
+    await this.streams.close();
     await this.watcher.close();
     await this.legacy.close();
+    await this.git.close();
     await this.building.catch(() => undefined);
     this.fuzzy.close();
     await this.gitCommands.processes.close();

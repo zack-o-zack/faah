@@ -181,3 +181,22 @@ export function decodeFileInput(
     );
   }
 }
+
+// Git handlers report a fixed missing-field error, but use the same ordered,
+// single-value Go JSON decoding as file requests.
+export function decodeStringFields(
+  input: Uint8Array,
+  fields: readonly string[],
+): Record<string, string> {
+  const value = new JSONInput(Buffer.from(input).toString('latin1')).value();
+  const out: Record<string, string> = {};
+  if (value === null) return out;
+  if (!(value instanceof OrderedObject)) throw new Error('expected object');
+  for (const [key, fieldValue] of value.entries) {
+    const field = key.toLowerCase();
+    if (!fields.includes(field) || fieldValue === null) continue;
+    if (typeof fieldValue !== 'string') throw new Error('expected string');
+    out[field] = fieldValue;
+  }
+  return out;
+}
