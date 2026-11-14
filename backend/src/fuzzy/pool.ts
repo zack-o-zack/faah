@@ -54,6 +54,11 @@ class Shard {
   }
 }
 
+/**
+ * Fuzzy file search over the index. Below 4,000 files it scores in-process;
+ * above, persistent Worker shards hold disjoint path copies and return top-K
+ * candidates that are merged here, with Go's tie order.
+ */
 export class FuzzyPool {
   private shards: Shard[] = [];
   private items: Item[] = [];

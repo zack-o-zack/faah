@@ -2,6 +2,10 @@ import asset from './cache-worker.bundle' with { type: 'file' };
 import { record, number } from '../decode.ts';
 import { RenderCancelled } from './cancel.ts';
 
+/**
+ * Queues L2 cache writes to a separate Worker after the response is sent.
+ * Per-path revisions drop writes made stale by an invalidation.
+ */
 export class RenderWrites {
   private worker: Worker | undefined;
   private next = 0;

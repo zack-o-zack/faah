@@ -5,6 +5,10 @@ import { resolveFile, fileError } from './service.ts';
 import type { RenderService } from '../render/service.ts';
 import type { LegacyFiles } from '../legacy/files.ts';
 
+/**
+ * Saves, creates and closes files. Every change invalidates rendering, touches
+ * the index and tells Go to drop its cached state, so all views agree.
+ */
 export class FileMutations {
   constructor(
     readonly options: {

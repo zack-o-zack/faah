@@ -127,6 +127,10 @@ export function compilePattern(pattern: string, fast = true): Rule | undefined {
   };
 }
 
+/**
+ * Hierarchical ignore rules for a tree, compiled per directory with Go's
+ * negation scoping and fast paths for plain segments, paths and suffixes.
+ */
 export class IgnoreSet {
   readonly rules: Rule[];
   constructor(extra: string[] = [], inherit?: Rule[]) {

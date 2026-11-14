@@ -17,6 +17,9 @@ function counts(text: string): AheadBehind | undefined {
   return { ahead: atoi(parts[0] ?? '') ?? 0, behind: atoi(parts[1] ?? '') ?? 0, hasUpstream: true };
 }
 
+/**
+ * Branch, upstream, ahead/behind and in-progress operation queries.
+ */
 export class GitSync {
   constructor(readonly commands: GitCommands) {}
   async branch(root: string): Promise<string> {

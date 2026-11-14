@@ -1,5 +1,9 @@
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 
+/**
+ * A `faah` child process speaking the ready-line protocol: it prints
+ * `faah-ready host:port` once listening and exits when stdin closes.
+ */
 export class Child {
   readonly process: ChildProcessWithoutNullStreams;
   readonly ready: Promise<string>;

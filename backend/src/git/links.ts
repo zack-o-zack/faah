@@ -13,6 +13,9 @@ function escape(value: string, segment: boolean): string {
   return result;
 }
 
+/**
+ * Web links (commit lists) derived from a branch's remote URL.
+ */
 export class GitLinks {
   private readonly sync: GitSync;
   constructor(readonly commands: GitCommands) {

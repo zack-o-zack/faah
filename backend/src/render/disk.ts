@@ -7,6 +7,10 @@ import { string } from '../decode.ts';
 
 export const rendererVersion = 'shiki-3.22.0-scopes-4';
 
+/**
+ * The L2 render cache: rendered chunks in SQLite (WAL) keyed by content,
+ * language, line count and renderer version, evicted LRU past the byte budget.
+ */
 export class RenderDisk {
   private readonly db: Database;
   constructor(

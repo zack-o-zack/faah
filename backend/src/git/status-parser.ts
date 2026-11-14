@@ -21,6 +21,10 @@ export function mapXY(xy: string): string {
   return code === 'U' ? '!' : code && 'ADRC'.includes(code) ? code : 'M';
 }
 
+/**
+ * Streaming parser for `git status --porcelain=v2 -z`: statuses, staged and
+ * partially staged paths, conflicts and renames, relative to the served root.
+ */
 export class StatusParser {
   readonly state: GitState = {
     git: true,
@@ -65,6 +69,9 @@ export interface NameStatus {
   from?: string;
 }
 
+/**
+ * Streaming parser for `git diff --name-status -z` records.
+ */
 export class NameStatusParser {
   private status = '';
   private from: string | undefined;

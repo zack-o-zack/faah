@@ -21,6 +21,11 @@ interface Waiter {
   abort: () => void;
 }
 
+/**
+ * Runs Git subprocesses with at most `limit` in flight per workspace. Output is
+ * split into records as bytes before decoding, terminal prompts and optional
+ * index locks are disabled, and close() cancels active and queued commands.
+ */
 export class GitProcesses {
   private used = 0;
   private readonly queue: Waiter[] = [];

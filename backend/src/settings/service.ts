@@ -50,6 +50,9 @@ function validate(values: Record<string, unknown>): void {
   }
 }
 
+/**
+ * The user settings file: schema defaults, legacy aliases and atomic saves.
+ */
 export class Settings {
   constructor(readonly path = settingsPath()) {}
   raw(): Record<string, unknown> {

@@ -21,6 +21,11 @@ export class SyncConflict extends ServiceError {
   }
 }
 
+/**
+ * Git mutations behind the HTTP routes: staging, hunks, commit, push, pull,
+ * abort and sync state. Each refreshes the workspace's Git state afterwards and
+ * reports refusals (dirty tree, divergence) as typed errors.
+ */
 export class GitActions {
   readonly mutations: GitMutations;
   constructor(

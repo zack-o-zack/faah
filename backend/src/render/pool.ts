@@ -81,6 +81,10 @@ class Shard {
   }
 }
 
+/**
+ * Up to four highlighting Workers that load grammars lazily. Requests go to
+ * the least busy Worker; closing the pool is permanent.
+ */
 export class RenderPool {
   private shards: Shard[] = [];
   private closed = false;

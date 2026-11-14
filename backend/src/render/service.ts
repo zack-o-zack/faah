@@ -8,6 +8,10 @@ import { RenderWrites } from './writes.ts';
 import { filenameLanguage } from './language.ts';
 import { RenderCancelled } from './cancel.ts';
 
+/**
+ * Opens documents and highlights chunks through the L1 memory and L2 disk
+ * caches, sharing in-flight work between requests and cancelling on close.
+ */
 export class RenderService {
   readonly cache = new LRU<Document>();
   readonly pool = new RenderPool();

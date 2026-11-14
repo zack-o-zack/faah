@@ -13,6 +13,10 @@ import { isMarkdown, renderMarkdown } from '../markdown/service.ts';
 import { delimiter, renderTable, maxBytes } from '../table/service.ts';
 import type { LegacyFiles } from '../legacy/files.ts';
 
+/**
+ * Read side of `/api/file`, `/api/markdown` and `/api/table`: windows of a
+ * rendered document plus Git/LSP metadata, previews with Go's size limits.
+ */
 export class Files {
   private readonly markdownHighlights = new LRU<Highlight>(128);
   private markdownHighlight(abs: string): Highlight {

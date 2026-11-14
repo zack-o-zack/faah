@@ -8,6 +8,11 @@ export interface GitInfo {
   dir: string;
 }
 
+/**
+ * Finds a directory's repository top level and Git directory. Successes are
+ * cached while the Git directory exists; failures stay retryable so a later
+ * `git init` is noticed.
+ */
 export class GitProbe {
   private readonly cache = new Map<string, GitInfo>();
   private readonly pending = new Map<string, Promise<GitInfo | undefined>>();

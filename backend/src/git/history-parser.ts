@@ -70,6 +70,9 @@ export function unpushedCommit(line: string): GitUnpushedCommit {
   };
 }
 
+/**
+ * Streaming parser for `--numstat -z` records, including renames split across fields.
+ */
 export class NumstatParser {
   readonly stats = new Map<string, Numstat>();
   private pending: Numstat | undefined;

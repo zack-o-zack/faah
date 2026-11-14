@@ -19,6 +19,10 @@ function command(): string[] {
   ];
 }
 
+/**
+ * @parcel/watcher subscriptions in a helper process (Linux), so a native
+ * startup that never returns can be killed after its deadline.
+ */
 export class WatcherProcess {
   private child: Bun.Subprocess<'pipe', 'pipe', 'ignore'> | undefined;
   private readonly pending = new Map<number, Pending>();

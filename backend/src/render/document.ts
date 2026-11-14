@@ -13,6 +13,10 @@ export function sizeOfLines(lines: readonly string[]): number {
 
 export type Highlight = (source: string, lang: string, want: number) => Promise<string[]>;
 
+/**
+ * One immutable source file: UTF-8 bytes, a line index and Go's width rules.
+ * Highlighting happens in 1,000-line chunks on demand.
+ */
 export class Document {
   readonly lang: string;
   readonly total: number;

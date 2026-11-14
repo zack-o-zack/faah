@@ -14,6 +14,10 @@ import type {
 } from './history-parser.ts';
 import { GitLinks } from './links.ts';
 
+/**
+ * Commit history reads: recent commits, unpushed ranges, per-commit files and
+ * details, using Go's exact argument lists.
+ */
 export class GitHistory {
   constructor(readonly commands: GitCommands) {}
   async recent(root: string, count = 5): Promise<GitCommit[]> {

@@ -1,5 +1,9 @@
 import { atoi } from '../compat/go-numbers.ts';
 
+/**
+ * Turns a unified diff into new-file line numbers for the change gutter: added,
+ * modified and one marker per pure deletion run.
+ */
 export class GutterParser {
   readonly added: number[] = [];
   readonly modified: number[] = [];

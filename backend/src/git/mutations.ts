@@ -3,12 +3,18 @@ import { trimSpace } from '../compat/go-strings.ts';
 import type { GitCommands } from './commands.ts';
 import { GitSync } from './sync.ts';
 
+/**
+ * A pull fetched commits that cannot be fast-forwarded onto the branch.
+ */
 export class NotFastForward extends Error {
   constructor() {
     super('not a fast-forward');
   }
 }
 
+/**
+ * Low-level Git writes with Go's error wording (`git add: exit status N: …`).
+ */
 export class GitMutations {
   constructor(
     readonly commands: GitCommands,

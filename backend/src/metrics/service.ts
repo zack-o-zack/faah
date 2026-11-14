@@ -7,6 +7,10 @@ export interface Metrics {
   lspMemBytes: number;
 }
 
+/**
+ * Process metrics in Go's shape. CPU usage is sampled at least 200 ms apart;
+ * memory includes the given helper processes.
+ */
 export class MetricsCollector {
   private time = performance.now();
   private cpu = process.cpuUsage();

@@ -12,33 +12,102 @@ services until phase 8. The ACP stdio bridge also delegates to Go during the por
 | Module                        | Responsibility                                                                                                |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | `backend/src/main.ts`, `cli/` | Go-style flags, targets, ready protocol, browser, stdin and signal lifetime                                   |
-| `http/`                       | Bun listener, HTTP adapter, guards, assets, gzip, CSP, ranges, SSE and streaming proxy                        |
+| `workspace/`                  | Workspace composition root, process composition, meta/reindex and stream routes                               |
+| `errors.ts`                   | `ServiceError` with a failure kind; the only error type services throw for expected failures                  |
+| `compat/`                     | Go semantics JavaScript lacks: strings, UTF-8 replacement, strconv, RE2 `\s`, `encoding/json` decoding        |
+| `http/`                       | Bun listener, router, route tables, error mapping, guards, assets, gzip, CSP, ranges, SSE and streaming proxy |
 | `workbench/`                  | Recents, pins, stable IDs, clone discovery/preparation, children, holding pages, routes                       |
 | `settings/`                   | Schema/defaults, raw JSON, aliases and atomic temp/rename saves                                               |
 | `metrics/`                    | Own process APIs, child RSS, CPU samples at least 200 ms apart, workbench aggregation                         |
 | `store/db.ts`                 | SQLite WAL, foreign keys, busy timeout, versioned transactional migrations                                    |
 | `ignore/`                     | Hierarchical Go ignore rules, scoped negation and segment/path/suffix fast paths                              |
-| `index/`                      | Concurrent walk, early root publication, tree/compact/touch, Git overlays and navigation                      |
+| `index/`                      | Concurrent walk, early root publication, tree/compact/touch, Git overlays, tree and find routes               |
 | `fuzzy/`                      | Go scoring and UTF-8 byte positions, top-K heaps, persistent sharded Workers at 4K files                      |
 | `search/`                     | Embedded ripgrep, indexed file batches, ASCII folding, RE2 compatibility and snippets                         |
-| `symbols/`                    | Go language families, declaration recognition and outline rules                                               |
+| `symbols/`                    | Go language families, declaration recognition, outline rules, outline and definition routes                   |
 | `files/`                      | File windows, raw downloads, Markdown/table file limits, save/new/close and typed request decoding            |
 | `render/`                     | Shiki Workers, Chroma language names and scope classes, immutable documents, L1/L2 caches and idle scavenging |
 | `markdown/`, `table/`         | Goldmark-compatible Markdown structure and Go CSV parsing                                                     |
-| `git/`                        | Bounded Git subprocesses, typed streaming parsers, repository state, reads, mutations and index overlays      |
+| `git/`                        | Bounded Git subprocesses, typed streaming parsers, repository state, reads, mutations and routes              |
 | `watch/`                      | Native filesystem subscription, ignore filtering, debounce and Git refresh                                    |
-| `legacy/`                     | Go startup/stop, remaining routes, metadata/LSP adapters and migration consistency                            |
+| `legacy/`                     | Go startup/stop, client, proxied routes, consistency hooks and metadata/LSP adapters                          |
 | `bench/`                      | Owned HTTP measurements, Go microbenchmark vectors, rg strategies and differential QA                         |
 | `scripts/build.ts`            | Generate static file imports and compile the executable                                                       |
 | `test/`                       | Unit, two-process SQLite and streaming proxy tests                                                            |
 | `spike/`                      | Separate compiled runtime proof; excluded from the application                                                |
 
-Services accept typed values and return plain values. HTTP modules decode
-requests, call services and encode responses. Services have no Request/Response
-parameters. A later WebSocket adapter can call the same services. New external
-inputs must be decoded from unknown; keep TypeScript strict, with no `any`, casts
-(except `as const`), non-null assertions or suppression directives. Format with
-Prettier. Keep business logic out of routes.
+## Architecture
+
+The backend has three layers. Dependencies point downwards only.
+
+1. **Services** (`git/actions.ts`, `files/view.ts`, `index/queries.ts`, …) hold
+   behaviour. They take typed values, return plain values and throw
+   `ServiceError(kind, message)` for expected failures. They never see
+   `Request`, `Response` or `Bun.serve`, and they receive their collaborators
+   as constructor options instead of creating or importing them, so tests pass
+   fakes. Where several implementations exist, they share an interface (watcher
+   backends, process runners).
+2. **Adapters** connect services to the outside world: HTTP route tables
+   (`<feature>/routes.ts`), Git subprocesses (`git/process.ts`), SQLite stores,
+   the watcher binding and the legacy Go client/proxy.
+3. **Composition roots** build one process. `workspace/workspace.ts` creates a
+   workspace's services in dependency order, wires the cross-service reactions
+   (a changed file invalidates rendering, the index, Go's caches and Git) and
+   returns the routes. `workspace/process.ts` and `workbench/process.ts` add
+   the shared static, settings and metrics routes; `main.ts` only parses flags,
+   listens and manages the lifetime.
+
+### Routes
+
+Each feature exports a function returning `RouteDef[]` from its `routes.ts`:
+
+```ts
+export function indexRoutes(queries: IndexQueries): RouteDef[] {
+  return [{ path: 'api/tree', fallbackStatus: 400, handle: async ({ query }) => json(...) }];
+}
+```
+
+`path` is relative to the base path (`prefix: true` matches a prefix),
+`methods` produces Go's `405 method not allowed`, and `fallbackStatus` is the
+status for unexpected errors, because Go's handlers differ (400 for reads, 500
+for file writes, 502 for Git). `passthrough` skips the shared headers for
+proxies and holding pages. `http/router.ts` resolves the base path, finds the
+route in a `RouteTable` and applies headers and gzip. `http/errors.ts` is the
+only place that turns errors into responses: `ServiceError` kinds map to status
+codes, `details` become extra body fields (the sync state on a refused pull),
+Go's own statuses pass through from the legacy client, and an aborted request
+gets 499. When two groups declare the same path, the group passed first wins;
+the workbench uses this for its theme-only `api/settings`.
+
+### Adding a route, feature or provider
+
+- **Route:** add a `RouteDef` to the owning feature's `routes.ts`. Decode the
+  request there, call the service, encode with `json(...)`. Throw
+  `ServiceError` for expected failures; do not build error responses in
+  services. If the route moves from Go, delete it from `legacy/routes.ts`.
+- **Feature:** create `src/<feature>/` with a service class (doc comment stating
+  its role and invariants), its `routes.ts`, and tests under `backend/test/`.
+  Construct it in `workspace/workspace.ts` and append its routes there.
+- **Implementation of an existing interface** (a forge provider, a watcher
+  backend): implement the interface in its own module and register it in the
+  feature's registry. Callers depend on the interface only.
+
+### Go compatibility
+
+Byte-exact responses sometimes need Go's semantics: `strings.TrimSpace`,
+byte-wise string ordering, per-byte UTF-8 replacement, `strconv.Atoi`
+ranges, RE2's ASCII `\s`, `encoding/json` decoding and its error wording.
+These live in `compat/`, one helper per behaviour, each with a comment naming
+the Go behaviour it preserves. Feature-specific quirks stay next to the feature
+in a clearly named file (`search/compat.ts`, `settings/json.ts`). Fixing a
+recorded oddity later means changing the helper and its contract golden.
+
+### Checks
+
+`bun run backend:check` runs the strict typecheck, type-aware ESLint
+(`backend/eslint.config.js`: `strictTypeChecked`, `stylisticTypeChecked`,
+floating promises, type-only imports, exhaustive switches, padding between
+declarations, no one-letter names), Prettier and the backend tests.
 
 SQLite lives at `$XDG_STATE_HOME/faah/faah.db`, otherwise `~/.faah/faah.db`.
 Schema version 1 contains workbench items and clone mappings. Every connection

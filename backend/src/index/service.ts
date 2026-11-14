@@ -7,6 +7,11 @@ import { walk, walkable, sortNodes, vcs } from './walk.ts';
 import { mergeGit, applyFlags, gitFiles } from './git.ts';
 import { emptyGit, type Node, type GitState } from './types.ts';
 
+/**
+ * The workspace file index: flat file list for search and the directory tree
+ * with Git overlays. Edits are serialized; the root is published early during
+ * the first walk.
+ */
 export class Index {
   files: Item[] = [];
   children = new Map<string, Node[]>();

@@ -27,6 +27,10 @@ export interface WorkspaceChild {
   lastActive: number;
 }
 
+/**
+ * The workbench: recent and pinned workspaces, their child processes, folder
+ * browsing and pull request clone preparation.
+ */
 export class Workbench {
   readonly children = new Map<string, WorkspaceChild>();
   private readonly reap: ReturnType<typeof setInterval>;

@@ -30,6 +30,11 @@ export function gitEvent(path: string): boolean {
   );
 }
 
+/**
+ * Watches the workspace and its external Git directories, filters ignored and
+ * object-store noise, and delivers 50 ms batches. When watching fails it
+ * reports unavailability so Git falls back to polling.
+ */
 export class WorkspaceWatch {
   private readonly native = new NativeWatcher();
   get pid(): number | undefined {

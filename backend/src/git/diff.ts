@@ -3,6 +3,10 @@ import { commitDiffArgs, validSHA } from './commands.ts';
 
 export const emptyTree = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
 
+/**
+ * Unified diffs of one path: against a base (HEAD, or a PR merge-base), between
+ * two commits, or one commit's own change.
+ */
 export class GitDiff {
   constructor(readonly commands: GitCommands) {}
   async against(root: string, path: string, base = 'HEAD'): Promise<string> {

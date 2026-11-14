@@ -1,6 +1,10 @@
 import { GitProcesses } from './process.ts';
 import { GitProbe, repoKey } from './probe.ts';
 
+/**
+ * Convenience reads over the bounded process pool. Reads fail quiet (empty
+ * result) as Go's helpers do, including outside a repository.
+ */
 export class GitCommands {
   readonly probe: GitProbe;
   constructor(

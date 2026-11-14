@@ -41,6 +41,9 @@ function decode(text: string): Item {
   return result;
 }
 
+/**
+ * Workbench items and remembered clones in the shared SQLite database.
+ */
 export class WorkbenchStore {
   constructor(readonly db: Database) {}
   items(): Item[] {

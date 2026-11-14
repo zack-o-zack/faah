@@ -10,6 +10,10 @@ import { GitSync } from './sync.ts';
 import { parseGutter } from './gutter.ts';
 import type { GitState } from '../index/types.ts';
 
+/**
+ * Read routes over Git: file diffs and gutters, history, unpushed commits and
+ * commit details, with highlighted diff hunks from the render service.
+ */
 export class GitReads {
   private readonly history: GitHistory;
   private readonly diffs: GitDiff;

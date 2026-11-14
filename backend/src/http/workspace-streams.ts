@@ -2,6 +2,10 @@ import type { GitWorkspace } from '../git/workspace.ts';
 import { LegacyFeeds } from '../legacy/feeds.ts';
 import { eventResponse, eventFrame } from './events.ts';
 
+/**
+ * The `/api/stream` and `/api/git/stream` SSE endpoints: metrics every 2.5 s,
+ * native Git events, and Go's thread/review feeds from one shared upstream.
+ */
 export class WorkspaceStreams {
   private readonly clients = new Set<() => void>();
   private readonly opening = new Set<Promise<unknown>>();

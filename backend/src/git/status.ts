@@ -4,6 +4,10 @@ import { repoKey } from './probe.ts';
 import { StatusParser, NameStatusParser } from './status-parser.ts';
 import { dictionary } from './maps.ts';
 
+/**
+ * One status snapshot of the served root, optionally overlaid with the files
+ * that differ from a base or head commit (PR review statuses).
+ */
 export class GitStatus {
   constructor(readonly probe: GitProbe) {}
   async read(root: string, base = 'HEAD', head = ''): Promise<GitState> {

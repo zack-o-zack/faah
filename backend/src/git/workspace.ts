@@ -55,6 +55,11 @@ function identity(payload: GitPayload): string {
   ]);
 }
 
+/**
+ * The workspace's current Git state. Snapshots are computed one at a time and
+ * overlaid on the index; unchanged payloads are not broadcast. Without stream
+ * subscribers, changes only invalidate and the next request recomputes.
+ */
 export class GitWorkspace {
   private readonly status: GitStatus;
   private readonly history: GitHistory;

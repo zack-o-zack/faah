@@ -1,6 +1,10 @@
 import { subscribe, type Callback } from './binding.ts';
 import { WatcherProcess } from './process.ts';
 
+/**
+ * @parcel/watcher subscriptions: in-process on macOS and Windows, through a
+ * helper process on Linux (see WatcherProcess).
+ */
 export class NativeWatcher {
   private readonly helper = process.platform === 'linux' ? new WatcherProcess() : undefined;
   get pid(): number | undefined {

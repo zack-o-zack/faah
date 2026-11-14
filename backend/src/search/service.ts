@@ -45,6 +45,10 @@ export async function unindexedTarget(
   }
 }
 
+/**
+ * Content search with embedded ripgrep, restricted to indexed files, plus the
+ * definition search behind `/api/def`. Matches keep Go's byte ranges and caps.
+ */
 export class Search {
   constructor(
     readonly options: {
