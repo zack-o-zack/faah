@@ -1,6 +1,6 @@
 # Agent editing and dispatch
 
-`agent.go` owns selection, prompts, jobs, and changed-file detection. Inline and batch edits run through the [thread manager](threads.md); [native adapters](agents.md) own process execution and protocols.
+`agent.go` owns selection. `internal/threads/prompts.go` owns commit, sync and merge prompts; `internal/threads/jobs.go` owns jobs and changed-file detection. Inline and batch edits run through the [thread manager](threads.md); [native adapters](agents.md) own process execution and protocols.
 
 ## Discovery and selection
 
@@ -16,7 +16,7 @@ The selection bar, context menu, and `Alt+E` open a composer. The browser sends 
 
 `threadManager.overlappingEdit` rejects overlapping ranges among running inline and batch edits with HTTP 409. Disjoint ranges can run concurrently. Uncommitted files are allowed. Ordinary conversation threads have no overlap guard, so concurrent writes can affect each other's changed-file lists.
 
-The thread manager exposes turns as `agentJob` snapshots through the agent manager's job and cancellation hooks. `/api/agent/job?id=` serves the same shape to all edit composers. Stop cancels the native turn; changes already written remain.
+The thread manager exposes turns as `threads.Job` snapshots through the agent manager's job and cancellation hooks. `/api/agent/job?id=` serves the same shape to all edit composers. Stop cancels the native turn; changes already written remain.
 
 ## Prompt jobs
 

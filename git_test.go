@@ -20,6 +20,7 @@ import (
 	"faah/internal/git/gittest"
 	lsppkg "faah/internal/lsp"
 	prpkg "faah/internal/pr"
+	"faah/internal/threads"
 	"faah/internal/workspace"
 )
 
@@ -700,7 +701,7 @@ func TestGitFFOnlyPull(t *testing.T) {
 	if st.Branch != "main" || st.Upstream != "origin/main" || st.Ahead != 1 || st.Behind != 1 || st.InProgress != "" || st.Dirty {
 		t.Fatalf("unexpected sync state after a diverged pull: %+v", st)
 	}
-	if p := gitSyncPrompt("rebase", st); !strings.Contains(p, "can't fast-forward onto origin/main") || !strings.Contains(p, "Run rebase") || !strings.Contains(p, "do not push") {
+	if p := threads.SyncPrompt("rebase", st); !strings.Contains(p, "can't fast-forward onto origin/main") || !strings.Contains(p, "Run rebase") || !strings.Contains(p, "do not push") {
 		t.Fatalf("rebase prompt is missing the situation or the no-push rule:\n%s", p)
 	}
 

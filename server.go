@@ -34,6 +34,7 @@ import (
 	"faah/internal/symbols"
 	"faah/internal/table"
 	"faah/internal/telemetry"
+	"faah/internal/threads"
 	"faah/internal/ui"
 	"faah/internal/workspace"
 )
@@ -363,11 +364,21 @@ func (s *Server) SetAgent(a *agentManager) {
 		s.threads = newThreadManager(a, s.ix.Root())
 		s.threads.prContext = s.prThreadContext
 		s.threads.symbolHash = s.symbolHash
-		a.onEdit = func() {
+		a.SetHooks(threads.Hooks{AfterEdit: func(changed []string) {
+			for _, rel := range changed {
+				abs := filepath.Join(s.ix.Root(), filepath.FromSlash(rel))
+				render.Evict(abs)
+				if s.lsp != nil {
+					s.lsp.CloseDoc(abs, rel)
+				}
+			}
+			if len(changed) == 0 {
+				return
+			}
 			if s.gitWatcher != nil {
 				s.gitWatcher.Trigger()
 			}
-		}
+		}})
 	}
 }
 
@@ -1728,7 +1739,7 @@ func (s *Server) handleGitCommitMessage(w http.ResponseWriter, r *http.Request) 
 	if cfg := settings.Read(); cfg.GitCommitMessageInstruction != nil {
 		instruction = strings.TrimSpace(*cfg.GitCommitMessageInstruction)
 	}
-	job, err := s.agent.StartPrompt("commit message", commitMessagePrompt(files, stat, diff, instruction))
+	job, err := s.agent.StartPrompt("commit message", threads.CommitMessagePrompt(files, stat, diff, instruction))
 	if err != nil {
 		code := http.StatusBadGateway
 		if errors.Is(err, errAgentNone) {
@@ -1993,7 +2004,7 @@ func (s *Server) handleGitSyncAgent(w http.ResponseWriter, r *http.Request) {
 		httpx.Fail(w, http.StatusConflict, "the PR already contains everything on "+st.Upstream+"; nothing to "+body.Strategy)
 		return
 	}
-	job, err := s.agent.StartPrompt(body.Strategy+" onto "+st.Upstream, gitSyncPrompt(body.Strategy, st))
+	job, err := s.agent.StartPrompt(body.Strategy+" onto "+st.Upstream, threads.SyncPrompt(body.Strategy, st))
 	if err != nil {
 		code := http.StatusBadGateway
 		if errors.Is(err, errAgentNone) {

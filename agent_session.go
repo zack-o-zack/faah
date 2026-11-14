@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io"
 	"time"
 
 	"faah/internal/agents"
@@ -16,27 +15,6 @@ func (s *threadSink) Reasoning(text string) {
 	s.turn.Reasoning += text
 	s.tm.publishLocked(s.tid, "reasoning", map[string]any{"turn": s.turn.ID, "text": text})
 	s.tm.maybeSaveLocked()
-}
-
-type writerSink struct {
-	io.Writer
-	wrote bool
-}
-
-// Text forwards assistant output.
-func (s *writerSink) Text(t string, _ bool) { s.wrote = true; _, _ = io.WriteString(s.Writer, t) }
-
-// Reasoning forwards the agent’s reasoning.
-func (s *writerSink) Reasoning(string) {}
-
-// Step reports tool activity.
-func (s *writerSink) Step(string) {}
-
-// Result supplies an answer when no text was streamed.
-func (s *writerSink) Result(t string) {
-	if !s.wrote {
-		_, _ = io.WriteString(s.Writer, t)
-	}
 }
 
 type threadSession struct {

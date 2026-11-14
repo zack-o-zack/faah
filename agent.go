@@ -24,13 +24,13 @@ import (
 	"faah/internal/agents/all"
 	"faah/internal/explain"
 	"faah/internal/explain/notes"
-	"faah/internal/forge"
 	"faah/internal/git"
 	"faah/internal/httpx"
 	lsppkg "faah/internal/lsp"
 	"faah/internal/processio"
 	"faah/internal/render"
 	"faah/internal/settings"
+	"faah/internal/threads"
 	"faah/internal/ui"
 )
 
@@ -53,99 +53,19 @@ type agentHarness struct {
 	Model     string   `json:"model,omitempty"`
 }
 
-// agentBatchItem represents one instruction anchored to a file range.
-type agentBatchItem struct {
-	Abs         string `json:"-"`
-	Path        string `json:"path"`
-	L1          int    `json:"l1"`
-	L2          int    `json:"l2"`
-	Instruction string `json:"instruction"`
-}
-
-// agentJob represents a single background editing task dispatched to an AI coding harness.
-// It tracks real-time progress, log outputs, duration, affected files, and cancellation handlers.
-type agentJob struct {
-	ID         int64            `json:"id"`                   // Unique monotonic job identifier
-	Harness    string           `json:"harness"`              // Name of the harness executing this job
-	Path       string           `json:"path"`                 // Relative file path targeted for editing
-	Lines      string           `json:"lines"`                // Line range formatted string (e.g. "L12-L30")
-	Running    bool             `json:"running"`              // True while harness process is actively executing
-	Error      string           `json:"error,omitempty"`      // Error message if the job failed or was aborted
-	Log        string           `json:"log"`                  // Tail of merged stdout/stderr log output
-	Stdout     string           `json:"stdout,omitempty"`     // Stdout log output tail
-	Stderr     string           `json:"stderr,omitempty"`     // Stderr log output tail
-	Changed    []string         `json:"changed"`              // Files detected as modified after job execution
-	Ms         int64            `json:"ms"`                   // Elapsed runtime in milliseconds
-	Tracked    bool             `json:"tracked"`              // Whether telemetry tracking has been recorded
-	ThreadID   string           `json:"threadId,omitempty"`   // The thread this edit runs as, when it runs as one
-	BatchCount int              `json:"batchCount,omitempty"` // Number of items in batch review edit
-	Items      []agentBatchItem `json:"items,omitempty"`      // Detailed batch items if multi-file edit
-
-	cancel context.CancelFunc
-	out    *processio.TailBuffer
-	stderr *processio.TailBuffer
-	start  time.Time
-}
-
 var (
 	// The refusals the UI reacts to rather than merely reporting.
 	errAgentBusy  = errors.New("an edit is already running")
 	errAgentDirty = errors.New("uncommitted")
-	errAgentNone  = errors.New("no coding harness is selected")
+	errAgentNone  = threads.ErrNoAgent
 )
-
-// lineStreamer forwards complete lines to w with a prefix in real time,
-// while also storing the raw bytes into a processio.TailBuffer.
-type lineStreamer struct {
-	mu     sync.Mutex
-	buf    *processio.TailBuffer
-	prefix string
-	line   []byte
-	w      io.Writer
-}
-
-func newLineStreamer(buf *processio.TailBuffer, prefix string, w io.Writer) *lineStreamer {
-	return &lineStreamer{buf: buf, prefix: prefix, w: w}
-}
-
-func (s *lineStreamer) Write(p []byte) (int, error) {
-	if s.buf != nil {
-		s.buf.Write(p)
-	}
-	if s.w == nil || ui.Quiet {
-		return len(p), nil
-	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	for _, b := range p {
-		if b == '\n' {
-			if len(s.line) > 0 {
-				fmt.Fprintf(s.w, "  %s %s\n", s.prefix, string(s.line))
-				s.line = s.line[:0]
-			}
-		} else if b != '\r' {
-			s.line = append(s.line, b)
-		}
-	}
-	return len(p), nil
-}
-
-func (s *lineStreamer) Flush() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if len(s.line) > 0 && s.w != nil && !ui.Quiet {
-		fmt.Fprintf(s.w, "  %s %s\n", s.prefix, string(s.line))
-		s.line = s.line[:0]
-	}
-}
 
 // agentManager owns discovery, the current choice, and every edit currently in
 // flight. Several harnesses can run at once as long as they touch disjoint
 // line ranges: two harnesses rewriting the same lines produces a state nobody
 // can review afterwards, so overlapping ranges are refused rather than queued.
 type agentManager struct {
-	root      string
-	lsp       *lsppkg.Manager
+	*threads.Jobs
 	openAgent func(string) agents.Agent
 
 	mu       sync.Mutex
@@ -153,13 +73,7 @@ type agentManager struct {
 	args     []string          // resolved argv, nil when nothing is selected
 	pinned   bool              // -agent was given, so the UI cannot change it
 	models   map[string]string // harness name -> selected model
-	jobs     map[int64]*agentJob
-	seq      int64
-	onEdit   func()
 
-	// Set by the thread manager: inline and batch edits run as threads.
-	threadJob    func(id int64) *agentJob // id 0 means the most recent
-	threadCancel func(id int64) bool      // id 0 means every one running
 }
 
 // newAgentManager wires discovery and restores the remembered choice. A flag
@@ -168,11 +82,19 @@ type agentManager struct {
 // stale settings file should just leave nothing selected.
 func newAgentManager(root, flagSpec string, lsp *lsppkg.Manager) (*agentManager, error) {
 	m := &agentManager{
-		root:      root,
 		openAgent: all.For,
-		lsp:       lsp,
 		models:    map[string]string{},
 	}
+	m.Jobs = threads.NewJobs(root, version, m.current, func(name string) agents.Agent { return m.openAgent(name) })
+	m.SetHooks(threads.Hooks{AfterEdit: func(changed []string) {
+		for _, rel := range changed {
+			abs := filepath.Join(root, filepath.FromSlash(rel))
+			render.Evict(abs)
+			if lsp != nil {
+				lsp.CloseDoc(abs, rel)
+			}
+		}
+	}})
 	s := settings.Read()
 	if s.Models != nil {
 		for k, v := range s.Models {
@@ -352,435 +274,6 @@ func (m *agentManager) Select(name string, modelOpt ...string) error {
 	return settings.Write(settings.Settings{Agent: name, Models: savedModels})
 }
 
-// Job returns a snapshot of job id, or of the most recently started job when
-// id is 0, or nil when there isn't one.
-func (m *agentManager) Job(id int64) *agentJob {
-	if m == nil {
-		return nil
-	}
-	m.mu.Lock()
-	j := m.jobs[id]
-	if id == 0 {
-		for _, cand := range m.jobs {
-			if j == nil || cand.ID > j.ID {
-				j = cand
-			}
-		}
-	}
-	var cp *agentJob
-	if j != nil {
-		c := *j
-		c.Log = j.out.String()
-		c.Stdout = c.Log
-		if j.stderr != nil {
-			c.Stderr = j.stderr.String()
-		}
-		if c.Running {
-			c.Ms = time.Since(j.start).Milliseconds()
-		}
-		cp = &c
-	}
-	lookup := m.threadJob
-	m.mu.Unlock()
-
-	// Inline and batch edits run as threads and share this id space, so one
-	// poll endpoint serves both. Asked for the latest, the newer of the two wins.
-	if lookup != nil {
-		if tj := lookup(id); tj != nil && (cp == nil || tj.ID > cp.ID) {
-			return tj
-		}
-	}
-	return cp
-}
-
-// nextJobID hands out an id from the sequence every job shares.
-func (m *agentManager) nextJobID() int64 {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.seq++
-	return m.seq
-}
-
-// StartPrompt dispatches a one-shot prompt to the selected harness with no
-// target file -- used for generating text (e.g. a commit message) rather
-// than editing code. There is no file range to anchor an overlap check
-// against, so a prompt job is never blocked by, or blocks, a file edit.
-func (m *agentManager) StartPrompt(label, prompt string) (*agentJob, error) {
-	m.mu.Lock()
-	if m.args == nil {
-		m.mu.Unlock()
-		ui.Status("err", "agent", "prompt dispatch refused: no coding harness selected", 0, os.Stdout)
-		return nil, errAgentNone
-	}
-	args := m.args
-	name := m.selected
-	model := m.models[name]
-	m.seq++
-	ctx, cancel := context.WithTimeout(context.Background(), agentTimeout)
-	job := &agentJob{
-		ID:      m.seq,
-		Harness: name,
-		Path:    label,
-		Running: true,
-		Changed: []string{},
-		Tracked: git.Available(m.root),
-		out:     processio.NewTailBuffer(agentLogBytes),
-		stderr:  processio.NewTailBuffer(agentLogBytes),
-		start:   time.Now(),
-		cancel:  cancel,
-	}
-	if m.jobs == nil {
-		m.jobs = map[int64]*agentJob{}
-	}
-	m.jobs[job.ID] = job
-	modelStr := ""
-	if m.models != nil && m.models[name] != "" {
-		modelStr = fmt.Sprintf(" (%s)", m.models[name])
-	}
-	m.mu.Unlock()
-
-	ui.Status("step", "agent", fmt.Sprintf("#%d %s%s · %s", job.ID, name, modelStr, label), 0, os.Stdout)
-
-	go m.run(ctx, cancel, job, args, model, prompt)
-	return m.Job(job.ID), nil
-}
-
-func (m *agentManager) run(ctx context.Context, cancel context.CancelFunc, job *agentJob, base []string, model, prompt string) {
-	defer cancel()
-	defer func() {
-		m.mu.Lock()
-		job.Running = false
-		job.Ms = time.Since(job.start).Milliseconds()
-		if job.cancel != nil {
-			job.cancel = nil
-		}
-		m.mu.Unlock()
-	}()
-
-	if ui.Verbose {
-		ui.VerbosePrompt(job.ID, job.Harness, prompt, os.Stdout)
-	}
-
-	before := worktreeSnapshot(m.root)
-
-	stdoutStreamer := newLineStreamer(job.out, ui.Faint("│", os.Stdout), os.Stdout)
-	stderrStreamer := newLineStreamer(job.stderr, ui.Dim("│", os.Stdout), os.Stdout)
-
-	a := m.openAgent(job.Harness)
-	session, err := a.Open(ctx, agents.Open{Key: fmt.Sprintf("edit-%d", job.ID), Version: version, Dir: m.root, Base: base, Model: model, Mode: agents.ModeEdit, Stderr: stderrStreamer})
-	if err == nil {
-		defer session.Close()
-		_, err = session.Prompt(ctx, prompt, &writerSink{Writer: stdoutStreamer})
-	}
-	stdoutStreamer.Flush()
-	stderrStreamer.Flush()
-
-	changed := changedSince(m.root, before)
-	m.settle(changed)
-
-	m.mu.Lock()
-	job.Running = false
-	job.Changed = changed
-	job.Ms = time.Since(job.start).Milliseconds()
-	if err != nil {
-		job.Error = err.Error()
-	}
-	stdoutOutput := job.out.String()
-	stderrOutput := job.stderr.String()
-	m.mu.Unlock()
-
-	durStr := ui.FmtDuration(time.Duration(job.Ms) * time.Millisecond)
-	if err != nil {
-		ui.Status("err", "agent", fmt.Sprintf("#%d %s failed in %s: %s", job.ID, job.Harness, durStr, err.Error()), 0, os.Stdout)
-		if trimmedErr := strings.TrimSpace(stderrOutput); trimmedErr != "" {
-			ui.KV("harness stderr", trimmedErr, 0, os.Stdout)
-		}
-		if trimmedOut := strings.TrimSpace(stdoutOutput); trimmedOut != "" {
-			ui.KV("harness stdout", trimmedOut, 0, os.Stdout)
-		}
-	} else {
-		var summary string
-		switch len(changed) {
-		case 0:
-			summary = "no files changed"
-		case 1:
-			summary = fmt.Sprintf("1 file changed: %s", changed[0])
-		default:
-			summary = fmt.Sprintf("%d files changed: %s", len(changed), strings.Join(changed, ", "))
-		}
-		ui.Status("ok", "agent", fmt.Sprintf("#%d %s · %s  (%s)", job.ID, job.Harness, durStr, summary), 0, os.Stdout)
-		if len(changed) == 0 && job.Tracked {
-			if trimmedErr := strings.TrimSpace(stderrOutput); trimmedErr != "" {
-				ui.KV("harness stderr", trimmedErr, 0, os.Stdout)
-			}
-		}
-	}
-}
-
-// settle drops every trace of the old bytes. Open memoises on path+mtime+size
-// so a rewritten file already misses the cache, but a harness that truncates
-// and writes in place can be read mid-write, and that torn copy would then sit
-// under a key nothing invalidates. Evicting is cheaper than reasoning about it.
-// Language servers hold their own copy of the file and never saw the write, so
-// they are closed here too and reopen on the next request.
-func (m *agentManager) settle(changed []string) {
-	for _, rel := range changed {
-		abs := filepath.Join(m.root, filepath.FromSlash(rel))
-		render.Evict(abs)
-		if m.lsp != nil {
-			m.lsp.CloseDoc(abs, rel)
-		}
-	}
-	if len(changed) > 0 && m.onEdit != nil {
-		m.onEdit()
-	}
-}
-
-// Cancel stops every harness currently running. Whatever each has already
-// written stays.
-func (m *agentManager) Cancel() bool {
-	return m.CancelJob(0)
-}
-
-// CancelJob stops the harness run with the given id, or every running harness
-// when id is 0.
-func (m *agentManager) CancelJob(id int64) bool {
-	if m == nil {
-		return false
-	}
-	m.mu.Lock()
-	tc := m.threadCancel
-	m.mu.Unlock()
-	fromThreads := tc != nil && tc(id)
-	if fromThreads && id != 0 {
-		return true
-	}
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if id != 0 {
-		j := m.jobs[id]
-		if j != nil && j.Running && j.cancel != nil {
-			ui.Status("warn", "agent", fmt.Sprintf("cancelled in-flight run with %s (job %d)", j.Harness, j.ID), 0, os.Stdout)
-			j.Running = false
-			j.Error = "cancelled"
-			cancel := j.cancel
-			j.cancel = nil
-			cancel()
-			return true
-		}
-		return false
-	}
-	cancelled := false
-	for _, j := range m.jobs {
-		if !j.Running || j.cancel == nil {
-			continue
-		}
-		ui.Status("warn", "agent", fmt.Sprintf("cancelled in-flight run with %s (job %d)", j.Harness, j.ID), 0, os.Stdout)
-		j.Running = false
-		j.Error = "cancelled"
-		cancel := j.cancel
-		j.cancel = nil
-		cancel()
-		cancelled = true
-	}
-	return cancelled || fromThreads
-}
-
-func (m *agentManager) Close() { m.Cancel() }
-
-// changedSince reports the paths whose state differs from the snapshot taken
-// before the run. Asking git is the only honest answer to "what did it touch":
-// a harness routinely edits files nobody pointed it at.
-func changedSince(root string, before map[string]string) []string {
-	return changedSinceMaps(before, worktreeSnapshot(root))
-}
-
-// worktreeSnapshot is git status with each listed file's size and mtime folded
-// into its entry. Status alone misses the common case of editing a file that is
-// already modified: it reads "M" before and after, so the edit would go unseen.
-// Files git lists as clean are left out, and those still surface through status.
-func worktreeSnapshot(root string) map[string]string {
-	st := git.Status(root)
-	for rel, code := range st {
-		if fi, err := os.Stat(filepath.Join(root, filepath.FromSlash(rel))); err == nil {
-			st[rel] = code + " " + strconv.FormatInt(fi.Size(), 10) + " " + strconv.FormatInt(fi.ModTime().UnixNano(), 10)
-		}
-	}
-	return st
-}
-
-// changedSinceMaps compares two status snapshots in both directions. Outside a
-// git repository both are nil and nothing is ever reported as changed, which is
-// why a job carries Tracked for the client to fall back on.
-func changedSinceMaps(before, after map[string]string) []string {
-	out := []string{}
-	for path, st := range after {
-		if before[path] != st {
-			out = append(out, path)
-		}
-	}
-	// A file restored to its committed state leaves the status list entirely.
-	for path := range before {
-		if _, still := after[path]; !still {
-			out = append(out, path)
-		}
-	}
-	// Map iteration order is random; sort so the job's summary and API
-	// response list the same files in the same order on every run.
-	sort.Strings(out)
-	return out
-}
-
-// readLineRange returns lines l1..l2 of a file, 1-based and inclusive.
-func readLineRange(abs string, l1, l2 int) (string, error) {
-	data, err := os.ReadFile(abs)
-	if err != nil {
-		return "", err
-	}
-	lines := strings.Split(strings.ReplaceAll(string(data), "\r\n", "\n"), "\n")
-	if l1 < 1 {
-		l1 = 1
-	}
-	if l2 < l1 {
-		l2 = l1
-	}
-	if l1 > len(lines) {
-		return "", fmt.Errorf("line %d is past the end of %s", l1, filepath.Base(abs))
-	}
-	if l2 > len(lines) {
-		l2 = len(lines)
-	}
-	return strings.Join(lines[l1-1:l2], "\n"), nil
-}
-
-// commitMessagePrompt asks the harness to write a commit message for the
-// staged changes. instruction is the user's git.commitMessageInstruction
-// setting (empty when unset), appended verbatim so it can refine or override
-// the base convention below.
-func commitMessagePrompt(files []string, stat, diff, instruction string) string {
-	var b strings.Builder
-	b.WriteString("Write a git commit message for the staged changes below.\n")
-	b.WriteString("Rules: imperative mood, a concise summary line under 72 characters, a blank line before an optional body, and explain why rather than just what changed.\n")
-	b.WriteString("Output ONLY the commit message text -- no markdown code fences, no preamble, no explanation afterwards, and do not edit any files.\n")
-	if instruction != "" {
-		fmt.Fprintf(&b, "\nAdditional instructions from the user: %s\n", instruction)
-	}
-	if len(files) > 0 {
-		fmt.Fprintf(&b, "\nChanged files (%d):\n", len(files))
-		maxFiles := 100
-		for i, f := range files {
-			if i >= maxFiles {
-				fmt.Fprintf(&b, "... and %d more files\n", len(files)-maxFiles)
-				break
-			}
-			fmt.Fprintf(&b, "- %s\n", f)
-		}
-	}
-	if strings.TrimSpace(stat) != "" {
-		b.WriteString("\nSummary of changes (diffstat):\n")
-		b.WriteString(stat)
-		b.WriteString("\n")
-	}
-	if strings.TrimSpace(diff) != "" {
-		b.WriteString("\nStaged diff:\n")
-		b.WriteString(diff)
-		b.WriteString("\n")
-	}
-	return b.String()
-}
-
-// gitSyncPrompt asks the harness to rebase (or merge) the current branch
-// onto its upstream after a fast-forward-only pull was refused, or to finish
-// one a previous attempt left half-done. It may run git and edit conflicted
-// files, but must never push: what reaches the remote stays the user's call.
-func gitSyncPrompt(strategy string, st git.SyncState) string {
-	// A PR's base is fetched by faah itself, with the forge token, into a ref
-	// of its own; the harness works against that ref and must not fetch.
-	onto, prefetched := st.Upstream, st.OntoRef != ""
-	if prefetched {
-		onto = st.OntoRef
-	}
-	remote, _, _ := strings.Cut(st.Upstream, "/")
-	var b strings.Builder
-	switch {
-	case st.InProgress != "":
-		fmt.Fprintf(&b, "A git %s of branch %s onto %s is in progress and stopped, most likely on conflicts. Finish it.\n\n", strategy, st.Branch, onto)
-	case st.PR > 0:
-		fmt.Fprintf(&b, "Pull request #%d (branch %s, checked out here as a detached HEAD) is out of date with its base branch %s: %d commit(s) on the PR, %d new on %s since it branched. Bring it up to date by running %s against %s, which holds %s's latest commits.\n\n", st.PR, st.Branch, st.Upstream, st.Ahead, st.Behind, st.Upstream, strategy, onto, st.Upstream)
-	default:
-		fmt.Fprintf(&b, "git pull is failing on branch %s: it can't fast-forward onto %s (%d local commit(s) not upstream, %d incoming). Run %s.\n\n", st.Branch, st.Upstream, st.Ahead, st.Behind, strategy)
-	}
-	b.WriteString("Steps:\n")
-	if strategy == "rebase" {
-		switch {
-		case st.InProgress != "":
-			b.WriteString("1. Run git status to see where the rebase stopped.\n")
-		case prefetched:
-			fmt.Fprintf(&b, "1. git rebase %s (already fetched: do not run git fetch or git pull).\n", onto)
-		default:
-			fmt.Fprintf(&b, "1. git fetch %s, then git rebase %s.\n", remote, st.Upstream)
-		}
-		b.WriteString("2. For each conflict, read both sides and resolve it so the intent of both the local and the incoming change survives. Remove every conflict marker, git add the files, and run GIT_EDITOR=true git rebase --continue. Repeat until the rebase completes.\n")
-		b.WriteString("3. Never use git rebase --skip: it silently drops a local commit.\n")
-	} else {
-		switch {
-		case st.InProgress != "":
-			b.WriteString("1. Run git status to see which files are still conflicted.\n")
-		case prefetched:
-			fmt.Fprintf(&b, "1. git merge --no-edit -m \"Merge branch '%s' into %s\" %s (already fetched: do not run git fetch or git pull).\n", st.Upstream, st.Branch, onto)
-		default:
-			fmt.Fprintf(&b, "1. git fetch %s, then git merge --no-edit %s.\n", remote, st.Upstream)
-		}
-		b.WriteString("2. For each conflict, read both sides and resolve it so the intent of both the local and the incoming change survives. Remove every conflict marker, git add the files, and run git commit --no-edit to conclude the merge.\n")
-	}
-	fmt.Fprintf(&b, "\nRules: do not push or force-push. Do not reset, amend, or rewrite commits beyond what the %s itself does. Do not touch files that are not part of a conflict.\n", strategy)
-	fmt.Fprintf(&b, "If a conflict cannot be resolved with confidence, run git %s --abort so the branch is back where it started, and say which files and why.\n", strategy)
-	b.WriteString("Finish with a short summary: the conflicts you resolved (file and how), or that there were none.\n")
-	return b.String()
-}
-
-// mergeMessagePrompt asks the harness for the commit message a squash (or a
-// merge commit) of a PR lands on its base branch with. Like
-// commitMessagePrompt it only writes text: no files, no git. draft is the
-// message as it stands in the merge dialog, rewritten rather than ignored.
-// commits is newest first.
-func mergeMessagePrompt(method string, meta forge.PRMeta, commits []git.UnpushedCommit, stat, diff, draft string, instructions []string) string {
-	var b strings.Builder
-	if method == forge.MergeMethodSquash {
-		fmt.Fprintf(&b, "Write the commit message for squash-merging pull request #%d (%q) into %s: its %d commit(s) become this one commit.\n", meta.Number, meta.Title, meta.BaseRef, len(commits))
-		b.WriteString("Rules: imperative mood, a concise summary line under 72 characters, a blank line, then a body explaining why the change was made and what it does overall. Describe the end result, not the PR's history: leave out fixups, review rounds and reverted attempts.\n")
-	} else {
-		fmt.Fprintf(&b, "Write the merge commit message for merging pull request #%d (%q) from %s into %s.\n", meta.Number, meta.Title, meta.HeadRef, meta.BaseRef)
-		b.WriteString("Rules: a concise summary line under 72 characters naming what the merge brings in, a blank line, then a short body summarizing the change.\n")
-	}
-	b.WriteString("Output ONLY the commit message text -- no markdown code fences, no preamble, no explanation afterwards, and do not edit any files or run git.\n")
-	for _, in := range instructions {
-		fmt.Fprintf(&b, "\nAdditional instructions from the user: %s\n", in)
-	}
-	if draft != "" {
-		b.WriteString("\nThe current message, which you are rewriting (keep what is accurate and useful):\n")
-		b.WriteString(draft)
-		b.WriteString("\n")
-	}
-	if len(commits) > 0 {
-		fmt.Fprintf(&b, "\nCommits on the PR (%d, oldest first):\n", len(commits))
-		for i := len(commits) - 1; i >= 0; i-- {
-			fmt.Fprintf(&b, "- %s\n", commits[i].Subject)
-		}
-	}
-	if strings.TrimSpace(stat) != "" {
-		b.WriteString("\nSummary of changes (diffstat):\n")
-		b.WriteString(stat)
-		b.WriteString("\n")
-	}
-	if strings.TrimSpace(diff) != "" {
-		b.WriteString("\nDiff:\n")
-		b.WriteString(diff)
-		b.WriteString("\n")
-	}
-	return b.String()
-}
-
 // ---------------------------------------------------------------- HTTP
 
 func (s *Server) agentOrFail(w http.ResponseWriter) bool {
@@ -870,7 +363,7 @@ func (s *Server) handleAgentEdit(w http.ResponseWriter, r *http.Request) {
 	l1, _ := strconv.Atoi(q.Get("l1"))
 	l2, _ := strconv.Atoi(q.Get("l2"))
 
-	job, err := s.threads.StartEdit([]agentBatchItem{{Abs: abs, Path: rel, L1: l1, L2: l2, Instruction: q.Get("instruction")}})
+	job, err := s.threads.StartEdit([]threads.BatchItem{{Abs: abs, Path: rel, L1: l1, L2: l2, Instruction: q.Get("instruction")}})
 	if err != nil {
 		code := 400
 		if errors.Is(err, errAgentBusy) || errors.Is(err, errAgentDirty) {
@@ -959,14 +452,14 @@ func (s *Server) handleAgentBatchEdit(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	items := make([]agentBatchItem, len(req.Edits))
+	items := make([]threads.BatchItem, len(req.Edits))
 	for i, e := range req.Edits {
 		abs, rel, ok := s.resolvePath(e.Path)
 		if !ok {
 			httpx.Fail(w, 400, fmt.Sprintf("bad path: %s", e.Path))
 			return
 		}
-		items[i] = agentBatchItem{
+		items[i] = threads.BatchItem{
 			Abs:         abs,
 			Path:        rel,
 			L1:          e.L1,
@@ -1184,8 +677,7 @@ func newThreadManager(a *agentManager, root string) *threadManager {
 	}
 	tm.tools = newExplainTools(tm)
 	tm.load()
-	a.threadJob = tm.job
-	a.threadCancel = tm.cancelJob
+	a.BindThreads(tm.job, tm.cancelJob)
 	return tm
 }
 
@@ -1616,7 +1108,7 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 		ui.VerbosePrompt(0, r.name, prompt, os.Stdout)
 	}
 
-	before := worktreeSnapshot(tm.root)
+	before := threads.WorktreeSnapshot(tm.root)
 	beforeSHA := git.SnapshotWorktree(tm.root)
 	started := time.Now()
 	sink := &threadSink{tm: tm, tid: r.tid, turn: r.turn, began: started}
@@ -1626,12 +1118,12 @@ func (tm *threadManager) runTurn(ctx context.Context, cancel context.CancelFunc,
 	if err == nil {
 		out, err = liveSession.session.Prompt(ctx, prompt, sink)
 	}
-	changed := changedSince(tm.root, before)
+	changed := threads.ChangedSince(tm.root, before)
 	afterSHA := ""
 	if len(changed) > 0 && beforeSHA != "" {
 		afterSHA = git.SnapshotWorktree(tm.root)
 	}
-	tm.agent.settle(changed)
+	tm.agent.Settle(changed)
 	var refs map[string]explain.Ref
 	if explaining {
 		refs = explain.ValidateRefs(tm.root, sink.reply())
@@ -1756,7 +1248,7 @@ func (tm *threadManager) RevertTurn(id string, turnID int) (*thread, []string, e
 	if err := git.RestoreSnapshotPaths(tm.root, beforeSHA, paths); err != nil {
 		return nil, nil, err
 	}
-	tm.agent.settle(paths)
+	tm.agent.Settle(paths)
 
 	tm.mu.Lock()
 	if t := tm.threads[id]; t != nil {
@@ -2136,14 +1628,14 @@ func (s *Server) handleThreadStream(w http.ResponseWriter, r *http.Request) {
 type threadJobRef struct {
 	tid   string
 	turn  int
-	items []agentBatchItem
+	items []threads.BatchItem
 }
 
 // StartEdit runs inline and batch edits as a thread, so every edit leaves a
 // transcript that can be followed up. It keeps the guarantee those flows have
 // always had: an edit on lines another edit is still changing is refused.
 // Conversations started from the Threads pane are never guarded this way.
-func (tm *threadManager) StartEdit(items []agentBatchItem) (*agentJob, error) {
+func (tm *threadManager) StartEdit(items []threads.BatchItem) (*threads.Job, error) {
 	if len(items) == 0 {
 		return nil, errors.New("no edits specified")
 	}
@@ -2185,7 +1677,7 @@ func (tm *threadManager) StartEdit(items []agentBatchItem) (*agentJob, error) {
 		var b strings.Builder
 		fmt.Fprintf(&b, "Apply these %d edits together.\n\n", len(items))
 		for i, it := range items {
-			snip, err := readLineRange(it.Abs, it.L1, it.L2)
+			snip, err := threads.ReadLineRange(it.Abs, it.L1, it.L2)
 			if err != nil {
 				return nil, err
 			}
@@ -2207,7 +1699,7 @@ func (tm *threadManager) StartEdit(items []agentBatchItem) (*agentJob, error) {
 		tm.mu.Unlock()
 		return nil, err
 	}
-	id := tm.agent.nextJobID()
+	id := tm.agent.NextJobID()
 	tm.mu.Lock()
 	tm.jobs[id] = &threadJobRef{tid: t.ID, turn: 1, items: items}
 	tm.mu.Unlock()
@@ -2216,7 +1708,7 @@ func (tm *threadManager) StartEdit(items []agentBatchItem) (*agentJob, error) {
 
 // overlappingEdit describes an edit still running on lines these items touch,
 // or returns "" when there is none.
-func (tm *threadManager) overlappingEdit(items []agentBatchItem) string {
+func (tm *threadManager) overlappingEdit(items []threads.BatchItem) string {
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
 	for id, ref := range tm.jobs {
@@ -2237,7 +1729,7 @@ func (tm *threadManager) overlappingEdit(items []agentBatchItem) string {
 
 // job presents an inline or batch edit's turn in the shape the edit UI polls.
 // id 0 means the most recent one.
-func (tm *threadManager) job(id int64) *agentJob {
+func (tm *threadManager) job(id int64) *threads.Job {
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
 	if id == 0 {
@@ -2256,7 +1748,7 @@ func (tm *threadManager) job(id int64) *agentJob {
 		return nil
 	}
 	turn := t.Turns[ref.turn-1]
-	j := &agentJob{
+	j := &threads.Job{
 		ID: id, ThreadID: t.ID, Harness: turn.Harness, Path: ref.items[0].Path, Lines: lineRef(ref.items[0].L1, ref.items[0].L2),
 		Running: turn.Running, Log: turn.Reply, Stdout: turn.Reply,
 		Changed: append([]string{}, turn.Changed...), Ms: turn.Ms, Tracked: turn.Tracked,
@@ -2294,7 +1786,7 @@ func (tm *threadManager) cancelJob(id int64) bool {
 }
 
 func anchorSnippet(abs string, l1, l2 int) string {
-	snip, err := readLineRange(abs, l1, l2)
+	snip, err := threads.ReadLineRange(abs, l1, l2)
 	if err != nil {
 		return ""
 	}
@@ -2302,4 +1794,25 @@ func anchorSnippet(abs string, l1, l2 int) string {
 		snip = snip[:threadSnippetMax] + "\n…"
 	}
 	return snip
+}
+
+// Job returns a snapshot of a background or inline edit job.
+func (m *agentManager) Job(id int64) *threads.Job {
+	if m == nil {
+		return nil
+	}
+	return m.Jobs.Job(id)
+}
+
+// Cancel stops every harness currently running. Whatever each has already
+// written stays.
+func (m *agentManager) Cancel() bool { return m.CancelJob(0) }
+
+// CancelJob stops the harness run with the given id, or every running harness
+// when id is 0.
+func (m *agentManager) CancelJob(id int64) bool {
+	if m == nil {
+		return false
+	}
+	return m.Jobs.CancelJob(id)
 }

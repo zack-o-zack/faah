@@ -4,7 +4,7 @@ This document describes the design and implementation of threads, the long-runni
 
 - the store, turn runner, and event feed: [`agent.go`](../../agent.go)
 - the HTTP routing and handlers: [`server.go`](../../server.go)
-- the selected harness and change settling it reuses: [`agent.go`](../../agent.go)
+- the selected harness: [`agent.go`](../../agent.go); change settling: [`internal/threads/jobs.go`](../../internal/threads/jobs.go)
 - native agent sessions, protocol handling and Ask mode: [`internal/agents`](../../internal/agents), one package per harness, listed in [`internal/agents/all/all.go`](../../internal/agents/all/all.go)
 - Explain's selection checks, evidence, prompt and citation checks: [`internal/explain`](../../internal/explain)
 - the sidebar views, stream subscriptions and composer: [`web/src/threads/`](../../web/src/threads/)
@@ -83,7 +83,7 @@ A turn is abandoned after 30 minutes (`threadTurnTimeout`). Stop cancels the tur
 
 `/api/agent/edit` and `/api/agent/batch` call `StartEdit`. One item becomes a thread of kind `edit` anchored to that range; several become a thread of kind `batch`, whose first message lists every item with its snippet and instruction. The turn then runs exactly like any other.
 
-The edit UI polls `/api/agent/job?id=` and cancels through `/api/agent/cancel`, so threads present themselves in that shape. `threadManager.job` maps a turn to an `agentJob` (error text split into `error` and `stderr`, the reply as `stdout`), job ids come from the same sequence the agent manager uses (`nextJobID`), and the agent manager reaches the thread manager through the `threadJob` and `threadCancel` hooks. `Job(0)`, "the most recent job", returns the newer of the two kinds.
+The edit UI polls `/api/agent/job?id=` and cancels through `/api/agent/cancel`, so threads present themselves in that shape. `threadManager.job` maps a turn to an `threads.Job` (error text split into `error` and `stderr`, the reply as `stdout`), job ids come from the same sequence the agent manager uses (`NextJobID`), and the agent manager reaches the thread manager through the `threadJob` and `threadCancel` hooks. `Job(0)`, "the most recent job", returns the newer of the two kinds.
 
 Inline edits keep their overlap guard. `overlappingEdit` refuses an edit on lines a running edit thread still covers, with the same `409` and message as before. Conversations started from the Threads pane are not part of that check, in either direction.
 

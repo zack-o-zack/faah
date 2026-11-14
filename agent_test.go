@@ -23,6 +23,7 @@ import (
 	"faah/internal/forge"
 	"faah/internal/git/gittest"
 	prpkg "faah/internal/pr"
+	"faah/internal/threads"
 	"faah/internal/workspace"
 )
 
@@ -85,12 +86,12 @@ func agentServer(t *testing.T, root, name string) *Server {
 
 // waitIdle waits for the most recently started job to finish. Tests that keep
 // several jobs in flight at once poll a specific id instead.
-func waitIdle(t *testing.T, s *Server) *agentJob {
+func waitIdle(t *testing.T, s *Server) *threads.Job {
 	t.Helper()
 	return waitIdleID(t, s, 0)
 }
 
-func waitIdleID(t *testing.T, s *Server, id int64) *agentJob {
+func waitIdleID(t *testing.T, s *Server, id int64) *threads.Job {
 	t.Helper()
 	deadline := time.Now().Add(20 * time.Second)
 	for time.Now().Before(deadline) {
@@ -554,64 +555,6 @@ func TestAgentCancelJob(t *testing.T) {
 	}
 }
 
-func TestReadLineRange(t *testing.T) {
-	p := filepath.Join(t.TempDir(), "f.txt")
-	if err := os.WriteFile(p, []byte("one\ntwo\nthree\nfour\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	for _, tc := range []struct {
-		l1, l2 int
-		want   string
-	}{
-		{2, 3, "two\nthree"},
-		{1, 1, "one"},
-		{3, 99, "three\nfour\n"}, // clamped to the end, trailing blank line included
-		{0, 1, "one"},            // l1 below 1 is clamped
-	} {
-		got, err := readLineRange(p, tc.l1, tc.l2)
-		if err != nil {
-			t.Fatalf("%d-%d: %v", tc.l1, tc.l2, err)
-		}
-		if got != tc.want {
-			t.Fatalf("%d-%d = %q, want %q", tc.l1, tc.l2, got, tc.want)
-		}
-	}
-	if _, err := readLineRange(p, 50, 60); err == nil {
-		t.Fatal("a range past the end should fail")
-	}
-}
-
-func TestChangedSinceReportsBothDirections(t *testing.T) {
-	before := map[string]string{"stays.go": "M", "reverted.go": "M"}
-	after := map[string]string{"stays.go": "M", "new.go": "U"}
-
-	got := map[string]bool{}
-	for _, p := range changedSinceMaps(before, after) {
-		got[p] = true
-	}
-	if got["stays.go"] {
-		t.Fatal("an unchanged status should not be reported")
-	}
-	if !got["new.go"] {
-		t.Fatal("a newly dirty file should be reported")
-	}
-	if !got["reverted.go"] {
-		t.Fatal("a file restored to its committed state should be reported")
-	}
-}
-
-// The job summary and API response list changed files, so their order must not
-// follow Go's randomised map iteration. Repeated to catch a lucky ordering.
-func TestChangedSinceIsSorted(t *testing.T) {
-	before := map[string]string{"b.go": "M", "d.go": "M"}
-	after := map[string]string{"c.go": "U", "a.go": "M", "d.go": "M"}
-	for i := 0; i < 20; i++ {
-		if got := strings.Join(changedSinceMaps(before, after), ","); got != "a.go,b.go,c.go" {
-			t.Fatalf("changed = %q, want a.go,b.go,c.go", got)
-		}
-	}
-}
-
 func TestLineRef(t *testing.T) {
 	if lineRef(4, 4) != "4" {
 		t.Fatalf("single line ref = %q", lineRef(4, 4))
@@ -637,7 +580,7 @@ func TestAgentBatchEditRejectsIntraBatchOverlap(t *testing.T) {
 	t.Cleanup(tm.Close)
 
 	// Overlapping ranges on the same file: lines 1-2 and lines 2-3
-	items := []agentBatchItem{
+	items := []threads.BatchItem{
 		{Abs: filepath.Join(root, "a.go"), Path: "a.go", L1: 1, L2: 2, Instruction: "edit 1"},
 		{Abs: filepath.Join(root, "a.go"), Path: "a.go", L1: 2, L2: 3, Instruction: "edit 2"},
 	}
@@ -646,7 +589,7 @@ func TestAgentBatchEditRejectsIntraBatchOverlap(t *testing.T) {
 	}
 
 	// Disjoint ranges on the same file: lines 1-1 and lines 3-3 (should succeed)
-	validItems := []agentBatchItem{
+	validItems := []threads.BatchItem{
 		{Abs: filepath.Join(root, "a.go"), Path: "a.go", L1: 1, L2: 1, Instruction: "edit 1"},
 		{Abs: filepath.Join(root, "a.go"), Path: "a.go", L1: 3, L2: 3, Instruction: "edit 2"},
 	}
@@ -784,49 +727,6 @@ func TestAgentBatchEditPayloadVariations(t *testing.T) {
 	}
 	if b4["error"] != "invalid or empty batch edits payload" {
 		t.Fatalf("empty batch error = %v", b4["error"])
-	}
-}
-
-func TestCommitMessagePrompt(t *testing.T) {
-	files := []string{"web/src/gitpanel.js", "server.go"}
-	stat := " web/src/gitpanel.js | 15 +++\n server.go           | 40 ++-\n 2 files changed, 45 insertions(+), 10 deletions(-)"
-	diff := "diff --git a/server.go b/server.go\n--- a/server.go\n+++ b/server.go\n@@ -1 +1 @@\n-old\n+new"
-	instruction := "Follow conventional commits format"
-
-	p := commitMessagePrompt(files, stat, diff, instruction)
-	if !strings.Contains(p, "Changed files (2):") {
-		t.Errorf("prompt missing changed files header:\n%s", p)
-	}
-	if !strings.Contains(p, "- web/src/gitpanel.js") || !strings.Contains(p, "- server.go") {
-		t.Errorf("prompt missing changed file paths:\n%s", p)
-	}
-	if !strings.Contains(p, "Summary of changes (diffstat):") || !strings.Contains(p, stat) {
-		t.Errorf("prompt missing diffstat summary:\n%s", p)
-	}
-	if !strings.Contains(p, "Staged diff:") || !strings.Contains(p, diff) {
-		t.Errorf("prompt missing staged diff:\n%s", p)
-	}
-	if !strings.Contains(p, "Additional instructions from the user: "+instruction) {
-		t.Errorf("prompt missing user instruction:\n%s", p)
-	}
-
-	// Test truncation when there are > 100 files
-	manyFiles := make([]string, 125)
-	for i := range manyFiles {
-		manyFiles[i] = fmt.Sprintf("file%d.go", i)
-	}
-	p2 := commitMessagePrompt(manyFiles, "", "", "")
-	if !strings.Contains(p2, "Changed files (125):") {
-		t.Errorf("prompt missing total count:\n%s", p2)
-	}
-	if !strings.Contains(p2, "... and 25 more files") {
-		t.Errorf("prompt missing truncation notice:\n%s", p2)
-	}
-	if !strings.Contains(p2, "- file0.go") || !strings.Contains(p2, "- file99.go") {
-		t.Errorf("prompt missing head files:\n%s", p2)
-	}
-	if strings.Contains(p2, "- file100.go") {
-		t.Errorf("prompt contains file beyond 100:\n%s", p2)
 	}
 }
 
