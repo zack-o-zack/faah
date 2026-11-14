@@ -1,4 +1,4 @@
-import { WorkspaceWatch } from '../watch/service.ts';
+import { WorkspaceWatch, ignoreEvent } from '../watch/service.ts';
 import { IdleScavenger } from '../render/idle.ts';
 import { RenderService } from '../render/service.ts';
 import { Files } from '../files/view.ts';
@@ -70,12 +70,14 @@ export class Navigation {
     this.watcher = new WorkspaceWatch({
       root: options.root,
       changed: async (paths) => {
+        const rebuild = paths.some(ignoreEvent);
         const refresh = this.legacy.refreshAndApply();
         const touch = (async () => {
           for (const path of paths) {
             this.render.invalidate(join(options.root, path));
-            await this.index.touch(path);
+            if (!rebuild) await this.index.touch(path);
           }
+          if (rebuild) await this.index.build();
         })();
         await Promise.all([touch, refresh]);
       },

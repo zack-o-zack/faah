@@ -1,4 +1,5 @@
 import { goldmarkStrike } from './strike.ts';
+import { goldmarkText } from './text.ts';
 import { goldmarkLinks } from './linkify.ts';
 import MarkdownIt from 'markdown-it';
 import footnotes from 'markdown-it-footnote';
@@ -52,6 +53,7 @@ export async function renderMarkdown(input: string, highlight: Highlight): Promi
     .use(footnotes)
     .use(tasks, { enabled: false, label: false })
     .use(goldmarkLinks)
+    .use(goldmarkText)
     .use(goldmarkStrike);
   // Goldmark accepts raw HTML and unsafe link destinations; browser sanitizing
   // remains the existing boundary. markdown-it's default URL policy is stricter.

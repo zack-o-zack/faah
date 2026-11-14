@@ -95,6 +95,11 @@ try {
     paths.push('api/outline?' + new URLSearchParams({ path }));
   const baseCases = paths.length;
   const markdownCases = [
+    '`"quoted" & <code>` and ![**bold** `code`](x.png "a & b")\n',
+    '# [linked](x) `code` ![alt](x.png)\n',
+    '```go\rpackage main\rvar x = 1\r```\r',
+    '---\n\n> ## nested\n>\n> paragraph\n',
+    '```text\nline\rnext\n```\n',
     '~single~ ~~double~~ ~mismatch~~ a~b~c ~~~triple~~~\n',
     '<code> https://example.com/a </code>\n',
     '<a href="x"> https://example.com/a </a>\n',

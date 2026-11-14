@@ -1,6 +1,6 @@
 import { buildWorkers } from './workers.ts';
 import { join, resolve } from 'node:path';
-import { mkdir, readdir } from 'node:fs/promises';
+import { mkdir, readdir, rm } from 'node:fs/promises';
 await buildWorkers();
 const root = resolve(import.meta.dir, '../..');
 const names: string[] = ['VERSION'];
@@ -23,16 +23,24 @@ lines.push(
 await Bun.write(join(root, 'backend/src/http/manifest.js'), lines.join('\n') + '\n');
 const out = process.env.FAAH_BUILD_OUT ?? join(root, 'backend/dist');
 await mkdir(out, { recursive: true });
-const proc = Bun.spawn(
-  [
-    'bun',
-    'build',
-    '--compile',
-    '--minify',
-    join(root, 'backend/src/main.ts'),
-    '--outfile',
-    join(out, process.env.FAAH_BUILD_NAME ?? 'faah'),
-  ],
-  { stdout: 'inherit', stderr: 'inherit', cwd: out },
-);
-process.exit(await proc.exited);
+let code: number;
+try {
+  const proc = Bun.spawn(
+    [
+      'bun',
+      'build',
+      '--compile',
+      '--minify',
+      join(root, 'backend/src/main.ts'),
+      '--outfile',
+      join(out, process.env.FAAH_BUILD_NAME ?? 'faah'),
+    ],
+    { stdout: 'inherit', stderr: 'inherit', cwd: out },
+  );
+  code = await proc.exited;
+} finally {
+  // Bun may leave its temporary executable behind when compilation fails.
+  for (const name of await readdir(out))
+    if (/^\..+\.bun-build$/.test(name)) await rm(join(out, name), { force: true });
+}
+process.exit(code);

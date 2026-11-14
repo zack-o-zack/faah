@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { homedir } from 'node:os';
 import { createHash } from 'node:crypto';
 import { string } from '../decode.ts';
-export const rendererVersion = 'shiki-3.22.0-scopes-3';
+export const rendererVersion = 'shiki-3.22.0-scopes-3-cr-1';
 export class RenderDisk {
   private readonly db: Database;
   constructor(

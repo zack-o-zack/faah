@@ -11,7 +11,13 @@ import { LRU } from '../src/render/lru.ts';
 import { RenderDisk } from '../src/render/disk.ts';
 import { RenderService } from '../src/render/service.ts';
 import { IdleScavenger } from '../src/render/idle.ts';
+import { engine } from '../src/render/engine.ts';
 import { highlightedText } from '../../test/contract/highlight.ts';
+test('recognized lexers normalize lone CRs while the no-lexer fallback preserves them', async () => {
+  const highlight = await engine();
+  expect(await highlight('line\rnext', 'plaintext', 1)).toEqual(['line']);
+  expect(await highlight('line\rnext', 'plain text', 1)).toEqual(['line\rnext']);
+});
 test('Chroma filename names, aliases, priorities, backups, and content analysis', () => {
   for (const [path, name] of [
     ['x.go', 'Go'],

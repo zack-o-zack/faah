@@ -6,6 +6,9 @@ export interface WatchEvent {
   path: string;
   type?: 'create' | 'update' | 'delete';
 }
+export function ignoreEvent(path: string): boolean {
+  return path === '.gitignore' || path.endsWith('/.gitignore');
+}
 export function gitEvent(path: string): boolean {
   return (
     path === '.git/HEAD' ||
@@ -132,8 +135,7 @@ export class WorkspaceWatch {
   }
   private async flush(events: Map<string, WatchEvent>): Promise<void> {
     if (this.stopped) return;
-    if ([...events.keys()].some((p) => p === '.gitignore' || p.endsWith('/.gitignore')))
-      this.ignores.clear();
+    if ([...events.keys()].some(ignoreEvent)) this.ignores.clear();
     let git = false;
     const paths: string[] = [];
     for (const [rel, event] of events) {
@@ -141,7 +143,7 @@ export class WorkspaceWatch {
         git = true;
         continue;
       }
-      if (await this.included(rel, event)) paths.push(rel);
+      if (ignoreEvent(rel) || (await this.included(rel, event))) paths.push(rel);
     }
     if (paths.length || git) await this.options.changed(paths, git);
   }

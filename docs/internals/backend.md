@@ -196,6 +196,10 @@ hand-written LazyQuotes parser with variable records, BOM stripping, delimiter
 sniffing, physical line numbers, a 1 MiB read cap and 1,000 data rows. A byte-cut
 final record is dropped as in Go.
 
+Markdown preserves lone carriage returns as Goldmark does, and image alt text
+includes inline code. Recognized lexers normalize carriage returns before
+highlighting, including plaintext; the no-lexer fallback preserves source bytes.
+
 `legacy/files.ts` is the only file metadata boundary. Git/LSP work runs in
 parallel with Bun's reads/highlighting; it never requests legacy `/api/file`.
 Normal HEAD-based diff availability uses the same index status rule as Go;
@@ -217,6 +221,10 @@ optional index locks during user mutations. Watcher startup/runtime errors warn
 and fall back to Go's existing polling; shutdown unsubscribes before stopping
 the child. The build generates a literal native `.node` dependency for its
 platform. Linux builds default to glibc; set `FAAH_WATCHER_LIBC=musl` for musl.
+
+Changes to any `.gitignore` rebuild the index and fuzzy shards so existing
+files enter or leave search immediately. These notifications are retained even
+when the new rules ignore `.gitignore` itself.
 
 ```sh
 bun backend/bench/render-micro.ts
@@ -321,6 +329,9 @@ filename. The build generates ignored `http/manifest.js` imports with the `file`
 loader. Compiled assets include VERSION, both HTML entrypoints, dist, themes,
 vendor files and logos/favicons. `FAAH_DEV_ROOT` overrides reads with disk assets.
 Lazy vendor downloads use the existing pinned CDN and the Go vendor cache path.
+
+The compiler runs in the output directory and removes `.bun-build` temporary
+executables after success or failure, preserving the compiler's exit code.
 
 ## Compiled spike on macOS arm64
 

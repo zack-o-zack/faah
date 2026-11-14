@@ -41,17 +41,17 @@ export async function propagation(base: string, dir: string, f: Fixtures, iterat
   });
   function waitFor(dirty: boolean) {
     let timer: ReturnType<typeof setTimeout>;
-    const promise = new Promise<boolean>((resolve) => {
+    const promise = new Promise<number | undefined>((resolve) => {
       timer = setTimeout(() => {
         listener = undefined;
-        resolve(false);
+        resolve(undefined);
       }, 15000);
       listener = (value) => {
         const files = array(object(value).gitFiles);
         if (files.includes(f.modified) === dirty) {
           clearTimeout(timer);
           listener = undefined;
-          resolve(true);
+          resolve(now());
         }
       };
     });
@@ -82,7 +82,11 @@ export async function propagation(base: string, dir: string, f: Fixtures, iterat
           ).sample;
         } else await writeFile(join(dir, f.modified), content);
         const observed = await waiting;
-        samples.push({ ms: now() - started, timeout: !observed, response: responseSample });
+        samples.push({
+          ms: (observed ?? now()) - started,
+          timeout: observed === undefined,
+          response: responseSample,
+        });
         // Reset is outside the measured interval, and must be seen before the next mutation.
         const clean = waitFor(false);
         if (mode === 'save') {

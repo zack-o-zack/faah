@@ -2,6 +2,14 @@ import { test, expect } from 'bun:test';
 import { renderMarkdown } from '../src/markdown/service.ts';
 import { plain } from '../src/render/html.ts';
 const highlight = async (s: string, _lang: string, n: number) => plain(s, n);
+test('Go image alt text includes inline code and lone CR stays inside inline code', async () => {
+  expect(await renderMarkdown('![**bold** `code`](x.png "a & b")\n', highlight)).toBe(
+    '<p data-line="1"><img src="x.png" alt="bold code" title="a &amp; b"></p>\n',
+  );
+  expect(await renderMarkdown('```go\rpackage main\rvar x = 1\r```\r', highlight)).toBe(
+    '<p data-line="1"><code>go\rpackage main\rvar x = 1\r</code></p>\n',
+  );
+});
 test('Go Markdown heading ids, paragraphs, raw HTML, CRLF and code source markers', async () => {
   expect(
     await renderMarkdown(

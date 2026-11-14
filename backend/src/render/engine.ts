@@ -14,6 +14,8 @@ export async function engine() {
   });
   const loading = new Map<string, Promise<void>>();
   return async (source: string, language: string, want: number): Promise<string[]> => {
+    // Chroma normalizes lone CRs when a lexer is present, including plaintext.
+    if (grammarIDs[language] !== undefined) source = source.replace(/\r\n?/g, '\n');
     const id = grammarIDs[language] ?? 'text';
     if (id === 'text') return plain(source, want);
     const grammar = bundledLanguagesInfo.find((g) => g.id === id);

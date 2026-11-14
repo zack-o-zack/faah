@@ -41,6 +41,36 @@ test('watcher coalesces paths, filters nested ignores and git noise, retaining H
     await rm(root, { recursive: true, force: true });
   }
 }, 10000);
+test('ignore changes clear nested filters and survive rules that ignore .gitignore itself', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'faah-watch-ignore-'));
+  const batches: string[][] = [];
+  const watcher = new WorkspaceWatch({
+    root,
+    delay: 1,
+    changed: async (paths) => {
+      batches.push(paths);
+    },
+  });
+  try {
+    await mkdir(join(root, 'sub'));
+    await writeFile(join(root, '.gitignore'), '*.tmp\n.gitignore\n');
+    watcher.receive([{ path: join(root, 'sub/a.tmp'), type: 'update' }]);
+    await Bun.sleep(20);
+    await watcher.settled();
+    expect(batches).toEqual([]);
+    await writeFile(join(root, '.gitignore'), '.gitignore\n');
+    watcher.receive([
+      { path: join(root, '.gitignore'), type: 'update' },
+      { path: join(root, 'sub/a.tmp'), type: 'update' },
+    ]);
+    await Bun.sleep(20);
+    await watcher.settled();
+    expect(batches).toEqual([['.gitignore', 'sub/a.tmp']]);
+  } finally {
+    await watcher.close();
+    await rm(root, { recursive: true, force: true });
+  }
+});
 test('native watcher observes an external edit and unsubscribes cleanly', async () => {
   const root = await mkdtemp(join(tmpdir(), 'faah-native-watch-'));
   let done: () => void = () => {};
