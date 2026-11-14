@@ -105,9 +105,8 @@ func wbDirItem(root string) wbItem {
 }
 
 func wbPRItem(pt forge.PRTarget) wbItem {
-	key := strings.ToLower(fmt.Sprintf("%s/%s/%s#%d", pt.Provider, pt.Owner, pt.Repo, pt.Number))
 	return wbItem{
-		ID:     wbItemID("pr", key),
+		ID:     forge.ItemID(pt),
 		Kind:   "pr",
 		URL:    pt.URL,
 		Repo:   pt.Owner + "/" + pt.Repo,
