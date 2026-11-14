@@ -4,10 +4,9 @@ import { dirname, join } from 'node:path';
 import { homedir } from 'node:os';
 import { createHash } from 'node:crypto';
 import { string } from '../decode.ts';
-export const rendererVersion = 'shiki-3.22.0-scopes-1';
+export const rendererVersion = 'shiki-3.22.0-scopes-3';
 export class RenderDisk {
   private readonly db: Database;
-  private clock = Date.now() * 1000;
   constructor(
     path = join(
       process.env.XDG_CACHE_HOME ?? join(homedir(), '.faah/cache'),
@@ -37,7 +36,11 @@ export class RenderDisk {
       const value: unknown = JSON.parse(row.lines);
       if (!Array.isArray(value)) throw new Error('invalid cached lines');
       const lines = value.map((line) => string(line));
-      this.db.query('UPDATE chunks SET touched=? WHERE key=?').run(++this.clock, key);
+      this.db
+        .query(
+          'UPDATE chunks SET touched=(SELECT COALESCE(MAX(touched),0)+1 FROM chunks) WHERE key=?',
+        )
+        .run(key);
       this.attach(key, path);
       return lines;
     } catch {
@@ -46,7 +49,12 @@ export class RenderDisk {
     }
   }
   private attach(key: string, path: string): void {
-    if (path) this.db.query('INSERT OR IGNORE INTO paths(path,key) VALUES (?,?)').run(path, key);
+    if (path)
+      this.db
+        .query(
+          'INSERT OR IGNORE INTO paths(path,key) SELECT ?,? WHERE EXISTS (SELECT 1 FROM chunks WHERE key=?)',
+        )
+        .run(path, key, key);
   }
   put(key: string, path: string, lines: string[]): void {
     const data = JSON.stringify(lines),
@@ -55,8 +63,10 @@ export class RenderDisk {
     this.db
       .transaction(() => {
         this.db
-          .query('INSERT OR REPLACE INTO chunks(key,lines,bytes,touched) VALUES (?,?,?,?)')
-          .run(key, data, bytes, ++this.clock);
+          .query(
+            'INSERT OR REPLACE INTO chunks(key,lines,bytes,touched) SELECT ?,?,?,COALESCE(MAX(touched),0)+1 FROM chunks',
+          )
+          .run(key, data, bytes);
         this.attach(key, path);
         this.trim();
       })

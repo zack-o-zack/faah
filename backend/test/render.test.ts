@@ -1,3 +1,4 @@
+import languageVectors from './render-languages.json';
 import { test, expect } from 'bun:test';
 import { mkdtemp, rm, writeFile, stat } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -38,6 +39,10 @@ test('Chroma filename names, aliases, priorities, backups, and content analysis'
   expect(fenceLanguage('golang')).toBe('Go');
   expect(fenceLanguage('unknown')).toBeUndefined();
 });
+test('all pinned Chroma filename vectors retain language names and backup matching', () => {
+  for (const vector of languageVectors) expect(language(vector.path, '')).toBe(vector.lang);
+});
+
 test('scope classes use the fixed theme vocabulary with specific scopes overriding containers', () => {
   expect(classFor(['source.ts', 'string.quoted', 'constant.character.escape.ts'])).toBe('s');
   expect(classFor(['source.python', 'entity.name.function.python'])).toBe('nf');
@@ -186,4 +191,17 @@ test('idle scavenging ignores metrics and streams, runs once per burst after 15 
   } finally {
     idle.close();
   }
+});
+
+test('invalid UTF-8 replaces each bad byte without changing byte-based window accounting', async () => {
+  const doc = new Document(
+    Buffer.from([0xe2, 0x82, 10, 0xf0, 0x9f, 0x98, 0x80]),
+    'unknown',
+    async (s, _, n) => plain(s, n),
+  );
+  expect(doc.raw(1)).toBe('��');
+  expect(doc.raw(2)).toBe('😀');
+  expect(doc.maxCols).toBe(2);
+  expect(doc.initialBytes).toBe(7 + 2 * 32);
+  expect((await doc.lines(0, 2)).lines).toEqual(['��', '😀']);
 });

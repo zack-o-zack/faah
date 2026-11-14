@@ -1,3 +1,4 @@
+import { goString } from './text.ts';
 import { language } from './language.ts';
 import { plain, visualWidth } from './html.ts';
 export const chunkLines = 1000,
@@ -20,13 +21,14 @@ export class Document {
   private background: Promise<void> | undefined;
   private scheduled = false;
   constructor(
-    source: string,
+    source: string | Uint8Array,
     path: string,
     readonly highlight: Highlight,
     readonly grow: (delta: number) => void = () => {},
+    readonly observeBackground: (task: Promise<void>) => void = () => {},
   ) {
-    this.source = Buffer.from(source);
-    this.lang = language(path, source);
+    this.source = typeof source === 'string' ? Buffer.from(source) : Buffer.from(source);
+    this.lang = language(path, goString(this.source));
     let total = 1;
     for (const byte of this.source) if (byte === 10) total++;
     this.total = total;
@@ -37,7 +39,7 @@ export class Document {
       this.offsets[i] = offset;
       const newline = this.source.indexOf(10, offset),
         end = newline < 0 ? this.source.length : newline;
-      width = Math.max(width, visualWidth(this.source.toString('utf8', offset, end)));
+      width = Math.max(width, visualWidth(goString(this.source.subarray(offset, end))));
       offset = newline < 0 ? this.source.length : end + 1;
     }
     this.offsets[total] = this.source.length;
@@ -49,7 +51,7 @@ export class Document {
     const start = this.offsets[line - 1] ?? 0;
     let end = this.offsets[line] ?? this.source.length;
     if (end > start && this.source[end - 1] === 10) end--;
-    return this.source.toString('utf8', start, end);
+    return goString(this.source.subarray(start, end));
   }
   get coming(): boolean {
     return this.source.length <= backgroundBytes;
@@ -67,6 +69,7 @@ export class Document {
           void this.fullPass().then(resolve, reject);
         }, 0),
       );
+      this.observeBackground(this.background);
       void this.background.catch((error) =>
         process.stderr.write('faah render full pass: ' + String(error) + '\n'),
       );
@@ -114,8 +117,8 @@ export class Document {
     );
     const all =
       segment.length > windowBytes
-        ? plain(segment.toString(), to - from)
-        : await this.highlight(segment.toString(), this.lang, to - from);
+        ? plain(goString(segment), to - from)
+        : await this.highlight(goString(segment), this.lang, to - from);
     if (this.full) return { lines: this.chunks.get(c) ?? [], exact: true };
     const lines = all.slice(start - from, end - from);
     if (c === 0 && this.total <= chunkLines && segment.length <= windowBytes) this.full = true;
@@ -124,7 +127,7 @@ export class Document {
     return { lines, exact: this.full };
   }
   private async fullPass(): Promise<void> {
-    const all = await this.highlight(this.source.toString(), this.lang, this.total);
+    const all = await this.highlight(goString(this.source), this.lang, this.total);
     const before = [...this.chunks.values()].reduce((n, v) => n + sizeOfLines(v), 0);
     let after = 0;
     for (let c = 0; c * chunkLines < this.total; c++) {

@@ -67,6 +67,13 @@ export class LegacyNavigation {
     const state = gitState(await this.value('api/git/refresh'));
     return state;
   }
+  async refreshAndApply(): Promise<void> {
+    const state =
+      this.snapshot.ready === true
+        ? gitState(await this.value('api/git/refresh'))
+        : await this.refresh();
+    await this.apply(state);
+  }
   private apply(state: GitState): Promise<void> {
     this.updating = this.updating.catch(() => undefined).then(() => this.options.apply(state));
     return this.updating;

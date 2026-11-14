@@ -39,27 +39,44 @@ const ordered = lexers
   .map((lexer, order) => ({
     ...lexer,
     order,
-    primary: lexer.filenames.flatMap((p) => suffixes.map((s) => glob(p + s))),
-    fallback: lexer.secondary.flatMap((p) => suffixes.map((s) => glob(p + s))),
+    primary: lexer.filenames.map(glob),
+    fallback: lexer.secondary.map(glob),
   }))
   .sort((a, b) => b.priority - a.priority || a.order - b.order);
-export function filenameLanguage(path: string): string | undefined {
-  const name = basename(path);
+function filenameLexer(path: string) {
+  const name = basename(path),
+    names = [
+      name,
+      ...suffixes.filter((s) => s && name.endsWith(s)).map((s) => name.slice(0, -s.length)),
+    ];
   return (
-    ordered.find((l) => l.primary.some((p) => p.test(name)))?.name ??
-    ordered.find((l) => l.fallback.some((p) => p.test(name)))?.name
+    ordered.find((l) => l.primary.some((p) => names.some((n) => p.test(n)))) ??
+    ordered.find((l) => l.fallback.some((p) => names.some((n) => p.test(n))))
   );
 }
+export function filenameLanguage(path: string): string | undefined {
+  return filenameLexer(path)?.name;
+}
+const byName = new Map<string, string>(),
+  byAlias = new Map<string, string>();
+for (const lexer of lexers) {
+  byName.set(lexer.name, lexer.name);
+  byName.set(lexer.name.toLowerCase(), lexer.name);
+  for (const alias of lexer.aliases) {
+    byAlias.set(alias, lexer.name);
+    byAlias.set(alias.toLowerCase(), lexer.name);
+  }
+}
 export function fenceLanguage(alias: string): string | undefined {
-  return (
-    lexers.find(
-      (l) =>
-        l.name.toLowerCase() === alias.toLowerCase() ||
-        l.aliases.some((a) => a.toLowerCase() === alias.toLowerCase()),
-    )?.name ??
-    filenameLanguage(alias) ??
-    filenameLanguage('file.' + alias)
-  );
+  const exact =
+    byName.get(alias) ??
+    byAlias.get(alias) ??
+    byName.get(alias.toLowerCase()) ??
+    byAlias.get(alias.toLowerCase());
+  if (exact) return exact;
+  const extension = filenameLexer('filename.' + alias),
+    file = filenameLexer(alias);
+  return extension && (!file || extension.priority >= file.priority) ? extension.name : file?.name;
 }
 function analyse(source: string): string | undefined {
   let best: string | undefined,

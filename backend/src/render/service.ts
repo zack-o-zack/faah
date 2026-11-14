@@ -1,3 +1,4 @@
+import { normalizeCRLF } from './text.ts';
 import { stat } from 'node:fs/promises';
 import { Document } from './document.ts';
 import { RenderPool } from './pool.ts';
@@ -11,6 +12,7 @@ export class RenderService {
   private rendering = new Map<string, Promise<string[]>>();
   private revisions = new Map<string, number>();
   private closed = false;
+  private backgrounds = new Set<Promise<void>>();
   constructor(disk?: RenderDisk) {
     this.disk = disk ?? new RenderDisk();
   }
@@ -43,10 +45,14 @@ export class RenderService {
         const data = await Bun.file(abs).bytes();
         if (data.subarray(0, 8000).includes(0)) throw new Error('binary file');
         const doc = new Document(
-          Buffer.from(data).toString().replaceAll('\r\n', '\n'),
+          normalizeCRLF(data),
           rel,
           (source, lang, want) => this.highlight(source, lang, want, abs),
           (delta) => this.cache.grow(key, delta),
+          (task) => {
+            this.backgrounds.add(task);
+            void task.finally(() => this.backgrounds.delete(task)).catch(() => undefined);
+          },
         );
         if (!this.closed && (this.revisions.get(abs) ?? 0) === revision)
           this.cache.put(key, doc, doc.initialBytes);
@@ -69,7 +75,7 @@ export class RenderService {
   async close(): Promise<void> {
     this.closed = true;
     await Promise.allSettled(this.opening.values());
-    await Promise.allSettled([...this.cache.entries.values()].map((e) => e.value.settled()));
+    await Promise.allSettled(this.backgrounds);
     await Promise.allSettled(this.rendering.values());
     this.pool.close();
     this.cache.clear();

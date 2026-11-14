@@ -61,8 +61,26 @@ export function rawHeaders(rel: string): Headers {
     'X-Content-Type-Options': 'nosniff',
   });
 }
-export function fileError(error: unknown, abs: string): string {
-  if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT')
-    return 'open ' + abs + ': no such file or directory';
+export function fileError(error: unknown, abs: string, operation = 'open'): string {
+  const messages: Record<string, string> = {
+    ENOENT: 'no such file or directory',
+    EACCES: 'permission denied',
+    EPERM: 'operation not permitted',
+    ENOTDIR: 'not a directory',
+    EISDIR: 'is a directory',
+    ELOOP: 'too many levels of symbolic links',
+    ENAMETOOLONG: 'file name too long',
+    EROFS: 'read-only file system',
+    ENOSPC: 'no space left on device',
+  };
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    typeof error.code === 'string'
+  ) {
+    const message = messages[error.code];
+    if (message) return operation + ' ' + abs + ': ' + message;
+  }
   return error instanceof Error ? error.message : String(error);
 }

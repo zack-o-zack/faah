@@ -10,7 +10,7 @@ export class Child {
     if (!exe) throw new Error('child executable is required');
     this.process = spawn(exe, command.slice(1), {
       cwd,
-      env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
+      env: { ...process.env, GIT_TERMINAL_PROMPT: '0', GIT_OPTIONAL_LOCKS: '0' },
       stdio: ['pipe', 'pipe', 'pipe'],
     });
     this.process.stdin.on('error', () => {

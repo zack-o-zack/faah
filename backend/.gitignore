@@ -7,3 +7,5 @@
 /src/fuzzy/worker.bundle
 
 /src/render/worker.bundle
+
+/src/watch/native-binding.js

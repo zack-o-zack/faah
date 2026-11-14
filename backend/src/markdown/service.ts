@@ -1,3 +1,5 @@
+import { goldmarkStrike } from './strike.ts';
+import { goldmarkLinks } from './linkify.ts';
 import MarkdownIt from 'markdown-it';
 import footnotes from 'markdown-it-footnote';
 import tasks from 'markdown-it-task-lists';
@@ -31,14 +33,9 @@ function firstLine(tokens: Token[], index: number): number | undefined {
       token.type,
     )
   ) {
-    for (let i = index + 1; i < tokens.length; i++) {
-      const next = tokens[i];
-      if (!next || next.level <= token.level) break;
-      if (
-        ['heading_open', 'paragraph_open', 'fence', 'code_block', 'table_open'].includes(next.type)
-      )
-        return firstLine(tokens, i);
-    }
+    const child = tokens[index + 1];
+    if (child && child.level > token.level && child.type !== 'hr')
+      return firstLine(tokens, index + 1);
     return;
   }
   if (!token.map) return;
@@ -53,7 +50,9 @@ export async function renderMarkdown(input: string, highlight: Highlight): Promi
   const source = input.replaceAll('\r\n', '\n');
   const md = new MarkdownIt({ html: true, linkify: true, breaks: false, typographer: false })
     .use(footnotes)
-    .use(tasks, { enabled: false, label: false });
+    .use(tasks, { enabled: false, label: false })
+    .use(goldmarkLinks)
+    .use(goldmarkStrike);
   // Goldmark accepts raw HTML and unsafe link destinations; browser sanitizing
   // remains the existing boundary. markdown-it's default URL policy is stricter.
   md.validateLink = () => true;
@@ -64,7 +63,7 @@ export async function renderMarkdown(input: string, highlight: Highlight): Promi
     const token = tokens[i];
     if (!token) continue;
     if (token.type === 'heading_open') {
-      token.attrSet('id', headingID(tokens[i + 1]?.content ?? '', seen));
+      token.attrSet('id', headingID(tokens[i + 1]?.content.split('\n').at(-1) ?? '', seen));
     }
     if (markerTypes.has(token.type)) {
       const line = firstLine(tokens, i);
@@ -103,6 +102,14 @@ export async function renderMarkdown(input: string, highlight: Highlight): Promi
         );
       }),
   );
+  md.renderer.rules.s_open = () => '<del>';
+  md.renderer.rules.s_close = () => '</del>';
+  md.renderer.rules.blockquote_open = (ts, i) => {
+    const token = ts[i];
+    return token
+      ? '<blockquote' + md.renderer.renderAttrs(token) + '>' + (token.attrs?.length ? '' : '\n')
+      : '';
+  };
   const fence = (ts: Token[], i: number) => {
     const token = ts[i];
     return token ? (rendered.get(token) ?? '') : '';
@@ -111,8 +118,8 @@ export async function renderMarkdown(input: string, highlight: Highlight): Promi
   md.renderer.rules.code_block = fence;
   md.renderer.rules.footnote_ref = (ts, i) => {
     const { id, sub } = footID(ts[i]);
-    const ref = sub > 0 ? `${id}:${sub}` : String(id);
-    return `<sup id="fnref:${ref}"><a href="#fn:${id}" class="footnote-ref" role="doc-noteref">${id}</a></sup>`;
+    const ref = sub > 0 ? `${sub}:${id}` : `:${id}`;
+    return `<sup id="fnref${ref}"><a href="#fn:${id}" class="footnote-ref" role="doc-noteref">${id}</a></sup>`;
   };
   md.renderer.rules.footnote_block_open = () =>
     '<div class="footnotes" role="doc-endnotes">\n<hr>\n<ol>\n';
@@ -121,8 +128,8 @@ export async function renderMarkdown(input: string, highlight: Highlight): Promi
   md.renderer.rules.footnote_close = () => '</li>\n';
   md.renderer.rules.footnote_anchor = (ts, i) => {
     const { id, sub } = footID(ts[i]),
-      ref = sub > 0 ? `${id}:${sub}` : String(id);
-    return `&#160;<a href="#fnref:${ref}" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a>`;
+      ref = sub > 0 ? `${sub}:${id}` : `:${id}`;
+    return `&#160;<a href="#fnref${ref}" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a>`;
   };
   return md.renderer.render(tokens, md.options, {});
 }

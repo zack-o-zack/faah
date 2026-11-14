@@ -32,7 +32,9 @@ export async function engine() {
         tokenizeMaxLineLength: 0,
         tokenizeTimeLimit: 0,
       });
-      const lines = tokens.map((line) => {
+      const sourceLines = source.split('\n');
+      const lines = tokens.map((line, lineIndex) => {
+        let offset = 0;
         const runs: { cls: string; text: string }[] = [];
         for (const token of line) {
           const explanations = token.explanation ?? [{ content: token.content, scopes: [] }];
@@ -40,7 +42,11 @@ export async function engine() {
             const cls = classFor(
               part.scopes.map((s) => s.scopeName),
               language,
+              part.content,
+              sourceLines[lineIndex] ?? '',
+              offset,
             );
+            offset += part.content.length;
             const previous = runs.at(-1);
             if (previous?.cls === cls) previous.text += part.content;
             else runs.push({ cls, text: part.content });

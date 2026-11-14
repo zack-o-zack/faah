@@ -1,32 +1,36 @@
 # Bun backend
 
-Phase 2 preserves the Go HTTP/SSE transport and frontend. Bun owns the process
-envelope, assets, settings, metrics, workbench and workspace navigation. Each workspace starts a hidden
+Phase 3 preserves the Go HTTP/SSE transport and frontend. Bun owns the process
+envelope, assets, settings, metrics, workbench, navigation, rendering and file
+operations. Each workspace starts a hidden
 Go server for the remaining routes. `FAAH_LEGACY_BIN` must name that executable.
 Auto-update and telemetry flags are accepted; Bun does not implement those
 services until phase 8. The ACP stdio bridge also delegates to Go during the port.
 
 ## Module map
 
-| Module                        | Responsibility                                                                           |
-| ----------------------------- | ---------------------------------------------------------------------------------------- |
-| `backend/src/main.ts`, `cli/` | Go-style flags, targets, ready protocol, browser, stdin and signal lifetime              |
-| `http/`                       | Bun listener, HTTP adapter, guards, assets, gzip, CSP, ranges, SSE and streaming proxy   |
-| `workbench/`                  | Recents, pins, stable IDs, clone discovery/preparation, children, holding pages, routes  |
-| `settings/`                   | Schema/defaults, raw JSON, aliases and atomic temp/rename saves                          |
-| `metrics/`                    | Own process APIs, child RSS, CPU samples at least 200 ms apart, workbench aggregation    |
-| `store/db.ts`                 | SQLite WAL, foreign keys, busy timeout, versioned transactional migrations               |
-| `ignore/`                     | Hierarchical Go ignore rules, scoped negation and segment/path/suffix fast paths         |
-| `index/`                      | Concurrent walk, early root publication, tree/compact/touch, Git overlays and navigation |
-| `fuzzy/`                      | Go scoring and UTF-8 byte positions, top-K heaps, persistent sharded Workers at 4K files |
-| `search/`                     | Embedded ripgrep, indexed file batches, ASCII folding, RE2 compatibility and snippets    |
-| `symbols/`                    | Go language families, declaration recognition and outline rules                          |
-| `files/`                      | Lexical path resolution, raw bytes and attachment/image headers                          |
-| `legacy/`                     | Go startup/stop, remaining routes, metadata/LSP adapters and migration consistency       |
-| `bench/`                      | Owned HTTP measurements, Go microbenchmark vectors, rg strategies and differential QA    |
-| `scripts/build.ts`            | Generate static file imports and compile the executable                                  |
-| `test/`                       | Unit, two-process SQLite and streaming proxy tests                                       |
-| `spike/`                      | Separate compiled runtime proof; excluded from the application                           |
+| Module                        | Responsibility                                                                                                |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `backend/src/main.ts`, `cli/` | Go-style flags, targets, ready protocol, browser, stdin and signal lifetime                                   |
+| `http/`                       | Bun listener, HTTP adapter, guards, assets, gzip, CSP, ranges, SSE and streaming proxy                        |
+| `workbench/`                  | Recents, pins, stable IDs, clone discovery/preparation, children, holding pages, routes                       |
+| `settings/`                   | Schema/defaults, raw JSON, aliases and atomic temp/rename saves                                               |
+| `metrics/`                    | Own process APIs, child RSS, CPU samples at least 200 ms apart, workbench aggregation                         |
+| `store/db.ts`                 | SQLite WAL, foreign keys, busy timeout, versioned transactional migrations                                    |
+| `ignore/`                     | Hierarchical Go ignore rules, scoped negation and segment/path/suffix fast paths                              |
+| `index/`                      | Concurrent walk, early root publication, tree/compact/touch, Git overlays and navigation                      |
+| `fuzzy/`                      | Go scoring and UTF-8 byte positions, top-K heaps, persistent sharded Workers at 4K files                      |
+| `search/`                     | Embedded ripgrep, indexed file batches, ASCII folding, RE2 compatibility and snippets                         |
+| `symbols/`                    | Go language families, declaration recognition and outline rules                                               |
+| `files/`                      | File windows, raw downloads, Markdown/table file limits, save/new/close and typed request decoding            |
+| `render/`                     | Shiki Workers, Chroma language names and scope classes, immutable documents, L1/L2 caches and idle scavenging |
+| `markdown/`, `table/`         | Goldmark-compatible Markdown structure and Go CSV parsing                                                     |
+| `watch/`                      | Native filesystem subscription, ignore filtering, debounce and Git refresh                                    |
+| `legacy/`                     | Go startup/stop, remaining routes, metadata/LSP adapters and migration consistency                            |
+| `bench/`                      | Owned HTTP measurements, Go microbenchmark vectors, rg strategies and differential QA                         |
+| `scripts/build.ts`            | Generate static file imports and compile the executable                                                       |
+| `test/`                       | Unit, two-process SQLite and streaming proxy tests                                                            |
+| `spike/`                      | Separate compiled runtime proof; excluded from the application                                                |
 
 Services accept typed values and return plain values. HTTP modules decode
 requests, call services and encode responses. Services have no Request/Response
@@ -47,7 +51,9 @@ JSON format; desktop hosts never replace them.
 
 Bun owns `/`, normalized base redirects, `/static/*`, `/api/settings`,
 `/api/metrics`, `/api/meta`, `/api/tree`, `/api/find`, `/api/search`,
-`/api/outline`, `/api/def`, `/api/raw`, `/api/reindex`, all `/api/wb/*` and
+`/api/outline`, `/api/def`, `/api/raw`, `/api/reindex`, `/api/file`,
+`/api/markdown`, `/api/table`, `/api/file/save`, `/api/fs/new`, `/api/close`,
+all `/api/wb/*` and
 `/w/<id>/*` routing. The last forwards to a
 Bun workspace, which forwards unported routes to its hidden Go child. Host and
 Origin survive both hops; response bodies stream with cancellation and no SSE
@@ -55,7 +61,7 @@ buffering. Active streams prevent idle eviction. Children use the same feature
 flags, ready protocol and stdin lifetime as Go.
 
 `backend/src/legacy/routes.ts` lists every remaining Go route explicitly:
-file/save/new/close, markdown/table, session, Git/diff/gutter/history, workspace
+session, Git/diff/gutter/history, workspace
 streams, LSP, agents, threads, Explain, MCP, PR/forge and review workflow. Remove each entry when its service moves to
 Bun. Metrics include the legacy process's RSS and its reported LSP memory.
 
@@ -112,8 +118,9 @@ All temporary consistency code lives in `legacy/` for removal in phase 8:
 - Proxied Git mutations apply a returned GitStatusPayload, or fetch a refresh,
   before returning to the client. Hunk, pull, sync-agent and abort also rebuild
   the index because they can change files, including on failed operations.
-- Successful file save/new calls normalize the request path, TouchPath it, and
-  refresh Git before returning. Agent edit/batch/job/cancel, thread
+- Bun save/new/close calls invalidate rendering caches, TouchPath the path,
+  call legacy `/api/close` to evict Go rendering/LSP state, then refresh/apply
+  Git before returning. Agent edit/batch/job/cancel, thread
   send/cancel/revert, and review-workflow run/status/stop rebuild and refresh.
   Review-workflow config POST touches `.faah/workflows.json` and refreshes Git;
   its GET remains a read.
@@ -126,6 +133,102 @@ All temporary consistency code lives in `legacy/` for removal in phase 8:
   and definition fallback search/classification are Bun-owned. Definition LSP
   state uses an inert filename with the query's extension, preserving Go State's
   extension-only lookup even when the original path is outside the workspace.
+
+## Rendering, files and observation
+
+`render/document.ts` keeps immutable UTF-8 source bytes and a byte-offset line
+index. It reproduces Go's final empty line, four-column tab stops, rune width,
+20,000-column clamp and invalid-UTF-8 replacement per byte. CRLF normalization
+happens before document creation. Files over 64 MiB or with a NUL in the first
+8,000 bytes fail as in Go. Image and deleted variants retain their distinct
+field sets. A `ref=` affects diff availability while the content still comes
+from the working tree, including Go's deleted-file/base exception.
+
+Highlighting uses 1,000-line chunks, 400 context lines on either side and a
+512 KiB byte window. Oversized windows first drop context, then use escaped
+plain text. Multi-chunk sources at most 2 MiB receive an asynchronous full pass;
+larger files remain window-only. Requests share opening, chunk and render work.
+The `exact` and `refine` flags retain Go's behavior, including oversized
+single-chunk files that cannot become exact. Background work remains tracked
+through L1 eviction and shutdown.
+
+The L1 LRU charges source bytes, line tables and rendered growth against
+64 MiB. Every 10 seconds, after 15 seconds without a non-stream/non-metrics
+request, it trims to 8 MiB and runs `Bun.gc(true)` in the process and render
+Workers, once per activity burst. Like Go, both budgets retain the newest
+document even when it alone exceeds the budget.
+
+The L2 SQLite WAL cache lives at `$XDG_CACHE_HOME/faah/render.sqlite`, otherwise
+`~/.faah/cache/faah/render.sqlite`. Rendered payloads are capped at 128 MiB and
+evicted in LRU order shared across connections. Keys hash source content,
+language, requested line count and `rendererVersion`; path associations allow
+save/close/watcher invalidation without dropping another path's identical
+content. Increment `rendererVersion` whenever grammar or scope mapping changes.
+Shutdown keeps L2 content so a fresh process can reuse rendered chunks. The
+budget counts stored payload bytes; SQLite pages, indexes and WAL add overhead.
+
+`render/lexers.json` exports all 297 configurations from the pinned Chroma
+v2.27.0 registry in registration order. Filename patterns, alias patterns,
+priorities, editor backup suffixes and content analysers preserve Go's language
+names, including `TypeScript` for TSX and lowercase `markdown`/`plaintext`.
+The generated filename test vectors compare primary/alias/backup matches with
+Go. `render/grammars.json` separately selects Shiki grammars, loaded lazily by
+up to four Workers. Names with no matching bundled grammar retain escaped plain
+text; detection does not substitute a different language name.
+
+`render/scopes.ts` is the explicit TextMate-to-theme mapping. Specific language
+rules precede generic leaf scopes. Its complete output vocabulary is
+`kt na nt nd nc no np err gi gd gh ge gs k nf nv nb s m o p cp c g`; ordinary
+names remain unstyled. Context rules restore Python import namespaces and
+adjust TypeScript, Go, Rust, shell, CSS and JSON scopes to Chroma's categories.
+Only `&`, `<` and `>` are escaped in source tokens. Tokens keep Go's
+`<i class=k>…</i>` shape. The contract comparator permits different token classes
+and boundaries only in file lines and Markdown code blocks, validates nesting
+and vocabulary, then compares escaped text exactly. All other fields and HTML
+remain exact; see `test/contract/README.md`.
+
+Markdown uses pinned markdown-it, footnote and task-list plugins with GFM table,
+strikethrough and linkification rules. Custom renderers preserve heading ids,
+duplicate tracking, container source markers, code wrappers, footnote ids and
+raw HTML. Fences use the same render pool; unlabelled or oversized fences stay
+plain. Preview limits and statuses remain 4 MiB / 413 / 415. CSV/TSV uses a
+hand-written LazyQuotes parser with variable records, BOM stripping, delimiter
+sniffing, physical line numbers, a 1 MiB read cap and 1,000 data rows. A byte-cut
+final record is dropped as in Go.
+
+`legacy/files.ts` is the only file metadata boundary. Git/LSP work runs in
+parallel with Bun's reads/highlighting; it never requests legacy `/api/file`.
+Normal HEAD-based diff availability uses the same index status rule as Go;
+explicit refs ask the Go diff endpoint. LSP state, diagnostics, missing language
+and running status come from Go. A disabled-LSP reply is immutable for that
+child's lifetime and is reused. Saves use plain writes and create parents; new
+paths preserve the 409 rule. These handlers deliberately retain Go's lack of an
+Origin/Host mutation guard. Their typed decoder also preserves Go's field
+folding, first-JSON-value behavior and error text.
+
+`watch/` subscribes to the canonical workspace root, plus external Git/common
+directories for linked worktrees. It filters hierarchical ignore rules and
+`.git` noise, retaining HEAD/index/refs/packed-refs changes, then debounces for
+50 ms. File events invalidate L1/L2, TouchPath the Bun index and refresh/apply
+legacy Git state. Go's `GitWatcher.Refresh` broadcasts changed status to the
+proxied Git/unified streams, so filesystem notifications can replace the polling
+floor. `GIT_OPTIONAL_LOCKS=0` prevents read-only child Git refreshes from taking
+optional index locks during user mutations. Watcher startup/runtime errors warn
+and fall back to Go's existing polling; shutdown unsubscribes before stopping
+the child. The build generates a literal native `.node` dependency for its
+platform. Linux builds default to glibc; set `FAAH_WATCHER_LIBC=musl` for musl.
+
+```sh
+bun backend/bench/render-micro.ts
+FAAH_LEGACY_BIN=/absolute/faah-go FAAH_BIN=/absolute/faah-bun bun backend/bench/token-agreement.ts
+FAAH_LEGACY_BIN=/absolute/faah-go FAAH_BIN=/absolute/faah-bun bun backend/bench/differential.ts
+```
+
+Token agreement counts matching classes per non-whitespace UTF-8 byte and also
+reports the subset where either renderer applies a class. The corpus sample is
+50 files from each of Flask, Redis, React and Kubernetes, distributed across
+available extensions and capped at 64 KiB per source. Go/Bun escaped text and
+language names must agree before class agreement is calculated.
 
 ## Phase 2 measurement commands
 

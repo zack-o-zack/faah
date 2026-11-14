@@ -1,5 +1,7 @@
+import { prepareWatcher } from './watcher.ts';
 import { join } from 'node:path';
 export async function buildWorkers(): Promise<void> {
+  await prepareWatcher();
   for (const name of ['fuzzy', 'render']) {
     const result = await Bun.build({
       entrypoints: [join(import.meta.dir, `../src/${name}/worker.ts`)],

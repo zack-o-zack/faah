@@ -1,4 +1,10 @@
-import { basename, isAbsolute } from 'node:path';
+import { WorkspaceWatch } from '../watch/service.ts';
+import { IdleScavenger } from '../render/idle.ts';
+import { RenderService } from '../render/service.ts';
+import { Files } from '../files/view.ts';
+import { FileMutations } from '../files/mutations.ts';
+import { LegacyFiles } from '../legacy/files.ts';
+import { basename, isAbsolute, join } from 'node:path';
 import { PathError, resolveFile, fileError } from '../files/service.ts';
 import { outline } from '../symbols/service.ts';
 import { trimSpace } from '../text.ts';
@@ -11,6 +17,11 @@ import { searchProfiler } from '../search/profile.ts';
 import { LegacyNavigation } from '../legacy/navigation.ts';
 import type { Child } from '../legacy/child.ts';
 export class Navigation {
+  readonly watcher: WorkspaceWatch;
+  readonly idle = new IdleScavenger(() => this.render.scavenge());
+  readonly render = new RenderService();
+  readonly files: Files;
+  readonly fileMutations: FileMutations;
   readonly fuzzy = new FuzzyPool();
   private readonly metrics = new MetricsCollector();
   readonly index: Index;
@@ -43,9 +54,35 @@ export class Navigation {
       excluded: () =>
         [...this.index.children.values()].flatMap((kids) => kids.filter((n) => n.ignored)),
     });
+    const legacyFiles = new LegacyFiles(
+      this.legacy,
+      () => this.index.git,
+      () => this.index.ready,
+    );
+    this.files = new Files(options.root, this.render, legacyFiles);
+    this.fileMutations = new FileMutations({
+      root: options.root,
+      render: this.render,
+      legacy: legacyFiles,
+      touch: (path) => this.index.touch(path),
+    });
     this.options = options;
-    this.building = this.index.build().then(() => {
+    this.watcher = new WorkspaceWatch({
+      root: options.root,
+      changed: async (paths) => {
+        const refresh = this.legacy.refreshAndApply();
+        const touch = (async () => {
+          for (const path of paths) {
+            this.render.invalidate(join(options.root, path));
+            await this.index.touch(path);
+          }
+        })();
+        await Promise.all([touch, refresh]);
+      },
+    });
+    this.building = this.index.build().then(async () => {
       this.legacy.start();
+      await this.watcher.start();
     });
     void this.building.catch((error) => {
       process.stderr.write('faah index: ' + String(error) + '\n');
@@ -134,8 +171,11 @@ export class Navigation {
     };
   }
   async close(): Promise<void> {
+    this.idle.close();
+    await this.watcher.close();
     await this.legacy.close();
     await this.building.catch(() => undefined);
     this.fuzzy.close();
+    await this.render.close();
   }
 }

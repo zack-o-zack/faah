@@ -1,3 +1,4 @@
+import { fileRoute } from '../files/routes.ts';
 import { headers, missing, redirect, json } from './response.ts';
 import { index, themes, staticAsset, themeName } from './assets.ts';
 import { legacyProxy } from '../legacy/proxy.ts';
@@ -39,6 +40,9 @@ export function handler(options: HandlerOptions): (request: Request) => Promise<
     const route = path.slice(base.length);
     if (pr && legacy) return legacyProxy({ request, origin: legacy.origin, route });
     if (navigation) {
+      navigation.idle.request(route, request.headers.get('accept'));
+      const file = await fileRoute(navigation, request, route);
+      if (file) return headers(file, request, workspace);
       const response = await navigationRoute({ nav: navigation, request, route });
       if (response) return headers(response, request, workspace);
     }

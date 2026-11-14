@@ -1,3 +1,4 @@
+import { goString } from '../render/text.ts';
 import { extname } from 'node:path';
 import { trimSpace } from '../text.ts';
 export const maxRows = 1000,
@@ -116,7 +117,7 @@ export class CSVReader {
 export function renderTable(input: Uint8Array, size: number, fallback: string): Table {
   const data = Buffer.from(input.buffer, input.byteOffset, Math.min(input.byteLength, maxBytes));
   const comma = sniffDelimiter(data.subarray(0, 64 << 10).toString(), fallback);
-  const source = data.toString().replaceAll('\r\n', '\n').replace(/\r$/, '');
+  const source = goString(data).replaceAll('\r\n', '\n').replace(/\r$/, '');
   const reader = new CSVReader(source, comma),
     cut = size > maxBytes;
   const result: Table = { header: [], headerLine: 0, rows: [], cols: 0, truncated: false };

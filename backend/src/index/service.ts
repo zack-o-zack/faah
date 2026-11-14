@@ -142,13 +142,15 @@ export class Index {
   }
   private async touchReady(path: string): Promise<void> {
     const rel = path.replace(/^\/+|\/+$/g, '');
-    if (!rel || rel.includes('..')) return;
+    if (!rel || rel.split('/').some((p) => p === '..' || p === '.' || !p)) return;
     let info;
     try {
       info = await stat(join(this.root, rel));
     } catch (error) {
       if (!(error instanceof Error) || !('code' in error) || error.code !== 'ENOENT') return;
-      this.files = this.files.filter((f) => f.path !== rel);
+      this.files = this.files.filter((f) => f.path !== rel && !f.path.startsWith(rel + '/'));
+      for (const dir of this.children.keys())
+        if (dir.startsWith(rel + '/')) this.children.delete(dir);
       const parent = posix.dirname(rel) === '.' ? '' : posix.dirname(rel);
       this.children.set(
         parent,

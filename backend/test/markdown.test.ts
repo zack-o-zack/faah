@@ -22,7 +22,7 @@ test('Go task lists, tables, container markers and footnotes retain non-highligh
     '> quoted\n\n- [x] done\n- [ ] todo\n\nA | B\n--|--\nx | y\n\nFootnote[^a].\n\n[^a]: note\n',
     highlight,
   );
-  expect(out).toContain('<blockquote data-line="1">\n<p data-line="1">quoted</p>\n</blockquote>');
+  expect(out).toContain('<blockquote data-line="1"><p data-line="1">quoted</p>\n</blockquote>');
   expect(out).toContain(
     '<li data-line="3"><input checked="" disabled="" type="checkbox"> done</li>',
   );
