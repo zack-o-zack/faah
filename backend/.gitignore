@@ -1,0 +1,5 @@
+/src/http/manifest.js
+/dist/
+
+/spike/generated.ts
+/spike/worker.bundle

@@ -18,7 +18,10 @@
     "test": "vitest run",
     "lint": "eslint web/src vite.config.ts eslint.config.js scripts/build-web.js scripts/check-web.js scripts/eslint-typescript/index.js",
     "format": "prettier --write web/src vite.config.ts eslint.config.js scripts/build-web.js scripts/check-web.js scripts/eslint-typescript/index.js",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json",
+    "backend:build": "bun backend/scripts/build.ts",
+    "backend:test": "cd backend && bun test test",
+    "backend:typecheck": "cd backend && ../node_modules/.bin/tsc --noEmit -p tsconfig.json"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
