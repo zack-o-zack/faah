@@ -134,6 +134,8 @@ try {
       'https://github.com/alice/a/../repo.git',
       'https://%67ithub.com/alice/repo.git',
       'https:///alice/repo.git',
+      'https://user name@github.com/alice/repo.git',
+      'https://你好@github.com/alice/repo.git',
     ]) {
       f.git('remote', 'set-url', 'origin', remote);
       equal(

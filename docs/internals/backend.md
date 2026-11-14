@@ -1,6 +1,6 @@
 # Bun backend
 
-Phase 3 preserves the Go HTTP/SSE transport and frontend. Bun owns the process
+The migration preserves the Go HTTP/SSE transport and frontend. Bun owns the process
 envelope, assets, settings, metrics, workbench, navigation, rendering and file
 operations. Each workspace starts a hidden
 Go server for the remaining routes. `FAAH_LEGACY_BIN` must name that executable.
@@ -25,6 +25,7 @@ services until phase 8. The ACP stdio bridge also delegates to Go during the por
 | `files/`                      | File windows, raw downloads, Markdown/table file limits, save/new/close and typed request decoding            |
 | `render/`                     | Shiki Workers, Chroma language names and scope classes, immutable documents, L1/L2 caches and idle scavenging |
 | `markdown/`, `table/`         | Goldmark-compatible Markdown structure and Go CSV parsing                                                     |
+| `git/`                        | Bounded Git subprocesses, typed streaming parsers, repository operations and native read routes               |
 | `watch/`                      | Native filesystem subscription, ignore filtering, debounce and Git refresh                                    |
 | `legacy/`                     | Go startup/stop, remaining routes, metadata/LSP adapters and migration consistency                            |
 | `bench/`                      | Owned HTTP measurements, Go microbenchmark vectors, rg strategies and differential QA                         |
@@ -53,6 +54,8 @@ Bun owns `/`, normalized base redirects, `/static/*`, `/api/settings`,
 `/api/metrics`, `/api/meta`, `/api/tree`, `/api/find`, `/api/search`,
 `/api/outline`, `/api/def`, `/api/raw`, `/api/reindex`, `/api/file`,
 `/api/markdown`, `/api/table`, `/api/file/save`, `/api/fs/new`, `/api/close`,
+`/api/diff`, `/api/gutter`, `/api/git/log`, `/api/unpushed`, `/api/commitfiles`,
+`/api/commitdetail`,
 all `/api/wb/*` and
 `/w/<id>/*` routing. The last forwards to a
 Bun workspace, which forwards unported routes to its hidden Go child. Host and
@@ -61,9 +64,87 @@ buffering. Active streams prevent idle eviction. Children use the same feature
 flags, ready protocol and stdin lifetime as Go.
 
 `backend/src/legacy/routes.ts` lists every remaining Go route explicitly:
-session, Git/diff/gutter/history, workspace
+session, Git status/mutations, workspace
 streams, LSP, agents, threads, Explain, MCP, PR/forge and review workflow. Remove each entry when its service moves to
 Bun. Metrics include the legacy process's RSS and its reported LSP memory.
+
+## Git read checkpoint
+
+Bun now serves diff, gutter, recent/unpushed history, commit files and commit
+metadata. Git status, mutation handlers, file/meta Git fields and both workspace
+streams still use the legacy adapters. PR URL workspaces remain pure proxy.
+This is a phase 4 checkpoint, not complete Git ownership.
+
+`git/process.ts` bounds Git concurrency at four subprocesses per workspace and
+cancels active/queued commands on shutdown. It suppresses terminal prompts and
+optional index locking. NUL/line records are split as bytes before UTF-8 decoding;
+large output yields to the event loop between batches. Probe successes cache the
+root/gitdir, while failures remain retryable so a later `git init` is visible.
+The safe-directory probe fallback preserves Go's global argument ordering.
+
+The native core includes porcelain-v2 staged/partial/conflict/rename decoding,
+subtree-relative paths, name-status/numstat/log parsing, ordinary staging,
+commit, hunk application, fast-forward fetch/merge, push and abort helpers.
+Those mutation helpers are tested against disposable repositories but are not
+yet connected to HTTP mutation routes. Snapshot/revert remains in Go for phase 7.
+
+History uses Go's exact `diff-tree`/`show` argument lists. On the installed Git,
+`show --numstat -m --first-parent` counts only the first parent, while the
+`diff-tree` stat form can count both parent diffs. Keep this behavior instead of
+silently normalizing merge stats. Remote URL parsing preserves Go's handling of
+explicit ports, IPv6 zones, escaped host/path bytes and credential stripping.
+
+`render/diff.ts` reconstructs old/new sides per hunk and highlights them through
+the render service. Raw text, sections, row numbers and omitted zero/empty fields
+match Go. Empty diff returns empty hunks; a nonempty binary/mode-only diff without
+hunks returns null. The contract comparator permits token-wrapper differences
+only in hunk HTML, retaining all other fields and text exactly. Goldens are
+unchanged.
+
+The core differential compares native methods directly with a real Go API:
+
+```sh
+FAAH_LEGACY_BIN=/absolute/faah-go bun backend/bench/git-core-differential.ts
+```
+
+It complements the HTTP differential, which now includes Git reads, binary and
+highlighted diffs, bad refs and revision guards. Temporary-repository tests cover
+unborn HEAD, partial staging, root/merge commits, frozen diffs, local-remote pulls,
+divergence, merge/rebase aborts, and process cancellation. Captured Git output
+fixtures are separate from the unchanged contract goldens.
+
+### Remaining phase 4 work
+
+- Make one native Git state owner authoritative for index overlays and Git fields
+  in meta/file. Wire refresh, stage, unstage, hunk, commit, push, pull, sync-state
+  and abort HTTP handlers. Preserve Go guards, JSON limits/errors and response
+  shapes. Keep PR base/frozen-head/your-status extension points.
+- Drive status refresh from the existing 50 ms filesystem feed. Include HEAD,
+  index, refs, packed-refs, FETCH_HEAD, MERGE_HEAD and rebase metadata. Compute with
+  subscribers or on demand, suppress unchanged snapshots, and use 1 s metadata /
+  adaptive 1–10 s status polling only when watching is unavailable.
+- Own `/api/stream` and `/api/git/stream`: initial/2.5 s native metrics and native
+  git-status; one on-demand internal legacy stream for the union of `threads=1`,
+  repeatable `thread=` and `review=1` options. Forward only matching thread/review
+  events. Preserve headers, 15 s pings, thread256/fan-in64 buffers and slow-client
+  closure. Test against a fake legacy SSE upstream.
+- Remove the old legacy Git snapshot application/subscription after native state
+  is wired. Keep refresh hooks after commit-message, sync-agent, thread revert,
+  agent writes and other proxied writers. Leave agent snapshots/reverts in Go
+  until phase 7 and all PR URL ownership in Go until phase 5.
+- Port the remaining index/watcher Git tests and native mutation route cases.
+  Run final-source Bun contracts257/257 three times, Go257/257, extended
+  differential, strict TS, backend tests, check and aislop. Rebuild references
+  before verification when assets/source change.
+- Alternate fresh Go/Bun launches for Git refresh/diff/gutter/log/commit detail,
+  stage/unstage round trips, meta, and SSE save/external-edit propagation; report
+  ratios and the hidden Go GitWatcher's CPU cost. Check tree/find/search/file
+  windows too, and retain the render micro rerun. Cold-open ratios are being
+  measured separately in a clean Codespace, not on this noisy local machine.
+
+Keep Go, frontend, desktop, contract goldens and `bench/results` unchanged. Do
+not push. Stop below 500 MiB free, remove owned temporary clones/build leftovers,
+and write precise scratch resume notes before stopping at a partial checkpoint.
 
 ## Navigation and migration consistency
 

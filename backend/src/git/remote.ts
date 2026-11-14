@@ -5,7 +5,7 @@ function unescape(value: string, host = false): string {
     bytes: number[] = [];
   const zone = host && value.startsWith('[') ? input.indexOf('%25') : -1;
   const hostByte = (byte: number) =>
-    byte >= 128 || /^[\w.!$&'()*+,;=:\[\]<>"~-]$/.test(String.fromCharCode(byte));
+    byte >= 128 || /^[\w.!$&'()*+,;=:[\]<>"~-]$/.test(String.fromCharCode(byte));
   for (let i = 0; i < input.length; i++) {
     const byte = input[i] ?? 0;
     if (byte === 37) {
@@ -35,7 +35,11 @@ function httpRemote(raw: string): { host: string; path: string } | undefined {
     if (!match) return;
     const authority = match[1] ?? '',
       at = authority.lastIndexOf('@');
-    if (at >= 0) unescape(authority.slice(0, at));
+    if (at >= 0) {
+      const user = authority.slice(0, at);
+      if (!/^[\w.\-:~!$&'()*+,;=%@]*$/.test(user)) return;
+      unescape(user);
+    }
     const host = authority.slice(at + 1),
       bracket = host.startsWith('[');
     const end = bracket ? host.lastIndexOf(']') : -1;
