@@ -53,8 +53,28 @@ func newExplainTools(tm *threadManager) *explainTools {
 	return et
 }
 
-// endpoint is where a turn reaches the tools with tok, or nil before faah listens.
-func (et *explainTools) endpoint(tok string) *agents.ToolEndpoint {
+// Issue creates a credential for the thread's native session.
+func (et *explainTools) Issue(id string) string {
+	return et.tokens.Issue(toolScope{tid: id})
+}
+
+// Touch refreshes the thread's session credentials.
+func (et *explainTools) Touch(id string) {
+	et.tokens.Touch(toolScope{tid: id})
+}
+
+// Revoke invalidates one session credential.
+func (et *explainTools) Revoke(token string) {
+	et.tokens.Revoke(token)
+}
+
+// RevokeThread invalidates every credential bound to the thread.
+func (et *explainTools) RevokeThread(id string) {
+	et.tokens.RevokeScope(func(scope any) bool { sc, ok := scope.(toolScope); return ok && sc.tid == id })
+}
+
+// Endpoint is where a turn reaches the tools with tok, or nil before faah listens.
+func (et *explainTools) Endpoint(tok string) *agents.ToolEndpoint {
 	u := et.addr.Load()
 	if u == nil {
 		return nil

@@ -2,23 +2,22 @@ package threads
 
 import (
 	"faah/internal/agents"
-	"faah/internal/codeintel"
+	"faah/internal/explain/notes"
 )
 
-// Runtime supplies the host-owned Explain operations. Threads keep the
-// conversation and turn state; the host keeps evidence, MCP and note checks.
+// Runtime supplies operations that read state owned by the host.
 type Runtime struct {
-	Select       func() (string, []string, string)
-	Instructions func(kind, reader string) string
-	ToolsPrompt  func() string
-	History      func([]codeintel.Note, []codeintel.Walkthrough) string
-	ValidateRefs func(root, reply string) map[string]codeintel.Citation
-	Issue        func(id string) string
-	Touch        func(id string)
-	Revoke       func(token string)
-	RevokeThread func(id string)
-	Endpoint     func(token string) *agents.ToolEndpoint
-	HashNotes    func(id string, turn, from int, ns []codeintel.Note)
+	Select    func() (string, []string, string)
+	HashNotes func(id string, turn, from int, ns []notes.Note)
+}
+
+// Credentials manages thread-scoped tool access through the host's MCP endpoint.
+type Credentials interface {
+	Issue(id string) string
+	Touch(id string)
+	Revoke(token string)
+	RevokeThread(id string)
+	Endpoint(token string) *agents.ToolEndpoint
 }
 
 // Snapshot returns independent thread snapshots for host-side note queries.
@@ -54,7 +53,7 @@ func (tm *Manager) RunningTurn(id string, turn int) bool {
 }
 
 // AddNotes records checked notes on a running turn.
-func (tm *Manager) AddNotes(id string, turn int, ns []codeintel.Note) {
+func (tm *Manager) AddNotes(id string, turn int, ns []notes.Note) {
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
 	if tr := tm.turnLocked(id, turn); tr != nil && tr.Running {
@@ -68,7 +67,7 @@ func (tm *Manager) AddNotes(id string, turn int, ns []codeintel.Note) {
 }
 
 // AddWalkthrough records a checked walkthrough on a running turn.
-func (tm *Manager) AddWalkthrough(id string, turn int, w codeintel.Walkthrough) {
+func (tm *Manager) AddWalkthrough(id string, turn int, w notes.Walkthrough) {
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
 	if tr := tm.turnLocked(id, turn); tr != nil && tr.Running {

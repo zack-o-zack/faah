@@ -50,10 +50,10 @@ func TestExplainPruneKeepsFollowUps(t *testing.T) {
 
 func TestExplainPromptNamesTheTools(t *testing.T) {
 	th := &Thread{Kind: "explain", ExplainKind: explain.KindBlock}
-	if p := threadPrompt(th, nil, "Explain main.go:1-2", false, "", false, testRuntime()); !strings.Contains(p, "two tools, annotate and walkthrough") {
+	if p := threadPrompt(th, nil, "Explain main.go:1-2", false, "", false); !strings.Contains(p, "two tools, annotate and walkthrough") {
 		t.Fatalf("MCP prompt = %s", p)
 	}
-	if p := threadPrompt(&Thread{}, nil, "hi", false, "", false, testRuntime()); strings.Contains(p, "annotate") {
+	if p := threadPrompt(&Thread{}, nil, "hi", false, "", false); strings.Contains(p, "annotate") {
 		t.Fatal("only explanations are told about the tools")
 	}
 }
@@ -72,7 +72,7 @@ func TestExplainReplayCarriesWhatWasShown(t *testing.T) {
 		Notes:        []notes.Note{{Kind: "line", Path: "main.go", L1: 4, L2: 4, Summary: "Calls helper."}},
 		Walkthroughs: []notes.Walkthrough{{Title: "Flow", Steps: []notes.Step{{Path: "main.go", L1: 3, L2: 5, Title: "Main", Body: "Starts."}, {Path: "main.go", L1: 7, L2: 7, Title: "Helper", Body: "Ends."}}}},
 	}}
-	p := threadPrompt(th, prior, "expand step 2", true, "", false, testRuntime())
+	p := threadPrompt(th, prior, "expand step 2", true, "", false)
 	for _, want := range []string{"- line main.go:4: Calls helper.", `(walkthrough shown, "Flow":`, "2. main.go:7 Helper: Ends."} {
 		if !strings.Contains(p, want) {
 			t.Fatalf("replay lacks %q:\n%s", want, p)

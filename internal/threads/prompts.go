@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"faah/internal/explain"
+	"faah/internal/explain/notes"
 	"faah/internal/forge"
 	"faah/internal/git"
 )
@@ -140,12 +142,12 @@ func MergeMessagePrompt(method string, meta forge.PRMeta, commits []git.Unpushed
 // threadPrompt composes what the harness is told for one turn. The anchor and
 // ground rules go in only when the harness has no memory of them: the first
 // turn, or recovery in a new native session.
-func threadPrompt(t *Thread, prior []*Turn, message string, replay bool, prCtx string, scopeChanged bool, runtime Runtime) string {
+func threadPrompt(t *Thread, prior []*Turn, message string, replay bool, prCtx string, scopeChanged bool) string {
 	var b strings.Builder
 	if len(prior) == 0 || replay {
 		if t.Kind == "explain" {
-			b.WriteString(runtime.Instructions(t.ExplainKind, t.ExplainReader))
-			b.WriteString(runtime.ToolsPrompt())
+			b.WriteString(explain.Instructions(t.ExplainKind, t.ExplainReader))
+			b.WriteString(notes.Prompt())
 		} else if t.Kind == "edit" || t.Kind == "batch" {
 			b.WriteString("Carry out the edit request below by editing files in place. ")
 			b.WriteString("Change only what it asks for; you may touch other files if the change needs it. ")
@@ -176,7 +178,7 @@ func threadPrompt(t *Thread, prior []*Turn, message string, replay bool, prCtx s
 		var h strings.Builder
 		for _, tr := range prior {
 			fmt.Fprintf(&h, "User: %s\n\nAssistant: %s\n\n", tr.Prompt, strings.TrimSpace(tr.Reply))
-			if shown := runtime.History(tr.Notes, tr.Walkthroughs); shown != "" {
+			if shown := notes.History(tr.Notes, tr.Walkthroughs); shown != "" {
 				h.WriteString(shown + "\n")
 			}
 			if len(tr.Changed) > 0 {

@@ -9,8 +9,6 @@ import (
 	"regexp"
 	"strings"
 	"time"
-
-	"faah/internal/codeintel"
 )
 
 // Explain This. A reader selects code and gets a short explanation grounded in
@@ -71,8 +69,16 @@ var explainKeywords = func() map[string]bool {
 	return m
 }()
 
-// Request is the shared persisted explanation value.
-type Request = codeintel.ExplainRequest
+// Request is what the client sends. A diff selection has no columns.
+type Request struct {
+	Path  string `json:"path"`
+	L1    int    `json:"l1"`
+	C1    *int   `json:"c1,omitempty"`
+	L2    int    `json:"l2"`
+	C2    *int   `json:"c2,omitempty"`
+	Text  string `json:"text"`
+	Force bool   `json:"force,omitempty"`
+}
 
 // Target is a selection checked against the file on disk. Name and Col
 // are set for a symbol; Col is -1 for a block.
@@ -84,8 +90,18 @@ type Target struct {
 	Text     string
 }
 
-// Summary is the shared persisted explanation value.
-type Summary = codeintel.EvidenceSummary
+// Summary is the line of evidence shown under an explanation.
+type Summary struct {
+	Source      string `json:"source"` // language server name, or "text"
+	Definition  bool   `json:"definition,omitempty"`
+	Refs        int    `json:"refs,omitempty"`
+	RefFiles    int    `json:"refFiles,omitempty"`
+	Callers     int    `json:"callers,omitempty"`
+	Identifiers int    `json:"identifiers,omitempty"`
+}
 
-// Ref is the shared persisted explanation value.
-type Ref = codeintel.Citation
+// Ref is a citation that survived checking; End is set for a range.
+type Ref struct {
+	Line int `json:"line,omitempty"`
+	End  int `json:"end,omitempty"`
+}

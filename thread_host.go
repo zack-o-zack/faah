@@ -1,7 +1,6 @@
 package main
 
 import (
-	"faah/internal/explain"
 	"faah/internal/explain/notes"
 	"faah/internal/threads"
 )
@@ -25,21 +24,10 @@ func newThreadManagerAt(a *agentManager, root, file string) *threadManager {
 	tm := &threadManager{agent: a, root: root, file: file}
 	tm.tools = newExplainTools(tm)
 	tm.Manager = threads.New(a.Jobs, root, file, threads.Runtime{
-		Select:       tm.explainHarness,
-		Instructions: explain.Instructions,
-		ToolsPrompt:  notes.Prompt,
-		History:      notes.History,
-		ValidateRefs: explain.ValidateRefs,
-		Issue:        func(id string) string { return tm.tools.tokens.Issue(toolScope{tid: id}) },
-		Touch:        func(id string) { tm.tools.tokens.Touch(toolScope{tid: id}) },
-		Revoke:       tm.tools.tokens.Revoke,
-		RevokeThread: func(id string) {
-			tm.tools.tokens.RevokeScope(func(scope any) bool { sc, ok := scope.(toolScope); return ok && sc.tid == id })
-		},
-		Endpoint: tm.tools.endpoint,
+		Select: tm.explainHarness,
 		HashNotes: func(id string, turn, from int, ns []notes.Note) {
 			tm.hashNotes(toolScope{tid: id, turn: turn}, from, ns)
 		},
-	})
+	}, tm.tools)
 	return tm
 }

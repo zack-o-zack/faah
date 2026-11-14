@@ -3,19 +3,36 @@
 // and finds saved notes again in code that has moved.
 package notes
 
-import (
-	"faah/internal/codeintel"
-	"faah/internal/explain"
-)
+import "faah/internal/explain"
 
-// Note is the shared persisted explanation value.
-type Note = codeintel.Note
+// Note explains one symbol, line or block in place.
+type Note struct {
+	Kind    string `json:"kind"` // symbol, line or block
+	Path    string `json:"path"`
+	L1      int    `json:"l1"`
+	L2      int    `json:"l2"`
+	Symbol  string `json:"symbol,omitempty"`
+	Summary string `json:"summary"`
+	Detail  string `json:"detail,omitempty"`
+	Text    string `json:"text"`           // the lines when saved, to find them again
+	Refs    string `json:"refs,omitempty"` // a symbol's callers and references hash when saved
+}
 
-// Step is the shared persisted explanation value.
-type Step = codeintel.Step
+// Step is one stop of a walkthrough.
+type Step struct {
+	Path  string `json:"path"`
+	L1    int    `json:"l1"`
+	L2    int    `json:"l2"`
+	Title string `json:"title"`
+	Body  string `json:"body"`
+	Text  string `json:"text"`
+}
 
-// Walkthrough is the shared persisted explanation value.
-type Walkthrough = codeintel.Walkthrough
+// Walkthrough guides the reader through a flow, one step at a time.
+type Walkthrough struct {
+	Title string `json:"title"`
+	Steps []Step `json:"steps"`
+}
 
 // Reader returns a workspace file's lines, or false when rel is not a
 // readable file inside the workspace.

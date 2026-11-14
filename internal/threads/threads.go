@@ -19,6 +19,8 @@ import (
 	"faah/internal/agents"
 	"faah/internal/agents/all"
 	"faah/internal/codeintel"
+	"faah/internal/explain"
+	"faah/internal/explain/notes"
 	"faah/internal/git"
 	"faah/internal/processio"
 	"faah/internal/settings"
@@ -73,10 +75,10 @@ type Turn struct {
 	FirstMs   int64    `json:"firstMs,omitempty"` // until the first words of the reply arrived
 	// Refs holds the citations in an explanation's reply that passed checking,
 	// by target as written.
-	Refs map[string]codeintel.Citation `json:"refs,omitempty"`
+	Refs map[string]explain.Ref `json:"refs,omitempty"`
 	// What an explanation showed on the code through the explain tools.
-	Notes        []codeintel.Note        `json:"notes,omitempty"`
-	Walkthroughs []codeintel.Walkthrough `json:"walkthroughs,omitempty"`
+	Notes        []notes.Note        `json:"notes,omitempty"`
+	Walkthroughs []notes.Walkthrough `json:"walkthroughs,omitempty"`
 }
 
 // Thread is the persisted conversation. Path and lines are where it was
@@ -104,12 +106,12 @@ type Thread struct {
 	// and EvidenceHash what surrounded that code; see explain.go. ExplainReader
 	// is the explain.reader text it was written for. The packet the harness
 	// reads is kept beside the store and loaded here for a turn.
-	ExplainKey    string                     `json:"explainKey,omitempty"`
-	ExplainKind   string                     `json:"explainKind,omitempty"`
-	ExplainReader string                     `json:"explainReader,omitempty"`
-	EvidenceHash  string                     `json:"evidenceHash,omitempty"`
-	Evidence      *codeintel.EvidenceSummary `json:"evidence,omitempty"`
-	ExplainReq    *codeintel.ExplainRequest  `json:"explainReq,omitempty"`
+	ExplainKey    string           `json:"explainKey,omitempty"`
+	ExplainKind   string           `json:"explainKind,omitempty"`
+	ExplainReader string           `json:"explainReader,omitempty"`
+	EvidenceHash  string           `json:"evidenceHash,omitempty"`
+	Evidence      *explain.Summary `json:"evidence,omitempty"`
+	ExplainReq    *explain.Request `json:"explainReq,omitempty"`
 	packet        string
 }
 
@@ -153,7 +155,8 @@ type Manager struct {
 	sessions    map[string]*threadSession
 	sessionIdle time.Duration
 	closed      bool
-	runtime     Runtime // host-owned Explain effects
+	runtime     Runtime // host-owned selection and symbol hashes
+	credentials Credentials
 }
 
 // StorePath keeps every workspace's threads beside settings.json, never
@@ -168,9 +171,9 @@ func StorePath(root string) string {
 }
 
 // New restores threads and connects their edit jobs to the shared job sequence.
-func New(a *Jobs, root, file string, runtime Runtime) *Manager {
+func New(a *Jobs, root, file string, runtime Runtime, credentials Credentials) *Manager {
 	tm := &Manager{
-		agent: a, root: root, file: file, runtime: runtime,
+		agent: a, root: root, file: file, runtime: runtime, credentials: credentials,
 		threads: map[string]*Thread{}, sessions: map[string]*threadSession{},
 		cancels: map[string]context.CancelFunc{}, jobs: map[int64]*threadJobRef{},
 		subs: map[string]map[chan Event]struct{}{},
@@ -299,8 +302,8 @@ func cloneThread(t *Thread) *Thread {
 		tc := *tr
 		tc.Tools = append([]string(nil), tr.Tools...)
 		tc.Changed = append([]string(nil), tr.Changed...)
-		tc.Notes = append([]codeintel.Note(nil), tr.Notes...)
-		tc.Walkthroughs = append([]codeintel.Walkthrough(nil), tr.Walkthroughs...)
+		tc.Notes = append([]notes.Note(nil), tr.Notes...)
+		tc.Walkthroughs = append([]notes.Walkthrough(nil), tr.Walkthroughs...)
 		c.Turns[i] = &tc
 	}
 	return &c
@@ -492,8 +495,8 @@ func (tm *Manager) runTurn(ctx context.Context, cancel context.CancelFunc, r *th
 	replay := len(r.prior) > 0 && sessionID == "" && liveSession == nil
 	var openErr error
 	if liveSession == nil {
-		tok := tm.runtime.Issue(r.tid)
-		o := agents.Open{Key: r.tid, Version: tm.agent.version, Dir: tm.root, Base: r.base, Env: r.env, Model: r.model, Mode: mode, Resume: sessionID, Tools: tm.runtime.Endpoint(tok), Stderr: stderr}
+		tok := tm.credentials.Issue(r.tid)
+		o := agents.Open{Key: r.tid, Version: tm.agent.version, Dir: tm.root, Base: r.base, Env: r.env, Model: r.model, Mode: mode, Resume: sessionID, Tools: tm.credentials.Endpoint(tok), Stderr: stderr}
 		var opened agents.Session
 		opened, openErr = a.Open(ctx, o)
 		if openErr != nil && sessionID != "" {
@@ -502,13 +505,13 @@ func (tm *Manager) runTurn(ctx context.Context, cancel context.CancelFunc, r *th
 			replay = true
 		}
 		if openErr != nil {
-			tm.runtime.Revoke(tok)
+			tm.credentials.Revoke(tok)
 		} else {
 			liveSession = &threadSession{session: opened, token: tok, name: r.name, model: r.model, mode: mode}
 			tm.mu.Lock()
 			if tm.closed || tm.threads[r.tid] == nil {
 				opened.Close()
-				tm.runtime.Revoke(tok)
+				tm.credentials.Revoke(tok)
 				openErr = errors.New("thread closed")
 			} else {
 				tm.sessions[r.tid] = liveSession
@@ -519,7 +522,7 @@ func (tm *Manager) runTurn(ctx context.Context, cancel context.CancelFunc, r *th
 		}
 	}
 	if liveSession != nil {
-		tm.runtime.Touch(r.tid)
+		tm.credentials.Touch(r.tid)
 	}
 	prCtx, scopeChanged := "", false
 	if tm.agent.hooks.PRContext != nil {
@@ -535,7 +538,7 @@ func (tm *Manager) runTurn(ctx context.Context, cancel context.CancelFunc, r *th
 			tm.mu.Unlock()
 		}
 	}
-	prompt := threadPrompt(t, r.prior, r.message, replay, prCtx, scopeChanged, tm.runtime)
+	prompt := threadPrompt(t, r.prior, r.message, replay, prCtx, scopeChanged)
 
 	if ui.Verbose {
 		ui.VerbosePrompt(0, r.name, prompt, os.Stdout)
@@ -557,9 +560,9 @@ func (tm *Manager) runTurn(ctx context.Context, cancel context.CancelFunc, r *th
 		afterSHA = git.SnapshotWorktree(tm.root)
 	}
 	tm.agent.settle(changed)
-	var refs map[string]codeintel.Citation
+	var refs map[string]explain.Ref
 	if explaining {
-		refs = tm.runtime.ValidateRefs(tm.root, sink.reply())
+		refs = explain.ValidateRefs(tm.root, sink.reply())
 	}
 
 	tm.mu.Lock()

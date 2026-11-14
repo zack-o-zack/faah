@@ -8,15 +8,15 @@ import (
 
 func TestThreadPrompt(t *testing.T) {
 	th := &Thread{Path: "main.go", L1: 3, L2: 4, Snippet: "func main() {}"}
-	first := threadPrompt(th, nil, "why?", false, "", false, testRuntime())
+	first := threadPrompt(th, nil, "why?", false, "", false)
 	if !strings.Contains(first, "@main.go lines 3-4") || !strings.Contains(first, "func main() {}") || !strings.HasSuffix(first, "why?") {
 		t.Fatalf("first prompt = %q", first)
 	}
 	prior := []*Turn{{Prompt: "why?", Reply: "because", Changed: []string{"a.go"}}}
-	if got := threadPrompt(th, prior, "and now?", false, "", false, testRuntime()); got != "and now?" {
+	if got := threadPrompt(th, prior, "and now?", false, "", false); got != "and now?" {
 		t.Fatalf("a live session should get the bare message, got %q", got)
 	}
-	replay := threadPrompt(th, prior, "and now?", true, "", false, testRuntime())
+	replay := threadPrompt(th, prior, "and now?", true, "", false)
 	for _, want := range []string{"@main.go", "User: why?", "Assistant: because", "a.go", "and now?"} {
 		if !strings.Contains(replay, want) {
 			t.Fatalf("replay prompt missing %q:\n%s", want, replay)

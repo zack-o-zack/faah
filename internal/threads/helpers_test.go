@@ -7,8 +7,6 @@ import (
 
 	"faah/internal/agents"
 	"faah/internal/agents/all"
-	"faah/internal/explain"
-	"faah/internal/explain/notes"
 	"faah/internal/mcp"
 	"faah/internal/threads/threadstest"
 )
@@ -36,20 +34,20 @@ func testJobs(root, name string) *Jobs {
 	}, all.For)
 }
 
-func testRuntime() Runtime {
-	tokens := &mcp.Tokens{}
-	return Runtime{
-		Instructions: explain.Instructions, ToolsPrompt: notes.Prompt, History: notes.History,
-		ValidateRefs: explain.ValidateRefs,
-		Issue:        func(id string) string { return tokens.Issue(id) },
-		Touch:        func(id string) { tokens.Touch(id) }, Revoke: tokens.Revoke,
-		RevokeThread: func(id string) { tokens.RevokeScope(func(scope any) bool { return scope == id }) },
-		Endpoint:     func(string) *agents.ToolEndpoint { return nil },
-	}
+type testCredentials struct {
+	tokens mcp.Tokens
 }
 
+func (c *testCredentials) Issue(id string) string { return c.tokens.Issue(id) }
+func (c *testCredentials) Touch(id string)        { c.tokens.Touch(id) }
+func (c *testCredentials) Revoke(token string)    { c.tokens.Revoke(token) }
+func (c *testCredentials) RevokeThread(id string) {
+	c.tokens.RevokeScope(func(scope any) bool { return scope == id })
+}
+func (c *testCredentials) Endpoint(string) *agents.ToolEndpoint { return nil }
+
 func testManager(jobs *Jobs, root string) *Manager {
-	return New(jobs, root, StorePath(root), testRuntime())
+	return New(jobs, root, StorePath(root), Runtime{}, &testCredentials{})
 }
 
 func waitThreadIdle(t *testing.T, tm *Manager, id string) *Thread {

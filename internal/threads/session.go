@@ -30,10 +30,10 @@ func (tm *Manager) closeSessionLocked(id string) {
 			s.idle.Stop()
 		}
 		s.session.Close()
-		tm.runtime.Revoke(s.token)
+		tm.credentials.Revoke(s.token)
 		delete(tm.sessions, id)
 	}
-	tm.runtime.RevokeThread(id)
+	tm.credentials.RevokeThread(id)
 }
 
 func (tm *Manager) idleSessionLocked(id string) {
