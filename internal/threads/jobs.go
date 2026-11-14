@@ -26,9 +26,13 @@ const (
 	jobLogBytes = harness.DefaultLogBytes
 )
 
+var ErrEditBusy = errors.New("an edit is already running")
+
 var ErrNoAgent = errors.New("no coding harness is selected")
 
 type Hooks struct {
+	// PRContext, when set (PR review sessions), describes the pull request the
+	// workspace is a checkout of; it goes into the first prompt of a thread.
 	PRContext func(scope string) string
 	AfterEdit func(changed []string)
 }
@@ -54,11 +58,6 @@ func NewJobs(root, version string, current func() (string, []string, string), op
 
 // SetHooks supplies the host's file invalidation effects.
 func (m *Jobs) SetHooks(hooks Hooks) { m.hooks = hooks }
-
-// BindThreads connects inline edits to the shared job lookup and cancellation.
-func (m *Jobs) BindThreads(job func(int64) *Job, cancel func(int64) bool) {
-	m.threadJob, m.threadCancel = job, cancel
-}
 
 // BatchItem represents one instruction anchored to a file range.
 type BatchItem struct {
@@ -180,8 +179,8 @@ func (m *Jobs) Job(id int64) *Job {
 	return cp
 }
 
-// NextJobID hands out an id from the sequence every job shares.
-func (m *Jobs) NextJobID() int64 {
+// nextJobID hands out an id from the sequence every job shares.
+func (m *Jobs) nextJobID() int64 {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.seq++
@@ -246,7 +245,7 @@ func (m *Jobs) run(ctx context.Context, cancel context.CancelFunc, job *Job, bas
 		ui.VerbosePrompt(job.ID, job.Harness, prompt, os.Stdout)
 	}
 
-	before := WorktreeSnapshot(m.root)
+	before := worktreeSnapshot(m.root)
 
 	stdoutStreamer := newLineStreamer(job.out, ui.Faint("│", os.Stdout), os.Stdout)
 	stderrStreamer := newLineStreamer(job.stderr, ui.Dim("│", os.Stdout), os.Stdout)
@@ -260,8 +259,8 @@ func (m *Jobs) run(ctx context.Context, cancel context.CancelFunc, job *Job, bas
 	stdoutStreamer.Flush()
 	stderrStreamer.Flush()
 
-	changed := ChangedSince(m.root, before)
-	m.Settle(changed)
+	changed := changedSince(m.root, before)
+	m.settle(changed)
 
 	m.mu.Lock()
 	job.Running = false
@@ -302,21 +301,21 @@ func (m *Jobs) run(ctx context.Context, cancel context.CancelFunc, job *Job, bas
 	}
 }
 
-// Settle drops every trace of the old bytes. Open memoises on path+mtime+size
+// settle drops every trace of the old bytes. Open memoises on path+mtime+size
 // so a rewritten file already misses the cache, but a harness that truncates
 // and writes in place can be read mid-write, and that torn copy would then sit
 // under a key nothing invalidates. Evicting is cheaper than reasoning about it.
 // Language servers hold their own copy of the file and never saw the write, so
 // they are closed here too and reopen on the next request.
-func (m *Jobs) Settle(changed []string) {
+func (m *Jobs) settle(changed []string) {
 	if m.hooks.AfterEdit != nil {
 		m.hooks.AfterEdit(changed)
 	}
 }
 
-// Cancel stops every harness currently running. Whatever each has already
+// cancel stops every harness currently running. Whatever each has already
 // written stays.
-func (m *Jobs) Cancel() bool {
+func (m *Jobs) cancel() bool {
 	return m.CancelJob(0)
 }
 
@@ -364,20 +363,20 @@ func (m *Jobs) CancelJob(id int64) bool {
 	return cancelled || fromThreads
 }
 
-func (m *Jobs) Close() { m.Cancel() }
+func (m *Jobs) Close() { m.cancel() }
 
-// ChangedSince reports the paths whose state differs from the snapshot taken
+// changedSince reports the paths whose state differs from the snapshot taken
 // before the run. Asking git is the only honest answer to "what did it touch":
 // a harness routinely edits files nobody pointed it at.
-func ChangedSince(root string, before map[string]string) []string {
-	return changedSinceMaps(before, WorktreeSnapshot(root))
+func changedSince(root string, before map[string]string) []string {
+	return changedSinceMaps(before, worktreeSnapshot(root))
 }
 
-// WorktreeSnapshot is git status with each listed file's size and mtime folded
+// worktreeSnapshot is git status with each listed file's size and mtime folded
 // into its entry. Status alone misses the common case of editing a file that is
 // already modified: it reads "M" before and after, so the edit would go unseen.
 // Files git lists as clean are left out, and those still surface through status.
-func WorktreeSnapshot(root string) map[string]string {
+func worktreeSnapshot(root string) map[string]string {
 	st := git.Status(root)
 	for rel, code := range st {
 		if fi, err := os.Stat(filepath.Join(root, filepath.FromSlash(rel))); err == nil {
@@ -409,8 +408,8 @@ func changedSinceMaps(before, after map[string]string) []string {
 	return out
 }
 
-// ReadLineRange returns lines l1..l2 of a file, 1-based and inclusive.
-func ReadLineRange(abs string, l1, l2 int) (string, error) {
+// readLineRange returns lines l1..l2 of a file, 1-based and inclusive.
+func readLineRange(abs string, l1, l2 int) (string, error) {
 	data, err := os.ReadFile(abs)
 	if err != nil {
 		return "", err

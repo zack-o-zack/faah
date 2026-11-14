@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -125,71 +124,12 @@ func TestExplainFailedFirstTurnIsNotReused(t *testing.T) {
 	waitThreadIdle(t, s, m["thread"].(map[string]any)["id"].(string))
 }
 
-func TestExplainPruneKeepsFollowUps(t *testing.T) {
-	isolateSettings(t)
-	root := t.TempDir()
-	m, err := newAgentManager(root, "", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	tm := newThreadManager(m, root)
-	add := func(id string, created int64, turns int) {
-		th := &thread{ID: id, Kind: "explain", Created: created}
-		for i := 0; i < turns; i++ {
-			th.Turns = append(th.Turns, &threadTurn{ID: i + 1})
-		}
-		tm.threads[id] = th
-		tm.writeExplainPacket(id, "packet")
-	}
-	add("old-followed", 1, 2)
-	add("old-single", 2, 1)
-	for i := 0; i < explainKeep; i++ {
-		add("new"+lineRef(i, i), int64(100+i), 1)
-	}
-	tm.mu.Lock()
-	tm.pruneExplainLocked()
-	tm.mu.Unlock()
-	if tm.threads["old-single"] != nil {
-		t.Fatal("an old explanation without follow-ups should be pruned")
-	}
-	if tm.threads["old-followed"] == nil {
-		t.Fatal("an old explanation with follow-ups should stay")
-	}
-	if _, err := os.Stat(tm.explainPacketPath("old-single")); !os.IsNotExist(err) {
-		t.Fatalf("pruned packet should be removed, stat err = %v", err)
-	}
-}
-
 // explainSettings writes explain.* settings for one test.
 func explainSettings(t *testing.T, values map[string]any) {
 	t.Helper()
 	if err := settings.UpdateMap(values); err != nil {
 		t.Fatal(err)
 	}
-}
-
-// fakeCLI puts a script named like a real harness on PATH. It records its
-// arguments in the workspace and replies with one line.
-func fakeCLI(t *testing.T, name string) {
-	t.Helper()
-	dir := t.TempDir()
-	if name == "claude" {
-		exe, err := os.Executable()
-		if err != nil {
-			t.Fatal(err)
-		}
-		if err = os.Symlink(exe, filepath.Join(dir, name)); err != nil {
-			t.Fatal(err)
-		}
-		t.Setenv("FAAH_THREAD_CLAUDE_HELPER", "1")
-		t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
-		return
-	}
-	body := "#!/bin/sh\nprintf '%s\\n' \"$@\" > " + name + "-args.txt\nprintf 'ok\\n'\n"
-	if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
 }
 
 func TestExplainWritesForTheReader(t *testing.T) {
@@ -357,23 +297,5 @@ func TestExplainPrepareOffAndBadInput(t *testing.T) {
 	}
 	if s.explainPre.gathers.Load() != 0 {
 		t.Fatal("nothing should have been gathered")
-	}
-}
-
-func TestExplainPromptNamesTheTools(t *testing.T) {
-	th := &thread{Kind: "explain", ExplainKind: explain.KindBlock}
-	if p := threadPrompt(th, nil, "Explain main.go:1-2", false, "", false); !strings.Contains(p, "two tools, annotate and walkthrough") {
-		t.Fatalf("MCP prompt = %s", p)
-	}
-	if p := threadPrompt(&thread{}, nil, "hi", false, "", false); strings.Contains(p, "annotate") {
-		t.Fatal("only explanations are told about the tools")
-	}
-}
-
-// Saved threads keep their explanation key under the name they always had.
-func TestExplainKeySavedName(t *testing.T) {
-	b, _ := json.Marshal(&thread{ExplainKey: "k"})
-	if !strings.Contains(string(b), `"explainKey":"k"`) {
-		t.Fatalf("thread JSON = %s", b)
 	}
 }

@@ -12,9 +12,9 @@ Selecting an agent saves its name and model under `$XDG_CONFIG_HOME/faah/setting
 
 The selection bar, context menu, and `Alt+E` open a composer. The browser sends a path, line range, and instruction. faah reads the source from disk and composes the prompt; browser-supplied source is not trusted as the file's contents.
 
-`/api/agent/edit` and `/api/agent/batch` call `threadManager.StartEdit`. One item creates an `edit` thread anchored to its range. Several items create a `batch` thread whose first message includes every snippet and instruction. Both use native Edit sessions and retain their transcript for follow-ups.
+`/api/agent/edit` and `/api/agent/batch` call `threads.Manager.StartEdit`. One item creates an `edit` thread anchored to its range. Several items create a `batch` thread whose first message includes every snippet and instruction. Both use native Edit sessions and retain their transcript for follow-ups.
 
-`threadManager.overlappingEdit` rejects overlapping ranges among running inline and batch edits with HTTP 409. Disjoint ranges can run concurrently. Uncommitted files are allowed. Ordinary conversation threads have no overlap guard, so concurrent writes can affect each other's changed-file lists.
+`threads.Manager.overlappingEdit` rejects overlapping ranges among running inline and batch edits with HTTP 409. Disjoint ranges can run concurrently. Uncommitted files are allowed. Ordinary conversation threads have no overlap guard, so concurrent writes can affect each other's changed-file lists.
 
 The thread manager exposes turns as `threads.Job` snapshots through the agent manager's job and cancellation hooks. `/api/agent/job?id=` serves the same shape to all edit composers. Stop cancels the native turn; changes already written remain.
 
@@ -28,7 +28,7 @@ A native completion signal ends a turn. Before and after snapshots identify chan
 
 `changedSince` compares Git status plus file size and modification time, including files already dirty before the turn. The result is sorted. Outside Git, jobs report `tracked: false`, and the client reloads without relying on a changed-file list.
 
-For changed files, `settle` evicts rendering caches and closes stale language-server documents. The browser reindexes, reloads open tabs, and redraws the tree. Source and diff views preserve their view and scroll position. Thread turns also retain before/after Git snapshots for diff review and revert; these do not move `HEAD` or modify the index.
+For changed files, `threads.Jobs.settle` evicts rendering caches and closes stale language-server documents. The browser reindexes, reloads open tabs, and redraws the tree. Source and diff views preserve their view and scroll position. Thread turns also retain before/after Git snapshots for diff review and revert; these do not move `HEAD` or modify the index.
 
 Diagnostics and replies are kept separately. A failed composer shows the error with available stdout and stderr so the instruction can be corrected and retried.
 
@@ -49,4 +49,4 @@ Browser mutations require `localPost`: POST, matching Origin and Host, and an IP
 
 ## Limits
 
-Thread turns have a 30-minute limit; prompt jobs use `agentTimeout`. Job stdout and stderr retain their last 32 KB. Gitignored changes do not appear in Git status. Thread history, settings, SDK helpers, and other faah state live outside the workspace.
+Thread turns have a 30-minute limit; prompt jobs use `jobTimeout`. Job stdout and stderr retain their last 32 KB. Gitignored changes do not appear in Git status. Thread history, settings, SDK helpers, and other faah state live outside the workspace.

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	"faah/internal/agents"
 	"faah/internal/mcp"
 )
 
@@ -87,22 +88,8 @@ func Tools(read Reader, rec Recorder) []mcp.Tool {
 	}
 }
 
-// StepLabel names a call to annotate or walkthrough in words, whatever prefix
-// the agent gave the tool ("mcp__faah__annotate", "faah-t1_annotate", "Run
-// mcp_faah_annotate"). Other steps pass through unchanged.
-func StepLabel(label string) string {
-	f := strings.Fields(label)
-	if len(f) == 0 {
-		return label
-	}
-	last := f[len(f)-1]
-	for name, words := range map[string]string{"annotate": "Show notes", "walkthrough": "Show a walkthrough"} {
-		if len(f) == 1 && last == name || strings.Contains(last, "faah") && strings.HasSuffix(last, "_"+name) {
-			return words
-		}
-	}
-	return label
-}
+// StepLabel names a normalized agent tool step.
+var StepLabel = agents.StepLabel
 
 // Prompt tells the agent how to show its explanation over MCP.
 func Prompt() string {

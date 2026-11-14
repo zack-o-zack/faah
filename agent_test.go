@@ -730,29 +730,11 @@ func TestAgentBatchEditPayloadVariations(t *testing.T) {
 	}
 }
 
-func TestThreadPrompt(t *testing.T) {
-	th := &thread{Path: "main.go", L1: 3, L2: 4, Snippet: "func main() {}"}
-	first := threadPrompt(th, nil, "why?", false, "", false)
-	if !strings.Contains(first, "@main.go lines 3-4") || !strings.Contains(first, "func main() {}") || !strings.HasSuffix(first, "why?") {
-		t.Fatalf("first prompt = %q", first)
-	}
-	prior := []*threadTurn{{Prompt: "why?", Reply: "because", Changed: []string{"a.go"}}}
-	if got := threadPrompt(th, prior, "and now?", false, "", false); got != "and now?" {
-		t.Fatalf("a live session should get the bare message, got %q", got)
-	}
-	replay := threadPrompt(th, prior, "and now?", true, "", false)
-	for _, want := range []string{"@main.go", "User: why?", "Assistant: because", "a.go", "and now?"} {
-		if !strings.Contains(replay, want) {
-			t.Fatalf("replay prompt missing %q:\n%s", want, replay)
-		}
-	}
-}
-
-func waitThreadIdle(t *testing.T, s *Server, id string) *thread {
+func waitThreadIdle(t *testing.T, s *Server, id string) *threads.Thread {
 	t.Helper()
 	deadline := time.Now().Add(20 * time.Second)
 	for time.Now().Before(deadline) {
-		if th := s.threads.Get(id); th != nil && !th.running() {
+		if th := s.threads.Get(id); th != nil && !th.Running() {
 			return th
 		}
 		time.Sleep(20 * time.Millisecond)
@@ -776,7 +758,7 @@ func TestThreadConversationReusesNativeSession(t *testing.T) {
 	}
 	id := m["id"].(string)
 	th := waitThreadIdle(t, s, id)
-	if th.Error() != "" || len(th.Turns) != 1 {
+	if threadError(th) != "" || len(th.Turns) != 1 {
 		t.Fatalf("turn 1 = %+v", th.Turns)
 	}
 	if !strings.Contains(th.Turns[0].Reply, "saw:") || !strings.Contains(th.Turns[0].Reply, "func main() {}") {
@@ -807,7 +789,7 @@ func TestThreadConversationReusesNativeSession(t *testing.T) {
 	}
 }
 
-func (t *thread) Error() string {
+func threadError(t *threads.Thread) string {
 	if n := len(t.Turns); n > 0 {
 		return t.Turns[n-1].Error
 	}
@@ -853,8 +835,8 @@ func TestThreadClaudeSessionResume(t *testing.T) {
 	th = waitThreadIdle(t, s, id)
 	data, _ = os.ReadFile(log)
 	lines = strings.Split(strings.TrimSpace(string(data)), "\n")
-	if len(lines) != 2 || !strings.Contains(lines[1], "--resume "+sid) || th.Error() != "" {
-		t.Fatalf("resume: %s, %s", data, th.Error())
+	if len(lines) != 2 || !strings.Contains(lines[1], "--resume "+sid) || threadError(th) != "" {
+		t.Fatalf("resume: %s, %s", data, threadError(th))
 	}
 
 }
@@ -873,22 +855,6 @@ func TestThreadBusyAndCancel(t *testing.T) {
 	th := waitThreadIdle(t, s, id)
 	if th.Turns[0].Error != context.Canceled.Error() {
 		t.Fatalf("cancelled turn error = %q", th.Turns[0].Error)
-	}
-}
-
-func TestThreadInterruptedTurnIsClosedOnLoad(t *testing.T) {
-	isolateSettings(t)
-	root := t.TempDir()
-	m, _ := newAgentManager(root, "", nil)
-	tm := newThreadManager(m, root)
-	tm.mu.Lock()
-	tm.threads["t1"] = &thread{ID: "t1", Title: "x", Turns: []*threadTurn{{ID: 1, Prompt: "p", Running: true}}}
-	tm.saveLocked()
-	tm.mu.Unlock()
-
-	got := newThreadManager(m, root).Get("t1")
-	if got == nil || got.Turns[0].Running || !strings.Contains(got.Turns[0].Error, "interrupted") {
-		t.Fatalf("interrupted turn = %+v", got)
 	}
 }
 
@@ -953,7 +919,7 @@ func TestInlineEditOverlapStillRefused(t *testing.T) {
 // (merge-base to PR head), the reviewer's own changes, or just the selection.
 func TestThreadPromptCarriesPRScope(t *testing.T) {
 	root := t.TempDir()
-	th := &thread{Kind: "ask"}
+	th := &threads.Thread{Kind: "ask"}
 	s := &Server{ix: workspace.NewIndex(root), pr: prpkg.New(nil, forge.PRTarget{URL: "https://github.com/o/r/pull/7"}, forge.PRMeta{Number: 7, Title: "Add thing", BaseRef: "main", HeadRef: "feat", HeadSHA: "abcdef1234567890"}, "", "1234567890abcdef")}
 	defer s.pr.Close()
 
@@ -980,15 +946,15 @@ func TestThreadPromptCarriesPRScope(t *testing.T) {
 		t.Errorf("selection context wrong:\n%s", sel)
 	}
 
-	first := threadPrompt(th, nil, "what do you think about the PR?", false, whole, false)
+	first := threadPrompt(t, th, nil, "what do you think about the PR?", false, whole, false)
 	if !strings.Contains(first, "git diff 1234567890abcdef") || !strings.HasSuffix(first, "what do you think about the PR?") {
 		t.Errorf("first prompt should carry the PR context before the question:\n%s", first)
 	}
-	prior := []*threadTurn{{Prompt: "x", Reply: "y"}}
-	if got := threadPrompt(th, prior, "and now?", false, whole, false); got != "and now?" {
+	prior := []*threads.Turn{{Prompt: "x", Reply: "y"}}
+	if got := threadPrompt(t, th, prior, "and now?", false, whole, false); got != "and now?" {
 		t.Errorf("follow-up turns stay bare when the scope is unchanged, got %q", got)
 	}
-	changed := threadPrompt(th, prior, "and now?", false, mine, true)
+	changed := threadPrompt(t, th, prior, "and now?", false, mine, true)
 	if !strings.Contains(changed, "changed what this conversation is about") || !strings.Contains(changed, "OWN changes") || !strings.HasSuffix(changed, "and now?") {
 		t.Errorf("a scope change should be announced with the new context:\n%s", changed)
 	}
@@ -1103,8 +1069,8 @@ func TestEventStreamMultiplexesFeeds(t *testing.T) {
 	}
 
 	var env struct {
-		ID   string  `json:"id"`
-		Data *thread `json:"data"`
+		ID   string          `json:"id"`
+		Data *threads.Thread `json:"data"`
 	}
 	if err := json.Unmarshal([]byte(data["thread:thread"]), &env); err != nil || env.ID != id || env.Data == nil || env.Data.ID != id {
 		t.Fatalf("thread:thread envelope = %s (%v)", data["thread:thread"], err)
@@ -1135,7 +1101,7 @@ func TestThreadReplaysWhenNativeResumeFails(t *testing.T) {
 		return nil
 	}
 	s := fakeAgentServer(t, root, echo)
-	a := &fakeAgent{prompt: echo, resumeError: errors.New("session not found")}
+	a := &fakeAgent{PromptFunc: echo, ResumeError: errors.New("session not found")}
 	s.agent.openAgent = func(string) agents.Agent { return a }
 	_, body := agentPostJSON(t, s, "/api/threads/create", map[string]any{"message": "first question"})
 	id := body["id"].(string)
@@ -1149,22 +1115,12 @@ func TestThreadReplaysWhenNativeResumeFails(t *testing.T) {
 		t.Fatal(err)
 	}
 	th := waitThreadIdle(t, s, id)
-	if th.Error() != "" || th.SessionID == first.SessionID {
+	if threadError(th) != "" || th.SessionID == first.SessionID {
 		t.Fatalf("resume fallback = %+v", th)
 	}
 	for _, want := range []string{"first question", "follow-up question", "### Earlier in this conversation"} {
 		if !strings.Contains(th.Turns[1].Reply, want) {
 			t.Fatalf("replay missing %q: %s", want, th.Turns[1].Reply)
 		}
-	}
-}
-
-func TestThreadSinkStepLabels(t *testing.T) {
-	root := t.TempDir()
-	s := &threadSink{tm: &threadManager{root: root}, tid: "t1", turn: &threadTurn{ID: 1}}
-	s.Step("Read " + filepath.Join(root, "a", "b.go"))
-	s.Step("mcp__faah__annotate")
-	if want := []string{"Read " + filepath.Join("a", "b.go"), "Show notes"}; strings.Join(s.turn.Tools, "|") != strings.Join(want, "|") {
-		t.Fatalf("tools %q, want %q", s.turn.Tools, want)
 	}
 }

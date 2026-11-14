@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"faah/internal/agents"
 	"faah/internal/render"
 	"faah/internal/workspace"
 )
@@ -173,7 +174,24 @@ func TestReviewWorkflowRunAndOrchestration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create agent manager: %v", err)
 	}
+	firstReply, secondReply := make(chan string), make(chan string)
+	a.openAgent = func(string) agents.Agent {
+		return &fakeAgent{PromptFunc: func(ctx context.Context, _ agents.Open, prompt string, sink agents.Sink) error {
+			replies := firstReply
+			if strings.Contains(prompt, "Prompt 2") {
+				replies = secondReply
+			}
+			select {
+			case reply := <-replies:
+				sink.Text(reply, false)
+				return nil
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		}}
+	}
 	s.SetAgent(a)
+	t.Cleanup(s.threads.Close)
 
 	customCfg := ReviewWorkflowConfig{
 		Workflows: []ReviewWorkflowDef{
@@ -229,24 +247,16 @@ func TestReviewWorkflowRunAndOrchestration(t *testing.T) {
 			// Complete stage 0 turn
 			if len(r.Stages) > 0 && r.Stages[0].ThreadID != "" && r.Stages[0].Status == "running" {
 				stg0Thread := s.threads.Get(r.Stages[0].ThreadID)
-				if stg0Thread != nil && stg0Thread.running() {
-					s.threads.mu.Lock()
-					stg0Thread.Turns[len(stg0Thread.Turns)-1].Running = false
-					stg0Thread.Turns[len(stg0Thread.Turns)-1].Reply = longReply
-					s.threads.publishThreadLocked(stg0Thread)
-					s.threads.mu.Unlock()
+				if stg0Thread != nil && stg0Thread.Running() {
+					firstReply <- longReply
 				}
 			}
 
 			// Complete stage 1 turn
 			if len(r.Stages) > 1 && r.Stages[1].ThreadID != "" && r.Stages[1].Status == "running" {
 				stg1Thread := s.threads.Get(r.Stages[1].ThreadID)
-				if stg1Thread != nil && stg1Thread.running() {
-					s.threads.mu.Lock()
-					stg1Thread.Turns[len(stg1Thread.Turns)-1].Running = false
-					stg1Thread.Turns[len(stg1Thread.Turns)-1].Reply = "Stage 2 done"
-					s.threads.publishThreadLocked(stg1Thread)
-					s.threads.mu.Unlock()
+				if stg1Thread != nil && stg1Thread.Running() {
+					secondReply <- "Stage 2 done"
 				}
 			}
 

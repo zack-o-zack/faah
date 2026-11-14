@@ -21,7 +21,7 @@ func TestReadLineRange(t *testing.T) {
 		{3, 99, "three\nfour\n"}, // clamped to the end, trailing blank line included
 		{0, 1, "one"},            // l1 below 1 is clamped
 	} {
-		got, err := ReadLineRange(p, tc.l1, tc.l2)
+		got, err := readLineRange(p, tc.l1, tc.l2)
 		if err != nil {
 			t.Fatalf("%d-%d: %v", tc.l1, tc.l2, err)
 		}
@@ -29,7 +29,7 @@ func TestReadLineRange(t *testing.T) {
 			t.Fatalf("%d-%d = %q, want %q", tc.l1, tc.l2, got, tc.want)
 		}
 	}
-	if _, err := ReadLineRange(p, 50, 60); err == nil {
+	if _, err := readLineRange(p, 50, 60); err == nil {
 		t.Fatal("a range past the end should fail")
 	}
 }

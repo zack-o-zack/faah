@@ -2,6 +2,7 @@ package threads
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"faah/internal/forge"
@@ -134,4 +135,81 @@ func MergeMessagePrompt(method string, meta forge.PRMeta, commits []git.Unpushed
 		b.WriteString("\n")
 	}
 	return b.String()
+}
+
+// threadPrompt composes what the harness is told for one turn. The anchor and
+// ground rules go in only when the harness has no memory of them: the first
+// turn, or recovery in a new native session.
+func threadPrompt(t *Thread, prior []*Turn, message string, replay bool, prCtx string, scopeChanged bool, runtime Runtime) string {
+	var b strings.Builder
+	if len(prior) == 0 || replay {
+		if t.Kind == "explain" {
+			b.WriteString(runtime.Instructions(t.ExplainKind, t.ExplainReader))
+			b.WriteString(runtime.ToolsPrompt())
+		} else if t.Kind == "edit" || t.Kind == "batch" {
+			b.WriteString("Carry out the edit request below by editing files in place. ")
+			b.WriteString("Change only what it asks for; you may touch other files if the change needs it. ")
+			b.WriteString("When done, reply in a sentence or two saying what you changed and in which files. ")
+			b.WriteString("The user may follow up in this conversation.\n\n")
+		} else {
+			b.WriteString("You are helping with a long-running conversation about the code in this workspace. ")
+			b.WriteString("You may read any file and edit any file needed to carry out what is asked; make edits directly. ")
+			b.WriteString("When you finish a request, reply with a concise summary: what you found or changed, and in which files.\n\n")
+		}
+		if prCtx != "" {
+			b.WriteString(prCtx)
+			b.WriteString("\n\n")
+		}
+		if t.Kind == "explain" {
+			b.WriteString(t.packet)
+			b.WriteString("\n\n")
+		} else if t.Path != "" && t.Kind != "batch" { // a batch carries its own snippets
+			ext := strings.TrimPrefix(filepath.Ext(t.Path), ".")
+			lineStr := fmt.Sprintf("lines %d-%d", t.L1, t.L2)
+			if t.L1 == t.L2 {
+				lineStr = fmt.Sprintf("line %d", t.L1)
+			}
+			fmt.Fprintf(&b, "The conversation started at @%s %s (the file may have changed since):\n```%s\n%s\n```\n\n", t.Path, lineStr, ext, t.Snippet)
+		}
+	}
+	if replay && len(prior) > 0 {
+		var h strings.Builder
+		for _, tr := range prior {
+			fmt.Fprintf(&h, "User: %s\n\nAssistant: %s\n\n", tr.Prompt, strings.TrimSpace(tr.Reply))
+			if shown := runtime.History(tr.Notes, tr.Walkthroughs); shown != "" {
+				h.WriteString(shown + "\n")
+			}
+			if len(tr.Changed) > 0 {
+				fmt.Fprintf(&h, "(files changed in that turn: %s)\n\n", strings.Join(tr.Changed, ", "))
+			}
+		}
+		hist := h.String()
+		if len(hist) > threadReplayMax {
+			hist = "…" + hist[len(hist)-threadReplayMax:]
+		}
+		b.WriteString("### Earlier in this conversation\n")
+		b.WriteString(hist)
+		b.WriteString("### Current request\n")
+	}
+	if scopeChanged && prCtx != "" && len(prior) > 0 && !replay {
+		b.WriteString("The user has changed what this conversation is about. ")
+		b.WriteString(prCtx)
+		b.WriteString("\n\n")
+	}
+	if t.Kind == "edit" && len(prior) == 0 {
+		b.WriteString("### Instruction\n")
+	}
+	b.WriteString(message)
+	return b.String()
+}
+
+func anchorSnippet(abs string, l1, l2 int) string {
+	snip, err := readLineRange(abs, l1, l2)
+	if err != nil {
+		return ""
+	}
+	if len(snip) > threadSnippetMax {
+		snip = snip[:threadSnippetMax] + "\n…"
+	}
+	return snip
 }

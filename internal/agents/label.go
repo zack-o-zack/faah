@@ -21,3 +21,20 @@ func ToolLabel(name string, input json.RawMessage) string {
 	}
 	return name
 }
+
+// StepLabel names a call to annotate or walkthrough in words, whatever prefix
+// the agent gave the tool ("mcp__faah__annotate", "faah-t1_annotate", "Run
+// mcp_faah_annotate"). Other steps pass through unchanged.
+func StepLabel(label string) string {
+	f := strings.Fields(label)
+	if len(f) == 0 {
+		return label
+	}
+	last := f[len(f)-1]
+	for name, words := range map[string]string{"annotate": "Show notes", "walkthrough": "Show a walkthrough"} {
+		if len(f) == 1 && last == name || strings.Contains(last, "faah") && strings.HasSuffix(last, "_"+name) {
+			return words
+		}
+	}
+	return label
+}

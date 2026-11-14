@@ -1,4 +1,4 @@
-package main
+package threads
 
 import (
 	"time"
@@ -24,19 +24,19 @@ type threadSession struct {
 	idle               *time.Timer
 }
 
-func (tm *threadManager) closeSessionLocked(id string) {
+func (tm *Manager) closeSessionLocked(id string) {
 	if s := tm.sessions[id]; s != nil {
 		if s.idle != nil {
 			s.idle.Stop()
 		}
 		s.session.Close()
-		tm.tools.tokens.Revoke(s.token)
+		tm.runtime.Revoke(s.token)
 		delete(tm.sessions, id)
 	}
-	tm.tools.tokens.RevokeScope(func(scope any) bool { sc, ok := scope.(toolScope); return ok && sc.tid == id })
+	tm.runtime.RevokeThread(id)
 }
 
-func (tm *threadManager) idleSessionLocked(id string) {
+func (tm *Manager) idleSessionLocked(id string) {
 	s := tm.sessions[id]
 	if s == nil {
 		return
@@ -49,7 +49,7 @@ func (tm *threadManager) idleSessionLocked(id string) {
 	timer = time.AfterFunc(d, func() {
 		tm.mu.Lock()
 		defer tm.mu.Unlock()
-		if tm.sessions[id] == s && s.idle == timer && tm.threads[id] != nil && !tm.threads[id].running() {
+		if tm.sessions[id] == s && s.idle == timer && tm.threads[id] != nil && !tm.threads[id].Running() {
 			tm.closeSessionLocked(id)
 		}
 	})

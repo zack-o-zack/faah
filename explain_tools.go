@@ -42,10 +42,7 @@ func newExplainTools(tm *threadManager) *explainTools {
 		call := tools[i].Call
 		tools[i].Call = func(ctx context.Context, scope any, args json.RawMessage) (string, error) {
 			sc, _ := scope.(toolScope)
-			tm.mu.Lock()
-			tr := tm.turnLocked(sc)
-			running := tr != nil && tr.Running
-			tm.mu.Unlock()
+			running := tm.RunningTurn(sc.tid, sc.turn)
 			if !running {
 				return "", errors.New("no explanation is running")
 			}
@@ -68,44 +65,14 @@ func (et *explainTools) endpoint(tok string) *agents.ToolEndpoint {
 // AddNotes records notes on the turn the scope names, while it runs.
 func (tm *threadManager) AddNotes(scope any, ns []notes.Note) {
 	sc, _ := scope.(toolScope)
-	tm.mu.Lock()
-	defer tm.mu.Unlock()
-	if tr := tm.turnLocked(sc); tr != nil && tr.Running {
-		tm.saveNotesLocked(sc, tr, ns)
-	}
-}
-
-func (tm *threadManager) saveNotesLocked(sc toolScope, tr *threadTurn, ns []notes.Note) {
-	tm.hashNotes(sc, len(tr.Notes), ns)
-	tr.Notes = append(tr.Notes, ns...)
-	tm.saveLocked()
-	tm.publishThreadLocked(tm.threads[sc.tid])
+	tm.Manager.AddNotes(sc.tid, sc.turn, ns)
 }
 
 // AddWalkthrough records a walkthrough on the turn the scope names, while it
 // runs.
 func (tm *threadManager) AddWalkthrough(scope any, w notes.Walkthrough) {
 	sc, _ := scope.(toolScope)
-	tm.mu.Lock()
-	defer tm.mu.Unlock()
-	if tr := tm.turnLocked(sc); tr != nil && tr.Running {
-		tr.Walkthroughs = append(tr.Walkthroughs, w)
-		tm.saveLocked()
-		tm.publishThreadLocked(tm.threads[sc.tid])
-	}
-}
-
-func (tm *threadManager) turnLocked(sc toolScope) *threadTurn {
-	t := tm.threads[sc.tid]
-	if t == nil {
-		return nil
-	}
-	for _, tr := range t.Turns {
-		if tr.ID == sc.turn || (sc.turn == 0 && tr.Running) {
-			return tr
-		}
-	}
-	return nil
+	tm.Manager.AddWalkthrough(sc.tid, sc.turn, w)
 }
 
 // SetToolsAddr tells explain turns where faah listens, as host:port. A
@@ -141,8 +108,7 @@ func (tm *threadManager) FileNotes(rel string, lines []string) []notes.View {
 		when int64
 	}
 	var all []saved
-	tm.mu.Lock()
-	for _, t := range tm.threads {
+	for _, t := range tm.Snapshot() {
 		if t.Kind != "explain" {
 			continue
 		}
@@ -154,7 +120,6 @@ func (tm *threadManager) FileNotes(rel string, lines []string) []notes.View {
 			}
 		}
 	}
-	tm.mu.Unlock()
 
 	// Newest turn first, and within a turn the later note first.
 	sort.SliceStable(all, func(a, b int) bool {
@@ -202,12 +167,7 @@ func (tm *threadManager) hashNotes(sc toolScope, from int, ns []notes.Note) {
 				continue
 			}
 			h := tm.symbolHash(n.Path, n.L1, n.Symbol)
-			tm.mu.Lock()
-			if tr := tm.turnLocked(sc); tr != nil && from+i < len(tr.Notes) {
-				tr.Notes[from+i].Refs = h
-				tm.saveLocked()
-			}
-			tm.mu.Unlock()
+			tm.SetNoteRefs(sc.tid, sc.turn, from+i, h)
 		}
 	}()
 }
