@@ -3,7 +3,7 @@ import { join, posix } from 'node:path';
 import { IgnoreSet, readGitignore } from '../ignore/service.ts';
 import { newItem, type Item } from '../fuzzy/score.ts';
 import { compare } from '../text.ts';
-import { walk, sortNodes, vcs } from './walk.ts';
+import { walk, walkable, sortNodes, vcs } from './walk.ts';
 import { mergeGit, applyFlags, gitFiles } from './git.ts';
 import { emptyGit, type Node, type GitState } from './types.ts';
 export class Index {
@@ -200,8 +200,10 @@ export class Index {
       return;
     }
     if (!dir && !ignored) {
+      const previous = this.files.find((f) => f.path === rel);
+      const walked = previous?.walked === true && info.isFile() && (await walkable(this.root, rel));
       this.files = this.files.filter((f) => f.path !== rel);
-      this.files.push(newItem(rel, info.size));
+      this.files.push(newItem(rel, info.size, walked));
       this.files.sort((a, b) => compare(a.path, b.path));
       await this.options.updated(this.files);
     }

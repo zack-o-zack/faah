@@ -3,6 +3,7 @@ import { mkdtemp, mkdir, writeFile, rm, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { Index } from '../src/index/service.ts';
+import { Search } from '../src/search/service.ts';
 import { sortNodes } from '../src/index/walk.ts';
 import { emptyGit, type GitState } from '../src/index/types.ts';
 
@@ -131,6 +132,42 @@ test('Go TouchPath inserts, updates and evicts paths without descending into ign
     await mkdir(join(f.root, 'empty'));
     await f.index.touch('empty');
     expect(await f.index.list('empty')).toEqual([]);
+  } finally {
+    await f.close();
+  }
+});
+
+test('touching walked files preserves parallel search while file and parent symlinks fall back', async () => {
+  const f = await workspace();
+  const strategies: string[] = [];
+  const search = new Search({
+    root: f.root,
+    files: () => f.index.files,
+    strategy: 'walk',
+    profile: (p) => strategies.push(p.strategy),
+  });
+  const query = () => search.search({ query: 'needle' }, AbortSignal.timeout(10000));
+  try {
+    await f.write('direct.txt', 'needle');
+    await f.write('parent/file.txt', 'needle');
+    await f.write('other/file.txt', 'needle');
+    await f.index.build();
+    await f.write('direct.txt', 'needle edited');
+    await f.index.touch('direct.txt');
+    expect(f.index.files.find((n) => n.path === 'direct.txt')?.walked).toBe(true);
+    await query();
+    expect(strategies.at(-1)).toBe('walk');
+    await rm(join(f.root, 'direct.txt'));
+    await symlink(join(f.root, 'other/file.txt'), join(f.root, 'direct.txt'));
+    await f.index.touch('direct.txt');
+    expect((await query()).results.some((n) => n.path === 'direct.txt')).toBe(true);
+    expect(strategies.at(-1)).toBe('explicit');
+    await f.index.build();
+    await rm(join(f.root, 'parent'), { recursive: true });
+    await symlink(join(f.root, 'other'), join(f.root, 'parent'));
+    await f.index.touch('parent/file.txt');
+    expect((await query()).results.some((n) => n.path === 'parent/file.txt')).toBe(true);
+    expect(strategies.at(-1)).toBe('explicit');
   } finally {
     await f.close();
   }

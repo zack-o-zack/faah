@@ -89,9 +89,11 @@ Search uses one ripgrep process with up to four walking threads for at least
 4,000 eligible files from a full
 index walk, pruning known ignored paths and ineligible indexed sizes, then
 filtering every hit against the exact indexed set. Small scopes,
-explicit ignored-file targets and files inserted/updated by TouchPath use explicit
-paths in batches below 128 KB, with up to four concurrent processes. That fallback
-also preserves files reached through symlinks by TouchPath. Both strategies apply our
+explicit ignored-file targets and new TouchPath entries use explicit paths in
+batches below 128 KB, with up to four concurrent processes. Updates to previously
+walked regular files retain the parallel walker after checking the file and its
+parents for symlinks. Paths reached through symlinks still use the explicit
+fallback. Both strategies apply our
 ignore compiler for glob filtering and the Go literal unindexed-file exception.
 Literal folding uses Rust's native `(?i-u)` bytes-regex flag; non-ASCII literal
 bytes remain exact. Regex folding uses Unicode `(?i)`, with Go's
@@ -216,8 +218,12 @@ directories for linked worktrees. It filters hierarchical ignore rules and
 50 ms. File events invalidate L1/L2, TouchPath the Bun index and refresh/apply
 legacy Git state. Go's `GitWatcher.Refresh` broadcasts changed status to the
 proxied Git/unified streams, so filesystem notifications can replace the polling
-floor. `GIT_OPTIONAL_LOCKS=0` prevents read-only child Git refreshes from taking
-optional index locks during user mutations. Watcher startup/runtime errors warn
+floor. A single startup `git update-index --refresh` primes Git's stat cache
+before index readiness and watcher subscription, without staging working-tree
+changes. Otherwise copied repositories can repeatedly rehash all tracked files.
+Background child reads retain `GIT_OPTIONAL_LOCKS=0` to avoid index-lock races
+with user mutations. Cache priming is best effort in read-only/non-Git folders.
+Watcher startup/runtime errors warn
 and fall back to Go's existing polling; shutdown unsubscribes before stopping
 the child. The build generates a literal native `.node` dependency for its
 platform. Linux builds default to glibc; set `FAAH_WATCHER_LIBC=musl` for musl.

@@ -63,6 +63,7 @@ async function main(): Promise<void> {
     version,
     target: f.targets[0] ?? '.',
     workbench: f.bool.has('workbench-child'),
+    gitEnabled: !f.bool.has('no-git'),
   });
   const handle = handler({
     base,
@@ -106,11 +107,13 @@ function workspaceNavigation(options: {
   version: string;
   target: string;
   workbench: boolean;
+  gitEnabled: boolean;
 }): Navigation | undefined {
   const { legacy, base, version, target, workbench } = options;
   if (!legacy || detectPR(target)) return;
   return new Navigation({
     child: legacy,
+    gitEnabled: options.gitEnabled,
     base,
     root: resolveTarget(target).root,
     version,

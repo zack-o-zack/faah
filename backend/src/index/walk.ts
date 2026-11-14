@@ -1,4 +1,4 @@
-import { readdir, stat } from 'node:fs/promises';
+import { readdir, stat, lstat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { availableParallelism } from 'node:os';
 import { IgnoreSet, readGitignore } from '../ignore/service.ts';
@@ -6,6 +6,14 @@ import { newItem, type Item } from '../fuzzy/score.ts';
 import { compare, lower } from '../text.ts';
 import type { Node } from './types.ts';
 export const vcs = new Set(['.git', '.hg', '.svn']);
+export async function walkable(root: string, path: string): Promise<boolean> {
+  const parts = path.split('/');
+  for (let i = 1; i <= parts.length; i++) {
+    const info = await lstat(join(root, ...parts.slice(0, i))).catch(() => undefined);
+    if (!info || info.isSymbolicLink()) return false;
+  }
+  return true;
+}
 export function sortNodes(kids: Node[]): Node[] {
   return kids.sort(
     (a, b) => Number(b.dir) - Number(a.dir) || compare(lower(a.name), lower(b.name)),

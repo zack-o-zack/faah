@@ -4,6 +4,7 @@ import { RenderService } from '../render/service.ts';
 import { Files } from '../files/view.ts';
 import { FileMutations } from '../files/mutations.ts';
 import { LegacyFiles } from '../legacy/files.ts';
+import { primeGitCache } from '../legacy/cache.ts';
 import { basename, isAbsolute, join } from 'node:path';
 import { PathError, resolveFile, fileError } from '../files/service.ts';
 import { outline } from '../symbols/service.ts';
@@ -34,6 +35,7 @@ export class Navigation {
     root: string;
     version: string;
     workbench: string;
+    gitEnabled?: boolean;
   }) {
     this.legacy = new LegacyNavigation({
       origin: options.child.origin,
@@ -42,9 +44,13 @@ export class Navigation {
       rebuild: () => this.index.build(),
       touch: (path) => this.index.touch(path),
     });
+    const primed = options.gitEnabled === false ? Promise.resolve() : primeGitCache(options.root);
     this.index = new Index({
       root: options.root,
-      gitState: () => this.legacy.refresh(),
+      gitState: async () => {
+        await primed;
+        return this.legacy.refresh();
+      },
       updated: (items) => this.fuzzy.set(items),
     });
     this.search = new Search({
