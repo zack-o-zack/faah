@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"faah/internal/workspace"
 	"fmt"
 	"io"
 	"math/rand"
@@ -129,7 +130,7 @@ func TestManagerDisabled(t *testing.T) {
 func TestExternalAllowlist(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
-	ix := NewIndex(root)
+	ix := workspace.NewIndex(root)
 	ix.Build()
 	m := newLSPManager(root, false)
 	s := NewServer(ix, m)

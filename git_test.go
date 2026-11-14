@@ -17,71 +17,15 @@ import (
 
 	"faah/internal/git"
 	"faah/internal/git/gittest"
+	"faah/internal/workspace"
 )
-
-func TestGitStatus(t *testing.T) {
-	if !gittest.Installed() {
-		t.Skip("git not installed")
-	}
-	root := gittest.Repo(t)
-
-	if !git.Available(root) {
-		t.Fatal("gitAvailable false for a real repo")
-	}
-	st := git.Status(root)
-	want := map[string]string{
-		"sub/mod.go":  "M",
-		"add.go":      "A",
-		"untr.go":     "U",
-		"del.go":      "D",
-		"sub/ren2.go": "R",
-	}
-	for path, code := range want {
-		if st[path] != code {
-			t.Errorf("status[%q] = %q, want %q (full: %v)", path, st[path], code, st)
-		}
-	}
-	if _, ok := st["keep.go"]; ok {
-		t.Errorf("keep.go should have no status, got %q", st["keep.go"])
-	}
-
-	// Overlay onto tree nodes. Deleted files appear with status "D".
-	ix := NewIndex(root)
-	ix.Build()
-	byName := map[string]Node{}
-	kids, _ := ix.Children("")
-	for _, k := range kids {
-		byName[k.Name] = k
-	}
-	sub, _ := ix.Children("sub")
-	for _, k := range sub {
-		byName[k.Name] = k
-	}
-	nodeWant := map[string]string{
-		"mod.go":  "M",
-		"add.go":  "A",
-		"untr.go": "U",
-		"ren2.go": "R",
-		"del.go":  "D",
-		"keep.go": "",
-	}
-	for name, code := range nodeWant {
-		if byName[name].Status != code {
-			t.Errorf("node %q status = %q, want %q", name, byName[name].Status, code)
-		}
-	}
-	// The sub/ dir holds changed files, so its (collapsed) folder node is dirty.
-	if !byName["sub"].Dir || !byName["sub"].Dirty {
-		t.Errorf("sub node = %+v, want dir with Dirty=true", byName["sub"])
-	}
-}
 
 func TestGitDiff(t *testing.T) {
 	if !gittest.Installed() {
 		t.Skip("git not installed")
 	}
 	root := gittest.Repo(t)
-	ix := NewIndex(root)
+	ix := workspace.NewIndex(root)
 	ix.Build()
 	s := NewServer(ix, nil)
 
@@ -142,7 +86,7 @@ func TestGitCleanRepo(t *testing.T) {
 	runCmd("add", "clean.go")
 	runCmd("commit", "-m", "init")
 
-	ix := NewIndex(dir)
+	ix := workspace.NewIndex(dir)
 	ix.Build()
 	s := NewServer(ix, nil)
 
@@ -173,7 +117,7 @@ func TestGitDisabled(t *testing.T) {
 	if st := git.Status(root); st != nil {
 		t.Errorf("gitStatus returned %v with -no-git", st)
 	}
-	ix := NewIndex(root)
+	ix := workspace.NewIndex(root)
 	ix.Build()
 	kids, _ := ix.Children("sub")
 	for _, k := range kids {
@@ -228,7 +172,7 @@ func TestGitGutter(t *testing.T) {
 	write("f.go", "alpha\nBRAVO\ncharlie\ndelta\nNEWLINE1\necho\nfoxtrot\nhotel\nindia\njuliet\n")
 	write("untr.go", "new\n")
 
-	ix := NewIndex(root)
+	ix := workspace.NewIndex(root)
 	ix.Build()
 	s := NewServer(ix, nil)
 
@@ -285,58 +229,12 @@ func TestGitGutter(t *testing.T) {
 	}
 }
 
-func TestUpdateGitStatus(t *testing.T) {
-	if !gittest.Installed() {
-		t.Skip("git not installed")
-	}
-	root := gittest.Repo(t)
-	ix := NewIndex(root)
-	ix.Build()
-
-	count, files, changed, statuses, dirtyDirs, _, _, _ := ix.UpdateGitStatus()
-	// Should be unchanged because Build() just ran
-	if changed {
-		t.Errorf("expected changed=false immediately after Build(), got true")
-	}
-	if count == 0 || len(files) == 0 {
-		t.Errorf("expected non-zero git changes, got count=%d, files=%v", count, files)
-	}
-	if !dirtyDirs["sub"] {
-		t.Errorf("expected 'sub' to be in dirtyDirs, got %v", dirtyDirs)
-	}
-	if statuses["add.go"] != "A" {
-		t.Errorf("expected add.go status 'A', got %q", statuses["add.go"])
-	}
-
-	// Now modify another file
-	if err := os.WriteFile(filepath.Join(root, "keep.go"), []byte("modified\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	count2, _, changed2, statuses2, _, _, _, _ := ix.UpdateGitStatus()
-	if !changed2 {
-		t.Errorf("expected changed=true after modifying keep.go")
-	}
-	if count2 <= count {
-		t.Errorf("expected count to increase, got count2=%d vs count=%d", count2, count)
-	}
-	if statuses2["keep.go"] != "M" {
-		t.Errorf("expected keep.go to have status 'M', got %q", statuses2["keep.go"])
-	}
-
-	// Calling it again without changes should report changed=false
-	_, _, changed3, _, _, _, _, _ := ix.UpdateGitStatus()
-	if changed3 {
-		t.Errorf("expected changed=false when worktree has not changed")
-	}
-}
-
 func TestGitWatcherStreamAndRefresh(t *testing.T) {
 	if !gittest.Installed() {
 		t.Skip("git not installed")
 	}
 	root := gittest.Repo(t)
-	ix := NewIndex(root)
+	ix := workspace.NewIndex(root)
 	ix.Build()
 
 	s := NewServer(ix, nil)
@@ -438,35 +336,12 @@ func TestGitWatcherStreamAndRefresh(t *testing.T) {
 	}
 }
 
-func TestGitWatcherCLICommitDetection(t *testing.T) {
-	if !gittest.Installed() {
-		t.Skip("git not installed")
-	}
-	root := gittest.Repo(t)
-	ix := NewIndex(root)
-	ix.Build()
-
-	gw := NewGitWatcher(ix)
-	gitdir := git.Dir(root)
-	if !gw.recordGitMeta(gitdir) {
-		// First recording initialized the metadata
-	}
-
-	// Commit existing changes via CLI
-	gittest.Run(t, root, "commit", "-am", "commit all")
-
-	// Watcher's metadata stat check should instantly see the index/HEAD modtime update
-	if !gw.recordGitMeta(gitdir) {
-		t.Errorf("expected recordGitMeta to report changed=true after CLI commit")
-	}
-}
-
 func TestGitWatcherAfterCommitNewChanges(t *testing.T) {
 	if !gittest.Installed() {
 		t.Skip("git not installed")
 	}
 	root := gittest.Repo(t)
-	ix := NewIndex(root)
+	ix := workspace.NewIndex(root)
 	ix.Build()
 
 	s := NewServer(ix, nil)
@@ -596,8 +471,8 @@ func TestGitStatusAgainstAndPRDiff(t *testing.T) {
 		t.Fatalf("expected gitStatusAgainst(root, baseSHA) to report foo.go as M, got: %v", stBase)
 	}
 
-	// Index should also pick up the diffBase
-	ix := NewIndex(root)
+	// workspace.Index should also pick up the diffBase
+	ix := workspace.NewIndex(root)
 	ix.SetDiffBase(baseSHA)
 	ix.Build()
 
@@ -694,7 +569,7 @@ func TestHandleDiffPRSplitsPRAndYourChanges(t *testing.T) {
 	run("commit", "-am", "pr commit")
 	prHead := run("rev-parse", "HEAD")
 
-	ix := NewIndex(root)
+	ix := workspace.NewIndex(root)
 	ix.Build()
 	srv := NewServer(ix, newLSPManager(root, false))
 	srv.SetPR(&prSession{
@@ -893,7 +768,7 @@ func TestGitRecentCommitsAndLog(t *testing.T) {
 	}
 
 	// Test /api/git/log endpoint
-	ix := NewIndex(dir)
+	ix := workspace.NewIndex(dir)
 	ix.Build()
 	s := NewServer(ix, nil)
 	ts := httptest.NewServer(s.mux)
@@ -926,103 +801,6 @@ func TestGitRecentCommitsAndLog(t *testing.T) {
 	}
 }
 
-func TestPRReviewerChangesInIndex(t *testing.T) {
-	if !git.Available(".") {
-		t.Skip("git not installed")
-	}
-	root := t.TempDir()
-	// macOS TempDir lives under /var -> /private/var; git reports the real path.
-	if r, err := filepath.EvalSymlinks(root); err == nil {
-		root = r
-	}
-	gittest.Run(t, root, "init", "-b", "main")
-	gittest.Run(t, root, "config", "user.name", "test")
-	gittest.Run(t, root, "config", "user.email", "test@example.com")
-
-	if err := os.MkdirAll(filepath.Join(root, "pkg"), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(root, "pkg", "foo.go"), []byte("package pkg\nfunc A() {}\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	gittest.Run(t, root, "add", ".")
-	gittest.Run(t, root, "commit", "-m", "base commit")
-	baseSHA := strings.TrimSpace(gittest.Run(t, root, "rev-parse", "HEAD"))
-
-	// PR changes foo.go
-	if err := os.WriteFile(filepath.Join(root, "pkg", "foo.go"), []byte("package pkg\nfunc A() {}\nfunc PR() {}\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	gittest.Run(t, root, "add", ".")
-	gittest.Run(t, root, "commit", "-m", "pr head commit")
-	prHeadSHA := strings.TrimSpace(gittest.Run(t, root, "rev-parse", "HEAD"))
-
-	ix := NewIndex(root)
-	ix.SetDiffBase(baseSHA)
-	ix.SetPRHead(prHeadSHA)
-	ix.Build()
-
-	// Initially, working tree matches prHeadSHA:
-	// Statuses should report foo.go as M (against diffBase), but yourStatuses must be empty.
-	count, files, _, statuses, _, _, yourStatuses, yourDirtyDirs := ix.UpdateGitStatus()
-	if count != 1 || len(files) != 1 || statuses["pkg/foo.go"] != "M" {
-		t.Fatalf("expected 1 file in PR diff, got statuses=%v", statuses)
-	}
-	if len(yourStatuses) != 0 || len(yourDirtyDirs) != 0 {
-		t.Fatalf("expected empty yourStatuses initially, got %v", yourStatuses)
-	}
-
-	// Now reviewer edits foo.go
-	if err := os.WriteFile(filepath.Join(root, "pkg", "foo.go"), []byte("package pkg\nfunc A() {}\nfunc PR() {}\nfunc Reviewer() {}\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	_, _, changed, statuses, _, _, yourStatuses, yourDirtyDirs := ix.UpdateGitStatus()
-	if !changed {
-		t.Errorf("expected changed=true after reviewer modification")
-	}
-	if statuses["pkg/foo.go"] != "M" {
-		t.Errorf("expected statuses[pkg/foo.go] = M, got %q", statuses["pkg/foo.go"])
-	}
-	if yourStatuses["pkg/foo.go"] != "M" {
-		t.Errorf("expected yourStatuses[pkg/foo.go] = M, got %q", yourStatuses["pkg/foo.go"])
-	}
-	if !yourDirtyDirs["pkg"] {
-		t.Errorf("expected yourDirtyDirs[pkg] = true, got %v", yourDirtyDirs)
-	}
-
-	// Check ix.Children() to verify Node fields
-	kids, ok := ix.Children("pkg")
-	if !ok || len(kids) != 1 {
-		t.Fatalf("expected 1 child in pkg, got %v", kids)
-	}
-	if kids[0].YourStatus != "M" {
-		t.Errorf("expected node YourStatus=M, got %q", kids[0].YourStatus)
-	}
-
-	// Now reviewer reverts all changes (restore to prHeadSHA)
-	gittest.Run(t, root, "checkout", "--", ".")
-
-	_, _, changed2, statuses, _, _, yourStatuses, yourDirtyDirs := ix.UpdateGitStatus()
-	if !changed2 {
-		t.Errorf("expected changed=true after revert")
-	}
-	if statuses["pkg/foo.go"] != "M" {
-		t.Errorf("expected PR change to remain in statuses, got %v", statuses)
-	}
-	if len(yourStatuses) != 0 {
-		t.Errorf("expected yourStatuses to be empty after revert, got %v", yourStatuses)
-	}
-	if len(yourDirtyDirs) != 0 {
-		t.Errorf("expected yourDirtyDirs to be empty after revert, got %v", yourDirtyDirs)
-	}
-
-	kids2, _ := ix.Children("pkg")
-	if len(kids2) > 0 && kids2[0].YourStatus != "" {
-		t.Errorf("expected node YourStatus to be cleared after revert, got %q", kids2[0].YourStatus)
-	}
-}
-
 func TestDeletedFileHandling(t *testing.T) {
 	if !gittest.Installed() {
 		t.Skip("git not installed")
@@ -1051,15 +829,15 @@ func TestDeletedFileHandling(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// 1. Verify Index.Build includes root.txt and sub/inner/nested.txt as "D"
-	ix := NewIndex(dir)
+	// 1. Verify workspace.Index.Build includes root.txt and sub/inner/nested.txt as "D"
+	ix := workspace.NewIndex(dir)
 	ix.Build()
 
 	rootKids, ok := ix.Children("")
 	if !ok {
 		t.Fatal("ix.Children(\"\") failed")
 	}
-	var rootNode, subDirNode *Node
+	var rootNode, subDirNode *workspace.Node
 	for i := range rootKids {
 		if rootKids[i].Name == "root.txt" {
 			rootNode = &rootKids[i]
@@ -1082,7 +860,7 @@ func TestDeletedFileHandling(t *testing.T) {
 	if !ok {
 		t.Fatal("ix.Children(\"sub\") failed")
 	}
-	var innerDirNode *Node
+	var innerDirNode *workspace.Node
 	for i := range subKids {
 		if subKids[i].Name == "inner" {
 			innerDirNode = &subKids[i]
@@ -1096,7 +874,7 @@ func TestDeletedFileHandling(t *testing.T) {
 	if !ok {
 		t.Fatal("ix.Children(\"sub/inner\") failed")
 	}
-	var nestedNode *Node
+	var nestedNode *workspace.Node
 	for i := range innerKids {
 		if innerKids[i].Name == "nested.txt" {
 			nestedNode = &innerKids[i]
@@ -1195,7 +973,7 @@ func TestUnpushedEndpoints(t *testing.T) {
 		t.Skip("git not installed")
 	}
 	root := gittest.UnpushedRepo(t)
-	ix := NewIndex(root)
+	ix := workspace.NewIndex(root)
 	ix.Build()
 	s := NewServer(ix, nil)
 	ts := httptest.NewServer(s.mux)
@@ -1299,7 +1077,7 @@ func TestUnpushedEndpointWithoutUpstream(t *testing.T) {
 	// gittest.Repo has no remote, so the section must report itself unavailable
 	// rather than fall back to some other branch.
 	root := gittest.Repo(t)
-	ix := NewIndex(root)
+	ix := workspace.NewIndex(root)
 	ix.Build()
 	s := NewServer(ix, nil)
 	ts := httptest.NewServer(s.mux)
@@ -1323,115 +1101,6 @@ func TestUnpushedEndpointWithoutUpstream(t *testing.T) {
 	}
 }
 
-func TestIndexTouchPath(t *testing.T) {
-	root := t.TempDir()
-	if err := os.WriteFile(filepath.Join(root, "existing.go"), []byte("package main\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	ix := NewIndex(root)
-	ix.Build()
-
-	newRel := "sub/added.go"
-	newAbs := filepath.Join(root, filepath.FromSlash(newRel))
-	if err := os.MkdirAll(filepath.Dir(newAbs), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(newAbs, []byte("package sub\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	ix.TouchPath(newRel)
-
-	files := ix.Files()
-	found := false
-	for _, f := range files {
-		if f.Path == newRel {
-			found = true
-			break
-		}
-	}
-	if !found {
-		t.Fatalf("expected %q in ix.Files() after TouchPath, got %+v", newRel, files)
-	}
-	subKids, ok := ix.Children("sub")
-	if !ok || len(subKids) != 1 || subKids[0].Path != newRel {
-		t.Fatalf("expected sub/added.go in ix.Children(\"sub\"), got %+v", subKids)
-	}
-
-	// Remove the file and verify TouchPath evicts it.
-	if err := os.Remove(newAbs); err != nil {
-		t.Fatal(err)
-	}
-	ix.TouchPath(newRel)
-	for _, f := range ix.Files() {
-		if f.Path == newRel {
-			t.Fatalf("expected %q to be removed from ix.Files() after deletion + TouchPath", newRel)
-		}
-	}
-}
-
-func TestGitInitAfterProbeAndWatcherReady(t *testing.T) {
-	if !gittest.Installed() {
-		t.Skip("git not installed")
-	}
-	root := t.TempDir()
-	if r, err := filepath.EvalSymlinks(root); err == nil {
-		root = r
-	}
-	if err := os.WriteFile(filepath.Join(root, "hello.txt"), []byte("hello\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	// 1. Probing before git init must return false without permanently caching false.
-	if git.Available(root) {
-		t.Fatalf("expected gitAvailable(%s) = false before git init", root)
-	}
-
-	// Initialize git repository (unborn HEAD, no commits yet).
-	gittest.Run(t, root, "init")
-
-	if !git.Available(root) {
-		t.Fatalf("expected gitAvailable(%s) = true immediately after git init", root)
-	}
-	if branch := git.CurrentBranch(root); branch == "" {
-		t.Fatalf("expected non-empty branch on unborn HEAD after git init")
-	}
-
-	// 2. Simulate workbench startup race: client subscribes before ix.Build() completes.
-	ix := NewIndex(root)
-	gw := NewGitWatcher(ix)
-	ch, cancel := gw.Subscribe()
-	defer cancel()
-
-	// Drain initial pre-index message
-	select {
-	case <-ch:
-	default:
-	}
-
-	ix.Build()
-	p, changed := gw.refreshInternal(true)
-	if !changed {
-		t.Fatalf("expected refreshInternal to report changed=true when index transitions to Ready")
-	}
-	if !p.Git || p.GitChanges != 1 || p.Statuses["hello.txt"] != "U" {
-		t.Fatalf("unexpected payload after ix.Build(): %+v", p)
-	}
-
-	// 3. Stage and unstage a file on an unborn HEAD (no commits yet).
-	if err := git.Stage(root, "hello.txt"); err != nil {
-		t.Fatalf("gitStage on unborn HEAD: %v", err)
-	}
-	if staged := git.StagedPaths(root); !staged["hello.txt"] {
-		t.Fatalf("expected hello.txt staged on unborn HEAD, got %v", staged)
-	}
-	if err := git.Unstage(root, "hello.txt"); err != nil {
-		t.Fatalf("gitUnstage on unborn HEAD: %v", err)
-	}
-	if staged := git.StagedPaths(root); staged["hello.txt"] {
-		t.Fatalf("expected hello.txt unstaged on unborn HEAD, got %v", staged)
-	}
-}
-
 func TestGitCommitAutoStage(t *testing.T) {
 	if !gittest.Installed() {
 		t.Skip("git not installed")
@@ -1443,7 +1112,7 @@ func TestGitCommitAutoStage(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "untracked.txt"), []byte("new file\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	ix := NewIndex(root)
+	ix := workspace.NewIndex(root)
 	ix.Build()
 	s := NewServer(ix, nil)
 

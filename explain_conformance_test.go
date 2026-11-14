@@ -3,6 +3,7 @@
 package main
 
 import (
+	"faah/internal/workspace"
 	"net/http/httptest"
 	"os"
 	"os/exec"
@@ -46,7 +47,7 @@ func TestExplainHarnessConformance(t *testing.T) {
 			if _, m.args, _, err = resolveAgentSpec(name, models[name]); err != nil {
 				t.Fatal(err)
 			}
-			ix := NewIndex(root)
+			ix := workspace.NewIndex(root)
 			ix.Build()
 			s := NewServer(ix, nil)
 			s.SetAgent(m)

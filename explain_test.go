@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"faah/internal/workspace"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -235,7 +236,7 @@ func TestExplainUsesItsOwnAgentAndModel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ix := NewIndex(root)
+	ix := workspace.NewIndex(root)
 	ix.Build()
 	s := NewServer(ix, nil)
 	s.SetAgent(m)

@@ -1,8 +1,11 @@
-package main
+package workspace
 
 import (
 	"bytes"
 	"context"
+	"faah/internal/ignore"
+	"faah/internal/render"
+	"faah/internal/symbols"
 	"faah/internal/textutil"
 	"io"
 	"os"
@@ -13,10 +16,6 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
-
-	"faah/internal/ignore"
-	"faah/internal/render"
-	"faah/internal/symbols"
 )
 
 // SearchOpts specifies the configuration for a workspace text search query.
@@ -28,11 +27,11 @@ type SearchOpts struct {
 	Glob      string // Optional glob or path filter (e.g. "*.go" or "src/")
 	MaxFiles  int    // Maximum number of files to return hits from (defaults to 200)
 	MaxPerFil int    // Maximum number of matches per file (defaults to 50)
-	// classifyDefs marks hits whose line looks like a declaration of Query.
-	classifyDefs bool
+	// ClassifyDefs marks hits whose line looks like a declaration of Query.
+	ClassifyDefs bool
 }
 
-const searchFileCap = 8 << 20 // do not grep blobs (cap at 8MB)
+const searchFileCap = 8 << 20
 
 // searcher compiles search options into precomputed patterns, byte slices,
 // and glob rules for high-speed parallel file grepping.
@@ -90,7 +89,7 @@ func newSearcher(o SearchOpts) (*searcher, error) {
 		}
 		s.lit = []byte(n)
 	}
-	if o.classifyDefs && symbols.IdentRe.MatchString(o.Query) {
+	if o.ClassifyDefs && symbols.IdentRe.MatchString(o.Query) {
 		s.defQueryQ = regexp.QuoteMeta(o.Query)
 		s.defByFam = make(map[string]*regexp.Regexp, 4)
 	}
@@ -270,7 +269,7 @@ func readInto(path string, buf *[]byte, size int64) ([]byte, error) {
 }
 
 // scan finds every match in one file's bytes.
-func (s *searcher) scan(data []byte, ext string, max int, w *workBuf) []Match {
+func (s *searcher) scan(data []byte, ext string, max int, w *workBuf) []textutil.Match {
 	// Cheap whole-file reject before paying for full-file lowercasing or line splitting.
 	if len(s.lit) > 0 {
 		if s.opts.Case {
@@ -289,14 +288,14 @@ func (s *searcher) scan(data []byte, ext string, max int, w *workBuf) []Match {
 		hay = asciiLower(&w.lower, data)
 	}
 
-	var out []Match
+	var out []textutil.Match
 	lineNo, start := 1, 0
 	var defRe *regexp.Regexp
 	defReResolved := false
 	getDefRe := func() *regexp.Regexp {
 		if !defReResolved {
 			defReResolved = true
-			if s.opts.classifyDefs || s.defRes != nil {
+			if s.opts.ClassifyDefs || s.defRes != nil {
 				defRe = s.defRegexForExt(strings.ToLower(ext))
 			}
 		}
@@ -357,8 +356,8 @@ func (s *searcher) scan(data []byte, ext string, max int, w *workBuf) []Match {
 	return out
 }
 
-// Search greps every indexed file in parallel.
-func Search(ix *Index, o SearchOpts) ([]FileMatches, bool, error) {
+// search greps every indexed file in parallel.
+func search(ix *Index, o SearchOpts) ([]FileMatches, bool, error) {
 	return SearchContext(context.Background(), ix, o)
 }
 
@@ -385,7 +384,7 @@ func SearchContext(ctx context.Context, ix *Index, o SearchOpts) ([]FileMatches,
 	files := ix.Files()
 	root := ix.Root()
 	// Ignored files are never indexed, but find-in-file on an open one names it
-	// exactly. Search that one file rather than finding nothing.
+	// exactly. search that one file rather than finding nothing.
 	if f, ok := unindexedTarget(root, files, o.Glob); ok {
 		files = []FileEntry{f}
 	}
@@ -424,7 +423,7 @@ func SearchContext(ctx context.Context, ix *Index, o SearchOpts) ([]FileMatches,
 					continue
 				}
 				var ext string
-				if s.opts.classifyDefs || s.defRes != nil {
+				if s.opts.ClassifyDefs || s.defRes != nil {
 					ext = filepath.Ext(f.Path)
 				}
 				m := s.scan(data, ext, o.MaxPerFil, w)
@@ -462,33 +461,4 @@ func SearchContext(ctx context.Context, ix *Index, o SearchOpts) ([]FileMatches,
 		results, truncated = results[:o.MaxFiles], true
 	}
 	return results, truncated, nil
-}
-
-// unindexedTarget reports the file a literal glob names when that file exists
-// under root but is not in the index (because .gitignore excludes it). Wildcard
-// globs, paths with "." or ".." segments, and anything but a regular file (a
-// symlink included) are refused.
-func unindexedTarget(root string, files []FileEntry, glob string) (FileEntry, bool) {
-	rel := strings.TrimPrefix(glob, "/")
-	if rel == "" || strings.ContainsAny(rel, "*?[!\\") || strings.HasSuffix(rel, "/") {
-		return FileEntry{}, false
-	}
-	for _, seg := range strings.Split(rel, "/") {
-		if seg == "" || seg == "." || seg == ".." {
-			return FileEntry{}, false
-		}
-	}
-	i := sort.Search(len(files), func(i int) bool { return files[i].Path >= rel })
-	if i < len(files) && files[i].Path == rel {
-		return FileEntry{}, false // indexed: the normal path handles it
-	}
-	st, err := os.Lstat(filepath.Join(root, filepath.FromSlash(rel)))
-	if err != nil || !st.Mode().IsRegular() {
-		return FileEntry{}, false
-	}
-	name := rel[strings.LastIndexByte(rel, '/')+1:]
-	return FileEntry{
-		Path: rel, Name: name, Size: st.Size(),
-		Lower: strings.ToLower(rel), NameStart: len(rel) - len(name),
-	}, true
 }

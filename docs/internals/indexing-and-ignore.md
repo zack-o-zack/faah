@@ -1,6 +1,6 @@
 # Filesystem Indexing & Ignore Engine
 
-This document explains the technical implementation of faah's in-memory indexer ([`index.go`](../../index.go)) and custom `.gitignore` evaluation engine ([`internal/ignore/ignore.go`](../../internal/ignore/ignore.go)).
+This document explains the technical implementation of faah's in-memory indexer ([`internal/workspace/index.go`](../../internal/workspace/index.go)) and custom `.gitignore` evaluation engine ([`internal/ignore/ignore.go`](../../internal/ignore/ignore.go)).
 
 ## 1. Directory Traversal Architecture
 

@@ -3,6 +3,7 @@
 package main
 
 import (
+	"faah/internal/workspace"
 	"fmt"
 	"os"
 	"strings"
@@ -29,7 +30,7 @@ func TestExplainBenchmark(t *testing.T) {
 		t.Fatal(err)
 	}
 	selections := []struct{ label, path, find, text string }{
-		{"symbol", "main.go", "ix := NewIndex(root)", "NewIndex"},
+		{"symbol", "main.go", "ix := workspace.NewIndex(root)", "workspace.NewIndex"},
 		{"block", "explain_refs.go", "func explain.LabelName(label string) string {", ""},
 	}
 
@@ -54,7 +55,7 @@ func TestExplainBenchmark(t *testing.T) {
 				// Native adapters read Open.Model from the manager, not argv.
 				m.models[n] = chosen
 			}
-			ix := NewIndex(root)
+			ix := workspace.NewIndex(root)
 			ix.Build()
 			s := NewServer(ix, newLSPManager(root, true))
 			s.SetAgent(m)

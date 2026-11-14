@@ -116,7 +116,7 @@ Every rendered row that exists in the working tree carries its line in `data-l`,
 
 ## 5. Real-Time Streaming & Adaptive Monitoring Engine
 
-To keep git statuses, sidebar badges, and editor gutter diff indicators in sync without requiring manual page reloads or full workspace re-indexing, faah uses a hybrid real-time monitoring engine (`git.go`, and in the browser [`web/src/workspace/`](../../web/src/workspace/) with [`web/src/git/documents.js`](../../web/src/git/documents.js)).
+To keep git statuses, sidebar badges, and editor gutter diff indicators in sync without requiring manual page reloads or full workspace re-indexing, faah uses a hybrid real-time monitoring engine (`internal/workspace/watcher.go`, and in the browser [`web/src/workspace/`](../../web/src/workspace/) with [`web/src/git/documents.js`](../../web/src/git/documents.js)).
 
 ### Design Constraints: Small vs. Massive Repositories
 
@@ -223,7 +223,7 @@ sequenceDiagram
     autonumber
     actor Dev as Developer (Terminal / CLI)
     participant FS as Local Filesystem (.git/index)
-    participant GW as faah GitWatcher (Go Backend)
+    participant GW as faah workspace.Watcher (Go Backend)
     participant SSE as SSE Stream (/api/git/stream)
     participant JS as Browser (workspace/stream.ts, git/documents.ts)
     participant UI as DOM (Tree, Tabs, Diff Overlay)
@@ -259,7 +259,7 @@ The sidebar git panel ([`web/src/git/`](../../web/src/git/): `GitPanel`, `Commit
 
 ### Staged-Path Tracking
 
-`git.StatusAndStagedAgainst` (`internal/git/status.go`) extracts both working-tree status codes and staged paths (`xy[0] != '.'`) from a single `git status --porcelain=v2 -z -uall` invocation (with `git.StagedPaths` available as a standalone `git diff --name-only --cached -z` helper when only staged paths are needed), mapping each path through `repoRelKey` so staged state is keyed identically to status. `Index.gitStagedMap` and `Node.Staged` carry it alongside the existing `gitStatusMap`/`Node.Status`, populated in both `Index.Build()` and `Index.UpdateGitStatus()`. `UpdateGitStatus`'s "did anything change" check compares *both* maps — staging a file often leaves its collapsed status letter unchanged (a modified-and-unstaged `M` and a modified-and-staged `M` are the same letter), so comparing status alone would silently swallow a stage/unstage broadcast. `GitStatusPayload` (`git.go`) carries the resulting `Staged` map and the current `Branch` name (`git.CurrentBranch`) down the same SSE stream (`/api/stream`) that already pushes status; during worktree-only polls when `.git` control files have not changed, `GitWatcher` reuses the cached branch, ahead/behind, and recent-commit metadata from `lastSnap`.
+`git.StatusAndStagedAgainst` (`internal/git/status.go`) extracts both working-tree status codes and staged paths (`xy[0] != '.'`) from a single `git status --porcelain=v2 -z -uall` invocation (with `git.StagedPaths` available as a standalone `git diff --name-only --cached -z` helper when only staged paths are needed), mapping each path through `repoRelKey` so staged state is keyed identically to status. `Index.gitStagedMap` and `Node.Staged` carry it alongside the existing `gitStatusMap`/`Node.Status`, populated in both `Index.Build()` and `Index.UpdateGitStatus()`. `UpdateGitStatus`'s "did anything change" check compares *both* maps — staging a file often leaves its collapsed status letter unchanged (a modified-and-unstaged `M` and a modified-and-staged `M` are the same letter), so comparing status alone would silently swallow a stage/unstage broadcast. `GitStatusPayload` (`internal/workspace/watcher.go`) carries the resulting `Staged` map and the current `Branch` name (`git.CurrentBranch`) down the same SSE stream (`/api/stream`) that already pushes status; during worktree-only polls when `.git` control files have not changed, `workspace.Watcher` reuses the cached branch, ahead/behind, and recent-commit metadata from `lastSnap`.
 
 ### Stage / Unstage / Commit & Auto-Staging
 

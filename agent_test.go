@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"faah/internal/workspace"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -67,7 +68,7 @@ func agentServer(t *testing.T, root, name string) *Server {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ix := NewIndex(root)
+	ix := workspace.NewIndex(root)
 	ix.Build()
 	s := NewServer(ix, nil)
 	s.SetAgent(m)
@@ -248,7 +249,7 @@ func TestAgentEditRefusedUntilHarnessChosen(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ix := NewIndex(root)
+	ix := workspace.NewIndex(root)
 	ix.Build()
 	s := NewServer(ix, nil)
 	s.SetAgent(m)
@@ -1051,7 +1052,7 @@ func TestInlineEditOverlapStillRefused(t *testing.T) {
 func TestThreadPromptCarriesPRScope(t *testing.T) {
 	root := t.TempDir()
 	th := &thread{Kind: "ask"}
-	s := &Server{ix: NewIndex(root), pr: &prSession{
+	s := &Server{ix: workspace.NewIndex(root), pr: &prSession{
 		target:   PRTarget{URL: "https://github.com/o/r/pull/7"},
 		meta:     PRMeta{Number: 7, Title: "Add thing", BaseRef: "main", HeadRef: "feat", HeadSHA: "abcdef1234567890"},
 		diffBase: "1234567890abcdef",

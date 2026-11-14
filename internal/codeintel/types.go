@@ -2,7 +2,10 @@
 // code produce, so packages outside main can use it.
 package codeintel
 
-import "faah/internal/textutil"
+import (
+	"faah/internal/textutil"
+	"faah/internal/workspace"
+)
 
 // NavHit is one navigation result, shaped exactly like a search Match so the
 // UI renders LSP answers and regex answers with the same code.
@@ -37,11 +40,8 @@ type CallNode struct {
 	Item     string `json:"item"`               // CallHierarchyItem, returned as-is to expand
 }
 
-// FileMatches groups all search hits found within a single file.
-type FileMatches struct {
-	Path    string  `json:"path"`    // Workspace-relative path to the file
-	Matches []Match `json:"matches"` // List of snippet matches within this file
-}
-
 // Match is the shared display-ready text snippet.
 type Match = textutil.Match
+
+// FileMatches groups workspace search hits by file.
+type FileMatches = workspace.FileMatches

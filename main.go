@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	_ "embed"
+	"faah/internal/workspace"
 	"flag"
 	"fmt"
 	"io"
@@ -210,7 +211,7 @@ func main() {
 	listenDur := time.Since(tListen)
 
 	tInit := time.Now()
-	ix := NewIndex(root)
+	ix := workspace.NewIndex(root)
 	lsp := newLSPManager(root, !*noLSP)
 	tel := telemetry.New(posthogKey, version, *noTelemetry)
 	defer tel.Close("normal")

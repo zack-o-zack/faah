@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"faah/internal/workspace"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -37,7 +38,7 @@ func TestReviewWorkflowDefaults(t *testing.T) {
 
 func TestReviewWorkflowConfigEndpoints(t *testing.T) {
 	tmp := t.TempDir()
-	ix := NewIndex(tmp)
+	ix := workspace.NewIndex(tmp)
 	s := NewServer(ix, nil)
 
 	// GET config
@@ -93,7 +94,7 @@ func TestReviewWorkflowConfigEndpoints(t *testing.T) {
 
 func TestReviewWorkflowStatusAndStop(t *testing.T) {
 	tmp := t.TempDir()
-	ix := NewIndex(tmp)
+	ix := workspace.NewIndex(tmp)
 	s := NewServer(ix, nil)
 
 	// Status before any run
@@ -117,7 +118,7 @@ func TestReviewWorkflowStatusAndStop(t *testing.T) {
 
 func TestReviewWorkflowRunEndpoint(t *testing.T) {
 	tmp := t.TempDir()
-	ix := NewIndex(tmp)
+	ix := workspace.NewIndex(tmp)
 	s := NewServer(ix, nil)
 
 	body, _ := json.Marshal(map[string]any{
@@ -136,7 +137,7 @@ func TestReviewWorkflowRunEndpoint(t *testing.T) {
 
 func TestReviewWorkflowConfigCorruptAndSaveValidation(t *testing.T) {
 	tmp := t.TempDir()
-	ix := NewIndex(tmp)
+	ix := workspace.NewIndex(tmp)
 	s := NewServer(ix, nil)
 
 	// Create corrupt workflows.json
@@ -165,7 +166,7 @@ func TestReviewWorkflowConfigCorruptAndSaveValidation(t *testing.T) {
 
 func TestReviewWorkflowRunAndOrchestration(t *testing.T) {
 	tmp := t.TempDir()
-	ix := NewIndex(tmp)
+	ix := workspace.NewIndex(tmp)
 	s := NewServer(ix, nil)
 	fakeCLI(t, "claude")
 	a, err := newAgentManager(tmp, "claude", nil)
@@ -279,7 +280,7 @@ func TestReviewWorkflowRunAndOrchestration(t *testing.T) {
 
 func TestReviewWorkflowRunUnknownIDAndNilThreads(t *testing.T) {
 	tmp := t.TempDir()
-	ix := NewIndex(tmp)
+	ix := workspace.NewIndex(tmp)
 	s := NewServer(ix, nil)
 
 	// Run with unknown ID falls back to first workflow definition
@@ -304,7 +305,7 @@ func TestReviewWorkflowRunUnknownIDAndNilThreads(t *testing.T) {
 
 func TestReviewWorkflowStopActiveRun(t *testing.T) {
 	tmp := t.TempDir()
-	ix := NewIndex(tmp)
+	ix := workspace.NewIndex(tmp)
 	s := NewServer(ix, nil)
 	fakeCLI(t, "claude")
 	a, err := newAgentManager(tmp, "claude", nil)
@@ -334,7 +335,7 @@ func TestReviewWorkflowStopActiveRun(t *testing.T) {
 
 func TestReviewWorkflowSSEStreamAndNilManager(t *testing.T) {
 	tmp := t.TempDir()
-	ix := NewIndex(tmp)
+	ix := workspace.NewIndex(tmp)
 	s := NewServer(ix, nil)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -365,7 +366,7 @@ func TestReviewWorkflowSSEStreamAndNilManager(t *testing.T) {
 
 func TestReviewWorkflowHTTPHandlerValidation(t *testing.T) {
 	tmp := t.TempDir()
-	ix := NewIndex(tmp)
+	ix := workspace.NewIndex(tmp)
 	s := NewServer(ix, nil)
 
 	// Method not allowed on config handler
@@ -459,7 +460,7 @@ func TestExtractCodeUnderstanding(t *testing.T) {
 
 func TestReviewWalkthroughEndpoint(t *testing.T) {
 	tmp := t.TempDir()
-	ix := NewIndex(tmp)
+	ix := workspace.NewIndex(tmp)
 	s := NewServer(ix, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/review/walkthrough", nil)

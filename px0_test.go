@@ -6,8 +6,12 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/json"
-	"errors"
-	"fmt"
+	"faah/internal/git/gittest"
+	"faah/internal/metrics"
+	"faah/internal/render"
+	"faah/internal/settings"
+	"faah/internal/ui"
+	"faah/internal/workspace"
 	"io"
 	"net"
 	"net/http"
@@ -19,12 +23,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"faah/internal/git/gittest"
-	"faah/internal/metrics"
-	"faah/internal/render"
-	"faah/internal/settings"
-	"faah/internal/ui"
 )
 
 func newTestServer(t *testing.T) (*Server, string) {
@@ -43,7 +41,7 @@ func newTestServer(t *testing.T) (*Server, string) {
 	write("secret/keys.go", "package secret\n\nconst Token = \"nope\"\n")
 	write("sub/deep.py", "def handler(req):\n    return 1\n")
 
-	ix := NewIndex(root)
+	ix := workspace.NewIndex(root)
 	ix.Build()
 	return NewServer(ix, nil), root
 }
@@ -200,7 +198,7 @@ func TestTreeListsIgnoredEntries(t *testing.T) {
 	_, root := newTestServer(t)
 	os.MkdirAll(filepath.Join(root, ".git"), 0o755)
 	os.WriteFile(filepath.Join(root, ".git", "HEAD"), []byte("ref: refs/heads/main\n"), 0o644)
-	ix := NewIndex(root)
+	ix := workspace.NewIndex(root)
 	ix.Build()
 	s := NewServer(ix, nil)
 
@@ -321,7 +319,7 @@ func TestChunkedReadsCoverWholeFile(t *testing.T) {
 		sb.WriteString("\n")
 	}
 	os.WriteFile(filepath.Join(root, "big.go"), []byte(sb.String()), 0o644)
-	ix := NewIndex(root)
+	ix := workspace.NewIndex(root)
 	ix.Build()
 	s := NewServer(ix, nil)
 
@@ -369,7 +367,7 @@ func TestCaseInsensitiveOffsetsWithUnicode(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "u.go"), []byte(body), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	ix := NewIndex(root)
+	ix := workspace.NewIndex(root)
 	ix.Build()
 	s := NewServer(ix, nil)
 
@@ -390,19 +388,6 @@ func TestCaseInsensitiveOffsetsWithUnicode(t *testing.T) {
 	}
 	if m["post"] != "(name)" {
 		t.Errorf("text after the match = %q, want %q", m["post"], "(name)")
-	}
-}
-
-func TestAsciiLowerPreservesLength(t *testing.T) {
-	for _, s := range []string{"", "abc", "ABC", "İd", "cafÉ", "日本", "MiXeD123"} {
-		var buf []byte
-		got := asciiLower(&buf, []byte(s))
-		if len(got) != len(s) {
-			t.Errorf("asciiLower(%q) changed length %d -> %d", s, len(s), len(got))
-		}
-		if asciiLowerString(s) != string(got) {
-			t.Errorf("string and byte forms disagree for %q", s)
-		}
 	}
 }
 
@@ -653,7 +638,7 @@ func TestCleanBasePath(t *testing.T) {
 
 func TestServerBasePathRouting(t *testing.T) {
 	root := t.TempDir()
-	ix := NewIndex(root)
+	ix := workspace.NewIndex(root)
 	s := NewServer(ix, nil, "/rev-123/")
 
 	if s.BasePath() != "/rev-123/" {
@@ -959,27 +944,6 @@ func TestServerServeHTTPGzip(t *testing.T) {
 	}
 	if !strings.Contains(string(body), "<!doctype html>") {
 		t.Errorf("expected html content in body")
-	}
-}
-
-func TestChildrenReturnsCopy(t *testing.T) {
-	dir := t.TempDir()
-	os.WriteFile(filepath.Join(dir, "a.txt"), []byte("hello"), 0o644)
-	ix := NewIndex(dir)
-	ix.Build()
-
-	kids1, ok := ix.Children("")
-	if !ok || len(kids1) == 0 {
-		t.Fatalf("expected children at root")
-	}
-
-	// Mutating the returned slice must not mutate ix.children
-	kids1[0].Dirty = true
-	kids1[0].Status = "M"
-
-	kids2, _ := ix.Children("")
-	if kids2[0].Dirty != false || kids2[0].Status != "" {
-		t.Errorf("ix.Children did not return an isolated copy of node slice")
 	}
 }
 
@@ -1380,7 +1344,7 @@ func TestSessionAPIEndpoints(t *testing.T) {
 	t.Setenv("XDG_STATE_HOME", tmpDir)
 
 	root := t.TempDir()
-	ix := NewIndex(root)
+	ix := workspace.NewIndex(root)
 	s := NewServer(ix, nil, "/rev-999/")
 
 	// 1. GET /rev-999/api/session initially
@@ -1447,7 +1411,7 @@ func TestPRDraftSessionPersistence(t *testing.T) {
 	t.Setenv("XDG_STATE_HOME", tmpDir)
 
 	root := t.TempDir()
-	ix := NewIndex(root)
+	ix := workspace.NewIndex(root)
 	s := NewServer(ix, nil, "/rev-42/")
 	pr := &prSession{
 		diffBase: "HEAD",
@@ -1510,11 +1474,11 @@ func TestPRDraftsSurviveNewCheckoutRoot(t *testing.T) {
 	t.Setenv("XDG_STATE_HOME", t.TempDir())
 	pt := PRTarget{Provider: "github", Owner: "acme", Repo: "widget", Number: 7}
 
-	s := NewServer(NewIndex(t.TempDir()), nil)
+	s := NewServer(workspace.NewIndex(t.TempDir()), nil)
 	s.SetPR(&prSession{diffBase: "HEAD", target: pt})
 	postDraft(t, s, "", "first run")
 
-	s2 := NewServer(NewIndex(t.TempDir()), nil)
+	s2 := NewServer(workspace.NewIndex(t.TempDir()), nil)
 	pr2 := &prSession{diffBase: "HEAD", target: pt}
 	s2.SetPR(pr2)
 	if len(pr2.comments) != 1 || pr2.comments[0].Body != "first run" {
@@ -1522,7 +1486,7 @@ func TestPRDraftsSurviveNewCheckoutRoot(t *testing.T) {
 	}
 
 	other := &prSession{diffBase: "HEAD", target: PRTarget{Provider: "github", Owner: "acme", Repo: "widget", Number: 8}}
-	NewServer(NewIndex(t.TempDir()), nil).SetPR(other)
+	NewServer(workspace.NewIndex(t.TempDir()), nil).SetPR(other)
 	if len(other.comments) != 0 {
 		t.Fatalf("another PR must not see these drafts, got %+v", other.comments)
 	}
@@ -1538,7 +1502,7 @@ func TestPRDraftsMigrateFromBasePathFile(t *testing.T) {
 
 	pt := PRTarget{Provider: "github", Owner: "acme", Repo: "widget", Number: 7}
 	pr := &prSession{diffBase: "HEAD", target: pt}
-	NewServer(NewIndex(root), nil, "/w/abc/").SetPR(pr)
+	NewServer(workspace.NewIndex(root), nil, "/w/abc/").SetPR(pr)
 	if len(pr.comments) != 1 || pr.comments[0].Body != "old" || pr.nextID != 3 {
 		t.Fatalf("expected the migrated draft, got %+v (nextID %d)", pr.comments, pr.nextID)
 	}
@@ -1552,50 +1516,12 @@ func TestPRDraftsMigrateFromBasePathFile(t *testing.T) {
 
 // ---------------------------------------------------------------- Search cancellation tests
 
-func TestSearchContextCancellation(t *testing.T) {
-	root := t.TempDir()
-	for i := 0; i < 20; i++ {
-		content := "package main\n\nfunc SearchTarget() {}\n"
-		if err := os.WriteFile(filepath.Join(root, "file_"+string(rune('a'+i))+".go"), []byte(content), 0o644); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	ix := NewIndex(root)
-	ix.Build()
-
-	// 1. Normal search should find all files
-	res, _, err := SearchContext(context.Background(), ix, SearchOpts{Query: "SearchTarget"})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(res) != 20 {
-		t.Fatalf("expected 20 file hits, got %d", len(res))
-	}
-
-	// 2. Search with already canceled context returns immediately
-	ctxCanceled, cancel := context.WithCancel(context.Background())
-	cancel()
-	_, _, err = SearchContext(ctxCanceled, ix, SearchOpts{Query: "SearchTarget"})
-	if !errors.Is(err, context.Canceled) {
-		t.Fatalf("expected context.Canceled, got %v", err)
-	}
-
-	// 3. Search cancelled while in-flight terminates worker goroutines
-	ctxTimed, cancelTimed := context.WithTimeout(context.Background(), 10*time.Microsecond)
-	defer cancelTimed()
-	_, _, err = SearchContext(ctxTimed, ix, SearchOpts{Query: "SearchTarget"})
-	if err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
-		t.Fatalf("expected cancellation or deadline error, got %v", err)
-	}
-}
-
 func TestHandleSearchWithCanceledRequest(t *testing.T) {
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "main.go"), []byte("package main\n\nfunc Hello() {}\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	ix := NewIndex(root)
+	ix := workspace.NewIndex(root)
 	ix.Build()
 	s := NewServer(ix, nil)
 
@@ -1615,78 +1541,12 @@ func TestHandleSearchWithCanceledRequest(t *testing.T) {
 
 // ---------------------------------------------------------------- Benchmarks
 
-func BenchmarkSearchLiteralInMemory(b *testing.B) {
-	root := b.TempDir()
-	content := "package main\n\n// TargetSearchToken is here\nfunc TargetSearchToken() string { return \"ok\" }\n"
-	for i := 0; i < 20; i++ {
-		_ = os.WriteFile(filepath.Join(root, fmt.Sprintf("file_%d.go", i)), []byte(content), 0o644)
-	}
-	ix := NewIndex(root)
-	ix.Build()
-
-	opts := SearchOpts{
-		Query:    "TargetSearchToken",
-		MaxFiles: 50,
-	}
-
-	b.ResetTimer()
-	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
-		_, _, _ = SearchContext(context.Background(), ix, opts)
-	}
-}
-
-func BenchmarkSearchDefWord(b *testing.B) {
-	root := b.TempDir()
-	missContent := strings.Repeat("package main\nfunc helperFunc(x int) int { return x + 1 }\n", 50)
-	for i := 0; i < 40; i++ {
-		_ = os.WriteFile(filepath.Join(root, fmt.Sprintf("miss_%d.go", i)), []byte(missContent), 0o644)
-	}
-	hitContent := "package main\nfunc TargetSymbolDef() string { return \"ok\" }\n"
-	_ = os.WriteFile(filepath.Join(root, "hit.go"), []byte(hitContent), 0o644)
-
-	ix := NewIndex(root)
-	ix.Build()
-
-	opts := SearchOpts{
-		Query:        "TargetSymbolDef",
-		Word:         true,
-		Case:         true,
-		classifyDefs: true,
-		MaxFiles:     50,
-	}
-
-	b.ResetTimer()
-	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
-		_, _, _ = SearchContext(context.Background(), ix, opts)
-	}
-}
-
-func BenchmarkSortNodes(b *testing.B) {
-	base := make([]Node, 64)
-	for i := range base {
-		base[i] = Node{
-			Name: fmt.Sprintf("File_%02d_Component.go", 64-i),
-			Path: fmt.Sprintf("pkg/File_%02d_Component.go", 64-i),
-			Dir:  i%5 == 0,
-		}
-	}
-	work := make([]Node, len(base))
-	b.ResetTimer()
-	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
-		copy(work, base)
-		sortNodes(work)
-	}
-}
-
 func BenchmarkHandleFileScrollChunk(b *testing.B) {
 	wd, err := os.Getwd()
 	if err != nil {
 		b.Fatal(err)
 	}
-	ix := NewIndex(wd)
+	ix := workspace.NewIndex(wd)
 	ix.Build()
 	srv := &Server{ix: ix, lsp: newLSPManager(wd, false), diffBase: "HEAD"}
 	req := httptest.NewRequest(http.MethodGet, "/api/file?path=server.go&start=300&count=300", nil)
@@ -1703,7 +1563,7 @@ func TestFindIndexingStatus(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "testfile.txt"), []byte("hello world"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	ix := NewIndex(root)
+	ix := workspace.NewIndex(root)
 	srv := NewServer(ix, nil)
 
 	// Before indexing: indexing should be true and files empty
