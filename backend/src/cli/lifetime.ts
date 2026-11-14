@@ -1,11 +1,12 @@
 import { readFileSync, unlinkSync } from 'node:fs';
 import { parse } from '../decode.ts';
-export function lifetime(
-  desktop: boolean,
-  stdinLifetime: boolean,
-  lock: string,
-  close: () => Promise<void>,
-): void {
+export function lifetime(options: {
+  desktop: boolean;
+  stdinLifetime: boolean;
+  lock: string;
+  close: () => Promise<void>;
+}): void {
+  const { desktop, stdinLifetime, lock, close } = options;
   let stopping = false;
   const shutdown = async () => {
     if (stopping) process.exit(130);

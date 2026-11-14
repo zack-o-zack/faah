@@ -1,0 +1,228 @@
+{
+  "decls": {
+    "go": "^\\s*(?:func\\s+(?:\\([^)]*\\)\\s*)?NAME\\b|type\\s+NAME\\b|(?:var|const)\\s+NAME\\b|\\tNAME\\s*=)",
+    "py": "^\\s*(?:(?:async\\s+)?def|class)\\s+NAME\\b|^NAME\\s*(?::[^=]+)?=",
+    "js": "^\\s*(?:export\\s+)?(?:default\\s+)?(?:async\\s+)?(?:function\\s*\\*?\\s*NAME\\b|class\\s+NAME\\b|(?:const|let|var|type|interface|enum)\\s+NAME\\b)|^\\s*(?:(?:public|private|protected|static|async|get|set|readonly)\\s+)*NAME\\s*\\([^;]*\\{\\s*$",
+    "rs": "^\\s*(?:pub(?:\\([^)]*\\))?\\s+)?(?:(?:async|const|unsafe)\\s+)*(?:fn|struct|enum|trait|type|const|static|mod|union)\\s+NAME\\b|^\\s*macro_rules!\\s*NAME\\b",
+    "c": "^\\s*#\\s*define\\s+NAME\\b|^\\s*(?:typedef\\s+.*\\bNAME\\s*;|(?:struct|enum|union|class|namespace)\\s+NAME\\b)|^[A-Za-z_][\\w\\s\\*&<>:]*\\bNAME\\s*\\([^;]*$",
+    "jvm": "^\\s*(?:(?:public|private|protected|internal|open|abstract|final|static|override|suspend|data|sealed|value|inline)\\s+)*(?:class|interface|enum|record|object|fun|val|var|def|trait|type)\\s+NAME\\b|^\\s*(?:(?:public|private|protected|static|final|synchronized|abstract|native)\\s+)+[\\w<>?,\\[\\]\\s]+\\s+NAME\\s*\\(",
+    "rb": "^\\s*(?:def\\s+(?:self\\.)?NAME\\b|(?:class|module)\\s+NAME\\b|NAME\\s*=)",
+    "sh": "^\\s*(?:function\\s+NAME\\b|NAME\\s*\\(\\s*\\))",
+    "php": "^\\s*(?:(?:public|private|protected|static|abstract|final)\\s+)*function\\s+&?\\s*NAME\\b|^\\s*(?:(?:abstract|final|readonly)\\s+)*(?:class|interface|trait|enum)\\s+NAME\\b",
+    "lua": "^\\s*(?:local\\s+)?function\\s+(?:[\\w.]+\\.)?NAME\\b|^\\s*(?:local\\s+)?NAME\\s*=\\s*function\\b",
+    "zig": "^\\s*(?:pub\\s+)?(?:fn|const|var)\\s+NAME\\b",
+    "ex": "^\\s*(?:def|defp|defmodule|defmacro|defmacrop|defprotocol)\\s+NAME\\b",
+    "hs": "^NAME\\s*::|^s*(?:data|type|newtype|class)\\s+NAME\\b"
+  },
+  "extensions": {
+    ".go": "go",
+    ".py": "py",
+    ".pyi": "py",
+    ".js": "js",
+    ".jsx": "js",
+    ".mjs": "js",
+    ".cjs": "js",
+    ".ts": "js",
+    ".tsx": "js",
+    ".mts": "js",
+    ".cts": "js",
+    ".rs": "rs",
+    ".c": "c",
+    ".h": "c",
+    ".cc": "c",
+    ".cpp": "c",
+    ".cxx": "c",
+    ".hpp": "c",
+    ".hh": "c",
+    ".java": "jvm",
+    ".kt": "jvm",
+    ".kts": "jvm",
+    ".scala": "jvm",
+    ".cs": "jvm",
+    ".swift": "jvm",
+    ".rb": "rb",
+    ".sh": "sh",
+    ".bash": "sh",
+    ".zsh": "sh",
+    ".php": "php",
+    ".lua": "lua",
+    ".zig": "zig",
+    ".ex": "ex",
+    ".exs": "ex",
+    ".hs": "hs"
+  },
+  "outline": {
+    "go": [
+      {
+        "kind": "func",
+        "pattern": "^func\\s+(?:\\([^)]*\\)\\s*)?([A-Za-z_]\\w*)\\s*[\\(\\[]"
+      },
+      {
+        "kind": "type",
+        "pattern": "^type\\s+([A-Za-z_]\\w*)\\b"
+      },
+      {
+        "kind": "const",
+        "pattern": "^const\\s+([A-Za-z_]\\w*)\\b"
+      },
+      {
+        "kind": "var",
+        "pattern": "^var\\s+([A-Za-z_]\\w*)\\b"
+      }
+    ],
+    "py": [
+      {
+        "kind": "class",
+        "pattern": "^(\\s*)class\\s+([A-Za-z_]\\w*)\\b"
+      },
+      {
+        "kind": "def",
+        "pattern": "^(\\s*)(?:async\\s+)?def\\s+([A-Za-z_]\\w*)\\s*\\("
+      }
+    ],
+    "js": [
+      {
+        "kind": "class",
+        "pattern": "^(\\s*)(?:export\\s+)?(?:default\\s+)?(?:abstract\\s+)?class\\s+([A-Za-z_$][\\w$]*)\\b"
+      },
+      {
+        "kind": "interface",
+        "pattern": "^(\\s*)(?:export\\s+)?interface\\s+([A-Za-z_$][\\w$]*)\\b"
+      },
+      {
+        "kind": "type",
+        "pattern": "^(\\s*)(?:export\\s+)?type\\s+([A-Za-z_$][\\w$]*)\\b"
+      },
+      {
+        "kind": "enum",
+        "pattern": "^(\\s*)(?:export\\s+)?(?:const\\s+)?enum\\s+([A-Za-z_$][\\w$]*)\\b"
+      },
+      {
+        "kind": "func",
+        "pattern": "^(\\s*)(?:export\\s+)?(?:default\\s+)?(?:async\\s+)?function\\s*\\*?\\s*([A-Za-z_$][\\w$]*)\\s*[\\(<]"
+      },
+      {
+        "kind": "func",
+        "pattern": "^(\\s*)(?:export\\s+)?const\\s+([A-Za-z_$][\\w$]*)\\s*=\\s*(?:async\\s*)?(?:\\([^)]*\\)|[A-Za-z_$][\\w$]*)\\s*=>"
+      }
+    ],
+    "rs": [
+      {
+        "kind": "mod",
+        "pattern": "^(\\s*)(?:pub(?:\\([^)]*\\))?\\s+)?mod\\s+([A-Za-z_]\\w*)\\b"
+      },
+      {
+        "kind": "struct",
+        "pattern": "^(\\s*)(?:pub(?:\\([^)]*\\))?\\s+)?struct\\s+([A-Za-z_]\\w*)\\b"
+      },
+      {
+        "kind": "enum",
+        "pattern": "^(\\s*)(?:pub(?:\\([^)]*\\))?\\s+)?enum\\s+([A-Za-z_]\\w*)\\b"
+      },
+      {
+        "kind": "trait",
+        "pattern": "^(\\s*)(?:pub(?:\\([^)]*\\))?\\s+)?(?:unsafe\\s+)?trait\\s+([A-Za-z_]\\w*)\\b"
+      },
+      {
+        "kind": "impl",
+        "pattern": "^(\\s*)(?:unsafe\\s+)?impl(?:<[^>]*>)?\\s+([A-Za-z_][\\w:<>, ]*?)\\s*\\{"
+      },
+      {
+        "kind": "fn",
+        "pattern": "^(\\s*)(?:pub(?:\\([^)]*\\))?\\s+)?(?:(?:async|const|unsafe|extern(?:\\s+\"[^\"]*\")?)\\s+)*fn\\s+([A-Za-z_]\\w*)\\b"
+      },
+      {
+        "kind": "type",
+        "pattern": "^(\\s*)(?:pub(?:\\([^)]*\\))?\\s+)?type\\s+([A-Za-z_]\\w*)\\b"
+      },
+      {
+        "kind": "const",
+        "pattern": "^(\\s*)(?:pub(?:\\([^)]*\\))?\\s+)?(?:const|static)\\s+([A-Za-z_]\\w*)\\b"
+      }
+    ],
+    "c": [
+      {
+        "kind": "class",
+        "pattern": "^(\\s*)(?:class|struct|enum(?:\\s+class)?|union|namespace)\\s+([A-Za-z_]\\w*)\\s*[:{]"
+      },
+      {
+        "kind": "func",
+        "pattern": "^([A-Za-z_][\\w\\s\\*&<>:]*?)\\b([A-Za-z_~][\\w:]*)\\s*\\([^;]*\\{\\s*$"
+      },
+      {
+        "kind": "macro",
+        "pattern": "^\\s*#\\s*define\\s+([A-Za-z_]\\w*)\\b"
+      }
+    ],
+    "jvm": [
+      {
+        "kind": "class",
+        "pattern": "^(\\s*)(?:(?:public|private|protected|internal|open|abstract|final|static|data|sealed|value)\\s+)*(?:class|interface|enum|record|object|trait|struct|actor|extension)\\s+([A-Za-z_]\\w*)\\b"
+      },
+      {
+        "kind": "func",
+        "pattern": "^(\\s*)(?:(?:public|private|protected|internal|open|override|suspend|inline|static|final)\\s+)*(?:fun|def|func)\\s+(?:<[^>]+>\\s+)?([A-Za-z_]\\w*)\\b"
+      },
+      {
+        "kind": "func",
+        "pattern": "^(\\s*)(?:(?:public|private|protected|static|final|synchronized|abstract|native|virtual|override|async)\\s+)+[\\w<>?,\\[\\]]+\\s+([A-Za-z_]\\w*)\\s*\\("
+      }
+    ],
+    "rb": [
+      {
+        "kind": "module",
+        "pattern": "^(\\s*)module\\s+([A-Za-z_][\\w:]*)\\b"
+      },
+      {
+        "kind": "class",
+        "pattern": "^(\\s*)class\\s+([A-Za-z_][\\w:]*)\\b"
+      },
+      {
+        "kind": "def",
+        "pattern": "^(\\s*)def\\s+((?:self\\.)?[A-Za-z_]\\w*[?!]?)\\b"
+      }
+    ],
+    "sh": [
+      {
+        "kind": "func",
+        "pattern": "^(\\s*)(?:function\\s+([A-Za-z_][\\w-]*)|([A-Za-z_][\\w-]*)\\s*\\(\\s*\\))"
+      }
+    ],
+    "php": [
+      {
+        "kind": "class",
+        "pattern": "^(\\s*)(?:(?:abstract|final|readonly)\\s+)*(?:class|interface|trait|enum)\\s+([A-Za-z_]\\w*)\\b"
+      },
+      {
+        "kind": "func",
+        "pattern": "^(\\s*)(?:(?:public|private|protected|static|abstract|final)\\s+)*function\\s+&?\\s*([A-Za-z_]\\w*)\\s*\\("
+      }
+    ],
+    "lua": [
+      {
+        "kind": "func",
+        "pattern": "^(\\s*)(?:local\\s+)?function\\s+([A-Za-z_][\\w.:]*)\\s*\\("
+      }
+    ],
+    "zig": [
+      {
+        "kind": "const",
+        "pattern": "^(\\s*)(?:pub\\s+)?const\\s+([A-Za-z_]\\w*)\\s*=\\s*(?:struct|enum|union)\\b"
+      },
+      {
+        "kind": "fn",
+        "pattern": "^(\\s*)(?:pub\\s+)?(?:export\\s+|inline\\s+)*fn\\s+([A-Za-z_]\\w*)\\s*\\("
+      }
+    ],
+    "ex": [
+      {
+        "kind": "module",
+        "pattern": "^(\\s*)(?:defmodule|defprotocol)\\s+([A-Za-z_][\\w.]*)\\b"
+      },
+      {
+        "kind": "def",
+        "pattern": "^(\\s*)(?:def|defp|defmacro|defmacrop)\\s+([A-Za-z_]\\w*[?!]?)\\b"
+      }
+    ]
+  }
+}

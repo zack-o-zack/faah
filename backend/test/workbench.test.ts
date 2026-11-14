@@ -13,7 +13,7 @@ test('workbench folder service and clone recognition', async () => {
   const temp = mkdtempSync(join(tmpdir(), 'faah-wb-unit-'));
   const db = openDB(join(temp, 'faah.db'));
   const store = new WorkbenchStore(db);
-  const wb = new Workbench(store, '/prefix/', temp, [], []);
+  const wb = new Workbench({ store, base: '/prefix/', cwd: temp, command: [], features: [] });
   try {
     mkdirSync(join(temp, 'Alpha'));
     mkdirSync(join(temp, 'alpha2'));
@@ -57,29 +57,29 @@ test('forge parsing preserves Go URL patterns', () => {
 });
 test('static ranges and modification validators', async () => {
   const bytes = new TextEncoder().encode('abcdef');
-  const partial = content(
+  const partial = content({
     bytes,
-    new Request('http://localhost/', { headers: { Range: 'bytes=1-3' } }),
-    new Headers(),
-  );
+    request: new Request('http://localhost/', { headers: { Range: 'bytes=1-3' } }),
+    headers: new Headers(),
+  });
   expect(partial.status).toBe(206);
   expect(await partial.text()).toBe('bcd');
   expect(
-    content(
+    content({
       bytes,
-      new Request('http://localhost/', { headers: { Range: 'bytes=100-' } }),
-      new Headers(),
-    ).status,
+      request: new Request('http://localhost/', { headers: { Range: 'bytes=100-' } }),
+      headers: new Headers(),
+    }).status,
   ).toBe(416);
   expect(
-    content(
+    content({
       bytes,
-      new Request('http://localhost/', {
+      request: new Request('http://localhost/', {
         headers: { 'If-Modified-Since': 'Fri, 01 Jan 2021 00:00:00 GMT' },
       }),
-      new Headers(),
-      new Date('2020-01-01'),
-    ).status,
+      headers: new Headers(),
+      modified: new Date('2020-01-01'),
+    }).status,
   ).toBe(304);
 });
 test('settings truncated JSON diagnostic matches Go', () => {

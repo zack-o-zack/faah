@@ -1,6 +1,8 @@
 import { headers, missing, redirect, json } from './response.ts';
 import { index, themes, staticAsset, themeName } from './assets.ts';
-import { proxy } from './proxy.ts';
+import { legacyProxy } from '../legacy/proxy.ts';
+import { navigationRoute } from './navigation.ts';
+import type { Navigation } from '../index/navigation.ts';
 import { legacyOwned } from '../legacy/routes.ts';
 import type { Child } from '../legacy/child.ts';
 import type { Settings } from '../settings/service.ts';
@@ -10,15 +12,19 @@ import { workspaceMetrics } from '../metrics/workspace.ts';
 import type { Workbench } from '../workbench/service.ts';
 import { workbenchMetrics } from '../workbench/metrics.ts';
 import { workbenchRoute } from '../workbench/routes.ts';
-export function handler(
-  base: string,
-  workspace: boolean,
-  version: string,
-  settings: Settings,
-  wb: Workbench | undefined,
-  legacy: Child | undefined,
-  lspEnabled: boolean,
-): (request: Request) => Promise<Response> {
+export interface HandlerOptions {
+  base: string;
+  workspace: boolean;
+  version: string;
+  settings: Settings;
+  wb: Workbench | undefined;
+  legacy: Child | undefined;
+  lspEnabled: boolean;
+  navigation?: Navigation;
+  pr?: boolean;
+}
+export function handler(options: HandlerOptions): (request: Request) => Promise<Response> {
+  const { base, workspace, version, settings, wb, legacy, lspEnabled, navigation, pr } = options;
   const metrics = new MetricsCollector();
   return async function handle(request: Request): Promise<Response> {
     const url = new URL(request.url);
@@ -31,8 +37,13 @@ export function handler(
       );
     if (!path.startsWith(base)) return headers(missing(), request, workspace);
     const route = path.slice(base.length);
+    if (pr && legacy) return legacyProxy({ request, origin: legacy.origin, route });
+    if (navigation) {
+      const response = await navigationRoute({ nav: navigation, request, route });
+      if (response) return headers(response, request, workspace);
+    }
     if (wb) {
-      const response = await workbenchRoute(wb, request, route, version, settings);
+      const response = await workbenchRoute({ wb, request, path: route, version, settings });
       if (response) return route.startsWith('w/') ? response : headers(response, request, false);
     }
     let response: Response;
@@ -45,8 +56,11 @@ export function handler(
     else if (route === 'api/settings') response = await settingsRoute(settings, request);
     else if (route === 'api/metrics' && wb) response = json(await workbenchMetrics(wb));
     else if (route === 'api/metrics')
-      response = json(await workspaceMetrics(metrics, legacy, base, lspEnabled));
-    else if (legacy && legacyOwned('/' + route)) return proxy(request, legacy.origin);
+      response = json(
+        await workspaceMetrics({ collector: metrics, child: legacy, base, lspEnabled }),
+      );
+    else if (legacy && legacyOwned('/' + route))
+      return legacyProxy({ request, origin: legacy.origin, route, navigation });
     else response = missing();
     return headers(response, request, workspace);
   };

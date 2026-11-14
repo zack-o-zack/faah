@@ -1,5 +1,7 @@
+import { buildWorkers } from './workers.ts';
 import { join, resolve } from 'node:path';
 import { mkdir, readdir } from 'node:fs/promises';
+await buildWorkers();
 const root = resolve(import.meta.dir, '../..');
 const names: string[] = ['VERSION'];
 async function walk(dir: string): Promise<void> {

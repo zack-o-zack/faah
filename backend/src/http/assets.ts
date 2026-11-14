@@ -70,7 +70,7 @@ export async function staticAsset(rel: string, request: Request): Promise<Respon
         /* Cached vendor bytes may live outside the dev root. */
       }
     }
-    return content(bytes, request, headers, modified);
+    return content({ bytes, request, headers, modified });
   }
   const response = missing();
   response.headers.set('X-Static-Missing', '1');

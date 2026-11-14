@@ -105,13 +105,14 @@ export function findClone(store: WorkbenchStore, repo: string, cwd: string): str
   return '';
 }
 const pending = new Map<string, Promise<string>>();
-export async function prepareClone(
-  store: WorkbenchStore,
-  item: Item,
-  cwd: string,
-  signal: AbortSignal,
-  progress: (value: string) => void,
-): Promise<string> {
+export async function prepareClone(options: {
+  store: WorkbenchStore;
+  item: Item;
+  cwd: string;
+  signal: AbortSignal;
+  progress: (value: string) => void;
+}): Promise<string> {
+  const { store, item, cwd, signal, progress } = options;
   const repo = item.repo ?? '';
   const dest = managedClone(repo);
   if (store.clone(repo) !== dest) {

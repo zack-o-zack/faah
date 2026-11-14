@@ -6,13 +6,14 @@ import { json, fail, missing, redirect } from '../http/response.ts';
 import { proxy } from '../http/proxy.ts';
 import { parse, string, message } from '../decode.ts';
 import { Settings } from '../settings/service.ts';
-export async function workbenchRoute(
-  wb: Workbench,
-  request: Request,
-  path: string,
-  version: string,
-  settings: Settings,
-): Promise<Response | undefined> {
+export async function workbenchRoute(options: {
+  wb: Workbench;
+  request: Request;
+  path: string;
+  version: string;
+  settings: Settings;
+}): Promise<Response | undefined> {
+  const { wb, request, path, version, settings } = options;
   if (path.startsWith('w/')) {
     const rest = path.slice(2);
     const id = rest.split('/')[0] ?? '';
@@ -39,7 +40,14 @@ export async function workbenchRoute(
         ws = wb.start(item);
       }
     }
-    return holding(wb.base, await themeName(settings), wb.childBase(id), item, ws, retry);
+    return holding({
+      base: wb.base,
+      theme: await themeName(settings),
+      self: wb.childBase(id),
+      item,
+      workspace: ws,
+      retry,
+    });
   }
   if (path === 'api/wb/ping') return json({ workbench: true, version });
   if (!path.startsWith('api/wb/') && path !== 'api/settings') return;

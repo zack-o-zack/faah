@@ -9,14 +9,15 @@ export function escapeHTML(text: string): string {
     .replace(/'/g, '&#39;')
     .replace(/\+/g, '&#43;');
 }
-export function holding(
-  base: string,
-  theme: string,
-  self: string,
-  item: Item | undefined,
-  workspace: Workspace | undefined,
-  retry: boolean,
-): Response {
+export function holding(options: {
+  base: string;
+  theme: string;
+  self: string;
+  item: Item | undefined;
+  workspace: Workspace | undefined;
+  retry: boolean;
+}): Response {
+  const { base, theme, self, item, workspace, retry } = options;
   const starting = Boolean(item) && (workspace?.state !== 'failed' || retry);
   const title = item
     ? item.title || (item.kind === 'pr' ? `${item.repo}#${item.number}` : '')

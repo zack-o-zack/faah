@@ -1,11 +1,7 @@
 // Delete each entry when its service moves to Bun.
 export const legacyRoutes = [
-  '/api/meta',
-  '/api/tree',
-  '/api/find',
   '/api/file',
   '/api/close',
-  '/api/raw',
   '/api/file/save',
   '/api/fs/new',
   '/api/markdown',
@@ -29,10 +25,6 @@ export const legacyRoutes = [
   '/api/unpushed',
   '/api/commitfiles',
   '/api/commitdetail',
-  '/api/search',
-  '/api/outline',
-  '/api/def',
-  '/api/reindex',
   '/api/lsp/def',
   '/api/lsp/refs',
   '/api/lsp/calls',

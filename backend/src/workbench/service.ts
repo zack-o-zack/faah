@@ -26,13 +26,23 @@ export interface Workspace {
 export class Workbench {
   readonly children = new Map<string, Workspace>();
   private readonly reap: ReturnType<typeof setInterval>;
-  constructor(
-    readonly store: WorkbenchStore,
-    readonly base: string,
-    readonly cwd: string,
-    readonly command: string[],
-    readonly features: string[],
-  ) {
+  readonly store: WorkbenchStore;
+  readonly base: string;
+  readonly cwd: string;
+  readonly command: string[];
+  readonly features: string[];
+  constructor(options: {
+    store: WorkbenchStore;
+    base: string;
+    cwd: string;
+    command: string[];
+    features: string[];
+  }) {
+    this.store = options.store;
+    this.base = options.base;
+    this.cwd = options.cwd;
+    this.command = options.command;
+    this.features = options.features;
     this.reap = setInterval(() => {
       for (const [id, c] of this.children)
         if (!c.active && Date.now() - c.lastActive > 1800000) void this.stop(id);
@@ -207,8 +217,14 @@ export class Workbench {
     try {
       const cwd =
         item.kind === 'pr'
-          ? await prepareClone(this.store, item, this.cwd, ws.controller.signal, (p) => {
-              ws.progress = p;
+          ? await prepareClone({
+              store: this.store,
+              item,
+              cwd: this.cwd,
+              signal: ws.controller.signal,
+              progress: (p) => {
+                ws.progress = p;
+              },
             })
           : this.cwd;
       if (ws.controller.signal.aborted) {

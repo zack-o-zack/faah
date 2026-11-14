@@ -1,12 +1,13 @@
 import type { Child } from '../legacy/child.ts';
 import { decodeMetrics } from './decode.ts';
 import { MetricsCollector } from './service.ts';
-export async function workspaceMetrics(
-  collector: MetricsCollector,
-  child: Child | undefined,
-  base: string,
-  lspEnabled: boolean,
-) {
+export async function workspaceMetrics(options: {
+  collector: MetricsCollector;
+  child: Child | undefined;
+  base: string;
+  lspEnabled: boolean;
+}) {
+  const { collector, child, base, lspEnabled } = options;
   const metrics = await collector.collect(
     child?.process.pid ? [child.process.pid] : [],
     lspEnabled,

@@ -1,3 +1,5 @@
+import { Navigation } from './index/navigation.ts';
+import { detectPR, resolveTarget } from './cli/target.ts';
 import { bridge, recordTarget, viewerURL } from './cli/workspace.ts';
 import { handler } from './http/router.ts';
 import { listen } from './http/listen.ts';
@@ -52,16 +54,27 @@ async function main(): Promise<void> {
   const self =
     Bun.embeddedFiles.length === 0 ? [process.execPath, import.meta.path] : [process.execPath];
   if (workspace) legacy = await startLegacy(f, base);
-  else wb = new Workbench(store, base, realpathSync(process.cwd()), self, features);
-  const handle = handler(
+  else
+    wb = new Workbench({ store, base, cwd: realpathSync(process.cwd()), command: self, features });
+  const pr = Boolean(detectPR(f.targets[0] ?? ''));
+  const navigation = workspaceNavigation({
+    legacy,
+    base,
+    version,
+    target: f.targets[0] ?? '.',
+    workbench: f.bool.has('workbench-child'),
+  });
+  const handle = handler({
     base,
     workspace,
     version,
     settings,
     wb,
     legacy,
-    !f.bool.has('no-lsp') && workspace,
-  );
+    lspEnabled: !f.bool.has('no-lsp') && workspace,
+    navigation,
+    pr,
+  });
   const server = listen(f.host, f.port, handle);
   if (workspace && !f.bool.has('workbench-child')) recordTarget(store, f.targets[0] ?? '.');
   const url = viewerURL(
@@ -75,16 +88,38 @@ async function main(): Promise<void> {
   if (wb && !f.bool.has('desktop-host'))
     atomicWrite(lock, JSON.stringify({ pid: process.pid, url }) + '\n');
   if (!f.bool.has('no-open')) openBrowser(url);
-  lifetime(
-    f.bool.has('desktop-host'),
-    f.bool.has('workbench-child') || f.bool.has('desktop-host'),
+  lifetime({
+    desktop: f.bool.has('desktop-host'),
+    stdinLifetime: f.bool.has('workbench-child') || f.bool.has('desktop-host'),
     lock,
-    async () => {
+    close: async () => {
+      await navigation?.close();
       await Promise.all([legacy?.stop(1500), wb?.close()]);
       await server.stop(true);
       db.close();
     },
-  );
+  });
+}
+function workspaceNavigation(options: {
+  legacy: Child | undefined;
+  base: string;
+  version: string;
+  target: string;
+  workbench: boolean;
+}): Navigation | undefined {
+  const { legacy, base, version, target, workbench } = options;
+  if (!legacy || detectPR(target)) return;
+  return new Navigation({
+    child: legacy,
+    base,
+    root: resolveTarget(target).root,
+    version,
+    workbench: workbench
+      ? base.includes('/w/')
+        ? base.slice(0, base.lastIndexOf('/w/') + 1)
+        : '/'
+      : '',
+  });
 }
 async function reuse(lock: string, open: boolean): Promise<boolean> {
   try {

@@ -1,9 +1,10 @@
-export function content(
-  bytes: Uint8Array,
-  request: Request,
-  headers: Headers,
-  modified?: Date,
-): Response {
+export function content(options: {
+  bytes: Uint8Array;
+  request: Request;
+  headers: Headers;
+  modified?: Date;
+}): Response {
+  const { bytes, request, headers, modified } = options;
   headers.set('Accept-Ranges', 'bytes');
   if (modified) {
     headers.set('Last-Modified', modified.toUTCString());

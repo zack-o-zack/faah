@@ -3,3 +3,5 @@
 
 /spike/generated.ts
 /spike/worker.bundle
+
+/src/fuzzy/worker.bundle
