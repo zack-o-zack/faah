@@ -138,14 +138,72 @@ closing the last optional subscriber cancels it. Go retains its per-thread
 256-event publisher buffers. Bun keeps bounded replay state (256 frames for
 threads, 64 for review), obtaining fresh snapshots when replay overflows. Each
 client has a 64-frame fan-in queue and closes on overflow or upstream loss so
-it can reconnect for fresh state. Both native streams send `: ping` every 15 s
-and preserve SSE headers and cancellation without gzip buffering.
+it can reconnect for fresh state. Both native streams send a `: ping` comment
+and the named `ping` event every 15 s, preserving Go heartbeat forms, SSE
+headers and cancellation without gzip buffering.
 
-### Remaining phase 4 work
+### Git verification and local measurements
 
-- Finish final-source contracts, differentials, checks and the render micro rerun.
-- Alternate fresh Go/Bun Git and SSE measurements, check earlier owned routes
-  and measure the hidden Go GitWatcher's CPU cost. Record results and limits.
+Final runtime `f1af693`: Bun contracts 257/257 on three consecutive runs;
+Go reference 257/257. HTTP differential: 227 cases, zero mismatches; Git core: 57 cases, zero mismatches. Strict backend/contract TS, 103 backend tests, npm check and aislop pass.
+
+HTTP p50 in milliseconds; ratio Bun/Go. Three alternating fresh launch pairs, 5 warmups + 15 measured requests per route per launch (45 per backend). 535 tracked files in generated + contract fixture. This is a local smoke benchmark on a noisy machine, not a large-repository or cold-open baseline.
+
+| Route         |      Go |    Bun |  Ratio |
+| ------------- | ------: | -----: | -----: |
+| git.refresh   |  41.914 | 27.317 | 0.652x |
+| diff          |   9.642 |  6.932 | 0.719x |
+| gutter        |   7.468 |  6.921 | 0.927x |
+| log           |  26.262 | 23.209 | 0.884x |
+| commitdetail  |  74.345 | 69.144 | 0.930x |
+| meta          |  20.833 | 22.277 | 1.069x |
+| tree          |   0.095 |  0.093 | 0.980x |
+| find          |   0.101 |  0.119 | 1.175x |
+| search        |   4.007 |  7.469 | 1.864x |
+| file.window   |   0.122 |  0.160 | 1.311x |
+| stage.unstage | 100.009 | 68.864 | 0.689x |
+
+SSE p50 milliseconds; 12 samples per backend/mode, no timeouts. Save timing starts before the HTTP call and ends at the first matching SSE event, which may precede the HTTP response. External writes use the same start-to-event timing and are independent of API saves. Resets wait for clean events.
+
+| Propagation |      Go |     Bun |  Ratio |
+| ----------- | ------: | ------: | -----: |
+| save        |  94.179 |  27.744 | 0.295x |
+| external    | 941.025 | 130.035 | 0.138x |
+
+Render micro median in microseconds/op, against the saved c32fe4e Go baseline. Bun rerun uses three samples per vector. NewDoc/DocCreation defer highlighting in Bun and are not equivalent eager work.
+
+| Vector                |        Go |      Bun |   Ratio |
+| --------------------- | --------: | -------: | ------: |
+| HighlightLines_Go     |     0.119 |    0.071 | 0.5955x |
+| HighlightLines_Python |     0.079 |    0.069 | 0.8762x |
+| NewDoc                |  1383.911 |    0.278 | 0.0002x |
+| DocCreation           |  2309.524 |    8.528 | 0.0037x |
+| ColdHighlight_Go      | 14219.431 | 3489.225 | 0.2454x |
+| RenderMarkdown        |    37.067 |    5.600 | 0.1511x |
+| RenderTable           |     4.255 |    0.632 | 0.1486x |
+| SniffDelim            |     0.101 |    0.099 | 0.9820x |
+
+Hidden Go child CPU: two alternating 20-second idle windows per mode after 3 seconds warmup, 600 tracked files. ps time resolution is 10 ms. Git child CPU comes from wait4 through a PATH wrapper, excluding wrapper interpreter CPU. Go CPU includes stream/metrics handling and wrapper-launch bookkeeping; this is an instrumented estimate, not an isolated function profile.
+
+| Mode             | Go CPU ms/window | Git CPU ms/window | Git calls/window | Total one-core % |
+| ---------------- | ---------------: | ----------------: | ---------------- | ---------------: |
+| native-only      |            10.00 |              0.00 | 0, 0             |          0.0500% |
+| optional-threads |            40.00 |             21.33 | 2, 2             |          0.3067% |
+
+No functional differences found in the exercised phase-4 contracts/differentials. Highlight token classes/boundaries retain the existing comparator allowance. PR URL workspaces and agent/thread/review service ownership remain in Go as scoped.
+
+Reproduce the alternating HTTP/SSE run with:
+
+```sh
+FAAH_LEGACY_BIN=/absolute/faah-go FAAH_BIN=/absolute/faah-bun \
+  FAAH_GIT_BENCH_REPORT=/tmp/faah-git-bench.json bun backend/bench/git.ts
+```
+
+The local raw logs, request samples, render vectors, instrumented CPU harness
+and executable hashes are archived at the private Git path returned by
+`git rev-parse --git-path faah-phase4-verification`. Contract goldens and
+`bench/results` were not changed. Cold-open ratios remain a separate clean
+Codespace measurement.
 
 ## Navigation and migration consistency
 
@@ -156,7 +214,7 @@ never descended into or searched. Expanding an ignored folder reads one level
 from disk, without adding it to the index. Compact views carry the deepest
 folder's flags. TouchPath follows the Go insertion/deletion behavior and updates
 persistent fuzzy shards after a flat-list change. Git overlays and rebuild
-publication are serialized; stream updates received during a walk supersede its
+publication are serialized; Git updates received during a walk supersede its
 older Git snapshot.
 
 Fuzzy matching caches original/lowercase UTF-8 bytes and path penalties. Scoring
@@ -279,7 +337,7 @@ names remain unstyled. Context rules restore Python import namespaces and
 adjust TypeScript, Go, Rust, shell, CSS and JSON scopes to Chroma's categories.
 Only `&`, `<` and `>` are escaped in source tokens. Tokens keep Go's
 `<i class=k>…</i>` shape. The contract comparator permits different token classes
-and boundaries only in file lines and Markdown code blocks, validates nesting
+and boundaries only in file lines, diff rows and Markdown code blocks, validates nesting
 and vocabulary, then compares escaped text exactly. All other fields and HTML
 remain exact; see `test/contract/README.md`.
 
@@ -300,7 +358,7 @@ highlighting, including plaintext; the no-lexer fallback preserves source bytes.
 `legacy/files.ts` is the only file metadata boundary. Git/LSP work runs in
 parallel with Bun's reads/highlighting; it never requests legacy `/api/file`.
 Normal HEAD-based diff availability uses the same index status rule as Go;
-explicit refs ask the Go diff endpoint. LSP state, diagnostics, missing language
+explicit refs use native Git diffs. LSP state, diagnostics, missing language
 and running status come from Go. A disabled-LSP reply is immutable for that
 child's lifetime and is reused. Saves use plain writes and create parents; new
 paths preserve the 409 rule. These handlers deliberately retain Go's lack of an
@@ -308,20 +366,20 @@ Origin/Host mutation guard. Their typed decoder also preserves Go's field
 folding, first-JSON-value behavior and error text.
 
 `watch/` subscribes to the canonical workspace root, plus external Git/common
-directories for linked worktrees. It filters hierarchical ignore rules and
-`.git` noise, retaining HEAD/index/refs/packed-refs changes, then debounces for
-50 ms. File events invalidate L1/L2, TouchPath the Bun index and refresh/apply
-legacy Git state. Go's `GitWatcher.Refresh` broadcasts changed status to the
-proxied Git/unified streams, so filesystem notifications can replace the polling
-floor. A single startup `git update-index --refresh` primes Git's stat cache
-before index readiness and watcher subscription, without staging working-tree
-changes. Otherwise copied repositories can repeatedly rehash all tracked files.
-Background child reads retain `GIT_OPTIONAL_LOCKS=0` to avoid index-lock races
+directories for linked worktrees. It filters hierarchical ignore rules for
+navigation and Git object noise, retaining repository creation/removal and
+control-file changes, then debounces for 50 ms. File events invalidate L1/L2,
+touch the Bun index and invalidate native Git state. Ignored worktree paths
+still invalidate Git because a tracked file may match an ignore rule.
+A single startup `git update-index --refresh` runs in the shared four-process
+pool before index readiness and watcher subscription, without staging
+working-tree changes. Otherwise copied repositories can repeatedly rehash all
+tracked files. Child reads retain `GIT_OPTIONAL_LOCKS=0` to avoid index-lock races
 with user mutations. Cache priming is best effort in read-only/non-Git folders.
-Watcher startup/runtime errors warn
-and fall back to Go's existing polling; shutdown unsubscribes before stopping
-the child. The build generates a literal native `.node` dependency for its
-platform. Linux builds default to glibc; set `FAAH_WATCHER_LIBC=musl` for musl.
+Watcher startup/runtime errors warn and enable Bun's polling fallback; shutdown
+unsubscribes before stopping the child. The build generates a literal native
+`.node` dependency for its platform. Linux builds default to glibc; set
+`FAAH_WATCHER_LIBC=musl` for musl.
 
 Changes to any `.gitignore` rebuild the index and fuzzy shards so existing
 files enter or leave search immediately. These notifications are retained even
