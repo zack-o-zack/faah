@@ -139,7 +139,7 @@ func BuildWalkthrough(root, diffBase, diffHead string, isPR bool, statuses map[s
 		hunks := render.HighlightDiff(target.path, diffText)
 		// Git reports identical rename content with a 100% similarity header.
 		// Binary edits also have no text hunks, so hunks cannot identify pure moves.
-		if target.oldPath != "" && strings.Contains(diffText, "\nsimilarity index 100%\n") {
+		if target.oldPath != "" && strings.Contains(diffText, "\nsimilarity index 100%\n") && !strings.Contains(diffText, "\nold mode ") {
 			diffText = ""
 		}
 		addCount, delCount := 0, 0
