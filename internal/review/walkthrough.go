@@ -47,6 +47,13 @@ type targetFile struct {
 	path, status, oldPath, group string
 }
 
+type walkthroughTargets struct {
+	files            []targetFile
+	baseRef, headRef string
+	fallback         bool
+	exactPaths       map[string]bool
+}
+
 // BuildWalkthrough builds file diffs for the Review Walkthrough.
 func BuildWalkthrough(o WalkthroughOptions) WalkthroughResponse {
 	chosen := o.ComparisonBase
@@ -57,21 +64,21 @@ func BuildWalkthrough(o WalkthroughOptions) WalkthroughResponse {
 			o.DiffBase = chosen
 		}
 	}
-	targets, baseRef, headRef, fallback, exactPaths := collectWalkthroughTargets(o)
-	if !branchBase && !fallback && len(targets) > 0 {
-		targets = attachRenameOrigins(o, baseRef, targets, exactPaths)
+	collected := collectWalkthroughTargets(o)
+	if !branchBase && !collected.fallback && len(collected.files) > 0 {
+		collected.files = attachRenameOrigins(o, collected.baseRef, collected.files, collected.exactPaths)
 	}
-	sort.Slice(targets, func(i, j int) bool {
-		gi, gj := targets[i].group, targets[j].group
+	sort.Slice(collected.files, func(i, j int) bool {
+		gi, gj := collected.files[i].group, collected.files[j].group
 		if gi != gj {
 			return groupRank(gi) < groupRank(gj)
 		}
-		return targets[i].path < targets[j].path
+		return collected.files[i].path < collected.files[j].path
 	})
 
-	response := WalkthroughResponse{Files: []WalkthroughFile{}, BaseRef: baseRef, HeadRef: headRef, PRMode: o.IsPR}
-	for _, target := range targets {
-		file, hidden, include := buildWalkthroughFile(o, baseRef, fallback, exactPaths, target)
+	response := WalkthroughResponse{Files: []WalkthroughFile{}, BaseRef: collected.baseRef, HeadRef: collected.headRef, PRMode: o.IsPR}
+	for _, target := range collected.files {
+		file, hidden, include := buildWalkthroughFile(o, collected.baseRef, collected.fallback, collected.exactPaths, target)
 		if hidden {
 			response.HiddenWhitespaceFiles++
 		}
@@ -88,56 +95,58 @@ func BuildWalkthrough(o WalkthroughOptions) WalkthroughResponse {
 	return response
 }
 
-func collectWalkthroughTargets(o WalkthroughOptions) ([]targetFile, string, string, bool, map[string]bool) {
-	baseRef, headRef, fallback := o.DiffBase, "working-tree", false
-	var targets []targetFile
-	exactPaths := map[string]bool{}
+func collectWalkthroughTargets(o WalkthroughOptions) walkthroughTargets {
+	collected := walkthroughTargets{
+		baseRef:    o.DiffBase,
+		headRef:    "working-tree",
+		exactPaths: map[string]bool{},
+	}
 	if o.IsPR {
-		baseRef = o.DiffBase
-		headRef = o.DiffHead
+		collected.baseRef = o.DiffBase
+		collected.headRef = o.DiffHead
 		for path, status := range o.Statuses {
-			targets = append(targets, targetFile{path: path, status: status, group: fileGroup(path)})
+			collected.files = append(collected.files, targetFile{path: path, status: status, group: fileGroup(path)})
 		}
 	} else if o.ComparisonBase != "" && o.ComparisonBase != "HEAD" {
 		for _, file := range git.ChangedFiles(o.Root, o.DiffBase, "") {
-			targets = append(targets, targetFile{path: file.Path, status: file.Status, oldPath: file.From, group: fileGroup(file.Path)})
-			exactPaths[file.Path] = true
+			collected.files = append(collected.files, targetFile{path: file.Path, status: file.Status, oldPath: file.From, group: fileGroup(file.Path)})
+			collected.exactPaths[file.Path] = true
 		}
 		for path, status := range o.Statuses {
 			if status == "U" {
-				targets = append(targets, targetFile{path: path, status: status, group: fileGroup(path)})
+				collected.files = append(collected.files, targetFile{path: path, status: status, group: fileGroup(path)})
 			}
 		}
 	} else {
 		statusMap := o.Statuses
 		for path, status := range statusMap {
-			targets = append(targets, targetFile{path: path, status: status, group: fileGroup(path)})
+			collected.files = append(collected.files, targetFile{path: path, status: status, group: fileGroup(path)})
 		}
 
 		// If working tree is clean, fallback to HEAD~1..HEAD so the reviewer has immediate diff to inspect
-		if len(targets) == 0 && git.Available(o.Root) {
+		if len(collected.files) == 0 && git.Available(o.Root) {
 			if headOut, err := exec.Command("git", "-C", o.Root, "rev-parse", "--verify", "HEAD").Output(); err == nil {
 				headSHA := strings.TrimSpace(string(headOut))
 				if cfList := git.CommitFiles(o.Root, headSHA); len(cfList) > 0 {
-					baseRef = "HEAD~1"
-					fallback = true
+					collected.baseRef = "HEAD~1"
+					collected.fallback = true
 					if len(headSHA) > 7 {
-						headRef = headSHA[:7]
+						collected.headRef = headSHA[:7]
 					} else {
-						headRef = headSHA
+						collected.headRef = headSHA
 					}
 					for _, cf := range cfList {
 						if o.IgnoreWhitespace {
-							exactPaths[cf.Path] = true
+							collected.exactPaths[cf.Path] = true
 						}
-						targets = append(targets, targetFile{path: cf.Path, status: cf.Status, oldPath: cf.From, group: fileGroup(cf.Path)})
+						collected.files = append(collected.files, targetFile{path: cf.Path, status: cf.Status, oldPath: cf.From, group: fileGroup(cf.Path)})
 					}
 				}
 			}
 		}
 	}
 
-	return targets, baseRef, headRef, fallback, exactPaths
+	return collected
 }
 func attachRenameOrigins(o WalkthroughOptions, baseRef string, targets []targetFile, exactPaths map[string]bool) []targetFile {
 	head := ""
