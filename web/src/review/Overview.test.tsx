@@ -67,11 +67,11 @@ const overviewCalls = (request: ReturnType<typeof vi.fn>) =>
 test('Overview is first and default, and renders sanitized description, checks and latest reviewer states', async () => {
   const { editor } = mount();
   editor.actions.setReviewMode('review');
-  expect(screen.getAllByRole('tab').map((tab) => tab.textContent?.trim())).toEqual([
-    'Overview',
-    'Changed files1',
-    'Review pipeline',
-  ]);
+  expect(
+    screen
+      .getAllByRole('tab')
+      .map((tab) => tab.querySelector('[data-tab-label]')?.textContent?.trim()),
+  ).toEqual(['Overview', 'Changed files', 'Review pipeline']);
   expect(screen.getByRole('tab', { name: /^Overview/ }).getAttribute('aria-selected')).toBe('true');
   await screen.findByRole('heading', { name: 'Why this change' });
   expect(document.querySelector('#pr-overview script')).toBeNull();
@@ -97,7 +97,7 @@ test('Overview shows muted empty states', async () => {
   });
   editor.actions.setReviewMode('review');
   await screen.findByText('No description');
-  expect(screen.getByText('No checks')).toBeTruthy();
+  expect(within(screen.getByRole('tabpanel')).getByText('No checks')).toBeTruthy();
   expect(screen.getByText('No reviewers')).toBeTruthy();
 });
 
@@ -305,13 +305,13 @@ test.each([
   ['failed', 'Checks: 1 failed'],
   ['running', 'Checks: 1 running'],
   ['passed', 'Checks: 1 passed'],
-])('scale: tab badge summarizes %s', async (state, label) => {
+])('scale: tab count summarizes %s', async (state, label) => {
   const { editor } = mount({ ...overview, checks: [{ id: 'ci', name: 'CI', state }] });
   editor.actions.setReviewMode('review');
   expect(await screen.findByLabelText(label)).toBeTruthy();
 });
 
-test('finished checks including five passed and one skipped retain a tab status pill', async () => {
+test('finished checks including five passed and one skipped show a plain total', async () => {
   const checks = [
     ...Array.from({ length: 5 }, (_, i) => ({
       id: `passed-${i}`,
@@ -323,9 +323,9 @@ test('finished checks including five passed and one skipped retain a tab status 
   const { editor } = mount({ ...overview, checks });
   editor.actions.setReviewMode('review');
   const pill = await screen.findByLabelText('Checks: 5 passed, 1 skipped');
-  expect(pill.classList.contains('badge')).toBe(true);
-  expect(pill.getAttribute('data-variant')).toBe('outline');
-  expect(pill.children).toHaveLength(1);
+  expect(pill.classList.contains('badge')).toBe(false);
+  expect(pill.getAttribute('data-variant')).toBeNull();
+  expect(pill.children).toHaveLength(0);
   expect(pill.textContent).toBe('6');
 });
 
@@ -346,7 +346,7 @@ test('Basecoat review tabs expose linked panels and roving arrow-key focus', asy
   expect(document.activeElement).toBe(files);
   expect(files.getAttribute('tabindex')).toBe('0');
   expect(overview.getAttribute('tabindex')).toBe('-1');
-  expect(files.querySelector('.badge')?.getAttribute('data-variant')).toBe('outline');
+  expect(files.querySelector('.badge')).toBeNull();
   fireEvent.keyDown(files, { key: 'ArrowRight' });
   expect(screen.getByRole('tabpanel').getAttribute('aria-labelledby')).toBe(
     'btn-review-tab-stages',
@@ -368,10 +368,31 @@ test.each([0, 1, 2])('terminal check group labels handle %i checks', async (coun
   const { editor } = mount({ ...overview, checks });
   editor.actions.setReviewMode('review');
   await screen.findByRole('heading', { name: 'Why this change' });
-  if (!count) expect(screen.getByText('No checks')).toBeTruthy();
+  if (!count) expect(within(screen.getByRole('tabpanel')).getByText('No checks')).toBeTruthy();
   else
     for (const state of ['passed', 'skipped', 'neutral'])
       expect(
         screen.getByRole('button', { name: `${count} ${state} check${count === 1 ? '' : 's'}` }),
       ).toBeTruthy();
+});
+
+test('segmented tabs stay single-line with plain counts and no second-line layout', async () => {
+  const { editor } = mount();
+  editor.actions.setReviewMode('review');
+  const tabs = screen.getAllByRole('tab');
+  expect(tabs[0]?.querySelector('[data-tab-info]')).toBeNull();
+  await screen.findByRole('heading', { name: 'Why this change' });
+  for (const tab of tabs) {
+    expect(tab.querySelector('[data-tab-label]')).not.toBeNull();
+    expect(tab.classList.contains('flex-col!')).toBe(false);
+    expect(tab.classList.contains('items-start!')).toBe(false);
+    expect(tab.classList.contains('py-2!')).toBe(false);
+    expect(tab.querySelector('.badge')).toBeNull();
+  }
+  expect(tabs[0]?.querySelector('[data-tab-info]')?.textContent).toBe('1');
+  expect(tabs[1]?.querySelector('[data-tab-info]')?.textContent).toBe('1');
+  fireEvent.click(required(tabs[1]));
+  await screen.findByText('No changes in this pull request');
+  expect(tabs[1]?.querySelector('[data-tab-info]')?.textContent).toBe('0');
+  expect(tabs[1]?.parentElement?.className).not.toContain('h-auto!');
 });

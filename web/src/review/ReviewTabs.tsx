@@ -1,7 +1,9 @@
 interface ReviewTabProps {
   id: string;
   title: string;
-  children?: JSX.Element;
+  name: string;
+  icon: string;
+  info: JSX.Element;
 }
 import { handleTabKeys } from '../lib/tab-keys.ts';
 import type { JSX } from 'solid-js';
@@ -9,7 +11,7 @@ import { createMemo, For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { FILE_GROUPS, groupCounts } from './logic.ts';
 import { DiffOptions } from '../viewers/DiffOptions.tsx';
-import { StatusBadge, badgeStatus } from './StatusBadge.tsx';
+import { TabStatus, tabStatus } from './TabStatus.tsx';
 export function ReviewTabs(): JSX.Element {
   const editor = useEditor();
   const review = editor.review;
@@ -23,27 +25,27 @@ export function ReviewTabs(): JSX.Element {
           class="[&>[role=tab]]:flex-none"
           onKeyDown={handleTabKeys}
         >
-          <ReviewTab id="overview" title="PR description, checks and approvals">
-            <span class="icon-[lucide--layout-dashboard] size-3.5 shrink-0" aria-hidden="true" />
-            <span>Overview</span>
-            <ChecksBadge />
-          </ReviewTab>
-          <ReviewTab id="walkthrough" title="Changed files grouped by kind">
-            <span class="icon-[lucide--zap] size-3.5 shrink-0" aria-hidden="true" />
-            <span>Changed files</span>
-            <span class="badge" data-variant="outline">
-              {review.walkthroughData()?.totalFiles ??
-                Object.keys(editor.store.state.workspace.meta?.pr?.files || {}).length}
-            </span>
-          </ReviewTab>
-          <ReviewTab id="stages" title="Your coding harness answers each review question in turn">
-            <span
-              class="icon-[lucide--sparkle] size-3.5 shrink-0 text-special"
-              aria-hidden="true"
-            />
-            <span>Review pipeline</span>
-            <PipelineBadge />
-          </ReviewTab>
+          <ReviewTab
+            id="overview"
+            name="Overview"
+            icon="icon-[lucide--layout-dashboard]"
+            title="PR description, checks and approvals"
+            info={<ChecksStatus />}
+          />
+          <ReviewTab
+            id="walkthrough"
+            name="Changed files"
+            icon="icon-[lucide--zap]"
+            title="Changed files grouped by kind"
+            info={<FilesStatus />}
+          />
+          <ReviewTab
+            id="stages"
+            name="Review pipeline"
+            icon="icon-[lucide--sparkle] text-special"
+            title="Your coding harness answers each review question in turn"
+            info={<PipelineStatus />}
+          />
         </nav>
       </div>
       <div class="flex-1" />
@@ -94,30 +96,47 @@ function ReviewTab(props: ReviewTabProps): JSX.Element {
       }
       aria-selected={selected()}
       title={props.title}
-      class="text-xs!"
+      class="group/tab text-xs!"
       onClick={() => editor.actions.setReviewTab(props.id)}
     >
-      {props.children}
+      <span data-tab-label class="flex items-center gap-1.5">
+        <span class={`${props.icon} size-3.5 shrink-0`} aria-hidden="true" />
+        {props.name}
+      </span>
+      {props.info}
     </button>
   );
 }
-function ChecksBadge(): JSX.Element {
+function ChecksStatus(): JSX.Element {
   const review = useEditor().review;
   const statuses = createMemo(
-    () => review.overviewData()?.checks.map((check) => badgeStatus(check.state)) || [],
+    () => review.overviewData()?.checks.map((check) => tabStatus(check.state)) || [],
   );
   return (
-    <Show when={!review.overview.loading && !review.overview.error}>
-      <StatusBadge noun="checks" statuses={statuses()} />
-    </Show>
+    <TabStatus
+      noun="checks"
+      statuses={statuses()}
+      loading={review.overview.loading}
+      error={!!review.overview.error}
+    />
   );
 }
-function PipelineBadge(): JSX.Element {
+function FilesStatus(): JSX.Element {
+  const editor = useEditor();
+  const review = editor.review;
+  const count = () =>
+    review.walkthroughData()?.totalFiles ??
+    Object.keys(editor.store.state.workspace.meta?.pr?.files || {}).length;
+  return <TabStatus noun="files" count={count()} loading={review.walkthrough.loading} />;
+}
+function PipelineStatus(): JSX.Element {
   const review = useEditor().review;
   const statuses = createMemo(() =>
-    review.stages().map((stage) => badgeStatus(stage.status || 'pending')),
+    review.stages().map((stage) => tabStatus(stage.status || 'pending')),
   );
-  return <StatusBadge noun="stages" statuses={statuses()} />;
+  return (
+    <TabStatus noun="stages" statuses={statuses()} loading={review.state.pending === 'load'} />
+  );
 }
 function WalkthroughToolbar(): JSX.Element {
   const editor = useEditor();
