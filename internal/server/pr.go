@@ -69,10 +69,18 @@ func (s *Server) handlePRExistingComments(w http.ResponseWriter, r *http.Request
 // sanitizes it, the same as a Markdown preview.
 func renderCommentBodies(cs []forge.PRComment) {
 	for i := range cs {
-		if h, err := render.RenderMarkdown([]byte(cs[i].Body)); err == nil {
-			cs[i].BodyHTML = h
-		}
+		cs[i].BodyHTML = renderPRBody(cs[i].Body)
 	}
+}
+
+// renderPRBody is shared by posted comments and the PR description. The page
+// sanitizes the resulting HTML through CommentBody in both places.
+func renderPRBody(body string) string {
+	html, err := render.RenderMarkdown([]byte(body))
+	if err != nil {
+		return ""
+	}
+	return html
 }
 
 // handlePRIssueCommentPost posts a new top-level PR comment immediately (not

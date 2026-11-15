@@ -3,6 +3,8 @@ import type { Request } from '../lib/api.ts';
 import type { CoreActions } from '../editor/contracts.ts';
 import type { StageDraft, ReviewRun, ReviewConfig, ReviewEvent } from './types.ts';
 import { decodeReviewEvent, decodeReviewStatus, decodeWalkthrough } from './decode.ts';
+import type { PROverview } from '../pr/types.ts';
+import { decodeOverview } from '../pr/decode.ts';
 import { decodeThread } from '../threads/decode.ts';
 import { isAbort, errorMessage } from '../lib/decode.ts';
 export interface ReviewOptions {
@@ -12,7 +14,7 @@ export interface ReviewOptions {
 interface ReviewState {
   mode: 'code' | 'review';
   layout: 'vertical' | 'horizontal';
-  tab: 'walkthrough' | 'stages';
+  tab: 'overview' | 'walkthrough' | 'stages';
   config: ReviewConfig;
   run: ReviewRun | null;
   active: number;
@@ -47,6 +49,7 @@ import { toast } from '../lib/toast.tsx';
 import { createWorkspaceSubscription } from '../workspace/stream.ts';
 import {
   REVIEW_EVENTS,
+  activeGroupFilter,
   activeAfterChange,
   changeStage,
   configRequest,
@@ -64,7 +67,7 @@ function initialState(): ReviewState {
   return {
     mode: 'code',
     layout: localStorage.getItem(LAYOUT_KEY) === 'horizontal' ? 'horizontal' : 'vertical',
-    tab: 'walkthrough',
+    tab: 'overview',
     config: { name: 'Review pipeline', stages: [] },
     run: null,
     active: 0,
@@ -94,6 +97,7 @@ function buildReviewStore(editor: ReviewHost, options: ReviewOptions = {}) {
   const [state, set] = createStore(initialState());
   const [revision, setRevision] = createSignal(1);
   const walkthroughRequest = createResourceRequest(request);
+  const overviewRequest = createResourceRequest(request);
   const controllers = new Set<AbortController>();
   let disposed = false;
   let statusController: AbortController | undefined;
@@ -103,8 +107,59 @@ function buildReviewStore(editor: ReviewHost, options: ReviewOptions = {}) {
   const active = () => stages()[state.active] || null;
   const running = () => isRunning(state.run);
   const [walkthrough] = createResource(
-    () => state.mode === 'review' && revision(),
-    async () => decodeWalkthrough(await walkthroughRequest('api/review/walkthrough')),
+    () =>
+      state.mode === 'review' &&
+      state.tab === 'walkthrough' &&
+      !!app.state.workspace.meta?.pr && {
+        revision: revision(),
+        ignoreWhitespace: app.settings.value('diffEditor.ignoreWhitespace') === true,
+      },
+    async ({ ignoreWhitespace }) =>
+      decodeWalkthrough(
+        await walkthroughRequest(
+          'api/review/walkthrough' + (ignoreWhitespace ? '?ignoreWhitespace=1' : ''),
+        ),
+      ),
+  );
+  const [overview, { refetch: refetchOverview }] = createResource(
+    () =>
+      state.mode === 'review' &&
+      !!app.state.workspace.meta?.pr &&
+      (app.state.workspace.meta.pr.headSHA || 'head'),
+    async (_source, info): Promise<PROverview> => {
+      const next = decodeOverview(
+        await overviewRequest(
+          'api/pr/overview' + (info.refetching === 'refresh' ? '?refresh=1' : ''),
+        ),
+      );
+      const previous = new Map(info.value?.checks.map((check) => [check.id, check]));
+      next.checks = next.checks.map((check) => {
+        const old = previous.get(check.id);
+        return old && old.name === check.name && old.state === check.state && old.url === check.url
+          ? old
+          : check;
+      });
+      return next;
+    },
+  );
+  createEffect(
+    on(
+      () => state.tab,
+      (tab) => {
+        if (tab === 'overview' && state.mode === 'review' && overview.state !== 'unresolved')
+          void refetchOverview();
+      },
+      { defer: true },
+    ),
+  );
+  // Leaving the PR context closes its review and releases the review subscription.
+  createEffect(
+    on(
+      () => !!app.state.workspace.meta?.pr,
+      (isPR) => {
+        if (!isPR) setReviewMode('code');
+      },
+    ),
   );
 
   // The stage on screen follows its thread on the shared stream; the thread store
@@ -206,8 +261,12 @@ function buildReviewStore(editor: ReviewHost, options: ReviewOptions = {}) {
 
   function setReviewMode(mode: string): void {
     const next = mode === 'review' ? 'review' : 'code';
+    if (next === 'review' && !app.state.workspace.meta?.pr) return;
     if (state.mode === next) return;
-    set('mode', next);
+    batch(() => {
+      set('mode', next);
+      if (next === 'review') set('tab', 'overview');
+    });
     app.actions.setWorkspaceTopic('review', next === 'review');
     if (next === 'review') void loadReview();
     else statusController?.abort();
@@ -313,6 +372,10 @@ function buildReviewStore(editor: ReviewHost, options: ReviewOptions = {}) {
     active,
     running,
     walkthrough,
+    overview,
+    overviewData: () => (overview.error ? null : overview.latest),
+    groupFilter: () =>
+      activeGroupFilter(walkthrough.error ? [] : walkthrough.latest?.files || [], state.filter),
     // A failed resource throws on read; views take its error separately.
     walkthroughData: () => (walkthrough.error ? null : walkthrough.latest),
     actions: {
@@ -333,7 +396,8 @@ function buildReviewStore(editor: ReviewHost, options: ReviewOptions = {}) {
         set('layout', next);
         localStorage.setItem(LAYOUT_KEY, next);
       },
-      setReviewTab: (tab: string) => set('tab', tab === 'stages' ? 'stages' : 'walkthrough'),
+      setReviewTab: (tab: string) =>
+        set('tab', tab === 'stages' || tab === 'walkthrough' ? tab : 'overview'),
       selectReviewStage: (index: number) => set({ active: index, edit: null }),
       openStageEditor(index = state.active) {
         const def = state.config.stages[index];
@@ -356,8 +420,11 @@ function buildReviewStore(editor: ReviewHost, options: ReviewOptions = {}) {
           return saveConfig({ ...state.config, name: trimmed });
       },
       setReviewFollowup: (value: string) => set('followup', value),
-      refreshWalkthrough: () => setRevision((value) => value + 1),
-      setInsightFilter: (filter: string) => set('filter', filter),
+      refreshReview: () => {
+        setRevision((value) => value + 1);
+        void refetchOverview('refresh');
+      },
+      setGroupFilter: (filter: string) => set('filter', filter),
       setWalkthroughViewed: (path: string, viewed: boolean) => set('viewed', path, viewed),
       setActiveWalkthroughFile: (path: string) => set('activeFile', path),
       revealWalkthrough(path: string, line = 0): void {

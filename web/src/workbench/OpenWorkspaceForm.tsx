@@ -1,3 +1,4 @@
+import { ButtonKbd } from '../lib/ButtonKbd.tsx';
 import type { JSX } from 'solid-js';
 import { createMemo, createSignal, onMount } from 'solid-js';
 import { useWorkbench } from './context.tsx';
@@ -47,17 +48,14 @@ export function OpenWorkspaceForm(): JSX.Element {
             data-variant="primary"
             data-size="sm"
             aria-label={label()}
+            title={`${label()} (Enter)`}
+            aria-keyshortcuts="Enter"
             disabled={!['pr', 'dir'].includes(kind())}
           >
             <span id="wb-go-label" class="max-sm:hidden">
               {label()}
             </span>
-            <kbd
-              class="kbd h-5 min-w-5 bg-primary-foreground/15 px-1 text-current"
-              aria-hidden="true"
-            >
-              <span class="icon-[lucide--corner-down-left] size-3" />
-            </kbd>
+            <ButtonKbd combo="Enter" />
           </button>
         }
         value={target()}

@@ -1,3 +1,4 @@
+import { prMeta } from '../pr/test-editor.ts';
 import type { ReviewOptions } from './store.ts';
 import type { StreamHandler } from '../lib/events.ts';
 import { required } from '../lib/test-values.ts';
@@ -11,6 +12,7 @@ function fixture(options: ReviewOptions = {}) {
   const subscribers = new Map<string, StreamHandler>();
   return createRoot((dispose) => {
     const app = createAppStore();
+    app.actions.setWorkspace({ git: true, pr: prMeta() });
     app.actions.subscribeWorkspaceEvent = (name, handler) => {
       subscribers.set(name, handler);
       return () => {
@@ -123,7 +125,7 @@ test('layout persists and a review reference leaves a way back', async () => {
   dispose();
 });
 
-test('the walkthrough count finishes loading after switching to the pipeline', async () => {
+test('a hidden pending walkthrough reloads when its tab is reopened', async () => {
   let finish: ((value: unknown) => void) | undefined;
   const pending = new Promise<unknown>((resolve) => {
     finish = resolve;
@@ -133,11 +135,51 @@ test('the walkthrough count finishes loading after switching to the pipeline', a
   });
   try {
     review.actions.setReviewMode('review');
+    review.actions.setReviewTab('walkthrough');
     await vi.waitFor(() => expect(review.walkthrough.loading).toBe(true));
     review.actions.setReviewTab('stages');
     finish?.({ totalFiles: 1, files: [] });
+    review.actions.setReviewTab('walkthrough');
     await vi.waitFor(() => expect(review.walkthroughData()?.totalFiles).toBe(1));
   } finally {
     dispose();
   }
+});
+
+test('walkthrough refetches with the whitespace query only when enabled', async () => {
+  const request = vi.fn<NonNullable<ReviewOptions['request']>>(async () => ({ files: [] }));
+  const { review, app, dispose } = fixture({ request });
+  review.actions.setReviewMode('review');
+  review.actions.setReviewTab('walkthrough');
+  await vi.waitFor(() =>
+    expect(request.mock.calls.some(([path]) => path === 'api/review/walkthrough')).toBe(true),
+  );
+  void app.settings.actions.setSetting('diffEditor.ignoreWhitespace', true);
+  await vi.waitFor(() =>
+    expect(
+      request.mock.calls.some(([path]) => path === 'api/review/walkthrough?ignoreWhitespace=1'),
+    ).toBe(true),
+  );
+  request.mockClear();
+  void app.settings.actions.setSetting('diffEditor.ignoreWhitespace', false);
+  await vi.waitFor(() =>
+    expect(request.mock.calls.some(([path]) => path === 'api/review/walkthrough')).toBe(true),
+  );
+  expect(request.mock.calls.some(([path]) => path.includes('ignoreWhitespace'))).toBe(false);
+  dispose();
+});
+
+test('local workflows never request review data, even with committed or uncommitted files', async () => {
+  const request = vi.fn(async () => reply());
+  const { review, app, dispose } = fixture({ request });
+  app.actions.setWorkspace({ git: true, gitChanges: 2 });
+  app.actions.acceptGitSnapshot({ git: true, statuses: { 'local.go': 'M', 'new.go': 'U' } });
+  review.actions.setReviewMode('review');
+  review.actions.toggleReviewMode();
+  review.actions.refreshReview();
+  await Promise.resolve();
+  expect(review.state.mode).toBe('code');
+  expect(request).not.toHaveBeenCalled();
+  expect(app.actions.setWorkspaceTopic).not.toHaveBeenCalled();
+  dispose();
 });

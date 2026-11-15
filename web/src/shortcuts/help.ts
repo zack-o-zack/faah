@@ -46,7 +46,7 @@ export const PALETTE_HELP: ShortcutHelp[] = [
 ];
 
 export const REVIEW_HELP: ShortcutHelp[] = [
-  { keys: ['Mod+Shift+V'], label: 'Toggle the review overview', section: 'Diff and preview' },
+  { keys: ['Mod+Shift+V'], label: 'Toggle review', section: 'Diff and preview' },
 ];
 
 export const AGENT_HELP: ShortcutHelp[] = [

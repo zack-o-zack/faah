@@ -249,7 +249,7 @@ func giteaPages[T any](ctx context.Context, a api, path string) ([]T, error) {
 	}
 	const limit = 50
 	var all []T
-	for page := 1; page <= 100; page++ {
+	for page := 1; ; page++ {
 		var items []T
 		if _, err := a.do(ctx, http.MethodGet, fmt.Sprintf("%s%slimit=%d&page=%d", path, sep, limit, page), nil, &items); err != nil {
 			return nil, err

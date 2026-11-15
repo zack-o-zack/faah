@@ -7,14 +7,8 @@ import type {
   WorkflowReply,
   ReviewEvent,
   WalkthroughFile,
-  Insight,
+  FileGroup,
 } from './types.ts';
-export interface InsightKind {
-  id: 'fastReturns' | 'edgeCases' | 'coreLogic';
-  label: string;
-  icon: string;
-  title: string;
-}
 export const REVIEW_EVENTS = [
   'snapshot',
   'run_started',
@@ -108,27 +102,6 @@ export function reviewStages(config: ReviewConfig, run: ReviewRun | null): Stage
   });
 }
 
-export function pipelineProgress(stages: StageState[]): {
-  statuses: string[];
-  done: number;
-  total: number;
-  title: string;
-  summary: string;
-} {
-  const statuses = stages.map(stageStatus);
-  const done = statuses.filter((status) => status === 'completed').length;
-  const working = statuses.indexOf('running');
-  const failed = statuses.includes('failed');
-  let title = `${done} of ${stages.length} done`;
-  if (working >= 0)
-    title += ` · working on ${stages[working]?.def.title || 'stage ' + (working + 1)}`;
-  if (failed) title += ' · a stage failed';
-  let summary = done === stages.length ? 'completed' : 'pending';
-  if (working >= 0) summary = 'running';
-  else if (failed) summary = 'failed';
-  return { statuses, done, total: stages.length, title, summary };
-}
-
 export function changeStage(config: ReviewConfig, index: number, action: string): ReviewConfig {
   const stages = config.stages.slice();
   if (action === 'remove') {
@@ -188,52 +161,55 @@ export function stageDefinition(draft: StageDraft, id: string, isNew: boolean): 
   };
 }
 
-export const INSIGHT_KINDS: InsightKind[] = [
+export const FILE_GROUPS: { id: FileGroup; label: string; icon: string; title: string }[] = [
+  { id: 'core', label: 'Core', icon: 'icon-[lucide--code]', title: 'Production source files' },
   {
-    id: 'fastReturns',
-    label: 'Returns',
-    icon: 'icon-[lucide--zap]',
-    title: 'Fast returns & guardrails',
+    id: 'tests',
+    label: 'Tests',
+    icon: 'icon-[lucide--flask-conical]',
+    title: 'Test files and fixtures',
   },
   {
-    id: 'edgeCases',
-    label: 'Edge cases',
-    icon: 'icon-[lucide--triangle-alert]',
-    title: 'Error & edge case exits',
+    id: 'config',
+    label: 'Config',
+    icon: 'icon-[lucide--sliders-horizontal]',
+    title: 'Configuration files',
   },
+  { id: 'docs', label: 'Docs', icon: 'icon-[lucide--book-open]', title: 'Documentation files' },
   {
-    id: 'coreLogic',
-    label: 'Core',
-    icon: 'icon-[lucide--target]',
-    title: 'Core happy-path modifications',
+    id: 'generated',
+    label: 'Generated',
+    icon: 'icon-[lucide--file-cog]',
+    title: 'Generated files and lockfiles',
   },
 ];
 
-/** Insights shown under a file: none until a filter asks for one kind. */
-export function fileInsights(
-  file: WalkthroughFile,
-  filter: string,
-): (Omit<Insight, 'kind'> & { kind: InsightKind })[] {
-  const kind = INSIGHT_KINDS.find((item) => item.id === filter);
-  if (!kind) return [];
-  return (file.understanding?.[kind.id] || []).map((item) => ({ ...item, kind }));
-}
-
-export function visibleFiles(files: WalkthroughFile[], filter: string): WalkthroughFile[] {
-  if (filter === 'all') return files;
-  return files.filter((file) => fileInsights(file, filter).length);
-}
-
-export function insightCounts(files: WalkthroughFile[]): Record<string, number> {
+export function groupCounts(files: WalkthroughFile[]): Record<string, number> {
   const counts: Record<string, number> = { all: files.length };
-  for (const kind of INSIGHT_KINDS) {
-    counts[kind.id] = files.reduce(
-      (total, file) => total + (file.understanding?.[kind.id]?.length || 0),
-      0,
-    );
-  }
+  for (const group of FILE_GROUPS)
+    counts[group.id] = files.filter((file) => file.group === group.id).length;
   return counts;
 }
+export function activeGroupFilter(files: WalkthroughFile[], filter: string): string {
+  return files.some((file) => file.group === filter) ? filter : 'all';
+}
+export function visibleFiles(files: WalkthroughFile[], filter: string): WalkthroughFile[] {
+  const active = activeGroupFilter(files, filter);
+  return active === 'all' ? files : files.filter((file) => file.group === active);
+}
+export function groupedFiles(files: WalkthroughFile[], filter: string) {
+  const visible = visibleFiles(files, filter);
+  return FILE_GROUPS.map((group) => {
+    const members = visible.filter((file) => file.group === group.id);
+    return {
+      ...group,
+      files: members,
+      additions: members.reduce((sum, file) => sum + (file.additions || 0), 0),
+      deletions: members.reduce((sum, file) => sum + (file.deletions || 0), 0),
+    };
+  }).filter((group) => group.files.length);
+}
+export const movedOnly = (file: WalkthroughFile): boolean => !!file.oldPath && !file.diff;
 
 /** A full commit hash says nothing a short one doesn't, at a fifth the width. */
 export const shortRef = (ref: string): string =>
@@ -250,4 +226,8 @@ export function activeBlock(tops: number[], anchor: number): number {
     active = index;
   }
   return active;
+}
+
+export function fileCount(count: number): string {
+  return `${count} ${count === 1 ? 'file' : 'files'}`;
 }

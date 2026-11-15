@@ -108,7 +108,12 @@ export function Popover(props: PopoverProps): JSX.Element {
         {props.label}
       </button>
       <Show when={open()}>
-        <Portal>
+        <Portal
+          mount={trigger?.closest('dialog') || undefined}
+          ref={(element) => {
+            element.style.display = 'contents';
+          }}
+        >
           <div class="dropdown-menu contents">
             <div
               ref={(el) => {

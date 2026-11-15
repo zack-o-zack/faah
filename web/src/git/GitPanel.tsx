@@ -21,7 +21,7 @@ export function GitPanel(): JSX.Element {
         <SplitHandle
           label="Git panel height"
           vertical
-          class="git-panel-resizer absolute -top-1 inset-x-0 z-10 h-2 cursor-row-resize hover:bg-primary [&.drag]:bg-primary"
+          class="git-panel-resizer absolute -top-px inset-x-0 z-10"
           value={-git.state.height}
           min={-700}
           max={-60}

@@ -467,7 +467,7 @@ function buildPRStore(editor: PRHost, options: PROptions = {}) {
         set('panel', 'collapsed', false);
       },
       setThreadExpanded: (key: string, open: boolean) => set('expanded', key, open),
-      // The comments panel shows with the overview, so a gutter marker opens it there.
+      // The comments panel shows with the review, so a gutter marker opens it there.
       revealPRThread(key: string): void {
         batch(() => {
           editor.actions.setReviewMode('review');
@@ -478,8 +478,7 @@ function buildPRStore(editor: PRHost, options: PROptions = {}) {
       },
       togglePRPanel: () => set('panel', 'collapsed', (collapsed) => !collapsed),
       setPRPanelHeight(height: number): void {
-        const max = Math.round(window.innerHeight * 0.8);
-        set('panel', { collapsed: false, height: Math.max(80, Math.min(max, height)) });
+        set('panel', { collapsed: false, height: Math.max(80, height) });
       },
     },
   };

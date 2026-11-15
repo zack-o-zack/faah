@@ -1,3 +1,4 @@
+import { scrollToItem } from '../lib/list.ts';
 import { errorMessage } from '../lib/decode.ts';
 import type { JSX } from 'solid-js';
 import { For, onCleanup, onMount, Show } from 'solid-js';
@@ -5,7 +6,7 @@ import { useEditor } from '../editor/context.tsx';
 import { createShortcut } from '../lib/shortcuts.tsx';
 import { Dialog } from '../lib/Dialog.tsx';
 import { PaletteItem } from './PaletteItem.tsx';
-import { MODES, scrollToItem } from './logic.ts';
+import { MODES } from './logic.ts';
 import { PALETTE_HELP } from '../shortcuts/help.ts';
 export function Palette(): JSX.Element {
   const editor = useEditor();

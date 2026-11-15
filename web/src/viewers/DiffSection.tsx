@@ -2,6 +2,7 @@ import type { DiffSectionProps } from './diff-view.ts';
 import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
+import { diffLayout } from '../settings/logic.ts';
 import { DiffRows } from './DiffRows.tsx';
 
 export function DiffSection(props: DiffSectionProps): JSX.Element {
@@ -12,6 +13,7 @@ export function DiffSection(props: DiffSectionProps): JSX.Element {
   };
   const hunkActions: ('stage' | 'unstage' | 'discard')[] = ['stage', 'unstage', 'discard'];
   const collapsed = () => props.document[collapsedKey()] ?? props.defaultCollapsed ?? false;
+  const exact = () => editor.settings.value('diffEditor.ignoreWhitespace') !== true;
   return (
     <section
       class={`diff-section diff-section-${props.kind}`}
@@ -67,18 +69,20 @@ export function DiffSection(props: DiffSectionProps): JSX.Element {
                       @@ -{hunk().oldStart} +{hunk().newStart} @@ {hunk().section}
                     </span>
                     <span class="flex-1" />
-                    <button
-                      class="btn"
-                      data-control="diff-hunk-btn diff-hunk-expand"
-                      data-variant="ghost"
-                      data-size="xs"
-                      data-hunk-expand={index()}
-                      onClick={() => props.actions.expand(hunk())}
-                    >
-                      <span class="icon-[lucide--chevrons-up-down] size-3" aria-hidden="true" />{' '}
-                      Expand
-                    </button>
-                    <Show when={props.canAct}>
+                    <Show when={exact()}>
+                      <button
+                        class="btn"
+                        data-control="diff-hunk-btn diff-hunk-expand"
+                        data-variant="ghost"
+                        data-size="xs"
+                        data-hunk-expand={index()}
+                        onClick={() => props.actions.expand(hunk())}
+                      >
+                        <span class="icon-[lucide--chevrons-up-down] size-3" aria-hidden="true" />{' '}
+                        Expand
+                      </button>
+                    </Show>
+                    <Show when={props.canAct && exact()}>
                       <For each={hunkActions}>
                         {(action) => (
                           <button
@@ -95,7 +99,10 @@ export function DiffSection(props: DiffSectionProps): JSX.Element {
                       </For>
                     </Show>
                   </div>
-                  <Show when={props.document.diffMode} keyed>
+                  <Show
+                    when={props.document.diffMode && diffLayout(editor.settings.preferences())}
+                    keyed
+                  >
                     {(mode) => (
                       <DiffRows
                         hunk={hunk()}

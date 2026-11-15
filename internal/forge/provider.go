@@ -66,6 +66,9 @@ type Provider interface {
 	// inline review comment.
 	ReplyToReviewComment(ctx context.Context, target PRTarget, token string, commentID int64, body string) (PRComment, error)
 
+	// FetchOverview reads the description, checks on headSHA, and current reviewer states.
+	FetchOverview(ctx context.Context, target PRTarget, token, headSHA string) (PROverview, error)
+
 	// MergeStatus reports whether the PR can merge right now and which merge
 	// methods the repository allows. A forge that computes mergeability
 	// lazily reports mergeStateUnknown until it has.

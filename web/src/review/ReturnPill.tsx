@@ -15,13 +15,13 @@ export function ReturnPill(): JSX.Element {
         <span>Jumped from: {review.state.returnTo?.title}</span>
         <button
           id="btn-return-to-review"
-          title={withKeys('Back to the overview ({Mod+Shift+V})')}
+          title={withKeys('Back to the review ({Mod+Shift+V})')}
           class="btn"
           data-variant="outline"
           data-size="xs"
           onClick={() => editor.actions.setReviewMode('review')}
         >
-          Back to overview
+          Back to review
         </button>
         <button
           id="btn-dismiss-review-return"

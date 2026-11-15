@@ -287,35 +287,33 @@ export const PILL_ICONS: Record<string, string> & { muted: string } = {
 
 export interface MergeMethod {
   label: string;
-  button: string;
-  confirm: string;
   done: string;
   explain: (count: number, base: string) => string;
 }
 export const MERGE_METHODS: Record<string, MergeMethod> = {
   merge: {
     label: 'Create a merge commit',
-    button: 'Merge',
-    confirm: 'Confirm merge',
     done: 'Merged',
     explain: (n: number, base: string): string =>
-      `All ${pluralize(n, 'commit')} from this branch are added to ${base} with a merge commit.`,
+      n === 0
+        ? `No commits from this branch to merge into ${base}.`
+        : `The ${pluralize(n, 'commit')} from this branch ${n === 1 ? 'is' : 'are'} added to ${base} with a merge commit.`,
   },
   squash: {
     label: 'Squash and merge',
-    button: 'Squash and merge',
-    confirm: 'Confirm squash and merge',
     done: 'Squashed and merged',
     explain: (n: number, base: string): string =>
-      `The ${pluralize(n, 'commit')} from this branch are combined into one commit on ${base}.`,
+      n === 0
+        ? `No commits from this branch to combine on ${base}.`
+        : `The ${pluralize(n, 'commit')} from this branch ${n === 1 ? 'is' : 'are'} combined into one commit on ${base}.`,
   },
   rebase: {
     label: 'Rebase and merge',
-    button: 'Rebase and merge',
-    confirm: 'Confirm rebase and merge',
     done: 'Rebased and merged',
     explain: (n: number, base: string): string =>
-      `The ${pluralize(n, 'commit')} from this branch are replayed onto ${base} one by one, with no merge commit.`,
+      n === 0
+        ? `No commits from this branch to replay onto ${base}.`
+        : `The ${pluralize(n, 'commit')} from this branch ${n === 1 ? 'is' : 'are'} replayed onto ${base}${n === 1 ? '' : ' one by one'}, with no merge commit.`,
   },
 };
 

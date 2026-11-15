@@ -83,6 +83,15 @@
   }
 
 
+  /* A shared 4px split bar with a transparent 8px grab area. Positioning utilities
+     on docked handles override relative without changing their hit area. */
+  .split-handle {
+    @apply relative cursor-col-resize before:absolute before:inset-y-0 before:-inset-x-0.5;
+  }
+  .split-handle[aria-orientation='horizontal'] {
+    @apply cursor-row-resize before:inset-x-0 before:-inset-y-0.5;
+  }
+
   ::selection { background: var(--sel); }
 
   /* An empty state that is only a sentence flows as text, so inline keys and code stay in the line. */
@@ -169,15 +178,17 @@
   #diffcontent { font: var(--fs)/var(--lh) var(--mono); padding-bottom: 40vh; }
   .diff-section.collapsed .diff-section-body { display: none; }
 
+  .diff-ln, .diff-col-num {
+    flex: none; text-align: right; color: var(--faint); user-select: none;
+  }
   .diff-ln {
-    position: relative;
-    flex: none; width: 48px; padding: 0 10px 0 6px; text-align: right;
-    color: var(--faint); user-select: none; font-variant-numeric: tabular-nums;
+    position: relative; width: 48px; padding: 0 10px 0 6px; font-variant-numeric: tabular-nums;
   }
 
   .diff-ln-nav { cursor: pointer; }
   .diff-ln-nav:hover { color: var(--foreground); text-decoration: underline; }
-  .diff-mk { flex: none; width: 14px; text-align: center; color: var(--faint); user-select: none; }
+  .diff-mk, .diff-col-sign { flex: none; text-align: center; color: var(--faint); user-select: none; }
+  .diff-mk { width: 14px; }
   .diff-code { flex: 1; min-width: 0; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; padding-right: 12px; }
   .diff-row, .diff-side { display: flex; }
   .diff-row.diff-add, .diff-side.diff-add { background: var(--gi-bg); }
@@ -240,6 +251,27 @@
   .md ul ul ul, .md ol ul ul { list-style-type: square; }
   .md li + li, .md li > ul, .md li > ol { margin-top: 4px; }
   .md li > ul, .md li > ol, .md li > p { margin-bottom: 0; }
+
+  /* Reserve the checkbox gutter on the item, so every wrapped line stays with
+     the task text. Absolute placement also overrides Basecoat's block input. */
+  .md .md-task-item {
+    --md-task-size: 1em;
+    --md-task-gap: .5em;
+    position: relative;
+    list-style-type: none;
+    padding-inline-start: calc(var(--md-task-size) + var(--md-task-gap));
+    margin-inline-start: calc(-1 * (var(--md-task-size) + var(--md-task-gap)));
+  }
+  .md .md-task-item input.md-task-checkbox {
+    position: absolute;
+    inset-inline-start: 0;
+    top: calc((1lh - var(--md-task-size)) / 2);
+    display: inline-block;
+    width: var(--md-task-size);
+    height: var(--md-task-size);
+    margin: 0;
+    font: inherit;
+  }
 
   .md blockquote { padding: 0 1em; color: var(--muted-foreground); border-left: 3px solid var(--border); }
   .md blockquote > :last-child { margin-bottom: 0; }
@@ -535,19 +567,11 @@
   }
   .diff-col-num {
     width: 44px;
-    text-align: right;
     padding-right: 8px;
-    user-select: none;
-    color: var(--faint);
-    flex: none;
     font-size: var(--t-11);
   }
   .diff-col-sign {
     width: 18px;
-    text-align: center;
-    user-select: none;
-    color: var(--faint);
-    flex: none;
     font-weight: 600;
   }
   .diff-type-add .diff-col-sign {
@@ -555,13 +579,6 @@
   }
   .diff-type-del .diff-col-sign {
     color: var(--gd);
-  }
-  .diff-col-code {
-    flex: 1;
-    min-width: 0;
-    white-space: pre;
-    overflow-x: auto;
-    padding-right: 14px;
   }
 
 }

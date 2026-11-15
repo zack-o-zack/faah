@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -12,6 +13,9 @@ import (
 	"testing"
 	"time"
 
+	"faah/internal/forge"
+	"faah/internal/git/gittest"
+	prpkg "faah/internal/pr"
 	"faah/internal/review"
 	"faah/internal/workspace"
 )
@@ -171,24 +175,96 @@ func TestReviewWorkflowHTTPHandlerValidation(t *testing.T) {
 }
 
 func TestReviewWalkthroughEndpoint(t *testing.T) {
-	tmp := t.TempDir()
-	ix := workspace.NewIndex(tmp)
-	s := New(Options{Workspace: ix, LSP: nil, Assets: assets, DevRoot: devRoot, Version: version})
-
-	req := httptest.NewRequest(http.MethodGet, "/api/review/walkthrough", nil)
+	root := gittest.Repo(t)
+	gittest.Run(t, root, "reset", "--hard", "HEAD")
+	gittest.Run(t, root, "clean", "-fd")
+	base := strings.TrimSpace(gittest.Run(t, root, "rev-parse", "HEAD"))
+	write := func(path, text string) {
+		t.Helper()
+		if err := os.WriteFile(filepath.Join(root, path), []byte(text), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("keep.go", "PR version\n")
+	gittest.Run(t, root, "add", "keep.go")
+	gittest.Run(t, root, "commit", "-qm", "PR change")
+	head := strings.TrimSpace(gittest.Run(t, root, "rev-parse", "HEAD"))
+	// Neither local commits nor uncommitted edits belong to the PR comparison.
+	write("keep.go", "local commit\n")
+	write("local.go", "local-only committed file\n")
+	gittest.Run(t, root, "add", ".")
+	gittest.Run(t, root, "commit", "-qm", "local changes")
+	write("keep.go", "uncommitted edit\n")
+	write("untracked.go", "local untracked file\n")
+	ix := workspace.NewIndex(root)
+	ix.Build()
+	ix.SetDiffBase(base)
+	ix.SetPRHead(head)
+	s := &Server{ix: ix, diffBase: base, prHeadSHA: head,
+		pr: prpkg.New(nil, forge.PRTarget{}, forge.PRMeta{HeadSHA: head}, "", base)}
 	rec := httptest.NewRecorder()
-	s.handleReviewWalkthrough(rec, req)
-
+	s.handleReviewWalkthrough(rec, httptest.NewRequest(http.MethodGet, "/api/review/walkthrough", nil))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected 200 OK, got %d: %s", rec.Code, rec.Body.String())
 	}
-
 	var resp review.WalkthroughResponse
 	if err := json.NewDecoder(rec.Body).Decode(&resp); err != nil {
-		t.Fatalf("failed to decode response: %v", err)
+		t.Fatal(err)
 	}
+	if resp.BaseRef != base || resp.HeadRef != head || len(resp.Files) != 1 || resp.Files[0].Path != "keep.go" {
+		t.Fatalf("expected only the PR comparison, got %+v", resp)
+	}
+	if !strings.Contains(resp.Files[0].Diff, "+PR version") || strings.Contains(resp.Files[0].Diff, "local") || strings.Contains(resp.Files[0].Diff, "uncommitted") {
+		t.Fatalf("local edits leaked into PR diff: %s", resp.Files[0].Diff)
+	}
+}
 
-	if resp.Files == nil {
-		t.Fatalf("expected non-nil files array")
+func TestReviewWalkthroughWhitespaceParameter(t *testing.T) {
+	root := gittest.Repo(t)
+	gittest.Run(t, root, "reset", "--hard", "HEAD")
+	gittest.Run(t, root, "clean", "-fd")
+	base := strings.TrimSpace(gittest.Run(t, root, "rev-parse", "HEAD"))
+	if err := os.WriteFile(filepath.Join(root, "keep.go"), []byte("    keep\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	gittest.Run(t, root, "add", "keep.go")
+	gittest.Run(t, root, "commit", "-qm", "PR whitespace change")
+	head := strings.TrimSpace(gittest.Run(t, root, "rev-parse", "HEAD"))
+	ix := workspace.NewIndex(root)
+	ix.Build()
+	ix.SetDiffBase(base)
+	ix.SetPRHead(head)
+	s := &Server{ix: ix, diffBase: base, prHeadSHA: head,
+		pr: prpkg.New(nil, forge.PRTarget{}, forge.PRMeta{HeadSHA: head}, "", base)}
+	for _, value := range []string{"", "1", "true", "0", "2"} {
+		rec := httptest.NewRecorder()
+		s.handleReviewWalkthrough(rec, httptest.NewRequest(http.MethodGet, "/api/review/walkthrough?ignoreWhitespace="+value, nil))
+		var response review.WalkthroughResponse
+		if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+			t.Fatal(err)
+		}
+		want := 0
+		if value == "1" {
+			want = 1
+		}
+		if response.HiddenWhitespaceFiles != want {
+			t.Fatalf("%q: %+v", value, response)
+		}
+	}
+}
+
+func TestReviewWalkthroughRequiresPR(t *testing.T) {
+	for _, incompletePR := range []bool{false, true} {
+		t.Run(fmt.Sprint(incompletePR), func(t *testing.T) {
+			s := &Server{ix: workspace.NewIndex(t.TempDir())}
+			if incompletePR {
+				s.pr = prpkg.New(nil, forge.PRTarget{}, forge.PRMeta{}, "", "HEAD")
+			}
+			rec := httptest.NewRecorder()
+			s.handleReviewWalkthrough(rec, httptest.NewRequest(http.MethodGet, "/api/review/walkthrough", nil))
+			if rec.Code != http.StatusConflict || !strings.Contains(rec.Body.String(), "Review requires a pull request") {
+				t.Fatalf("expected PR context error, got %d: %s", rec.Code, rec.Body.String())
+			}
+		})
 	}
 }

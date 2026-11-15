@@ -156,3 +156,12 @@ test('raw settings must be JSON', () => {
   expect(validRawSettings('{"a": 1}')).toBe('');
   expect(validRawSettings('{a')).toMatch(/^JSON Syntax Error/);
 });
+
+test('changed-word highlighting defaults on and derives from the saved setting', () => {
+  expect(preferences({})).toHaveProperty('highlightChangedWords', true);
+  for (const value of [false, true])
+    expect(preferences({ 'diffEditor.highlightChangedWords': value })).toHaveProperty(
+      'highlightChangedWords',
+      value,
+    );
+});

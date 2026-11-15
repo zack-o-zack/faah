@@ -47,20 +47,7 @@ func FilesBetween(root, from, to string) map[string]string {
 // review session (pr.go) can diff a file against the merge-base with the
 // PR's target branch instead of the working tree's HEAD.
 func DiffAgainst(root, relpath, base string) string {
-	if !Available(root) {
-		return ""
-	}
-	out, err := exec.Command("git", "-C", root, "diff", "--no-color", base, "--", relpath).Output()
-	if err != nil {
-		if base == "HEAD" {
-			// Unborn HEAD (newly initialized repo with no commits yet): diff against the empty tree.
-			if out2, err2 := exec.Command("git", "-C", root, "diff", "--no-color", "4b825dc642cb6eb9a060e54bf8d69288fbee4904", "--", relpath).Output(); err2 == nil {
-				return string(out2)
-			}
-		}
-		return ""
-	}
-	return string(out)
+	return DiffPaths(root, base, "", relpath)
 }
 
 // DiffBetween is DiffAgainst generalized to a two-dot diff between two
@@ -69,14 +56,7 @@ func DiffAgainst(root, relpath, base string) string {
 // from the reviewer's local changes since checkout (head..working tree),
 // which DiffAgainst covers.
 func DiffBetween(root, relpath, from, to string) string {
-	if !Available(root) {
-		return ""
-	}
-	out, err := exec.Command("git", "-C", root, "diff", "--no-color", from, to, "--", relpath).Output()
-	if err != nil {
-		return ""
-	}
-	return string(out)
+	return DiffPaths(root, from, to, relpath)
 }
 
 // MergeBase returns the merge-base commit of a and b, or "" if it cannot
@@ -193,10 +173,23 @@ func DiffFull(root string, max int, refs ...string) string {
 // commit. This is the ref form of DiffAgainst: the working tree isn't
 // involved at all, so the result is frozen no matter what is edited since.
 func DiffCommit(root, relpath, sha string) string {
+	return diffCommit(root, relpath, sha, false)
+}
+
+func DiffCommitIgnoringWhitespace(root, relpath, sha string) string {
+	return diffCommit(root, relpath, sha, true)
+}
+
+var whitespaceDiffArgs = []string{"--ignore-all-space", "--ignore-blank-lines"}
+
+func diffCommit(root, relpath, sha string, ignoreWhitespace bool) string {
 	if !Available(root) || !ValidSHA(sha) {
 		return ""
 	}
 	args := append([]string{"-C", root, "diff-tree", "-p", "--no-color"}, commitDiffArgs...)
+	if ignoreWhitespace {
+		args = append(args, whitespaceDiffArgs...)
+	}
 	args = append(args, sha, "--", relpath)
 	out, err := exec.Command("git", args...).Output()
 	if err != nil {
@@ -208,4 +201,61 @@ func DiffCommit(root, relpath, sha string) string {
 // HunksCommit is HunksAgainst for a single commit's own diff.
 func HunksCommit(root, relpath, sha string) (added, modified, deleted []int) {
 	return parseDiffHunks(DiffCommit(root, relpath, sha))
+}
+
+// ChangedFiles lists changes with rename origins in one Git subprocess.
+// An empty head compares the base to the working tree (including staged paths).
+func ChangedFiles(root, base, head string) []CommitFile {
+	info := Probe(root)
+	if !info.ok || base == "" {
+		return nil
+	}
+	args := []string{"-C", root, "diff", "--name-status", "-z", "--find-renames", base}
+	if head != "" {
+		args = append(args, head)
+	}
+	out, err := exec.Command("git", args...).Output()
+	if err != nil {
+		return nil
+	}
+	return parseChangedFiles(out, repoRelKey(info, root))
+}
+
+// DiffPaths includes both sides of a rename so Git can compute its actual edits.
+func DiffPaths(root, base, head string, paths ...string) string {
+	return diffPaths(root, base, head, false, paths...)
+}
+
+// DiffPathsIgnoringWhitespace is the walkthrough's display-only whitespace filter.
+func DiffPathsIgnoringWhitespace(root, base, head string, paths ...string) string {
+	return diffPaths(root, base, head, true, paths...)
+}
+
+func diffPaths(root, base, head string, ignoreWhitespace bool, paths ...string) string {
+	if !Available(root) {
+		return ""
+	}
+	argsForBase := func(base string) []string {
+		args := []string{"-C", root, "diff", "--no-color", "--find-renames"}
+		if ignoreWhitespace {
+			args = append(args, whitespaceDiffArgs...)
+		}
+		args = append(args, base)
+		if head != "" {
+			args = append(args, head)
+		}
+		args = append(args, "--")
+		return append(args, paths...)
+	}
+	out, err := exec.Command("git", argsForBase(base)...).Output()
+	if err != nil {
+		if base == "HEAD" && head == "" {
+			// An unborn repository has no HEAD; retain the empty-tree comparison.
+			if emptyOut, emptyErr := exec.Command("git", argsForBase("4b825dc642cb6eb9a060e54bf8d69288fbee4904")...).Output(); emptyErr == nil {
+				return string(emptyOut)
+			}
+		}
+		return ""
+	}
+	return string(out)
 }

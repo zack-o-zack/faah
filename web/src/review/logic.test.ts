@@ -5,9 +5,9 @@ import {
   activeBlock,
   changeStage,
   configRequest,
-  fileInsights,
-  insightCounts,
-  pipelineProgress,
+  activeGroupFilter,
+  movedOnly,
+  groupCounts,
   reviewStages,
   reviewTransition,
   stageDefinition,
@@ -67,13 +67,6 @@ test('configured stages show their run state only while the run still matches th
   expect(stages[1]).toEqual({ def: def('s9'), status: 'pending' });
 });
 
-test('progress summarises dots, counts and the stage being worked on', () => {
-  const progress = pipelineProgress(run('r', ['completed', 'running', 'failed']).stages);
-  expect(progress.done).toBe(1);
-  expect(progress.summary).toBe('running');
-  expect(progress.title).toBe('1 of 3 done · working on S1 · a stage failed');
-});
-
 test('config replies and requests carry the standard workflow', () => {
   const reply = {
     workflows: [{ id: 'standard', name: 'W', stages: [def('a')] }],
@@ -104,22 +97,33 @@ test('stage definitions need a title; new stages derive question and prompt', ()
   expect(edited).toMatchObject({ question: 'Q', prompt: '' });
 });
 
-test('insight filters narrow the file list and count each kind', () => {
+test('group filters count files and fall back when the selected group disappears', () => {
   const files = [
-    {
-      path: 'a.go',
-      understanding: {
-        edgeCases: [{ line: 3, kind: 'error', text: '', explanation: '' }],
-        coreLogic: [{ line: 1, kind: 'core', text: '', explanation: '' }],
-      },
-    },
-    { path: 'b.go', understanding: {} },
+    { path: 'a.go', group: 'core' as const },
+    { path: 'b_test.go', group: 'tests' as const },
   ];
-  expect(insightCounts(files)).toEqual({ all: 2, fastReturns: 0, edgeCases: 1, coreLogic: 1 });
+  expect(groupCounts(files)).toEqual({
+    all: 2,
+    core: 1,
+    tests: 1,
+    config: 0,
+    docs: 0,
+    generated: 0,
+  });
+  expect(visibleFiles(files, 'tests').map((file) => file.path)).toEqual(['b_test.go']);
   expect(visibleFiles(files, 'all')).toHaveLength(2);
-  expect(visibleFiles(files, 'edgeCases').map((file) => file.path)).toEqual(['a.go']);
-  expect(fileInsights(required(files[0]), 'all')).toEqual([]);
-  expect(fileInsights(required(files[0]), 'edgeCases')[0]?.line).toBe(3);
+  expect(activeGroupFilter(files, 'docs')).toBe('all');
+  expect(visibleFiles(files, 'docs')).toHaveLength(2);
+  expect(movedOnly({ ...required(files[0]), oldPath: 'old.go', hunks: [] })).toBe(true);
+  expect(movedOnly(required(files[0]))).toBe(false);
+  expect(
+    movedOnly({
+      ...required(files[0]),
+      oldPath: 'old.go',
+      diff: '@@ -1 +1 @@\n-before\n+after',
+      hunks: [{ oldStart: 1, newStart: 1, section: '', rows: [] }],
+    }),
+  ).toBe(false);
 });
 
 test('the selected stage follows a move and stays in range after removal', () => {
@@ -132,4 +136,16 @@ test('the selected stage follows a move and stays in range after removal', () =>
 test('the active diff block is the last one starting above the anchor', () => {
   expect(activeBlock([0, 100, 300], 150)).toBe(1);
   expect(activeBlock([200, 400], 70)).toBe(0);
+});
+
+test('a moved binary with content changes is not a pure move', () => {
+  expect(
+    movedOnly({
+      path: 'new.bin',
+      oldPath: 'old.bin',
+      group: 'core',
+      diff: 'Binary files a/old.bin and b/new.bin differ',
+      hunks: [],
+    }),
+  ).toBe(false);
 });

@@ -1,4 +1,5 @@
 import type { JSX } from 'solid-js';
+import { ButtonKbd } from '../lib/ButtonKbd.tsx';
 import { useEditor } from '../editor/context.tsx';
 // Follow-up questions about a stage go to that stage's thread.
 export function ReviewCompose(): JSX.Element {
@@ -27,22 +28,22 @@ export function ReviewCompose(): JSX.Element {
           data-control="agent-input review-input"
         />
         <footer data-align="block-end" class="gap-1">
-          <span class="text-xs text-muted-foreground">
-            Enter to send · Shift+Enter for a new line
-          </span>
+          <span class="text-xs text-muted-foreground">Shift+Enter for a new line</span>
           <span class="flex-1" />
           <button
             id="review-compose-send"
             type="button"
             disabled={!canSend()}
             title="Send (Enter)"
+            aria-keyshortcuts="Enter"
             aria-label="Send"
-            class="btn rounded-full"
+            class="btn rounded-full gap-1.5"
             data-variant="primary"
-            data-size="icon-sm"
+            data-size="sm"
             onClick={() => void editor.actions.sendReviewFollowup()}
           >
             <span class="icon-[lucide--arrow-up] size-4" aria-hidden="true" />
+            <ButtonKbd combo="Enter" />
           </button>
         </footer>
       </div>

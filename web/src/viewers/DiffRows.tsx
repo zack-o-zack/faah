@@ -12,6 +12,7 @@ import type { JSX } from 'solid-js';
 import { createMemo, createSignal, Index, onCleanup, onMount, Show } from 'solid-js';
 import { splitRows, unifiedRows, rowOffsets, measuredWindow } from './diff-rows.ts';
 import { DiffSide, UnifiedRow } from './DiffRow.tsx';
+import { useEditor } from '../editor/context.tsx';
 import { RowComposers } from '../pr/RowComments.tsx';
 
 function DiffSlot(props: DiffSlotProps): JSX.Element {
@@ -68,12 +69,15 @@ function DiffSlot(props: DiffSlotProps): JSX.Element {
   );
 }
 export function DiffRows(props: DiffRowsProps): JSX.Element {
+  const editor = useEditor();
   let table: HTMLDivElement | undefined;
   const heights = new Map<number, number>();
   const [revision, updateHeights] = createSignal(0);
   const [origin, setOrigin] = createSignal(0);
   const rows = createMemo(() =>
-    props.mode === 'unified' ? unifiedRows(props.hunk.rows) : splitRows(props.hunk.rows),
+    props.mode === 'unified'
+      ? unifiedRows(props.hunk.rows, editor.settings.preferences().highlightChangedWords)
+      : splitRows(props.hunk.rows, editor.settings.preferences().highlightChangedWords),
   );
   const offsets = createMemo(() => {
     revision();

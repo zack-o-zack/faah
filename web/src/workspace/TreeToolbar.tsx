@@ -51,7 +51,6 @@ export function TreeToolbar(): JSX.Element {
           <button
             id="btn-changed"
             class="btn"
-            disabled={!tree.hasGitView()}
             aria-pressed={tree.mode() === 'git'}
             data-variant={tree.mode() === 'git' ? 'secondary' : 'outline'}
             onClick={() => void editor.actions.setTreeMode('git')}

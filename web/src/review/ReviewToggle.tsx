@@ -4,8 +4,16 @@ import { useEditor } from '../editor/context.tsx';
 import { createShortcut } from '../lib/shortcuts.tsx';
 import { withKeys } from '../lib/keyboard.ts';
 import { REVIEW_HELP } from '../shortcuts/help.ts';
-// The top bar's way into the overview, and back to the editor while it shows.
+// Only PR workspaces expose the review entry, shortcut and help entry.
 export function ReviewToggle(): JSX.Element {
+  const editor = useEditor();
+  return (
+    <Show when={editor.store.state.workspace.meta?.pr}>
+      <PRReviewToggle />
+    </Show>
+  );
+}
+function PRReviewToggle(): JSX.Element {
   const editor = useEditor();
   const review = editor.review;
   const pr = () => editor.store.state.workspace.meta?.pr;
@@ -24,20 +32,10 @@ export function ReviewToggle(): JSX.Element {
           data-size="xs"
           onClick={() => editor.actions.setReviewMode('review')}
         >
-          <Show
-            when={pr()}
-            fallback={
-              <>
-                <span class="icon-[lucide--list-checks] size-3.5 shrink-0" aria-hidden="true" />
-                <span>Overview</span>
-              </>
-            }
-          >
-            <span class="icon-[lucide--git-pull-request] size-3.5 shrink-0" aria-hidden="true" />
-            <span>
-              PR <span class="tabular-nums">#{pr()?.number}</span>
-            </span>
-          </Show>
+          <span class="icon-[lucide--git-pull-request] size-3.5 shrink-0" aria-hidden="true" />
+          <span>
+            PR <span class="tabular-nums">#{pr()?.number}</span>
+          </span>
           <Show when={review.running()}>
             <span
               class="size-1.5 shrink-0 animate-pulse rounded-full bg-warn"

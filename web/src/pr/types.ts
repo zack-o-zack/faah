@@ -118,3 +118,27 @@ export interface ForgeMeta {
     readonly: string;
   };
 }
+
+export type PRCheckState = 'passed' | 'failed' | 'running' | 'skipped' | 'neutral';
+export type PRReviewState = 'approved' | 'changes_requested' | 'commented' | 'pending';
+export interface PRCheck {
+  id: string;
+  name: string;
+  state: PRCheckState;
+  url: string;
+}
+export interface PRReviewer {
+  id: string;
+  name: string;
+  avatarUrl: string;
+  state: PRReviewState;
+}
+export interface PROverview {
+  description: Required<
+    Pick<PRComment, 'body' | 'bodyHtml' | 'author' | 'avatarUrl' | 'createdAt'>
+  >;
+  checks: PRCheck[];
+  truncated: boolean;
+  totalChecks: number;
+  reviewers: PRReviewer[];
+}

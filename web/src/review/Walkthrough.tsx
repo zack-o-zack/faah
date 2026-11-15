@@ -7,31 +7,37 @@ interface EmptyStateProps {
 import type { JSX } from 'solid-js';
 import { Match, Show, Switch } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
+import { visibleFiles } from './logic.ts';
 import { WalkthroughFiles } from './WalkthroughFiles.tsx';
 import { WalkthroughDiff } from './WalkthroughDiff.tsx';
 export function Walkthrough(): JSX.Element {
   const review = useEditor().review;
   const files = () => review.walkthroughData()?.files || [];
   return (
-    <div id="review-walkthrough-view" class="flex h-full min-h-0 flex-1 flex-row overflow-hidden">
+    <div
+      id="review-walkthrough-view"
+      role="tabpanel"
+      aria-labelledby="btn-review-tab-walkthrough"
+      class="flex h-full min-h-0 flex-1 flex-row overflow-hidden"
+    >
       <Switch>
         <Match when={review.walkthrough.error}>
-          <EmptyState icon="icon-[lucide--circle-alert]" title="Failed to load code understanding">
+          <EmptyState icon="icon-[lucide--circle-alert]" title="Failed to load walkthrough">
             <span class="text-destructive">{review.walkthrough.error.message}</span>
           </EmptyState>
         </Match>
-        <Match when={!review.walkthroughData()}>
-          <EmptyState spinner title="Analyzing code changes & guardrails…" />
+        <Match when={review.walkthrough.loading || !review.walkthroughData()}>
+          <EmptyState spinner title="Loading changed files…" />
         </Match>
-        <Match when={!files().length}>
-          <EmptyState icon="icon-[lucide--check]" title="Working tree is clean">
-            No modified files or uncommitted diffs found against{' '}
-            {review.walkthroughData()?.baseRef || 'HEAD'}.
+        <Match when={!files().length && !review.walkthroughData()?.hiddenWhitespaceFiles}>
+          <WalkthroughFiles data={review.walkthroughData()} />
+          <EmptyState icon="icon-[lucide--check]" title="No changes in this pull request">
+            No differences found between the PR base and head.
           </EmptyState>
         </Match>
-        <Match when={files().length}>
+        <Match when={files().length || review.walkthroughData()?.hiddenWhitespaceFiles}>
           <WalkthroughFiles data={review.walkthroughData()} />
-          <WalkthroughDiff files={files()} />
+          <WalkthroughDiff files={visibleFiles(files(), review.groupFilter())} />
         </Match>
       </Switch>
     </div>

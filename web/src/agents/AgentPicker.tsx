@@ -7,6 +7,7 @@ interface AgentPickerProps {
 import type { JSX } from 'solid-js';
 import { createMemo, createResource, createSignal, For, Show, onMount } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
+import { moveListIndex } from '../lib/list.ts';
 import { Popover } from '../lib/Popover.tsx';
 import { ErrorNotice } from '../lib/ErrorNotice.tsx';
 import { filterAgentModels, groupAgentModels } from './logic.ts';
@@ -111,7 +112,7 @@ function PickerPanel(props: { height: number; close: () => void }): JSX.Element 
     if (await editor.actions.selectAgent(active()?.harness || '', model)) props.close();
   }
   function move(delta: number) {
-    const index = Math.max(0, Math.min(models().length - 1, selected() + delta));
+    const index = moveListIndex(selected(), delta, models().length);
     setSelected(index);
     list?.children[index]?.scrollIntoView({ block: 'nearest' });
   }

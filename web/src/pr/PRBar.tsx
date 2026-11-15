@@ -19,7 +19,7 @@ export function PRBar(): JSX.Element {
   return (
     <div
       id="pr-bar"
-      class="[body:not(.in-review-mode)_&]:hidden! flex flex-none flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2"
+      class="[body:not(.in-review-mode)_&]:hidden! flex flex-none flex-wrap items-center bg-sidebar gap-x-3 gap-y-2 px-3 py-2"
     >
       <div class="flex min-w-0 flex-1 basis-80 flex-col gap-0.5">
         <div class="flex min-w-0 items-center gap-2">

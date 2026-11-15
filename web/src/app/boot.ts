@@ -57,7 +57,7 @@ function takeInitialLocation(): { path: string; line?: number } | null {
 
 /**
  * Loads the workspace and opens it the way it was left: Git view with the first change selected
- * when there are changes, the file tree otherwise, and the pull request overview for a PR session.
+ * when there are changes, the file tree otherwise, and the pull request review for a PR session.
  * Returns a function that stops the readiness poll.
  */
 export function bootWorkspace(editor: BootEditor): () => void {

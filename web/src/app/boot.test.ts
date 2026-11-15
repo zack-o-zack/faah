@@ -94,7 +94,7 @@ test('an open changed tab is selected instead of opening a file', async () => {
   expect(actions.openFile).not.toHaveBeenCalled();
 });
 
-test('a clean workspace collapses the file tree; a PR session opens the overview', async () => {
+test('a clean workspace collapses the file tree; a PR session opens the review', async () => {
   vi.mocked(api).mockResolvedValue(meta({ pr: { number: 7 } }));
   const { editor, actions } = createEditor([], false);
   bootWorkspace(editor);

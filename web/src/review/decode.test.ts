@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import { decodeReviewEvent, decodeReviewStatus, decodeWalkthrough } from './decode.ts';
-test('decodes full runs, stage events and walkthrough insights', () => {
+test('decodes full runs, stage events and walkthrough file groups', () => {
   expect(
     decodeReviewStatus({
       run: {
@@ -22,10 +22,11 @@ test('decodes full runs, stage events and walkthrough insights', () => {
       files: [
         {
           path: 'a',
-          understanding: { edgeCases: [{ line: 2, kind: 'error', text: 'x', explanation: 'why' }] },
+          group: 'core',
+          oldPath: 'old',
         },
       ],
-    }).files[0]?.understanding?.edgeCases?.[0]?.explanation,
-  ).toBe('why');
+    }).files[0]?.oldPath,
+  ).toBe('old');
   expect(() => decodeReviewStatus({ run: { activeStage: '1' } })).toThrow();
 });

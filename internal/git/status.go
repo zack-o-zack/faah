@@ -161,26 +161,11 @@ func mapXY(xy string) string {
 
 // parseNameStatusZ parses `git diff --name-status -z` output into dst.
 func parseNameStatusZ(out []byte, key func(string) (string, bool), dst map[string]string, overwrite bool) {
-	parts := strings.Split(string(out), "\x00")
-	for i := 0; i < len(parts); i++ {
-		st := parts[i]
-		if st == "" {
-			continue
-		}
-		code := st[:1]
-		if code == "R" || code == "C" {
-			i += 2 // R<score> \0 <src> \0 <dst>
-		} else {
-			i++
-		}
-		if i < len(parts) {
-			if k, ok := key(parts[i]); ok {
-				if overwrite {
-					dst[k] = code
-				} else if _, exists := dst[k]; !exists {
-					dst[k] = code
-				}
-			}
+	for _, file := range parseChangedFiles(out, key) {
+		if overwrite {
+			dst[file.Path] = file.Status
+		} else if _, exists := dst[file.Path]; !exists {
+			dst[file.Path] = file.Status
 		}
 	}
 }

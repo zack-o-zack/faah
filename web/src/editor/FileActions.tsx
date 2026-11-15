@@ -1,5 +1,5 @@
 import type { JSX } from 'solid-js';
-import { diffLayout } from '../settings/logic.ts';
+import { DiffOptions } from '../viewers/DiffOptions.tsx';
 import { Show } from 'solid-js';
 import { useEditor } from './context.tsx';
 import { EditControls } from './EditControls.tsx';
@@ -70,45 +70,14 @@ export function FileActions(): JSX.Element {
             class="btn"
             data-size="xs"
             aria-pressed={!!document()?.diffMode}
-            onClick={() =>
-              actions.setDiffMode(document(), diffLayout(editor.settings.preferences()))
-            }
+            onClick={() => actions.setDiffMode(document(), true)}
             data-variant={document()?.diffMode ? 'secondary' : 'outline'}
           >
             Changes
           </button>
         </div>
         <Show when={document()?.diffMode}>
-          <button
-            id="diff-layout"
-            class="btn"
-            data-variant="ghost"
-            data-size="icon-xs"
-            title={
-              document()?.diffMode === 'split'
-                ? 'Show changes in one column'
-                : 'Show changes side by side'
-            }
-            aria-label={
-              document()?.diffMode === 'split'
-                ? 'Show changes in one column'
-                : 'Show changes side by side'
-            }
-            onClick={() =>
-              actions.setDiffMode(
-                document(),
-                document()?.diffMode === 'split' ? 'unified' : 'split',
-              )
-            }
-          >
-            <span
-              class={
-                document()?.diffMode === 'split'
-                  ? 'icon-[lucide--rectangle-vertical] size-3.5'
-                  : 'icon-[lucide--columns-2] size-3.5'
-              }
-            />
-          </button>
+          <DiffOptions id="diff-options" />
         </Show>
       </Show>
       <EditControls />

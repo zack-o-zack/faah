@@ -43,7 +43,7 @@ faah stores all configuration in a single per-user global file (`~/.faah/setting
 | `markdown.preview.open` | Workbench | `true` | `true`, `false` | Open Markdown files in rendered preview |
 | `table.preview.open` | Workbench | `true` | `true`, `false` | Open CSV and TSV files as a table |
 | `diffEditor.renderSideBySide` | Diff Editor | `true` | `true`, `false` | Split vs. unified diff view default |
-| `diffEditor.ignoreTrimWhitespace` | Diff Editor | `true` | `true`, `false` | Ignore whitespace differences in diffs |
+| `diffEditor.ignoreWhitespace` | Git & Diff | `false` | `true`, `false` | Hide whitespace differences in the walkthrough |
 | `git.gutterIndicators` | Git | `true` | `true`, `false` | Visual change markers in gutter |
 | `git.commitMessageInstruction` | Git & Diff | `""` | any string (multi-line textarea) | Extra instructions given to the coding harness when the git panel's **✨ Commit** (empty message) writes a commit message |
 | `explorer.compactFolders` | Explorer | `true` | `true`, `false` | Compact single-child directory chains |

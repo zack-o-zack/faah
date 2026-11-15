@@ -1,4 +1,5 @@
 import type { JSX } from 'solid-js';
+import { handleTabKeys } from '../lib/tab-keys.ts';
 import { Index, Show } from 'solid-js';
 import { useWorkbench } from './context.tsx';
 import { Recent } from './Recent.tsx';
@@ -14,16 +15,7 @@ export function WorkbenchTabs(): JSX.Element {
         aria-label="Workspaces"
         data-variant="line"
         class="w-full justify-start border-b [&>[role=tab]]:flex-none"
-        onKeyDown={(e) => {
-          if (['ArrowLeft', 'ArrowRight'].includes(e.key)) {
-            e.preventDefault();
-            const tab = state.tab === 'recent' ? 'browse' : 'recent';
-            actions.selectTab(tab);
-            e.currentTarget
-              .querySelector<HTMLButtonElement>(`[aria-controls="wb-panel-${tab}"]`)
-              ?.focus();
-          }
-        }}
+        onKeyDown={handleTabKeys}
       >
         <Index each={['recent', 'browse']}>
           {(tab) => (

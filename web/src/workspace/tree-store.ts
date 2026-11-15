@@ -82,7 +82,8 @@ function buildTreeStore(app: TreeHost, options: TreeOptions = {}) {
         app.state.git.unpushedCount ||
         app.state.workspace.meta.pr)
     );
-  const mode = () => (state.mode === 'git' && hasGitView() ? 'git' : 'files');
+  // Availability chooses the initial view; an explicit Diff selection also works when clean.
+  const mode = () => (state.mode === 'git' ? 'git' : 'files');
   const counts = createMemo(() => ({
     all: Object.keys(app.state.git.snapshot?.statuses || app.state.workspace.meta?.pr?.files || {})
       .length,

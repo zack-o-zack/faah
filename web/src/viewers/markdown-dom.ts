@@ -97,6 +97,25 @@ function sanitizeBody(html: string, docPath: string): HTMLElement {
     if (tag === 'img') mdSetImage(el, mdURL(attrs.src || ''), base);
     if (tag === 'a' && attrs.href) mdSetLink(el, mdURL(attrs.href), base);
   }
+  // Goldmark emits task checkboxes without task-list classes. Derive hooks after
+  // sanitization so tight and paragraph-wrapped tasks share the same prose layout.
+  for (const item of body.querySelectorAll('li')) {
+    const first = item.firstElementChild;
+    const container = first?.localName === 'p' ? first : item;
+    const checkbox = container.firstElementChild;
+    if (!(checkbox instanceof HTMLInputElement) || checkbox.type !== 'checkbox') continue;
+    let leading = checkbox.previousSibling;
+    let startsWithCheckbox = true;
+    while (leading) {
+      if (leading.nodeType !== Node.TEXT_NODE || leading.textContent?.trim())
+        startsWithCheckbox = false;
+      leading = leading.previousSibling;
+    }
+    if (!startsWithCheckbox) continue;
+    item.classList.add('md-task-item');
+    checkbox.classList.remove('mr-2');
+    checkbox.classList.add('md-task-checkbox');
+  }
   return body;
 }
 export function sanitizeHTML(html: string, path: string): string {

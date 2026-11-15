@@ -87,3 +87,14 @@ test('new item validates paths and reports failures without closing the form', a
   tree.actions.closeNewItem();
   expect(tree.state.newItem).toBeNull();
 });
+
+test.each([true, false])('Diff mode can be selected in a clean workspace (git=%s)', async (git) => {
+  const { app, tree } = fixture(vi.fn(async () => ({ children: [] })));
+  app.actions.setWorkspace({ git, gitChanges: 0 });
+  expect(tree.hasGitView()).toBe(false);
+  await tree.actions.setTreeMode('git');
+  expect(tree.mode()).toBe('git');
+  expect(tree.rows()).toEqual([]);
+  await tree.actions.setTreeMode('files');
+  expect(tree.mode()).toBe('files');
+});

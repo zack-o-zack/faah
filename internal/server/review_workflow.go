@@ -135,19 +135,22 @@ func (s *Server) handleReviewWorkflowStream(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-// handleReviewWalkthrough delivers file diffs and extracted understanding for the Review Walkthrough.
+// handleReviewWalkthrough delivers grouped file diffs for the Review Walkthrough.
 func (s *Server) handleReviewWalkthrough(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httpx.Fail(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
 
-	isPR := s.pr != nil && s.prHeadSHA != ""
-	var statuses map[string]string
-	if isPR {
-		statuses = s.ix.PRFiles()
-	} else {
-		statuses = s.ix.GitStatusMap()
+	if s.pr == nil || s.prHeadSHA == "" {
+		httpx.Fail(w, http.StatusConflict, "Review requires a pull request")
+		return
 	}
-	httpx.WriteJSON(w, review.BuildWalkthrough(s.ix.Root(), s.diffBase, s.prHeadSHA, isPR, statuses))
+	httpx.WriteJSON(w, review.BuildWalkthrough(review.WalkthroughOptions{
+		Root:             s.ix.Root(),
+		DiffBase:         s.diffBase,
+		DiffHead:         s.prHeadSHA,
+		Statuses:         s.ix.PRFiles(),
+		IgnoreWhitespace: r.URL.Query().Get("ignoreWhitespace") == "1",
+	}))
 }

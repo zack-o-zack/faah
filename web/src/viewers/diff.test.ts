@@ -51,15 +51,15 @@ test('split pairs changed runs, pads additions and repeats context', () => {
   expect(pairs[0]?.left).toBe(pairs[0]?.right);
   expect(pairs[3]).toMatchObject({ left: null, right: { text: 'extra', newLine: 5 } });
   expect(
-    required(required(splitRows(rows)[1]).left)
+    required(required(splitRows(rows, true)[1]).left)
       .parts.map((p) => p.text)
       .join(''),
   ).toBe('old value');
 });
 test('unified rows preserve original order and all gutter positions', () => {
   const rows = required(parseDiff(diff)[0]).rows;
-  expect(unifiedRows(rows).map((row) => row.text)).toEqual(rows.map((row) => row.text));
-  expect(unifiedRows(rows).map(gutterAnchor)).toEqual(rows.map(gutterAnchor));
+  expect(unifiedRows(rows, true).map((row) => row.text)).toEqual(rows.map((row) => row.text));
+  expect(unifiedRows(rows, true).map(gutterAnchor)).toEqual(rows.map(gutterAnchor));
 });
 describe('bounded intraline changes', () => {
   test.each([
@@ -165,7 +165,9 @@ test('real metadata reload patch preserves separate hunk offsets and highlighted
   const hunks = parseDiff(metadataFixture);
   expect(hunks).toHaveLength(3);
   for (const hunk of hunks) {
-    expect(unifiedRows(hunk.rows).map((row) => row.text)).toEqual(hunk.rows.map((row) => row.text));
+    expect(unifiedRows(hunk.rows, true).map((row) => row.text)).toEqual(
+      hunk.rows.map((row) => row.text),
+    );
     expect(parseDiff(serializeHunk(hunk))[0]?.rows).toEqual(hunk.rows);
   }
 });

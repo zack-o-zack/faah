@@ -71,7 +71,7 @@ async function request(
   const j: unknown = await r.json();
   // The body rides along: some replies, like a failed agent job, carry detail beyond the message.
   if (j && typeof j === 'object' && 'error' in j && typeof j.error === 'string' && j.error)
-    throw Object.assign(new Error(j.error), { body: j });
+    throw Object.assign(new Error(j.error), { body: j, status: r.status });
   return j;
 }
 export const api: Request = (path, params, opts) => request('GET', path, params, opts);

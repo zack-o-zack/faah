@@ -1,16 +1,7 @@
-interface VerdictProps {
-  class?: string;
-  id: string;
-  event: 'COMMENT' | 'APPROVE' | 'REQUEST_CHANGES';
-  title?: string;
-  disabled?: boolean | string;
-  icon: string;
-  label: string;
-  hint: string;
-}
 import type { JSX } from 'solid-js';
-import { Show } from 'solid-js';
+import { createSignal, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
+import { OptionButton } from './OptionButton.tsx';
 import { Popover } from '../lib/Popover.tsx';
 import { ErrorNotice } from '../lib/ErrorNotice.tsx';
 import { draftsNote, forgeInfo, prEnded } from './logic.ts';
@@ -21,9 +12,24 @@ export function ReviewPanel(): JSX.Element {
   const meta = () => editor.pr.meta() || {};
   const gate = () => editor.merge.gate();
   const verdicts = () => meta()?.writeAccess && !prEnded(meta());
+  type Verdict = 'COMMENT' | 'APPROVE' | 'REQUEST_CHANGES';
+  const [selected, setSelected] = createSignal<Verdict>('COMMENT');
+  const blocked = () =>
+    gate().all ||
+    (selected() === 'APPROVE' && gate().approve) ||
+    (selected() !== 'COMMENT' && !verdicts());
+  const hint = () => {
+    if (selected() === 'APPROVE')
+      return gate().approveNote || 'Submit feedback and approve merging these changes';
+    if (selected() === 'REQUEST_CHANGES')
+      return 'Submit feedback that must be addressed before merging';
+    return 'Submit general feedback without explicit approval';
+  };
   return (
     <Popover
       triggerId="pr-review-toggle"
+      onOpen={() => setSelected('COMMENT')}
+      panelClass="fixed z-[70] m-0 w-[min(28rem,calc(100vw-1rem))] min-w-0 top-auto left-auto gap-0"
       variant="outline"
       size="sm"
       label={
@@ -42,7 +48,7 @@ export function ReviewPanel(): JSX.Element {
       open={pr().review.open}
       onOpenChange={editor.actions.setReviewPanel}
     >
-      <div class="flex w-[min(28rem,90vw)] flex-col gap-3 p-2">
+      <div class="flex min-w-0 w-full flex-col gap-3 p-2">
         <label class="flex flex-col gap-1.5">
           <span class="text-xs font-medium">
             Summary <span class="font-normal text-muted-foreground">(optional)</span>
@@ -60,68 +66,52 @@ export function ReviewPanel(): JSX.Element {
         </label>
         <p class="text-xs text-muted-foreground">{draftsNote(pr().drafts.length)}</p>
         <ErrorNotice error={pr().review.error} />
-        <div class="flex flex-col gap-1.5" role="group" aria-label="Send as">
-          <Verdict
-            id="pr-submit-comment"
-            event="COMMENT"
-            icon="icon-[lucide--message-square]"
+        <div class="button-group flex w-full gap-0" role="radiogroup" aria-label="Review verdict">
+          <OptionButton
+            selected={selected() === 'COMMENT'}
             label="Comment"
-            hint="Submit general feedback without explicit approval"
-            disabled={gate().all}
+            icon="icon-[lucide--message-square]"
+            disabled={!!gate().all || !!pr().review.pending}
             title={
               gate().all ||
               (meta().readOnly
-                ? `No ${forgeInfo(editor.store.state.workspace.meta).label} token configured -- click to connect and submit`
-                : 'Submit review with drafts, without approval or change requests')
+                ? `No ${forgeInfo(editor.store.state.workspace.meta).label} token configured, click to connect and submit`
+                : 'Submit general feedback')
             }
-            class="flex w-full items-start gap-2.5 rounded-md border px-3 py-2 text-left hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50"
+            onClick={() => setSelected('COMMENT')}
           />
           <Show when={verdicts()}>
-            <Verdict
-              id="pr-submit-approve"
-              event="APPROVE"
-              icon="icon-[lucide--check] text-gi"
+            <OptionButton
+              selected={selected() === 'APPROVE'}
               label="Approve"
-              hint={gate().approveNote || 'Submit feedback and approve merging these changes'}
-              disabled={gate().all || gate().approve}
+              icon="icon-[lucide--check] text-gi"
+              disabled={!!gate().all || !!gate().approve || !!pr().review.pending}
               title={gate().all || gate().approve || gate().approveNote || 'Approve this PR'}
-              class="flex w-full items-start gap-2.5 rounded-md border px-3 py-2 text-left hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50"
+              onClick={() => setSelected('APPROVE')}
             />
-            <Verdict
-              id="pr-submit-request-changes"
-              event="REQUEST_CHANGES"
-              icon="icon-[lucide--file-diff] text-destructive"
+            <OptionButton
+              selected={selected() === 'REQUEST_CHANGES'}
               label="Request changes"
-              hint="Submit feedback that must be addressed before merging"
-              disabled={gate().all}
+              icon="icon-[lucide--file-diff] text-destructive"
+              disabled={!!gate().all || !!pr().review.pending}
               title={gate().all || 'Request changes on this PR'}
-              class="flex w-full items-start gap-2.5 rounded-md border px-3 py-2 text-left hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50"
+              onClick={() => setSelected('REQUEST_CHANGES')}
             />
           </Show>
         </div>
+        <p class="text-xs text-muted-foreground">{hint()}</p>
+        <button
+          id="pr-review-submit"
+          type="button"
+          class="btn w-full"
+          data-variant="primary"
+          disabled={!!blocked() || !!pr().review.pending}
+          title={typeof blocked() === 'string' ? String(blocked()) : undefined}
+          onClick={() => void editor.actions.submitReview(selected())}
+        >
+          {pr().review.pending ? 'Sending…' : 'Submit review'}
+        </button>
       </div>
     </Popover>
-  );
-}
-function Verdict(props: VerdictProps): JSX.Element {
-  const editor = useEditor();
-  const pending = () => editor.pr.state.review.pending;
-  return (
-    <button
-      id={props.id}
-      type="button"
-      title={props.title}
-      disabled={!!props.disabled || !!pending()}
-      class="flex w-full items-start gap-2.5 rounded-md border px-3 py-2 text-left hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50"
-      onClick={() => void editor.actions.submitReview(props.event)}
-    >
-      <span class={`${props.icon} mt-0.5 size-4 shrink-0`} aria-hidden="true" />
-      <span class="flex min-w-0 flex-col gap-0.5">
-        <span class="text-sm font-medium">
-          {pending() === props.event ? 'Sending…' : props.label}
-        </span>
-        <span class="text-xs text-muted-foreground">{props.hint}</span>
-      </span>
-    </button>
   );
 }

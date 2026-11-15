@@ -3,6 +3,7 @@ import type { AppStore } from '../app/store.ts';
 import type { DocTab } from '../editor/types.ts';
 import type { DocumentBuffer } from '../editor/buffer.ts';
 interface ResourceKey {
+  query: Record<string, string | undefined> | undefined;
   path: string;
   ref: string;
   base: string;
@@ -24,8 +25,10 @@ export function createViewerResource<T>(
   document: Accessor<DocTab | null>,
   endpoint: string | Accessor<string>,
   decode: (value: unknown) => T,
+  params?: Accessor<Record<string, string | undefined>>,
 ): ResourceReturn<T> {
   let controller: AbortController | undefined;
+  const query = createMemo(() => params?.());
   const key = createMemo<ResourceKey | undefined>(
     () => {
       const doc = document();
@@ -34,6 +37,7 @@ export function createViewerResource<T>(
       const buffer = editor.store.buffers.get(doc.path);
       buffer?.revision();
       return {
+        query: query(),
         path: doc.path,
         ref: doc.diffRef || '',
         base: doc.diffBase || '',
@@ -45,6 +49,7 @@ export function createViewerResource<T>(
     undefined,
     {
       equals: (a, b) =>
+        a?.query === b?.query &&
         a?.path === b?.path &&
         a?.ref === b?.ref &&
         a?.base === b?.base &&
@@ -59,7 +64,7 @@ export function createViewerResource<T>(
     const path = typeof endpoint === 'function' ? endpoint() : endpoint;
     const value = await api(
       path,
-      { path: key.path, ref: key.ref, base: key.base },
+      { path: key.path, ref: key.ref, base: key.base, ...key.query },
       { signal: controller.signal },
     );
     return decode(value);
