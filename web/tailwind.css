@@ -243,6 +243,27 @@
   .md li + li, .md li > ul, .md li > ol { margin-top: 4px; }
   .md li > ul, .md li > ol, .md li > p { margin-bottom: 0; }
 
+  /* Reserve the checkbox gutter on the item, so every wrapped line stays with
+     the task text. Absolute placement also overrides Basecoat's block input. */
+  .md .md-task-item {
+    --md-task-size: 1em;
+    --md-task-gap: .5em;
+    position: relative;
+    list-style-type: none;
+    padding-inline-start: calc(var(--md-task-size) + var(--md-task-gap));
+    margin-inline-start: calc(-1 * (var(--md-task-size) + var(--md-task-gap)));
+  }
+  .md .md-task-item input.md-task-checkbox {
+    position: absolute;
+    inset-inline-start: 0;
+    top: calc((1lh - var(--md-task-size)) / 2);
+    display: inline-block;
+    width: var(--md-task-size);
+    height: var(--md-task-size);
+    margin: 0;
+    font: inherit;
+  }
+
   .md blockquote { padding: 0 1em; color: var(--muted-foreground); border-left: 3px solid var(--border); }
   .md blockquote > :last-child { margin-bottom: 0; }
   .md code, .md samp, .md tt { font-family: var(--mono); font-size: .86em; }

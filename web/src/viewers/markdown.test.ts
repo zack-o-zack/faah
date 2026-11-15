@@ -62,3 +62,24 @@ test('a missing Markdown image becomes a card naming its path', () => {
   expect(card.textContent).toBe('Image not found: docs/missing.png');
   expect(card.firstElementChild?.getAttribute('aria-hidden')).toBe('true');
 });
+
+test('sanitized task lists have structural hooks for tight, loose and nested tasks without trusting incoming classes', async () => {
+  const { default: html } = await import('../review/fixtures/tasklist.html?raw');
+  const fragment = sanitizeDocument(html, 'tasks.md');
+  const tasks = fragment.querySelectorAll('li.md-task-item');
+  expect(tasks).toHaveLength(4);
+  const inputs = fragment.querySelectorAll<HTMLInputElement>('input.md-task-checkbox');
+  expect([...inputs].map((input) => input.checked)).toEqual([true, false, false, true]);
+  for (const input of inputs) {
+    expect(input.disabled).toBe(true);
+    expect(input.classList.contains('mr-2')).toBe(false);
+  }
+  expect(fragment.querySelector('li.md-task-item > p > input.md-task-checkbox')).not.toBeNull();
+  expect(fragment.querySelector('li.md-task-item ul li.md-task-item')).not.toBeNull();
+  expect(fragment.querySelector('ul')?.className).toBe('');
+  expect(
+    [...fragment.querySelectorAll('li')].find(
+      (li) => li.textContent === 'Ordinary bullet stays visible',
+    )?.className,
+  ).toBe('');
+});
