@@ -139,7 +139,7 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
       if (options?.push !== false) store.actions.pushHistory(path, document.cur);
       batch(() => {
         activateView();
-        // Opening a file leaves the overview; closing a tab behind it does not.
+        // Opening a file leaves the review; closing a tab behind it does not.
         actions.setReviewMode('code');
       });
       if (options?.line) centerLine(options.line);

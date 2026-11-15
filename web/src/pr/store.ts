@@ -467,7 +467,7 @@ function buildPRStore(editor: PRHost, options: PROptions = {}) {
         set('panel', 'collapsed', false);
       },
       setThreadExpanded: (key: string, open: boolean) => set('expanded', key, open),
-      // The comments panel shows with the overview, so a gutter marker opens it there.
+      // The comments panel shows with the review, so a gutter marker opens it there.
       revealPRThread(key: string): void {
         batch(() => {
           editor.actions.setReviewMode('review');

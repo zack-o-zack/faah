@@ -4,6 +4,7 @@ import { TreeToolbar } from '../workspace/TreeToolbar.tsx';
 import { TreeScope } from '../workspace/TreeScope.tsx';
 import { Tree } from '../workspace/Tree.tsx';
 import { GitPanel } from '../git/GitPanel.tsx';
+import { ReviewButton } from '../review/ReviewButton.tsx';
 import { Unpushed } from '../git/Unpushed.tsx';
 export function Sidebar(): JSX.Element {
   const editor = useEditor();
@@ -19,6 +20,7 @@ export function Sidebar(): JSX.Element {
       <Tree />
       <Unpushed />
       <GitPanel />
+      <ReviewButton />
     </aside>
   );
 }

@@ -27,7 +27,7 @@ function mount(reply: unknown, walkthrough: unknown = { files: [], totalFiles: 0
   return required(editor);
 }
 
-test('the overview mounts only in review mode and toggles its layout', async () => {
+test('the review mounts only in review mode and toggles its layout', async () => {
   const editor = mount({ config: { stages: [{ id: 'a', title: 'Check changes' }] } });
   expect(document.getElementById('review-view')).toBe(null);
   editor.actions.setReviewMode('review');
@@ -95,7 +95,7 @@ test('walkthrough filters list files by group', async () => {
   expect(screen.getByText('Moved from old/a.go, no content changes')).toBeTruthy();
 });
 
-test('overview preserves server syntax tokens and decodes source text safely', async () => {
+test('review preserves server syntax tokens and decodes source text safely', async () => {
   const editor = mount(
     { config: { stages: [] } },
     {
