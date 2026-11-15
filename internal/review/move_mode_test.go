@@ -17,7 +17,7 @@ func TestWalkthroughMoveRetainsModeChange(t *testing.T) {
 		t.Fatal(err)
 	}
 	gittest.Run(t, root, "add", "-A")
-	response := BuildWalkthrough(root, "HEAD", "", false, map[string]string{"moved.go": "R"})
+	response := BuildWalkthrough(root, "HEAD", "", false, map[string]string{"moved.go": "R"}, false)
 	if len(response.Files) != 1 || !strings.Contains(response.Files[0].Diff, "new mode 100755") {
 		t.Fatalf("mode change lost: %+v", response)
 	}

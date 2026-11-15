@@ -23,17 +23,18 @@ type WalkthroughFile struct {
 
 // WalkthroughResponse is the response payload for /api/review/walkthrough.
 type WalkthroughResponse struct {
-	Files          []WalkthroughFile `json:"files"`
-	TotalFiles     int               `json:"totalFiles"`
-	TotalAdditions int               `json:"totalAdditions"`
-	TotalDeletions int               `json:"totalDeletions"`
-	BaseRef        string            `json:"baseRef"`
-	HeadRef        string            `json:"headRef"`
-	PRMode         bool              `json:"prMode"`
+	HiddenWhitespaceFiles int               `json:"hiddenWhitespaceFiles"`
+	Files                 []WalkthroughFile `json:"files"`
+	TotalFiles            int               `json:"totalFiles"`
+	TotalAdditions        int               `json:"totalAdditions"`
+	TotalDeletions        int               `json:"totalDeletions"`
+	BaseRef               string            `json:"baseRef"`
+	HeadRef               string            `json:"headRef"`
+	PRMode                bool              `json:"prMode"`
 }
 
 // BuildWalkthrough builds file diffs for the Review Walkthrough.
-func BuildWalkthrough(root, diffBase, diffHead string, isPR bool, statuses map[string]string) WalkthroughResponse {
+func BuildWalkthrough(root, diffBase, diffHead string, isPR bool, statuses map[string]string, ignoreWhitespace bool) WalkthroughResponse {
 	var (
 		walkthroughFiles = []WalkthroughFile{}
 		baseRef          = diffBase
@@ -50,6 +51,8 @@ func BuildWalkthrough(root, diffBase, diffHead string, isPR bool, statuses map[s
 		group   string
 	}
 	var targets []targetFile
+	exactPaths := map[string]bool{}
+	hiddenWhitespaceFiles := 0
 
 	if isPR {
 		baseRef = diffBase
@@ -76,6 +79,9 @@ func BuildWalkthrough(root, diffBase, diffHead string, isPR bool, statuses map[s
 						headRef = headSHA
 					}
 					for _, cf := range cfList {
+						if ignoreWhitespace {
+							exactPaths[cf.Path] = true
+						}
 						targets = append(targets, targetFile{path: cf.Path, status: cf.Status, oldPath: cf.From, group: fileGroup(cf.Path)})
 					}
 				}
@@ -89,6 +95,11 @@ func BuildWalkthrough(root, diffBase, diffHead string, isPR bool, statuses map[s
 			head = diffHead
 		}
 		moves := git.ChangedFiles(root, baseRef, head)
+		if ignoreWhitespace {
+			for _, move := range moves {
+				exactPaths[move.Path] = true
+			}
+		}
 		targetIndices := make(map[string]int, len(targets))
 		for i, target := range targets {
 			targetIndices[target.path] = i
@@ -131,12 +142,37 @@ func BuildWalkthrough(root, diffBase, diffHead string, isPR bool, statuses map[s
 		if target.oldPath != "" {
 			paths = append(paths, target.oldPath)
 		}
-		diffText := git.DiffPaths(root, baseRef, head, paths...)
+		readDiff := git.DiffPaths
+		if ignoreWhitespace {
+			readDiff = git.DiffPathsIgnoringWhitespace
+		}
+		diffText := readDiff(root, baseRef, head, paths...)
 		if diffText == "" && target.oldPath == "" {
+			if ignoreWhitespace && exactPaths[target.path] {
+				hiddenWhitespaceFiles++
+			}
 			continue
 		}
 
 		hunks := render.HighlightDiff(target.path, diffText)
+		if ignoreWhitespace {
+			// Git suppresses wholly blank hunks, but leaves blank edits in mixed
+			// hunks. Keep the parser's line numbers when hiding those rows.
+			for i := range hunks {
+				rows := hunks[i].Rows[:0]
+				for _, row := range hunks[i].Rows {
+					if row.Type != "ctx" && strings.TrimSpace(row.Text) == "" {
+						continue
+					}
+					rows = append(rows, row)
+				}
+				hunks[i].Rows = rows
+			}
+			if target.oldPath != "" && len(hunks) == 0 &&
+				!strings.Contains(diffText, "Binary files ") && !strings.Contains(diffText, "old mode ") {
+				diffText = ""
+			}
+		}
 		// Git reports identical rename content with a 100% similarity header.
 		// Binary edits also have no text hunks, so hunks cannot identify pure moves.
 		if target.oldPath != "" && strings.Contains(diffText, "\nsimilarity index 100%\n") && !strings.Contains(diffText, "\nold mode ") {
@@ -169,12 +205,13 @@ func BuildWalkthrough(root, diffBase, diffHead string, isPR bool, statuses map[s
 	}
 
 	return WalkthroughResponse{
-		Files:          walkthroughFiles,
-		TotalFiles:     len(walkthroughFiles),
-		TotalAdditions: totalAdditions,
-		TotalDeletions: totalDeletions,
-		BaseRef:        baseRef,
-		HeadRef:        headRef,
-		PRMode:         isPR,
+		HiddenWhitespaceFiles: hiddenWhitespaceFiles,
+		Files:                 walkthroughFiles,
+		TotalFiles:            len(walkthroughFiles),
+		TotalAdditions:        totalAdditions,
+		TotalDeletions:        totalDeletions,
+		BaseRef:               baseRef,
+		HeadRef:               headRef,
+		PRMode:                isPR,
 	}
 }

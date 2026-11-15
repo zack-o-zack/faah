@@ -210,11 +210,24 @@ func ChangedFiles(root, base, head string) []CommitFile {
 
 // DiffPaths includes both sides of a rename so Git can compute its actual edits.
 func DiffPaths(root, base, head string, paths ...string) string {
+	return diffPaths(root, base, head, false, paths...)
+}
+
+// DiffPathsIgnoringWhitespace is the walkthrough's display-only whitespace filter.
+func DiffPathsIgnoringWhitespace(root, base, head string, paths ...string) string {
+	return diffPaths(root, base, head, true, paths...)
+}
+
+func diffPaths(root, base, head string, ignoreWhitespace bool, paths ...string) string {
 	if !Available(root) {
 		return ""
 	}
 	argsForBase := func(base string) []string {
-		args := []string{"-C", root, "diff", "--no-color", "--find-renames", base}
+		args := []string{"-C", root, "diff", "--no-color", "--find-renames"}
+		if ignoreWhitespace {
+			args = append(args, "--ignore-all-space", "--ignore-blank-lines")
+		}
+		args = append(args, base)
 		if head != "" {
 			args = append(args, head)
 		}

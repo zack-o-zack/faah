@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"faah/internal/git/gittest"
 	"faah/internal/review"
 	"faah/internal/workspace"
 )
@@ -190,5 +191,32 @@ func TestReviewWalkthroughEndpoint(t *testing.T) {
 
 	if resp.Files == nil {
 		t.Fatalf("expected non-nil files array")
+	}
+}
+
+func TestReviewWalkthroughWhitespaceParameter(t *testing.T) {
+	root := gittest.Repo(t)
+	gittest.Run(t, root, "reset", "--hard", "HEAD")
+	gittest.Run(t, root, "clean", "-fd")
+	if err := os.WriteFile(filepath.Join(root, "keep.go"), []byte("    keep\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	ix := workspace.NewIndex(root)
+	ix.Build()
+	s := New(Options{Workspace: ix, Assets: assets, DevRoot: devRoot, Version: version})
+	for _, value := range []string{"", "1", "true", "0", "2"} {
+		rec := httptest.NewRecorder()
+		s.handleReviewWalkthrough(rec, httptest.NewRequest(http.MethodGet, "/api/review/walkthrough?ignoreWhitespace="+value, nil))
+		var response review.WalkthroughResponse
+		if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+			t.Fatal(err)
+		}
+		want := 0
+		if value == "1" {
+			want = 1
+		}
+		if response.HiddenWhitespaceFiles != want {
+			t.Fatalf("%q: %+v", value, response)
+		}
 	}
 }
