@@ -37,6 +37,7 @@ type WalkthroughResponse struct {
 // WalkthroughOptions describes the comparison and display of a walkthrough.
 type WalkthroughOptions struct {
 	Root, DiffBase, DiffHead string
+	ComparisonBase           string
 	IsPR                     bool
 	Statuses                 map[string]string
 	IgnoreWhitespace         bool
@@ -48,8 +49,16 @@ type targetFile struct {
 
 // BuildWalkthrough builds file diffs for the Review Walkthrough.
 func BuildWalkthrough(o WalkthroughOptions) WalkthroughResponse {
+	chosen := o.ComparisonBase
+	branchBase := !o.IsPR && chosen != "" && chosen != "HEAD"
+	if branchBase {
+		o.DiffBase = git.MergeBase(o.Root, chosen, "HEAD")
+		if o.DiffBase == "" {
+			o.DiffBase = chosen
+		}
+	}
 	targets, baseRef, headRef, fallback, exactPaths := collectWalkthroughTargets(o)
-	if !fallback && len(targets) > 0 {
+	if !branchBase && !fallback && len(targets) > 0 {
 		targets = attachRenameOrigins(o, baseRef, targets, exactPaths)
 	}
 	sort.Slice(targets, func(i, j int) bool {
@@ -72,6 +81,9 @@ func BuildWalkthrough(o WalkthroughOptions) WalkthroughResponse {
 			response.TotalDeletions += file.Deletions
 		}
 	}
+	if branchBase {
+		response.BaseRef = chosen
+	}
 	response.TotalFiles = len(response.Files)
 	return response
 }
@@ -85,6 +97,16 @@ func collectWalkthroughTargets(o WalkthroughOptions) ([]targetFile, string, stri
 		headRef = o.DiffHead
 		for path, status := range o.Statuses {
 			targets = append(targets, targetFile{path: path, status: status, group: fileGroup(path)})
+		}
+	} else if o.ComparisonBase != "" && o.ComparisonBase != "HEAD" {
+		for _, file := range git.ChangedFiles(o.Root, o.DiffBase, "") {
+			targets = append(targets, targetFile{path: file.Path, status: file.Status, oldPath: file.From, group: fileGroup(file.Path)})
+			exactPaths[file.Path] = true
+		}
+		for path, status := range o.Statuses {
+			if status == "U" {
+				targets = append(targets, targetFile{path: path, status: status, group: fileGroup(path)})
+			}
 		}
 	} else {
 		statusMap := o.Statuses
