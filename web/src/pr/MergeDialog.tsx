@@ -4,12 +4,12 @@ interface CommitFieldsProps {
   draft: MergeMessage;
 }
 import type { JSX } from 'solid-js';
-import { For, Show } from 'solid-js';
+import { createEffect, For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
-import { ReviewDialogHeader } from './ReviewDialogHeader.tsx';
-import { ReviewDialogFooter } from './ReviewDialogFooter.tsx';
+import { DropdownMenu } from '../lib/DropdownMenu.tsx';
 import { Dialog } from '../lib/Dialog.tsx';
 import { ErrorNotice } from '../lib/ErrorNotice.tsx';
+import { ButtonKbd } from '../lib/ButtonKbd.tsx';
 import { keyLabel } from '../lib/keyboard.ts';
 import { AgentPicker } from '../agents/AgentPicker.tsx';
 import { mergeMethodInfo } from './logic.ts';
@@ -35,40 +35,31 @@ export function MergeDialog(): JSX.Element {
           void editor.actions.confirmMerge();
         }}
       >
-        <div class="overflow-auto">
-          <ReviewDialogHeader
-            prefix="pr-merge"
-            title={`Merge pull request #${editor.pr.meta()?.number}`}
-            onClose={editor.actions.closeMergeDialog}
-          >
-            <code>{editor.pr.meta()?.head}</code>{' '}
-            <span class="icon-[lucide--arrow-right] size-3 align-[-2px]" aria-hidden="true" />{' '}
-            <code>{merge.base()}</code>
-          </ReviewDialogHeader>
-          <section class="flex flex-col gap-3 overflow-auto">
-            <div
-              id="pr-merge-methods"
-              class="button-group"
-              role="radiogroup"
-              aria-label="Merge method"
-            >
-              <For each={merge.allowed()}>
-                {(value) => (
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={value === dialog().method}
-                    aria-pressed={value === dialog().method}
-                    class="btn"
-                    data-variant={value === dialog().method ? 'secondary' : 'ghost'}
-                    data-size="xs"
-                    onClick={() => editor.actions.setMergeMethod(value)}
-                  >
-                    {mergeMethodInfo(value).label}
-                  </button>
-                )}
-              </For>
+        <div class="max-w-[min(42rem,calc(100vw-2rem))] overflow-hidden">
+          <header class="flex-row! items-start justify-between gap-4">
+            <div class="min-w-0 flex-1 space-y-1">
+              <h2 id="pr-merge-title" class="whitespace-nowrap text-base font-semibold">
+                Merge pull request #{editor.pr.meta()?.number}
+              </h2>
+              <p
+                id="pr-merge-refs"
+                class="truncate font-mono text-sm text-muted-foreground"
+                title={`${editor.pr.meta()?.head} → ${merge.base()}`}
+              >
+                {editor.pr.meta()?.head} → {merge.base()}
+              </p>
             </div>
+            <button
+              class="btn shrink-0"
+              data-variant="ghost"
+              data-size="icon-xs"
+              aria-label="Close (Esc)"
+              onClick={editor.actions.closeMergeDialog}
+            >
+              <span class="icon-[lucide--x] size-3.5" aria-hidden="true" />
+            </button>
+          </header>
+          <section class="flex min-h-0 flex-col gap-4 overflow-y-auto">
             <p id="pr-merge-explain" data-ui="pr-merge-explain" class="text-muted-foreground">
               {method().explain(merge.commitCount(), merge.base())}
             </p>
@@ -91,14 +82,72 @@ export function MergeDialog(): JSX.Element {
             </Show>
             <ErrorNotice error={dialog().error} />
           </section>
-          <ReviewDialogFooter
-            prefix="pr-merge"
-            hint={`${keyLabel('Mod+Enter')} to merge, Esc to cancel`}
-            confirm={dialog().pending ? 'Merging...' : method().confirm}
-            disabled={!!blocked() || dialog().pending || dialog().rewriting.pending}
-            onClose={editor.actions.closeMergeDialog}
-            onConfirm={editor.actions.confirmMerge}
-          />
+          <footer class="flex-row! flex-wrap items-center gap-3">
+            <div class="ml-auto flex items-center gap-2">
+              <button
+                id="pr-merge-cancel"
+                title="Cancel (Esc)"
+                aria-keyshortcuts="Escape"
+                class="btn"
+                data-variant="outline"
+                data-size="sm"
+                onClick={editor.actions.closeMergeDialog}
+              >
+                Cancel <ButtonKbd combo="Esc" />
+              </button>
+              <div class="button-group flex gap-0">
+                <button
+                  id="pr-merge-confirm"
+                  title={`${method().label} (${keyLabel('Mod+Enter')})`}
+                  aria-keyshortcuts="Meta+Enter Control+Enter"
+                  class="btn"
+                  data-variant="primary"
+                  data-size="sm"
+                  disabled={!!blocked() || dialog().pending || dialog().rewriting.pending}
+                  onClick={() => void editor.actions.confirmMerge()}
+                >
+                  {dialog().pending ? 'Merging...' : method().label} <ButtonKbd combo="Mod+Enter" />
+                </button>
+                <Show when={merge.allowed().length > 1}>
+                  <DropdownMenu
+                    triggerId="pr-merge-method-caret"
+                    accessibleLabel="Choose merge method"
+                    variant="primary"
+                    size="sm"
+                    disabled={dialog().pending || dialog().rewriting.pending}
+                    label={<span class="icon-[lucide--chevron-down] size-3.5" aria-hidden="true" />}
+                    panelClass="fixed z-[70] m-0 w-[min(24rem,calc(100vw-1rem))] min-w-0 top-auto left-auto gap-0"
+                  >
+                    <For each={merge.allowed()}>
+                      {(value) => (
+                        <button
+                          type="button"
+                          role="menuitemradio"
+                          aria-checked={value === dialog().method}
+                          class="flex w-full items-start gap-2 rounded-md p-2 text-left hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
+                          onClick={() => editor.actions.chooseMergeMethod(value)}
+                        >
+                          <span class="size-4 shrink-0">
+                            <Show when={value === dialog().method}>
+                              <span class="icon-[lucide--check] size-4" aria-hidden="true" />
+                            </Show>
+                          </span>
+                          <span class="min-w-0 space-y-1">
+                            <span class="block whitespace-nowrap text-sm font-medium">
+                              {mergeMethodInfo(value).label}
+                            </span>
+                            <span class="block whitespace-normal text-xs text-muted-foreground">
+                              {mergeMethodInfo(value).explain(merge.commitCount(), merge.base())}
+                            </span>
+                          </span>
+                        </button>
+                      )}
+                    </For>
+                  </DropdownMenu>
+                </Show>
+              </div>
+            </div>
+          </footer>
         </div>
       </Dialog>
     </Show>
@@ -107,46 +156,22 @@ export function MergeDialog(): JSX.Element {
 function CommitFields(props: CommitFieldsProps): JSX.Element {
   const editor = useEditor();
   const dialog = () => editor.merge.state.dialog;
-  const hasHarness = () =>
-    editor.agents.state.harnesses.some((harness) => harness.installed) ||
-    !!editor.agents.state.selected;
-  const squash = () => dialog().method === 'squash';
-  const rewriteShown = () => hasHarness() && (!squash() || dialog().rewrite);
+  let instructions: HTMLInputElement | undefined;
+  createEffect(() => {
+    if (dialog().aiOpen) queueMicrotask(() => instructions?.focus());
+  });
   const rewriting = () => dialog().rewriting;
+  const isDefault = () => {
+    const original = editor.merge.state.info?.defaults?.[dialog().method] || {
+      title: '',
+      message: '',
+    };
+    return props.draft.title === original.title && props.draft.message === original.message;
+  };
   return (
-    <div id="pr-merge-commit" data-ui="pr-merge-commit" class="field flex flex-col gap-2">
-      <Show when={squash() && hasHarness()}>
-        <div
-          id="pr-merge-ai-checkbox-wrap"
-          data-ui="pr-merge-ai-checkbox-wrap"
-          class="flex items-center gap-2"
-        >
-          <label
-            for="pr-merge-ai-checkbox"
-            data-ui="pr-merge-checkbox-label"
-            class="label label inline-flex items-center cursor-pointer select-none gap-2"
-          >
-            <input
-              type="checkbox"
-              id="pr-merge-ai-checkbox"
-              class="input"
-              checked={dialog().rewrite}
-              onChange={(event) => editor.actions.setMergeRewrite(event.currentTarget.checked)}
-            />
-            <span>
-              {rewriting().pending
-                ? `Rewriting... (${rewriting().seconds}s)`
-                : 'Rewrite commit message with AI'}
-            </span>
-          </label>
-        </div>
-      </Show>
+    <div id="pr-merge-commit" data-ui="pr-merge-commit" class="field flex flex-col gap-3">
       {/* aislop-ignore-next-line jsx-a11y/label-has-associated-control -- Solid associates this label through for. */}
-      <label
-        data-ui="pr-merge-label"
-        class="label label text-muted-foreground"
-        for="pr-merge-commit-title"
-      >
+      <label data-ui="pr-merge-label" class="label text-foreground" for="pr-merge-commit-title">
         Commit title
       </label>
       <input
@@ -162,36 +187,54 @@ function CommitFields(props: CommitFieldsProps): JSX.Element {
       />
       <div data-ui="pr-merge-label-row" class="flex items-baseline justify-between">
         {/* aislop-ignore-next-line jsx-a11y/label-has-associated-control -- Solid associates this label through for. */}
-        <label
-          data-ui="pr-merge-label"
-          class="label label text-muted-foreground"
-          for="pr-merge-commit-body"
-        >
+        <label data-ui="pr-merge-label" class="label text-foreground" for="pr-merge-commit-body">
           Commit message
         </label>
-        <button
-          type="button"
-          id="pr-merge-reset"
-          data-ui="pr-merge-link"
-          class="text-primary-text"
-          onClick={editor.actions.resetMergeMessage}
-        >
-          Reset to default
-        </button>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            id="pr-merge-ai-toggle"
+            class="btn"
+            data-variant="special"
+            data-size="xs"
+            aria-expanded={dialog().aiOpen}
+            aria-controls="pr-merge-ai-row"
+            disabled={rewriting().pending}
+            onClick={() => editor.actions.setMergeAIOpen(!dialog().aiOpen)}
+          >
+            <span class="icon-[lucide--sparkle] size-3.5" aria-hidden="true" />
+            Rewrite with AI
+          </button>
+          <button
+            type="button"
+            id="pr-merge-reset"
+            title="Reset to default message"
+            aria-label="Reset to default message"
+            disabled={isDefault() || rewriting().pending}
+            data-ui="pr-merge-link"
+            class="btn"
+            data-variant="ghost"
+            data-size="icon-xs"
+            onClick={editor.actions.resetMergeMessage}
+          >
+            <span class="icon-[lucide--rotate-ccw] size-3.5" aria-hidden="true" />
+          </button>
+        </div>
       </div>
       <textarea
         id="pr-merge-commit-body"
         rows="8"
         spellcheck={false}
         autocomplete="off"
-        class="textarea resize-y"
+        class="textarea min-h-28 max-h-[30vh] resize-y overflow-y-auto"
         data-control="pr-merge-input pr-merge-body"
         value={props.draft.message}
         onInput={(event) => editor.actions.setMergeField('message', event.currentTarget.value)}
       />
-      <Show when={rewriteShown()}>
+      <Show when={dialog().aiOpen}>
         <div id="pr-merge-ai-row" data-ui="pr-merge-ai" class="flex items-center gap-2">
           <input
+            ref={instructions}
             aria-label="Rewrite instructions"
             type="text"
             spellcheck={false}

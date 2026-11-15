@@ -19,7 +19,7 @@ interface MergeState {
     method: string;
     drafts: Record<string, MergeMessage>;
     instruction: string;
-    rewrite: boolean;
+    aiOpen: boolean;
     rewriting: { pending: boolean; seconds: number };
     pending: boolean;
     error: string;
@@ -71,7 +71,7 @@ function initialState(): MergeState {
       method: 'squash',
       drafts: {},
       instruction: '',
-      rewrite: false,
+      aiOpen: false,
       rewriting: { pending: false, seconds: 0 },
       pending: false,
       error: '',
@@ -167,7 +167,7 @@ function buildMergeStore(editor: MergeHost, options: MergeOptions = {}) {
       method: value,
       drafts,
       instruction: '',
-      rewrite: false,
+      aiOpen: false,
       pending: false,
       error: '',
     });
@@ -185,7 +185,7 @@ function buildMergeStore(editor: MergeHost, options: MergeOptions = {}) {
     rewriteController?.abort();
     const controller = new AbortController();
     rewriteController = controller;
-    set('dialog', { rewrite: true, error: '', rewriting: { pending: true, seconds: 0 } });
+    set('dialog', { aiOpen: true, error: '', rewriting: { pending: true, seconds: 0 } });
     try {
       const job = await editor.actions.runAgentJob(
         'api/pr/merge-message',
@@ -205,7 +205,7 @@ function buildMergeStore(editor: MergeHost, options: MergeOptions = {}) {
       const body = error instanceof Error && 'body' in error ? error.body : null;
       const harness = isRecord(body) && typeof body.harness === 'string' ? body.harness : '';
       set('dialog', {
-        rewrite: false,
+        aiOpen: false,
         error: harness ? `${harness}: ${errorMessage(error)}` : errorMessage(error),
       });
     } finally {
@@ -268,14 +268,10 @@ function buildMergeStore(editor: MergeHost, options: MergeOptions = {}) {
         rewriteController?.abort();
         set('dialog', { open: false, rewriting: { pending: false, seconds: 0 } });
       },
-      // Picking a method is picking what to do: open the dialog for it when merging is possible.
+      // Selection is remembered; only the Merge CTA opens the confirmation dialog.
       chooseMergeMethod(value: string): void {
         rememberMethod(value);
-        if (canMerge() && !sync().running) void openMergeDialog(value);
-      },
-      setMergeMethod(value: string): void {
-        rememberMethod(value);
-        set('dialog', 'method', value);
+        if (state.dialog.open) set('dialog', { method: value, aiOpen: false });
       },
       setMergeField: (field: 'title' | 'message', value: string) =>
         set('dialog', 'drafts', state.dialog.method, (draft) => ({
@@ -284,16 +280,11 @@ function buildMergeStore(editor: MergeHost, options: MergeOptions = {}) {
         })),
       resetMergeMessage() {
         rewriteController?.abort();
-        set('dialog', { rewrite: false, error: '' });
+        set('dialog', { aiOpen: false, error: '' });
         set('dialog', 'drafts', state.dialog.method, defaultDraft(state.dialog.method));
       },
-      setMergeRewrite(enabled: boolean): void {
-        if (enabled) void rewriteMergeMessage();
-        else {
-          rewriteController?.abort();
-          set('dialog', { rewrite: false });
-          set('dialog', 'drafts', state.dialog.method, defaultDraft(state.dialog.method));
-        }
+      setMergeAIOpen(open: boolean): void {
+        if (!state.dialog.rewriting.pending) set('dialog', 'aiOpen', open);
       },
       setMergeInstruction: (value: string) => set('dialog', 'instruction', value),
       rewriteMergeMessage,

@@ -45,7 +45,7 @@ test('the dialog opens on the chosen method with the forge defaults', async () =
   });
   await editor.actions.openMergeDialog('merge');
   expect(editor.merge.state.dialog).toMatchObject({ open: true, method: 'merge' });
-  editor.actions.setMergeMethod('squash');
+  editor.actions.chooseMergeMethod('squash');
   expect(editor.merge.method()).toBe('squash');
   editor.actions.setMergeField('title', '');
   await editor.actions.confirmMerge();
@@ -105,7 +105,7 @@ test('the harness rewrite fills the message and shows its progress', async () =>
     expect(editor.merge.state.dialog.rewriting).toEqual({ pending: true, seconds: 2 });
     return decodeAgentJob({ stdout: 'Better title\n\nBetter body' });
   });
-  await editor.actions.setMergeRewrite(true);
+  await editor.actions.rewriteMergeMessage();
   await vi.waitFor(() => expect(editor.merge.state.dialog.rewriting.pending).toBe(false));
   expect(editor.merge.state.dialog.drafts.squash).toEqual({
     title: 'Better title',

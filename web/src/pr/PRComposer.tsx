@@ -6,6 +6,7 @@ interface PRComposerProps {
 import type { JSX } from 'solid-js';
 import { onMount, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
+import { ButtonKbd } from '../lib/ButtonKbd.tsx';
 import { keyLabel } from '../lib/keyboard.ts';
 // A draft review comment on one diff line.
 export function PRComposer(props: PRComposerProps): JSX.Element {
@@ -51,7 +52,7 @@ export function PRComposer(props: PRComposerProps): JSX.Element {
         spellcheck={false}
         autocomplete="off"
         aria-label="Review comment"
-        placeholder={`Leave a comment on this line... (${modEnter} to add)`}
+        placeholder="Leave a comment on this line..."
         class="textarea resize-y"
         value={props.composer.body}
         onInput={(event) =>
@@ -74,17 +75,29 @@ export function PRComposer(props: PRComposerProps): JSX.Element {
         </div>
       </Show>
       <div class="flex items-center gap-2 font-mono text-muted-foreground">
-        <span class="flex-1 text-xs">{modEnter} to add, Esc to cancel</span>
+        <span class="flex-1" />
+        <button
+          type="button"
+          class="btn"
+          data-variant="ghost"
+          data-size="xs"
+          title="Cancel (Esc)"
+          aria-keyshortcuts="Escape"
+          onClick={() => editor.actions.closeComposer(props.composer.id)}
+        >
+          Cancel <ButtonKbd combo="Esc" />
+        </button>
         <button
           type="button"
           title={`Add comment (${modEnter})`}
+          aria-keyshortcuts="Meta+Enter Control+Enter"
           class="btn"
           data-variant="primary"
           data-size="xs"
           disabled={props.composer.pending || !props.composer.body.trim()}
           onClick={() => void editor.actions.sendComposer(props.composer.id)}
         >
-          {props.composer.pending ? 'Adding…' : 'Add Comment'}
+          {props.composer.pending ? 'Adding…' : 'Add Comment'} <ButtonKbd combo="Mod+Enter" />
         </button>
       </div>
     </div>

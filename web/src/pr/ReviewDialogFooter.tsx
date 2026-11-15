@@ -1,7 +1,7 @@
 import type { JSX } from 'solid-js';
+import { ButtonKbd } from '../lib/ButtonKbd.tsx';
 interface ReviewDialogFooterProps {
   prefix: string;
-  hint: string;
   confirm: string;
   disabled: boolean;
   onClose: () => void;
@@ -12,11 +12,11 @@ export function ReviewDialogFooter(props: ReviewDialogFooterProps): JSX.Element 
   return (
     <footer class="flex-row! items-center gap-2">
       {props.children}
-      <span id={`${props.prefix}-hint`} data-ui="agent-hint" class="flex-1">
-        {props.hint}
-      </span>
+      <span class="flex-1" />
       <button
         id={`${props.prefix}-cancel`}
+        title="Cancel (Esc)"
+        aria-keyshortcuts="Escape"
         type="button"
         class="btn"
         data-control="bar-action"
@@ -24,19 +24,21 @@ export function ReviewDialogFooter(props: ReviewDialogFooterProps): JSX.Element 
         data-size="xs"
         onClick={() => props.onClose()}
       >
-        Cancel
+        Cancel <ButtonKbd combo="Esc" />
       </button>
       <button
         id={`${props.prefix}-${props.prefix === 'forge-connect' ? 'submit' : 'confirm'}`}
         type="button"
         class="btn"
         data-control="bar-action pr-btn-merge"
+        title={`${props.confirm} (Enter)`}
+        aria-keyshortcuts="Enter"
         data-variant="primary"
         data-size="xs"
         disabled={props.disabled}
         onClick={() => props.onConfirm()}
       >
-        {props.confirm}
+        {props.confirm} <ButtonKbd combo="Enter" />
       </button>
     </footer>
   );

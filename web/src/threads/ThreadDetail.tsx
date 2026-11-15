@@ -1,5 +1,6 @@
 import type { JSX } from 'solid-js';
 import { For, onMount, Show } from 'solid-js';
+import { ButtonKbd } from '../lib/ButtonKbd.tsx';
 import { useEditor } from '../editor/context.tsx';
 import { AgentPicker } from '../agents/AgentPicker.tsx';
 import { targetRef } from '../agents/logic.ts';
@@ -153,10 +154,12 @@ export function ThreadDetail(): JSX.Element {
             <span class="flex-1" />
             <button
               id="thr-send"
-              class="btn rounded-full"
+              class="btn rounded-full gap-1.5"
               data-control="agent-send"
               data-variant="primary"
-              data-size="icon-sm"
+              data-size="sm"
+              title={editor.threads.running() ? 'Stop this reply' : 'Send (Enter)'}
+              aria-keyshortcuts={editor.threads.running() ? undefined : 'Enter'}
               aria-label={editor.threads.running() ? 'Stop this reply' : 'Send (Enter)'}
               disabled={
                 !editor.threads.running() &&
@@ -175,11 +178,14 @@ export function ThreadDetail(): JSX.Element {
                 }
                 aria-hidden="true"
               />
+              <Show when={!editor.threads.running()}>
+                <ButtonKbd combo="Enter" />
+              </Show>
             </button>
           </footer>
         </div>
         <p data-ui="agent-hint" id="thr-hint" class="px-1 text-xs text-muted-foreground">
-          Enter to send · Shift+Enter for a new line
+          Shift+Enter for a new line
         </p>
       </div>
     </section>

@@ -6,7 +6,6 @@ import { ReviewDialogHeader } from './ReviewDialogHeader.tsx';
 import { ReviewDialogFooter } from './ReviewDialogFooter.tsx';
 import { Dialog } from '../lib/Dialog.tsx';
 import { ErrorNotice } from '../lib/ErrorNotice.tsx';
-import { keyLabel } from '../lib/keyboard.ts';
 import { FORGE_SOURCES } from './logic.ts';
 // Everything forge-specific comes from the server's token setup for this host.
 export function ForgeConnectDialog(): JSX.Element {
@@ -148,7 +147,6 @@ export function ForgeConnectDialog(): JSX.Element {
           </section>
           <ReviewDialogFooter
             prefix="forge-connect"
-            hint={`${keyLabel('Enter')} to connect, Esc to cancel`}
             confirm={connect.pending ? 'Checking...' : 'Connect'}
             disabled={connect.pending}
             onClose={editor.actions.closeForgeConnect}
