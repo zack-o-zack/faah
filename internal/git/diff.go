@@ -47,20 +47,7 @@ func FilesBetween(root, from, to string) map[string]string {
 // review session (pr.go) can diff a file against the merge-base with the
 // PR's target branch instead of the working tree's HEAD.
 func DiffAgainst(root, relpath, base string) string {
-	if !Available(root) {
-		return ""
-	}
-	out, err := exec.Command("git", "-C", root, "diff", "--no-color", base, "--", relpath).Output()
-	if err != nil {
-		if base == "HEAD" {
-			// Unborn HEAD (newly initialized repo with no commits yet): diff against the empty tree.
-			if out2, err2 := exec.Command("git", "-C", root, "diff", "--no-color", "4b825dc642cb6eb9a060e54bf8d69288fbee4904", "--", relpath).Output(); err2 == nil {
-				return string(out2)
-			}
-		}
-		return ""
-	}
-	return string(out)
+	return DiffPaths(root, base, "", relpath)
 }
 
 // DiffBetween is DiffAgainst generalized to a two-dot diff between two
@@ -69,14 +56,7 @@ func DiffAgainst(root, relpath, base string) string {
 // from the reviewer's local changes since checkout (head..working tree),
 // which DiffAgainst covers.
 func DiffBetween(root, relpath, from, to string) string {
-	if !Available(root) {
-		return ""
-	}
-	out, err := exec.Command("git", "-C", root, "diff", "--no-color", from, to, "--", relpath).Output()
-	if err != nil {
-		return ""
-	}
-	return string(out)
+	return DiffPaths(root, from, to, relpath)
 }
 
 // MergeBase returns the merge-base commit of a and b, or "" if it cannot
@@ -242,7 +222,11 @@ func DiffPaths(root, base, head string, paths ...string) string {
 	out, err := exec.Command("git", args...).Output()
 	if err != nil {
 		if base == "HEAD" && head == "" {
-			return DiffAgainst(root, paths[0], base)
+			// An unborn repository has no HEAD; retain the empty-tree comparison.
+			args[5] = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+			if emptyOut, emptyErr := exec.Command("git", args...).Output(); emptyErr == nil {
+				return string(emptyOut)
+			}
 		}
 		return ""
 	}
