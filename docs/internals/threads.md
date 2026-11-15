@@ -143,7 +143,7 @@ The store turns on the stream's `threads` topic while thread data is wanted and 
 
 ## 8b. PR Scope
 
-A thread in a PR session carries `scope` (`pr`, `mine`, `selection`) and `scopeSent`. `Server.prThreadContext(scope)` builds the text: the PR's number and title, then the exact range for the scope (`git diff <merge-base> <head>` for `pr`, `git diff <head>` plus the untracked files for `mine`) and the same diff written to a temp file (`prSession.writeScopeFile`, removed in `Close`). It goes in with the first prompt, with a replay, and once more whenever `scope != scopeSent`. `POST /api/threads/scope` changes it. Outside a PR session the context is empty.
+A thread in a PR session carries `scope` (`pr`, `mine`, `selection`) and `scopeSent`. `Server.prThreadContext(scope)` builds the text: the PR's number and title, then the exact range for the scope (`git diff <merge-base> <head>` for `pr`, `git diff <head>` plus the untracked files for `mine`) and the same diff written to a temp file (`pr.Session.WriteScopeFile`, removed in `Close`). It goes in with the first prompt, with a replay, and once more whenever `scope != scopeSent`. `POST /api/threads/scope` changes it. Outside a PR session the context is empty.
 
 ## 9. Limits
 

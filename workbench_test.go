@@ -16,9 +16,9 @@ import (
 	"time"
 
 	"faah/internal/forge"
-	"faah/internal/settings"
-
 	"faah/internal/git/gittest"
+	"faah/internal/pr/prtest"
+	"faah/internal/settings"
 )
 
 func newTestStore(t *testing.T) *wbStore {
@@ -104,24 +104,6 @@ func TestWorkbenchStoreSetsAsideCorruptFile(t *testing.T) {
 	}
 	if _, err := os.Stat(st.path + ".bad"); err != nil {
 		t.Fatalf("corrupt file not kept: %v", err)
-	}
-}
-
-func TestRemoteMatchesRepo(t *testing.T) {
-	cases := []struct {
-		origin string
-		want   bool
-	}{
-		{"git@github.com:px0-ai/px0.git\n", true},
-		{"https://github.com/PX0-AI/px0", true},
-		{"ssh://git@github.com/px0-ai/px0.git", true},
-		{"https://github.com/px0-ai/px0-docs.git", false},
-		{"https://github.com/other/px0.git", false},
-	}
-	for _, c := range cases {
-		if got := remoteMatchesRepo(c.origin, "px0-ai", "px0"); got != c.want {
-			t.Errorf("%q: got %v", c.origin, got)
-		}
 	}
 }
 
@@ -365,7 +347,7 @@ func TestWorkbenchForgetsNewItemThatFails(t *testing.T) {
 
 	it := wbPRItem(forge.PRTarget{Provider: "github", Owner: "o", Repo: "r", Number: 9, URL: "https://github.com/o/r/pull/9"})
 	wb.store.Record(it)
-	wb.rememberClone(it.Repo, gitRepoWithRemotes(t, map[string]string{"origin": "https://github.com/o/r.git"}))
+	wb.rememberClone(it.Repo, prtest.RepoWithRemotes(t, map[string]string{"origin": "https://github.com/o/r.git"}))
 	c := wb.start(it, true)
 	select {
 	case <-c.done:
@@ -385,39 +367,6 @@ func TestWorkbenchForgetsNewItemThatFails(t *testing.T) {
 	body := w.Body.String()
 	if !strings.Contains(body, "404 Not Found") || strings.Contains(body, "retry=1") {
 		t.Fatalf("holding page:\n%s", body)
-	}
-}
-
-// gitRepoWithRemotes makes an empty git repository with the given remotes.
-func gitRepoWithRemotes(t *testing.T, remotes map[string]string) string {
-	t.Helper()
-	dir := t.TempDir()
-	gittest.Run(t, dir, "init", "-q")
-	for name, u := range remotes {
-		gittest.Run(t, dir, "remote", "add", name, u)
-	}
-	resolved, _ := filepath.EvalSymlinks(dir)
-	return resolved
-}
-
-func TestFindPRRemotePrefersOriginThenUpstream(t *testing.T) {
-	fork := gitRepoWithRemotes(t, map[string]string{
-		"origin":   "git@github.com:me/px0.git",
-		"upstream": "https://github.com/px0-ai/px0.git",
-	})
-	if top, remote := findPRRemote(fork, "px0-ai", "px0"); top != fork || remote != "upstream" {
-		t.Fatalf("fork: %q %q", top, remote)
-	}
-	both := gitRepoWithRemotes(t, map[string]string{
-		"origin":   "https://github.com/px0-ai/px0",
-		"upstream": "https://github.com/px0-ai/px0.git",
-	})
-	if _, remote := findPRRemote(both, "px0-ai", "px0"); remote != "origin" {
-		t.Fatalf("both: %q", remote)
-	}
-	other := gitRepoWithRemotes(t, map[string]string{"origin": "https://github.com/px0-ai/px0-docs.git"})
-	if top, _ := findPRRemote(other, "px0-ai", "px0"); top != "" {
-		t.Fatalf("other repo matched: %q", top)
 	}
 }
 
@@ -491,7 +440,7 @@ func TestWorkbenchOpenPRAsksForClone(t *testing.T) {
 		t.Fatalf("non-clone accepted: %d %s", w.Code, w.Body.String())
 	}
 
-	clone := gitRepoWithRemotes(t, map[string]string{"origin": "git@github.com:acme/widget.git"})
+	clone := prtest.RepoWithRemotes(t, map[string]string{"origin": "git@github.com:acme/widget.git"})
 	if w := postJSON(t, wb, "/api/wb/open", `{"target":"`+pr+`","clone":"`+clone+`"}`); w.Code != http.StatusOK {
 		t.Fatalf("clone refused: %d %s", w.Code, w.Body.String())
 	}

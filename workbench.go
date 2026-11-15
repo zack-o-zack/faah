@@ -41,6 +41,7 @@ import (
 	"faah/internal/forge"
 	"faah/internal/git"
 	"faah/internal/metrics"
+	prpkg "faah/internal/pr"
 	"faah/internal/settings"
 	"faah/internal/ui"
 )
@@ -105,9 +106,8 @@ func wbDirItem(root string) wbItem {
 }
 
 func wbPRItem(pt forge.PRTarget) wbItem {
-	key := strings.ToLower(fmt.Sprintf("%s/%s/%s#%d", pt.Provider, pt.Owner, pt.Repo, pt.Number))
 	return wbItem{
-		ID:     wbItemID("pr", key),
+		ID:     forge.ItemID(pt),
 		Kind:   "pr",
 		URL:    pt.URL,
 		Repo:   pt.Owner + "/" + pt.Repo,
@@ -1437,7 +1437,7 @@ func managedCloneDir(repo string) string {
 // is repo ("owner/name"), or "".
 func cloneOf(dir, repo string) string {
 	owner, name := splitRepo(repo)
-	top, _ := findPRRemote(dir, owner, name)
+	top, _ := prpkg.FindRemote(dir, owner, name)
 	return top
 }
 

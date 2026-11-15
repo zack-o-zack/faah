@@ -26,6 +26,7 @@ import (
 	"faah/internal/git"
 	lsppkg "faah/internal/lsp"
 	"faah/internal/mcp"
+	prpkg "faah/internal/pr"
 	"faah/internal/settings"
 	"faah/internal/telemetry"
 	"faah/internal/ui"
@@ -164,7 +165,7 @@ func main() {
 		fatal(fmt.Errorf("faah: git is required for PR review; remove -no-git"))
 	}
 
-	var pr *prSession
+	var pr *prpkg.Session
 	var root, initialFile string
 	var initialLine int
 	var targetDur time.Duration
@@ -174,13 +175,13 @@ func main() {
 		// Outside a clone of the PR's repository, use one the workbench knows,
 		// so the checkout is a worktree rather than a fresh clone.
 		cloneDir := "."
-		if top, _ := findPRRemote(".", prTarget.Owner, prTarget.Repo); top == "" {
+		if top, _ := prpkg.FindRemote(".", prTarget.Owner, prTarget.Repo); top == "" {
 			st := &wbStore{path: workbenchStorePath()}
 			if known := knownClone(st.Load(), prTarget.Owner+"/"+prTarget.Repo); known != "" {
 				cloneDir = known
 			}
 		}
-		p, err := checkoutPR(ctx, prProvider, prTarget, cloneDir, func(msg string) {
+		p, err := prpkg.Checkout(ctx, prProvider, prTarget, cloneDir, func(msg string) {
 			sp.Update(msg)
 		})
 		cancel()
@@ -188,10 +189,11 @@ func main() {
 			sp.Fail(fmt.Sprintf("Failed to prepare PR #%d: %v", prTarget.Number, err))
 			fatal(fmt.Errorf("faah: %w", err))
 		}
-		if p.meta.Merged {
-			sp.Success(fmt.Sprintf("PR #%d checked out [merged] (%s)", prTarget.Number, p.meta.Title))
+		meta := p.Snapshot().Meta
+		if meta.Merged {
+			sp.Success(fmt.Sprintf("PR #%d checked out [merged] (%s)", prTarget.Number, meta.Title))
 		} else {
-			sp.Success(fmt.Sprintf("PR #%d checked out (%s)", prTarget.Number, p.meta.Title))
+			sp.Success(fmt.Sprintf("PR #%d checked out (%s)", prTarget.Number, meta.Title))
 		}
 		pr = p
 		root = p.Root()
@@ -231,7 +233,7 @@ func main() {
 		pxSrv.workbenchURL = workbenchBaseOf(configuredBasePath)
 	} else if pr != nil {
 		it := wbPRItem(prTarget)
-		it.Title = pr.meta.Title
+		it.Title = pr.Snapshot().Meta.Title
 		go recordRecent(it)
 	} else {
 		go recordRecent(wbDirItem(root))
@@ -260,13 +262,15 @@ func main() {
 	url := viewerURL(addr, initialFile, initialLine, configuredBasePath)
 	ui.Heading("faah "+version, nil, os.Stdout)
 	if pr != nil {
-		prTitle := fmt.Sprintf("#%d %s", pr.meta.Number, pr.meta.Title)
-		if pr.meta.Merged {
+		meta := pr.Snapshot().Meta
+		prTitle := fmt.Sprintf("#%d %s", meta.Number, meta.Title)
+		if meta.Merged {
 			prTitle += " " + ui.Paint("[MERGED]", ui.ColorWarn, true, os.Stdout)
 		}
 		ui.KV("PR", prTitle, 11, os.Stdout)
-		if pr.token == "" {
-			ui.KV("access", ui.Dim(fmt.Sprintf("read-only (no %s token: %s to submit reviews)", pr.provider.Info().Label, pr.provider.Info().TokenHint), os.Stdout), 11, os.Stdout)
+		if pr.TokenSource() == "" {
+			provider, _, _ := pr.Credentials()
+			ui.KV("access", ui.Dim(fmt.Sprintf("read-only (no %s token: %s to submit reviews)", provider.Info().Label, provider.Info().TokenHint), os.Stdout), 11, os.Stdout)
 		}
 	}
 	ui.KV("workspace", root, 11, os.Stdout)

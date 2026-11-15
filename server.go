@@ -5,10 +5,8 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"crypto/sha256"
 	"embed"
 	"encoding/csv"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -35,7 +33,9 @@ import (
 	"faah/internal/git"
 	lsppkg "faah/internal/lsp"
 	"faah/internal/metrics"
+	prpkg "faah/internal/pr"
 	"faah/internal/render"
+	"faah/internal/session"
 	"faah/internal/settings"
 	"faah/internal/symbols"
 	"faah/internal/table"
@@ -84,7 +84,7 @@ type Server struct {
 	agent      *agentManager      // nil unless main wires editing for this session
 	threads    *threadManager     // nil unless editing is wired: threads run on the same harness
 	explainPre explainPrefetch    // evidence gathered ahead of an Explain click
-	pr         *prSession         // nil unless main launched this process as `faah pr ...`
+	pr         *prpkg.Session     // nil unless main launched this process as `faah pr ...`
 	diffBase   string             // ref /api/diff and /api/gutter diff against; "HEAD" unless in PR mode
 	prHeadSHA  string             // PR mode only: the checked-out PR head commit. Frozen boundary between
 	// the PR's own diff (diffBase..prHeadSHA) and the reviewer's local edits
@@ -92,7 +92,7 @@ type Server struct {
 	gitWatcher *workspace.Watcher
 	mux        *http.ServeMux
 	basePath   string
-	session    *sessionManager
+	session    *session.Manager
 
 	workbenchURL string // the workbench's base path, when this faah is one of its workspaces
 
@@ -258,7 +258,7 @@ func NewServer(ix *workspace.Index, lsp *lsppkg.Manager, basePaths ...string) *S
 		bp = cleanBasePath(basePaths[0])
 	}
 	s := &Server{ix: ix, lsp: lsp, diffBase: "HEAD", basePath: bp, mux: http.NewServeMux(), streamsDone: make(chan struct{})}
-	s.session = newSessionManager(s.basePath, ix.Root())
+	s.session = session.New(s.basePath, ix.Root())
 	s.gitWatcher = workspace.NewWatcher(ix)
 	s.gitWatcher.Start(context.Background())
 	s.reviewFlow = newReviewWorkflowManager(s)
@@ -562,10 +562,9 @@ func (s *Server) prThreadContext(scope string) string {
 	if p == nil {
 		return ""
 	}
-	p.mu.Lock()
-	num, title, base, head := p.meta.Number, p.meta.Title, p.meta.BaseRef, p.meta.HeadRef
-	mb, headSHA, url := p.diffBase, p.meta.HeadSHA, p.target.URL
-	p.mu.Unlock()
+	snap := p.Snapshot()
+	num, title, base, head := snap.Meta.Number, snap.Meta.Title, snap.Meta.BaseRef, snap.Meta.HeadRef
+	mb, headSHA, url := snap.DiffBase, snap.Meta.HeadSHA, snap.Target.URL
 	root := s.ix.Root()
 	short := func(x string) string { return x[:min(12, len(x))] }
 	haveRange := mb != "" && mb != "HEAD" && headSHA != ""
@@ -599,7 +598,7 @@ func (s *Server) prThreadContext(scope string) string {
 			fmt.Fprintf(&b, ", plus untracked files: %s", strings.Join(un, ", "))
 		}
 		b.WriteString(". ")
-		if f := p.writeScopeFile("your-changes.diff", git.DiffFull(root, diffFileMax, headSHA)); f != "" {
+		if f := p.WriteScopeFile("your-changes.diff", git.DiffFull(root, diffFileMax, headSHA)); f != "" {
 			fmt.Fprintf(&b, "That diff is also saved at %s. ", f)
 		}
 		if prRange != "" {
@@ -617,7 +616,7 @@ func (s *Server) prThreadContext(scope string) string {
 			break
 		}
 		fmt.Fprintf(&b, " The PR is exactly %s: read it with that and `git log --stat %s..%s`; do not review from `git show HEAD` or `git diff HEAD~1`.", prRange, mb, headSHA)
-		if f := p.writeScopeFile("pr.diff", git.DiffFull(root, diffFileMax, mb, headSHA)); f != "" {
+		if f := p.WriteScopeFile("pr.diff", git.DiffFull(root, diffFileMax, mb, headSHA)); f != "" {
 			fmt.Fprintf(&b, " The full diff is also saved at %s.", f)
 		}
 		if files := s.ix.PRFiles(); len(files) > 0 {
@@ -641,44 +640,45 @@ func (s *Server) prThreadContext(scope string) string {
 // SetPR marks this process as a PR review session: diffs are computed
 // against the PR's merge-base instead of HEAD, and the /api/pr/* endpoints
 // become live. Unset (nil) for a normal workspace.
-func (s *Server) SetPR(p *prSession) {
+func (s *Server) SetPR(p *prpkg.Session) {
 	s.pr = p
 	if s.threads != nil {
 		s.threads.prContext = s.prThreadContext
 	}
 	if p != nil {
-		s.diffBase = p.diffBase
-		s.prHeadSHA = p.meta.HeadSHA
+		snap := p.Snapshot()
+		s.diffBase = snap.DiffBase
+		s.prHeadSHA = snap.Meta.HeadSHA
 		if s.ix != nil {
-			s.ix.SetDiffBase(p.diffBase)
-			s.ix.SetPRHead(p.meta.HeadSHA)
-			s.ix.SetPushedHead(p.meta.HeadSHA)
+			s.ix.SetDiffBase(snap.DiffBase)
+			s.ix.SetPRHead(snap.Meta.HeadSHA)
+			s.ix.SetPushedHead(snap.Meta.HeadSHA)
 		}
 		if s.gitWatcher != nil {
 			s.gitWatcher.Trigger()
 		}
-		if p.target.Owner != "" && p.target.Repo != "" && p.target.Number > 0 {
+		if snap.Target.Owner != "" && snap.Target.Repo != "" && snap.Target.Number > 0 {
 			// Drafts are keyed on the PR, not the base path. Carry over any
 			// drafts an older faah saved under the base-path file.
-			prs := newPRSessionManager(p.target)
+			prs := session.NewPR(snap.Target)
 			if old := s.session; old != nil && len(prs.Get().Drafts) == 0 && len(old.Get().Drafts) > 0 {
 				drafts := old.Get().Drafts
-				prs.Update(func(ws *WorkspaceSession) { ws.Drafts = drafts })
-				old.Update(func(ws *WorkspaceSession) { ws.Drafts = nil })
+				prs.Update(func(ws *session.Workspace) { ws.Drafts = drafts })
+				old.Update(func(ws *session.Workspace) { ws.Drafts = nil })
 			}
 			s.session = prs
 		}
 		if s.session != nil {
-			p.mu.Lock()
-			if len(p.comments) == 0 && len(s.session.Get().Drafts) > 0 {
-				p.comments = append([]forge.DraftComment(nil), s.session.Get().Drafts...)
-				for _, c := range p.comments {
-					if c.ID > p.nextID {
-						p.nextID = c.ID
+			p.WithDrafts(func(drafts *[]forge.DraftComment, nextID *int64) {
+				if len((*drafts)) == 0 && len(s.session.Get().Drafts) > 0 {
+					(*drafts) = append([]forge.DraftComment(nil), s.session.Get().Drafts...)
+					for _, c := range *drafts {
+						if c.ID > (*nextID) {
+							(*nextID) = c.ID
+						}
 					}
 				}
-			}
-			p.mu.Unlock()
+			})
 		}
 	}
 }
@@ -988,7 +988,7 @@ func (s *Server) handleMeta(w http.ResponseWriter, r *http.Request) {
 		"agents":         []agentHarness{},
 	}
 	if s.pr != nil {
-		meta["pr"] = s.pr.metaMap(s.ix.PRFiles())
+		meta["pr"] = s.pr.MetaMap(s.ix.PRFiles())
 	}
 	writeJSON(w, meta)
 }
@@ -2171,7 +2171,7 @@ func (s *Server) handleGitPush(w http.ResponseWriter, r *http.Request) {
 	}
 	if s.pr != nil {
 		// force is only sent after the reviewer confirmed pushing a rebased
-		// PR branch; it is a lease, never a blind overwrite (prSession.Push).
+		// PR branch; it is a lease, never a blind overwrite (pr.Session.Push).
 		var body struct {
 			Force bool `json:"force"`
 		}
@@ -2223,7 +2223,7 @@ func (s *Server) handleGitPull(w http.ResponseWriter, r *http.Request) {
 		info, err := s.pr.Pull()
 		if err != nil {
 			status := http.StatusBadGateway
-			if errors.Is(err, errPRDiverged) {
+			if errors.Is(err, prpkg.ErrDiverged) {
 				status = http.StatusConflict
 			}
 			fail(w, status, err.Error())
@@ -2275,10 +2275,9 @@ func (s *Server) handleGitPull(w http.ResponseWriter, r *http.Request) {
 // index after anything moved them (push, pull), so diffs, the file tree and
 // the ahead count all measure from the new boundary.
 func (s *Server) syncPRRefs() {
-	s.pr.mu.Lock()
-	s.diffBase = s.pr.diffBase
-	s.prHeadSHA = s.pr.meta.HeadSHA
-	s.pr.mu.Unlock()
+	snap := s.pr.Snapshot()
+	s.diffBase = snap.DiffBase
+	s.prHeadSHA = snap.Meta.HeadSHA
 	if s.ix != nil {
 		s.ix.SetDiffBase(s.diffBase)
 		s.ix.SetPRHead(s.prHeadSHA)
@@ -2296,9 +2295,8 @@ func (s *Server) syncPRRefs() {
 func (s *Server) prSyncState(fetch bool) (git.SyncState, error) {
 	p := s.pr
 	root := s.ix.Root()
-	p.mu.Lock()
-	st := git.SyncState{PR: p.meta.Number, Branch: p.meta.HeadRef, Upstream: p.meta.BaseRef, OntoRef: prBaseRef(p.meta.Number)}
-	p.mu.Unlock()
+	snap := p.Snapshot()
+	st := git.SyncState{PR: snap.Meta.Number, Branch: snap.Meta.HeadRef, Upstream: snap.Meta.BaseRef, OntoRef: prpkg.BaseRef(snap.Meta.Number)}
 	st.InProgress = git.OpInProgress(root)
 	if st.InProgress != "" {
 		st.Code = "in-progress"
@@ -2486,11 +2484,13 @@ func (s *Server) handleUnpushed(w http.ResponseWriter, r *http.Request) {
 	var commits []git.UnpushedCommit
 	if s.pr != nil {
 		// Detached PR checkout: your commits are everything past the PR head.
-		s.pr.mu.Lock()
-		head, branch := s.pr.remoteHead(), s.pr.meta.HeadRef
-		s.pr.mu.Unlock()
+		snap := s.pr.Snapshot()
+		head, branch := snap.PushedSHA, snap.Meta.HeadRef
+		if head == "" {
+			head = snap.Meta.HeadSHA
+		}
 		commits = git.CommitsSince(s.ix.Root(), head, limit)
-		upstream = fmt.Sprintf("PR #%d head (%s)", s.pr.meta.Number, branch)
+		upstream = fmt.Sprintf("PR #%d head (%s)", snap.Meta.Number, branch)
 	} else {
 		upstream, commits = git.UnpushedCommits(s.ix.Root(), limit)
 	}
@@ -2960,139 +2960,6 @@ func (s *Server) lspBrief(rel string) map[string]any {
 
 // ---------------------------------------------------------------- Workspace Session
 
-// SessionTab represents an open editor tab pointing to a file path. Ref, when
-// set, is the commit SHA the tab is pinned to -- a tab opened from the
-// Unpushed sidebar section, showing that commit's own diff rather than the
-// working tree's. A commit that no longer exists simply restores as an
-// ordinary tab.
-type SessionTab struct {
-	Path string `json:"path"`
-	Ref  string `json:"ref,omitempty"`
-}
-
-// WorkspaceSession stores the persistent UI state for a workspace:
-// the list of open tabs, the currently active tab index, expanded directory tree paths,
-// and any unsaved PR review comment drafts.
-type WorkspaceSession struct {
-	Tabs     []SessionTab         `json:"tabs"`
-	Active   int                  `json:"active"`
-	OpenDirs []string             `json:"openDirs"`
-	Drafts   []forge.DraftComment `json:"drafts,omitempty"`
-}
-
-// sessionDir returns the directory holding session files: XDG_STATE_HOME/faah/sessions
-// if available, falling back to ~/.faah/sessions or os.TempDir()/faah-sessions.
-func sessionDir() string {
-	if xdg := os.Getenv("XDG_STATE_HOME"); xdg != "" {
-		return filepath.Join(xdg, "faah", "sessions")
-	}
-	if home, err := os.UserHomeDir(); err == nil && home != "" {
-		return filepath.Join(home, ".faah", "sessions")
-	}
-	return filepath.Join(os.TempDir(), "faah-sessions")
-}
-
-// sessionFilePath returns the path to the JSON file where workspace session state is saved.
-// The file name is derived from the base path or an 8-byte SHA-256 hash of the cleaned
-// workspace root path.
-func sessionFilePath(basePath, root string) string {
-	key := ""
-	if basePath != "" && basePath != "/" {
-		clean := strings.Trim(basePath, "/")
-		clean = strings.ReplaceAll(clean, "/", "_")
-		key = clean
-	} else {
-		h := sha256.Sum256([]byte(filepath.Clean(root)))
-		key = hex.EncodeToString(h[:8])
-	}
-	return filepath.Join(sessionDir(), key+".json")
-}
-
-// prSessionFilePath returns the session file for a pull request, keyed on the PR
-// itself (the workbench item ID) rather than the base path or checkout root. Every
-// opening checks the PR out into a new temporary directory, so a root-keyed file
-// would never be found again.
-func prSessionFilePath(pt forge.PRTarget) string {
-	return filepath.Join(sessionDir(), "pr-"+wbPRItem(pt).ID+".json")
-}
-
-// newPRSessionManager opens the session file for a pull request.
-func newPRSessionManager(pt forge.PRTarget) *sessionManager {
-	sm := &sessionManager{
-		path: prSessionFilePath(pt),
-		data: WorkspaceSession{Tabs: []SessionTab{}, OpenDirs: []string{}},
-	}
-	sm.load()
-	return sm
-}
-
-// sessionManager coordinates concurrent thread-safe access and persistence
-// for workspace session data on disk.
-type sessionManager struct {
-	mu   sync.Mutex
-	path string
-	data WorkspaceSession
-}
-
-// newSessionManager initializes a session manager for the given workspace,
-// loading any existing session JSON file from disk.
-func newSessionManager(basePath, root string) *sessionManager {
-	p := sessionFilePath(basePath, root)
-	sm := &sessionManager{
-		path: p,
-		data: WorkspaceSession{
-			Tabs:     []SessionTab{},
-			OpenDirs: []string{},
-		},
-	}
-	sm.load()
-	return sm
-}
-
-// load reads the session state from disk into memory, initializing empty slices if nil.
-func (sm *sessionManager) load() {
-	if sm.path == "" {
-		return
-	}
-	data, err := os.ReadFile(sm.path)
-	if err != nil {
-		return
-	}
-	var s WorkspaceSession
-	if err := json.Unmarshal(data, &s); err == nil {
-		if s.Tabs == nil {
-			s.Tabs = []SessionTab{}
-		}
-		if s.OpenDirs == nil {
-			s.OpenDirs = []string{}
-		}
-		sm.data = s
-	}
-}
-
-// Get returns a snapshot of the current workspace session.
-func (sm *sessionManager) Get() WorkspaceSession {
-	sm.mu.Lock()
-	defer sm.mu.Unlock()
-	return sm.data
-}
-
-// Update executes a mutation function on the session state under mutex protection
-// and persists the resulting state formatted as JSON to disk.
-func (sm *sessionManager) Update(fn func(*WorkspaceSession)) WorkspaceSession {
-	sm.mu.Lock()
-	defer sm.mu.Unlock()
-	fn(&sm.data)
-	if sm.path != "" {
-		if err := os.MkdirAll(filepath.Dir(sm.path), 0o755); err == nil {
-			if b, err := json.MarshalIndent(sm.data, "", "  "); err == nil {
-				_ = os.WriteFile(sm.path, append(b, '\n'), 0o644)
-			}
-		}
-	}
-	return sm.data
-}
-
 // handleSession handles GET and POST requests for /api/session.
 // GET returns the current workspace session state.
 // POST updates tab list, active tab, and open directories, saving changes to disk.
@@ -3105,15 +2972,15 @@ func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		var payload struct {
-			Tabs     *[]SessionTab `json:"tabs"`
-			Active   *int          `json:"active"`
-			OpenDirs *[]string     `json:"openDirs"`
+			Tabs     *[]session.Tab `json:"tabs"`
+			Active   *int           `json:"active"`
+			OpenDirs *[]string      `json:"openDirs"`
 		}
 		if err := json.NewDecoder(io.LimitReader(r.Body, 1<<20)).Decode(&payload); err != nil {
 			fail(w, http.StatusBadRequest, "invalid JSON: "+err.Error())
 			return
 		}
-		updated := s.session.Update(func(ws *WorkspaceSession) {
+		updated := s.session.Update(func(ws *session.Workspace) {
 			if payload.Tabs != nil {
 				ws.Tabs = *payload.Tabs
 			}

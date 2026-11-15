@@ -19,6 +19,7 @@ import (
 	"faah/internal/git"
 	"faah/internal/git/gittest"
 	lsppkg "faah/internal/lsp"
+	prpkg "faah/internal/pr"
 	"faah/internal/workspace"
 )
 
@@ -574,13 +575,9 @@ func TestHandleDiffPRSplitsPRAndYourChanges(t *testing.T) {
 	ix := workspace.NewIndex(root)
 	ix.Build()
 	srv := NewServer(ix, lsppkg.New(lsppkg.Options{Root: root, Enabled: false, Version: version}))
-	srv.SetPR(&prSession{
-		target: forge.PRTarget{Owner: "o", Repo: "r"},
-		meta:   forge.PRMeta{Number: 1, BaseRef: "main", HeadRef: "feature", HeadSHA: prHead},
-		// checkoutPR would have set this to the real merge-base; a plain
-		// commit SHA works identically as a diff boundary in this test.
-		diffBase: mergeBase,
-	})
+	// checkoutPR would have set this to the real merge-base; a plain
+	// commit SHA works identically as a diff boundary in this test.
+	srv.SetPR(prpkg.New(nil, forge.PRTarget{Owner: "o", Repo: "r"}, forge.PRMeta{Number: 1, BaseRef: "main", HeadRef: "feature", HeadSHA: prHead}, "", mergeBase))
 
 	getDiff := func() map[string]any {
 		req := httptest.NewRequest("GET", "/api/diff?path=foo.go", nil)

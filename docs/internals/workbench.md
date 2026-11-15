@@ -4,7 +4,7 @@ The workbench (`workbench.go`, `web/workbench.{html,css,js}`) is what `faah` ser
 
 ## Why child processes
 
-`Server` is built around a single workspace: one `Index`, `lsp.Manager`, `agentManager`, `prSession`, `workspace.Watcher` and `diffBase`, all fixed in `main()`. Rather than threading a workspace ID through every handler, the workbench re-runs the faah binary per workspace. Each child keeps faah's single-workspace performance, a crashing or memory-hungry language server only takes down its own child, and stopping a child frees everything it held.
+`Server` is built around a single workspace: one `Index`, `lsp.Manager`, `agentManager`, `pr.Session`, `workspace.Watcher` and `diffBase`, all fixed in `main()`. Rather than threading a workspace ID through every handler, the workbench re-runs the faah binary per workspace. Each child keeps faah's single-workspace performance, a crashing or memory-hungry language server only takes down its own child, and stopping a child frees everything it held.
 
 ```mermaid
 flowchart LR
@@ -27,19 +27,19 @@ faah [passed-on flags] -workbench-child -host 127.0.0.1 -port 0 -no-open -no-upd
 - **Lifetime.** The workbench holds the child's stdin. The child treats EOF on stdin as SIGTERM and shuts down the normal way, which removes PR worktrees and stops language servers. This works if the workbench is stopped, crashes or is killed, on every platform. `stop` closes stdin and kills the child after 5 seconds. `cmd.WaitDelay` keeps a grandchild holding the output pipes from blocking `Wait`.
 - **States.** `starting` → `running` → `stopped`, or `failed` if the child exits before it is ready or takes longer than `wbStartTimeout` (3 minutes; a PR may clone a large repository). Live state is kept only in memory and never written to `workbench.json`.
 - **Idle stop.** The proxy counts requests in flight per child; an open tab always holds an event stream. `reapIdle` stops children with none in flight for `wbIdleAfter` (30 minutes).
-- **PR clones.** `checkoutPR` makes a worktree when its working directory is a clone of the PR's repository, so the workbench starts every PR child in one (see below). Before the child is launched, `run` resolves the clone, or makes one, while the state is `starting` and `progress` says what it is waiting on. `stop` cancels this through `wbChild.ctx`.
+- **PR clones.** `pr.Checkout` makes a worktree when its working directory is a clone of the PR's repository, so the workbench starts every PR child in one (see below). Before the child is launched, `run` resolves the clone, or makes one, while the state is `starting` and `progress` says what it is waiting on. `stop` cancels this through `wbChild.ctx`.
 
 ## PR clones ([`workbench.go`](../../workbench.go))
 
 Every PR is a worktree of one local clone per repository; nothing is cloned per PR.
 
-- **Matching.** `findPRRemote(dir, owner, repo)` (pr.go) returns the clone's top level and the name of the remote that points at the repository. It checks `origin` first, then `upstream` (a fork), then any other remote. `remoteMatchesRepo` compares the parsed `owner/repo` of https, ssh and scp-style URLs exactly, ignoring case. The old check, a substring test on `origin`, matched `faah` against `faah-docs`. `checkoutPR`, `computeDiffBase` and `Pull` fetch from that remote rather than assuming `origin`. An empty remote name still means `origin`.
+- **Matching.** `pr.FindRemote(dir, owner, repo)` (internal/pr/session.go) returns the clone's top level and the name of the remote that points at the repository. It checks `origin` first, then `upstream` (a fork), then any other remote. `pr.remoteMatchesRepo` compares the parsed `owner/repo` of https, ssh and scp-style URLs exactly, ignoring case. The old check, a substring test on `origin`, matched `faah` against `faah-docs`. `pr.Checkout`, `computeDiffBase` and `Pull` fetch from that remote rather than assuming `origin`. An empty remote name still means `origin`.
 - **Finding.** `findClone` tries `knownClone` first: the clone remembered in `workbench.json` (`clones`, keyed by lowercased `owner/repo`), then the recorded directories, then the workbench's cwd. Failing that, `scanForClone` searches the usual code folders under home and the parents of recorded directories, breadth-first, three levels deep. It skips hidden and dependency folders, looks at no more than 20,000 entries and gives up after 1.5 seconds, and it only considers folders named like the repository that hold a `.git`. A clone found this way is remembered.
 - **Asking.** `/api/wb/open` checks for a clone before it records a PR. With none, it returns `{needClone, repo, managed}` and the page asks. The next request passes `clone`, either a folder (verified with `cloneOf`, then remembered) or `"managed"`.
 - **faah's own clone.** `makeClone` clones once into `<state>/repos/<owner>/<repo>`, as a partial clone (`--filter=blob:none`) with no checkout of its own. It clones into a sibling temp folder and renames it into place, so an interrupted clone never looks finished. A per-repository mutex keeps two PRs opened together from cloning twice.
 - **Credentials.** `gitLocalThenToken` runs the head fetch and `worktree add` with the clone's own git credentials first, and with the GitHub token only if that fails. A partial clone fetches file contents during `worktree add`, which a private repository's token covers. A user's clone may have broader access than the token, so its credentials go first.
 - **Reopening.** A recent PR reopened from its holding page whose clone has disappeared fails with `errNoClone`. The holding page then offers **Choose a clone**, which links to the workbench with `?open=<url>`.
-- **CLI.** `main` passes `knownClone`'s result (memory and recorded directories, no scan) to `checkoutPR` when `faah <pr-url>` runs outside a matching clone.
+- **CLI.** `main` passes `knownClone`'s result (memory and recorded directories, no scan) to `pr.Checkout` when `faah <pr-url>` runs outside a matching clone.
 
 ## Proxy
 
@@ -53,7 +53,7 @@ If the child is not running, a GET of the workspace page itself (`/w/<id>/`) sta
 
 ## Item IDs
 
-`wbItemID` is the first 6 bytes, as hex, of the SHA-256 of the kind plus a key: the cleaned absolute path for a directory, or the lowercased `provider/owner/repo#n` for a pull request. The ID is stable, so `/w/<id>/` is stable. A PR's review drafts are saved in a session file named after the same ID (`prSessionFilePath`), so they survive a reopen, from the workbench or from `faah <pr-url>`, even though each opening checks the PR out into a new temporary directory.
+`wbItemID` (directories) and `forge.ItemID` (PRs) are the first 6 bytes, as hex, of the SHA-256 of the kind plus a key: the cleaned absolute path for a directory, or the lowercased `provider/owner/repo#n` for a pull request. The ID is stable, so `/w/<id>/` is stable. A PR's review drafts are saved in a session file named after the same ID (`session.prFilePath`), so they survive a reopen, from the workbench or from `faah <pr-url>`, even though each opening checks the PR out into a new temporary directory.
 
 ## Store
 
