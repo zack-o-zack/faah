@@ -26,7 +26,7 @@
       "rule": "complexity/too-many-params",
       "engine": "code-quality",
       "file": "agent.go",
-      "fingerprint": "aaf581c530c63720",
+      "fingerprint": "a9aa638298a9574e",
       "count": 1
     },
     {
@@ -114,17 +114,10 @@
       "count": 1
     },
     {
-      "rule": "complexity/file-too-large",
-      "engine": "code-quality",
-      "file": "git.go",
-      "fingerprint": "message:acc412ddac35058f",
-      "count": 1
-    },
-    {
       "rule": "complexity/function-too-long",
       "engine": "code-quality",
-      "file": "git.go",
-      "fingerprint": "5825dc75b98a8055",
+      "file": "internal/git/status.go",
+      "fingerprint": "374e3b89922ec275",
       "count": 1
     },
     {
