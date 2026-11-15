@@ -18,6 +18,16 @@ type ReviewBases struct {
 	Branches      []ReviewBranch `json:"branches"`
 }
 
+// HasBranch reports whether name exactly matches a locally available branch.
+func (bases ReviewBases) HasBranch(name string) bool {
+	for _, branch := range bases.Branches {
+		if branch.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
 // ListReviewBases reads only local refs, in exactly one Git subprocess.
 func ListReviewBases(root string) ReviewBases {
 	empty := ReviewBases{Branches: []ReviewBranch{}}

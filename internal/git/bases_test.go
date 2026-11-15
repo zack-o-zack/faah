@@ -45,3 +45,20 @@ func TestReviewBases(t *testing.T) {
 		t.Fatalf("outside git: %+v", got)
 	}
 }
+
+func TestReviewBasesHasBranch(t *testing.T) {
+	bases := ReviewBases{Branches: []ReviewBranch{{Name: "main"}, {Name: "origin/main", Remote: true}}}
+	for _, name := range []string{"main", "origin/main"} {
+		if !bases.HasBranch(name) {
+			t.Errorf("listed branch %q was rejected", name)
+		}
+	}
+	for _, name := range []string{"", "HEAD", "Main", "origin", "--output=bad", "main..HEAD", "missing-branch"} {
+		if bases.HasBranch(name) {
+			t.Errorf("unlisted branch %q was accepted", name)
+		}
+	}
+	if (ReviewBases{}).HasBranch("main") {
+		t.Fatal("empty list accepted a branch")
+	}
+}
