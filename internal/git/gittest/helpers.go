@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -32,14 +33,7 @@ func Repo(tb testing.TB) string {
 			tb.Fatal(err)
 		}
 	}
-	run := func(args ...string) {
-		cmd := exec.Command("git", args...)
-		cmd.Dir = root
-		cmd.Env = append(os.Environ(), "GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_SYSTEM=/dev/null")
-		if out, err := cmd.CombinedOutput(); err != nil {
-			tb.Fatalf("git %v: %v\n%s", args, err, out)
-		}
-	}
+	run := func(args ...string) { Run(tb, root, args...) }
 	write("keep.go", "keep\n")
 	write("sub/mod.go", "line one\n")
 	write("del.go", "del\n")
@@ -60,18 +54,38 @@ func Repo(tb testing.TB) string {
 	return root
 }
 
-// Run runs a git command in dir with a hermetic config, failing the
-// test on error. Mirrors Repo's own run() closure for tests that need
-// more than one working tree.
-func Run(tb testing.TB, dir string, args ...string) string {
+// Command prepares a fixture git command with an explicit directory and no
+// inherited repository or configuration overrides. Callers can inspect expected
+// failures themselves; Run is the usual choice for successful commands.
+func Command(tb testing.TB, dir string, args ...string) *exec.Cmd {
 	tb.Helper()
+	if dir == "" {
+		tb.Fatal("empty git fixture directory")
+	}
 	if testing.Short() {
 		tb.Skip("skipping git integration test in short mode")
 	}
 	cmd := exec.Command("git", args...)
 	cmd.Dir = dir
-	cmd.Env = append(os.Environ(), "GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_SYSTEM=/dev/null")
-	out, err := cmd.CombinedOutput()
+	for _, entry := range os.Environ() {
+		key, _, _ := strings.Cut(entry, "=")
+		switch key {
+		case "GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR":
+			continue
+		}
+		if strings.HasPrefix(key, "GIT_CONFIG") {
+			continue
+		}
+		cmd.Env = append(cmd.Env, entry)
+	}
+	cmd.Env = append(cmd.Env, "GIT_CONFIG_NOSYSTEM=1", "GIT_CONFIG_GLOBAL="+filepath.Join(tb.TempDir(), "config"))
+	return cmd
+}
+
+// Run runs a git command in dir with a hermetic config, failing the test on error.
+func Run(tb testing.TB, dir string, args ...string) string {
+	tb.Helper()
+	out, err := Command(tb, dir, args...).CombinedOutput()
 	if err != nil {
 		tb.Fatalf("git %v (in %s): %v\n%s", args, dir, err, out)
 	}

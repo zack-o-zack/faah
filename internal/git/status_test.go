@@ -2,7 +2,6 @@ package git
 
 import (
 	"os"
-	"os/exec"
 	"path/filepath"
 	"testing"
 
@@ -35,14 +34,7 @@ func TestGitStatusPartialAfterStaging(t *testing.T) {
 	if r, err := filepath.EvalSymlinks(root); err == nil {
 		root = r
 	}
-	run := func(args ...string) {
-		cmd := exec.Command("git", args...)
-		cmd.Dir = root
-		cmd.Env = append(os.Environ(), "GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_SYSTEM=/dev/null")
-		if out, err := cmd.CombinedOutput(); err != nil {
-			t.Fatalf("git %v: %v\n%s", args, err, out)
-		}
-	}
+	run := func(args ...string) { gittest.Run(t, root, args...) }
 	write := func(body string) {
 		if err := os.WriteFile(filepath.Join(root, "a.txt"), []byte(body), 0o644); err != nil {
 			t.Fatal(err)

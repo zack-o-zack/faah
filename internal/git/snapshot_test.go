@@ -2,7 +2,6 @@ package git
 
 import (
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -18,14 +17,7 @@ func TestGitSnapshotAndRestore(t *testing.T) {
 	if r, err := filepath.EvalSymlinks(root); err == nil {
 		root = r
 	}
-	run := func(args ...string) {
-		cmd := exec.Command("git", args...)
-		cmd.Dir = root
-		cmd.Env = append(os.Environ(), "GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_SYSTEM=/dev/null")
-		if out, err := cmd.CombinedOutput(); err != nil {
-			t.Fatalf("git %v: %v\n%s", args, err, out)
-		}
-	}
+	run := func(args ...string) { gittest.Run(t, root, args...) }
 	fileA := filepath.Join(root, "a.go")
 	if err := os.WriteFile(fileA, []byte("package a\n"), 0o644); err != nil {
 		t.Fatal(err)

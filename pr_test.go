@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -174,13 +173,7 @@ func TestPRSessionCloseRefCleanup(t *testing.T) {
 		t.Skip("git not installed")
 	}
 	root := t.TempDir()
-	run := func(args ...string) {
-		cmd := exec.Command("git", args...)
-		cmd.Dir = root
-		if out, err := cmd.CombinedOutput(); err != nil {
-			t.Fatalf("git %v: %v\n%s", args, err, out)
-		}
-	}
+	run := func(args ...string) { gittest.Run(t, root, args...) }
 	run("init")
 	run("config", "user.name", "test")
 	run("config", "user.email", "test@test.local")
@@ -197,11 +190,11 @@ func TestPRSessionCloseRefCleanup(t *testing.T) {
 	}
 	p.Close()
 
-	checkRef := exec.Command("git", "-C", root, "rev-parse", "--verify", "refs/faah/pr/99")
+	checkRef := gittest.Command(t, root, "rev-parse", "--verify", "refs/faah/pr/99")
 	if err := checkRef.Run(); err == nil {
 		t.Errorf("refs/faah/pr/99 was not deleted on Close")
 	}
-	checkBase := exec.Command("git", "-C", root, "rev-parse", "--verify", "refs/faah/base/99")
+	checkBase := gittest.Command(t, root, "rev-parse", "--verify", "refs/faah/base/99")
 	if err := checkBase.Run(); err == nil {
 		t.Errorf("refs/faah/base/99 was not deleted on Close")
 	}

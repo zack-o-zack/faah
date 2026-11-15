@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -133,13 +132,7 @@ func TestGitCleanRepo(t *testing.T) {
 		t.Skip("git not installed")
 	}
 	dir := t.TempDir()
-	runCmd := func(args ...string) {
-		cmd := exec.Command("git", args...)
-		cmd.Dir = dir
-		if out, err := cmd.CombinedOutput(); err != nil {
-			t.Fatalf("git %v failed: %v\n%s", args, err, out)
-		}
-	}
+	runCmd := func(args ...string) { gittest.Run(t, dir, args...) }
 	runCmd("init")
 	runCmd("config", "user.email", "test@test.com")
 	runCmd("config", "user.name", "test")
@@ -220,14 +213,7 @@ func TestGitGutter(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	run := func(args ...string) {
-		cmd := exec.Command("git", args...)
-		cmd.Dir = root
-		cmd.Env = append(os.Environ(), "GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_SYSTEM=/dev/null")
-		if out, err := cmd.CombinedOutput(); err != nil {
-			t.Fatalf("git %v: %v\n%s", args, err, out)
-		}
-	}
+	run := func(args ...string) { gittest.Run(t, root, args...) }
 	// Committed baseline.
 	write("f.go", "alpha\nbravo\ncharlie\ndelta\necho\nfoxtrot\ngolf\nhotel\nindia\njuliet\n")
 	write("clean.go", "stable\n")
@@ -467,12 +453,7 @@ func TestGitWatcherCLICommitDetection(t *testing.T) {
 	}
 
 	// Commit existing changes via CLI
-	cmd := exec.Command("git", "commit", "-am", "commit all")
-	cmd.Dir = root
-	cmd.Env = append(os.Environ(), "GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_SYSTEM=/dev/null")
-	if out, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("git commit failed: %v\n%s", err, out)
-	}
+	gittest.Run(t, root, "commit", "-am", "commit all")
 
 	// Watcher's metadata stat check should instantly see the index/HEAD modtime update
 	if !gw.recordGitMeta(gitdir) {
@@ -493,18 +474,8 @@ func TestGitWatcherAfterCommitNewChanges(t *testing.T) {
 	defer ts.Close()
 
 	// 1. Commit everything so working tree is clean
-	cmdAdd := exec.Command("git", "add", "-A")
-	cmdAdd.Dir = root
-	cmdAdd.Env = append(os.Environ(), "GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_SYSTEM=/dev/null")
-	if out, err := cmdAdd.CombinedOutput(); err != nil {
-		t.Fatalf("git add failed: %v\n%s", err, out)
-	}
-	cmd := exec.Command("git", "commit", "-m", "commit all")
-	cmd.Dir = root
-	cmd.Env = append(os.Environ(), "GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_SYSTEM=/dev/null")
-	if out, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("git commit failed: %v\n%s", err, out)
-	}
+	gittest.Run(t, root, "add", "-A")
+	gittest.Run(t, root, "commit", "-m", "commit all")
 
 	count, _, changed, statuses, _, _, _, _ := ix.UpdateGitStatus()
 	if count != 0 || len(statuses) != 0 {
@@ -591,16 +562,7 @@ func TestGitStatusAgainstAndPRDiff(t *testing.T) {
 	if r, err := filepath.EvalSymlinks(root); err == nil {
 		root = r
 	}
-	run := func(args ...string) string {
-		cmd := exec.Command("git", args...)
-		cmd.Dir = root
-		cmd.Env = append(os.Environ(), "GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_SYSTEM=/dev/null")
-		out, err := cmd.CombinedOutput()
-		if err != nil {
-			t.Fatalf("git %v: %v\n%s", args, err, out)
-		}
-		return strings.TrimSpace(string(out))
-	}
+	run := func(args ...string) string { return strings.TrimSpace(gittest.Run(t, root, args...)) }
 	write := func(rel, body string) {
 		p := filepath.Join(root, filepath.FromSlash(rel))
 		os.MkdirAll(filepath.Dir(p), 0o755)
@@ -711,16 +673,7 @@ func TestHandleDiffPRSplitsPRAndYourChanges(t *testing.T) {
 	if r, err := filepath.EvalSymlinks(root); err == nil {
 		root = r
 	}
-	run := func(args ...string) string {
-		cmd := exec.Command("git", args...)
-		cmd.Dir = root
-		cmd.Env = append(os.Environ(), "GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_SYSTEM=/dev/null")
-		out, err := cmd.CombinedOutput()
-		if err != nil {
-			t.Fatalf("git %v: %v\n%s", args, err, out)
-		}
-		return strings.TrimSpace(string(out))
-	}
+	run := func(args ...string) string { return strings.TrimSpace(gittest.Run(t, root, args...)) }
 	write := func(rel, body string) {
 		if err := os.WriteFile(filepath.Join(root, rel), []byte(body), 0o644); err != nil {
 			t.Fatal(err)
@@ -885,7 +838,7 @@ func TestGitFFOnlyPull(t *testing.T) {
 	}
 	gittest.Run(t, cloneB, "commit", "-aqm", "local edit")
 	before := strings.TrimSpace(gittest.Run(t, cloneB, "rev-parse", "HEAD"))
-	if out, err := exec.Command("git", "-C", cloneB, "rebase", "origin/main").CombinedOutput(); err == nil {
+	if out, err := gittest.Command(t, cloneB, "rebase", "origin/main").CombinedOutput(); err == nil {
 		t.Fatalf("expected the rebase to stop on a conflict:\n%s", out)
 	}
 	if op := git.OpInProgress(cloneB); op != "rebase" {
@@ -1434,12 +1387,7 @@ func TestGitInitAfterProbeAndWatcherReady(t *testing.T) {
 	}
 
 	// Initialize git repository (unborn HEAD, no commits yet).
-	cmd := exec.Command("git", "init")
-	cmd.Dir = root
-	cmd.Env = append(os.Environ(), "GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_SYSTEM=/dev/null")
-	if out, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("git init: %v\n%s", err, out)
-	}
+	gittest.Run(t, root, "init")
 
 	if !git.Available(root) {
 		t.Fatalf("expected gitAvailable(%s) = true immediately after git init", root)
@@ -1490,9 +1438,7 @@ func TestGitCommitAutoStage(t *testing.T) {
 	}
 	root := gittest.Repo(t)
 	// Unstage everything so nothing is staged
-	if out, err := exec.Command("git", "-C", root, "reset").CombinedOutput(); err != nil {
-		t.Fatalf("git reset: %v (%s)", err, out)
-	}
+	gittest.Run(t, root, "reset")
 	// Add an uncommitted modification
 	if err := os.WriteFile(filepath.Join(root, "untracked.txt"), []byte("new file\n"), 0o644); err != nil {
 		t.Fatal(err)
@@ -1520,11 +1466,8 @@ func TestGitCommitAutoStage(t *testing.T) {
 	if git.HasUncommittedChanges(root) {
 		t.Fatalf("expected working tree clean after commit")
 	}
-	out, err := exec.Command("git", "-C", root, "log", "-1", "--pretty=%s").Output()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if strings.TrimSpace(string(out)) != "auto staged commit" {
-		t.Fatalf("expected commit subject 'auto staged commit', got %q", strings.TrimSpace(string(out)))
+	out := gittest.Run(t, root, "log", "-1", "--pretty=%s")
+	if strings.TrimSpace(out) != "auto staged commit" {
+		t.Fatalf("expected commit subject 'auto staged commit', got %q", strings.TrimSpace(out))
 	}
 }
