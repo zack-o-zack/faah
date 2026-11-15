@@ -15,6 +15,7 @@ import (
 	"faah/internal/agents"
 	"faah/internal/explain"
 	"faah/internal/settings"
+	"faah/internal/workspace"
 )
 
 const explainGoSource = "package main\n\nfunc main() {\n\thelper()\n}\n\nfunc helper() {}\n"
@@ -235,7 +236,7 @@ func TestExplainUsesItsOwnAgentAndModel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ix := NewIndex(root)
+	ix := workspace.NewIndex(root)
 	ix.Build()
 	s := NewServer(ix, nil)
 	s.SetAgent(m)

@@ -20,6 +20,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"faah/internal/workspace"
 )
 
 // Position encodings are the classic source of off-by-N bugs in LSP clients:
@@ -129,7 +131,7 @@ func TestManagerDisabled(t *testing.T) {
 func TestExternalAllowlist(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
-	ix := NewIndex(root)
+	ix := workspace.NewIndex(root)
 	ix.Build()
 	m := newLSPManager(root, false)
 	s := NewServer(ix, m)

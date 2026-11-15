@@ -26,6 +26,7 @@ import (
 	"faah/internal/metrics"
 	"faah/internal/render"
 	"faah/internal/symbols"
+	"faah/internal/textutil"
 )
 
 // A minimal LSP client: enough of the protocol to answer navigation questions
@@ -1309,7 +1310,7 @@ func (m *lspManager) resolve(c *lspClient, locs []lspLocation, markDef bool) []N
 					from = to
 				}
 			}
-			h := snip([]byte(text), from, to)
+			h := textutil.Snip([]byte(text), from, to)
 			out = append(out, NavHit{
 				Path: k.rel, Line: line, Pre: h.Pre, Mid: h.Mid, Post: h.Post,
 				Def: markDef, Ext: k.ext,

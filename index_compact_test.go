@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"faah/internal/workspace"
 )
 
 func TestCompactChildrenJoinsSingleFolderChains(t *testing.T) {
@@ -17,7 +19,7 @@ func TestCompactChildrenJoinsSingleFolderChains(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	ix := NewIndex(root)
+	ix := workspace.NewIndex(root)
 	ix.Build()
 
 	kids, ok := ix.CompactChildren("", treeViewFilter("all"))

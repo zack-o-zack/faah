@@ -13,6 +13,7 @@ import (
 	"faah/internal/explain"
 	"faah/internal/symbols"
 	"faah/internal/ui"
+	"faah/internal/workspace"
 )
 
 // Explain This. A reader selects code and gets a short explanation grounded in
@@ -64,7 +65,7 @@ func (explainWorkspace) Outline(abs, rel string) ([]symbols.Symbol, error) {
 }
 
 func (w explainWorkspace) Search(ctx context.Context, name string) []FileMatches {
-	res, _, err := SearchContext(ctx, w.s.ix, SearchOpts{Query: name, Word: true, Case: true, MaxFiles: 50, MaxPerFil: 20, classifyDefs: true})
+	res, _, err := workspace.SearchContext(ctx, w.s.ix, workspace.SearchOpts{Query: name, Word: true, Case: true, MaxFiles: 50, MaxPerFil: 20, ClassifyDefs: true})
 	if err != nil {
 		return nil
 	}

@@ -1,4 +1,4 @@
-package main
+package workspace
 
 import (
 	"context"
@@ -34,13 +34,13 @@ type GitStatusPayload struct {
 	Rewritten     bool              `json:"rewritten,omitempty"`     // PR mode: HEAD no longer contains the PR head (an unpushed rebase); only a force-push updates the PR
 }
 
-// GitWatcher monitors git state changes in the background and broadcasts updates
+// Watcher monitors git state changes in the background and broadcasts updates
 // to connected browser clients over SSE (/api/stream). It uses a hybrid detection strategy:
 //  1. Fast path: 1-second polling of .git metadata files (HEAD, index, packed-refs) to instantly
 //     detect CLI operations (git commit, git checkout, git add).
 //  2. Worktree path: adaptive polling of working tree file modifications.
 //  3. Manual triggers: immediate re-evaluations triggered on user UI actions.
-type GitWatcher struct {
+type Watcher struct {
 	ix   *Index
 	root string
 
@@ -70,9 +70,9 @@ type GitWatcher struct {
 	lastInGit      bool
 }
 
-// NewGitWatcher constructs a new GitWatcher attached to the given workspace index.
-func NewGitWatcher(ix *Index) *GitWatcher {
-	gw := &GitWatcher{
+// NewWatcher constructs a new Watcher attached to the given workspace index.
+func NewWatcher(ix *Index) *Watcher {
+	gw := &Watcher{
 		ix:             ix,
 		root:           ix.Root(),
 		clients:        make(map[chan []byte]struct{}),
@@ -86,7 +86,7 @@ func NewGitWatcher(ix *Index) *GitWatcher {
 }
 
 // Start begins the background monitoring goroutine.
-func (gw *GitWatcher) Start(ctx context.Context) {
+func (gw *Watcher) Start(ctx context.Context) {
 	if git.Disabled() {
 		return
 	}
@@ -100,7 +100,7 @@ func (gw *GitWatcher) Start(ctx context.Context) {
 	go gw.loop(ctx, gitdir)
 }
 
-func (gw *GitWatcher) Stop() {
+func (gw *Watcher) Stop() {
 	select {
 	case <-gw.stopCh:
 	default:
@@ -109,14 +109,14 @@ func (gw *GitWatcher) Stop() {
 }
 
 // Trigger requests an immediate status check and broadcast.
-func (gw *GitWatcher) Trigger() {
+func (gw *Watcher) Trigger() {
 	select {
 	case gw.triggerCh <- struct{}{}:
 	default:
 	}
 }
 
-func (gw *GitWatcher) recordGitMeta(gitdir string) bool {
+func (gw *Watcher) recordGitMeta(gitdir string) bool {
 	if gitdir == "" {
 		return false
 	}
@@ -166,7 +166,7 @@ func (gw *GitWatcher) recordGitMeta(gitdir string) bool {
 	return changed
 }
 
-func (gw *GitWatcher) loop(ctx context.Context, gitdir string) {
+func (gw *Watcher) loop(ctx context.Context, gitdir string) {
 	metaTicker := time.NewTicker(1 * time.Second)
 	defer metaTicker.Stop()
 
@@ -258,16 +258,16 @@ func (gw *GitWatcher) loop(ctx context.Context, gitdir string) {
 
 // Refresh runs an immediate UpdateGitStatus, broadcasts to subscribers if changed,
 // and returns the latest git status payload.
-func (gw *GitWatcher) Refresh() GitStatusPayload {
+func (gw *Watcher) Refresh() GitStatusPayload {
 	p, _ := gw.refreshInternal(false)
 	return p
 }
 
-func (gw *GitWatcher) refreshInternal(worktreeOnly bool) (GitStatusPayload, bool) {
+func (gw *Watcher) refreshInternal(worktreeOnly bool) (GitStatusPayload, bool) {
 	ready := gw.ix.Ready()
 	inGit := git.Available(gw.root)
 	count, files, changed, statuses, dirtyDirs, staged, yourStatuses, yourDirtyDirs := gw.ix.UpdateGitStatus()
-	partial := gw.ix.GitPartial()
+	partial := gw.ix.gitPartial()
 
 	gw.mu.Lock()
 	if ready != gw.lastReady || inGit != gw.lastInGit {
@@ -283,7 +283,7 @@ func (gw *GitWatcher) refreshInternal(worktreeOnly bool) (GitStatusPayload, bool
 	var rewritten bool
 	var branch, commitsURL string
 	if inGit {
-		pushedHead := gw.ix.PushedHead()
+		pushedHead := gw.ix.pushedHeadRef()
 		gw.mu.Lock()
 		canReuseMeta := worktreeOnly && gw.hasMetaCache && gw.lastPushedHead == pushedHead
 		if canReuseMeta {
@@ -359,8 +359,8 @@ func (gw *GitWatcher) refreshInternal(worktreeOnly bool) (GitStatusPayload, bool
 // checkout is a detached HEAD with no upstream, so "ahead" is measured from the
 // PR head it was checked out at (or last pushed to) -- exactly the reviewer's
 // own commits. Behind stays 0 there: knowing it needs a fetch, which Pull does.
-func (gw *GitWatcher) aheadBehind() (ahead, behind int) {
-	if head := gw.ix.PushedHead(); head != "" {
+func (gw *Watcher) aheadBehind() (ahead, behind int) {
+	if head := gw.ix.pushedHeadRef(); head != "" {
 		return git.CountSince(gw.root, head), 0
 	}
 	ahead, behind, _ = git.AheadBehind(gw.root)
@@ -369,13 +369,13 @@ func (gw *GitWatcher) aheadBehind() (ahead, behind int) {
 
 // checkAndBroadcast runs UpdateGitStatus and broadcasts to subscribers if changed.
 // Returns duration of the status check.
-func (gw *GitWatcher) checkAndBroadcast() time.Duration {
+func (gw *Watcher) checkAndBroadcast() time.Duration {
 	start := time.Now()
 	gw.Refresh()
 	return time.Since(start)
 }
 
-func (gw *GitWatcher) broadcast(msg []byte) {
+func (gw *Watcher) broadcast(msg []byte) {
 	gw.mu.Lock()
 	defer gw.mu.Unlock()
 	for ch := range gw.clients {
@@ -387,7 +387,7 @@ func (gw *GitWatcher) broadcast(msg []byte) {
 }
 
 // Subscribe registers a new SSE listener channel and returns an unregister cancel function.
-func (gw *GitWatcher) Subscribe() (<-chan []byte, func()) {
+func (gw *Watcher) Subscribe() (<-chan []byte, func()) {
 	ch := make(chan []byte, 16)
 
 	// Immediately send current state to newly connected client

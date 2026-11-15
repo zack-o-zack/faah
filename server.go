@@ -39,6 +39,7 @@ import (
 	"faah/internal/table"
 	"faah/internal/telemetry"
 	"faah/internal/ui"
+	"faah/internal/workspace"
 )
 
 //go:embed web/index.html web/workbench.html web/dist web/themes web/vendor
@@ -75,7 +76,7 @@ func cleanBasePath(p string) string {
 // Server is the main faah HTTP server handling the web UI, static assets,
 // REST API endpoints, Server-Sent Events (SSE), and workspace services.
 type Server struct {
-	ix         *Index
+	ix         *workspace.Index
 	lsp        *lspManager
 	tel        *telemetry.Service // nil in tests; Track is nil-safe
 	agent      *agentManager      // nil unless main wires editing for this session
@@ -86,7 +87,7 @@ type Server struct {
 	prHeadSHA  string             // PR mode only: the checked-out PR head commit. Frozen boundary between
 	// the PR's own diff (diffBase..prHeadSHA) and the reviewer's local edits
 	// since checkout (prHeadSHA..working tree); refreshed on Pull.
-	gitWatcher *GitWatcher
+	gitWatcher *workspace.Watcher
 	mux        *http.ServeMux
 	basePath   string
 	session    *sessionManager
@@ -245,8 +246,8 @@ func (s *Server) registerRoutes() {
 }
 
 // NewServer creates and initializes a faah Server instance, binding index and language servers,
-// starting the background GitWatcher, and registering all HTTP and SSE routes.
-func NewServer(ix *Index, lsp *lspManager, basePaths ...string) *Server {
+// starting the background workspace.Watcher, and registering all HTTP and SSE routes.
+func NewServer(ix *workspace.Index, lsp *lspManager, basePaths ...string) *Server {
 	if lsp == nil {
 		lsp = newLSPManager(ix.Root(), false)
 	}
@@ -256,7 +257,7 @@ func NewServer(ix *Index, lsp *lspManager, basePaths ...string) *Server {
 	}
 	s := &Server{ix: ix, lsp: lsp, diffBase: "HEAD", basePath: bp, mux: http.NewServeMux(), streamsDone: make(chan struct{})}
 	s.session = newSessionManager(s.basePath, ix.Root())
-	s.gitWatcher = NewGitWatcher(ix)
+	s.gitWatcher = workspace.NewWatcher(ix)
 	s.gitWatcher.Start(context.Background())
 	s.reviewFlow = newReviewWorkflowManager(s)
 	s.registerRoutes()
@@ -960,15 +961,7 @@ func (s *Server) handleStatic(sub fs.FS, prefix string) http.Handler {
 func (s *Server) handleMeta(w http.ResponseWriter, r *http.Request) {
 	n, at, ms := s.ix.Stats()
 	inGit := git.Available(s.ix.Root())
-	if inGit && s.ix.Ready() {
-		s.ix.mu.RLock()
-		noStatus := s.ix.gitStatusMap == nil
-		s.ix.mu.RUnlock()
-		if noStatus {
-			s.ix.UpdateGitStatus()
-		}
-	}
-	gitCount, gitFiles := s.ix.GitChanges()
+	gitCount, gitFiles := s.ix.MetaGitChanges(inGit)
 	meta := map[string]any{
 		"root":           s.ix.Root(),
 		"name":           filepath.Base(s.ix.Root()),
@@ -1254,14 +1247,14 @@ func (s *Server) handleTree(w http.ResponseWriter, r *http.Request) {
 // treeViewFilter says which entries a sidebar view shows, for compacting
 // folder chains the way that view sees them: every entry, changed ones, or
 // in PR review the reviewer's own (not pushed) ones. Empty means no compacting.
-func treeViewFilter(view string) func(Node) bool {
+func treeViewFilter(view string) func(workspace.Node) bool {
 	switch view {
 	case "all":
-		return func(Node) bool { return true }
+		return func(workspace.Node) bool { return true }
 	case "changed":
-		return func(n Node) bool { return n.Dirty || n.Status != "" }
+		return func(n workspace.Node) bool { return n.Dirty || n.Status != "" }
 	case "yours":
-		return func(n Node) bool { return n.YourDirty || n.YourStatus != "" }
+		return func(n workspace.Node) bool { return n.YourDirty || n.YourStatus != "" }
 	}
 	return nil
 }
@@ -2545,14 +2538,14 @@ func (s *Server) handleCommitDetail(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	q := r.URL.Query()
-	opts := SearchOpts{
+	opts := workspace.SearchOpts{
 		Query: q.Get("q"),
 		Regex: q.Get("re") == "1",
 		Case:  q.Get("case") == "1",
 		Word:  q.Get("word") == "1",
 		Glob:  q.Get("glob"),
 	}
-	res, truncated, err := SearchContext(r.Context(), s.ix, opts)
+	res, truncated, err := workspace.SearchContext(r.Context(), s.ix, opts)
 	if err != nil {
 		if errors.Is(err, context.Canceled) || r.Context().Err() != nil {
 			return
@@ -2616,9 +2609,9 @@ func (s *Server) handleDef(w http.ResponseWriter, r *http.Request) {
 		fail(w, 400, "no symbol")
 		return
 	}
-	res, _, err := SearchContext(r.Context(), s.ix, SearchOpts{
+	res, _, err := workspace.SearchContext(r.Context(), s.ix, workspace.SearchOpts{
 		Query: sym, Word: true, Case: true,
-		MaxFiles: 400, MaxPerFil: 20, classifyDefs: true,
+		MaxFiles: 400, MaxPerFil: 20, ClassifyDefs: true,
 	})
 	if err != nil {
 		if errors.Is(err, context.Canceled) || r.Context().Err() != nil {

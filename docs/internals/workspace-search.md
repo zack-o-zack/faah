@@ -1,6 +1,6 @@
 # Workspace Search & Symbol Extraction
 
-This document explains faah's high-throughput parallel search engine ([`search.go`](../../search.go)) and fast regex symbol extractor ([`internal/symbols/symbols.go`](../../internal/symbols/symbols.go)).
+This document explains faah's high-throughput parallel search engine ([`internal/workspace/search.go`](../../internal/workspace/search.go)) and fast regex symbol extractor ([`internal/symbols/symbols.go`](../../internal/symbols/symbols.go)).
 
 ## 1. Search Engine Architecture
 
@@ -57,7 +57,7 @@ var workPool = sync.Pool{
 
 ### In-Place ASCII Lowercasing
 
-For case-insensitive literal searches, converting full UTF-8 strings with `strings.ToLower()` allocates new heap memory for every line. Instead, `search.go` performs in-place byte lowercasing directly into `workBuf.asciiLower`:
+For case-insensitive literal searches, converting full UTF-8 strings with `strings.ToLower()` allocates new heap memory for every line. Instead, `internal/workspace/search.go` performs in-place byte lowercasing directly into `workBuf.asciiLower`:
 
 - ASCII characters A-Z are mapped to a-z via single-byte manipulation (`b + 32`).
 - UTF-8 multibyte characters are preserved untouched.
@@ -78,7 +78,7 @@ If the prefilter returns `false`, the entire file is discarded in a few microsec
 
 Long source lines (such as minified code, long strings, or complex expressions) cannot be displayed in full inside a compact sidebar search panel. 
 
-Instead of returning raw byte offsets or forcing the JavaScript client to calculate UTF-16 string offsets, `search.go` performs line elision server-side:
+Instead of returning raw byte offsets or forcing the JavaScript client to calculate UTF-16 string offsets, `textutil.Snip` (`internal/textutil/snip.go`) performs line elision server-side:
 
 ```go
 type Match struct {
