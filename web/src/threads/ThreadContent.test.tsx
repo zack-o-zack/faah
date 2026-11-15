@@ -27,7 +27,7 @@ test('deleting a populated thread does not open it and keyboard activation opens
   expect(open).toHaveBeenCalledOnce();
 });
 
-test('explanation notes and walkthrough steps are flowing links to their source ranges', () => {
+test('finished notes show code peeks and walkthrough steps open their source ranges', () => {
   const open = vi.fn();
   const turn = decodeTurn({
     id: 1,
@@ -40,11 +40,12 @@ test('explanation notes and walkthrough steps are flowing links to their source 
     ],
   });
   render(() => <ThreadArtifacts turn={turn} onOpen={open} />);
-  expect(screen.queryByRole('button')).toBeNull();
-  fireEvent.click(screen.getByRole('link', { name: /main.go:3-8 Starts the workspace/ }));
+  expect(screen.getByText('Starts the workspace')).toBeTruthy();
+  expect(document.querySelector('[data-ui=thr-peek]')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: '3' }));
   fireEvent.click(screen.getByRole('link', { name: 'Serve' }));
   expect(open.mock.calls).toEqual([
-    [{ path: 'main.go', line: 3, end: 8 }],
+    [{ path: 'main.go', line: 3 }],
     [{ path: 'app.go', line: 12, end: 12 }],
   ]);
 });

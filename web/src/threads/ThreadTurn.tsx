@@ -60,7 +60,7 @@ export function ThreadTurn(props: ThreadTurnProps): JSX.Element {
           }
           onOpen={open}
         />
-        <ThreadArtifacts turn={props.turn} onOpen={open} />
+        <ThreadArtifacts thread={props.thread?.id} turn={props.turn} onOpen={open} />
         <ErrorNotice title="The run failed" error={props.turn.error} />
         <Show when={props.thread?.kind === 'explain' && props.turn.id === 1 && !props.turn.running}>
           <footer
