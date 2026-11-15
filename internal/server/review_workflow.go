@@ -135,7 +135,7 @@ func (s *Server) handleReviewWorkflowStream(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-// handleReviewWalkthrough delivers file diffs and extracted understanding for the Review Walkthrough.
+// handleReviewWalkthrough delivers grouped file diffs for the Review Walkthrough.
 func (s *Server) handleReviewWalkthrough(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httpx.Fail(w, http.StatusMethodNotAllowed, "method not allowed")

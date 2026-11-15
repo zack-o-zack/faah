@@ -47,6 +47,7 @@ import { toast } from '../lib/toast.tsx';
 import { createWorkspaceSubscription } from '../workspace/stream.ts';
 import {
   REVIEW_EVENTS,
+  activeGroupFilter,
   activeAfterChange,
   changeStage,
   configRequest,
@@ -313,6 +314,8 @@ function buildReviewStore(editor: ReviewHost, options: ReviewOptions = {}) {
     active,
     running,
     walkthrough,
+    groupFilter: () =>
+      activeGroupFilter(walkthrough.error ? [] : walkthrough.latest?.files || [], state.filter),
     // A failed resource throws on read; views take its error separately.
     walkthroughData: () => (walkthrough.error ? null : walkthrough.latest),
     actions: {
@@ -357,7 +360,7 @@ function buildReviewStore(editor: ReviewHost, options: ReviewOptions = {}) {
       },
       setReviewFollowup: (value: string) => set('followup', value),
       refreshWalkthrough: () => setRevision((value) => value + 1),
-      setInsightFilter: (filter: string) => set('filter', filter),
+      setGroupFilter: (filter: string) => set('filter', filter),
       setWalkthroughViewed: (path: string, viewed: boolean) => set('viewed', path, viewed),
       setActiveWalkthroughFile: (path: string) => set('activeFile', path),
       revealWalkthrough(path: string, line = 0): void {

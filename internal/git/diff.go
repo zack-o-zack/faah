@@ -209,3 +209,42 @@ func DiffCommit(root, relpath, sha string) string {
 func HunksCommit(root, relpath, sha string) (added, modified, deleted []int) {
 	return parseDiffHunks(DiffCommit(root, relpath, sha))
 }
+
+// ChangedFiles lists changes with rename origins in one Git subprocess.
+// An empty head compares the base to the working tree (including staged paths).
+func ChangedFiles(root, base, head string) []CommitFile {
+	info := Probe(root)
+	if !info.ok || base == "" {
+		return nil
+	}
+	args := []string{"-C", root, "diff", "--name-status", "-z", "--find-renames", base}
+	if head != "" {
+		args = append(args, head)
+	}
+	out, err := exec.Command("git", args...).Output()
+	if err != nil {
+		return nil
+	}
+	return parseChangedFiles(out, repoRelKey(info, root))
+}
+
+// DiffPaths includes both sides of a rename so Git can compute its actual edits.
+func DiffPaths(root, base, head string, paths ...string) string {
+	if !Available(root) {
+		return ""
+	}
+	args := []string{"-C", root, "diff", "--no-color", "--find-renames", base}
+	if head != "" {
+		args = append(args, head)
+	}
+	args = append(args, "--")
+	args = append(args, paths...)
+	out, err := exec.Command("git", args...).Output()
+	if err != nil {
+		if base == "HEAD" && head == "" {
+			return DiffAgainst(root, paths[0], base)
+		}
+		return ""
+	}
+	return string(out)
+}

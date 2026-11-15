@@ -5,8 +5,9 @@ import {
   activeBlock,
   changeStage,
   configRequest,
-  fileInsights,
-  insightCounts,
+  activeGroupFilter,
+  movedOnly,
+  groupCounts,
   pipelineProgress,
   reviewStages,
   reviewTransition,
@@ -104,22 +105,32 @@ test('stage definitions need a title; new stages derive question and prompt', ()
   expect(edited).toMatchObject({ question: 'Q', prompt: '' });
 });
 
-test('insight filters narrow the file list and count each kind', () => {
+test('group filters count files and fall back when the selected group disappears', () => {
   const files = [
-    {
-      path: 'a.go',
-      understanding: {
-        edgeCases: [{ line: 3, kind: 'error', text: '', explanation: '' }],
-        coreLogic: [{ line: 1, kind: 'core', text: '', explanation: '' }],
-      },
-    },
-    { path: 'b.go', understanding: {} },
+    { path: 'a.go', group: 'core' as const },
+    { path: 'b_test.go', group: 'tests' as const },
   ];
-  expect(insightCounts(files)).toEqual({ all: 2, fastReturns: 0, edgeCases: 1, coreLogic: 1 });
+  expect(groupCounts(files)).toEqual({
+    all: 2,
+    core: 1,
+    tests: 1,
+    config: 0,
+    docs: 0,
+    generated: 0,
+  });
+  expect(visibleFiles(files, 'tests').map((file) => file.path)).toEqual(['b_test.go']);
   expect(visibleFiles(files, 'all')).toHaveLength(2);
-  expect(visibleFiles(files, 'edgeCases').map((file) => file.path)).toEqual(['a.go']);
-  expect(fileInsights(required(files[0]), 'all')).toEqual([]);
-  expect(fileInsights(required(files[0]), 'edgeCases')[0]?.line).toBe(3);
+  expect(activeGroupFilter(files, 'docs')).toBe('all');
+  expect(visibleFiles(files, 'docs')).toHaveLength(2);
+  expect(movedOnly({ ...required(files[0]), oldPath: 'old.go', hunks: [] })).toBe(true);
+  expect(movedOnly(required(files[0]))).toBe(false);
+  expect(
+    movedOnly({
+      ...required(files[0]),
+      oldPath: 'old.go',
+      hunks: [{ oldStart: 1, newStart: 1, section: '', rows: [] }],
+    }),
+  ).toBe(false);
 });
 
 test('the selected stage follows a move and stays in range after removal', () => {

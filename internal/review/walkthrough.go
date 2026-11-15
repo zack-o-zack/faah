@@ -1,10 +1,7 @@
 package review
 
 import (
-	"fmt"
 	"os/exec"
-	"path/filepath"
-	"regexp"
 	"sort"
 	"strings"
 
@@ -12,32 +9,16 @@ import (
 	"faah/internal/render"
 )
 
-// WalkthroughFile holds one file's diff hunks and extracted cognitive understanding.
+// WalkthroughFile holds one file's diff hunks.
 type WalkthroughFile struct {
-	Path          string            `json:"path"`
-	Status        string            `json:"status"` // "M", "A", "D"
-	Additions     int               `json:"additions"`
-	Deletions     int               `json:"deletions"`
-	Diff          string            `json:"diff"`
-	Hunks         []render.DiffHunk `json:"hunks"`
-	Understanding *Understanding    `json:"understanding"`
-}
-
-// Understanding aggregates fast returns, edge cases, and core logic blocks.
-type Understanding struct {
-	Summary     string        `json:"summary"`
-	FastReturns []InsightItem `json:"fastReturns"`
-	EdgeCases   []InsightItem `json:"edgeCases"`
-	CoreLogic   []InsightItem `json:"coreLogic"`
-}
-
-// InsightItem represents a surfaced guard, edge case, or core code block.
-type InsightItem struct {
-	Line        int    `json:"line"`
-	EndLine     int    `json:"endLine,omitempty"`
-	Kind        string `json:"kind"` // "guard", "nil_check", "auth", "validation", "cache", "error", "timeout", "panic", "fallback", "core", "function"
-	Text        string `json:"text"`
-	Explanation string `json:"explanation"`
+	Path      string            `json:"path"`
+	Status    string            `json:"status"` // "M", "A", "D", "R"
+	Additions int               `json:"additions"`
+	Deletions int               `json:"deletions"`
+	Diff      string            `json:"diff"`
+	Hunks     []render.DiffHunk `json:"hunks"`
+	Group     string            `json:"group"`
+	OldPath   string            `json:"oldPath,omitempty"`
 }
 
 // WalkthroughResponse is the response payload for /api/review/walkthrough.
@@ -51,202 +32,7 @@ type WalkthroughResponse struct {
 	PRMode         bool              `json:"prMode"`
 }
 
-var (
-	reReturn     = regexp.MustCompile(`(?i)\b(?:return|continue|break|throw|reject|goto)\b`)
-	reNilCheck   = regexp.MustCompile(`(?i)(?:==\s*nil|!=\s*nil|===?\s*null|!==?\s*null|===?\s*undefined|!==?\s*undefined|!\w+)`)
-	reAuth       = regexp.MustCompile(`(?i)(?:auth|permission|forbidden|unauthorized|token|credential|denied|role|secret|allow)`)
-	reValidation = regexp.MustCompile(`(?i)(?:validate|invalid|required|missing|empty|len\(|<=?\s*0|>=?\s*0|bounds|overflow)`)
-	reCache      = regexp.MustCompile(`(?i)(?:cache|hit|cached|memo|idempotent|existing|found)`)
-	reError      = regexp.MustCompile(`(?i)(?:err\s*!=\s*nil|errors\.New|fmt\.Errorf|new\s+Error|Exception|failed|failure)`)
-	reTimeout    = regexp.MustCompile(`(?i)(?:timeout|timed out|ctx\.Done\(\)|DeadlineExceeded|Canceled|expired)`)
-	reFallback   = regexp.MustCompile(`(?i)(?:fallback|default:|recover\(\)|except\s*:|catch\s*\()`)
-	rePanic      = regexp.MustCompile(`(?i)(?:panic\(|fatal\(|fatalf\(|assert\()`)
-	reFuncDef    = regexp.MustCompile(`(?i)\b(?:func\s+|function\s+|class\s+|def\s+|type\s+\w+\s+(?:struct|interface))\b`)
-)
-
-func truncateInsightText(s string, max int) string {
-	s = strings.TrimSpace(s)
-	if len(s) > max {
-		return s[:max-3] + "..."
-	}
-	return s
-}
-
-func pluralS(n int) string {
-	if n == 1 {
-		return ""
-	}
-	return "s"
-}
-
-// insightExts are the languages whose returns, errors and functions the
-// patterns below recognise.
-var insightExts = map[string]bool{
-	".go": true, ".js": true, ".mjs": true, ".cjs": true, ".jsx": true, ".ts": true, ".tsx": true,
-	".py": true, ".rb": true, ".rs": true, ".java": true, ".kt": true, ".swift": true, ".c": true,
-	".h": true, ".cc": true, ".cpp": true, ".hpp": true, ".cs": true, ".php": true, ".scala": true,
-	".dart": true, ".lua": true, ".sh": true,
-}
-
-// extractCodeUnderstanding parses diff hunks to surface guard bailouts, edge cases, and core logic.
-func extractCodeUnderstanding(rel string, hunks []render.DiffHunk) *Understanding {
-	und := &Understanding{
-		FastReturns: []InsightItem{},
-		EdgeCases:   []InsightItem{},
-		CoreLogic:   []InsightItem{},
-	}
-	if len(hunks) == 0 {
-		und.Summary = "No modifications in this file."
-		return und
-	}
-	// The patterns read code: in YAML, JSON or prose every line would be noise.
-	if !insightExts[strings.ToLower(filepath.Ext(rel))] {
-		return und
-	}
-
-	type rowInfo struct {
-		row render.DiffRow
-	}
-	var addedRows []rowInfo
-	for _, h := range hunks {
-		for _, r := range h.Rows {
-			if r.Type == "add" {
-				addedRows = append(addedRows, rowInfo{row: r})
-			}
-		}
-	}
-
-	if len(addedRows) == 0 {
-		und.Summary = "Only line deletions or unmodified context in this file."
-		return und
-	}
-
-	for i := 0; i < len(addedRows); i++ {
-		cur := addedRows[i].row
-		txt := strings.TrimSpace(cur.Text)
-		if txt == "" || strings.HasPrefix(txt, "//") || strings.HasPrefix(txt, "/*") || strings.HasPrefix(txt, "*") {
-			continue
-		}
-
-		hasReturnInside := reReturn.MatchString(txt)
-		blockHasReturn := hasReturnInside
-		if !hasReturnInside && (strings.HasPrefix(txt, "if ") || strings.HasPrefix(txt, "if(")) {
-			for j := i + 1; j < len(addedRows) && j <= i+3; j++ {
-				nextTxt := strings.TrimSpace(addedRows[j].row.Text)
-				if reReturn.MatchString(nextTxt) {
-					blockHasReturn = true
-					break
-				}
-				if strings.Contains(nextTxt, "}") {
-					break
-				}
-			}
-		}
-
-		// 1. Error & failure edge cases
-		if reError.MatchString(txt) || (blockHasReturn && strings.Contains(txt, "err")) {
-			expl := "Error check and failure propagation"
-			if strings.Contains(txt, "fmt.Errorf") || strings.Contains(txt, "errors.New") {
-				expl = "Constructs and returns explicit error"
-			}
-			und.EdgeCases = append(und.EdgeCases, InsightItem{
-				Line:        cur.NewLine,
-				Kind:        "error",
-				Text:        truncateInsightText(txt, 90),
-				Explanation: expl,
-			})
-			continue
-		}
-
-		if reTimeout.MatchString(txt) {
-			und.EdgeCases = append(und.EdgeCases, InsightItem{
-				Line:        cur.NewLine,
-				Kind:        "timeout",
-				Text:        truncateInsightText(txt, 90),
-				Explanation: "Context deadline or timeout handler",
-			})
-			continue
-		}
-
-		if rePanic.MatchString(txt) {
-			und.EdgeCases = append(und.EdgeCases, InsightItem{
-				Line:        cur.NewLine,
-				Kind:        "panic",
-				Text:        truncateInsightText(txt, 90),
-				Explanation: "Assertion failure or unrecoverable panic exit",
-			})
-			continue
-		}
-
-		if reFallback.MatchString(txt) {
-			und.EdgeCases = append(und.EdgeCases, InsightItem{
-				Line:        cur.NewLine,
-				Kind:        "fallback",
-				Text:        truncateInsightText(txt, 90),
-				Explanation: "Fallback resilience path on unexpected state",
-			})
-			continue
-		}
-
-		// 2. Fast returns & bailouts
-		if blockHasReturn {
-			kind := "guard"
-			expl := "Early return guard clause"
-
-			if reAuth.MatchString(txt) {
-				kind = "auth"
-				expl = "Authorization or access check guard"
-			} else if reNilCheck.MatchString(txt) {
-				kind = "nil_check"
-				expl = "Nil / null guard preventing panic on invalid reference"
-			} else if reCache.MatchString(txt) {
-				kind = "cache"
-				expl = "Fast-path cache or idempotent shortcut"
-			} else if reValidation.MatchString(txt) {
-				kind = "validation"
-				expl = "Input boundary or parameter validation bailout"
-			}
-
-			und.FastReturns = append(und.FastReturns, InsightItem{
-				Line:        cur.NewLine,
-				Kind:        kind,
-				Text:        truncateInsightText(txt, 90),
-				Explanation: expl,
-			})
-			continue
-		}
-
-		// 3. Core logic declarations
-		if reFuncDef.MatchString(txt) {
-			und.CoreLogic = append(und.CoreLogic, InsightItem{
-				Line:        cur.NewLine,
-				Kind:        "function",
-				Text:        truncateInsightText(txt, 90),
-				Explanation: "Introduces or updates functional declaration",
-			})
-		}
-	}
-
-	parts := []string{}
-	if len(und.FastReturns) > 0 {
-		parts = append(parts, fmt.Sprintf("%d fast return%s", len(und.FastReturns), pluralS(len(und.FastReturns))))
-	}
-	if len(und.EdgeCases) > 0 {
-		parts = append(parts, fmt.Sprintf("%d edge case%s", len(und.EdgeCases), pluralS(len(und.EdgeCases))))
-	}
-	if len(und.CoreLogic) > 0 {
-		parts = append(parts, fmt.Sprintf("%d core change%s", len(und.CoreLogic), pluralS(len(und.CoreLogic))))
-	}
-	if len(parts) > 0 {
-		und.Summary = fmt.Sprintf("Surfaces %s across modified hunks.", strings.Join(parts, ", "))
-	} else {
-		und.Summary = fmt.Sprintf("Modified %d line%s in this file.", len(addedRows), pluralS(len(addedRows)))
-	}
-
-	return und
-}
-
-// BuildWalkthrough builds file diffs and extracted understanding for the Review Walkthrough.
+// BuildWalkthrough builds file diffs for the Review Walkthrough.
 func BuildWalkthrough(root, diffBase, diffHead string, isPR bool, statuses map[string]string) WalkthroughResponse {
 	var (
 		walkthroughFiles = []WalkthroughFile{}
@@ -257,8 +43,10 @@ func BuildWalkthrough(root, diffBase, diffHead string, isPR bool, statuses map[s
 	)
 
 	type targetFile struct {
-		path   string
-		status string
+		path    string
+		status  string
+		oldPath string
+		group   string
 	}
 	var targets []targetFile
 
@@ -266,12 +54,12 @@ func BuildWalkthrough(root, diffBase, diffHead string, isPR bool, statuses map[s
 		baseRef = diffBase
 		headRef = diffHead
 		for path, status := range statuses {
-			targets = append(targets, targetFile{path: path, status: status})
+			targets = append(targets, targetFile{path: path, status: status, group: fileGroup(path)})
 		}
 	} else {
 		statusMap := statuses
 		for path, status := range statusMap {
-			targets = append(targets, targetFile{path: path, status: status})
+			targets = append(targets, targetFile{path: path, status: status, group: fileGroup(path)})
 		}
 
 		// If working tree is clean, fallback to HEAD~1..HEAD so the reviewer has immediate diff to inspect
@@ -286,35 +74,70 @@ func BuildWalkthrough(root, diffBase, diffHead string, isPR bool, statuses map[s
 						headRef = headSHA
 					}
 					for _, cf := range cfList {
-						targets = append(targets, targetFile{path: cf.Path, status: cf.Status})
+						targets = append(targets, targetFile{path: cf.Path, status: cf.Status, oldPath: cf.From, group: fileGroup(cf.Path)})
 					}
 				}
 			}
 		}
 	}
 
+	if baseRef != "HEAD~1" && len(targets) > 0 {
+		head := ""
+		if isPR {
+			head = diffHead
+		}
+		moves := git.ChangedFiles(root, baseRef, head)
+		targetIndices := make(map[string]int, len(targets))
+		for i, target := range targets {
+			targetIndices[target.path] = i
+		}
+		oldPaths := map[string]bool{}
+		for _, move := range moves {
+			if move.Status != "R" || move.From == "" {
+				continue
+			}
+			if i, exists := targetIndices[move.Path]; exists {
+				targets[i].oldPath = move.From
+				targets[i].status = "R"
+				oldPaths[move.From] = true
+			}
+		}
+		filtered := targets[:0]
+		for _, target := range targets {
+			if !oldPaths[target.path] {
+				filtered = append(filtered, target)
+			}
+		}
+		targets = filtered
+	}
 	sort.Slice(targets, func(i, j int) bool {
+		gi, gj := targets[i].group, targets[j].group
+		if gi != gj {
+			return groupRank(gi) < groupRank(gj)
+		}
 		return targets[i].path < targets[j].path
 	})
 
 	for _, target := range targets {
-		var diffText string
+		head := ""
 		if isPR {
-			diffText = git.DiffBetween(root, target.path, diffBase, diffHead)
-			if diffText == "" {
-				diffText = git.DiffAgainst(root, target.path, diffBase)
-			}
+			head = diffHead
 		} else if baseRef == "HEAD~1" {
-			diffText = git.DiffBetween(root, target.path, "HEAD~1", "HEAD")
-		} else {
-			diffText = git.DiffAgainst(root, target.path, baseRef)
+			head = "HEAD"
 		}
-
-		if diffText == "" {
+		paths := []string{target.path}
+		if target.oldPath != "" {
+			paths = append(paths, target.oldPath)
+		}
+		diffText := git.DiffPaths(root, baseRef, head, paths...)
+		if diffText == "" && target.oldPath == "" {
 			continue
 		}
 
 		hunks := render.HighlightDiff(target.path, diffText)
+		if target.oldPath != "" && len(hunks) == 0 {
+			diffText = ""
+		}
 		addCount, delCount := 0, 0
 		for _, h := range hunks {
 			for _, row := range h.Rows {
@@ -328,16 +151,16 @@ func BuildWalkthrough(root, diffBase, diffHead string, isPR bool, statuses map[s
 
 		totalAdditions += addCount
 		totalDeletions += delCount
-		und := extractCodeUnderstanding(target.path, hunks)
 
 		walkthroughFiles = append(walkthroughFiles, WalkthroughFile{
-			Path:          target.path,
-			Status:        target.status,
-			Additions:     addCount,
-			Deletions:     delCount,
-			Diff:          diffText,
-			Hunks:         hunks,
-			Understanding: und,
+			Path:      target.path,
+			Status:    target.status,
+			Additions: addCount,
+			Deletions: delCount,
+			Diff:      diffText,
+			Hunks:     hunks,
+			Group:     target.group,
+			OldPath:   target.oldPath,
 		})
 	}
 

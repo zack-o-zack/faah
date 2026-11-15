@@ -16,12 +16,12 @@ export function Walkthrough(): JSX.Element {
     <div id="review-walkthrough-view" class="flex h-full min-h-0 flex-1 flex-row overflow-hidden">
       <Switch>
         <Match when={review.walkthrough.error}>
-          <EmptyState icon="icon-[lucide--circle-alert]" title="Failed to load code understanding">
+          <EmptyState icon="icon-[lucide--circle-alert]" title="Failed to load walkthrough">
             <span class="text-destructive">{review.walkthrough.error.message}</span>
           </EmptyState>
         </Match>
         <Match when={!review.walkthroughData()}>
-          <EmptyState spinner title="Analyzing code changes & guardrails…" />
+          <EmptyState spinner title="Loading changed files…" />
         </Match>
         <Match when={!files().length}>
           <EmptyState icon="icon-[lucide--check]" title="Working tree is clean">

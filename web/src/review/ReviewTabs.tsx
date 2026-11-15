@@ -6,7 +6,7 @@ interface ReviewTabProps {
 import type { JSX } from 'solid-js';
 import { For, Index, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
-import { INSIGHT_KINDS, insightCounts, pipelineProgress } from './logic.ts';
+import { FILE_GROUPS, groupCounts, pipelineProgress } from './logic.ts';
 import { StageDot } from './StageDot.tsx';
 export function ReviewTabs(): JSX.Element {
   const editor = useEditor();
@@ -14,9 +14,9 @@ export function ReviewTabs(): JSX.Element {
   return (
     <div id="review-sub-bar" class="flex shrink-0 flex-wrap items-center gap-2 p-3 select-none">
       <div class="flex items-center gap-2" role="tablist">
-        <ReviewTab id="walkthrough" title="Scrollytelling code diff and guardrail understanding">
+        <ReviewTab id="walkthrough" title="Changed files grouped by kind">
           <span class="icon-[lucide--zap] size-3.5 shrink-0" aria-hidden="true" />
-          <span>Diff & Understanding</span>
+          <span>Changed files</span>
           <span class="badge" data-variant="secondary">
             {review.walkthroughData()?.totalFiles ?? 0}
           </span>
@@ -82,31 +82,29 @@ function PipelineBadge(): JSX.Element {
 function WalkthroughToolbar(): JSX.Element {
   const editor = useEditor();
   const review = editor.review;
-  const counts = () => insightCounts(review.walkthroughData()?.files || []);
+  const counts = () => groupCounts(review.walkthroughData()?.files || []);
   const chips: { id: string; label: string; title: string; icon?: string }[] = [
-    { id: 'all', label: 'All', title: 'Show all insights' },
-    ...INSIGHT_KINDS,
+    { id: 'all', label: 'All', title: 'Show all files' },
+    ...FILE_GROUPS,
   ];
   return (
     <div class="flex items-center gap-2">
-      <div class="flex flex-wrap items-center gap-1" role="group" aria-label="Filter insights">
-        <For each={chips}>
+      <div class="flex flex-wrap items-center gap-1" role="group" aria-label="Filter file groups">
+        <For each={chips.filter((chip) => chip.id === 'all' || counts()[chip.id])}>
           {(chip) => (
             <button
               title={chip.title}
               class="btn"
-              data-variant={review.state.filter === chip.id ? 'secondary' : 'ghost'}
+              data-variant={review.groupFilter() === chip.id ? 'secondary' : 'ghost'}
               data-size="xs"
-              aria-pressed={review.state.filter === chip.id}
-              onClick={() => editor.actions.setInsightFilter(chip.id)}
+              aria-pressed={review.groupFilter() === chip.id}
+              onClick={() => editor.actions.setGroupFilter(chip.id)}
             >
               <Show when={chip.icon}>
                 <span class={`${chip.icon} size-3 shrink-0`} aria-hidden="true" />
               </Show>
               {chip.label}
-              <Show when={chip.id !== 'all'}>
-                <span class="tabular-nums text-muted-foreground">{counts()[chip.id]}</span>
-              </Show>
+              <span class="tabular-nums text-muted-foreground">{counts()[chip.id]}</span>
             </button>
           )}
         </For>

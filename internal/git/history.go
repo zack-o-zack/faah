@@ -194,48 +194,23 @@ func CommitFiles(root, sha string) []CommitFile {
 	if !info.ok || !ValidSHA(sha) {
 		return nil
 	}
-	args := append([]string{"-C", root, "diff-tree", "--name-status", "-z"}, commitDiffArgs...)
+	args := append([]string{"-C", root, "diff-tree", "--name-status", "-z", "--find-renames"}, commitDiffArgs...)
 	out, err := exec.Command("git", append(args, sha)...).Output()
 	if err != nil {
 		return nil
 	}
 	stats := commitNumstat(root, sha)
 	key := repoRelKey(info, root)
-	var files []CommitFile
-	// -z name-status emits "<status>\0<path>\0", or "<status>\0<src>\0<dst>\0"
-	// for a rename or copy, so the field count per record varies.
-	fields := strings.Split(string(out), "\x00")
-	for i := 0; i < len(fields); i++ {
-		st := fields[i]
-		if st == "" {
-			continue
+	relativeStats := make(map[string]numstat, len(stats))
+	for path, stat := range stats {
+		if rel, ok := key(path); ok {
+			relativeStats[rel] = stat
 		}
-		letter := st[:1]
-		rename := letter == "R" || letter == "C"
-		if i+1 >= len(fields) {
-			break
-		}
-		from, to := "", fields[i+1]
-		i++
-		if rename {
-			if i+1 >= len(fields) {
-				break
-			}
-			from, to = to, fields[i+1]
-			i++
-		}
-		path, ok := key(to)
-		if !ok {
-			continue
-		}
-		ns := stats[to]
-		f := CommitFile{Path: path, Status: letter, Add: ns.add, Del: ns.del, Binary: ns.binary}
-		if from != "" {
-			if fp, ok := key(from); ok {
-				f.From = fp
-			}
-		}
-		files = append(files, f)
+	}
+	files := parseChangedFiles(out, key)
+	for i := range files {
+		ns := relativeStats[files[i].Path]
+		files[i].Add, files[i].Del, files[i].Binary = ns.add, ns.del, ns.binary
 	}
 	return files
 }
@@ -347,4 +322,44 @@ type LogCommit struct {
 	Subject string `json:"subject"`
 	Author  string `json:"author"`
 	Date    string `json:"date"`
+}
+
+// parseChangedFiles shares the NUL-delimited rename parser across diff readers.
+func parseChangedFiles(out []byte, key func(string) (string, bool)) []CommitFile {
+	var files []CommitFile
+	// -z name-status emits "<status>\0<path>\0", or "<status>\0<src>\0<dst>\0"
+	// for a rename or copy, so the field count per record varies.
+	fields := strings.Split(string(out), "\x00")
+	for i := 0; i < len(fields); i++ {
+		st := fields[i]
+		if st == "" {
+			continue
+		}
+		letter := st[:1]
+		rename := letter == "R" || letter == "C"
+		if i+1 >= len(fields) {
+			break
+		}
+		from, to := "", fields[i+1]
+		i++
+		if rename {
+			if i+1 >= len(fields) {
+				break
+			}
+			from, to = to, fields[i+1]
+			i++
+		}
+		path, ok := key(to)
+		if !ok {
+			continue
+		}
+		f := CommitFile{Path: path, Status: letter}
+		if from != "" {
+			if fp, ok := key(from); ok {
+				f.From = fp
+			}
+		}
+		files = append(files, f)
+	}
+	return files
 }

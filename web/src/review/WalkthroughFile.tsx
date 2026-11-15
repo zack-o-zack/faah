@@ -6,7 +6,7 @@ interface WalkthroughFileProps {
 import type { JSX } from 'solid-js';
 import { createEffect, For, on } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
-import { rowLine } from './logic.ts';
+import { movedOnly, rowLine } from './logic.ts';
 import { syntaxParts } from '../viewers/diff-intraline.ts';
 import { LineStats } from './LineStats.tsx';
 const ROW_TYPE: Record<string, string> = { add: 'diff-type-add', del: 'diff-type-del' };
@@ -42,7 +42,12 @@ export function WalkthroughFile(props: WalkthroughFileProps): JSX.Element {
       >
         <div class="flex min-w-0 items-center gap-2">
           <span class="icon-[lucide--file] size-3.5 shrink-0 text-muted-foreground" />
-          <span class="min-w-0 truncate font-mono font-semibold">{props.file.path}</span>
+          <span class="min-w-0 truncate font-mono font-semibold">
+            {props.file.path}
+            <span class="block truncate text-muted-foreground" title={props.file.oldPath}>
+              {props.file.oldPath}
+            </span>
+          </span>
           <span class="shrink-0 font-mono">
             <LineStats additions={props.file.additions} deletions={props.file.deletions} />
           </span>
@@ -63,7 +68,11 @@ export function WalkthroughFile(props: WalkthroughFileProps): JSX.Element {
         <For
           each={props.file.hunks}
           fallback={
-            <div class="empty p-3 text-center text-muted-foreground">No diff hunks to display.</div>
+            <div class="empty p-3 text-center text-muted-foreground">
+              {movedOnly(props.file)
+                ? `Moved from ${props.file.oldPath}, no content changes`
+                : 'No diff hunks to display.'}
+            </div>
           }
         >
           {(hunk) => (

@@ -6,7 +6,7 @@ import type {
   ReviewRun,
   WorkflowReply,
   ReviewEvent,
-  Insight,
+  FileGroup,
   WalkthroughReply,
 } from './types.ts';
 export function decodeStageDef(value: unknown): StageDef {
@@ -74,24 +74,22 @@ export function decodeReviewStatus(value: unknown): { config?: WorkflowReply; ru
     run: v.run ? decodeRun(v.run) : undefined,
   };
 }
-function decodeInsights(value: unknown): Insight[] {
-  return list(value).map((item) => {
-    const i = record(item);
-    return {
-      line: number(i.line),
-      endLine: number(i.endLine),
-      kind: text(i.kind),
-      text: text(i.text),
-      explanation: text(i.explanation),
-    };
-  });
+function decodeGroup(value: unknown): FileGroup {
+  if (
+    value === 'core' ||
+    value === 'tests' ||
+    value === 'config' ||
+    value === 'docs' ||
+    value === 'generated'
+  )
+    return value;
+  throw new Error('Invalid file group');
 }
 export function decodeWalkthrough(value: unknown): WalkthroughReply {
   const v = record(value);
   return {
     files: list(v.files).map((item) => {
       const f = record(item);
-      const u = f.understanding ? record(f.understanding) : null;
       return {
         path: text(f.path),
         status: text(f.status),
@@ -99,14 +97,8 @@ export function decodeWalkthrough(value: unknown): WalkthroughReply {
         deletions: number(f.deletions),
         diff: text(f.diff),
         hunks: decodeHunks(f.hunks),
-        understanding: u
-          ? {
-              summary: text(u.summary),
-              fastReturns: decodeInsights(u.fastReturns),
-              edgeCases: decodeInsights(u.edgeCases),
-              coreLogic: decodeInsights(u.coreLogic),
-            }
-          : null,
+        group: decodeGroup(f.group),
+        oldPath: text(f.oldPath),
       };
     }),
     totalFiles: number(v.totalFiles),

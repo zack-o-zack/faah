@@ -70,7 +70,7 @@ test('a configured stage shows its title and question before its first run', asy
   );
 });
 
-test('walkthrough filters list only files with that kind of insight', async () => {
+test('walkthrough filters list files by group', async () => {
   const editor = mount(
     { config: { stages: [] } },
     {
@@ -79,18 +79,19 @@ test('walkthrough filters list only files with that kind of insight', async () =
         {
           path: 'src/a.go',
           additions: 2,
-          understanding: { edgeCases: [{ line: 3, explanation: 'nil' }] },
+          group: 'tests',
+          oldPath: 'old/a.go',
           hunks: [],
         },
-        { path: 'src/b.go', deletions: 1, understanding: {}, hunks: [] },
+        { path: 'src/b.go', deletions: 1, group: 'core', hunks: [] },
       ],
     },
   );
   editor.actions.setReviewMode('review');
   await waitFor(() => expect(screen.getAllByTitle('src/b.go')).toHaveLength(1));
-  fireEvent.click(screen.getByRole('button', { name: /Edge cases/ }));
+  fireEvent.click(screen.getByRole('button', { name: /Tests/ }));
   expect(screen.queryByTitle('src/b.go')).toBe(null);
-  expect(screen.getByText('nil')).toBeTruthy();
+  expect(screen.getByText('Moved from old/a.go, no content changes')).toBeTruthy();
 });
 
 test('overview preserves server syntax tokens and decodes source text safely', async () => {
@@ -101,6 +102,7 @@ test('overview preserves server syntax tokens and decodes source text safely', a
       files: [
         {
           path: 'main.go',
+          group: 'core',
           additions: 1,
           hunks: [
             {

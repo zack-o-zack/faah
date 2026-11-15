@@ -40,19 +40,7 @@ export interface WorkflowReply {
 }
 export type ReviewEvent =
   ReviewRun | { runId?: string; stageIndex?: number; stage?: StageState } | StageState;
-export interface Insight {
-  line: number;
-  endLine?: number;
-  kind: string;
-  text: string;
-  explanation: string;
-}
-export interface Understanding {
-  summary?: string;
-  fastReturns?: Insight[];
-  edgeCases?: Insight[];
-  coreLogic?: Insight[];
-}
+export type FileGroup = 'core' | 'tests' | 'config' | 'docs' | 'generated';
 export interface WalkthroughFile {
   path: string;
   status?: string;
@@ -60,7 +48,8 @@ export interface WalkthroughFile {
   deletions?: number;
   diff?: string;
   hunks?: DiffHunk[];
-  understanding?: Understanding | null;
+  group: FileGroup;
+  oldPath?: string;
 }
 export interface WalkthroughReply {
   files: WalkthroughFile[];
