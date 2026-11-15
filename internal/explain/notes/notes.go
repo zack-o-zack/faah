@@ -3,7 +3,10 @@
 // and finds saved notes again in code that has moved.
 package notes
 
-import "faah/internal/explain"
+import (
+	"faah/internal/explain"
+	"strings"
+)
 
 // Note explains one symbol, line or block in place.
 type Note struct {
@@ -56,5 +59,20 @@ type View struct {
 	Turn   int    `json:"turn"`
 	Index  int    `json:"index"` // in the turn's notes
 	Note
-	Stale string `json:"stale,omitempty"` // "text" when its code changed, "refs" when a symbol's uses did
+	Links map[string]explain.Ref `json:"links,omitempty"`
+	Stale string                 `json:"stale,omitempty"` // "text" when its code changed, "refs" when a symbol's uses did
+}
+
+// DetailLinks selects only checked citations used by this detail.
+func DetailLinks(detail string, refs map[string]explain.Ref) map[string]explain.Ref {
+	var out map[string]explain.Ref
+	for target, ref := range refs {
+		if detail != "" && strings.Contains(detail, target) {
+			if out == nil {
+				out = map[string]explain.Ref{}
+			}
+			out[target] = ref
+		}
+	}
+	return out
 }

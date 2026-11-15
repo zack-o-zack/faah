@@ -77,6 +77,7 @@ type Turn struct {
 	// by target as written.
 	Refs map[string]explain.Ref `json:"refs,omitempty"`
 	// What an explanation showed on the code through the explain tools.
+	Dismissed    []int               `json:"dismissed,omitempty"`
 	Notes        []notes.Note        `json:"notes,omitempty"`
 	Walkthroughs []notes.Walkthrough `json:"walkthroughs,omitempty"`
 }
@@ -302,6 +303,7 @@ func cloneThread(t *Thread) *Thread {
 		tc := *tr
 		tc.Tools = append([]string(nil), tr.Tools...)
 		tc.Changed = append([]string(nil), tr.Changed...)
+		tc.Dismissed = append([]int(nil), tr.Dismissed...)
 		tc.Notes = append([]notes.Note(nil), tr.Notes...)
 		tc.Walkthroughs = append([]notes.Walkthrough(nil), tr.Walkthroughs...)
 		c.Turns[i] = &tc
@@ -562,7 +564,13 @@ func (tm *Manager) runTurn(ctx context.Context, cancel context.CancelFunc, r *th
 	tm.agent.settle(changed)
 	var refs map[string]explain.Ref
 	if explaining {
-		refs = explain.ValidateRefs(tm.root, sink.reply())
+		cited := sink.reply()
+		tm.mu.Lock()
+		for _, n := range r.turn.Notes {
+			cited += "\n\n" + n.Detail
+		}
+		tm.mu.Unlock()
+		refs = explain.ValidateRefs(tm.root, cited)
 	}
 
 	tm.mu.Lock()

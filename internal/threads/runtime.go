@@ -3,6 +3,7 @@ package threads
 import (
 	"faah/internal/agents"
 	"faah/internal/explain/notes"
+	"slices"
 )
 
 // Runtime supplies operations that read state owned by the host.
@@ -85,4 +86,20 @@ func (tm *Manager) SetNoteRefs(id string, turn, index int, hash string) {
 		tr.Notes[index].Refs = hash
 		tm.saveLocked()
 	}
+}
+
+// DismissNote persistently hides a note while retaining it in its thread.
+func (tm *Manager) DismissNote(id string, turn, index int) bool {
+	tm.mu.Lock()
+	defer tm.mu.Unlock()
+	tr := tm.turnLocked(id, turn)
+	if tr == nil || index < 0 || index >= len(tr.Notes) {
+		return false
+	}
+	if !slices.Contains(tr.Dismissed, index) {
+		tr.Dismissed = append(tr.Dismissed, index)
+		tm.saveLocked()
+		tm.publishThreadLocked(tm.threads[id])
+	}
+	return true
 }

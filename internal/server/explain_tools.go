@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"regexp"
+	"slices"
 	"sort"
 	"sync"
 	"sync/atomic"
@@ -124,8 +125,9 @@ func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
 // notes cover the same code, the newest wins.
 func (tm *threadManager) fileNotes(rel string, lines []string) []notes.View {
 	type saved struct {
-		v    notes.View
-		when int64
+		v         notes.View
+		when      int64
+		dismissed bool
 	}
 	var all []saved
 	for _, t := range tm.Snapshot() {
@@ -135,7 +137,7 @@ func (tm *threadManager) fileNotes(rel string, lines []string) []notes.View {
 		for _, tr := range t.Turns {
 			for i, n := range tr.Notes {
 				if n.Path == rel {
-					all = append(all, saved{notes.View{Thread: t.ID, Turn: tr.ID, Index: i, Note: n}, tr.Started})
+					all = append(all, saved{notes.View{Thread: t.ID, Turn: tr.ID, Index: i, Note: n, Links: notes.DetailLinks(n.Detail, tr.Refs)}, tr.Started, slices.Contains(tr.Dismissed, i)})
 				}
 			}
 		}
@@ -163,6 +165,9 @@ func (tm *threadManager) fileNotes(rel string, lines []string) []notes.View {
 			continue
 		}
 		seen[key] = true
+		if sv.dismissed {
+			continue
+		}
 		if v.Kind == "symbol" && v.Stale == "" && v.Refs != "" {
 			if cur := tm.tools.refs.get(v, tm.symbolHash); cur != "" && explain.StaleReason(v.Refs, cur) != "" {
 				v.Stale = "refs"
@@ -286,4 +291,24 @@ func (s *Server) handleExplainNotes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httpx.WriteJSON(w, map[string]any{"notes": s.threads.fileNotes(rel, lines)})
+}
+
+func (s *Server) handleExplainNotesDismiss(w http.ResponseWriter, r *http.Request) {
+	if !httpx.LocalPost(w, r) || !s.threadsOrFail(w) {
+		return
+	}
+	var req struct {
+		Thread string `json:"thread"`
+		Turn   int    `json:"turn"`
+		Index  int    `json:"index"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httpx.Fail(w, http.StatusBadRequest, "bad request")
+		return
+	}
+	if !s.threads.DismissNote(req.Thread, req.Turn, req.Index) {
+		httpx.Fail(w, http.StatusNotFound, "no such note")
+		return
+	}
+	httpx.WriteJSON(w, map[string]any{"ok": true})
 }
