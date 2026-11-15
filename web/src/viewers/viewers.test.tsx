@@ -436,3 +436,38 @@ test('an open editor diff follows shared layout changes', async () => {
   await editor.settings.actions.setSetting('diffEditor.renderSideBySide', false);
   expect(window.document.querySelector('.diff-unified')).toBeTruthy();
 });
+
+test('finished orb holds for hover and focus, fades after five seconds, and preserves failures', async () => {
+  vi.useFakeTimers();
+  try {
+    const app = store();
+    const editor = editorStore(app);
+    render(() => (
+      <EditorProvider value={editor}>
+        <ExplainOrb />
+      </EditorProvider>
+    ));
+    app.actions.orbBegin();
+    app.actions.orbAttach(decodeThread({ id: 't', turns: [{ running: false }] }));
+    const orb = required(document.getElementById('explain-orb'));
+    await fireEvent.mouseEnter(orb);
+    vi.advanceTimersByTime(6000);
+    expect(orb.style.opacity).toBe('1');
+    await fireEvent.mouseLeave(orb);
+    const button = required(document.getElementById('explain-orb-open'));
+    await fireEvent.focusIn(button);
+    vi.advanceTimersByTime(6000);
+    expect(document.getElementById('explain-orb')).toBeTruthy();
+    await fireEvent.focusOut(button);
+    vi.advanceTimersByTime(5000);
+    expect(orb.style.opacity).toBe('0');
+    vi.advanceTimersByTime(200);
+    expect(document.getElementById('explain-orb')).toBeNull();
+    app.actions.orbBegin();
+    app.actions.orbFailed('failed');
+    vi.advanceTimersByTime(10000);
+    expect(document.getElementById('explain-orb')?.dataset.phase).toBe('failed');
+  } finally {
+    vi.useRealTimers();
+  }
+});

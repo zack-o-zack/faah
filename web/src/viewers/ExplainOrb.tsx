@@ -1,11 +1,19 @@
 import type { JSX } from 'solid-js';
-import { createMemo, Show } from 'solid-js';
+import { createOrbFade } from './orb-fade.ts';
+import { createMemo, createSignal, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { orbView } from './orb-model.ts';
 export function ExplainOrb(): JSX.Element {
   const editor = useEditor();
   const state = editor.store.state.explanation;
   const actions = editor.actions;
+  const [hovered, setHovered] = createSignal(false);
+  const [focused, setFocused] = createSignal(false);
+  const fading = createOrbFade(
+    () => state.model?.phase,
+    () => hovered() || focused(),
+    actions.dismissOrb,
+  );
   const view = createMemo(() => (state.model ? orbView(state.model) : null));
   return (
     <>
@@ -17,9 +25,21 @@ export function ExplainOrb(): JSX.Element {
       >
         <div
           id="explain-orb"
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
+          onFocusIn={() => setFocused(true)}
+          onFocusOut={(event) => {
+            if (
+              !event.currentTarget.contains(
+                event.relatedTarget instanceof Node ? event.relatedTarget : null,
+              )
+            )
+              setFocused(false);
+          }}
+          style={{ opacity: fading() ? 0 : 1 }}
           data-ui="explain-orb"
           data-phase={state.model?.phase}
-          class="group flex max-w-full items-center overflow-hidden rounded-full border bg-popover text-popover-foreground shadow-md data-[phase=done]:items-start data-[phase=done]:rounded-xl data-[phase=done]:bg-popover/70 data-[phase=done]:backdrop-blur-sm"
+          class="transition-opacity duration-200 motion-reduce:transition-none group flex max-w-full items-center overflow-hidden rounded-full border bg-popover text-popover-foreground shadow-md data-[phase=done]:items-start data-[phase=done]:rounded-xl data-[phase=done]:bg-popover/70 data-[phase=done]:backdrop-blur-sm"
         >
           <button
             id="explain-orb-open"
