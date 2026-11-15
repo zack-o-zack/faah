@@ -60,7 +60,7 @@ func TestExplainBenchmark(t *testing.T) {
 			ix.Build()
 			s := NewServer(ix, lsppkg.New(lsppkg.Options{Root: root, Enabled: true, Version: version}), assets, devRoot)
 			s.SetAgent(m)
-			s.threads.file = ""
+			s.threads = newThreadManagerAt(m, root, "")
 			defer func() {
 				if s.gitWatcher != nil {
 					s.gitWatcher.Stop()

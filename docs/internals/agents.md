@@ -8,7 +8,7 @@
 
 A `Session` exposes `ID`, `Prompt`, `Interrupt`, and `Close`. `Prompt` streams text, reasoning, tool steps, and a final result through `Sink`; it returns only at the protocol's completion signal. `internal/agents/host` manages process input, output, diagnostics, and shutdown.
 
-`agent.go` keeps one live session per thread and persists its native id. A follow-up sends only the new message. Sessions close after ten idle minutes, on an agent/model/mode change, on an error, on thread deletion, and at shutdown. After a restart or idle close, faah reopens the saved native id. If resume fails, it opens a new session and sends bounded conversation history, including displayed notes and walkthroughs. Changing agent or model also starts a new session with that history.
+`internal/threads` keeps one live session per thread and persists its native id. A follow-up sends only the new message. Sessions close after ten idle minutes, on an agent/model/mode change, on an error, on thread deletion, and at shutdown. After a restart or idle close, faah reopens the saved native id. If resume fails, it opens a new session and sends bounded conversation history, including displayed notes and walkthroughs. Changing agent or model also starts a new session with that history.
 
 ## Processes and protocols
 

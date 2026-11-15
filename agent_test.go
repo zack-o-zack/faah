@@ -23,6 +23,7 @@ import (
 	"faah/internal/forge"
 	"faah/internal/git/gittest"
 	prpkg "faah/internal/pr"
+	"faah/internal/threads"
 	"faah/internal/workspace"
 )
 
@@ -85,12 +86,12 @@ func agentServer(t *testing.T, root, name string) *Server {
 
 // waitIdle waits for the most recently started job to finish. Tests that keep
 // several jobs in flight at once poll a specific id instead.
-func waitIdle(t *testing.T, s *Server) *agentJob {
+func waitIdle(t *testing.T, s *Server) *threads.Job {
 	t.Helper()
 	return waitIdleID(t, s, 0)
 }
 
-func waitIdleID(t *testing.T, s *Server, id int64) *agentJob {
+func waitIdleID(t *testing.T, s *Server, id int64) *threads.Job {
 	t.Helper()
 	deadline := time.Now().Add(20 * time.Second)
 	for time.Now().Before(deadline) {
@@ -554,64 +555,6 @@ func TestAgentCancelJob(t *testing.T) {
 	}
 }
 
-func TestReadLineRange(t *testing.T) {
-	p := filepath.Join(t.TempDir(), "f.txt")
-	if err := os.WriteFile(p, []byte("one\ntwo\nthree\nfour\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	for _, tc := range []struct {
-		l1, l2 int
-		want   string
-	}{
-		{2, 3, "two\nthree"},
-		{1, 1, "one"},
-		{3, 99, "three\nfour\n"}, // clamped to the end, trailing blank line included
-		{0, 1, "one"},            // l1 below 1 is clamped
-	} {
-		got, err := readLineRange(p, tc.l1, tc.l2)
-		if err != nil {
-			t.Fatalf("%d-%d: %v", tc.l1, tc.l2, err)
-		}
-		if got != tc.want {
-			t.Fatalf("%d-%d = %q, want %q", tc.l1, tc.l2, got, tc.want)
-		}
-	}
-	if _, err := readLineRange(p, 50, 60); err == nil {
-		t.Fatal("a range past the end should fail")
-	}
-}
-
-func TestChangedSinceReportsBothDirections(t *testing.T) {
-	before := map[string]string{"stays.go": "M", "reverted.go": "M"}
-	after := map[string]string{"stays.go": "M", "new.go": "U"}
-
-	got := map[string]bool{}
-	for _, p := range changedSinceMaps(before, after) {
-		got[p] = true
-	}
-	if got["stays.go"] {
-		t.Fatal("an unchanged status should not be reported")
-	}
-	if !got["new.go"] {
-		t.Fatal("a newly dirty file should be reported")
-	}
-	if !got["reverted.go"] {
-		t.Fatal("a file restored to its committed state should be reported")
-	}
-}
-
-// The job summary and API response list changed files, so their order must not
-// follow Go's randomised map iteration. Repeated to catch a lucky ordering.
-func TestChangedSinceIsSorted(t *testing.T) {
-	before := map[string]string{"b.go": "M", "d.go": "M"}
-	after := map[string]string{"c.go": "U", "a.go": "M", "d.go": "M"}
-	for i := 0; i < 20; i++ {
-		if got := strings.Join(changedSinceMaps(before, after), ","); got != "a.go,b.go,c.go" {
-			t.Fatalf("changed = %q, want a.go,b.go,c.go", got)
-		}
-	}
-}
-
 func TestLineRef(t *testing.T) {
 	if lineRef(4, 4) != "4" {
 		t.Fatalf("single line ref = %q", lineRef(4, 4))
@@ -637,7 +580,7 @@ func TestAgentBatchEditRejectsIntraBatchOverlap(t *testing.T) {
 	t.Cleanup(tm.Close)
 
 	// Overlapping ranges on the same file: lines 1-2 and lines 2-3
-	items := []agentBatchItem{
+	items := []threads.BatchItem{
 		{Abs: filepath.Join(root, "a.go"), Path: "a.go", L1: 1, L2: 2, Instruction: "edit 1"},
 		{Abs: filepath.Join(root, "a.go"), Path: "a.go", L1: 2, L2: 3, Instruction: "edit 2"},
 	}
@@ -646,7 +589,7 @@ func TestAgentBatchEditRejectsIntraBatchOverlap(t *testing.T) {
 	}
 
 	// Disjoint ranges on the same file: lines 1-1 and lines 3-3 (should succeed)
-	validItems := []agentBatchItem{
+	validItems := []threads.BatchItem{
 		{Abs: filepath.Join(root, "a.go"), Path: "a.go", L1: 1, L2: 1, Instruction: "edit 1"},
 		{Abs: filepath.Join(root, "a.go"), Path: "a.go", L1: 3, L2: 3, Instruction: "edit 2"},
 	}
@@ -787,72 +730,11 @@ func TestAgentBatchEditPayloadVariations(t *testing.T) {
 	}
 }
 
-func TestCommitMessagePrompt(t *testing.T) {
-	files := []string{"web/src/gitpanel.js", "server.go"}
-	stat := " web/src/gitpanel.js | 15 +++\n server.go           | 40 ++-\n 2 files changed, 45 insertions(+), 10 deletions(-)"
-	diff := "diff --git a/server.go b/server.go\n--- a/server.go\n+++ b/server.go\n@@ -1 +1 @@\n-old\n+new"
-	instruction := "Follow conventional commits format"
-
-	p := commitMessagePrompt(files, stat, diff, instruction)
-	if !strings.Contains(p, "Changed files (2):") {
-		t.Errorf("prompt missing changed files header:\n%s", p)
-	}
-	if !strings.Contains(p, "- web/src/gitpanel.js") || !strings.Contains(p, "- server.go") {
-		t.Errorf("prompt missing changed file paths:\n%s", p)
-	}
-	if !strings.Contains(p, "Summary of changes (diffstat):") || !strings.Contains(p, stat) {
-		t.Errorf("prompt missing diffstat summary:\n%s", p)
-	}
-	if !strings.Contains(p, "Staged diff:") || !strings.Contains(p, diff) {
-		t.Errorf("prompt missing staged diff:\n%s", p)
-	}
-	if !strings.Contains(p, "Additional instructions from the user: "+instruction) {
-		t.Errorf("prompt missing user instruction:\n%s", p)
-	}
-
-	// Test truncation when there are > 100 files
-	manyFiles := make([]string, 125)
-	for i := range manyFiles {
-		manyFiles[i] = fmt.Sprintf("file%d.go", i)
-	}
-	p2 := commitMessagePrompt(manyFiles, "", "", "")
-	if !strings.Contains(p2, "Changed files (125):") {
-		t.Errorf("prompt missing total count:\n%s", p2)
-	}
-	if !strings.Contains(p2, "... and 25 more files") {
-		t.Errorf("prompt missing truncation notice:\n%s", p2)
-	}
-	if !strings.Contains(p2, "- file0.go") || !strings.Contains(p2, "- file99.go") {
-		t.Errorf("prompt missing head files:\n%s", p2)
-	}
-	if strings.Contains(p2, "- file100.go") {
-		t.Errorf("prompt contains file beyond 100:\n%s", p2)
-	}
-}
-
-func TestThreadPrompt(t *testing.T) {
-	th := &thread{Path: "main.go", L1: 3, L2: 4, Snippet: "func main() {}"}
-	first := threadPrompt(th, nil, "why?", false, "", false)
-	if !strings.Contains(first, "@main.go lines 3-4") || !strings.Contains(first, "func main() {}") || !strings.HasSuffix(first, "why?") {
-		t.Fatalf("first prompt = %q", first)
-	}
-	prior := []*threadTurn{{Prompt: "why?", Reply: "because", Changed: []string{"a.go"}}}
-	if got := threadPrompt(th, prior, "and now?", false, "", false); got != "and now?" {
-		t.Fatalf("a live session should get the bare message, got %q", got)
-	}
-	replay := threadPrompt(th, prior, "and now?", true, "", false)
-	for _, want := range []string{"@main.go", "User: why?", "Assistant: because", "a.go", "and now?"} {
-		if !strings.Contains(replay, want) {
-			t.Fatalf("replay prompt missing %q:\n%s", want, replay)
-		}
-	}
-}
-
-func waitThreadIdle(t *testing.T, s *Server, id string) *thread {
+func waitThreadIdle(t *testing.T, s *Server, id string) *threads.Thread {
 	t.Helper()
 	deadline := time.Now().Add(20 * time.Second)
 	for time.Now().Before(deadline) {
-		if th := s.threads.Get(id); th != nil && !th.running() {
+		if th := s.threads.Get(id); th != nil && !th.Running() {
 			return th
 		}
 		time.Sleep(20 * time.Millisecond)
@@ -876,7 +758,7 @@ func TestThreadConversationReusesNativeSession(t *testing.T) {
 	}
 	id := m["id"].(string)
 	th := waitThreadIdle(t, s, id)
-	if th.Error() != "" || len(th.Turns) != 1 {
+	if threadError(th) != "" || len(th.Turns) != 1 {
 		t.Fatalf("turn 1 = %+v", th.Turns)
 	}
 	if !strings.Contains(th.Turns[0].Reply, "saw:") || !strings.Contains(th.Turns[0].Reply, "func main() {}") {
@@ -907,7 +789,7 @@ func TestThreadConversationReusesNativeSession(t *testing.T) {
 	}
 }
 
-func (t *thread) Error() string {
+func threadError(t *threads.Thread) string {
 	if n := len(t.Turns); n > 0 {
 		return t.Turns[n-1].Error
 	}
@@ -953,8 +835,8 @@ func TestThreadClaudeSessionResume(t *testing.T) {
 	th = waitThreadIdle(t, s, id)
 	data, _ = os.ReadFile(log)
 	lines = strings.Split(strings.TrimSpace(string(data)), "\n")
-	if len(lines) != 2 || !strings.Contains(lines[1], "--resume "+sid) || th.Error() != "" {
-		t.Fatalf("resume: %s, %s", data, th.Error())
+	if len(lines) != 2 || !strings.Contains(lines[1], "--resume "+sid) || threadError(th) != "" {
+		t.Fatalf("resume: %s, %s", data, threadError(th))
 	}
 
 }
@@ -973,22 +855,6 @@ func TestThreadBusyAndCancel(t *testing.T) {
 	th := waitThreadIdle(t, s, id)
 	if th.Turns[0].Error != context.Canceled.Error() {
 		t.Fatalf("cancelled turn error = %q", th.Turns[0].Error)
-	}
-}
-
-func TestThreadInterruptedTurnIsClosedOnLoad(t *testing.T) {
-	isolateSettings(t)
-	root := t.TempDir()
-	m, _ := newAgentManager(root, "", nil)
-	tm := newThreadManager(m, root)
-	tm.mu.Lock()
-	tm.threads["t1"] = &thread{ID: "t1", Title: "x", Turns: []*threadTurn{{ID: 1, Prompt: "p", Running: true}}}
-	tm.saveLocked()
-	tm.mu.Unlock()
-
-	got := newThreadManager(m, root).Get("t1")
-	if got == nil || got.Turns[0].Running || !strings.Contains(got.Turns[0].Error, "interrupted") {
-		t.Fatalf("interrupted turn = %+v", got)
 	}
 }
 
@@ -1053,7 +919,7 @@ func TestInlineEditOverlapStillRefused(t *testing.T) {
 // (merge-base to PR head), the reviewer's own changes, or just the selection.
 func TestThreadPromptCarriesPRScope(t *testing.T) {
 	root := t.TempDir()
-	th := &thread{Kind: "ask"}
+	th := &threads.Thread{Kind: "ask"}
 	s := &Server{ix: workspace.NewIndex(root), pr: prpkg.New(nil, forge.PRTarget{URL: "https://github.com/o/r/pull/7"}, forge.PRMeta{Number: 7, Title: "Add thing", BaseRef: "main", HeadRef: "feat", HeadSHA: "abcdef1234567890"}, "", "1234567890abcdef")}
 	defer s.pr.Close()
 
@@ -1080,15 +946,15 @@ func TestThreadPromptCarriesPRScope(t *testing.T) {
 		t.Errorf("selection context wrong:\n%s", sel)
 	}
 
-	first := threadPrompt(th, nil, "what do you think about the PR?", false, whole, false)
+	first := threadPrompt(t, th, nil, "what do you think about the PR?", false, whole, false)
 	if !strings.Contains(first, "git diff 1234567890abcdef") || !strings.HasSuffix(first, "what do you think about the PR?") {
 		t.Errorf("first prompt should carry the PR context before the question:\n%s", first)
 	}
-	prior := []*threadTurn{{Prompt: "x", Reply: "y"}}
-	if got := threadPrompt(th, prior, "and now?", false, whole, false); got != "and now?" {
+	prior := []*threads.Turn{{Prompt: "x", Reply: "y"}}
+	if got := threadPrompt(t, th, prior, "and now?", false, whole, false); got != "and now?" {
 		t.Errorf("follow-up turns stay bare when the scope is unchanged, got %q", got)
 	}
-	changed := threadPrompt(th, prior, "and now?", false, mine, true)
+	changed := threadPrompt(t, th, prior, "and now?", false, mine, true)
 	if !strings.Contains(changed, "changed what this conversation is about") || !strings.Contains(changed, "OWN changes") || !strings.HasSuffix(changed, "and now?") {
 		t.Errorf("a scope change should be announced with the new context:\n%s", changed)
 	}
@@ -1203,8 +1069,8 @@ func TestEventStreamMultiplexesFeeds(t *testing.T) {
 	}
 
 	var env struct {
-		ID   string  `json:"id"`
-		Data *thread `json:"data"`
+		ID   string          `json:"id"`
+		Data *threads.Thread `json:"data"`
 	}
 	if err := json.Unmarshal([]byte(data["thread:thread"]), &env); err != nil || env.ID != id || env.Data == nil || env.Data.ID != id {
 		t.Fatalf("thread:thread envelope = %s (%v)", data["thread:thread"], err)
@@ -1235,7 +1101,7 @@ func TestThreadReplaysWhenNativeResumeFails(t *testing.T) {
 		return nil
 	}
 	s := fakeAgentServer(t, root, echo)
-	a := &fakeAgent{prompt: echo, resumeError: errors.New("session not found")}
+	a := &fakeAgent{PromptFunc: echo, ResumeError: errors.New("session not found")}
 	s.agent.openAgent = func(string) agents.Agent { return a }
 	_, body := agentPostJSON(t, s, "/api/threads/create", map[string]any{"message": "first question"})
 	id := body["id"].(string)
@@ -1249,22 +1115,12 @@ func TestThreadReplaysWhenNativeResumeFails(t *testing.T) {
 		t.Fatal(err)
 	}
 	th := waitThreadIdle(t, s, id)
-	if th.Error() != "" || th.SessionID == first.SessionID {
+	if threadError(th) != "" || th.SessionID == first.SessionID {
 		t.Fatalf("resume fallback = %+v", th)
 	}
 	for _, want := range []string{"first question", "follow-up question", "### Earlier in this conversation"} {
 		if !strings.Contains(th.Turns[1].Reply, want) {
 			t.Fatalf("replay missing %q: %s", want, th.Turns[1].Reply)
 		}
-	}
-}
-
-func TestThreadSinkStepLabels(t *testing.T) {
-	root := t.TempDir()
-	s := &threadSink{tm: &threadManager{root: root}, tid: "t1", turn: &threadTurn{ID: 1}}
-	s.Step("Read " + filepath.Join(root, "a", "b.go"))
-	s.Step("mcp__faah__annotate")
-	if want := []string{"Read " + filepath.Join("a", "b.go"), "Show notes"}; strings.Join(s.turn.Tools, "|") != strings.Join(want, "|") {
-		t.Fatalf("tools %q, want %q", s.turn.Tools, want)
 	}
 }

@@ -19,6 +19,7 @@ import (
 	"faah/internal/render"
 	"faah/internal/session"
 	"faah/internal/settings"
+	"faah/internal/threads"
 )
 
 func (s *Server) prOrFail(w http.ResponseWriter) bool {
@@ -436,7 +437,7 @@ func (s *Server) handlePRMergeMessage(w http.ResponseWriter, r *http.Request) {
 		instructions = append(instructions, t)
 	}
 	draft := strings.TrimSpace(strings.TrimSpace(body.Title) + "\n\n" + strings.TrimSpace(body.Message))
-	prompt := mergeMessagePrompt(body.Method, meta, s.prCommits(),
+	prompt := threads.MergeMessagePrompt(body.Method, meta, s.prCommits(),
 		git.RangeStat(root, from, meta.HeadSHA), git.RangeDiff(root, from, meta.HeadSHA), draft, instructions)
 	job, err := s.agent.StartPrompt(body.Method+" message", prompt)
 	if err != nil {

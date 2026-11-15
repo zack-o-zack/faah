@@ -18,6 +18,7 @@ import (
 	"faah/internal/git"
 	"faah/internal/httpx"
 	"faah/internal/render"
+	"faah/internal/threads"
 )
 
 // ReviewWorkflowDef defines a customizable multi-stage review pipeline.
@@ -516,17 +517,17 @@ func (m *ReviewWorkflowManager) orchestrate(ctx context.Context, run *ReviewWork
 }
 
 func (m *ReviewWorkflowManager) waitForThreadTurn(ctx context.Context, threadID string) error {
-	ch, initial, unsub, ok := m.server.threads.subscribe(threadID)
+	ch, initial, unsub, ok := m.server.threads.Subscribe(threadID)
 	if !ok {
 		return errors.New("failed to subscribe to thread")
 	}
 	defer unsub()
 
 	// Check initial state
-	if initial.name == "thread" {
-		var t thread
-		if err := json.Unmarshal(initial.data, &t); err == nil {
-			if !t.running() {
+	if initial.Name == "thread" {
+		var t threads.Thread
+		if err := json.Unmarshal(initial.Data, &t); err == nil {
+			if !t.Running() {
 				return nil
 			}
 		}
@@ -541,10 +542,10 @@ func (m *ReviewWorkflowManager) waitForThreadTurn(ctx context.Context, threadID 
 			if !open {
 				return errors.New("thread event feed closed prematurely")
 			}
-			if ev.name == "thread" {
-				var t thread
-				if err := json.Unmarshal(ev.data, &t); err == nil {
-					if !t.running() {
+			if ev.Name == "thread" {
+				var t threads.Thread
+				if err := json.Unmarshal(ev.Data, &t); err == nil {
+					if !t.Running() {
 						if len(t.Turns) > 0 {
 							lastTurn := t.Turns[len(t.Turns)-1]
 							if lastTurn.Error != "" && lastTurn.Reply == "" {

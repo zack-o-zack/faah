@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"faah/internal/threads"
 	"faah/internal/workspace"
 )
 
@@ -52,8 +53,8 @@ func TestExplainHarnessConformance(t *testing.T) {
 			ix.Build()
 			s := NewServer(ix, nil, assets, devRoot)
 			s.SetAgent(m)
-			s.threads.file = ""         // nothing from this run is worth keeping
-			ts := httptest.NewServer(s) // where MCP harnesses reach the tools
+			s.threads = newThreadManagerAt(m, root, "") // nothing from this run is worth keeping
+			ts := httptest.NewServer(s)                 // where MCP harnesses reach the tools
 			t.Cleanup(ts.Close)
 			s.SetToolsAddr(strings.TrimPrefix(ts.URL, "ht"+"tp://"))
 			t.Cleanup(func() {
@@ -105,11 +106,11 @@ func TestExplainHarnessConformance(t *testing.T) {
 	}
 }
 
-func waitHarnessIdle(t *testing.T, s *Server, id string) *thread {
+func waitHarnessIdle(t *testing.T, s *Server, id string) *threads.Thread {
 	t.Helper()
 	deadline := time.Now().Add(4 * time.Minute)
 	for time.Now().Before(deadline) {
-		if th := s.threads.Get(id); th != nil && !th.running() {
+		if th := s.threads.Get(id); th != nil && !th.Running() {
 			return th
 		}
 		time.Sleep(200 * time.Millisecond)

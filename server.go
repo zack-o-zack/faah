@@ -34,6 +34,7 @@ import (
 	"faah/internal/symbols"
 	"faah/internal/table"
 	"faah/internal/telemetry"
+	"faah/internal/threads"
 	"faah/internal/ui"
 	"faah/internal/workspace"
 )
@@ -361,13 +362,22 @@ func (s *Server) SetAgent(a *agentManager) {
 	s.agent = a
 	if a != nil {
 		s.threads = newThreadManager(a, s.ix.Root())
-		s.threads.prContext = s.prThreadContext
 		s.threads.symbolHash = s.symbolHash
-		a.onEdit = func() {
+		a.SetHooks(threads.Hooks{PRContext: s.prThreadContext, AfterEdit: func(changed []string) {
+			for _, rel := range changed {
+				abs := filepath.Join(s.ix.Root(), filepath.FromSlash(rel))
+				render.Evict(abs)
+				if s.lsp != nil {
+					s.lsp.CloseDoc(abs, rel)
+				}
+			}
+			if len(changed) == 0 {
+				return
+			}
 			if s.gitWatcher != nil {
 				s.gitWatcher.Trigger()
 			}
-		}
+		}})
 	}
 }
 
@@ -471,9 +481,6 @@ func (s *Server) prThreadContext(scope string) string {
 // become live. Unset (nil) for a normal workspace.
 func (s *Server) SetPR(p *prpkg.Session) {
 	s.pr = p
-	if s.threads != nil {
-		s.threads.prContext = s.prThreadContext
-	}
 	if p != nil {
 		snap := p.Snapshot()
 		s.diffBase = snap.DiffBase
@@ -1459,16 +1466,16 @@ func (s *Server) subscribeStreamFeeds(r *http.Request, w io.Writer, flusher http
 
 	// threadFrames adapts a thread subscription; per-thread events carry
 	// their id so one connection can follow several threads.
-	threadFrames := func(id string, ch chan threadEvent, first threadEvent, unsub func()) {
-		frame := func(ev threadEvent) []byte {
+	threadFrames := func(id string, ch <-chan threads.Event, first threads.Event, unsub func()) {
+		frame := func(ev threads.Event) []byte {
 			if id == "" {
-				return []byte(fmt.Sprintf("event: threads:%s\ndata: %s\n\n", ev.name, ev.data))
+				return []byte(fmt.Sprintf("event: threads:%s\ndata: %s\n\n", ev.Name, ev.Data))
 			}
 			env, _ := json.Marshal(struct {
 				ID   string          `json:"id"`
 				Data json.RawMessage `json:"data"`
-			}{id, ev.data})
-			return []byte(fmt.Sprintf("event: thread:%s\ndata: %s\n\n", ev.name, env))
+			}{id, ev.Data})
+			return []byte(fmt.Sprintf("event: thread:%s\ndata: %s\n\n", ev.Name, env))
 		}
 		snapshots = append(snapshots, frame(first)...)
 		frames := make(chan []byte)
@@ -1496,7 +1503,7 @@ func (s *Server) subscribeStreamFeeds(r *http.Request, w io.Writer, flusher http
 
 	if s.threads != nil {
 		if q.Get("threads") == "1" {
-			ch, first, unsub, _ := s.threads.subscribe("")
+			ch, first, unsub, _ := s.threads.Subscribe("")
 			threadFrames("", ch, first, unsub)
 		}
 		seen := map[string]bool{}
@@ -1505,7 +1512,7 @@ func (s *Server) subscribeStreamFeeds(r *http.Request, w io.Writer, flusher http
 				continue
 			}
 			seen[id] = true
-			ch, first, unsub, found := s.threads.subscribe(id)
+			ch, first, unsub, found := s.threads.Subscribe(id)
 			if !found {
 				// Gone while the client was away: say so, so it stops asking.
 				env, _ := json.Marshal(map[string]any{"id": id, "data": map[string]string{"id": id}})
@@ -1728,7 +1735,7 @@ func (s *Server) handleGitCommitMessage(w http.ResponseWriter, r *http.Request) 
 	if cfg := settings.Read(); cfg.GitCommitMessageInstruction != nil {
 		instruction = strings.TrimSpace(*cfg.GitCommitMessageInstruction)
 	}
-	job, err := s.agent.StartPrompt("commit message", commitMessagePrompt(files, stat, diff, instruction))
+	job, err := s.agent.StartPrompt("commit message", threads.CommitMessagePrompt(files, stat, diff, instruction))
 	if err != nil {
 		code := http.StatusBadGateway
 		if errors.Is(err, errAgentNone) {
@@ -1993,7 +2000,7 @@ func (s *Server) handleGitSyncAgent(w http.ResponseWriter, r *http.Request) {
 		httpx.Fail(w, http.StatusConflict, "the PR already contains everything on "+st.Upstream+"; nothing to "+body.Strategy)
 		return
 	}
-	job, err := s.agent.StartPrompt(body.Strategy+" onto "+st.Upstream, gitSyncPrompt(body.Strategy, st))
+	job, err := s.agent.StartPrompt(body.Strategy+" onto "+st.Upstream, threads.SyncPrompt(body.Strategy, st))
 	if err != nil {
 		code := http.StatusBadGateway
 		if errors.Is(err, errAgentNone) {

@@ -2,9 +2,9 @@
 
 This document describes the design and implementation of threads, the long-running multi-turn conversations with a coding harness:
 
-- the store, turn runner, and event feed: [`agent.go`](../../agent.go)
+- the store, turn runner, and event feed: [`internal/threads/threads.go`](../../internal/threads/threads.go)
 - the HTTP routing and handlers: [`server.go`](../../server.go)
-- the selected harness and change settling it reuses: [`agent.go`](../../agent.go)
+- the selected harness: [`agent.go`](../../agent.go); change settling: [`internal/threads/jobs.go`](../../internal/threads/jobs.go)
 - native agent sessions, protocol handling and Ask mode: [`internal/agents`](../../internal/agents), one package per harness, listed in [`internal/agents/all/all.go`](../../internal/agents/all/all.go)
 - Explain's selection checks, evidence, prompt and citation checks: [`internal/explain`](../../internal/explain)
 - the sidebar views, stream subscriptions and composer: [`web/src/threads/`](../../web/src/threads/)
@@ -17,7 +17,7 @@ Threads share agent selection, native sessions, `changedSince` and `settle`. [In
 sequenceDiagram
     autonumber
     participant UI as Browser (threads/store.ts)
-    participant S as faah (agent.go / server.go)
+    participant S as faah (internal/threads / server.go)
     participant H as Harness
     participant G as git
 
@@ -35,13 +35,13 @@ sequenceDiagram
     UI->>S: reindex, reload open tabs
 ```
 
-A `thread` holds an id, a title (the first line of the first message), an optional anchor (`path`, `l1`, `l2`, and a `snippet` of those lines read by the server at creation), and its `turns`. A `threadTurn` holds the prompt, the accumulated `reply`, one line per tool call in `tools`, the `changed` files, an error, and the harness and model that ran it.
+A `threads.Thread` holds an id, a title (the first line of the first message), an optional anchor (`path`, `l1`, `l2`, and a `snippet` of those lines read by the server at creation), and its `turns`. A `threads.Turn` holds the prompt, the accumulated `reply`, one line per tool call in `tools`, the `changed` files, an error, and the harness and model that ran it.
 
 The anchor's snippet is read by `readLineRange` on the server, so the client never supplies file content. It is prompt context only, and the prompt says the file may have changed since.
 
 ## 2. Session Continuity
 
-All five agents use native sessions. A thread retains a live `agents.Session` and persists `Session.ID()`. Follow-ups send only the new message. `agent_session.go` closes a session after ten idle minutes; subsequent messages reopen its saved native id. Deleting a thread, shutting down, changing agent/model/mode, or a turn error closes its live session and revokes its tool credential.
+All five agents use native sessions. A thread retains a live `agents.Session` and persists `Session.ID()`. Follow-ups send only the new message. `internal/threads/session.go` closes a session after ten idle minutes; subsequent messages reopen its saved native id. Deleting a thread, shutting down, changing agent/model/mode, or a turn error closes its live session and revokes its tool credential.
 
 If native resume fails, faah opens a new session and replays bounded history, including the annotations and walkthroughs the reader saw. Changing agent or model also starts a new session with that context. The last turn identifies which agent and model own the saved id. The anchor, evidence and ground rules are sent on the first turn and during recovery.
 
@@ -49,7 +49,7 @@ See [Native agent sessions](agents.md) for the `Agent`/`Open`/`Session` interfac
 
 ## 3. Output and Streaming
 
-Each adapter translates its native events into `threadSink.Text`, `Reasoning`, `Step`, and `Result`. Text streams into the reply, reasoning is kept separately, and tool activity becomes step labels. A turn finishes only on the protocol's completion event or an error. Diagnostics go to a bounded buffer and are appended to errors when a failed turn has no reply.
+Each adapter translates its native events into `threads.threadSink.Text`, `Reasoning`, `Step`, and `Result`. Text streams into the reply, reasoning is kept separately, and tool activity becomes step labels. A turn finishes only on the protocol's completion event or an error. Diagnostics go to a bounded buffer and are appended to errors when a failed turn has no reply.
 
 The feed is Server-Sent Events at `/api/threads/stream`. The browser does not open it directly: browsers allow six HTTP/1.1 connections per host across all tabs, and a stream per feature used to take them all, after which every request queued forever. Instead the same events ride on the tab's one `/api/stream` connection ([`web/src/workspace/stream.js`](../../web/src/workspace/stream.js)): `?threads=1` adds the list events as `threads:<event>`, and each `?thread=<id>` adds that thread's events as `thread:<event>` with payload `{id, data}`. A `thread=` id that no longer exists gets a `thread:deleted` on connect.
 
@@ -83,7 +83,7 @@ A turn is abandoned after 30 minutes (`threadTurnTimeout`). Stop cancels the tur
 
 `/api/agent/edit` and `/api/agent/batch` call `StartEdit`. One item becomes a thread of kind `edit` anchored to that range; several become a thread of kind `batch`, whose first message lists every item with its snippet and instruction. The turn then runs exactly like any other.
 
-The edit UI polls `/api/agent/job?id=` and cancels through `/api/agent/cancel`, so threads present themselves in that shape. `threadManager.job` maps a turn to an `agentJob` (error text split into `error` and `stderr`, the reply as `stdout`), job ids come from the same sequence the agent manager uses (`nextJobID`), and the agent manager reaches the thread manager through the `threadJob` and `threadCancel` hooks. `Job(0)`, "the most recent job", returns the newer of the two kinds.
+The edit UI polls `/api/agent/job?id=` and cancels through `/api/agent/cancel`, so threads present themselves in that shape. `threads.Manager.job` maps a turn to an `threads.Job` (error text split into `error` and `stderr`, the reply as `stdout`), job ids come from the same sequence the agent manager uses (`nextJobID`), and the agent manager reaches the thread manager through the `threadJob` and `threadCancel` hooks. `Job(0)`, "the most recent job", returns the newer of the two kinds.
 
 Inline edits keep their overlap guard. `overlappingEdit` refuses an edit on lines a running edit thread still covers, with the same `409` and message as before. Conversations started from the Threads pane are not part of that check, in either direction.
 
@@ -109,8 +109,8 @@ To provide instant visual review and safe rollbacks of code modifications genera
 - **Freshness:** gathering first syncs every open document with disk. Faah sends no file-watch events, so a change in a file the server has never opened can be missing from references and callers until that file is opened.
 - **Harness:** `explainHarness` resolves `explain.agent` and `explain.model` for explain turns only. A harness pinned with `-agent` wins.
 - **Prefetch:** `POST /api/explain/prepare` answers at once and gathers in a goroutine. `explainPrefetch` holds one selection; a new one cancels the one in flight. `/api/explain` uses prepared evidence only when the key (selection plus the file's size and modification time) matches and it is under 30 seconds old.
-- **Timing:** `threadTurn.FirstMs` records when the first words arrived. `TestExplainBenchmark`, behind the `harness` build tag, times real explanations per harness and model.
-- **Citations:** at the end of a turn `explain.ValidateRefs` fills `threadTurn.Refs`. The transcript (`lib/Markdown.tsx` with `threads/references.ts`) then links only those targets. `Reply` is left as written.
+- **Timing:** `threads.Turn.FirstMs` records when the first words arrived. `TestExplainBenchmark`, behind the `harness` build tag, times real explanations per harness and model.
+- **Citations:** at the end of a turn `explain.ValidateRefs` fills `threads.Turn.Refs`. The transcript (`lib/Markdown.tsx` with `threads/references.ts`) then links only those targets. `Reply` is left as written.
 - **Tools:** every agent receives `annotate` (notes on symbols, lines or blocks) and `walkthrough` (2 to 20 steps across files) over MCP. `internal/explain/notes` validates calls, saves accepted results on the running turn, and returns what was shown or refused. `/api/mcp` uses a thread-bound session credential that remains valid between turns; tool calls require a running turn, and closing the native session revokes the credential. `SetToolsAddr` supplies the listening endpoint. See [MCP and credentials](agents.md#mcp-and-credentials) for transport headers and per-agent attachment.
 - **Orb:** Explain leaves the sidebar closed and prepares the thread view behind it. [`web/src/viewers/orb-model.js`](../../web/src/viewers/orb-model.js) turns the explanation's events into the editor pill (`ExplainOrb.tsx`): the `/api/explain` reply, then `thread:thread` snapshots and `thread:tool` steps while that thread's stream is followed, and `threads:summary` to end it when another thread took over the stream. The pill is hidden while the sidebar shows the same thread. `notes.StepLabel` names annotate and walkthrough calls in words whatever prefix the agent gives them, and steps drop the workspace prefix from paths.
 - **Notes:** `GET /api/explain/notes?path=` returns every note on a file, each found again with `notes.Locate` by the text it covered. A note whose text is gone stays at its saved line with `stale: "text"`. Where notes cover the same lines, the newest wins. A symbol note saves its callers and references hash (`explain.Gather`) in the background when it is added; the endpoint compares it with a hash it refreshes in the background at most every 10 seconds, and marks a change `stale: "refs"`.

@@ -1,7 +1,6 @@
-package main
+package threads
 
 import (
-	"io"
 	"time"
 
 	"faah/internal/agents"
@@ -18,27 +17,6 @@ func (s *threadSink) Reasoning(text string) {
 	s.tm.maybeSaveLocked()
 }
 
-type writerSink struct {
-	io.Writer
-	wrote bool
-}
-
-// Text forwards assistant output.
-func (s *writerSink) Text(t string, _ bool) { s.wrote = true; _, _ = io.WriteString(s.Writer, t) }
-
-// Reasoning forwards the agent’s reasoning.
-func (s *writerSink) Reasoning(string) {}
-
-// Step reports tool activity.
-func (s *writerSink) Step(string) {}
-
-// Result supplies an answer when no text was streamed.
-func (s *writerSink) Result(t string) {
-	if !s.wrote {
-		_, _ = io.WriteString(s.Writer, t)
-	}
-}
-
 type threadSession struct {
 	session            agents.Session
 	token, name, model string
@@ -46,19 +24,19 @@ type threadSession struct {
 	idle               *time.Timer
 }
 
-func (tm *threadManager) closeSessionLocked(id string) {
+func (tm *Manager) closeSessionLocked(id string) {
 	if s := tm.sessions[id]; s != nil {
 		if s.idle != nil {
 			s.idle.Stop()
 		}
 		s.session.Close()
-		tm.tools.tokens.Revoke(s.token)
+		tm.credentials.Revoke(s.token)
 		delete(tm.sessions, id)
 	}
-	tm.tools.tokens.RevokeScope(func(scope any) bool { sc, ok := scope.(toolScope); return ok && sc.tid == id })
+	tm.credentials.RevokeThread(id)
 }
 
-func (tm *threadManager) idleSessionLocked(id string) {
+func (tm *Manager) idleSessionLocked(id string) {
 	s := tm.sessions[id]
 	if s == nil {
 		return
@@ -71,7 +49,7 @@ func (tm *threadManager) idleSessionLocked(id string) {
 	timer = time.AfterFunc(d, func() {
 		tm.mu.Lock()
 		defer tm.mu.Unlock()
-		if tm.sessions[id] == s && s.idle == timer && tm.threads[id] != nil && !tm.threads[id].running() {
+		if tm.sessions[id] == s && s.idle == timer && tm.threads[id] != nil && !tm.threads[id].Running() {
 			tm.closeSessionLocked(id)
 		}
 	})
