@@ -299,12 +299,12 @@ var Schema = []SchemaItem{
 		Step:        numPtr(50.0),
 	},
 	{
-		Key:         "diffEditor.ignoreTrimWhitespace",
-		Title:       "Diff: Ignore Trim Whitespace",
-		Description: "Controls whether the diff viewer ignores changes in leading or trailing whitespace.",
+		Key:         "diffEditor.ignoreWhitespace",
+		Title:       "Diff: Ignore Whitespace",
+		Description: "Hides changes that only differ in spaces or blank lines.",
 		Category:    "Git & Diff",
 		Type:        "boolean",
-		Default:     true,
+		Default:     false,
 	},
 	{
 		Key:         "git.gutterIndicators",
