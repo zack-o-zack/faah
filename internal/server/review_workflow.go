@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"faah/internal/git"
 	"faah/internal/httpx"
 	"faah/internal/review"
 )
@@ -143,39 +142,15 @@ func (s *Server) handleReviewWalkthrough(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	isPR := s.pr != nil && s.prHeadSHA != ""
-	base := r.URL.Query().Get("base")
-	if !isPR && base != "" && base != "HEAD" {
-		if !git.ListReviewBases(s.ix.Root()).HasBranch(base) {
-			httpx.Fail(w, http.StatusBadRequest, "Unknown comparison branch: "+base)
-			return
-		}
-	}
-	var statuses map[string]string
-	if isPR {
-		statuses = s.ix.PRFiles()
-	} else {
-		statuses = s.ix.GitStatusMap()
+	if s.pr == nil || s.prHeadSHA == "" {
+		httpx.Fail(w, http.StatusConflict, "Review requires a pull request")
+		return
 	}
 	httpx.WriteJSON(w, review.BuildWalkthrough(review.WalkthroughOptions{
 		Root:             s.ix.Root(),
-		ComparisonBase:   base,
 		DiffBase:         s.diffBase,
 		DiffHead:         s.prHeadSHA,
-		IsPR:             isPR,
-		Statuses:         statuses,
+		Statuses:         s.ix.PRFiles(),
 		IgnoreWhitespace: r.URL.Query().Get("ignoreWhitespace") == "1",
 	}))
-}
-
-func (s *Server) handleReviewBases(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		httpx.Fail(w, http.StatusMethodNotAllowed, "method not allowed")
-		return
-	}
-	if s.pr != nil && s.prHeadSHA != "" {
-		httpx.WriteJSON(w, git.ReviewBases{Branches: []git.ReviewBranch{}})
-		return
-	}
-	httpx.WriteJSON(w, git.ListReviewBases(s.ix.Root()))
 }

@@ -42,7 +42,8 @@ func TestWalkthroughGroups(t *testing.T) {
 		}
 	}
 	gittest.Run(t, root, "add", "-A")
-	response := BuildWalkthrough(WalkthroughOptions{Root: root, DiffBase: "HEAD", DiffHead: "", IsPR: false, Statuses: statuses, IgnoreWhitespace: false})
+	gittest.Run(t, root, "commit", "-qm", "PR changes")
+	response := BuildWalkthrough(WalkthroughOptions{Root: root, DiffBase: "HEAD~1", DiffHead: "HEAD", Statuses: statuses, IgnoreWhitespace: false})
 	data, _ := json.Marshal(response)
 	var decoded struct {
 		Files []struct{ Path, Group string }
@@ -66,7 +67,7 @@ func TestWalkthroughGroups(t *testing.T) {
 }
 
 func TestWalkthroughMoves(t *testing.T) {
-	for _, mode := range []string{"pr", "pr-relative", "fallback", "staged"} {
+	for _, mode := range []string{"pr", "pr-relative"} {
 		for _, edit := range []bool{false, true} {
 			t.Run(mode+map[bool]string{false: "/pure", true: "/edited"}[edit], func(t *testing.T) {
 				root := gittest.Repo(t)
@@ -96,7 +97,7 @@ func TestWalkthroughMoves(t *testing.T) {
 				if mode == "pr-relative" {
 					diffBase = "HEAD~1"
 				}
-				response := BuildWalkthrough(WalkthroughOptions{Root: root, DiffBase: diffBase, DiffHead: "HEAD", IsPR: strings.HasPrefix(mode, "pr"), Statuses: statuses, IgnoreWhitespace: false})
+				response := BuildWalkthrough(WalkthroughOptions{Root: root, DiffBase: diffBase, DiffHead: "HEAD", Statuses: statuses, IgnoreWhitespace: false})
 				data, _ := json.Marshal(response)
 				var decoded struct {
 					Files []struct{ Path, OldPath, Status string }
@@ -122,7 +123,7 @@ func TestWalkthroughMoves(t *testing.T) {
 }
 
 func TestWalkthroughBinaryMoves(t *testing.T) {
-	for _, mode := range []string{"pr", "fallback"} {
+	for _, mode := range []string{"pr"} {
 		t.Run(mode, func(t *testing.T) {
 			root := gittest.Repo(t)
 			gittest.Run(t, root, "reset", "--hard", "HEAD")
@@ -141,7 +142,7 @@ func TestWalkthroughBinaryMoves(t *testing.T) {
 				base = "HEAD~1"
 				statuses = git.FilesBetween(root, base, "HEAD")
 			}
-			response := BuildWalkthrough(WalkthroughOptions{Root: root, DiffBase: base, DiffHead: "HEAD", IsPR: mode == "pr", Statuses: statuses, IgnoreWhitespace: false})
+			response := BuildWalkthrough(WalkthroughOptions{Root: root, DiffBase: base, DiffHead: "HEAD", Statuses: statuses, IgnoreWhitespace: false})
 			if len(response.Files) != 1 {
 				t.Fatalf("want one renamed binary, got %+v", response.Files)
 			}

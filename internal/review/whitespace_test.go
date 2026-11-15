@@ -21,9 +21,10 @@ func TestWalkthroughWhitespace(t *testing.T) {
 	gittest.Run(t, root, "mv", "old.go", "new.go")
 	writeWalkFile(t, root, "new.go", strings.Repeat("unchanged line\n", 20)+"    value\n")
 	gittest.Run(t, root, "add", "new.go")
-	writeWalkFile(t, root, "untracked.go", "")
-	statuses := map[string]string{"mixed.go": "M", "indent.go": "M", "old.go": "D", "new.go": "A", "untracked.go": "?"}
-	exact := BuildWalkthrough(WalkthroughOptions{Root: root, DiffBase: "HEAD", DiffHead: "", IsPR: false, Statuses: statuses, IgnoreWhitespace: false})
+	gittest.Run(t, root, "add", "-A")
+	gittest.Run(t, root, "commit", "-qm", "PR whitespace changes")
+	statuses := map[string]string{"mixed.go": "M", "indent.go": "M", "old.go": "D", "new.go": "A"}
+	exact := BuildWalkthrough(WalkthroughOptions{Root: root, DiffBase: "HEAD~1", DiffHead: "HEAD", Statuses: statuses, IgnoreWhitespace: false})
 	if exact.HiddenWhitespaceFiles != 0 || exact.TotalFiles != 3 {
 		t.Fatalf("exact: %+v", exact)
 	}
@@ -32,11 +33,11 @@ func TestWalkthroughWhitespace(t *testing.T) {
 		if f.OldPath != "" {
 			paths = append(paths, f.OldPath)
 		}
-		if f.Diff != git.DiffPaths(root, "HEAD", "", paths...) {
+		if f.Diff != git.DiffPaths(root, "HEAD~1", "HEAD", paths...) {
 			t.Fatalf("default changed %s", f.Path)
 		}
 	}
-	filtered := BuildWalkthrough(WalkthroughOptions{Root: root, DiffBase: "HEAD", DiffHead: "", IsPR: false, Statuses: statuses, IgnoreWhitespace: true})
+	filtered := BuildWalkthrough(WalkthroughOptions{Root: root, DiffBase: "HEAD~1", DiffHead: "HEAD", Statuses: statuses, IgnoreWhitespace: true})
 	if filtered.HiddenWhitespaceFiles != 1 || filtered.TotalFiles != 2 {
 		t.Fatalf("filtered: %+v", filtered)
 	}
