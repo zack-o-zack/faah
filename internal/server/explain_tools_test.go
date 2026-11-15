@@ -80,7 +80,7 @@ func TestExplainToolCallsLandOnTheTurn(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		_, err = call(`{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"annotate","arguments":{"notes":[{"kind":"symbol","path":"main.go","l1":7,"symbol":"helper","summary":"Does nothing yet."}]}}}`, sid)
+		_, err = call(`{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"annotate","arguments":{"notes":[{"kind":"symbol","path":"main.go","l1":7,"symbol":"helper","summary":"Does nothing yet.","detail":"See main.go:4 and missing.go:99."}]}}}`, sid)
 		return err
 	})
 	ts := httptest.NewServer(s)
@@ -91,6 +91,12 @@ func TestExplainToolCallsLandOnTheTurn(t *testing.T) {
 	tr := th.Turns[0]
 	if n := tr.Notes; len(n) != 1 || n[0].Symbol != "helper" || n[0].L1 != 7 || n[0].Text != "func helper() {}" {
 		t.Fatalf("notes = %+v\nreply: %s\nerror: %s", n, tr.Reply, tr.Error)
+	}
+	if _, ok := tr.Refs["main.go:4"]; !ok {
+		t.Fatalf("detail citation unchecked: %+v", tr.Refs)
+	}
+	if v := fileNotes(t, s, "main.go"); len(v) != 1 || len(v[0].Links) != 1 || v[0].Links["main.go:4"].Line != 4 {
+		t.Fatalf("served citations = %+v", v)
 	}
 	// The session credential remains valid between turns; tools refuse idle calls.
 	tok := regexp.MustCompile(`tok=([A-Za-z0-9_-]+)`).FindStringSubmatch(tr.Reply)
