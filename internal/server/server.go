@@ -66,13 +66,16 @@ type Server struct {
 	endStreams  sync.Once
 }
 
-// EndStreams ends every open event stream. Register it with
+// EndStreams stops background maintenance and ends every open event stream. Register it with
 // http.Server.RegisterOnShutdown: Shutdown does not cancel request contexts,
 // so streams would otherwise hold it up until its deadline.
 func (s *Server) EndStreams() {
 	s.endStreams.Do(func() {
 		if s.streamsDone != nil {
 			close(s.streamsDone)
+		}
+		if s.gitWatcher != nil {
+			s.gitWatcher.Stop()
 		}
 	})
 }
@@ -128,21 +131,26 @@ func (s *Server) scavenge() {
 	tick := time.NewTicker(10 * time.Second)
 	defer tick.Stop()
 	done := true // nothing to release before the first request
-	for range tick.C {
-		idle := time.Since(time.Unix(0, s.lastReq.Load()))
-		if s.lsp != nil && idle >= lspIdleFor {
-			s.lsp.ReapIdle(lspIdleFor)
+	for {
+		select {
+		case <-s.streamsDone:
+			return
+		case <-tick.C:
+			idle := time.Since(time.Unix(0, s.lastReq.Load()))
+			if s.lsp != nil && idle >= lspIdleFor {
+				s.lsp.ReapIdle(lspIdleFor)
+			}
+			if idle < idleFor {
+				done = false
+				continue
+			}
+			if done {
+				continue // already released since the last burst of work
+			}
+			render.Scavenge()
+			debug.FreeOSMemory()
+			done = true
 		}
-		if idle < idleFor {
-			done = false
-			continue
-		}
-		if done {
-			continue // already released since the last burst of work
-		}
-		render.Scavenge()
-		debug.FreeOSMemory()
-		done = true
 	}
 }
 
