@@ -1,6 +1,6 @@
 # Language Server Protocol (LSP) Architecture & Intelligence
 
-This document details the architecture, lifecycle management, and security boundaries of faah's Language Server Protocol subsystem ([`lsp.go`](../../lsp.go) and [`server.go`](../../server.go)).
+This document details the architecture, lifecycle management, and security boundaries of faah's Language Server Protocol subsystem ([`internal/lsp`](../../internal/lsp) and [`server.go`](../../server.go)).
 
 ## 1. Zero-Cost Lazy Architecture
 
@@ -28,7 +28,7 @@ stateDiagram-v2
 
 ## 2. Server Registry & Extension Precedence
 
-Language server definitions reside in [`lsp.go`](../../lsp.go). Multiple language servers can be registered for a given extension, evaluated in order of precedence:
+Language server definitions reside in [`internal/lsp`](../../internal/lsp). Multiple language servers can be registered for a given extension, evaluated in order of precedence:
 
 | Language          | Extensions                   | Primary Server               | Fallback Server | Discovery Search Paths     |
 | ----------------- | ---------------------------- | ---------------------------- | --------------- | -------------------------- |
@@ -45,7 +45,7 @@ Language server definitions reside in [`lsp.go`](../../lsp.go). Multiple languag
 
 ## 3. Communication & Lifecycle Management
 
-Each active language server is managed by an `lspClient` struct:
+Each active language server is managed by an `client` struct:
 
 ### Stdio JSON-RPC Transport
 
@@ -93,7 +93,7 @@ sequenceDiagram
 - Target paths returned by the server are normalized and admitted into `extAllowed`.
 - External files can be opened and inspected, but cannot be enumerated, searched, listed in the sidebar explorer tree, or edited with an agent.
 
-## 5. Stateless Call Hierarchy Trails ([`lsp.go`](../../lsp.go))
+## 5. Stateless Call Hierarchy Trails ([`internal/lsp`](../../internal/lsp))
 
 faah provides full incoming and outgoing call hierarchy navigation (`Calls` tab in the right inspector) without holding complex graph state in server memory.
 
@@ -116,9 +116,9 @@ Executing installation commands (e.g., `go install` or `npm install`) requires r
 1. `/api/lsp/install` accepts only `POST` requests.
 1. The `Origin` header must exactly match the `Host` header.
 1. The `Host` header must resolve strictly to `127.0.0.1`, `[::1]`, or `localhost`.
-1. Commands are pulled strictly from the internal `lspRegistry`, and the client request cannot provide or modify the command string.
+1. Commands are pulled strictly from the internal `registry`, and the client request cannot provide or modify the command string.
 
 ## 7. Diagnostics (`textDocument/publishDiagnostics`) & Idle Server Reaping
 
-- **Diagnostics**: `lspClient` advertises `publishDiagnostics: {}` during `initialize` and parses incoming `textDocument/publishDiagnostics` notifications into per-file `LSPDiagnostic` slices (errors and warnings). `/api/file` and `/api/lsp/diagnostics` expose these diagnostics so both the virtualized code viewer (`editor/EditorRow.tsx`) and diff viewer (`viewers/DiffRow.tsx`) render inline diagnostic badges via CSS `data-diag` attributes without polluting DOM text nodes.
-- **Idle Reaping (`ReapIdle`)**: Each `lspClient` records its last activity timestamp (`lastUsed`). The server's background scavenger (`Server.scavenge()`) calls `lspManager.ReapIdle(10 * time.Minute)`, shutting down idle language servers without marking them permanently stopped so they respawn transparently on the next request.
+- **Diagnostics**: `client` advertises `publishDiagnostics: {}` during `initialize` and parses incoming `textDocument/publishDiagnostics` notifications into per-file `diagnostic` slices (errors and warnings). `/api/file` and `/api/lsp/diagnostics` expose these diagnostics so both the virtualized code viewer (`editor/EditorRow.tsx`) and diff viewer (`viewers/DiffRow.tsx`) render inline diagnostic badges via CSS `data-diag` attributes without polluting DOM text nodes.
+- **Idle Reaping (`ReapIdle`)**: Each `client` records its last activity timestamp (`lastUsed`). The server's background scavenger (`Server.scavenge()`) calls `lsp.Manager.ReapIdle(10 * time.Minute)`, shutting down idle language servers without marking them permanently stopped so they respawn transparently on the next request.

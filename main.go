@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"faah/internal/git"
+	lsppkg "faah/internal/lsp"
 	"faah/internal/mcp"
 	"faah/internal/settings"
 	"faah/internal/telemetry"
@@ -212,7 +213,7 @@ func main() {
 
 	tInit := time.Now()
 	ix := workspace.NewIndex(root)
-	lsp := newLSPManager(root, !*noLSP)
+	lsp := lsppkg.New(lsppkg.Options{Root: root, Enabled: !*noLSP, Version: version})
 	tel := telemetry.New(posthogKey, version, *noTelemetry)
 	defer tel.Close("normal")
 

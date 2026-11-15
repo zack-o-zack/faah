@@ -32,6 +32,7 @@ import (
 
 	"faah/internal/fuzzy"
 	"faah/internal/git"
+	lsppkg "faah/internal/lsp"
 	"faah/internal/metrics"
 	"faah/internal/render"
 	"faah/internal/settings"
@@ -77,7 +78,7 @@ func cleanBasePath(p string) string {
 // REST API endpoints, Server-Sent Events (SSE), and workspace services.
 type Server struct {
 	ix         *workspace.Index
-	lsp        *lspManager
+	lsp        *lsppkg.Manager
 	tel        *telemetry.Service // nil in tests; Track is nil-safe
 	agent      *agentManager      // nil unless main wires editing for this session
 	threads    *threadManager     // nil unless editing is wired: threads run on the same harness
@@ -247,9 +248,9 @@ func (s *Server) registerRoutes() {
 
 // NewServer creates and initializes a faah Server instance, binding index and language servers,
 // starting the background workspace.Watcher, and registering all HTTP and SSE routes.
-func NewServer(ix *workspace.Index, lsp *lspManager, basePaths ...string) *Server {
+func NewServer(ix *workspace.Index, lsp *lsppkg.Manager, basePaths ...string) *Server {
 	if lsp == nil {
-		lsp = newLSPManager(ix.Root(), false)
+		lsp = lsppkg.New(lsppkg.Options{Root: ix.Root(), Enabled: false, Version: version})
 	}
 	bp := "/"
 	if len(basePaths) > 0 && basePaths[0] != "" {
@@ -991,11 +992,11 @@ func (s *Server) handleMeta(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, meta)
 }
 
-func getProcessMetrics(lsp *lspManager) metrics.ProcessMetrics {
+func getProcessMetrics(lsp *lsppkg.Manager) metrics.ProcessMetrics {
 	if lsp == nil {
 		return metrics.Collect(0, false)
 	}
-	return metrics.Collect(lsp.memBytes(), lsp.Enabled())
+	return metrics.Collect(lsp.MemoryBytes(), lsp.Enabled())
 }
 
 func (s *Server) handleMetrics(w http.ResponseWriter, r *http.Request) {
@@ -2826,53 +2827,11 @@ func (s *Server) relevantLSPServers() []map[string]any {
 		}
 	}
 
-	seen := map[string]bool{}
-	var result []map[string]any
-
-	// 1. Add servers matching extensions present in the workspace
-	for i := range lspRegistry {
-		def := &lspRegistry[i]
-		matchesExt := false
-		for _, ext := range def.Exts {
-			if extMap[ext] {
-				matchesExt = true
-				break
-			}
-		}
-		if matchesExt && !seen[def.Name] {
-			seen[def.Name] = true
-			result = append(result, s.lsp.ServerStatus(def))
-		}
+	exts := make([]string, 0, len(extMap))
+	for ext := range extMap {
+		exts = append(exts, ext)
 	}
-
-	// 2. Also include any server that is currently running or starting.
-	// Snapshot the names under RLock first: ServerStatus takes m.mu.RLock
-	// itself, and Go's RWMutex is not reentrant, so holding the lock across
-	// the call would deadlock.
-	s.lsp.mu.RLock()
-	var extra []string
-	for name := range s.lsp.clients {
-		if !seen[name] {
-			extra = append(extra, name)
-		}
-	}
-	for name := range s.lsp.starting {
-		if !seen[name] {
-			extra = append(extra, name)
-		}
-	}
-	s.lsp.mu.RUnlock()
-	for _, name := range extra {
-		for i := range lspRegistry {
-			if lspRegistry[i].Name == name {
-				seen[name] = true
-				result = append(result, s.lsp.ServerStatus(&lspRegistry[i]))
-				break
-			}
-		}
-	}
-
-	return result
+	return s.lsp.RelevantServers(exts)
 }
 
 // handleLSPServers returns the list of all language servers relevant to the workspace
@@ -2971,7 +2930,7 @@ func (s *Server) handleLSPStart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, rel, ok := s.resolvePath(r.URL.Query().Get("path"))
+	abs, rel, ok := s.resolvePath(r.URL.Query().Get("path"))
 	if !ok {
 		fail(w, 400, "bad path or server required")
 		return
@@ -2979,7 +2938,7 @@ func (s *Server) handleLSPStart(w http.ResponseWriter, r *http.Request) {
 	s.lsp.Rescan()
 	ctx, cancel := context.WithTimeout(r.Context(), 1500*time.Millisecond)
 	defer cancel()
-	s.lsp.client(ctx, rel) // the spawn continues if this gives up waiting
+	s.lsp.Warm(ctx, abs, rel) // the spawn continues if this gives up waiting
 	writeJSON(w, s.lspBrief(rel))
 }
 

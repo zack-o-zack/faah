@@ -17,6 +17,7 @@ import (
 
 	"faah/internal/git"
 	"faah/internal/git/gittest"
+	lsppkg "faah/internal/lsp"
 	"faah/internal/workspace"
 )
 
@@ -482,7 +483,7 @@ func TestGitStatusAgainstAndPRDiff(t *testing.T) {
 	}
 
 	// Server should mark diffAvailable=true for foo.go
-	srv := NewServer(ix, newLSPManager(root, false))
+	srv := NewServer(ix, lsppkg.New(lsppkg.Options{Root: root, Enabled: false, Version: version}))
 	srv.diffBase = baseSHA
 
 	req := httptest.NewRequest("GET", "/api/file?path=foo.go", nil)
@@ -571,7 +572,7 @@ func TestHandleDiffPRSplitsPRAndYourChanges(t *testing.T) {
 
 	ix := workspace.NewIndex(root)
 	ix.Build()
-	srv := NewServer(ix, newLSPManager(root, false))
+	srv := NewServer(ix, lsppkg.New(lsppkg.Options{Root: root, Enabled: false, Version: version}))
 	srv.SetPR(&prSession{
 		target: PRTarget{Owner: "o", Repo: "r"},
 		meta:   PRMeta{Number: 1, BaseRef: "main", HeadRef: "feature", HeadSHA: prHead},
@@ -885,7 +886,7 @@ func TestDeletedFileHandling(t *testing.T) {
 	}
 
 	// 2. Test /api/file and /api/diff endpoints for deleted file
-	srv := NewServer(ix, newLSPManager(ix.Root(), false))
+	srv := NewServer(ix, lsppkg.New(lsppkg.Options{Root: ix.Root(), Enabled: false, Version: version}))
 	ts := httptest.NewServer(srv)
 	defer ts.Close()
 

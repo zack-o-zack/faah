@@ -4,7 +4,7 @@ The workbench (`workbench.go`, `web/workbench.{html,css,js}`) is what `faah` ser
 
 ## Why child processes
 
-`Server` is built around a single workspace: one `Index`, `lspManager`, `agentManager`, `prSession`, `workspace.Watcher` and `diffBase`, all fixed in `main()`. Rather than threading a workspace ID through every handler, the workbench re-runs the faah binary per workspace. Each child keeps faah's single-workspace performance, a crashing or memory-hungry language server only takes down its own child, and stopping a child frees everything it held.
+`Server` is built around a single workspace: one `Index`, `lsp.Manager`, `agentManager`, `prSession`, `workspace.Watcher` and `diffBase`, all fixed in `main()`. Rather than threading a workspace ID through every handler, the workbench re-runs the faah binary per workspace. Each child keeps faah's single-workspace performance, a crashing or memory-hungry language server only takes down its own child, and stopping a child frees everything it held.
 
 ```mermaid
 flowchart LR

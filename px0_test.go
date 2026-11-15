@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"faah/internal/git/gittest"
+	lsppkg "faah/internal/lsp"
 	"faah/internal/metrics"
 	"faah/internal/render"
 	"faah/internal/settings"
@@ -948,23 +949,6 @@ func TestServerServeHTTPGzip(t *testing.T) {
 	}
 }
 
-func TestLSPBoundsChecks(t *testing.T) {
-	c := &lspClient{encoding: "utf-32"}
-
-	// Test toLSP with negative column
-	pos := c.toLSP("hello", 1, -5)
-	if pos.Character != 0 {
-		t.Errorf("expected 0 for negative byteCol, got %d", pos.Character)
-	}
-
-	// Test fromLSP with negative character
-	lines := []string{"hello"}
-	line, col := c.fromLSP(lines, lspPosition{Line: 0, Character: -10})
-	if line != 1 || col != 0 {
-		t.Errorf("expected line 1 col 0 for negative character, got line %d col %d", line, col)
-	}
-}
-
 func TestSetRawHeaders(t *testing.T) {
 	cases := []struct {
 		path            string
@@ -1549,7 +1533,7 @@ func BenchmarkHandleFileScrollChunk(b *testing.B) {
 	}
 	ix := workspace.NewIndex(wd)
 	ix.Build()
-	srv := &Server{ix: ix, lsp: newLSPManager(wd, false), diffBase: "HEAD"}
+	srv := &Server{ix: ix, lsp: lsppkg.New(lsppkg.Options{Root: wd, Enabled: false, Version: version}), diffBase: "HEAD"}
 	req := httptest.NewRequest(http.MethodGet, "/api/file?path=server.go&start=300&count=300", nil)
 	b.ResetTimer()
 	b.ReportAllocs()
