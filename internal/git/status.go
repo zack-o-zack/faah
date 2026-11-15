@@ -168,7 +168,6 @@ func parseNameStatusZ(out []byte, key func(string) (string, bool), dst map[strin
 			dst[file.Path] = file.Status
 		}
 	}
-
 }
 
 // StagedPaths maps repo-relative-to-served-root path -> true for every

@@ -213,18 +213,19 @@ func DiffPaths(root, base, head string, paths ...string) string {
 	if !Available(root) {
 		return ""
 	}
-	args := []string{"-C", root, "diff", "--no-color", "--find-renames", base}
-	if head != "" {
-		args = append(args, head)
+	argsForBase := func(base string) []string {
+		args := []string{"-C", root, "diff", "--no-color", "--find-renames", base}
+		if head != "" {
+			args = append(args, head)
+		}
+		args = append(args, "--")
+		return append(args, paths...)
 	}
-	args = append(args, "--")
-	args = append(args, paths...)
-	out, err := exec.Command("git", args...).Output()
+	out, err := exec.Command("git", argsForBase(base)...).Output()
 	if err != nil {
 		if base == "HEAD" && head == "" {
 			// An unborn repository has no HEAD; retain the empty-tree comparison.
-			args[5] = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
-			if emptyOut, emptyErr := exec.Command("git", args...).Output(); emptyErr == nil {
+			if emptyOut, emptyErr := exec.Command("git", argsForBase("4b825dc642cb6eb9a060e54bf8d69288fbee4904")...).Output(); emptyErr == nil {
 				return string(emptyOut)
 			}
 		}
