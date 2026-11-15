@@ -1,6 +1,7 @@
 import { record, text, number, boolean, list, strings, stringMap } from '../lib/decode.ts';
 import type {
   PRMeta,
+  PROverview,
   PRComment,
   Draft,
   MergeInfo,
@@ -155,4 +156,46 @@ export function decodeLaunch(value: unknown): { href: string } {
   const error = text(v.error);
   if (error) throw new Error(error);
   return { href: text(v.href) };
+}
+
+export function decodeOverview(value: unknown): PROverview {
+  const v = record(value);
+  const description = record(v.description);
+  return {
+    description: {
+      body: text(description.body),
+      bodyHtml: text(description.bodyHtml),
+      author: text(description.author),
+      avatarUrl: text(description.avatarUrl),
+      createdAt: text(description.createdAt),
+    },
+    truncated: boolean(v.truncated),
+    totalChecks: number(v.totalChecks),
+    checks: list(v.checks).map((item) => {
+      const row = record(item);
+      const state = text(row.state);
+      return {
+        id: text(row.id),
+        name: text(row.name),
+        url: text(row.url),
+        state:
+          state === 'passed' || state === 'failed' || state === 'running' || state === 'skipped'
+            ? state
+            : 'neutral',
+      };
+    }),
+    reviewers: list(v.reviewers).map((item) => {
+      const row = record(item);
+      const state = text(row.state);
+      return {
+        id: text(row.id),
+        name: text(row.name),
+        avatarUrl: text(row.avatarUrl),
+        state:
+          state === 'approved' || state === 'changes_requested' || state === 'commented'
+            ? state
+            : 'pending',
+      };
+    }),
+  };
 }

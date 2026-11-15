@@ -38,79 +38,68 @@ function mount(git = true, changed = false) {
   return required(editor);
 }
 
-const reviewButton = () => required(document.querySelector<HTMLButtonElement>('#side #btn-review'));
 const topBar = () => required(document.getElementById('main-top-bar'));
+const pressReviewShortcut = () =>
+  fireEvent.keyDown(document, {
+    key: 'V',
+    shiftKey: true,
+    ...(isMac ? { metaKey: true } : { ctrlKey: true }),
+  });
 
-test.each([false, true])(
-  'Review sits below the Git panel in Diff mode (changed=%s)',
-  async (changed) => {
-    const editor = mount(true, changed);
-    const diff = screen.getByRole('button', { name: 'Diff' });
-    expect(diff.hasAttribute('disabled')).toBe(false);
-    fireEvent.click(diff);
-    const button = reviewButton();
-    expect(button.textContent).toBe('Review');
-    expect(button.dataset.variant).toBe('outline');
-    expect(button.dataset.size).toBe('sm');
-    expect(button.title).toContain('Changed files, review pipeline and PR comments');
-    expect(button.querySelector('.icon-\\[lucide--list-checks\\]')).toBeTruthy();
-    expect(topBar().querySelector('#btn-pr-toggle')).toBeNull();
-    expect(topBar().querySelector('#btn-review')).toBeNull();
-    const recent = required(document.getElementById('git-recent-commits'));
-    expect(recent.compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(button.closest('#git-panel-body')).toBeNull();
-    fireEvent.click(button);
-    expect(editor.review.state.mode).toBe('review');
-    expect(document.getElementById('btn-review')).toBeNull();
-    expect(topBar().querySelector('#btn-pr-close')?.textContent).toContain('Back to editor');
-    fireEvent.click(screen.getByRole('button', { name: 'Back to editor' }));
-    expect(editor.review.state.mode).toBe('code');
-    expect(reviewButton()).toBeTruthy();
-  },
-);
-
-test('a PR keeps its entry in the top bar and hides the sidebar entry', () => {
-  const editor = mount();
+test.each([
+  [false, false],
+  [true, false],
+  [true, true],
+])('local workflows have no Review section (git=%s, changed=%s)', (git, changed) => {
+  const editor = mount(git, changed);
   fireEvent.click(screen.getByRole('button', { name: 'Diff' }));
-  expect(reviewButton()).toBeTruthy();
-  editor.store.actions.setWorkspace({ git: true, pr: prMeta() });
-  expect(document.getElementById('btn-review')).toBeNull();
-  expect(topBar().querySelector('#btn-pr-toggle')?.textContent).toContain('PR #7');
-  fireEvent.click(screen.getByRole('button', { name: 'PR #7' }));
-  expect(editor.review.state.mode).toBe('review');
-  expect(topBar().querySelector('#btn-pr-toggle')).toBeNull();
-  expect(topBar().querySelector('#btn-pr-close')).toBeTruthy();
-});
-
-test('Files hides Review while its shortcut and single help entry remain active', () => {
-  const editor = mount();
-  fireEvent.click(screen.getByRole('button', { name: 'Diff' }));
-  expect(reviewButton()).toBeTruthy();
-  fireEvent.click(screen.getByRole('button', { name: 'Files' }));
   expect(document.getElementById('btn-review')).toBeNull();
   expect(document.getElementById('btn-pr-toggle')).toBeNull();
-  const help = () =>
-    editor.shortcuts.entries().filter((entry) => entry.keys.includes('Mod+Shift+V'));
-  expect(help()).toHaveLength(1);
-  expect(help()[0]?.label).toBe('Toggle review');
-  const key = () =>
-    fireEvent.keyDown(document, {
-      key: 'V',
-      shiftKey: true,
-      ...(isMac ? { metaKey: true } : { ctrlKey: true }),
-    });
-  key();
-  expect(editor.review.state.mode).toBe('review');
-  key();
+  pressReviewShortcut();
   expect(editor.review.state.mode).toBe('code');
-  expect(document.getElementById('btn-review')).toBeNull();
-  expect(help()).toHaveLength(1);
+  expect(document.getElementById('review-view')).toBeNull();
+  expect(
+    editor.shortcuts.entries().filter((entry) => entry.keys.includes('Mod+Shift+V')),
+  ).toHaveLength(0);
 });
 
-test('non-Git Diff mode shows Review without a Git panel', () => {
-  mount(false);
-  fireEvent.click(screen.getByRole('button', { name: 'Diff' }));
-  expect(document.getElementById('git-panel')).toBeNull();
-  expect(reviewButton()).toBeTruthy();
-  expect(topBar().querySelector('#btn-pr-toggle')).toBeNull();
+test('local workflows cannot enter Review through actions or the shortcut', () => {
+  const editor = mount();
+  editor.actions.setReviewMode('review');
+  expect(editor.review.state.mode).toBe('code');
+  editor.actions.toggleReviewMode();
+  expect(editor.review.state.mode).toBe('code');
+  const event = new KeyboardEvent('keydown', {
+    key: 'V',
+    shiftKey: true,
+    ...(isMac ? { metaKey: true } : { ctrlKey: true }),
+    bubbles: true,
+    cancelable: true,
+  });
+  document.dispatchEvent(event);
+  expect(event.defaultPrevented).toBe(false);
+  expect(editor.review.state.mode).toBe('code');
+});
+
+test('only a PR exposes Review, and losing PR context closes it and removes its shortcut', () => {
+  const editor = mount();
+  editor.store.actions.setWorkspace({ git: true, pr: prMeta() });
+  expect(topBar().querySelector('#btn-pr-toggle')?.textContent).toContain('PR #7');
+  expect(
+    editor.shortcuts.entries().filter((entry) => entry.keys.includes('Mod+Shift+V')),
+  ).toHaveLength(1);
+  fireEvent.click(screen.getByRole('button', { name: 'PR #7' }));
+  expect(editor.review.state.mode).toBe('review');
+  expect(topBar().querySelector('#btn-pr-close')).toBeTruthy();
+  pressReviewShortcut();
+  expect(editor.review.state.mode).toBe('code');
+  pressReviewShortcut();
+  expect(editor.review.state.mode).toBe('review');
+  editor.store.actions.setWorkspace({ git: true, gitChanges: 1 });
+  expect(editor.review.state.mode).toBe('code');
+  expect(document.getElementById('review-view')).toBeNull();
+  expect(topBar().querySelector('#btn-pr-close')).toBeNull();
+  expect(
+    editor.shortcuts.entries().filter((entry) => entry.keys.includes('Mod+Shift+V')),
+  ).toHaveLength(0);
 });

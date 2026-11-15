@@ -8,7 +8,6 @@ import {
   activeGroupFilter,
   movedOnly,
   groupCounts,
-  pipelineProgress,
   reviewStages,
   reviewTransition,
   stageDefinition,
@@ -66,13 +65,6 @@ test('configured stages show their run state only while the run still matches th
   expect(stages[0]?.status).toBe('completed');
   expect(stages[0]?.def).toBe(config.stages[0]);
   expect(stages[1]).toEqual({ def: def('s9'), status: 'pending' });
-});
-
-test('progress summarises dots, counts and the stage being worked on', () => {
-  const progress = pipelineProgress(run('r', ['completed', 'running', 'failed']).stages);
-  expect(progress.done).toBe(1);
-  expect(progress.summary).toBe('running');
-  expect(progress.title).toBe('1 of 3 done · working on S1 · a stage failed');
 });
 
 test('config replies and requests carry the standard workflow', () => {

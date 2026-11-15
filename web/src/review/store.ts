@@ -2,12 +2,9 @@ import type { AppStore } from '../app/store.ts';
 import type { Request } from '../lib/api.ts';
 import type { CoreActions } from '../editor/contracts.ts';
 import type { StageDraft, ReviewRun, ReviewConfig, ReviewEvent } from './types.ts';
-import {
-  decodeReviewEvent,
-  decodeReviewStatus,
-  decodeWalkthrough,
-  decodeReviewBases,
-} from './decode.ts';
+import { decodeReviewEvent, decodeReviewStatus, decodeWalkthrough } from './decode.ts';
+import type { PROverview } from '../pr/types.ts';
+import { decodeOverview } from '../pr/decode.ts';
 import { decodeThread } from '../threads/decode.ts';
 import { isAbort, errorMessage } from '../lib/decode.ts';
 export interface ReviewOptions {
@@ -17,7 +14,7 @@ export interface ReviewOptions {
 interface ReviewState {
   mode: 'code' | 'review';
   layout: 'vertical' | 'horizontal';
-  tab: 'walkthrough' | 'stages';
+  tab: 'overview' | 'walkthrough' | 'stages';
   config: ReviewConfig;
   run: ReviewRun | null;
   active: number;
@@ -27,7 +24,6 @@ interface ReviewState {
   edit: { index: number; value: StageDraft } | null;
   followup: string;
   filter: string;
-  base: string;
   target: { path: string; line: number; sequence: number };
   activeFile: string;
   viewed: Record<string, boolean>;
@@ -71,7 +67,7 @@ function initialState(): ReviewState {
   return {
     mode: 'code',
     layout: localStorage.getItem(LAYOUT_KEY) === 'horizontal' ? 'horizontal' : 'vertical',
-    tab: 'walkthrough',
+    tab: 'overview',
     config: { name: 'Review pipeline', stages: [] },
     run: null,
     active: 0,
@@ -81,7 +77,6 @@ function initialState(): ReviewState {
     edit: null,
     followup: '',
     filter: 'all',
-    base: 'HEAD',
     target: { path: '', line: 0, sequence: 0 },
     activeFile: '',
     viewed: {},
@@ -102,6 +97,7 @@ function buildReviewStore(editor: ReviewHost, options: ReviewOptions = {}) {
   const [state, set] = createStore(initialState());
   const [revision, setRevision] = createSignal(1);
   const walkthroughRequest = createResourceRequest(request);
+  const overviewRequest = createResourceRequest(request);
   const controllers = new Set<AbortController>();
   let disposed = false;
   let statusController: AbortController | undefined;
@@ -112,35 +108,58 @@ function buildReviewStore(editor: ReviewHost, options: ReviewOptions = {}) {
   const running = () => isRunning(state.run);
   const [walkthrough] = createResource(
     () =>
-      state.mode === 'review' && {
+      state.mode === 'review' &&
+      state.tab === 'walkthrough' &&
+      !!app.state.workspace.meta?.pr && {
         revision: revision(),
-        base: app.state.workspace.meta?.pr ? 'HEAD' : state.base,
         ignoreWhitespace: app.settings.value('diffEditor.ignoreWhitespace') === true,
       },
-    async ({ ignoreWhitespace, base }) => {
-      const query = new URLSearchParams();
-      if (ignoreWhitespace) query.set('ignoreWhitespace', '1');
-      if (base !== 'HEAD') query.set('base', base);
-      try {
-        return decodeWalkthrough(
-          await walkthroughRequest('api/review/walkthrough' + (query.size ? '?' + query : '')),
-        );
-      } catch (error) {
-        if (
-          base !== 'HEAD' &&
-          state.base === base &&
-          !isAbort(error) &&
-          typeof error === 'object' &&
-          error !== null &&
-          'status' in error &&
-          error.status === 400
-        ) {
-          toast('error', errorMessage(error));
-          set('base', 'HEAD');
-        }
-        throw error;
-      }
+    async ({ ignoreWhitespace }) =>
+      decodeWalkthrough(
+        await walkthroughRequest(
+          'api/review/walkthrough' + (ignoreWhitespace ? '?ignoreWhitespace=1' : ''),
+        ),
+      ),
+  );
+  const [overview, { refetch: refetchOverview }] = createResource(
+    () =>
+      state.mode === 'review' &&
+      !!app.state.workspace.meta?.pr &&
+      (app.state.workspace.meta.pr.headSHA || 'head'),
+    async (_source, info): Promise<PROverview> => {
+      const next = decodeOverview(
+        await overviewRequest(
+          'api/pr/overview' + (info.refetching === 'refresh' ? '?refresh=1' : ''),
+        ),
+      );
+      const previous = new Map(info.value?.checks.map((check) => [check.id, check]));
+      next.checks = next.checks.map((check) => {
+        const old = previous.get(check.id);
+        return old && old.name === check.name && old.state === check.state && old.url === check.url
+          ? old
+          : check;
+      });
+      return next;
     },
+  );
+  createEffect(
+    on(
+      () => state.tab,
+      (tab) => {
+        if (tab === 'overview' && state.mode === 'review' && overview.state !== 'unresolved')
+          void refetchOverview();
+      },
+      { defer: true },
+    ),
+  );
+  // Leaving the PR context closes its review and releases the review subscription.
+  createEffect(
+    on(
+      () => !!app.state.workspace.meta?.pr,
+      (isPR) => {
+        if (!isPR) setReviewMode('code');
+      },
+    ),
   );
 
   // The stage on screen follows its thread on the shared stream; the thread store
@@ -242,8 +261,12 @@ function buildReviewStore(editor: ReviewHost, options: ReviewOptions = {}) {
 
   function setReviewMode(mode: string): void {
     const next = mode === 'review' ? 'review' : 'code';
+    if (next === 'review' && !app.state.workspace.meta?.pr) return;
     if (state.mode === next) return;
-    set('mode', next);
+    batch(() => {
+      set('mode', next);
+      if (next === 'review') set('tab', 'overview');
+    });
     app.actions.setWorkspaceTopic('review', next === 'review');
     if (next === 'review') void loadReview();
     else statusController?.abort();
@@ -349,6 +372,8 @@ function buildReviewStore(editor: ReviewHost, options: ReviewOptions = {}) {
     active,
     running,
     walkthrough,
+    overview,
+    overviewData: () => (overview.error ? null : overview.latest),
     groupFilter: () =>
       activeGroupFilter(walkthrough.error ? [] : walkthrough.latest?.files || [], state.filter),
     // A failed resource throws on read; views take its error separately.
@@ -371,7 +396,8 @@ function buildReviewStore(editor: ReviewHost, options: ReviewOptions = {}) {
         set('layout', next);
         localStorage.setItem(LAYOUT_KEY, next);
       },
-      setReviewTab: (tab: string) => set('tab', tab === 'stages' ? 'stages' : 'walkthrough'),
+      setReviewTab: (tab: string) =>
+        set('tab', tab === 'stages' || tab === 'walkthrough' ? tab : 'overview'),
       selectReviewStage: (index: number) => set({ active: index, edit: null }),
       openStageEditor(index = state.active) {
         const def = state.config.stages[index];
@@ -394,9 +420,10 @@ function buildReviewStore(editor: ReviewHost, options: ReviewOptions = {}) {
           return saveConfig({ ...state.config, name: trimmed });
       },
       setReviewFollowup: (value: string) => set('followup', value),
-      refreshWalkthrough: () => setRevision((value) => value + 1),
-      loadBases: async () => decodeReviewBases(await request('api/review/bases')),
-      setComparisonBase: (base: string) => set('base', base),
+      refreshReview: () => {
+        setRevision((value) => value + 1);
+        void refetchOverview('refresh');
+      },
       setGroupFilter: (filter: string) => set('filter', filter),
       setWalkthroughViewed: (path: string, viewed: boolean) => set('viewed', path, viewed),
       setActiveWalkthroughFile: (path: string) => set('activeFile', path),

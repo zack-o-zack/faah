@@ -1,0 +1,82 @@
+<h1 id="review-the-change-not-the-noise" data-line="1">Review the change, not the noise</h1>
+<p data-line="3">
+  This update makes pull request reviews easier to scan. It keeps
+  <strong>the PR's own changes</strong> separate from local work, and brings the description,
+  checks, and reviewer decisions together.
+</p>
+<h2 id="what-changed" data-line="5">What changed</h2>
+<ul data-line="7">
+  <li data-line="7">
+    A focused overview for each pull request.
+    <ul data-line="8">
+      <li data-line="8">Read the description with document typography.</li>
+      <li data-line="9">Keep CI and reviewer decisions in view.</li>
+    </ul>
+  </li>
+  <li data-line="10">Shared diff preferences across the editor and walkthrough.</li>
+</ul>
+<h3 id="validation" data-line="12">Validation</h3>
+<ul data-line="14">
+  <li data-line="14">
+    <input checked="" disabled="" type="checkbox" /> Keep local commits out of the PR diff
+  </li>
+  <li data-line="15">
+    <input checked="" disabled="" type="checkbox" /> Check all four forge adapters
+  </li>
+  <li data-line="16"><input disabled="" type="checkbox" /> Finish the final visual review</li>
+</ul>
+<table data-line="18">
+  <thead>
+    <tr>
+      <th>Surface</th>
+      <th>Behavior</th>
+      <th>Verification</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Overview</td>
+      <td>Description, checks and reviewers</td>
+      <td>Component and provider tests</td>
+    </tr>
+    <tr>
+      <td>Changed files</td>
+      <td>Only changes in the PR</td>
+      <td>Frozen base-to-head comparison</td>
+    </tr>
+    <tr>
+      <td>Review pipeline</td>
+      <td>Run the configured review steps</td>
+      <td>Existing workflow coverage</td>
+    </tr>
+  </tbody>
+</table>
+<blockquote data-line="24">
+  <p data-line="24">A review should make the important decisions easy to find.</p>
+</blockquote>
+<h2 id="implementation-example" data-line="26">Implementation example</h2>
+<p data-line="28">Use the shared <code>highlightChangedWords</code> preference:</p>
+<pre
+  class="md-code"
+  data-line="31"
+  data-lang="go"
+><code><i class=k>func</i> <i class=nf>reviewReady</i><i class=p>(</i>checks <i class=kt>int</i><i class=p>)</i> <i class=kt>bool</i> <i class=p>{</i>
+    <i class=k>return</i> checks <i class=p>&gt;</i> <i class=m>0</i>
+<i class=p>}</i></code></pre>
+<p data-line="36">
+  See #47 and @zack for context. More details:
+  <a href="https://example.test/review-guide">https://example.test/review-guide</a>. The code
+  reference <code>#48</code> stays plain text.
+</p>
+<p data-line="39"><img src="https://images.test/diagram.png" alt="Review flow" /></p>
+<details>
+  <summary>Additional verification notes</summary>
+  <p data-line="44">The same review data is normalized for GitHub, GitLab, Gitea and Bitbucket.</p>
+</details>
+<h2 id="why-this-matters" data-line="48">Why this matters</h2>
+<p data-line="50">
+  The status column stays available while you read a long description. Failed and running checks
+  remain visible. Successful checks can be expanded when you need their details.
+</p>
+<h3 id="follow-up" data-line="52">Follow-up</h3>
+<p data-line="54">Keep this layout quiet, readable and useful in everyday code reviews.</p>

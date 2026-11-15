@@ -108,7 +108,6 @@ export function decodeWalkthrough(value: unknown): WalkthroughReply {
     totalDeletions: number(v.totalDeletions),
     baseRef: text(v.baseRef),
     headRef: text(v.headRef),
-    prMode: boolean(v.prMode),
   };
 }
 

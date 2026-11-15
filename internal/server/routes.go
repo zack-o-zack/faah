@@ -119,6 +119,7 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc(s.routePath("/api/review/walkthrough"), s.handleReviewWalkthrough)
 	s.mux.HandleFunc(s.routePath("/api/settings"), s.handleSettings)
 	s.mux.HandleFunc(s.routePath("/api/pr/meta"), s.handlePRMeta)
+	s.mux.HandleFunc(s.routePath("/api/pr/overview"), s.handlePROverview)
 	s.mux.HandleFunc(s.routePath("/api/pr/comments"), s.handlePRComments)
 	s.mux.HandleFunc(s.routePath("/api/pr/comments/delete"), s.handlePRCommentDelete)
 	s.mux.HandleFunc(s.routePath("/api/pr/submit"), s.handlePRSubmit)

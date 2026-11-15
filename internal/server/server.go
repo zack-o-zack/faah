@@ -35,18 +35,19 @@ type Options struct {
 // Server is the main faah HTTP server handling the web UI, static assets,
 // REST API endpoints, Server-Sent Events (SSE), and workspace services.
 type Server struct {
-	version    string
-	assets     fs.FS
-	devRoot    string
-	ix         *workspace.Index
-	lsp        *lsppkg.Manager
-	tel        *telemetry.Service // nil in tests; Track is nil-safe
-	agent      *agentManager      // nil unless main wires editing for this session
-	threads    *threadManager     // nil unless editing is wired: threads run on the same harness
-	explainPre explainPrefetch    // evidence gathered ahead of an Explain click
-	pr         *prpkg.Session     // nil unless main launched this process as `faah pr ...`
-	diffBase   string             // ref /api/diff and /api/gutter diff against; "HEAD" unless in PR mode
-	prHeadSHA  string             // PR mode only: the checked-out PR head commit. Frozen boundary between
+	overviewCache prOverviewCache
+	version       string
+	assets        fs.FS
+	devRoot       string
+	ix            *workspace.Index
+	lsp           *lsppkg.Manager
+	tel           *telemetry.Service // nil in tests; Track is nil-safe
+	agent         *agentManager      // nil unless main wires editing for this session
+	threads       *threadManager     // nil unless editing is wired: threads run on the same harness
+	explainPre    explainPrefetch    // evidence gathered ahead of an Explain click
+	pr            *prpkg.Session     // nil unless main launched this process as `faah pr ...`
+	diffBase      string             // ref /api/diff and /api/gutter diff against; "HEAD" unless in PR mode
+	prHeadSHA     string             // PR mode only: the checked-out PR head commit. Frozen boundary between
 	// the PR's own diff (diffBase..prHeadSHA) and the reviewer's local edits
 	// since checkout (prHeadSHA..working tree); refreshed on Pull.
 	gitWatcher *workspace.Watcher

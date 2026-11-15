@@ -14,7 +14,12 @@ export function Walkthrough(): JSX.Element {
   const review = useEditor().review;
   const files = () => review.walkthroughData()?.files || [];
   return (
-    <div id="review-walkthrough-view" class="flex h-full min-h-0 flex-1 flex-row overflow-hidden">
+    <div
+      id="review-walkthrough-view"
+      role="tabpanel"
+      aria-labelledby="btn-review-tab-walkthrough"
+      class="flex h-full min-h-0 flex-1 flex-row overflow-hidden"
+    >
       <Switch>
         <Match when={review.walkthrough.error}>
           <EmptyState icon="icon-[lucide--circle-alert]" title="Failed to load walkthrough">
@@ -26,9 +31,8 @@ export function Walkthrough(): JSX.Element {
         </Match>
         <Match when={!files().length && !review.walkthroughData()?.hiddenWhitespaceFiles}>
           <WalkthroughFiles data={review.walkthroughData()} />
-          <EmptyState icon="icon-[lucide--check]" title="Working tree is clean">
-            No modified files or uncommitted diffs found against{' '}
-            {review.walkthroughData()?.baseRef || 'HEAD'}.
+          <EmptyState icon="icon-[lucide--check]" title="No changes in this pull request">
+            No differences found between the PR base and head.
           </EmptyState>
         </Match>
         <Match when={files().length || review.walkthroughData()?.hiddenWhitespaceFiles}>

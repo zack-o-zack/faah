@@ -1,5 +1,6 @@
 import type { JSX } from 'solid-js';
-import { Show } from 'solid-js';
+import { Match, Show, Switch } from 'solid-js';
+import { Overview } from './Overview.tsx';
 import { useEditor } from '../editor/context.tsx';
 import { ReviewTabs } from './ReviewTabs.tsx';
 import { Walkthrough } from './Walkthrough.tsx';
@@ -14,15 +15,25 @@ export function ReviewView(): JSX.Element {
         class={`group/review relative flex min-h-0 flex-1 flex-col overflow-hidden layout-${review.state.layout}`}
       >
         <ReviewTabs />
-        <Show when={review.state.tab === 'stages'} fallback={<Walkthrough />}>
-          <div
-            id="review-stages-view"
-            class="flex min-h-0 flex-1 overflow-hidden group-[.layout-horizontal]/review:flex-col"
-          >
-            <StageList />
-            <StageView />
-          </div>
-        </Show>
+        <Switch>
+          <Match when={review.state.tab === 'overview'}>
+            <Overview />
+          </Match>
+          <Match when={review.state.tab === 'walkthrough'}>
+            <Walkthrough />
+          </Match>
+          <Match when={review.state.tab === 'stages'}>
+            <div
+              id="review-stages-view"
+              role="tabpanel"
+              aria-labelledby="btn-review-tab-stages"
+              class="flex min-h-0 flex-1 overflow-hidden group-[.layout-horizontal]/review:flex-col"
+            >
+              <StageList />
+              <StageView />
+            </div>
+          </Match>
+        </Switch>
       </div>
     </Show>
   );

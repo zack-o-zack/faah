@@ -6,7 +6,6 @@ interface WalkthroughFilesProps {
 import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
-import { BasePicker } from './BasePicker.tsx';
 import { groupedFiles, movedOnly, shortRef, fileCount } from './logic.ts';
 import { LineStats } from './LineStats.tsx';
 // Group summaries keep the file list easy to scan.
@@ -33,30 +32,11 @@ export function WalkthroughFiles(props: WalkthroughFilesProps): JSX.Element {
             deletions={props.data?.totalDeletions}
           />{' '}
           ·{' '}
-          <Show
-            when={
-              !props.data?.prMode &&
-              !editor.store.state.workspace.meta?.pr &&
-              editor.store.state.workspace.meta?.git
-            }
-            fallback={
-              <span class="font-mono">
-                {shortRef(props.data?.baseRef || 'HEAD')}{' '}
-                <span class="icon-[lucide--arrow-right] size-3 align-[-2px]" aria-hidden="true" />{' '}
-                {shortRef(props.data?.headRef || 'now')}
-              </span>
-            }
-          >
-            <BasePicker
-              label={
-                <span class="font-mono">
-                  {shortRef(props.data?.baseRef || 'HEAD')}{' '}
-                  <span class="icon-[lucide--arrow-right] size-3 align-[-2px]" aria-hidden="true" />{' '}
-                  {shortRef(props.data?.headRef || 'now')}
-                </span>
-              }
-            />
-          </Show>
+          <span class="font-mono">
+            {shortRef(props.data?.baseRef || 'PR base')}{' '}
+            <span class="icon-[lucide--arrow-right] size-3 align-[-2px]" aria-hidden="true" />{' '}
+            {shortRef(props.data?.headRef || 'PR head')}
+          </span>
         </span>
       </div>
       <div

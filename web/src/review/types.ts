@@ -59,7 +59,6 @@ export interface WalkthroughReply {
   totalDeletions: number;
   baseRef: string;
   headRef: string;
-  prMode: boolean;
 }
 
 export interface ReviewBases {

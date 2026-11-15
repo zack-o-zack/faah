@@ -120,6 +120,7 @@ func TestGitLabMergeMethods(t *testing.T) {
 
 // fakeGitLab serves a small GitLab API for one project, recording writes.
 type fakeGitLab struct {
+	routes   map[string]func(http.ResponseWriter, *http.Request)
 	mu       sync.Mutex
 	writes   []string         // "METHOD path"
 	bodies   []map[string]any // matching request bodies
@@ -134,6 +135,10 @@ func (f *fakeGitLab) handler(t *testing.T) http.Handler {
 			t.Errorf("%s %s: Authorization = %q", r.Method, r.URL.EscapedPath(), got)
 		}
 		path := r.URL.EscapedPath()
+		if handler := f.routes[r.Method+" "+path]; handler != nil {
+			handler(w, r)
+			return
+		}
 		if r.Method != http.MethodGet {
 			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)

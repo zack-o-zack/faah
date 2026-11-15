@@ -1,3 +1,4 @@
+import { prMeta } from '../pr/test-editor.ts';
 import { fireEvent, render, screen, waitFor } from '@solidjs/testing-library';
 import { expect, test, vi } from 'vitest';
 import { createAppStore } from '../app/store.ts';
@@ -11,6 +12,7 @@ function mount(reply: unknown, walkthrough: unknown = { files: [], totalFiles: 0
   let editor: EditorStore | undefined;
   render(() => {
     const app = createAppStore();
+    app.actions.setWorkspace({ git: true, pr: prMeta() });
     app.actions.subscribeWorkspaceEvent = () => () => {};
     app.actions.setWorkspaceTopic = vi.fn();
     app.actions.watchWorkspaceThread = () => () => {};
@@ -31,7 +33,8 @@ test('the review mounts only in review mode and toggles its layout', async () =>
   const editor = mount({ config: { stages: [{ id: 'a', title: 'Check changes' }] } });
   expect(document.getElementById('review-view')).toBe(null);
   editor.actions.setReviewMode('review');
-  await screen.findByText('Working tree is clean');
+  editor.actions.setReviewTab('walkthrough');
+  await screen.findByText('No changes in this pull request');
   editor.actions.setReviewTab('stages');
   const view = required(document.getElementById('review-view'));
   expect(view.classList.contains('layout-vertical')).toBe(true);
@@ -88,6 +91,7 @@ test('walkthrough filters list files by group', async () => {
     },
   );
   editor.actions.setReviewMode('review');
+  editor.actions.setReviewTab('walkthrough');
   await waitFor(() => expect(screen.getAllByTitle('src/b.go')).toHaveLength(1));
   fireEvent.click(screen.getByRole('button', { name: /Tests/ }));
   expect(screen.queryByTitle('src/b.go')).toBe(null);
@@ -124,6 +128,7 @@ test('review preserves server syntax tokens and decodes source text safely', asy
     },
   );
   editor.actions.setReviewMode('review');
+  editor.actions.setReviewTab('walkthrough');
   await screen.findByText('func');
   expect(document.querySelector('.diff-code .k')?.textContent).toBe('func');
   expect(document.querySelector('.diff-code .nf')?.textContent).toBe('main');
@@ -149,6 +154,7 @@ test('a changed binary move keeps its origin without a pure move badge', async (
     },
   );
   editor.actions.setReviewMode('review');
+  editor.actions.setReviewTab('walkthrough');
   await screen.findByTitle('new.bin');
   expect(screen.getAllByTitle('old.bin')).toHaveLength(2);
   expect(screen.queryByText('Moved')).toBe(null);
@@ -179,6 +185,7 @@ test('walkthrough follows the shared split and unified preference', async () => 
     },
   );
   editor.actions.setReviewMode('review');
+  editor.actions.setReviewTab('walkthrough');
   await screen.findByTitle('main.go');
   expect(document.querySelectorAll('.review-diff-table .diff-row-pair')).toHaveLength(1);
   void editor.store.settings.actions.setSetting('diffEditor.renderSideBySide', false);
@@ -189,7 +196,8 @@ test('walkthrough follows the shared split and unified preference', async () => 
 test('diff options read and write shared settings and stay open', async () => {
   const editor = mount({});
   editor.actions.setReviewMode('review');
-  await screen.findByText('Working tree is clean');
+  editor.actions.setReviewTab('walkthrough');
+  await screen.findByText('No changes in this pull request');
   const write = vi.spyOn(editor.store.settings.actions, 'setSetting');
   fireEvent.click(screen.getByRole('button', { name: 'Diff options' }));
   expect(screen.getByRole('button', { name: 'Side by side' }).getAttribute('aria-pressed')).toBe(
@@ -215,6 +223,7 @@ test.each([0, 2])(
   async (count) => {
     const editor = mount({}, { files: [], hiddenWhitespaceFiles: count });
     editor.actions.setReviewMode('review');
+    editor.actions.setReviewTab('walkthrough');
     await waitFor(() => expect(editor.review.walkthroughData()).toBeTruthy());
     expect(screen.queryByText(count + ' whitespace-only files hidden') !== null).toBe(count > 0);
   },
