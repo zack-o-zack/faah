@@ -34,7 +34,7 @@ sequenceDiagram
 
     CLI->>Net: listen(host, port)
     Note over CLI,Net: Binds socket in <0.2ms
-    CLI->>Srv: NewServer(Index, LSP)
+    CLI->>Srv: server.New(server.Options{Workspace: Index, LSP: LSP})
     opt host is 0.0.0.0
         CLI->>OS: InterfaceAddrs()
         OS-->>CLI: Interface addresses
@@ -65,7 +65,7 @@ The explorer expands folders through `/api/tree` on demand. Expand All skips ign
 
 ## 3. HTTP Server & API Catalog
 
-The server is implemented in [`server.go`](../../server.go) using Go's standard `http.ServeMux`. Every request passes through a centralized `ServeHTTP` wrapper that records activity timestamps, tracks status codes and durations, applies pooled Gzip compression when accepted by the client (excluding SSE streams), and logs every HTTP request to the terminal when the `-verbose` flag is active.
+The server is implemented in [`internal/server/server.go`](../../internal/server/server.go) using Go's standard `http.ServeMux`. Every request passes through a centralized `ServeHTTP` wrapper that records activity timestamps, tracks status codes and durations, applies pooled Gzip compression when accepted by the client (excluding SSE streams), and logs every HTTP request to the terminal when the `-verbose` flag is active.
 
 ### Base Path & Subpath Prefixing
 When hosted behind reverse proxies or multi-tenant review platforms, faah supports custom URL prefixes via the `-base-path` CLI flag or `server.basePath` in settings (e.g. `/rev-123/`):
@@ -77,7 +77,7 @@ When hosted behind reverse proxies or multi-tenant review platforms, faah suppor
 
 faah is structured into decoupled core files and modular `internal/` packages:
 
-- **Root Package (`faah`)**: Contains the CLI entrypoint ([`main.go`](../../main.go)), HTTP routing and middleware ([`server.go`](../../server.go)), filesystem indexing and tree walk ([`internal/workspace/index.go`](../../internal/workspace/index.go)), search pipeline ([`internal/workspace/search.go`](../../internal/workspace/search.go)), Git operations and watcher ([`internal/workspace/watcher.go`](../../internal/workspace/watcher.go)), LSP client and supervisor ([`internal/lsp`](../../internal/lsp)), agent selection ([`agent.go`](../../agent.go)) and multi-turn threads ([`internal/threads`](../../internal/threads)), PR review lifecycle ([`internal/pr/session.go`](../../internal/pr/session.go)), forge providers ([`internal/forge`](../../internal/forge)), and multi-repo workbench ([`internal/workbench/workbench.go`](../../internal/workbench/workbench.go)).
+- **Root Package (`faah`)**: Contains the CLI entrypoint ([`main.go`](../../main.go)), HTTP routing and middleware ([`internal/server/server.go`](../../internal/server/server.go)), filesystem indexing and tree walk ([`internal/workspace/index.go`](../../internal/workspace/index.go)), search pipeline ([`internal/workspace/search.go`](../../internal/workspace/search.go)), Git operations and watcher ([`internal/workspace/watcher.go`](../../internal/workspace/watcher.go)), LSP client and supervisor ([`internal/lsp`](../../internal/lsp)), agent selection ([`internal/server/agent.go`](../../internal/server/agent.go)) and multi-turn threads ([`internal/threads`](../../internal/threads)), PR review lifecycle ([`internal/pr/session.go`](../../internal/pr/session.go)), forge providers ([`internal/forge`](../../internal/forge)), and multi-repo workbench ([`internal/workbench/workbench.go`](../../internal/workbench/workbench.go)).
 - **`internal/agents`**: Native `Agent`/`Open`/`Session` adapters, process hosts, protocol handling and Ask policies, listed in `internal/agents/all`. See [Native agent sessions](agents.md).
 - **`internal/mcp`**: Authenticated Streamable HTTP tools and the ACP stdio bridge.
 - **`internal/explain`**: Explain's selection checks, evidence gathering through the `Workspace` interface, prompt, and citation checks.
@@ -180,7 +180,7 @@ faah is structured into decoupled core files and modular `internal/` packages:
 
 Even though Go's garbage collector frees unreferenced heap objects rapidly, the Go runtime does not immediately release physical memory pages back to the host operating system. In high-churn CLI sessions (such as searching a 50,000-file repository), the process resident set size (RSS) could appear inflated long after the search completes.
 
-To maintain a lean footprint (~20–30 MB RSS), `server.go` implements an automatic scavenger:
+To maintain a lean footprint (~20–30 MB RSS), `internal/server/server.go` implements an automatic scavenger:
 
 ```go
 func (s *Server) scavenge() {

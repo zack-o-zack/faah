@@ -2,8 +2,8 @@
 
 This document describes the design and implementation of faah's pull request review feature:
 - the `forge.Provider` abstraction layer and its implementations for GitHub, GitLab, Gitea / Forgejo, and Bitbucket Cloud ([`internal/forge`](../../internal/forge));
-- connecting a forge token from the UI ([`internal/forge`](../../internal/forge), [`server.go`](../../server.go));
-- the checkout lifecycle, push/pull ([`internal/pr/session.go`](../../internal/pr/session.go)), merging and progress reporting ([`pr.go`](../../pr.go)), and merge-base diffing ([`internal/git`](../../internal/git/));
+- connecting a forge token from the UI ([`internal/forge`](../../internal/forge), [`internal/server/pr.go`](../../internal/server/pr.go));
+- the checkout lifecycle, push/pull ([`internal/pr/session.go`](../../internal/pr/session.go)), merging and progress reporting ([`internal/server/pr.go`](../../internal/server/pr.go)), and merge-base diffing ([`internal/git`](../../internal/git/));
 - the frontend, in [`web/src/pr/`](../../web/src/pr/): the review bar, comments and drafts (`store.js`, `PRBar`, `CommentsPanel`, `RowComments`, `PRComposer`), merging (`merge-store.js`, `MergePill`, `MergeControls`, `MergeDialog`), and the Connect dialog (`forge-store.js`, `ForgeConnectDialog`).
 
 For the user-facing behaviour, see [Pull Request Review](../features/github-pr-review.md) and [Getting Started](../features/pr-review-getting-started.md).
@@ -143,7 +143,7 @@ Each provider's `ResolveToken(cfg, target)` checks faah Settings, then the envir
 
 Host scoping matters because a PR URL can name any host. Without it, a crafted link to `evil.example/-/merge_requests/1` would receive the user's gitlab.com token. glab's tokens are already stored per host, so they need no extra scoping. `pr.Checkout` keeps the token and where it came from (`pr.Session.tokenSource`).
 
-### Connecting from the UI (`internal/forge`, `server.go`)
+### Connecting from the UI (`internal/forge`, `internal/server/pr.go`)
 
 `/api/meta` carries `forge`, built by `forgeMeta()`: the provider's `Info`, the host, `hasToken` and `source`, and `TokenSetup(host)`. That is the token page URL, the steps to follow there, the environment variable and CLI alternatives, the `HostKey` setting for multi-host forges, and an optional `Extra` field (Bitbucket's email). In a PR session the forge is the PR's. In a plain workspace it is whichever forge `forge.ForRemote` recognizes from the branch's remote. `ForgeConnectDialog` (`web/src/pr/`) renders it with no forge-specific code of its own.
 
@@ -223,7 +223,7 @@ Users can delegate all drafted PR comments directly to an AI coding agent (Claud
 
 ## 7. Committing and Pushing Back to the PR
 
-A PR checkout is process-scoped (§1) but not read-only: the sidebar git panel ([Git Awareness §9](git-integration.md)) works inside it, with `pr.Session.Pull` and `pr.Session.Push` (`internal/pr/session.go`) replacing the plain-workspace fast-forward/push logic when `s.pr != nil` (`server.go`'s `handleGitPull`/`handleGitPush`).
+A PR checkout is process-scoped (§1) but not read-only: the sidebar git panel ([Git Awareness §9](git-integration.md)) works inside it, with `pr.Session.Pull` and `pr.Session.Push` (`internal/pr/session.go`) replacing the plain-workspace fast-forward/push logic when `s.pr != nil` (`internal/server/git.go`'s `handleGitPull`/`handleGitPush`).
 
 ### Why the Checkout Needs Its Own Push/Pull
 

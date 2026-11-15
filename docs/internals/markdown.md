@@ -28,7 +28,7 @@ While the preview shows, the source viewport renders no rows; switching back mou
 
 ## 2. Opening a Markdown Tab
 
-`handleFile` in [`server.go`](../../server.go) adds `markdown: isMarkdown(rel)` to every `/api/file` response, and the document entry ([`web/src/editor/documents.js`](../../web/src/editor/documents.js)) records it. A new Markdown document opens in the preview when the `markdown.preview.open` setting is on; toggling the preview saves that setting, so the next file opens the same way.
+`handleFile` in [`internal/server/files.go`](../../internal/server/files.go) adds `markdown: isMarkdown(rel)` to every `/api/file` response, and the document entry ([`web/src/editor/documents.js`](../../web/src/editor/documents.js)) records it. A new Markdown document opens in the preview when the `markdown.preview.open` setting is on; toggling the preview saves that setting, so the next file opens the same way.
 
 - `previewKind(document)` in [`view.js`](../../web/src/viewers/view.js) returns `'markdown'`, `'table'` or `''`; `viewMode(document)` returns the view to show (`source` while editing, then image, diff, the chosen preview, or source).
 - [`Viewers.tsx`](../../web/src/viewers/Viewers.tsx) mounts `PreviewViewer` for the preview views. Its resource fetches `/api/markdown`, keyed by the path, the buffer and its revision, so a replaced request is aborted and a stale reply is dropped.
