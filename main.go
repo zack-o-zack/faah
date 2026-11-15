@@ -22,6 +22,7 @@ import (
 	"syscall"
 	"time"
 
+	"faah/internal/forge"
 	"faah/internal/git"
 	lsppkg "faah/internal/lsp"
 	"faah/internal/mcp"
@@ -141,19 +142,19 @@ func main() {
 		return
 	}
 
-	// A full pull or merge request URL (see prURLExamples)
+	// A full pull or merge request URL (see forge.PRURLExamples)
 	// checks out the PR's full source tree instead of resolving a local file/directory.
 	// Only full URLs via "faah <url>" are supported for PR review.
 	target := "."
-	var prProvider GitProvider
-	var prTarget PRTarget
+	var prProvider forge.Provider
+	var prTarget forge.PRTarget
 	isPR := false
 	if flag.NArg() > 0 {
 		arg0 := flag.Arg(0)
 		if arg0 == "pr" {
 			fatal(fmt.Errorf("'faah pr' is no longer supported; open pull requests directly with: faah <url>"))
 		}
-		if provider, pt, ok := DetectPRURL(arg0); ok {
+		if provider, pt, ok := forge.DetectPRURL(arg0); ok {
 			prProvider, prTarget, isPR = provider, pt, true
 		} else {
 			target = arg0

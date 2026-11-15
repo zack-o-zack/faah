@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"faah/internal/forge"
 	"faah/internal/settings"
 
 	"faah/internal/git/gittest"
@@ -32,8 +33,8 @@ func TestWorkbenchItemIDsAreStable(t *testing.T) {
 	if a.ID != b.ID || len(a.ID) != 12 {
 		t.Fatalf("dir ids differ or wrong length: %q %q", a.ID, b.ID)
 	}
-	p1 := wbPRItem(PRTarget{Provider: "github", Owner: "Px0-AI", Repo: "px0", Number: 7, URL: "https://github.com/Px0-AI/px0/pull/7"})
-	p2 := wbPRItem(PRTarget{Provider: "github", Owner: "px0-ai", Repo: "PX0", Number: 7, URL: "https://github.com/px0-ai/px0/pull/7/files"})
+	p1 := wbPRItem(forge.PRTarget{Provider: "github", Owner: "Px0-AI", Repo: "px0", Number: 7, URL: "https://github.com/Px0-AI/px0/pull/7"})
+	p2 := wbPRItem(forge.PRTarget{Provider: "github", Owner: "px0-ai", Repo: "PX0", Number: 7, URL: "https://github.com/px0-ai/px0/pull/7/files"})
 	if p1.ID != p2.ID {
 		t.Fatalf("same PR got different ids: %q %q", p1.ID, p2.ID)
 	}
@@ -44,7 +45,7 @@ func TestWorkbenchItemIDsAreStable(t *testing.T) {
 
 func TestWorkbenchStoreRecordKeepsPinAndTitle(t *testing.T) {
 	st := newTestStore(t)
-	it := wbPRItem(PRTarget{Provider: "github", Owner: "o", Repo: "r", Number: 1, URL: "u"})
+	it := wbPRItem(forge.PRTarget{Provider: "github", Owner: "o", Repo: "r", Number: 1, URL: "u"})
 	it.Title = "Fix things"
 	if err := st.Record(it); err != nil {
 		t.Fatal(err)
@@ -362,7 +363,7 @@ func TestWorkbenchForgetsNewItemThatFails(t *testing.T) {
 	wb := newWorkbench("/", dir, exe, nil)
 	defer wb.Close()
 
-	it := wbPRItem(PRTarget{Provider: "github", Owner: "o", Repo: "r", Number: 9, URL: "https://github.com/o/r/pull/9"})
+	it := wbPRItem(forge.PRTarget{Provider: "github", Owner: "o", Repo: "r", Number: 9, URL: "https://github.com/o/r/pull/9"})
 	wb.store.Record(it)
 	wb.rememberClone(it.Repo, gitRepoWithRemotes(t, map[string]string{"origin": "https://github.com/o/r.git"}))
 	c := wb.start(it, true)

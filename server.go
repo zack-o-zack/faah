@@ -30,6 +30,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"faah/internal/forge"
 	"faah/internal/fuzzy"
 	"faah/internal/git"
 	lsppkg "faah/internal/lsp"
@@ -670,7 +671,7 @@ func (s *Server) SetPR(p *prSession) {
 		if s.session != nil {
 			p.mu.Lock()
 			if len(p.comments) == 0 && len(s.session.Get().Drafts) > 0 {
-				p.comments = append([]prComment(nil), s.session.Get().Drafts...)
+				p.comments = append([]forge.DraftComment(nil), s.session.Get().Drafts...)
 				for _, c := range p.comments {
 					if c.ID > p.nextID {
 						p.nextID = c.ID
@@ -2973,10 +2974,10 @@ type SessionTab struct {
 // the list of open tabs, the currently active tab index, expanded directory tree paths,
 // and any unsaved PR review comment drafts.
 type WorkspaceSession struct {
-	Tabs     []SessionTab `json:"tabs"`
-	Active   int          `json:"active"`
-	OpenDirs []string     `json:"openDirs"`
-	Drafts   []prComment  `json:"drafts,omitempty"`
+	Tabs     []SessionTab         `json:"tabs"`
+	Active   int                  `json:"active"`
+	OpenDirs []string             `json:"openDirs"`
+	Drafts   []forge.DraftComment `json:"drafts,omitempty"`
 }
 
 // sessionDir returns the directory holding session files: XDG_STATE_HOME/faah/sessions
@@ -3011,12 +3012,12 @@ func sessionFilePath(basePath, root string) string {
 // itself (the workbench item ID) rather than the base path or checkout root. Every
 // opening checks the PR out into a new temporary directory, so a root-keyed file
 // would never be found again.
-func prSessionFilePath(pt PRTarget) string {
+func prSessionFilePath(pt forge.PRTarget) string {
 	return filepath.Join(sessionDir(), "pr-"+wbPRItem(pt).ID+".json")
 }
 
 // newPRSessionManager opens the session file for a pull request.
-func newPRSessionManager(pt PRTarget) *sessionManager {
+func newPRSessionManager(pt forge.PRTarget) *sessionManager {
 	sm := &sessionManager{
 		path: prSessionFilePath(pt),
 		data: WorkspaceSession{Tabs: []SessionTab{}, OpenDirs: []string{}},

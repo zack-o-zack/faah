@@ -1,8 +1,8 @@
 # Git Forge PR Review & Provider Architecture
 
 This document describes the design and implementation of faah's pull request review feature:
-- the `GitProvider` abstraction layer and its implementations for GitHub, GitLab, Gitea / Forgejo, and Bitbucket Cloud ([`forge.go`](../../forge.go));
-- connecting a forge token from the UI ([`forge.go`](../../forge.go), [`server.go`](../../server.go));
+- the `forge.Provider` abstraction layer and its implementations for GitHub, GitLab, Gitea / Forgejo, and Bitbucket Cloud ([`internal/forge`](../../internal/forge));
+- connecting a forge token from the UI ([`internal/forge`](../../internal/forge), [`server.go`](../../server.go));
 - the checkout lifecycle, push/pull, merging and progress reporting ([`pr.go`](../../pr.go)), and merge-base diffing ([`internal/git`](../../internal/git/));
 - the frontend, in [`web/src/pr/`](../../web/src/pr/): the review bar, comments and drafts (`store.js`, `PRBar`, `CommentsPanel`, `RowComments`, `PRComposer`), merging (`merge-store.js`, `MergePill`, `MergeControls`, `MergeDialog`), and the Connect dialog (`forge-store.js`, `ForgeConnectDialog`).
 
@@ -20,16 +20,16 @@ Two core faah tenets shape pull request reviews:
 
 ---
 
-## 2. Extensible Forge Architecture (`GitProvider`)
+## 2. Extensible Forge Architecture (`forge.Provider`)
 
-To support multiple git forges (GitHub, GitLab, Gitea/Forgejo and Bitbucket Cloud today) without entangling core review logic, forge interactions are abstracted behind the `GitProvider` interface in [`forge.go`](../../forge.go):
+To support multiple git forges (GitHub, GitLab, Gitea/Forgejo and Bitbucket Cloud today) without entangling core review logic, forge interactions are abstracted behind the `forge.Provider` interface in [`internal/forge`](../../internal/forge):
 
 ```go
-type GitProvider interface {
+type Provider interface {
     Name() string
     MatchURL(rawURL string) bool
     ParseURL(rawURL string) (PRTarget, error)
-    Info() ForgeInfo                                  // label and token setting, for the UI
+    Info() Info                                  // label and token setting, for the UI
     TokenSetup(host string) TokenSetup                // how to create a token on host, for the Connect dialog
     MatchRemote(remoteURL string) bool                // which forge a plain workspace's remote is on
     CloneURL(target PRTarget) string                  // https clone URL of the base repository
@@ -38,14 +38,14 @@ type GitProvider interface {
     ResolveToken(cfg settings, target PRTarget) (token, source string)
     FetchPR(ctx context.Context, target PRTarget, token string) (PRMeta, error)
     CheckPushAccess(ctx context.Context, target PRTarget, token string) bool
-    SubmitReview(ctx context.Context, target PRTarget, token, headSHA string, comments []prComment, event, body string) error
+    SubmitReview(ctx context.Context, target PRTarget, token, headSHA string, comments []DraftComment, event, body string) error
     FetchComments(...) / PostIssueComment(...) / ReplyToReviewComment(...)
     MergeStatus(ctx context.Context, target PRTarget, token string) (PRMergeStatus, error)
     Merge(ctx context.Context, target PRTarget, token string, req PRMergeRequest) (PRMergeResult, error)
 }
 ```
 
-Merging is forge-neutral by construction: `PRMergeStatus.State` is one of the `MergeState*` constants (`clean`, `unstable`, `conflicts`, `behind`, `blocked`, `draft`, `unknown`, `closed`, `merged`), and methods are `MergeMethodMerge`/`Squash`/`Rebase`, named for what lands on the base branch. A provider maps its own vocabulary onto these: GitHub's `mergeable_state` (`githubMergeState`) and `allow_*_merge` repository flags, GitLab's `detailed_merge_status` plus its project merge method and `squash_option` (`gitlabMergeState`, `gitlabMergeMethods`), Bitbucket's `merge_commit`/`squash`/`fast_forward` strategies, and Gitea's `Do` field. `Merge` must wrap `ErrPRHeadMoved` when the PR head is no longer `req.HeadSHA`, and `ErrPRNotMergeable` when the forge refuses the merge. `handlePRMerge` maps both to a 409 with a message the dialog shows as is, without matching on forge-specific text.
+Merging is forge-neutral by construction: `PRMergeStatus.State` is one of the `mergeState*` constants (`clean`, `unstable`, `conflicts`, `behind`, `blocked`, `draft`, `unknown`, `closed`, `merged`), and methods are `MergeMethodMerge`/`Squash`/`Rebase`, named for what lands on the base branch. A provider maps its own vocabulary onto these: GitHub's `mergeable_state` (`githubMergeState`) and `allow_*_merge` repository flags, GitLab's `detailed_merge_status` plus its project merge method and `squash_option` (`gitlabMergeState`, `gitlabMergeMethods`), Bitbucket's `merge_commit`/`squash`/`fast_forward` strategies, and Gitea's `Do` field. `Merge` must wrap `ErrPRHeadMoved` when the PR head is no longer `req.HeadSHA`, and `ErrPRNotMergeable` when the forge refuses the merge. `handlePRMerge` maps both to a 409 with a message the dialog shows as is, without matching on forge-specific text.
 
 ### Git Transport
 
@@ -53,7 +53,7 @@ Nothing outside a provider names a forge host. `newForgeGit` turns the provider 
 
 `PRTarget.Host` carries the forge host, which a self-hosted GitLab needs. `PRTarget.Owner` may be a nested group path (`group/sub`), so `remoteMatchesRepo` compares a remote's whole repository path rather than its last two segments. Only a local-path remote matches by suffix.
 
-### GitLab (`forge.go`)
+### GitLab (`internal/forge`)
 
 - **URLs**: any host with GitLab's `/-/merge_requests/<n>` path. The API root is `https://<host>/api/v4`, and the project is addressed by its URL-encoded full path.
 - **Tokens**: `gitlab.token` and `GITLAB_TOKEN` are scoped to `gitlabTokenHost()`, which is gitlab.com or `GITLAB_HOST`. Any other host only gets `glab config get token --host <host>`. Without this, an arbitrary merge request URL could collect a gitlab.com token. API calls send `Authorization: Bearer`, and git uses Basic auth with `oauth2:<token>`.
@@ -61,9 +61,9 @@ Nothing outside a provider names a forge host. `newForgeGit` turns the provider 
 - **Merging**: `Merge` sends `squash`, the reviewed `sha`, and one message (title and body joined) as `squash_commit_message` or `merge_commit_message`. A 409 maps to `ErrPRHeadMoved`, and 405, 406, and 422 map to `ErrPRNotMergeable`. `MergeStatus.CanMerge` is the merge request's own `user.can_merge`.
 - **Push access**: Developer (30) or higher, on the project or through its group.
 
-### Gitea and Bitbucket Cloud (`forge.go`)
+### Gitea and Bitbucket Cloud (`internal/forge`)
 
-Both use `forge.go`'s `forgeAPI`, which handles one JSON request, decodes a 2xx into the caller's struct, and turns anything else into an error with the forge's own message and the status code. Status codes are what each `Merge` uses to tell `ErrPRHeadMoved` from `ErrPRNotMergeable`. Tests point `giteaAPIBase` and `bitbucketAPIBase` at fake servers.
+Both use `internal/forge`'s `api`, which handles one JSON request, decodes a 2xx into the caller's struct, and turns anything else into an error with the forge's own message and the status code. Status codes are what each `Merge` uses to tell `ErrPRHeadMoved` from `ErrPRNotMergeable`. Tests point `giteaAPIBase` and `bitbucketAPIBase` at fake servers.
 
 - **Gitea**: the API root is `https://<host>/api/v1` and auth is `Authorization: token <t>`. The token is scoped to `giteaTokenHost` (`gitea.host`, then `GITEA_HOST`, then codeberg.org), for the same reason as GitLab's. `SubmitReview` is one call to `/pulls/{n}/reviews`, with `new_position`/`old_position` line numbers. Review comments carry no reply link, so `FetchComments` threads them by path and line, oldest first (`sortComments`), and `ReplyToReviewComment` posts a one-comment `COMMENT` review on that line. Status is `mergeable` plus title-prefix drafts. `Merge` sends `Do` (`merge`, `squash`, `rebase`, or `fast-forward-only` when only that is enabled) with `head_commit_id`. The provider is registered last because its URL pattern is the loosest. GitHub's `/pull/` (singular) never matches it, and `github.com` is excluded explicitly.
 - **Bitbucket**: the API root is `https://api.bitbucket.org/2.0`. `PRHeadRef` is `""`, so checkout takes the clone path. The API returns 12-character hashes, which `headSHA` expands to full ones through the commit endpoint, so stale-head checks compare like with like. Conflicts come from `diffstat` entries whose status contains "conflict". Allowed methods come from the destination branch's `merge_strategies`, mapped through `bitbucketStrategies`. `Merge` checks the head itself, since Bitbucket takes no SHA guard, and treats a 202 (async merge) as accepted. Comment threads follow `parent` links up to the root. An access token uses `Bearer` for the API and `x-token-auth` for git. An API token with an email uses Basic `email:token` for the API and `x-bitbucket-api-token-auth` for git. `CheckPushAccess` uses `/user/permissions/repositories`, which only an API token can call, and fails closed otherwise.
@@ -80,7 +80,7 @@ Both use `forge.go`'s `forgeAPI`, which handles one JSON request, decodes a 2xx 
 ### URL Matching & Routing
 Pull requests are opened exclusively via `faah <url>`. URL routing in `main.go` calls:
 ```go
-provider, target, ok := DetectPRURL(arg0)
+provider, target, ok := forge.DetectPRURL(arg0)
 ```
 - Iterates over `defaultProviders` in order: GitHub, GitLab, Bitbucket, then Gitea last, because its `<host>/<owner>/<repo>/pulls/<n>` pattern is the loosest. Each provider's URL shape is distinct (`/pull/`, `/-/merge_requests/`, `/pull-requests/`, `/pulls/`), and `TestForgeURLRouting` pins every shape to its provider.
 - If a provider matches and successfully parses the URL, faah enters PR review mode.
@@ -97,7 +97,7 @@ provider, target, ok := DetectPRURL(arg0)
 sequenceDiagram
     participant CLI as CLI (main.go)
     participant PR as PR Engine (pr.go)
-    participant Prov as GitProvider (forge.go)
+    participant Prov as forge.Provider (internal/forge)
     participant Git as Host Git CLI
 
     CLI->>PR: checkoutPR(ctx, provider, target, cwd, onProgress)
@@ -143,9 +143,9 @@ Each provider's `ResolveToken(cfg, target)` checks faah Settings, then the envir
 
 Host scoping matters because a PR URL can name any host. Without it, a crafted link to `evil.example/-/merge_requests/1` would receive the user's gitlab.com token. glab's tokens are already stored per host, so they need no extra scoping. `checkoutPR` keeps the token and where it came from (`prSession.tokenSource`).
 
-### Connecting from the UI (`forge.go`, `server.go`)
+### Connecting from the UI (`internal/forge`, `server.go`)
 
-`/api/meta` carries `forge`, built by `forgeMeta()`: the provider's `Info`, the host, `hasToken` and `source`, and `TokenSetup(host)`. That is the token page URL, the steps to follow there, the environment variable and CLI alternatives, the `HostKey` setting for multi-host forges, and an optional `Extra` field (Bitbucket's email). In a PR session the forge is the PR's. In a plain workspace it is whichever forge `ForgeForRemote` recognizes from the branch's remote. `ForgeConnectDialog` (`web/src/pr/`) renders it with no forge-specific code of its own.
+`/api/meta` carries `forge`, built by `forgeMeta()`: the provider's `Info`, the host, `hasToken` and `source`, and `TokenSetup(host)`. That is the token page URL, the steps to follow there, the environment variable and CLI alternatives, the `HostKey` setting for multi-host forges, and an optional `Extra` field (Bitbucket's email). In a PR session the forge is the PR's. In a plain workspace it is whichever forge `forge.ForRemote` recognizes from the branch's remote. `ForgeConnectDialog` (`web/src/pr/`) renders it with no forge-specific code of its own.
 
 `POST /api/forge/connect {token, extra}` (`handleForgeConnect`):
 1. Writes the token setting (plus `Extra.Key`, and `HostKey` = the target host) with `updateSettingsMap`. The exception: a token is already saved for this forge, `HostKey` is set, and `ResolveToken` doesn't return that saved token for this host, meaning it belongs to another instance. Then nothing is written and the token is used for the session only (`saved: false`).
@@ -174,11 +174,11 @@ If no token is found:
 
 ### Adding a forge
 
-A new forge is one file implementing `GitProvider`, plus its settings:
+A new forge is one file implementing `forge.Provider`, plus its settings:
 1. URL matching (`MatchURL`, `ParseURL`) with a pattern that can't match another forge's URLs. Add it to `TestForgeURLRouting`.
 2. Git transport (`CloneURL`, `PRHeadRef`, `GitAuth`), and `MatchRemote` for plain workspaces.
 3. Tokens: `ResolveToken` with host scoping if the forge can be self-hosted, `Info`, and `TokenSetup`. Add its settings to `settingsSchema`, which `TestTokenSetupPerForge` checks.
-4. The API methods, mapping onto `PRMeta`, `PRComment`, the `MergeState*` values and the `MergeMethod*` values, and wrapping `ErrPRHeadMoved` / `ErrPRNotMergeable` in `Merge`.
+4. The API methods, mapping onto `PRMeta`, `PRComment`, the `mergeState*` values and the `MergeMethod*` values, and wrapping `ErrPRHeadMoved` / `ErrPRNotMergeable` in `Merge`.
 5. Registration in `defaultProviders`, before Gitea unless its URL pattern is looser still.
 6. Tests against a fake API server, like `gitlab_test.go` and `forges_test.go`.
 

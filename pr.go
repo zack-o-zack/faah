@@ -17,6 +17,7 @@ import (
 	"sync"
 	"time"
 
+	"faah/internal/forge"
 	"faah/internal/git"
 	"faah/internal/render"
 	"faah/internal/settings"
@@ -36,9 +37,9 @@ import (
 type prSession struct {
 	mu sync.Mutex
 
-	provider        GitProvider
-	target          PRTarget
-	meta            PRMeta
+	provider        forge.Provider
+	target          forge.PRTarget
+	meta            forge.PRMeta
 	token           string
 	tokenSource     string // where token came from: settings, env, gh, glab, session ("" with no token)
 	writeAccess     bool
@@ -58,7 +59,7 @@ type prSession struct {
 
 	scopeDir string // temp dir holding the diff files handed to threads; removed in Close
 
-	comments []prComment
+	comments []forge.DraftComment
 	nextID   int64
 }
 
@@ -123,9 +124,9 @@ type forgeGit struct {
 	Auth     git.Auth // empty without a token
 }
 
-func newForgeGit(provider GitProvider, target PRTarget, token string) forgeGit {
+func newForgeGit(provider forge.Provider, target forge.PRTarget, token string) forgeGit {
 	if provider == nil {
-		provider = &GitHubProvider{}
+		provider = &forge.GitHub{}
 	}
 	return forgeGit{CloneURL: provider.CloneURL(target), HeadRef: provider.PRHeadRef(target), Auth: provider.GitAuth(target, token)}
 }
@@ -169,7 +170,7 @@ func fetchPRBase(worktree, srcRepo, srcRemote string, fg forgeGit, baseRef strin
 // the same repo (the common case -- opened inside the repo), or a shallow
 // single-branch clone of the PR head otherwise (a bare URL opened from an
 // unrelated directory).
-func checkoutPR(ctx context.Context, provider GitProvider, target PRTarget, cwd string, onProgress func(string)) (*prSession, error) {
+func checkoutPR(ctx context.Context, provider forge.Provider, target forge.PRTarget, cwd string, onProgress func(string)) (*prSession, error) {
 	cfg := settings.Read()
 	token, tokenSource := provider.ResolveToken(cfg, target)
 
@@ -301,7 +302,7 @@ func remoteMatchesRepo(remoteURL, owner, repo string) bool {
 		}
 		local = parsed.Scheme == "file"
 		u = parsed.Path
-	case remoteHost(u) != "":
+	case forge.RemoteHost(u) != "":
 		_, u, _ = strings.Cut(u, ":")
 	default:
 		local = true
@@ -641,10 +642,10 @@ func (s *Server) handlePRExistingComments(w http.ResponseWriter, r *http.Request
 		return
 	}
 	if issue == nil {
-		issue = []PRComment{}
+		issue = []forge.PRComment{}
 	}
 	if review == nil {
-		review = []PRComment{}
+		review = []forge.PRComment{}
 	}
 	renderCommentBodies(issue)
 	renderCommentBodies(review)
@@ -654,7 +655,7 @@ func (s *Server) handlePRExistingComments(w http.ResponseWriter, r *http.Request
 // renderCommentBodies renders each body the way the forge shows it. Bots post
 // raw HTML (<details>, <picture>), so the result is unsafe until the page
 // sanitizes it, the same as a Markdown preview.
-func renderCommentBodies(cs []PRComment) {
+func renderCommentBodies(cs []forge.PRComment) {
 	for i := range cs {
 		if h, err := render.RenderMarkdown([]byte(cs[i].Body)); err == nil {
 			cs[i].BodyHTML = h
@@ -692,7 +693,7 @@ func (s *Server) handlePRIssueCommentPost(w http.ResponseWriter, r *http.Request
 		fail(w, http.StatusBadGateway, err.Error())
 		return
 	}
-	cs := []PRComment{c}
+	cs := []forge.PRComment{c}
 	renderCommentBodies(cs)
 	writeJSON(w, cs[0])
 }
@@ -728,7 +729,7 @@ func (s *Server) handlePRReviewCommentReply(w http.ResponseWriter, r *http.Reque
 		fail(w, http.StatusBadGateway, err.Error())
 		return
 	}
-	cs := []PRComment{c}
+	cs := []forge.PRComment{c}
 	renderCommentBodies(cs)
 	writeJSON(w, cs[0])
 }
@@ -744,7 +745,7 @@ func (s *Server) handlePRComments(w http.ResponseWriter, r *http.Request) {
 		defer p.mu.Unlock()
 		comments := p.comments
 		if comments == nil {
-			comments = []prComment{}
+			comments = []forge.DraftComment{}
 		}
 		writeJSON(w, map[string]any{"comments": comments})
 	case http.MethodPost:
@@ -768,7 +769,7 @@ func (s *Server) handlePRComments(w http.ResponseWriter, r *http.Request) {
 		}
 		p.mu.Lock()
 		p.nextID++
-		c := prComment{ID: p.nextID, Path: body.Path, Line: body.Line, Side: side, Body: strings.TrimSpace(body.Body)}
+		c := forge.DraftComment{ID: p.nextID, Path: body.Path, Line: body.Line, Side: side, Body: strings.TrimSpace(body.Body)}
 		p.comments = append(p.comments, c)
 		if s.session != nil {
 			s.session.Update(func(ws *WorkspaceSession) { ws.Drafts = p.comments })
@@ -833,7 +834,7 @@ func (s *Server) handlePRSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	p.mu.Lock()
-	comments := append([]prComment(nil), p.comments...)
+	comments := append([]forge.DraftComment(nil), p.comments...)
 	p.mu.Unlock()
 
 	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
@@ -861,14 +862,14 @@ type prMergeMessage struct {
 // prefills for each method that writes a commit: the conventions GitHub,
 // GitLab and Gitea all default to. Rebase writes no commit of its own.
 // commits is newest first, as git log lists them.
-func prMergeDefaults(meta PRMeta, commits []git.UnpushedCommit) map[string]prMergeMessage {
+func prMergeDefaults(meta forge.PRMeta, commits []git.UnpushedCommit) map[string]prMergeMessage {
 	var body strings.Builder
 	for i := len(commits) - 1; i >= 0; i-- {
 		fmt.Fprintf(&body, "* %s\n", commits[i].Subject)
 	}
 	return map[string]prMergeMessage{
-		MergeMethodMerge:  {Title: fmt.Sprintf("Merge pull request #%d from %s", meta.Number, meta.HeadRef), Message: meta.Title},
-		MergeMethodSquash: {Title: fmt.Sprintf("%s (#%d)", meta.Title, meta.Number), Message: strings.TrimSpace(body.String())},
+		forge.MergeMethodMerge:  {Title: fmt.Sprintf("Merge pull request #%d from %s", meta.Number, meta.HeadRef), Message: meta.Title},
+		forge.MergeMethodSquash: {Title: fmt.Sprintf("%s (#%d)", meta.Title, meta.Number), Message: strings.TrimSpace(body.String())},
 	}
 }
 
@@ -885,7 +886,7 @@ func (s *Server) prCommits() []git.UnpushedCommit {
 }
 
 func validMergeMethod(m string) bool {
-	return m == MergeMethodMerge || m == MergeMethodSquash || m == MergeMethodRebase
+	return m == forge.MergeMethodMerge || m == forge.MergeMethodSquash || m == forge.MergeMethodRebase
 }
 
 // handlePRMergeStatus reports whether the PR can merge and how, plus what the
@@ -972,7 +973,7 @@ func (s *Server) handlePRMerge(w http.ResponseWriter, r *http.Request) {
 	p.mu.Unlock()
 	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 	defer cancel()
-	res, err := p.provider.Merge(ctx, p.target, p.token, PRMergeRequest{
+	res, err := p.provider.Merge(ctx, p.target, p.token, forge.PRMergeRequest{
 		Method:  body.Method,
 		Title:   strings.TrimSpace(body.Title),
 		Message: strings.TrimSpace(body.Message),
@@ -980,9 +981,9 @@ func (s *Server) handlePRMerge(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		switch {
-		case errors.Is(err, ErrPRHeadMoved):
+		case errors.Is(err, forge.ErrPRHeadMoved):
 			fail(w, http.StatusConflict, "the PR has new commits since this checkout; pull and review them, then merge")
-		case errors.Is(err, ErrPRNotMergeable):
+		case errors.Is(err, forge.ErrPRNotMergeable):
 			fail(w, http.StatusConflict, err.Error())
 		default:
 			fail(w, http.StatusBadGateway, err.Error())
@@ -1023,7 +1024,7 @@ func (s *Server) handlePRMergeMessage(w http.ResponseWriter, r *http.Request) {
 		Title       string `json:"title"`
 		Message     string `json:"message"`
 	}
-	if err := json.NewDecoder(io.LimitReader(r.Body, 1<<16)).Decode(&body); err != nil || (body.Method != MergeMethodSquash && body.Method != MergeMethodMerge) {
+	if err := json.NewDecoder(io.LimitReader(r.Body, 1<<16)).Decode(&body); err != nil || (body.Method != forge.MergeMethodSquash && body.Method != forge.MergeMethodMerge) {
 		fail(w, http.StatusBadRequest, "method must be squash or merge")
 		return
 	}
@@ -1075,8 +1076,8 @@ func (s *Server) handleLaunchPR(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	targetURL := strings.TrimSpace(body.Target)
-	if _, _, ok := DetectPRURL(targetURL); !ok {
-		fail(w, http.StatusBadRequest, "target must be a valid pull or merge request URL (e.g. "+prURLExamples+")")
+	if _, _, ok := forge.DetectPRURL(targetURL); !ok {
+		fail(w, http.StatusBadRequest, "target must be a valid pull or merge request URL (e.g. "+forge.PRURLExamples+")")
 		return
 	}
 	exe, err := os.Executable()
@@ -1099,7 +1100,7 @@ func (s *Server) handleLaunchPR(w http.ResponseWriter, r *http.Request) {
 // forgeTarget is the forge this workspace talks to: the PR's in a review
 // session, otherwise the one the branch's remote points at. A plain
 // workspace's target has only Provider and Host.
-func (s *Server) forgeTarget() (GitProvider, PRTarget, bool) {
+func (s *Server) forgeTarget() (forge.Provider, forge.PRTarget, bool) {
 	if s.pr != nil {
 		s.pr.mu.Lock()
 		defer s.pr.mu.Unlock()
@@ -1107,14 +1108,14 @@ func (s *Server) forgeTarget() (GitProvider, PRTarget, bool) {
 	}
 	root := s.ix.Root()
 	if !git.Available(root) {
-		return nil, PRTarget{}, false
+		return nil, forge.PRTarget{}, false
 	}
 	remote := git.RemoteURL(root, git.CurrentBranch(root))
-	p := ForgeForRemote(remote)
+	p := forge.ForRemote(remote)
 	if p == nil {
-		return nil, PRTarget{}, false
+		return nil, forge.PRTarget{}, false
 	}
-	return p, PRTarget{Provider: p.Name(), Host: remoteHost(remote)}, true
+	return p, forge.PRTarget{Provider: p.Name(), Host: forge.RemoteHost(remote)}, true
 }
 
 // forgeMeta names the forge, whether faah has a token for it (and from

@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"faah/internal/forge"
 	"faah/internal/git/gittest"
 	lsppkg "faah/internal/lsp"
 	"faah/internal/metrics"
@@ -1457,7 +1458,7 @@ func postDraft(t *testing.T, s *Server, prefix, body string) {
 // temporary directory each time; drafts must still come back.
 func TestPRDraftsSurviveNewCheckoutRoot(t *testing.T) {
 	t.Setenv("XDG_STATE_HOME", t.TempDir())
-	pt := PRTarget{Provider: "github", Owner: "acme", Repo: "widget", Number: 7}
+	pt := forge.PRTarget{Provider: "github", Owner: "acme", Repo: "widget", Number: 7}
 
 	s := NewServer(workspace.NewIndex(t.TempDir()), nil)
 	s.SetPR(&prSession{diffBase: "HEAD", target: pt})
@@ -1470,7 +1471,7 @@ func TestPRDraftsSurviveNewCheckoutRoot(t *testing.T) {
 		t.Fatalf("expected the draft from the earlier run, got %+v", pr2.comments)
 	}
 
-	other := &prSession{diffBase: "HEAD", target: PRTarget{Provider: "github", Owner: "acme", Repo: "widget", Number: 8}}
+	other := &prSession{diffBase: "HEAD", target: forge.PRTarget{Provider: "github", Owner: "acme", Repo: "widget", Number: 8}}
 	NewServer(workspace.NewIndex(t.TempDir()), nil).SetPR(other)
 	if len(other.comments) != 0 {
 		t.Fatalf("another PR must not see these drafts, got %+v", other.comments)
@@ -1482,10 +1483,10 @@ func TestPRDraftsMigrateFromBasePathFile(t *testing.T) {
 	t.Setenv("XDG_STATE_HOME", t.TempDir())
 	root := t.TempDir()
 	newSessionManager("/w/abc/", root).Update(func(ws *WorkspaceSession) {
-		ws.Drafts = []prComment{{ID: 3, Path: "a.go", Line: 1, Side: "RIGHT", Body: "old"}}
+		ws.Drafts = []forge.DraftComment{{ID: 3, Path: "a.go", Line: 1, Side: "RIGHT", Body: "old"}}
 	})
 
-	pt := PRTarget{Provider: "github", Owner: "acme", Repo: "widget", Number: 7}
+	pt := forge.PRTarget{Provider: "github", Owner: "acme", Repo: "widget", Number: 7}
 	pr := &prSession{diffBase: "HEAD", target: pt}
 	NewServer(workspace.NewIndex(root), nil, "/w/abc/").SetPR(pr)
 	if len(pr.comments) != 1 || pr.comments[0].Body != "old" || pr.nextID != 3 {
