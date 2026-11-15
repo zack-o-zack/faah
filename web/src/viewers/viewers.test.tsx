@@ -22,6 +22,7 @@ import { ImageViewer } from './ImageViewer.tsx';
 import { ExplainOrb } from './ExplainOrb.tsx';
 import { MermaidDiagram } from './MermaidDiagram.tsx';
 import { renderDiagram } from './mermaid-runtime.ts';
+import { DiffSection } from './DiffSection.tsx';
 import { DiffRows } from './DiffRows.tsx';
 import { diffSelection } from './diff-selection.ts';
 import { api } from '../lib/api.ts';
@@ -409,4 +410,29 @@ test('sanitization depends on content and path, not theme or scroll targets', as
   expect(sanitizeHTML).toHaveBeenCalledTimes(1);
   setData({ path: 'readme.md', html: '<p>Changed content</p>' });
   expect(sanitizeHTML).toHaveBeenCalledTimes(2);
+});
+
+test('an open editor diff follows shared layout changes', async () => {
+  const editor = editorStore();
+  const document = testDocument({ diffMode: 'split' });
+  render(() => (
+    <EditorProvider value={editor}>
+      <DiffSection
+        document={document}
+        kind="you"
+        title="Changes"
+        subtitle=""
+        diagnostics={new Map()}
+        expanded={new Map()}
+        top={0}
+        height={500}
+        jump={() => {}}
+        actions={{ apply: vi.fn(async () => {}), expand: vi.fn(async () => {}) }}
+        hunks={[{ oldStart: 1, newStart: 1, rows: [{ type: 'add', newLine: 1, text: 'new' }] }]}
+      />
+    </EditorProvider>
+  ));
+  expect(window.document.querySelector('.diff-split')).toBeTruthy();
+  await editor.settings.actions.setSetting('diffEditor.renderSideBySide', false);
+  expect(window.document.querySelector('.diff-unified')).toBeTruthy();
 });

@@ -2,6 +2,7 @@ import type { DiffSectionProps } from './diff-view.ts';
 import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
+import { diffLayout } from '../settings/logic.ts';
 import { DiffRows } from './DiffRows.tsx';
 
 export function DiffSection(props: DiffSectionProps): JSX.Element {
@@ -95,7 +96,10 @@ export function DiffSection(props: DiffSectionProps): JSX.Element {
                       </For>
                     </Show>
                   </div>
-                  <Show when={props.document.diffMode} keyed>
+                  <Show
+                    when={props.document.diffMode && diffLayout(editor.settings.preferences())}
+                    keyed
+                  >
                     {(mode) => (
                       <DiffRows
                         hunk={hunk()}

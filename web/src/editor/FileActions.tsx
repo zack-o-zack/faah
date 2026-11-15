@@ -85,25 +85,25 @@ export function FileActions(): JSX.Element {
             data-variant="ghost"
             data-size="icon-xs"
             title={
-              document()?.diffMode === 'split'
+              editor.settings.preferences().splitDiff
                 ? 'Show changes in one column'
                 : 'Show changes side by side'
             }
             aria-label={
-              document()?.diffMode === 'split'
+              editor.settings.preferences().splitDiff
                 ? 'Show changes in one column'
                 : 'Show changes side by side'
             }
             onClick={() =>
               actions.setDiffMode(
                 document(),
-                document()?.diffMode === 'split' ? 'unified' : 'split',
+                editor.settings.preferences().splitDiff ? 'unified' : 'split',
               )
             }
           >
             <span
               class={
-                document()?.diffMode === 'split'
+                editor.settings.preferences().splitDiff
                   ? 'icon-[lucide--rectangle-vertical] size-3.5'
                   : 'icon-[lucide--columns-2] size-3.5'
               }
