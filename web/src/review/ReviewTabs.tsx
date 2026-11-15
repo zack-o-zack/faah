@@ -7,7 +7,7 @@ import type { JSX } from 'solid-js';
 import { For, Index, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { FILE_GROUPS, groupCounts, pipelineProgress } from './logic.ts';
-import { Popover } from '../lib/Popover.tsx';
+import { DiffOptions } from '../viewers/DiffOptions.tsx';
 import { StageDot } from './StageDot.tsx';
 export function ReviewTabs(): JSX.Element {
   const editor = useEditor();
@@ -110,73 +110,7 @@ function WalkthroughToolbar(): JSX.Element {
           )}
         </For>
       </div>
-      <Popover
-        triggerId="btn-walkthrough-options"
-        triggerTitle="Diff options"
-        accessibleLabel="Diff options"
-        variant="ghost"
-        size="icon-xs"
-        autofocus
-        label={<span class="icon-[lucide--settings] size-3.5 shrink-0" aria-hidden="true" />}
-      >
-        <div class="flex flex-col gap-3 p-3 text-xs">
-          <h3 class="font-medium">Diff options</h3>
-          <div class="flex flex-col gap-1.5">
-            <span>Layout</span>
-            <div class="button-group" role="group" aria-label="Layout">
-              <For
-                each={[
-                  { label: 'Side by side', split: true },
-                  { label: 'Unified', split: false },
-                ]}
-              >
-                {(option) => (
-                  <button
-                    type="button"
-                    class="btn"
-                    data-size="sm"
-                    aria-pressed={editor.store.settings.preferences().splitDiff === option.split}
-                    data-variant={
-                      editor.store.settings.preferences().splitDiff === option.split
-                        ? 'secondary'
-                        : 'outline'
-                    }
-                    onClick={() =>
-                      void editor.store.settings.actions.setSetting(
-                        'diffEditor.renderSideBySide',
-                        option.split,
-                      )
-                    }
-                  >
-                    {option.label}
-                  </button>
-                )}
-              </For>
-            </div>
-          </div>
-          <div class="field" data-orientation="horizontal">
-            <section>
-              <label for="walkthrough-ignore-whitespace">Ignore whitespace</label>
-              <p>Hides changes in spaces and blank lines</p>
-            </section>
-            <input
-              id="walkthrough-ignore-whitespace"
-              type="checkbox"
-              role="switch"
-              class="input"
-              aria-label="Ignore whitespace"
-              checked={editor.store.settings.value('diffEditor.ignoreWhitespace') === true}
-              aria-checked={editor.store.settings.value('diffEditor.ignoreWhitespace') === true}
-              onChange={(event) =>
-                void editor.store.settings.actions.setSetting(
-                  'diffEditor.ignoreWhitespace',
-                  event.currentTarget.checked,
-                )
-              }
-            />
-          </div>
-        </div>
-      </Popover>
+      <DiffOptions id="btn-walkthrough-options" />
       <button
         id="btn-refresh-walkthrough"
         title="Refresh walkthrough and diff"

@@ -141,7 +141,7 @@ export interface CoreActions {
   reloadOpenTabs: (options?: { onlyIfChanged: boolean }) => Promise<void>;
   reconcileTreeSnapshot: () => Promise<void>;
   closeTabs: (indices: number[]) => void;
-  setDiffMode: (doc: DocTab | null, mode: string) => void;
+  setDiffMode: (doc: DocTab | null, enabled: boolean) => void;
   stepDiffFile: (doc: DocTab, file: { path: string }) => Promise<void>;
   acceptLspReply: (reply: LspBrief) => void;
 }

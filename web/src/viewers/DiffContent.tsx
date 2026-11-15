@@ -37,7 +37,6 @@ export function DiffContent(props: DiffContentProps): JSX.Element {
     !props.document.diffRef &&
     (props.data.prHunks !== undefined || props.data.prDiff !== undefined);
   function jump(line: number) {
-    editor.actions.setDiffMode(props.document, 'source');
     editor.actions.setView(props.document, 'source');
     editor.actions.patch({ cur: line });
     editor.actions.centerLine(line);

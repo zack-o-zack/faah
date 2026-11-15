@@ -29,16 +29,13 @@ function buildViewerActions(store: ViewerStore) {
     if (!document || document.isEditing) return;
     patch(document, { view, diffMode: null, diffDismissed: true });
   }
-  function setDiffMode(document: DocTab | null, mode: string): void {
-    if (!document || (mode !== 'source' && !canDiff(document, store.state.workspace.meta))) return;
+  function setDiffMode(document: DocTab | null, enabled: boolean): void {
+    if (!document || (enabled && !canDiff(document, store.state.workspace.meta))) return;
     patch(document, {
-      diffMode: mode === 'source' ? null : mode,
-      diffDismissed: mode === 'source',
-      openedInDiffView: mode !== 'source',
+      diffMode: enabled ? diffLayout(store.settings.preferences()) : null,
+      diffDismissed: !enabled,
+      openedInDiffView: enabled,
     });
-    // The last layout chosen is the default for the next diff.
-    if (mode !== 'source' && mode !== diffLayout(store.settings.preferences()))
-      void store.settings.actions.setSetting('diffEditor.renderSideBySide', mode === 'split');
   }
   function updateImage(document: DocTab, update: Partial<ImageState>): void {
     patch(document, { image: { ...document.image, ...update } });

@@ -9,7 +9,7 @@ interface DocumentGitHost extends Omit<EditorHost, 'actions'> {
     reloadOpenTabs: (options: { onlyIfChanged: boolean }) => Promise<void>;
     reconcileTreeSnapshot: () => Promise<void>;
     closeTabs: (indices: number[]) => void;
-    setDiffMode: (doc: DocTab, mode: string) => void;
+    setDiffMode: (doc: DocTab, enabled: boolean) => void;
     stepDiffFile: (doc: DocTab, file: { path: string }) => Promise<void>;
   };
 }
@@ -119,10 +119,7 @@ function buildDocumentGitActions(editor: DocumentGitHost, options: { request?: R
   function toggleActiveDiff() {
     const document = editor.active();
     if (!document || !canDiff(document, app.state.workspace.meta)) return;
-    editor.actions.setDiffMode(
-      document,
-      document.diffMode ? 'source' : diffLayout(app.settings.preferences()),
-    );
+    editor.actions.setDiffMode(document, !document.diffMode);
   }
 
   async function stepChangedFile(direction: number): Promise<void> {
