@@ -24,7 +24,7 @@ export function Unpushed(): JSX.Element {
         <SplitHandle
           label="Unpushed panel height"
           vertical
-          class="unpushed-resizer absolute -top-1 inset-x-0 z-10 h-2 cursor-row-resize hover:bg-primary [&.drag]:bg-primary"
+          class="unpushed-resizer absolute -top-px inset-x-0 z-10"
           value={-(git.state.unpushedHeight || panel?.offsetHeight || 82)}
           min={-600}
           max={-60}

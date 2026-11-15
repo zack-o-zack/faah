@@ -7,7 +7,8 @@ import { record } from '../lib/decode.ts';
 import { createEditorStore } from '../editor/store.ts';
 import type { Request } from '../lib/api.ts';
 import { fireEvent, render, screen, waitFor } from '@solidjs/testing-library';
-import { expect, test, vi } from 'vitest';
+import { afterEach, expect, test, vi } from 'vitest';
+afterEach(() => vi.restoreAllMocks());
 import { EditorProvider } from '../editor/context.tsx';
 import { createPREditor, routes } from './test-editor.ts';
 import { PRBar } from './PRBar.tsx';
@@ -150,19 +151,162 @@ test('a composer opens under its diff row with focus and closes on Escape', asyn
   expect(screen.queryByRole('textbox', { name: 'Review comment' })).toBe(null);
 });
 
-test('Overview keeps the existing PR comments panel rendered', () => {
+function mountFooter() {
+  let editor: ReturnType<typeof createEditorStore> | undefined;
   render(() => {
     const app = createAppStore();
     app.actions.setWorkspace({ git: true, pr: prMeta() });
-    const editor = createEditorStore(app, { review: { request: async () => ({}) } });
+    const feature = { request: routes(replies) };
+    editor = createEditorStore(app, { review: feature, pr: feature, merge: feature });
     editor.actions.setReviewMode('review');
     return (
       <EditorProvider value={editor}>
-        <PRPanels />
+        <main id="main">
+          <header id="test-topbar" />
+          <div id="review-view">
+            <div id="review-sub-bar" />
+          </div>
+          <PRPanels />
+          <footer id="status" />
+        </main>
       </EditorProvider>
     );
   });
-  expect(document.getElementById('pr-comments-panel')).not.toBeNull();
+  return required(editor);
+}
+
+test('the footer starts with its resize handle above the PR bar and comments', () => {
+  mountFooter();
+  const footer = required(document.getElementById('pr-footer'));
+  const handle = screen.getByRole('separator', { name: 'Comments panel height' });
+  expect(Array.from(footer.children)).toEqual([
+    handle,
+    document.getElementById('pr-bar'),
+    document.getElementById('pr-comments-panel'),
+  ]);
+  expect(footer.classList.contains('border-t')).toBe(true);
+  expect(required(document.getElementById('pr-bar')).classList.contains('border-t')).toBe(false);
+});
+
+test('dragging the top edge resizes expanded comments within bounds without a collapsed jump', () => {
+  const layout = mockRenderedPanel();
+  const editor = mountFooter();
+  const handle = screen.getByRole('separator', { name: 'Comments panel height' });
+  const panel = required(document.getElementById('pr-comments-panel'));
+  expect(editor.pr.state.panel.collapsed).toBe(true);
+  expect(handle.getAttribute('aria-disabled')).toBe('true');
+  expect(handle.style.cursor).toBe('default');
+  fireEvent.pointerDown(handle, { button: 0, clientY: 600 });
+  fireEvent.pointerMove(document, { clientY: 599 });
+  expect(editor.pr.state.panel.collapsed).toBe(true);
+  expect(handle.hasAttribute('data-dragging')).toBe(false);
+  fireEvent.click(screen.getByRole('button', { name: 'Expand/collapse comments panel' }));
+  fireEvent.pointerDown(handle, { button: 0, clientY: 600 });
+  expect(handle.hasAttribute('data-dragging')).toBe(true);
+  fireEvent.pointerMove(document, { clientY: 599 });
+  expect(panel.style.height).toBe('289px');
+  fireEvent.pointerMove(document, { clientY: 560 });
+  expect(editor.pr.state.panel.collapsed).toBe(false);
+  expect(panel.style.height).toBe('328px');
+  fireEvent.pointerMove(document, { clientY: -1000 });
+  expect(panel.getBoundingClientRect().height).toBe(615);
+  fireEvent.pointerMove(document, { clientY: 2000 });
+  expect(panel.getBoundingClientRect().height).toBe(208);
+  fireEvent.pointerUp(document);
+  expect(handle.hasAttribute('data-dragging')).toBe(false);
+  fireEvent.pointerMove(document, { clientY: 1000 });
+  expect(panel.getBoundingClientRect().height).toBe(208);
+  fireEvent.pointerDown(handle, { button: 0, clientY: 1000 });
+  fireEvent.pointerCancel(document);
+  expect(handle.hasAttribute('data-dragging')).toBe(false);
+  layout.rect.mockRestore();
+});
+
+test('the footer resize handle keeps reverse arrow and Shift resizing after expansion', () => {
+  mockRenderedPanel();
+  const editor = mountFooter();
+  const handle = screen.getByRole('separator', { name: 'Comments panel height' });
+  expect(handle.getAttribute('aria-orientation')).toBe('horizontal');
+  expect(handle.getAttribute('tabindex')).toBe('-1');
+  fireEvent.keyDown(handle, { key: 'ArrowUp' });
+  expect(editor.pr.state.panel.collapsed).toBe(true);
+  fireEvent.click(screen.getByRole('button', { name: 'Expand/collapse comments panel' }));
+  expect(handle.getAttribute('tabindex')).toBe('0');
+  fireEvent.keyDown(handle, { key: 'ArrowUp' });
+  expect(editor.pr.state.panel.collapsed).toBe(false);
+  expect(handle.getAttribute('aria-valuenow')).toBe('298');
+  fireEvent.keyDown(handle, { key: 'ArrowDown', shiftKey: true });
+  expect(required(document.getElementById('pr-comments-panel')).style.height).toBe('258px');
+});
+
+function mockRenderedPanel() {
+  let cap = 615;
+  const rect = vi
+    .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+    .mockImplementation(function (this: HTMLElement) {
+      const height =
+        this.id === 'pr-comments-panel'
+          ? Math.min(cap, Math.max(208, Number.parseFloat(this.style.height)))
+          : 0;
+      return new DOMRect(0, 0, 1000, height);
+    });
+  return {
+    rect,
+    resize: (height: number) => {
+      cap = height;
+      fireEvent.resize(window);
+    },
+  };
+}
+
+test('CSS-capped sizing starts from the rendered panel, reverses immediately and saves the rendered height', () => {
+  const layout = mockRenderedPanel();
+  const editor = mountFooter();
+  const handle = screen.getByRole('separator', { name: 'Comments panel height' });
+  const panel = required(document.getElementById('pr-comments-panel'));
+  editor.actions.setPRPanelHeight(2000);
+  layout.rect.mockClear();
+  layout.resize(215);
+  // CSS handles window changes without any JavaScript measurement or resize observer.
+  expect(layout.rect).not.toHaveBeenCalled();
+  fireEvent.pointerDown(handle, { button: 0, clientY: 600 });
+  expect(layout.rect).toHaveBeenCalledTimes(1);
+  fireEvent.pointerMove(document, { clientY: 599 });
+  expect(panel.getBoundingClientRect().height).toBe(215);
+  // Reverse one pixel after pushing past the cap. There is no accumulated overshoot.
+  fireEvent.pointerMove(document, { clientY: 600 });
+  expect(editor.pr.state.panel.height).toBe(214);
+  fireEvent.pointerMove(document, { clientY: -2000 });
+  fireEvent.pointerUp(document);
+  expect(editor.pr.state.panel.height).toBe(215);
+  expect(handle.hasAttribute('data-dragging')).toBe(false);
+  layout.resize(615);
+  fireEvent.keyDown(handle, { key: 'ArrowUp' });
+  expect(editor.pr.state.panel.height).toBe(225);
+  fireEvent.keyDown(handle, { key: 'ArrowDown', shiftKey: true });
+  expect(editor.pr.state.panel.height).toBe(208);
+});
+
+test('comments keep the scrolling list above a pinned composer and collapse without a body', async () => {
+  const editor = mountFooter();
+  editor.actions.initializePR();
+  fireEvent.click(screen.getByRole('button', { name: 'Expand/collapse comments panel' }));
+  await screen.findByText('Looks good');
+  const panel = required(document.getElementById('pr-comments-panel'));
+  const list = required(document.getElementById('pr-comments-list'));
+  const composer = required(panel.querySelector('[data-ui="pr-comments-compose"]'));
+  expect(panel.classList.contains('overflow-hidden')).toBe(true);
+  expect(panel.classList.contains('min-h-min')).toBe(true);
+  expect(panel.classList.contains('shrink')).toBe(true);
+  expect(list.classList.contains('min-h-16')).toBe(true);
+  expect(list.classList.contains('[contain:size]')).toBe(true);
+  expect(list.classList.contains('overflow-y-auto')).toBe(true);
+  expect(list.nextElementSibling).toBe(composer);
+  expect(composer.classList.contains('flex-none')).toBe(true);
+  fireEvent.click(screen.getByRole('button', { name: 'Expand/collapse comments panel' }));
+  expect(document.getElementById('pr-comments-list')).toBeNull();
+  expect(screen.queryByRole('textbox', { name: 'Pull request comment' })).toBeNull();
+  expect(panel.style.height).toBe('auto');
 });
 
 test('review selection resets on open, honors gate reasons, and disables the CTA while sending', async () => {

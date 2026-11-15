@@ -83,6 +83,15 @@
   }
 
 
+  /* A shared 4px split bar with a transparent 8px grab area. Positioning utilities
+     on docked handles override relative without changing their hit area. */
+  .split-handle {
+    @apply relative cursor-col-resize before:absolute before:inset-y-0 before:-inset-x-0.5;
+  }
+  .split-handle[aria-orientation='horizontal'] {
+    @apply cursor-row-resize before:inset-x-0 before:-inset-y-0.5;
+  }
+
   ::selection { background: var(--sel); }
 
   /* An empty state that is only a sentence flows as text, so inline keys and code stay in the line. */

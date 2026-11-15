@@ -478,8 +478,7 @@ function buildPRStore(editor: PRHost, options: PROptions = {}) {
       },
       togglePRPanel: () => set('panel', 'collapsed', (collapsed) => !collapsed),
       setPRPanelHeight(height: number): void {
-        const max = Math.round(window.innerHeight * 0.8);
-        set('panel', { collapsed: false, height: Math.max(80, Math.min(max, height)) });
+        set('panel', { collapsed: false, height: Math.max(80, height) });
       },
     },
   };
