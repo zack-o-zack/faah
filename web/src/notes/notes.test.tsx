@@ -169,3 +169,18 @@ test('symbol refresh targets the current symbol and includes its UTF-16 columns'
     ),
   ).toEqual({ path: 'a.go', l1: 2, l2: 2, c1: 12, c2: 15, text: 'run' });
 });
+
+test('leaving one note does not clear another note hovered during the card grace period', async () => {
+  const fixture = setup();
+  const editor = fixture.editor;
+  await editor.actions.openFile('a.go');
+  const button = await screen.findByRole('button', { name: 'Explains the call' });
+  const ghost = required(button.closest('[data-note]'));
+  await fireEvent.mouseEnter(ghost);
+  await fireEvent.mouseLeave(ghost);
+  editor.notes.hoverLine(3);
+  await new Promise((resolve) => setTimeout(resolve, 180));
+  expect(editor.notes.hovered()?.index).toBe(1);
+  fixture.view.unmount();
+  vi.unstubAllGlobals();
+});

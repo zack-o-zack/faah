@@ -42,7 +42,8 @@ export function MarginNotes(props: { first: number; last: number }): JSX.Element
           const leave = () => {
             timer = setTimeout(() => {
               setOpen(false);
-              editor.notes.setHovered(null);
+              const current = editor.notes.hovered();
+              if (current && noteKey(current) === noteKey(note)) editor.notes.setHovered(null);
             }, 140);
           };
           const start = () => editor.offsets()[note.l1 - 1] || 0;

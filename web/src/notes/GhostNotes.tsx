@@ -4,7 +4,7 @@ import { useEditor } from '../editor/context.tsx';
 import { Popover } from '../lib/Popover.tsx';
 import { NoteCard } from './NoteCard.tsx';
 import { indentCols } from './layout.ts';
-import type { NoteView } from './store.ts';
+import { noteKey, type NoteView } from './store.ts';
 function Ghost(props: { note: NoteView; indent: number }): JSX.Element {
   const editor = useEditor();
   const [open, setOpen] = createSignal(false);
@@ -18,7 +18,8 @@ function Ghost(props: { note: NoteView; indent: number }): JSX.Element {
   const leave = () => {
     timer = setTimeout(() => {
       setOpen(false);
-      editor.notes.setHovered(null);
+      const current = editor.notes.hovered();
+      if (current && noteKey(current) === noteKey(props.note)) editor.notes.setHovered(null);
     }, 140);
   };
   return (
