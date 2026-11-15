@@ -90,6 +90,7 @@ function FileCard(props: { file: WalkthroughFile }): JSX.Element {
             }
           >
             <span class="badge" data-variant="secondary">
+              <span class="icon-[lucide--move-right] size-3 shrink-0" aria-hidden="true" />
               Moved
             </span>
           </Show>
