@@ -32,6 +32,7 @@ export function BasePicker(props: { label: JSX.Element }): JSX.Element {
           fallback={
             <div class="empty" role="status">
               <header>
+                <span class="icon-[lucide--loader-circle] size-4 animate-spin" aria-hidden="true" />
                 <p>Loading branches…</p>
               </header>
             </div>
@@ -94,7 +95,11 @@ function BaseCommand(props: { bases: ReviewBases; close: () => void }): JSX.Elem
       <Show when={force}>
         <span class="ml-auto font-mono text-muted-foreground">{value}</span>
       </Show>
-      <span data-indicator class="icon-[lucide--check] size-4" aria-hidden="true" />
+      <span
+        data-indicator
+        class="icon-[lucide--check] size-4 static! visible!"
+        aria-hidden="true"
+      />
     </button>
   );
   return (
@@ -114,7 +119,12 @@ function BaseCommand(props: { bases: ReviewBases; close: () => void }): JSX.Elem
             placeholder="Search branches…"
           />
         </header>
-        <div role="menu" data-empty="No matching branches" aria-label="Branches">
+        <div
+          role="menu"
+          class="max-h-none! overflow-visible!"
+          data-empty="No matching branches"
+          aria-label="Branches"
+        >
           <For each={[false, true]}>
             {(remote) => (
               <div role="group" aria-label={remote ? 'Remote' : 'Local'}>

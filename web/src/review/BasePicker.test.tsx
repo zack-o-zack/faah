@@ -78,6 +78,12 @@ test('picker loads lazily, searches with Basecoat, selects with keyboard and rel
   expect(screen.getByText('Remote default branch')).toBeTruthy();
   expect(screen.getByText('Remote branch (current)')).toBeTruthy();
   expect(screen.queryByRole('menuitem', { name: 'feature' })).toBeNull();
+  expect(document.querySelector('[data-filter="HEAD"]')?.getAttribute('data-checked')).toBe('true');
+  fireEvent.input(input, { target: { value: 'does-not-exist' } });
+  expect(document.querySelector('[aria-label="Branches"]')?.getAttribute('data-empty')).toBe(
+    'No matching branches',
+  );
+  expect(screen.queryAllByRole('menuitem').length).toBe(3);
   fireEvent.input(input, { target: { value: 'MAIN' } });
   expect(
     screen.getAllByRole('menuitem').filter((row) => row.textContent === 'origin/feature'),

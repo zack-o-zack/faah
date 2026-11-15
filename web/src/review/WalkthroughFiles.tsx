@@ -66,14 +66,19 @@ export function WalkthroughFiles(props: WalkthroughFilesProps): JSX.Element {
         <For each={groupedFiles(props.data?.files || [], review.groupFilter())}>
           {(group) => (
             <section>
-              <div class="flex items-center gap-2 px-2 pt-3 pb-1 text-xs text-muted-foreground">
-                <span class={`${group.icon} size-3 shrink-0`} aria-hidden="true" />
-                <span class="font-semibold">{group.label}</span>
-                <span>{group.files.length}</span>
-                <span class="ml-auto">
+              <header class="item" data-size="xs">
+                <figure>
+                  <span class={`${group.icon} size-3`} aria-hidden="true" />
+                </figure>
+                <section>
+                  <h3>
+                    {group.label} <span>{group.files.length}</span>
+                  </h3>
+                </section>
+                <aside>
                   <LineStats additions={group.additions} deletions={group.deletions} />
-                </span>
-              </div>
+                </aside>
+              </header>
               <For each={group.files}>{(file) => <FileCard file={file} />}</For>
             </section>
           )}

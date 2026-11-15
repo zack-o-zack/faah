@@ -154,14 +154,13 @@ function WalkthroughToolbar(): JSX.Element {
               </For>
             </div>
           </div>
-          <label class="flex items-center justify-between gap-3">
-            <span>
-              Ignore whitespace
-              <span class="mt-1 block text-muted-foreground">
-                Hides changes in spaces and blank lines
-              </span>
-            </span>
+          <div class="field" data-orientation="horizontal">
+            <section>
+              <label for="walkthrough-ignore-whitespace">Ignore whitespace</label>
+              <p>Hides changes in spaces and blank lines</p>
+            </section>
             <input
+              id="walkthrough-ignore-whitespace"
               type="checkbox"
               role="switch"
               class="input"
@@ -175,7 +174,7 @@ function WalkthroughToolbar(): JSX.Element {
                 )
               }
             />
-          </label>
+          </div>
         </div>
       </Popover>
       <button
