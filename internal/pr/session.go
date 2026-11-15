@@ -4,11 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -187,7 +185,7 @@ func Checkout(ctx context.Context, provider forge.Provider, target forge.PRTarge
 	}
 	cleanup := func() { os.RemoveAll(tmp) }
 
-	srcRepo, srcRemote := FindRemote(cwd, target.Owner, target.Repo)
+	srcRepo, srcRemote := forge.FindRemote(cwd, target.Owner, target.Repo)
 	fg := newForgeGit(provider, target, token)
 
 	num := target.Number
@@ -233,66 +231,6 @@ func Checkout(ctx context.Context, provider forge.Provider, target forge.PRTarge
 }
 
 func (p *Session) Root() string { return p.worktree }
-
-// FindRemote reports the git repository containing dir and the name of its
-// remote that points at owner/repo, preferring origin, then upstream (a fork
-// checkout), then any other. Both are empty when dir is not such a clone.
-func FindRemote(dir, owner, repo string) (toplevel, remote string) {
-	if owner == "" || repo == "" {
-		return "", ""
-	}
-	info := git.Probe(dir)
-	if !info.OK() || info.Root() == "" {
-		return "", ""
-	}
-	out, err := exec.Command("git", "-C", info.Root(), "remote").Output()
-	if err != nil {
-		return "", ""
-	}
-	names := strings.Fields(string(out))
-	rank := func(n string) int {
-		switch n {
-		case "origin":
-			return 0
-		case "upstream":
-			return 1
-		}
-		return 2
-	}
-	sort.SliceStable(names, func(i, j int) bool { return rank(names[i]) < rank(names[j]) })
-	for _, name := range names {
-		u, err := exec.Command("git", "-C", info.Root(), "remote", "get-url", name).Output()
-		if err == nil && remoteMatchesRepo(string(u), owner, repo) {
-			return info.Root(), name
-		}
-	}
-	return "", ""
-}
-
-// remoteMatchesRepo reports whether a remote URL (https, ssh or scp-style)
-// names owner/repo, ignoring case. owner may be a nested GitLab group path
-// ("group/sub"), so the whole repository path is compared, not just its last
-// two segments; only a local-path remote matches by suffix.
-func remoteMatchesRepo(remoteURL, owner, repo string) bool {
-	want := strings.ToLower(owner + "/" + repo)
-	u := strings.ToLower(strings.TrimSpace(remoteURL))
-	local := false
-	switch {
-	case strings.Contains(u, "://"):
-		parsed, err := url.Parse(u)
-		if err != nil {
-			return false
-		}
-		local = parsed.Scheme == "file"
-		u = parsed.Path
-	case forge.RemoteHost(u) != "":
-		_, u, _ = strings.Cut(u, ":")
-	default:
-		local = true
-	}
-	u = strings.TrimSuffix(strings.Trim(u, "/"), ".git")
-	return u == want || (local && strings.HasSuffix(u, "/"+want))
-}
 
 // Close removes the worktree registration (if any), cleans up temporary
 // references, and deletes the temp checkout. Safe on a nil receiver.

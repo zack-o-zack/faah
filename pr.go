@@ -15,6 +15,7 @@ import (
 
 	"faah/internal/forge"
 	"faah/internal/git"
+	"faah/internal/httpx"
 	"faah/internal/render"
 	"faah/internal/session"
 	"faah/internal/settings"
@@ -22,7 +23,7 @@ import (
 
 func (s *Server) prOrFail(w http.ResponseWriter) bool {
 	if s.pr == nil {
-		fail(w, http.StatusNotFound, "not a PR review session")
+		httpx.Fail(w, http.StatusNotFound, "not a PR review session")
 		return false
 	}
 	return true
@@ -32,7 +33,7 @@ func (s *Server) handlePRMeta(w http.ResponseWriter, r *http.Request) {
 	if !s.prOrFail(w) {
 		return
 	}
-	writeJSON(w, s.pr.MetaMap(s.ix.PRFiles()))
+	httpx.WriteJSON(w, s.pr.MetaMap(s.ix.PRFiles()))
 }
 
 // handlePRExistingComments fetches every comment already posted on the PR
@@ -48,7 +49,7 @@ func (s *Server) handlePRExistingComments(w http.ResponseWriter, r *http.Request
 	defer cancel()
 	issue, review, err := provider.FetchComments(ctx, target, token)
 	if err != nil {
-		fail(w, http.StatusBadGateway, err.Error())
+		httpx.Fail(w, http.StatusBadGateway, err.Error())
 		return
 	}
 	if issue == nil {
@@ -59,7 +60,7 @@ func (s *Server) handlePRExistingComments(w http.ResponseWriter, r *http.Request
 	}
 	renderCommentBodies(issue)
 	renderCommentBodies(review)
-	writeJSON(w, map[string]any{"issueComments": issue, "reviewComments": review})
+	httpx.WriteJSON(w, map[string]any{"issueComments": issue, "reviewComments": review})
 }
 
 // renderCommentBodies renders each body the way the forge shows it. Bots post
@@ -81,32 +82,32 @@ func (s *Server) handlePRIssueCommentPost(w http.ResponseWriter, r *http.Request
 	if !s.prOrFail(w) {
 		return
 	}
-	if !localPost(w, r) {
+	if !httpx.LocalPost(w, r) {
 		return
 	}
 	p := s.pr
 	provider, target, token := p.Credentials()
 	if token == "" {
-		fail(w, http.StatusForbidden, "no auth token configured; posting comments requires a "+provider.Info().Label+" token")
+		httpx.Fail(w, http.StatusForbidden, "no auth token configured; posting comments requires a "+provider.Info().Label+" token")
 		return
 	}
 	var body struct {
 		Body string `json:"body"`
 	}
 	if err := json.NewDecoder(io.LimitReader(r.Body, 1<<16)).Decode(&body); err != nil || strings.TrimSpace(body.Body) == "" {
-		fail(w, http.StatusBadRequest, "body is required")
+		httpx.Fail(w, http.StatusBadRequest, "body is required")
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
 	defer cancel()
 	c, err := provider.PostIssueComment(ctx, target, token, strings.TrimSpace(body.Body))
 	if err != nil {
-		fail(w, http.StatusBadGateway, err.Error())
+		httpx.Fail(w, http.StatusBadGateway, err.Error())
 		return
 	}
 	cs := []forge.PRComment{c}
 	renderCommentBodies(cs)
-	writeJSON(w, cs[0])
+	httpx.WriteJSON(w, cs[0])
 }
 
 // handlePRReviewCommentReply posts an immediate, threaded reply to an
@@ -117,13 +118,13 @@ func (s *Server) handlePRReviewCommentReply(w http.ResponseWriter, r *http.Reque
 	if !s.prOrFail(w) {
 		return
 	}
-	if !localPost(w, r) {
+	if !httpx.LocalPost(w, r) {
 		return
 	}
 	p := s.pr
 	provider, target, token := p.Credentials()
 	if token == "" {
-		fail(w, http.StatusForbidden, "no auth token configured; posting comments requires a "+provider.Info().Label+" token")
+		httpx.Fail(w, http.StatusForbidden, "no auth token configured; posting comments requires a "+provider.Info().Label+" token")
 		return
 	}
 	var body struct {
@@ -131,19 +132,19 @@ func (s *Server) handlePRReviewCommentReply(w http.ResponseWriter, r *http.Reque
 		Body      string `json:"body"`
 	}
 	if err := json.NewDecoder(io.LimitReader(r.Body, 1<<16)).Decode(&body); err != nil || body.CommentID <= 0 || strings.TrimSpace(body.Body) == "" {
-		fail(w, http.StatusBadRequest, "commentId and body are required")
+		httpx.Fail(w, http.StatusBadRequest, "commentId and body are required")
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
 	defer cancel()
 	c, err := provider.ReplyToReviewComment(ctx, target, token, body.CommentID, strings.TrimSpace(body.Body))
 	if err != nil {
-		fail(w, http.StatusBadGateway, err.Error())
+		httpx.Fail(w, http.StatusBadGateway, err.Error())
 		return
 	}
 	cs := []forge.PRComment{c}
 	renderCommentBodies(cs)
-	writeJSON(w, cs[0])
+	httpx.WriteJSON(w, cs[0])
 }
 
 func (s *Server) handlePRComments(w http.ResponseWriter, r *http.Request) {
@@ -158,10 +159,10 @@ func (s *Server) handlePRComments(w http.ResponseWriter, r *http.Request) {
 			if comments == nil {
 				comments = []forge.DraftComment{}
 			}
-			writeJSON(w, map[string]any{"comments": comments})
+			httpx.WriteJSON(w, map[string]any{"comments": comments})
 		})
 	case http.MethodPost:
-		if !localPost(w, r) {
+		if !httpx.LocalPost(w, r) {
 			return
 		}
 		var body struct {
@@ -172,7 +173,7 @@ func (s *Server) handlePRComments(w http.ResponseWriter, r *http.Request) {
 		}
 		if err := json.NewDecoder(io.LimitReader(r.Body, 1<<16)).Decode(&body); err != nil ||
 			body.Path == "" || body.Line <= 0 || strings.TrimSpace(body.Body) == "" {
-			fail(w, http.StatusBadRequest, "path, line, and body are required")
+			httpx.Fail(w, http.StatusBadRequest, "path, line, and body are required")
 			return
 		}
 		side := strings.ToUpper(body.Side)
@@ -180,9 +181,9 @@ func (s *Server) handlePRComments(w http.ResponseWriter, r *http.Request) {
 			side = "RIGHT"
 		}
 		c := p.AddComment(forge.DraftComment{Path: body.Path, Line: body.Line, Side: side, Body: strings.TrimSpace(body.Body)}, s.persistPRDrafts)
-		writeJSON(w, c)
+		httpx.WriteJSON(w, c)
 	default:
-		fail(w, http.StatusMethodNotAllowed, "method not allowed")
+		httpx.Fail(w, http.StatusMethodNotAllowed, "method not allowed")
 	}
 }
 
@@ -190,14 +191,14 @@ func (s *Server) handlePRCommentDelete(w http.ResponseWriter, r *http.Request) {
 	if !s.prOrFail(w) {
 		return
 	}
-	if !localPost(w, r) {
+	if !httpx.LocalPost(w, r) {
 		return
 	}
 	id, _ := strconv.ParseInt(r.URL.Query().Get("id"), 10, 64)
 	p := s.pr
 	p.DeleteComment(id, func(drafts []forge.DraftComment) {
 		s.persistPRDrafts(drafts)
-		writeJSON(w, map[string]any{"ok": true})
+		httpx.WriteJSON(w, map[string]any{"ok": true})
 	})
 }
 
@@ -205,13 +206,13 @@ func (s *Server) handlePRSubmit(w http.ResponseWriter, r *http.Request) {
 	if !s.prOrFail(w) {
 		return
 	}
-	if !localPost(w, r) {
+	if !httpx.LocalPost(w, r) {
 		return
 	}
 	p := s.pr
 	provider, target, token := p.Credentials()
 	if token == "" {
-		fail(w, http.StatusForbidden, "no auth token configured; review submission is read-only")
+		httpx.Fail(w, http.StatusForbidden, "no auth token configured; review submission is read-only")
 		return
 	}
 	var body struct {
@@ -219,16 +220,16 @@ func (s *Server) handlePRSubmit(w http.ResponseWriter, r *http.Request) {
 		Body  string `json:"body"`
 	}
 	if err := json.NewDecoder(io.LimitReader(r.Body, 1<<16)).Decode(&body); err != nil {
-		fail(w, http.StatusBadRequest, "invalid JSON")
+		httpx.Fail(w, http.StatusBadRequest, "invalid JSON")
 		return
 	}
 	event := strings.ToUpper(body.Event)
 	if event != "APPROVE" && event != "REQUEST_CHANGES" && event != "COMMENT" {
-		fail(w, http.StatusBadRequest, "event must be APPROVE, REQUEST_CHANGES, or COMMENT")
+		httpx.Fail(w, http.StatusBadRequest, "event must be APPROVE, REQUEST_CHANGES, or COMMENT")
 		return
 	}
 	if (event == "APPROVE" || event == "REQUEST_CHANGES") && !p.Snapshot().WriteAccess {
-		fail(w, http.StatusForbidden, "no push access on this repository; only Comment reviews are allowed")
+		httpx.Fail(w, http.StatusForbidden, "no push access on this repository; only Comment reviews are allowed")
 		return
 	}
 	var comments []forge.DraftComment
@@ -239,11 +240,11 @@ func (s *Server) handlePRSubmit(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
 	defer cancel()
 	if err := provider.SubmitReview(ctx, target, token, p.Snapshot().Meta.HeadSHA, comments, event, body.Body); err != nil {
-		fail(w, http.StatusBadGateway, err.Error())
+		httpx.Fail(w, http.StatusBadGateway, err.Error())
 		return
 	}
 	p.ClearComments(s.persistPRDrafts)
-	writeJSON(w, map[string]any{"ok": true})
+	httpx.WriteJSON(w, map[string]any{"ok": true})
 }
 
 // prMergeMessage is a commit title and body, as prefilled in the merge dialog.
@@ -295,7 +296,7 @@ func (s *Server) handlePRMergeStatus(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 	st, err := provider.MergeStatus(ctx, target, token)
 	if err != nil {
-		fail(w, http.StatusBadGateway, err.Error())
+		httpx.Fail(w, http.StatusBadGateway, err.Error())
 		return
 	}
 	commits := s.prCommits()
@@ -309,7 +310,7 @@ func (s *Server) handlePRMergeStatus(w http.ResponseWriter, r *http.Request) {
 	if cfg := settings.Read(); cfg.GitCommitMessageInstruction != nil {
 		hasInstruction = strings.TrimSpace(*cfg.GitCommitMessageInstruction) != ""
 	}
-	writeJSON(w, map[string]any{
+	httpx.WriteJSON(w, map[string]any{
 		"status":   st,
 		"canMerge": st.CanMerge && writeAccess && token != "",
 		// The forge holds commits this checkout hasn't seen: merging now
@@ -332,17 +333,17 @@ func (s *Server) handlePRMerge(w http.ResponseWriter, r *http.Request) {
 	if !s.prOrFail(w) {
 		return
 	}
-	if !localPost(w, r) {
+	if !httpx.LocalPost(w, r) {
 		return
 	}
 	p := s.pr
 	provider, target, token := p.Credentials()
 	if token == "" {
-		fail(w, http.StatusForbidden, "no auth token configured; merging requires a token")
+		httpx.Fail(w, http.StatusForbidden, "no auth token configured; merging requires a token")
 		return
 	}
 	if !p.Snapshot().WriteAccess {
-		fail(w, http.StatusForbidden, "no push access on this repository; merging is not allowed")
+		httpx.Fail(w, http.StatusForbidden, "no push access on this repository; merging is not allowed")
 		return
 	}
 	var body struct {
@@ -351,15 +352,15 @@ func (s *Server) handlePRMerge(w http.ResponseWriter, r *http.Request) {
 		Message string `json:"message"`
 	}
 	if err := json.NewDecoder(io.LimitReader(r.Body, 1<<16)).Decode(&body); err != nil || !validMergeMethod(body.Method) {
-		fail(w, http.StatusBadRequest, "method must be merge, squash, or rebase")
+		httpx.Fail(w, http.StatusBadRequest, "method must be merge, squash, or rebase")
 		return
 	}
 	if op := git.OpInProgress(s.ix.Root()); op != "" {
-		fail(w, http.StatusConflict, "a "+op+" is in progress in this checkout; finish or abort it first")
+		httpx.Fail(w, http.StatusConflict, "a "+op+" is in progress in this checkout; finish or abort it first")
 		return
 	}
 	if p.Rewritten() {
-		fail(w, http.StatusConflict, "this checkout was rebased but not pushed; force-push it first, or the forge merges the old commits")
+		httpx.Fail(w, http.StatusConflict, "this checkout was rebased but not pushed; force-push it first, or the forge merges the old commits")
 		return
 	}
 	snap := p.Snapshot()
@@ -375,11 +376,11 @@ func (s *Server) handlePRMerge(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch {
 		case errors.Is(err, forge.ErrPRHeadMoved):
-			fail(w, http.StatusConflict, "the PR has new commits since this checkout; pull and review them, then merge")
+			httpx.Fail(w, http.StatusConflict, "the PR has new commits since this checkout; pull and review them, then merge")
 		case errors.Is(err, forge.ErrPRNotMergeable):
-			fail(w, http.StatusConflict, err.Error())
+			httpx.Fail(w, http.StatusConflict, err.Error())
 		default:
-			fail(w, http.StatusBadGateway, err.Error())
+			httpx.Fail(w, http.StatusBadGateway, err.Error())
 		}
 		return
 	}
@@ -389,7 +390,7 @@ func (s *Server) handlePRMerge(w http.ResponseWriter, r *http.Request) {
 	} else {
 		p.UpdateMergeState(nil)
 	}
-	writeJSON(w, map[string]any{"ok": true, "sha": res.SHA, "message": res.Message})
+	httpx.WriteJSON(w, map[string]any{"ok": true, "sha": res.SHA, "message": res.Message})
 }
 
 // handlePRMergeMessage has the harness write (or rewrite) the commit message
@@ -401,7 +402,7 @@ func (s *Server) handlePRMergeMessage(w http.ResponseWriter, r *http.Request) {
 	if !s.prOrFail(w) {
 		return
 	}
-	if !localPost(w, r) {
+	if !httpx.LocalPost(w, r) {
 		return
 	}
 	if !s.agentOrFail(w) {
@@ -414,14 +415,14 @@ func (s *Server) handlePRMergeMessage(w http.ResponseWriter, r *http.Request) {
 		Message     string `json:"message"`
 	}
 	if err := json.NewDecoder(io.LimitReader(r.Body, 1<<16)).Decode(&body); err != nil || (body.Method != forge.MergeMethodSquash && body.Method != forge.MergeMethodMerge) {
-		fail(w, http.StatusBadRequest, "method must be squash or merge")
+		httpx.Fail(w, http.StatusBadRequest, "method must be squash or merge")
 		return
 	}
 	p := s.pr
 	snap := p.Snapshot()
 	meta, from := snap.Meta, snap.DiffBase
 	if !git.ValidSHA(from) {
-		fail(w, http.StatusConflict, "the PR's merge base is unresolved, so there is no diff to describe")
+		httpx.Fail(w, http.StatusConflict, "the PR's merge base is unresolved, so there is no diff to describe")
 		return
 	}
 	root := s.ix.Root()
@@ -443,44 +444,44 @@ func (s *Server) handlePRMergeMessage(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, errAgentNone) {
 			code = http.StatusBadRequest
 		}
-		fail(w, code, err.Error())
+		httpx.Fail(w, code, err.Error())
 		return
 	}
-	writeJSON(w, job)
+	httpx.WriteJSON(w, job)
 }
 
 // handleLaunchPR lets an already-running faah open another PR without
 // disturbing its own session: it re-execs itself as a brand new process on
 // a new port with "faah -y <url>". The call returns as soon as the child starts.
 func (s *Server) handleLaunchPR(w http.ResponseWriter, r *http.Request) {
-	if !localPost(w, r) {
+	if !httpx.LocalPost(w, r) {
 		return
 	}
 	var body struct {
 		Target string `json:"target"`
 	}
 	if err := json.NewDecoder(io.LimitReader(r.Body, 4096)).Decode(&body); err != nil || strings.TrimSpace(body.Target) == "" {
-		fail(w, http.StatusBadRequest, "target is required")
+		httpx.Fail(w, http.StatusBadRequest, "target is required")
 		return
 	}
 	targetURL := strings.TrimSpace(body.Target)
 	if _, _, ok := forge.DetectPRURL(targetURL); !ok {
-		fail(w, http.StatusBadRequest, "target must be a valid pull or merge request URL (e.g. "+forge.PRURLExamples+")")
+		httpx.Fail(w, http.StatusBadRequest, "target must be a valid pull or merge request URL (e.g. "+forge.PRURLExamples+")")
 		return
 	}
 	exe, err := os.Executable()
 	if err != nil {
-		fail(w, http.StatusInternalServerError, err.Error())
+		httpx.Fail(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	cmd := exec.Command(exe, "-y", targetURL)
 	cmd.Dir = s.ix.Root()
 	if err := cmd.Start(); err != nil {
-		fail(w, http.StatusInternalServerError, err.Error())
+		httpx.Fail(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	go cmd.Wait() // reap without blocking the handler
-	writeJSON(w, map[string]any{"ok": true})
+	httpx.WriteJSON(w, map[string]any{"ok": true})
 }
 
 // ---------------------------------------------------------------- forge connect
@@ -533,7 +534,7 @@ func (s *Server) forgeMeta() map[string]any {
 // another host of the same forge, in which case it is used for this session
 // only. Either way a running review starts using it immediately.
 func (s *Server) handleForgeConnect(w http.ResponseWriter, r *http.Request) {
-	if !localPost(w, r) {
+	if !httpx.LocalPost(w, r) {
 		return
 	}
 	var body struct {
@@ -541,13 +542,13 @@ func (s *Server) handleForgeConnect(w http.ResponseWriter, r *http.Request) {
 		Extra string `json:"extra"`
 	}
 	if err := json.NewDecoder(io.LimitReader(r.Body, 1<<14)).Decode(&body); err != nil || strings.TrimSpace(body.Token) == "" {
-		fail(w, http.StatusBadRequest, "paste a token first")
+		httpx.Fail(w, http.StatusBadRequest, "paste a token first")
 		return
 	}
 	token, extra := strings.TrimSpace(body.Token), strings.TrimSpace(body.Extra)
 	provider, target, ok := s.forgeTarget()
 	if !ok {
-		fail(w, http.StatusBadRequest, "this workspace's remote isn't on a forge faah knows")
+		httpx.Fail(w, http.StatusBadRequest, "this workspace's remote isn't on a forge faah knows")
 		return
 	}
 	info, setup := provider.Info(), provider.TokenSetup(target.Host)
@@ -575,7 +576,7 @@ func (s *Server) handleForgeConnect(w http.ResponseWriter, r *http.Request) {
 			prev[k] = raw[k] // nil deletes on restore
 		}
 		if err := settings.UpdateMap(updates); err != nil {
-			fail(w, http.StatusInternalServerError, err.Error())
+			httpx.Fail(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 	}
@@ -588,7 +589,7 @@ func (s *Server) handleForgeConnect(w http.ResponseWriter, r *http.Request) {
 			if persist {
 				settings.UpdateMap(prev)
 			}
-			fail(w, http.StatusBadRequest, info.Label+" didn't accept this token: "+git.RedactToken(err.Error(), token))
+			httpx.Fail(w, http.StatusBadRequest, info.Label+" didn't accept this token: "+git.RedactToken(err.Error(), token))
 			return
 		}
 		validated = true
@@ -599,7 +600,7 @@ func (s *Server) handleForgeConnect(w http.ResponseWriter, r *http.Request) {
 		}
 		s.pr.ReplaceCredentials(token, source, writeAccess)
 	}
-	writeJSON(w, map[string]any{"ok": true, "saved": persist, "validated": validated, "writeAccess": writeAccess})
+	httpx.WriteJSON(w, map[string]any{"ok": true, "saved": persist, "validated": validated, "writeAccess": writeAccess})
 }
 
 func nilIfEmpty(s string) any {

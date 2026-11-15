@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/px0-ai/harness"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -16,6 +15,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/px0-ai/harness"
 
 	"faah/internal/agents"
 	"faah/internal/agents/all"
@@ -35,7 +36,7 @@ func isolateSettings(t *testing.T) string {
 }
 
 // agentPost speaks the way the browser does: POST, with an Origin that matches
-// a Host localPost will accept.
+// a Host httpx.LocalPost will accept.
 func agentPost(t *testing.T, s *Server, url string) (int, map[string]any) {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodPost, url, nil)
@@ -71,7 +72,7 @@ func agentServer(t *testing.T, root, name string) *Server {
 	}
 	ix := workspace.NewIndex(root)
 	ix.Build()
-	s := NewServer(ix, nil)
+	s := NewServer(ix, nil, assets, devRoot)
 	s.SetAgent(m)
 	t.Cleanup(func() {
 		s.threads.Close()
@@ -252,7 +253,7 @@ func TestAgentEditRefusedUntilHarnessChosen(t *testing.T) {
 	}
 	ix := workspace.NewIndex(root)
 	ix.Build()
-	s := NewServer(ix, nil)
+	s := NewServer(ix, nil, assets, devRoot)
 	s.SetAgent(m)
 
 	code, body := agentPost(t, s, "/api/agent/edit?path=a.go&l1=1&l2=1&instruction=hi")

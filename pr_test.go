@@ -12,6 +12,7 @@ import (
 	"faah/internal/forge"
 	"faah/internal/git"
 	"faah/internal/git/gittest"
+	"faah/internal/httpx/httpxtest"
 	prpkg "faah/internal/pr"
 	"faah/internal/settings"
 )
@@ -117,7 +118,7 @@ func connectServer(t *testing.T, host string) *Server {
 
 func TestForgeConnectAppliesAndSaves(t *testing.T) {
 	s := connectServer(t, "gitlab.example.com")
-	w := postJSON(t, s, "/api/forge/connect", `{"token":"good-token"}`)
+	w := httpxtest.PostJSON(t, s, "/api/forge/connect", `{"token":"good-token"}`)
 	if w.Code != 200 {
 		t.Fatalf("connect: %d %s", w.Code, w.Body)
 	}
@@ -147,7 +148,7 @@ func TestForgeConnectAppliesAndSaves(t *testing.T) {
 
 func TestForgeConnectRejectsBadToken(t *testing.T) {
 	s := connectServer(t, "gitlab.com")
-	w := postJSON(t, s, "/api/forge/connect", `{"token":"bad-token"}`)
+	w := httpxtest.PostJSON(t, s, "/api/forge/connect", `{"token":"bad-token"}`)
 	if w.Code != 400 {
 		t.Fatalf("bad token accepted: %d %s", w.Code, w.Body)
 	}
@@ -161,7 +162,7 @@ func TestForgeConnectRejectsBadToken(t *testing.T) {
 	if token != "" {
 		t.Errorf("session took a rejected token")
 	}
-	if w := postJSON(t, s, "/api/forge/connect", `{"token":"  "}`); w.Code != 400 {
+	if w := httpxtest.PostJSON(t, s, "/api/forge/connect", `{"token":"  "}`); w.Code != 400 {
 		t.Errorf("empty token: %d", w.Code)
 	}
 }
@@ -173,7 +174,7 @@ func TestForgeConnectKeepsOtherHostsToken(t *testing.T) {
 	if err := settings.UpdateMap(map[string]any{"gitlab.token": "corp-token", "gitlab.host": "gitlab.corp.io"}); err != nil {
 		t.Fatal(err)
 	}
-	w := postJSON(t, s, "/api/forge/connect", `{"token":"good-token"}`)
+	w := httpxtest.PostJSON(t, s, "/api/forge/connect", `{"token":"good-token"}`)
 	var res map[string]any
 	json.Unmarshal(w.Body.Bytes(), &res)
 	if w.Code != 200 || res["saved"] != false {

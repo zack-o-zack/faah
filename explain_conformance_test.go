@@ -50,7 +50,7 @@ func TestExplainHarnessConformance(t *testing.T) {
 			}
 			ix := workspace.NewIndex(root)
 			ix.Build()
-			s := NewServer(ix, nil)
+			s := NewServer(ix, nil, assets, devRoot)
 			s.SetAgent(m)
 			s.threads.file = ""         // nothing from this run is worth keeping
 			ts := httptest.NewServer(s) // where MCP harnesses reach the tools

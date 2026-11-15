@@ -20,6 +20,7 @@ import (
 
 	"faah/internal/forge"
 	"faah/internal/git/gittest"
+	"faah/internal/httpx"
 	lsppkg "faah/internal/lsp"
 	"faah/internal/metrics"
 	prpkg "faah/internal/pr"
@@ -48,7 +49,7 @@ func newTestServer(t *testing.T) (*Server, string) {
 
 	ix := workspace.NewIndex(root)
 	ix.Build()
-	return NewServer(ix, nil), root
+	return NewServer(ix, nil, assets, devRoot), root
 }
 
 func get(t *testing.T, s *Server, url string) (int, map[string]any) {
@@ -205,7 +206,7 @@ func TestTreeListsIgnoredEntries(t *testing.T) {
 	os.WriteFile(filepath.Join(root, ".git", "HEAD"), []byte("ref: refs/heads/main\n"), 0o644)
 	ix := workspace.NewIndex(root)
 	ix.Build()
-	s := NewServer(ix, nil)
+	s := NewServer(ix, nil, assets, devRoot)
 
 	entries := func(url string) (int, map[string]map[string]any) {
 		code, body := get(t, s, url)
@@ -326,7 +327,7 @@ func TestChunkedReadsCoverWholeFile(t *testing.T) {
 	os.WriteFile(filepath.Join(root, "big.go"), []byte(sb.String()), 0o644)
 	ix := workspace.NewIndex(root)
 	ix.Build()
-	s := NewServer(ix, nil)
+	s := NewServer(ix, nil, assets, devRoot)
 
 	var all []string
 	for start := 0; ; start += render.ChunkLines {
@@ -374,7 +375,7 @@ func TestCaseInsensitiveOffsetsWithUnicode(t *testing.T) {
 	}
 	ix := workspace.NewIndex(root)
 	ix.Build()
-	s := NewServer(ix, nil)
+	s := NewServer(ix, nil, assets, devRoot)
 
 	code, out := get(t, s, "/api/search?q=finduser")
 	if code != http.StatusOK {
@@ -618,33 +619,10 @@ func TestViewerURL(t *testing.T) {
 	}
 }
 
-func TestCleanBasePath(t *testing.T) {
-	cases := []struct {
-		in   string
-		want string
-	}{
-		{"", "/"},
-		{"/", "/"},
-		{".", "/"},
-		{"rev-123", "/rev-123/"},
-		{"/rev-123", "/rev-123/"},
-		{"/rev-123/", "/rev-123/"},
-		{"//rev-123///", "/rev-123/"},
-		{"sub/path", "/sub/path/"},
-		{"/a/b/", "/a/b/"},
-	}
-	for _, tc := range cases {
-		got := cleanBasePath(tc.in)
-		if got != tc.want {
-			t.Errorf("cleanBasePath(%q) = %q, want %q", tc.in, got, tc.want)
-		}
-	}
-}
-
 func TestServerBasePathRouting(t *testing.T) {
 	root := t.TempDir()
 	ix := workspace.NewIndex(root)
-	s := NewServer(ix, nil, "/rev-123/")
+	s := NewServer(ix, nil, assets, devRoot, "/rev-123/")
 
 	if s.BasePath() != "/rev-123/" {
 		t.Fatalf("BasePath() = %q, want /rev-123/", s.BasePath())
@@ -797,35 +775,6 @@ func TestVerboseRequestLogging(t *testing.T) {
 	}
 }
 
-func TestStatusRecorderInterfaces(t *testing.T) {
-	rec := httptest.NewRecorder()
-	sr := &statusRecorder{ResponseWriter: rec}
-
-	// Verify http.Flusher
-	if flusher, ok := any(sr).(http.Flusher); ok {
-		flusher.Flush()
-		if !rec.Flushed {
-			t.Error("expected Flush to propagate to underlying recorder")
-		}
-	} else {
-		t.Error("statusRecorder does not implement http.Flusher")
-	}
-
-	// Verify Unwrap
-	if unwrapped := sr.Unwrap(); unwrapped != rec {
-		t.Errorf("expected Unwrap to return %p, got %p", rec, unwrapped)
-	}
-
-	// Verify gzipWriter Flusher and Unwrap
-	gw := gzipWriter{ResponseWriter: rec}
-	if _, ok := any(gw).(http.Flusher); !ok {
-		t.Error("gzipWriter does not implement http.Flusher")
-	}
-	if unwrapped := gw.Unwrap(); unwrapped != rec {
-		t.Errorf("expected gzipWriter Unwrap to return %p, got %p", rec, unwrapped)
-	}
-}
-
 func TestUnifiedEventStream(t *testing.T) {
 	s, _ := newTestServer(t)
 	ts := httptest.NewServer(s)
@@ -877,48 +826,6 @@ func TestUnifiedEventStream(t *testing.T) {
 	}
 	if m.Goroutine <= 0 {
 		t.Errorf("expected goroutines > 0, got %d", m.Goroutine)
-	}
-}
-
-func TestGzipWriterBodilessResponsesAndContentLength(t *testing.T) {
-	rec := httptest.NewRecorder()
-	gz, _ := gzip.NewWriterLevel(rec, gzip.BestSpeed)
-	gw := &gzipWriter{ResponseWriter: rec, w: gz}
-
-	// 1. Test 304 Not Modified
-	gw.Header().Set("Content-Length", "1234")
-	gw.Header().Set("Content-Encoding", "gzip")
-	gw.WriteHeader(http.StatusNotModified)
-	gz.Close()
-
-	if rec.Header().Get("Content-Length") != "" {
-		t.Errorf("expected Content-Length to be deleted on 304, got: %q", rec.Header().Get("Content-Length"))
-	}
-	if rec.Header().Get("Content-Encoding") != "" {
-		t.Errorf("expected Content-Encoding to be deleted on 304, got: %q", rec.Header().Get("Content-Encoding"))
-	}
-	if rec.Body.Len() != 0 {
-		t.Errorf("expected no body written on 304, got %d bytes: %q", rec.Body.Len(), rec.Body.String())
-	}
-
-	// 2. Test 200 with normal body
-	rec2 := httptest.NewRecorder()
-	gz2, _ := gzip.NewWriterLevel(rec2, gzip.BestSpeed)
-	gw2 := &gzipWriter{ResponseWriter: rec2, w: gz2}
-	gw2.Header().Set("Content-Length", "999")
-	gw2.Header().Set("Content-Encoding", "gzip")
-	gw2.WriteHeader(http.StatusOK)
-	gw2.Write([]byte("hello compressed world"))
-	gz2.Close()
-
-	if rec2.Header().Get("Content-Length") != "" {
-		t.Errorf("expected Content-Length to be stripped from compressed response, got: %q", rec2.Header().Get("Content-Length"))
-	}
-	if rec2.Header().Get("Content-Encoding") != "gzip" {
-		t.Errorf("expected Content-Encoding to be gzip on 200, got: %q", rec2.Header().Get("Content-Encoding"))
-	}
-	if rec2.Body.Len() == 0 {
-		t.Errorf("expected compressed body on 200")
 	}
 }
 
@@ -1054,8 +961,8 @@ func TestContentSecurityPolicyHeader(t *testing.T) {
 		if csp == "" {
 			t.Fatalf("%s: missing Content-Security-Policy header", ep)
 		}
-		if csp != contentSecurityPolicy {
-			t.Errorf("%s: got CSP %q, want %q", ep, csp, contentSecurityPolicy)
+		if csp != httpx.ContentSecurityPolicy {
+			t.Errorf("%s: got CSP %q, want %q", ep, csp, httpx.ContentSecurityPolicy)
 		}
 
 		requiredDirectives := []string{
@@ -1333,7 +1240,7 @@ func TestSessionAPIEndpoints(t *testing.T) {
 
 	root := t.TempDir()
 	ix := workspace.NewIndex(root)
-	s := NewServer(ix, nil, "/rev-999/")
+	s := NewServer(ix, nil, assets, devRoot, "/rev-999/")
 
 	// 1. GET /rev-999/api/session initially
 	req := httptest.NewRequest(http.MethodGet, "/rev-999/api/session", nil)
@@ -1378,7 +1285,7 @@ func TestSessionAPIEndpoints(t *testing.T) {
 	}
 
 	// 4. Create a new server instance with same basePath and check that state is restored
-	s2 := NewServer(ix, nil, "/rev-999/")
+	s2 := NewServer(ix, nil, assets, devRoot, "/rev-999/")
 	sess2 := s2.session.Get()
 	if len(sess2.Tabs) != 2 {
 		t.Fatalf("expected 2 tabs in restored session, got %d", len(sess2.Tabs))
@@ -1400,7 +1307,7 @@ func TestPRDraftSessionPersistence(t *testing.T) {
 
 	root := t.TempDir()
 	ix := workspace.NewIndex(root)
-	s := NewServer(ix, nil, "/rev-42/")
+	s := NewServer(ix, nil, assets, devRoot, "/rev-42/")
 	pr := prpkg.New(nil, forge.PRTarget{}, forge.PRMeta{}, "", "HEAD")
 	s.SetPR(pr)
 
@@ -1423,7 +1330,7 @@ func TestPRDraftSessionPersistence(t *testing.T) {
 	}
 
 	// Create a second server instance simulating a restart
-	s2 := NewServer(ix, nil, "/rev-42/")
+	s2 := NewServer(ix, nil, assets, devRoot, "/rev-42/")
 	pr2 := prpkg.New(nil, forge.PRTarget{}, forge.PRMeta{}, "", "HEAD")
 	s2.SetPR(pr2)
 
@@ -1458,11 +1365,11 @@ func TestPRDraftsSurviveNewCheckoutRoot(t *testing.T) {
 	t.Setenv("XDG_STATE_HOME", t.TempDir())
 	pt := forge.PRTarget{Provider: "github", Owner: "acme", Repo: "widget", Number: 7}
 
-	s := NewServer(workspace.NewIndex(t.TempDir()), nil)
+	s := NewServer(workspace.NewIndex(t.TempDir()), nil, assets, devRoot)
 	s.SetPR(prpkg.New(nil, pt, forge.PRMeta{}, "", "HEAD"))
 	postDraft(t, s, "", "first run")
 
-	s2 := NewServer(workspace.NewIndex(t.TempDir()), nil)
+	s2 := NewServer(workspace.NewIndex(t.TempDir()), nil, assets, devRoot)
 	pr2 := prpkg.New(nil, pt, forge.PRMeta{}, "", "HEAD")
 	s2.SetPR(pr2)
 	pr2.WithDrafts(func(drafts *[]forge.DraftComment, nextID *int64) {
@@ -1472,7 +1379,7 @@ func TestPRDraftsSurviveNewCheckoutRoot(t *testing.T) {
 	})
 
 	other := prpkg.New(nil, forge.PRTarget{Provider: "github", Owner: "acme", Repo: "widget", Number: 8}, forge.PRMeta{}, "", "HEAD")
-	NewServer(workspace.NewIndex(t.TempDir()), nil).SetPR(other)
+	NewServer(workspace.NewIndex(t.TempDir()), nil, assets, devRoot).SetPR(other)
 	other.WithDrafts(func(drafts *[]forge.DraftComment, nextID *int64) {
 		if len((*drafts)) != 0 {
 			t.Fatalf("another PR must not see these drafts, got %+v", (*drafts))
@@ -1490,7 +1397,7 @@ func TestPRDraftsMigrateFromBasePathFile(t *testing.T) {
 
 	pt := forge.PRTarget{Provider: "github", Owner: "acme", Repo: "widget", Number: 7}
 	pr := prpkg.New(nil, pt, forge.PRMeta{}, "", "HEAD")
-	NewServer(workspace.NewIndex(root), nil, "/w/abc/").SetPR(pr)
+	NewServer(workspace.NewIndex(root), nil, assets, devRoot, "/w/abc/").SetPR(pr)
 	pr.WithDrafts(func(drafts *[]forge.DraftComment, nextID *int64) {
 		if len((*drafts)) != 1 || (*drafts)[0].Body != "old" || (*nextID) != 3 {
 			t.Fatalf("expected the migrated draft, got %+v (nextID %d)", (*drafts), (*nextID))
@@ -1513,7 +1420,7 @@ func TestHandleSearchWithCanceledRequest(t *testing.T) {
 	}
 	ix := workspace.NewIndex(root)
 	ix.Build()
-	s := NewServer(ix, nil)
+	s := NewServer(ix, nil, assets, devRoot)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/search?q=Hello", nil)
 	ctx, cancel := context.WithCancel(req.Context())
@@ -1554,7 +1461,7 @@ func TestFindIndexingStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 	ix := workspace.NewIndex(root)
-	srv := NewServer(ix, nil)
+	srv := NewServer(ix, nil, assets, devRoot)
 
 	// Before indexing: indexing should be true and files empty
 	w := httptest.NewRecorder()

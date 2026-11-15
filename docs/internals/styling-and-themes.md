@@ -18,7 +18,7 @@ the generated assets, not the Tailwind source or npm dependencies. Pages load
 The entry has these sections, in order:
 
 1. **Imports:** Tailwind's preflight, theme and utilities, then Basecoat Vega.
-2. **Sources:** `@source` scans the two HTML pages, `web/src/` and `workbench.go`.
+2. **Sources:** `@source` scans the two HTML pages, `web/src/` and `internal/workbench/workbench.go`.
    The Go source matters because it contains the holding-page template.
 3. **Variants:** `dark:` follows the root `.dark` class; `desktop:` matches
    `[data-shell]`; `win-linux:` matches the desktop platform attributes.

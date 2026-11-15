@@ -26,6 +26,7 @@ import (
 	"faah/internal/explain/notes"
 	"faah/internal/forge"
 	"faah/internal/git"
+	"faah/internal/httpx"
 	lsppkg "faah/internal/lsp"
 	"faah/internal/processio"
 	"faah/internal/render"
@@ -784,7 +785,7 @@ func mergeMessagePrompt(method string, meta forge.PRMeta, commits []git.Unpushed
 
 func (s *Server) agentOrFail(w http.ResponseWriter) bool {
 	if s.agent == nil {
-		fail(w, http.StatusNotFound, "editing is not available in this session")
+		httpx.Fail(w, http.StatusNotFound, "editing is not available in this session")
 		return false
 	}
 	return true
@@ -796,7 +797,7 @@ func (s *Server) handleAgentHarnesses(w http.ResponseWriter, r *http.Request) {
 	if !s.agentOrFail(w) {
 		return
 	}
-	writeJSON(w, map[string]any{
+	httpx.WriteJSON(w, map[string]any{
 		"harnesses": s.agent.Detect(),
 		"selected":  s.agent.Name(),
 		"model":     s.agent.Model(),
@@ -811,20 +812,20 @@ func (s *Server) handleAgentModels(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Method != http.MethodGet {
-		fail(w, http.StatusMethodNotAllowed, "use GET to list models")
+		httpx.Fail(w, http.StatusMethodNotAllowed, "use GET to list models")
 		return
 	}
 	name := r.URL.Query().Get("name")
 	models, err := harness.DiscoverModels(r.Context(), name)
 	if err != nil {
-		fail(w, http.StatusBadRequest, err.Error())
+		httpx.Fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	writeJSON(w, map[string]any{"models": models})
+	httpx.WriteJSON(w, map[string]any{"models": models})
 }
 
 func (s *Server) handleAgentSelect(w http.ResponseWriter, r *http.Request) {
-	if !localPost(w, r) {
+	if !httpx.LocalPost(w, r) {
 		return
 	}
 	if !s.agentOrFail(w) {
@@ -837,10 +838,10 @@ func (s *Server) handleAgentSelect(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, errAgentBusy) {
 			code = http.StatusConflict
 		}
-		fail(w, code, err.Error())
+		httpx.Fail(w, code, err.Error())
 		return
 	}
-	writeJSON(w, map[string]any{
+	httpx.WriteJSON(w, map[string]any{
 		"harnesses": s.agent.Detect(),
 		"selected":  s.agent.Name(),
 		"model":     s.agent.Model(),
@@ -850,7 +851,7 @@ func (s *Server) handleAgentSelect(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleAgentEdit(w http.ResponseWriter, r *http.Request) {
-	if !localPost(w, r) {
+	if !httpx.LocalPost(w, r) {
 		return
 	}
 	if !s.agentOrFail(w) {
@@ -863,7 +864,7 @@ func (s *Server) handleAgentEdit(w http.ResponseWriter, r *http.Request) {
 	}
 	abs, rel, ok := s.resolvePath(q.Get("path"))
 	if !ok {
-		fail(w, 400, "bad path")
+		httpx.Fail(w, 400, "bad path")
 		return
 	}
 	l1, _ := strconv.Atoi(q.Get("l1"))
@@ -875,14 +876,14 @@ func (s *Server) handleAgentEdit(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, errAgentBusy) || errors.Is(err, errAgentDirty) {
 			code = http.StatusConflict
 		}
-		fail(w, code, err.Error())
+		httpx.Fail(w, code, err.Error())
 		return
 	}
-	writeJSON(w, job)
+	httpx.WriteJSON(w, job)
 }
 
 func (s *Server) handleAgentBatchEdit(w http.ResponseWriter, r *http.Request) {
-	if !localPost(w, r) {
+	if !httpx.LocalPost(w, r) {
 		return
 	}
 	if !s.agentOrFail(w) {
@@ -891,7 +892,7 @@ func (s *Server) handleAgentBatchEdit(w http.ResponseWriter, r *http.Request) {
 
 	bodyBytes, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
 	if err != nil {
-		fail(w, 400, "failed reading body")
+		httpx.Fail(w, 400, "failed reading body")
 		return
 	}
 
@@ -953,7 +954,7 @@ func (s *Server) handleAgentBatchEdit(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if len(req.Edits) == 0 {
-			fail(w, 400, "invalid or empty batch edits payload")
+			httpx.Fail(w, 400, "invalid or empty batch edits payload")
 			return
 		}
 	}
@@ -962,7 +963,7 @@ func (s *Server) handleAgentBatchEdit(w http.ResponseWriter, r *http.Request) {
 	for i, e := range req.Edits {
 		abs, rel, ok := s.resolvePath(e.Path)
 		if !ok {
-			fail(w, 400, fmt.Sprintf("bad path: %s", e.Path))
+			httpx.Fail(w, 400, fmt.Sprintf("bad path: %s", e.Path))
 			return
 		}
 		items[i] = agentBatchItem{
@@ -980,10 +981,10 @@ func (s *Server) handleAgentBatchEdit(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, errAgentBusy) || errors.Is(err, errAgentDirty) {
 			code = http.StatusConflict
 		}
-		fail(w, code, err.Error())
+		httpx.Fail(w, code, err.Error())
 		return
 	}
-	writeJSON(w, job)
+	httpx.WriteJSON(w, job)
 }
 
 // handleAgentJob is polled while an edit runs, once per in-flight compose box.
@@ -997,14 +998,14 @@ func (s *Server) handleAgentJob(w http.ResponseWriter, r *http.Request) {
 	id, _ := strconv.ParseInt(r.URL.Query().Get("id"), 10, 64)
 	j := s.agent.Job(id)
 	if j == nil {
-		writeJSON(w, map[string]any{"idle": true})
+		httpx.WriteJSON(w, map[string]any{"idle": true})
 		return
 	}
-	writeJSON(w, j)
+	httpx.WriteJSON(w, j)
 }
 
 func (s *Server) handleAgentCancel(w http.ResponseWriter, r *http.Request) {
-	if !localPost(w, r) {
+	if !httpx.LocalPost(w, r) {
 		return
 	}
 	if !s.agentOrFail(w) {
@@ -1019,7 +1020,7 @@ func (s *Server) handleAgentCancel(w http.ResponseWriter, r *http.Request) {
 			id = body.ID
 		}
 	}
-	writeJSON(w, map[string]any{"cancelled": s.agent.CancelJob(id)})
+	httpx.WriteJSON(w, map[string]any{"cancelled": s.agent.CancelJob(id)})
 }
 
 // Threads are long-running, multi-turn conversations with a coding harness,
@@ -1906,7 +1907,7 @@ func (tm *threadManager) subscribe(id string) (chan threadEvent, threadEvent, fu
 
 func (s *Server) threadsOrFail(w http.ResponseWriter) bool {
 	if s.threads == nil {
-		fail(w, http.StatusNotFound, "threads are not available in this session")
+		httpx.Fail(w, http.StatusNotFound, "threads are not available in this session")
 		return false
 	}
 	return true
@@ -1926,7 +1927,7 @@ func (s *Server) handleThreads(w http.ResponseWriter, r *http.Request) {
 	if !s.threadsOrFail(w) {
 		return
 	}
-	writeJSON(w, map[string]any{"threads": s.threads.List()})
+	httpx.WriteJSON(w, map[string]any{"threads": s.threads.List()})
 }
 
 func (s *Server) handleThreadGet(w http.ResponseWriter, r *http.Request) {
@@ -1935,14 +1936,14 @@ func (s *Server) handleThreadGet(w http.ResponseWriter, r *http.Request) {
 	}
 	t := s.threads.Get(r.URL.Query().Get("id"))
 	if t == nil {
-		fail(w, http.StatusNotFound, errThreadGone.Error())
+		httpx.Fail(w, http.StatusNotFound, errThreadGone.Error())
 		return
 	}
-	writeJSON(w, t)
+	httpx.WriteJSON(w, t)
 }
 
 func (s *Server) handleThreadCreate(w http.ResponseWriter, r *http.Request) {
-	if !localPost(w, r) || !s.threadsOrFail(w) {
+	if !httpx.LocalPost(w, r) || !s.threadsOrFail(w) {
 		return
 	}
 	var body struct {
@@ -1953,27 +1954,27 @@ func (s *Server) handleThreadCreate(w http.ResponseWriter, r *http.Request) {
 		Scope   string `json:"scope"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		fail(w, 400, "bad request")
+		httpx.Fail(w, 400, "bad request")
 		return
 	}
 	var abs, rel string
 	if body.Path != "" {
 		var ok bool
 		if abs, rel, ok = s.resolvePath(body.Path); !ok {
-			fail(w, 400, "bad path")
+			httpx.Fail(w, 400, "bad path")
 			return
 		}
 	}
 	t, err := s.threads.Create(abs, rel, body.L1, body.L2, body.Message, body.Scope)
 	if err != nil {
-		fail(w, threadStatus(err), err.Error())
+		httpx.Fail(w, threadStatus(err), err.Error())
 		return
 	}
-	writeJSON(w, t)
+	httpx.WriteJSON(w, t)
 }
 
 func (s *Server) handleThreadSend(w http.ResponseWriter, r *http.Request) {
-	if !localPost(w, r) || !s.threadsOrFail(w) {
+	if !httpx.LocalPost(w, r) || !s.threadsOrFail(w) {
 		return
 	}
 	var body struct {
@@ -1981,19 +1982,19 @@ func (s *Server) handleThreadSend(w http.ResponseWriter, r *http.Request) {
 		Message string `json:"message"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		fail(w, 400, "bad request")
+		httpx.Fail(w, 400, "bad request")
 		return
 	}
 	t, err := s.threads.Send(body.ID, body.Message)
 	if err != nil {
-		fail(w, threadStatus(err), err.Error())
+		httpx.Fail(w, threadStatus(err), err.Error())
 		return
 	}
-	writeJSON(w, t)
+	httpx.WriteJSON(w, t)
 }
 
 func (s *Server) handleThreadCancel(w http.ResponseWriter, r *http.Request) {
-	if !localPost(w, r) || !s.threadsOrFail(w) {
+	if !httpx.LocalPost(w, r) || !s.threadsOrFail(w) {
 		return
 	}
 	id := r.URL.Query().Get("id")
@@ -2005,11 +2006,11 @@ func (s *Server) handleThreadCancel(w http.ResponseWriter, r *http.Request) {
 			id = body.ID
 		}
 	}
-	writeJSON(w, map[string]any{"cancelled": s.threads.Cancel(id)})
+	httpx.WriteJSON(w, map[string]any{"cancelled": s.threads.Cancel(id)})
 }
 
 func (s *Server) handleThreadScope(w http.ResponseWriter, r *http.Request) {
-	if !localPost(w, r) || !s.threadsOrFail(w) {
+	if !httpx.LocalPost(w, r) || !s.threadsOrFail(w) {
 		return
 	}
 	var body struct {
@@ -2017,18 +2018,18 @@ func (s *Server) handleThreadScope(w http.ResponseWriter, r *http.Request) {
 		Scope string `json:"scope"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		fail(w, 400, "bad request")
+		httpx.Fail(w, 400, "bad request")
 		return
 	}
 	if err := s.threads.SetScope(body.ID, body.Scope); err != nil {
-		fail(w, threadStatus(err), err.Error())
+		httpx.Fail(w, threadStatus(err), err.Error())
 		return
 	}
-	writeJSON(w, s.threads.Get(body.ID))
+	httpx.WriteJSON(w, s.threads.Get(body.ID))
 }
 
 func (s *Server) handleThreadDelete(w http.ResponseWriter, r *http.Request) {
-	if !localPost(w, r) || !s.threadsOrFail(w) {
+	if !httpx.LocalPost(w, r) || !s.threadsOrFail(w) {
 		return
 	}
 	id := r.URL.Query().Get("id")
@@ -2041,14 +2042,14 @@ func (s *Server) handleThreadDelete(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if id == "" {
-		fail(w, 400, "missing thread id")
+		httpx.Fail(w, 400, "missing thread id")
 		return
 	}
-	writeJSON(w, map[string]any{"deleted": s.threads.Delete(id)})
+	httpx.WriteJSON(w, map[string]any{"deleted": s.threads.Delete(id)})
 }
 
 func (s *Server) handleThreadRevert(w http.ResponseWriter, r *http.Request) {
-	if !localPost(w, r) || !s.threadsOrFail(w) {
+	if !httpx.LocalPost(w, r) || !s.threadsOrFail(w) {
 		return
 	}
 	var body struct {
@@ -2056,12 +2057,12 @@ func (s *Server) handleThreadRevert(w http.ResponseWriter, r *http.Request) {
 		Turn int    `json:"turn"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.ID == "" || body.Turn < 1 {
-		fail(w, http.StatusBadRequest, "id and turn are required")
+		httpx.Fail(w, http.StatusBadRequest, "id and turn are required")
 		return
 	}
 	t, paths, err := s.threads.RevertTurn(body.ID, body.Turn)
 	if err != nil {
-		fail(w, threadStatus(err), err.Error())
+		httpx.Fail(w, threadStatus(err), err.Error())
 		return
 	}
 	for _, p := range paths {
@@ -2070,7 +2071,7 @@ func (s *Server) handleThreadRevert(w http.ResponseWriter, r *http.Request) {
 	if s.gitWatcher != nil {
 		s.gitWatcher.Trigger()
 	}
-	writeJSON(w, map[string]any{"ok": true, "thread": t, "reverted": paths})
+	httpx.WriteJSON(w, map[string]any{"ok": true, "thread": t, "reverted": paths})
 }
 
 // handleThreadStream is the SSE feed: one thread's snapshot and live deltas
@@ -2086,7 +2087,7 @@ func (s *Server) handleThreadStream(w http.ResponseWriter, r *http.Request) {
 	}
 	ch, first, unsub, ok := s.threads.subscribe(r.URL.Query().Get("id"))
 	if !ok {
-		fail(w, http.StatusNotFound, errThreadGone.Error())
+		httpx.Fail(w, http.StatusNotFound, errThreadGone.Error())
 		return
 	}
 	defer unsub()

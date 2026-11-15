@@ -10,7 +10,6 @@ import (
 	"faah/internal/forge"
 	"faah/internal/git"
 	"faah/internal/git/gittest"
-	"faah/internal/pr/prtest"
 )
 
 func TestPRSessionCloseRefCleanup(t *testing.T) {
@@ -378,71 +377,5 @@ func TestPRForcePushAfterRebase(t *testing.T) {
 	mainTip := strings.TrimSpace(gittest.Run(t, wt, "rev-parse", BaseRef(1)))
 	if p.Snapshot().DiffBase != mainTip {
 		t.Fatalf("diffBase = %q, want the new merge-base %s", p.Snapshot().DiffBase, mainTip)
-	}
-}
-
-func TestRemoteMatchesNestedGroups(t *testing.T) {
-	cases := []struct {
-		remote string
-		want   bool
-	}{
-		{"git@gitlab.com:group/sub/app.git", true},
-		{"https://gitlab.com/group/sub/app", true},
-		{"ssh://git@gitlab.com:2222/group/sub/app.git", true},
-		{"https://gitlab.com/sub/app.git", false},
-		{"https://gitlab.com/other/group/sub/app.git", false},
-		{"/srv/mirrors/group/sub/app.git", true}, // a local path matches by suffix
-	}
-	for _, c := range cases {
-		if got := remoteMatchesRepo(c.remote, "group/sub", "app"); got != c.want {
-			t.Errorf("%q: got %v, want %v", c.remote, got, c.want)
-		}
-	}
-	if p := forge.ForRemote("git@gitlab.com:a/b.git"); p == nil || p.Name() != "gitlab" {
-		t.Errorf("forge.ForRemote(gitlab) = %v", p)
-	}
-	if p := forge.ForRemote("https://github.com/a/b"); p == nil || p.Name() != "github" {
-		t.Errorf("forge.ForRemote(github) = %v", p)
-	}
-	if p := forge.ForRemote("https://example.com/a/b.git"); p != nil {
-		t.Errorf("forge.ForRemote(unknown) = %v", p.Name())
-	}
-}
-
-func TestRemoteMatchesRepo(t *testing.T) {
-	cases := []struct {
-		origin string
-		want   bool
-	}{
-		{"git@github.com:px0-ai/px0.git\n", true},
-		{"https://github.com/PX0-AI/px0", true},
-		{"ssh://git@github.com/px0-ai/px0.git", true},
-		{"https://github.com/px0-ai/px0-docs.git", false},
-		{"https://github.com/other/px0.git", false},
-	}
-	for _, c := range cases {
-		if got := remoteMatchesRepo(c.origin, "px0-ai", "px0"); got != c.want {
-			t.Errorf("%q: got %v", c.origin, got)
-		}
-	}
-}
-func TestFindPRRemotePrefersOriginThenUpstream(t *testing.T) {
-	fork := prtest.RepoWithRemotes(t, map[string]string{
-		"origin":   "git@github.com:me/px0.git",
-		"upstream": "https://github.com/px0-ai/px0.git",
-	})
-	if top, remote := FindRemote(fork, "px0-ai", "px0"); top != fork || remote != "upstream" {
-		t.Fatalf("fork: %q %q", top, remote)
-	}
-	both := prtest.RepoWithRemotes(t, map[string]string{
-		"origin":   "https://github.com/px0-ai/px0",
-		"upstream": "https://github.com/px0-ai/px0.git",
-	})
-	if _, remote := FindRemote(both, "px0-ai", "px0"); remote != "origin" {
-		t.Fatalf("both: %q", remote)
-	}
-	other := prtest.RepoWithRemotes(t, map[string]string{"origin": "https://github.com/px0-ai/px0-docs.git"})
-	if top, _ := FindRemote(other, "px0-ai", "px0"); top != "" {
-		t.Fatalf("other repo matched: %q", top)
 	}
 }

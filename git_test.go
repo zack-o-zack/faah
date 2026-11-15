@@ -30,7 +30,7 @@ func TestGitDiff(t *testing.T) {
 	root := gittest.Repo(t)
 	ix := workspace.NewIndex(root)
 	ix.Build()
-	s := NewServer(ix, nil)
+	s := NewServer(ix, nil, assets, devRoot)
 
 	code, body := get(t, s, "/api/diff?path=sub/mod.go")
 	if code != 200 {
@@ -91,7 +91,7 @@ func TestGitCleanRepo(t *testing.T) {
 
 	ix := workspace.NewIndex(dir)
 	ix.Build()
-	s := NewServer(ix, nil)
+	s := NewServer(ix, nil, assets, devRoot)
 
 	_, meta := get(t, s, "/api/meta")
 	if meta["git"] != true {
@@ -128,7 +128,7 @@ func TestGitDisabled(t *testing.T) {
 			t.Errorf("node %q has status %q with -no-git", k.Name, k.Status)
 		}
 	}
-	s := NewServer(ix, nil)
+	s := NewServer(ix, nil, assets, devRoot)
 	_, body := get(t, s, "/api/diff?path=sub/mod.go")
 	if body["available"] != false {
 		t.Errorf("diff available = %v with -no-git, want false", body["available"])
@@ -177,7 +177,7 @@ func TestGitGutter(t *testing.T) {
 
 	ix := workspace.NewIndex(root)
 	ix.Build()
-	s := NewServer(ix, nil)
+	s := NewServer(ix, nil, assets, devRoot)
 
 	ints := func(body map[string]any, key string) []int {
 		var out []int
@@ -240,7 +240,7 @@ func TestGitWatcherStreamAndRefresh(t *testing.T) {
 	ix := workspace.NewIndex(root)
 	ix.Build()
 
-	s := NewServer(ix, nil)
+	s := NewServer(ix, nil, assets, devRoot)
 	ts := httptest.NewServer(s.mux)
 	defer ts.Close()
 
@@ -347,7 +347,7 @@ func TestGitWatcherAfterCommitNewChanges(t *testing.T) {
 	ix := workspace.NewIndex(root)
 	ix.Build()
 
-	s := NewServer(ix, nil)
+	s := NewServer(ix, nil, assets, devRoot)
 	ts := httptest.NewServer(s.mux)
 	defer ts.Close()
 
@@ -485,7 +485,7 @@ func TestGitStatusAgainstAndPRDiff(t *testing.T) {
 	}
 
 	// Server should mark diffAvailable=true for foo.go
-	srv := NewServer(ix, lsppkg.New(lsppkg.Options{Root: root, Enabled: false, Version: version}))
+	srv := NewServer(ix, lsppkg.New(lsppkg.Options{Root: root, Enabled: false, Version: version}), assets, devRoot)
 	srv.diffBase = baseSHA
 
 	req := httptest.NewRequest("GET", "/api/file?path=foo.go", nil)
@@ -574,7 +574,7 @@ func TestHandleDiffPRSplitsPRAndYourChanges(t *testing.T) {
 
 	ix := workspace.NewIndex(root)
 	ix.Build()
-	srv := NewServer(ix, lsppkg.New(lsppkg.Options{Root: root, Enabled: false, Version: version}))
+	srv := NewServer(ix, lsppkg.New(lsppkg.Options{Root: root, Enabled: false, Version: version}), assets, devRoot)
 	// checkoutPR would have set this to the real merge-base; a plain
 	// commit SHA works identically as a diff boundary in this test.
 	srv.SetPR(prpkg.New(nil, forge.PRTarget{Owner: "o", Repo: "r"}, forge.PRMeta{Number: 1, BaseRef: "main", HeadRef: "feature", HeadSHA: prHead}, "", mergeBase))
@@ -769,7 +769,7 @@ func TestGitRecentCommitsAndLog(t *testing.T) {
 	// Test /api/git/log endpoint
 	ix := workspace.NewIndex(dir)
 	ix.Build()
-	s := NewServer(ix, nil)
+	s := NewServer(ix, nil, assets, devRoot)
 	ts := httptest.NewServer(s.mux)
 	defer ts.Close()
 
@@ -884,7 +884,7 @@ func TestDeletedFileHandling(t *testing.T) {
 	}
 
 	// 2. Test /api/file and /api/diff endpoints for deleted file
-	srv := NewServer(ix, lsppkg.New(lsppkg.Options{Root: ix.Root(), Enabled: false, Version: version}))
+	srv := NewServer(ix, lsppkg.New(lsppkg.Options{Root: ix.Root(), Enabled: false, Version: version}), assets, devRoot)
 	ts := httptest.NewServer(srv)
 	defer ts.Close()
 
@@ -974,7 +974,7 @@ func TestUnpushedEndpoints(t *testing.T) {
 	root := gittest.UnpushedRepo(t)
 	ix := workspace.NewIndex(root)
 	ix.Build()
-	s := NewServer(ix, nil)
+	s := NewServer(ix, nil, assets, devRoot)
 	ts := httptest.NewServer(s.mux)
 	defer ts.Close()
 
@@ -1078,7 +1078,7 @@ func TestUnpushedEndpointWithoutUpstream(t *testing.T) {
 	root := gittest.Repo(t)
 	ix := workspace.NewIndex(root)
 	ix.Build()
-	s := NewServer(ix, nil)
+	s := NewServer(ix, nil, assets, devRoot)
 	ts := httptest.NewServer(s.mux)
 	defer ts.Close()
 
@@ -1113,7 +1113,7 @@ func TestGitCommitAutoStage(t *testing.T) {
 	}
 	ix := workspace.NewIndex(root)
 	ix.Build()
-	s := NewServer(ix, nil)
+	s := NewServer(ix, nil, assets, devRoot)
 
 	if len(git.StagedPaths(root)) != 0 {
 		t.Fatalf("expected nothing staged before commit")

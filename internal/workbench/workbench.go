@@ -1,4 +1,4 @@
-package main
+package workbench
 
 // The workbench is what a bare `faah` opens: a launcher page listing the
 // directories and pull requests opened before, with a folder browser and a box
@@ -10,10 +10,10 @@ package main
 // Children are tied to the workbench through their stdin: when the pipe closes,
 // because the workbench stopped them or died, they shut down the same way a
 // Ctrl-C would, which removes PR checkouts and stops language servers. A child
-// nobody has had open for wbIdleAfter is stopped to free its memory; opening it
+// nobody has had open for idleAfter is stopped to free its memory; opening it
 // again starts a new one.
 //
-// What was opened is recorded in workbench.json (see workbenchStorePath). It
+// What was opened is recorded in workbench.json (see storePath). It
 // holds what to reopen, never live state: process IDs and ports are not saved.
 
 import (
@@ -40,25 +40,25 @@ import (
 
 	"faah/internal/forge"
 	"faah/internal/git"
+	"faah/internal/httpx"
 	"faah/internal/metrics"
-	prpkg "faah/internal/pr"
 	"faah/internal/settings"
 	"faah/internal/ui"
 )
 
 const (
-	wbReadyPrefix  = "faah-ready "    // a child prints this, then its address, once it is listening
-	wbStartTimeout = 3 * time.Minute  // a PR checkout may clone a large repository
-	wbIdleAfter    = 30 * time.Minute // stop a child nobody has had open for this long
-	wbStopGrace    = 5 * time.Second  // how long a child gets to clean up before it is killed
-	wbMaxRecent    = 50               // unpinned entries kept in workbench.json
-	wbMaxBrowse    = 5000             // directory entries listed by the folder browser
-	wbLogLines     = 20               // child output lines kept for error reports
-	wbPingTimeout  = 400 * time.Millisecond
+	ReadyPrefix  = "faah-ready "    // a child prints this, then its address, once it is listening
+	startTimeout = 3 * time.Minute  // a PR checkout may clone a large repository
+	idleAfter    = 30 * time.Minute // stop a child nobody has had open for this long
+	stopGrace    = 5 * time.Second  // how long a child gets to clean up before it is killed
+	maxRecent    = 50               // unpinned entries kept in Launcher.json
+	maxBrowse    = 5000             // directory entries listed by the folder browser
+	logLines     = 20               // child output lines kept for error reports
+	pingTimeout  = 400 * time.Millisecond
 )
 
-// wbItem is one entry in workbench.json: a directory or a pull request.
-type wbItem struct {
+// item is one entry in workbench.json: a directory or a pull request.
+type item struct {
 	ID         string `json:"id"`
 	Kind       string `json:"kind"` // "dir" or "pr"
 	Path       string `json:"path,omitempty"`
@@ -70,17 +70,17 @@ type wbItem struct {
 	LastOpened int64  `json:"lastOpened"` // unix milliseconds
 }
 
-type wbFile struct {
-	Version int      `json:"version"`
-	Items   []wbItem `json:"items"`
+type file struct {
+	Version int    `json:"version"`
+	Items   []item `json:"items"`
 	// Clones maps a lowercased "owner/repo" to the local clone its pull
 	// requests are checked out from (see workbench_clone.go).
 	Clones map[string]string `json:"clones,omitempty"`
 }
 
-// workbenchStateDir is where workbench.json and the instance lock live:
+// stateDir is where workbench.json and the instance lock live:
 // $XDG_STATE_HOME/faah when set, otherwise ~/.faah, like the session files.
-func workbenchStateDir() string {
+func stateDir() string {
 	if xdg := os.Getenv("XDG_STATE_HOME"); xdg != "" {
 		return filepath.Join(xdg, "faah")
 	}
@@ -90,23 +90,23 @@ func workbenchStateDir() string {
 	return filepath.Join(os.TempDir(), "faah")
 }
 
-func workbenchStorePath() string { return filepath.Join(workbenchStateDir(), "workbench.json") }
-func workbenchLockPath() string  { return filepath.Join(workbenchStateDir(), "workbench.lock") }
+func storePath() string { return filepath.Join(stateDir(), "workbench.json") }
+func lockPath() string  { return filepath.Join(stateDir(), "workbench.lock") }
 
-// wbItemID is stable for a directory or PR, so its /w/<id>/ URL and the
+// itemID is stable for a directory or PR, so its /w/<id>/ URL and the
 // session file keyed on that base path (review drafts) survive restarts.
-func wbItemID(kind, key string) string {
+func itemID(kind, key string) string {
 	h := sha256.Sum256([]byte(kind + "\x00" + key))
 	return hex.EncodeToString(h[:6])
 }
 
-func wbDirItem(root string) wbItem {
+func dirItem(root string) item {
 	root = filepath.Clean(root)
-	return wbItem{ID: wbItemID("dir", root), Kind: "dir", Path: root, Title: filepath.Base(root)}
+	return item{ID: itemID("dir", root), Kind: "dir", Path: root, Title: filepath.Base(root)}
 }
 
-func wbPRItem(pt forge.PRTarget) wbItem {
-	return wbItem{
+func prItem(pt forge.PRTarget) item {
+	return item{
 		ID:     forge.ItemID(pt),
 		Kind:   "pr",
 		URL:    pt.URL,
@@ -115,16 +115,16 @@ func wbPRItem(pt forge.PRTarget) wbItem {
 	}
 }
 
-// wbStore reads and writes workbench.json. It keeps no copy in memory: every
+// store reads and writes workbench.json. It keeps no copy in memory: every
 // change re-reads the file first, so entries recorded meanwhile by a plain
 // `faah <dir>` in another terminal are not overwritten.
-type wbStore struct {
+type store struct {
 	mu   sync.Mutex
 	path string
 }
 
-func (st *wbStore) load() wbFile {
-	f := wbFile{Version: 1}
+func (st *store) load() file {
+	f := file{Version: 1}
 	b, err := os.ReadFile(st.path)
 	if err != nil {
 		return f
@@ -132,19 +132,19 @@ func (st *wbStore) load() wbFile {
 	if err := json.Unmarshal(b, &f); err != nil {
 		// Keep the unreadable file for inspection rather than overwriting it.
 		os.Rename(st.path, st.path+".bad")
-		return wbFile{Version: 1}
+		return file{Version: 1}
 	}
 	f.Version = 1
 	return f
 }
 
-func (st *wbStore) Load() wbFile {
+func (st *store) snapshot() file {
 	st.mu.Lock()
 	defer st.mu.Unlock()
 	return st.load()
 }
 
-func (st *wbStore) Update(fn func(*wbFile)) error {
+func (st *store) update(fn func(*file)) error {
 	st.mu.Lock()
 	defer st.mu.Unlock()
 	f := st.load()
@@ -153,19 +153,19 @@ func (st *wbStore) Update(fn func(*wbFile)) error {
 	return writeFileAtomic(st.path, f)
 }
 
-func (st *wbStore) Get(id string) (wbItem, bool) {
-	for _, it := range st.Load().Items {
+func (st *store) get(id string) (item, bool) {
+	for _, it := range st.snapshot().Items {
 		if it.ID == id {
 			return it, true
 		}
 	}
-	return wbItem{}, false
+	return item{}, false
 }
 
 // Record adds an item or refreshes an existing one, marking it opened now.
 // Pinned state survives; a title is only replaced by a non-empty one.
-func (st *wbStore) Record(it wbItem) error {
-	return st.Update(func(f *wbFile) {
+func (st *store) record(it item) error {
+	return st.update(func(f *file) {
 		it.LastOpened = time.Now().UnixMilli()
 		for i := range f.Items {
 			if f.Items[i].ID == it.ID {
@@ -182,13 +182,13 @@ func (st *wbStore) Record(it wbItem) error {
 }
 
 // trimRecent orders items most recent first and drops the oldest unpinned ones.
-func trimRecent(f *wbFile) {
+func trimRecent(f *file) {
 	sort.SliceStable(f.Items, func(i, j int) bool { return f.Items[i].LastOpened > f.Items[j].LastOpened })
 	kept := f.Items[:0]
 	unpinned := 0
 	for _, it := range f.Items {
 		if !it.Pinned {
-			if unpinned >= wbMaxRecent {
+			if unpinned >= maxRecent {
 				continue
 			}
 			unpinned++
@@ -228,14 +228,14 @@ func writeFileAtomic(p string, v any) error {
 
 // recordRecent notes a workspace opened outside the workbench (`faah <dir>`,
 // `faah <pr-url>`) so it shows up in the workbench later. Best effort.
-func recordRecent(it wbItem) {
-	st := &wbStore{path: workbenchStorePath()}
-	_ = st.Record(it)
+func recordRecent(it item) error {
+	st := &store{path: storePath()}
+	return st.record(it)
 }
 
 /* ---------- child processes ---------- */
 
-type wbChild struct {
+type child struct {
 	id       string
 	title    string // for the holding page, which may outlive the item (see forget)
 	gone     bool   // failed, and the item was taken out of the list with it
@@ -261,12 +261,12 @@ type wbChild struct {
 	log   []string
 }
 
-func (c *wbChild) appendLog(line string) {
+func (c *child) appendLog(line string) {
 	c.logMu.Lock()
 	defer c.logMu.Unlock()
 	c.log = append(c.log, line)
-	if len(c.log) > wbLogLines {
-		c.log = c.log[len(c.log)-wbLogLines:]
+	if len(c.log) > logLines {
+		c.log = c.log[len(c.log)-logLines:]
 	}
 }
 
@@ -313,7 +313,7 @@ func (lw *lineWriter) emit(line string) {
 
 // failure picks the line that best explains why a child exited: the last
 // "faah: ..." line fatal() wrote, otherwise the last thing it said.
-func (c *wbChild) failure() string {
+func (c *child) failure() string {
 	c.logMu.Lock()
 	defer c.logMu.Unlock()
 	for i := len(c.log) - 1; i >= 0; i-- {
@@ -333,28 +333,43 @@ func (c *wbChild) failure() string {
 	return "faah exited unexpectedly"
 }
 
-type workbench struct {
-	store     *wbStore
+type Launcher struct {
+	store     *store
+	assets    fs.FS
+	devRoot   string
+	version   string
+	resolve   func(string) (string, string, int, error)
 	basePath  string
 	cwd       string
 	exe       string
 	childArgs []string // flags handed on to every child (-no-lsp, -agent, ...)
 
 	mu       sync.Mutex
-	children map[string]*wbChild
+	children map[string]*child
 	closing  bool
 
 	mux *http.ServeMux
 }
 
-func newWorkbench(basePath, cwd, exe string, childArgs []string) *workbench {
-	wb := &workbench{
-		store:     &wbStore{path: workbenchStorePath()},
-		basePath:  cleanBasePath(basePath),
-		cwd:       cwd,
-		exe:       exe,
-		childArgs: childArgs,
-		children:  map[string]*wbChild{},
+type Options struct {
+	BasePath, CWD, Executable, Version, DevRoot string
+	ChildArgs                                   []string
+	Assets                                      fs.FS
+	ResolveTarget                               func(string) (root, initialFile string, line int, err error)
+}
+
+func New(opts Options) *Launcher {
+	wb := &Launcher{
+		store:     &store{path: storePath()},
+		basePath:  httpx.CleanBasePath(opts.BasePath),
+		cwd:       opts.CWD,
+		exe:       opts.Executable,
+		childArgs: opts.ChildArgs,
+		assets:    opts.Assets,
+		devRoot:   opts.DevRoot,
+		version:   opts.Version,
+		resolve:   opts.ResolveTarget,
+		children:  map[string]*child{},
 		mux:       http.NewServeMux(),
 	}
 	wb.routes()
@@ -362,17 +377,17 @@ func newWorkbench(basePath, cwd, exe string, childArgs []string) *workbench {
 	return wb
 }
 
-func (wb *workbench) route(sub string) string {
+func (wb *Launcher) route(sub string) string {
 	return strings.TrimSuffix(wb.basePath, "/") + sub
 }
 
-func (wb *workbench) childBase(id string) string { return wb.route("/w/" + id + "/") }
+func (wb *Launcher) childBase(id string) string { return wb.route("/w/" + id + "/") }
 
-func (wb *workbench) routes() {
-	sub, _ := fs.Sub(assets, "web")
+func (wb *Launcher) routes() {
+	sub, _ := fs.Sub(wb.assets, "web")
 	staticPrefix := wb.route("/static/")
-	wb.mux.Handle(staticPrefix, (&Server{}).handleStatic(sub, staticPrefix))
-	wb.mux.HandleFunc(wb.route("/static/themes.css"), (&Server{}).handleThemes)
+	wb.mux.Handle(staticPrefix, httpx.Static(sub, staticPrefix))
+	wb.mux.HandleFunc(wb.route("/static/themes.css"), httpx.Themes(wb.assets, wb.devRoot))
 	wb.mux.HandleFunc(wb.route("/api/wb/ping"), wb.handlePing)
 	wb.mux.HandleFunc(wb.route("/api/wb/state"), wb.handleState)
 	wb.mux.HandleFunc(wb.route("/api/wb/browse"), wb.handleBrowse)
@@ -394,11 +409,11 @@ func (wb *workbench) routes() {
 	}
 }
 
-func (wb *workbench) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (wb *Launcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if !strings.HasPrefix(r.URL.Path, wb.route("/w/")) {
 		// Proxied responses carry the child's own headers.
 		w.Header().Set("Cache-Control", "no-store")
-		w.Header().Set("Content-Security-Policy", contentSecurityPolicy)
+		w.Header().Set("Content-Security-Policy", httpx.ContentSecurityPolicy)
 	}
 	if ui.Verbose {
 		start := time.Now()
@@ -412,14 +427,14 @@ func (wb *workbench) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // start launches the child for it unless one is already starting or running.
 // With forget set, a child that fails before it is ready also takes the item
 // out of the list: a mistyped PR URL should not linger there.
-func (wb *workbench) start(it wbItem, forget bool) *wbChild {
+func (wb *Launcher) start(it item, forget bool) *child {
 	wb.mu.Lock()
 	defer wb.mu.Unlock()
 	if c := wb.children[it.ID]; c != nil && (c.state == "starting" || c.state == "running") {
 		return c
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	c := &wbChild{id: it.ID, title: itemTitle(it), state: "starting", done: make(chan struct{}),
+	c := &child{id: it.ID, title: itemTitle(it), state: "starting", done: make(chan struct{}),
 		ctx: ctx, cancel: cancel, lastActive: time.Now()}
 	wb.children[it.ID] = c
 	if wb.closing {
@@ -434,7 +449,7 @@ func (wb *workbench) start(it wbItem, forget bool) *wbChild {
 
 // run prepares what the child needs (a PR's local clone), starts it, waits
 // for it to report its address, then waits for it to exit.
-func (wb *workbench) run(c *wbChild, it wbItem, forget bool) {
+func (wb *Launcher) run(c *child, it item, forget bool) {
 	defer close(c.done)
 	defer c.cancel()
 	failed := func(msg string) {
@@ -443,7 +458,7 @@ func (wb *workbench) run(c *wbChild, it wbItem, forget bool) {
 			wb.mu.Lock()
 			c.gone = true
 			wb.mu.Unlock()
-			_ = wb.store.Update(func(f *wbFile) { f.Items = withoutItem(f.Items, it.ID) })
+			_ = wb.store.update(func(f *file) { f.Items = withoutItem(f.Items, it.ID) })
 		}
 	}
 
@@ -479,9 +494,9 @@ func (wb *workbench) run(c *wbChild, it wbItem, forget bool) {
 	cmd.Env = append(os.Environ(), "GIT_TERMINAL_PROMPT=0")
 	ready := make(chan string, 1)
 	out := &lineWriter{fn: func(line string) {
-		if i := strings.Index(line, wbReadyPrefix); i >= 0 {
+		if i := strings.Index(line, ReadyPrefix); i >= 0 {
 			select {
-			case ready <- strings.TrimSpace(line[i+len(wbReadyPrefix):]):
+			case ready <- strings.TrimSpace(line[i+len(ReadyPrefix):]):
 			default:
 			}
 			return
@@ -492,7 +507,7 @@ func (wb *workbench) run(c *wbChild, it wbItem, forget bool) {
 	cmd.Stderr = &lineWriter{fn: c.appendLog}
 	// A language server or harness the child started could hold its output
 	// open after it exits; do not let that keep Wait from returning.
-	cmd.WaitDelay = wbStopGrace
+	cmd.WaitDelay = stopGrace
 	stdin, err := cmd.StdinPipe()
 	if err == nil {
 		wb.mu.Lock()
@@ -519,7 +534,7 @@ func (wb *workbench) run(c *wbChild, it wbItem, forget bool) {
 		exited <- err
 	}()
 
-	timer := time.NewTimer(wbStartTimeout)
+	timer := time.NewTimer(startTimeout)
 	defer timer.Stop()
 	select {
 	case addr := <-ready:
@@ -539,7 +554,7 @@ func (wb *workbench) run(c *wbChild, it wbItem, forget bool) {
 			},
 			FlushInterval: -1, // event streams must not sit in a buffer
 			ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
-				fail(w, http.StatusBadGateway, "workspace is not responding: "+err.Error())
+				httpx.Fail(w, http.StatusBadGateway, "workspace is not responding: "+err.Error())
 			},
 		}
 		wb.mu.Lock()
@@ -568,19 +583,19 @@ func (wb *workbench) run(c *wbChild, it wbItem, forget bool) {
 	wb.setState(c, "stopped", "")
 }
 
-func (wb *workbench) setState(c *wbChild, state, msg string) {
+func (wb *Launcher) setState(c *child, state, msg string) {
 	wb.mu.Lock()
 	c.state, c.err, c.proxy, c.progress = state, msg, nil, ""
 	wb.mu.Unlock()
 }
 
-func (wb *workbench) setProgress(c *wbChild, msg string) {
+func (wb *Launcher) setProgress(c *child, msg string) {
 	wb.mu.Lock()
 	c.progress = msg
 	wb.mu.Unlock()
 }
 
-func (wb *workbench) isClosing() bool {
+func (wb *Launcher) isClosing() bool {
 	wb.mu.Lock()
 	defer wb.mu.Unlock()
 	return wb.closing
@@ -588,7 +603,7 @@ func (wb *workbench) isClosing() bool {
 
 // learnTitle asks a freshly started child for its PR title so the list shows
 // more than a number.
-func (wb *workbench) learnTitle(c *wbChild, it wbItem) {
+func (wb *Launcher) learnTitle(c *child, it item) {
 	if it.Kind != "pr" {
 		return
 	}
@@ -606,7 +621,7 @@ func (wb *workbench) learnTitle(c *wbChild, it wbItem) {
 	if json.NewDecoder(resp.Body).Decode(&meta) != nil || meta.PR == nil || meta.PR.Title == "" {
 		return
 	}
-	_ = wb.store.Update(func(f *wbFile) {
+	_ = wb.store.update(func(f *file) {
 		for i := range f.Items {
 			if f.Items[i].ID == it.ID {
 				f.Items[i].Title = meta.PR.Title
@@ -616,9 +631,9 @@ func (wb *workbench) learnTitle(c *wbChild, it wbItem) {
 }
 
 // stop closes the child's stdin, which it takes as the signal to shut down,
-// and kills it if it is still around after wbStopGrace. A child still
+// and kills it if it is still around after stopGrace. A child still
 // preparing (cloning) is cancelled instead.
-func (wb *workbench) stop(id string) {
+func (wb *Launcher) stop(id string) {
 	wb.mu.Lock()
 	c := wb.children[id]
 	var cmd *exec.Cmd
@@ -635,7 +650,7 @@ func (wb *workbench) stop(id string) {
 	}
 	select {
 	case <-c.done:
-	case <-time.After(wbStopGrace):
+	case <-time.After(stopGrace):
 		if cmd != nil {
 			cmd.Process.Kill()
 		}
@@ -644,7 +659,7 @@ func (wb *workbench) stop(id string) {
 }
 
 // Close stops every child, in parallel, and waits for them.
-func (wb *workbench) Close() {
+func (wb *Launcher) Close() {
 	wb.mu.Lock()
 	wb.closing = true
 	ids := make([]string, 0, len(wb.children))
@@ -660,14 +675,14 @@ func (wb *workbench) Close() {
 	wg.Wait()
 }
 
-func (wb *workbench) reapIdle() {
+func (wb *Launcher) reapIdle() {
 	tick := time.NewTicker(time.Minute)
 	defer tick.Stop()
 	for range tick.C {
 		var idle []string
 		wb.mu.Lock()
 		for id, c := range wb.children {
-			if c.state == "running" && c.active == 0 && time.Since(c.lastActive) > wbIdleAfter {
+			if c.state == "running" && c.active == 0 && time.Since(c.lastActive) > idleAfter {
 				idle = append(idle, id)
 			}
 		}
@@ -690,52 +705,52 @@ func trustedGet(w http.ResponseWriter, r *http.Request) bool {
 	}
 	host = strings.Trim(host, "[]")
 	if host != "localhost" && net.ParseIP(host) == nil {
-		fail(w, http.StatusForbidden, "open faah by IP address or localhost")
+		httpx.Fail(w, http.StatusForbidden, "open faah by IP address or localhost")
 		return false
 	}
 	return true
 }
 
-func (wb *workbench) handleIndex(w http.ResponseWriter, r *http.Request) {
+func (wb *Launcher) handleIndex(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != wb.basePath {
 		http.NotFound(w, r)
 		return
 	}
-	b, err := fs.ReadFile(assets, "web/workbench.html")
+	b, err := fs.ReadFile(wb.assets, "web/workbench.html")
 	if err != nil {
-		fail(w, 500, err.Error())
+		httpx.Fail(w, 500, err.Error())
 		return
 	}
 	html := strings.Replace(string(b), `<base href="/">`, fmt.Sprintf(`<base href="%s">`, template.HTMLEscapeString(wb.basePath)), 1)
-	html = strings.Replace(html, `data-theme="catppuccin-mocha"`, fmt.Sprintf(`data-theme="%s"`, template.HTMLEscapeString(wbTheme())), 1)
+	html = strings.Replace(html, `data-theme="catppuccin-mocha"`, fmt.Sprintf(`data-theme="%s"`, template.HTMLEscapeString(wb.theme())), 1)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	io.WriteString(w, html)
 }
 
-func wbTheme() string {
+func (wb *Launcher) theme() string {
 	if t := settings.Read().WorkbenchColorTheme; t != nil && *t != "" && !strings.ContainsAny(*t, `/\`) {
 		// Holding pages do not run the app's client-side theme initialization.
-		if info, err := fs.Stat(assets, "web/themes/"+*t+".css"); err == nil && !info.IsDir() {
+		if info, err := fs.Stat(wb.assets, "web/themes/"+*t+".css"); err == nil && !info.IsDir() {
 			return *t
 		}
 	}
 	return "catppuccin-mocha"
 }
 
-func (wb *workbench) handlePing(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, map[string]any{"workbench": true, "version": version})
+func (wb *Launcher) handlePing(w http.ResponseWriter, r *http.Request) {
+	httpx.WriteJSON(w, map[string]any{"workbench": true, "version": wb.version})
 }
 
-type wbItemView struct {
-	wbItem
+type itemView struct {
+	item
 	State    string `json:"state"`
 	Error    string `json:"error,omitempty"`
 	Progress string `json:"progress,omitempty"`
 	Href     string `json:"href"`
 }
 
-func (wb *workbench) view(it wbItem) wbItemView {
-	v := wbItemView{wbItem: it, State: "stopped", Href: wb.childBase(it.ID)}
+func (wb *Launcher) view(it item) itemView {
+	v := itemView{item: it, State: "stopped", Href: wb.childBase(it.ID)}
 	wb.mu.Lock()
 	if c := wb.children[it.ID]; c != nil {
 		v.State, v.Error, v.Progress = c.state, c.err, c.progress
@@ -744,26 +759,26 @@ func (wb *workbench) view(it wbItem) wbItemView {
 	return v
 }
 
-func (wb *workbench) handleState(w http.ResponseWriter, r *http.Request) {
+func (wb *Launcher) handleState(w http.ResponseWriter, r *http.Request) {
 	if !trustedGet(w, r) {
 		return
 	}
-	items := wb.store.Load().Items
-	views := make([]wbItemView, 0, len(items))
+	items := wb.store.snapshot().Items
+	views := make([]itemView, 0, len(items))
 	for _, it := range items {
 		views = append(views, wb.view(it))
 	}
 	home, _ := os.UserHomeDir()
-	writeJSON(w, map[string]any{
+	httpx.WriteJSON(w, map[string]any{
 		"cwd":     wb.cwd,
 		"home":    home,
 		"sep":     string(filepath.Separator),
-		"version": version,
+		"version": wb.version,
 		"items":   views,
 	})
 }
 
-type wbEntry struct {
+type entry struct {
 	Name string `json:"name"`
 	Path string `json:"path"`
 	Git  bool   `json:"git,omitempty"`
@@ -775,24 +790,24 @@ func hasGitMarker(dir string) bool {
 	return err == nil
 }
 
-func (wb *workbench) handleBrowse(w http.ResponseWriter, r *http.Request) {
+func (wb *Launcher) handleBrowse(w http.ResponseWriter, r *http.Request) {
 	if !trustedGet(w, r) {
 		return
 	}
 	dir, err := expandPath(r.URL.Query().Get("path"), wb.cwd)
 	if err != nil {
-		fail(w, http.StatusBadRequest, err.Error())
+		httpx.Fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	ents, err := os.ReadDir(dir)
 	if err != nil {
-		fail(w, http.StatusBadRequest, err.Error())
+		httpx.Fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	showHidden := r.URL.Query().Get("hidden") == "1"
-	out := []wbEntry{}
+	out := []entry{}
 	for _, e := range ents {
-		if len(out) >= wbMaxBrowse {
+		if len(out) >= maxBrowse {
 			break
 		}
 		name := e.Name()
@@ -809,22 +824,22 @@ func (wb *workbench) handleBrowse(w http.ResponseWriter, r *http.Request) {
 		if !isDir {
 			continue
 		}
-		out = append(out, wbEntry{Name: name, Path: full, Git: hasGitMarker(full)})
+		out = append(out, entry{Name: name, Path: full, Git: hasGitMarker(full)})
 	}
 	sort.Slice(out, func(i, j int) bool { return strings.ToLower(out[i].Name) < strings.ToLower(out[j].Name) })
 	parent := filepath.Dir(dir)
 	if parent == dir {
 		parent = ""
 	}
-	writeJSON(w, map[string]any{"path": dir, "parent": parent, "git": hasGitMarker(dir) || git.Available(dir), "entries": out})
+	httpx.WriteJSON(w, map[string]any{"path": dir, "parent": parent, "git": hasGitMarker(dir) || git.Available(dir), "entries": out})
 }
 
 // handleMkdir creates a folder for Browse's New folder. The path is a name
 // inside base (the folder being shown), or a ~ or absolute path; missing
 // parents are created too. A folder that already exists is an error, so a
 // typo cannot silently land somewhere else.
-func (wb *workbench) handleMkdir(w http.ResponseWriter, r *http.Request) {
-	if !localPost(w, r) {
+func (wb *Launcher) handleMkdir(w http.ResponseWriter, r *http.Request) {
+	if !httpx.LocalPost(w, r) {
 		return
 	}
 	var body struct {
@@ -832,7 +847,7 @@ func (wb *workbench) handleMkdir(w http.ResponseWriter, r *http.Request) {
 		Base string `json:"base"`
 	}
 	if readJSONBody(r, &body) != nil || strings.TrimSpace(body.Path) == "" {
-		fail(w, http.StatusBadRequest, "folder name is required")
+		httpx.Fail(w, http.StatusBadRequest, "folder name is required")
 		return
 	}
 	base := body.Base
@@ -841,32 +856,32 @@ func (wb *workbench) handleMkdir(w http.ResponseWriter, r *http.Request) {
 	}
 	dir, err := expandPath(body.Path, base)
 	if err != nil {
-		fail(w, http.StatusBadRequest, err.Error())
+		httpx.Fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	if _, err := os.Stat(dir); err == nil {
-		fail(w, http.StatusConflict, dir+" already exists")
+		httpx.Fail(w, http.StatusConflict, dir+" already exists")
 		return
 	}
 	if err := os.MkdirAll(dir, 0o755); err != nil {
-		fail(w, http.StatusBadRequest, err.Error())
+		httpx.Fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	writeJSON(w, map[string]any{"path": dir})
+	httpx.WriteJSON(w, map[string]any{"path": dir})
 }
 
 // handleComplete completes the folder name being typed: q's last path
 // element is a case-insensitive prefix of folders in its parent. A q ending
 // in a separator lists the folder itself. Each value keeps the q's own
 // spelling of the parent (~, relative), so the input does not jump.
-func (wb *workbench) handleComplete(w http.ResponseWriter, r *http.Request) {
+func (wb *Launcher) handleComplete(w http.ResponseWriter, r *http.Request) {
 	if !trustedGet(w, r) {
 		return
 	}
 	q := r.URL.Query().Get("q")
-	out := []wbEntry{}
+	out := []entry{}
 	if strings.TrimSpace(q) == "" || strings.Contains(q, "://") {
-		writeJSON(w, map[string]any{"entries": out})
+		httpx.WriteJSON(w, map[string]any{"entries": out})
 		return
 	}
 	typedDir, prefix := q, ""
@@ -881,12 +896,12 @@ func (wb *workbench) handleComplete(w http.ResponseWriter, r *http.Request) {
 	}
 	dir, err := expandPath(typedDir, wb.cwd)
 	if err != nil {
-		writeJSON(w, map[string]any{"entries": out})
+		httpx.WriteJSON(w, map[string]any{"entries": out})
 		return
 	}
 	ents, err := os.ReadDir(dir)
 	if err != nil {
-		writeJSON(w, map[string]any{"entries": out})
+		httpx.WriteJSON(w, map[string]any{"entries": out})
 		return
 	}
 	lp := strings.ToLower(prefix)
@@ -905,7 +920,7 @@ func (wb *workbench) handleComplete(w http.ResponseWriter, r *http.Request) {
 		if !isDir {
 			continue
 		}
-		out = append(out, wbEntry{Name: name, Path: typedDir + name + "/", Git: hasGitMarker(full)})
+		out = append(out, entry{Name: name, Path: typedDir + name + "/", Git: hasGitMarker(full)})
 	}
 	sort.Slice(out, func(i, j int) bool {
 		// Exact-case prefix matches first, then alphabetical.
@@ -918,17 +933,17 @@ func (wb *workbench) handleComplete(w http.ResponseWriter, r *http.Request) {
 	if len(out) > 50 {
 		out = out[:50]
 	}
-	writeJSON(w, map[string]any{"dir": dir, "entries": out})
+	httpx.WriteJSON(w, map[string]any{"dir": dir, "entries": out})
 }
 
 // handleMetrics sums the workbench and every running workspace, the way the
 // app's status bar shows one process, and lists each part for the menu.
-func (wb *workbench) handleMetrics(w http.ResponseWriter, r *http.Request) {
+func (wb *Launcher) handleMetrics(w http.ResponseWriter, r *http.Request) {
 	type part struct {
 		Name string `json:"name"`
 		metrics.ProcessMetrics
 	}
-	self := getProcessMetrics(nil)
+	self := metrics.Collect(0, false)
 	parts := []part{{Name: "workbench", ProcessMetrics: self}}
 
 	type running struct{ name, url string }
@@ -973,7 +988,7 @@ func (wb *workbench) handleMetrics(w http.ResponseWriter, r *http.Request) {
 		total.LSPMemBytes += p.LSPMemBytes
 		total.LSPEnabled = total.LSPEnabled || p.LSPEnabled
 	}
-	writeJSON(w, map[string]any{
+	httpx.WriteJSON(w, map[string]any{
 		"rssBytes":    total.RSSBytes,
 		"cpuUsage":    total.CPUUsage,
 		"goroutines":  total.Goroutine,
@@ -985,25 +1000,25 @@ func (wb *workbench) handleMetrics(w http.ResponseWriter, r *http.Request) {
 
 // handleSettings saves the theme picked on the workbench page. Only the
 // theme: the app's full settings editor lives in each workspace.
-func (wb *workbench) handleSettings(w http.ResponseWriter, r *http.Request) {
-	if !localPost(w, r) {
+func (wb *Launcher) handleSettings(w http.ResponseWriter, r *http.Request) {
+	if !httpx.LocalPost(w, r) {
 		return
 	}
 	var body map[string]any
 	if readJSONBody(r, &body) != nil {
-		fail(w, http.StatusBadRequest, "bad request")
+		httpx.Fail(w, http.StatusBadRequest, "bad request")
 		return
 	}
 	theme, ok := body["workbench.colorTheme"].(string)
 	if !ok || len(body) != 1 {
-		fail(w, http.StatusBadRequest, "only workbench.colorTheme can be set here")
+		httpx.Fail(w, http.StatusBadRequest, "only workbench.colorTheme can be set here")
 		return
 	}
 	if err := settings.UpdateMap(map[string]any{"workbench.colorTheme": theme}); err != nil {
-		fail(w, http.StatusInternalServerError, err.Error())
+		httpx.Fail(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	writeJSON(w, map[string]any{"ok": true})
+	httpx.WriteJSON(w, map[string]any{"ok": true})
 }
 
 // expandPath resolves ~ and relative paths (against base) to a clean absolute path.
@@ -1031,8 +1046,8 @@ func readJSONBody(r *http.Request, v any) error {
 
 // handleOpen records a directory or PR URL and starts its child. The page
 // then navigates to href, which shows progress until the child is ready.
-func (wb *workbench) handleOpen(w http.ResponseWriter, r *http.Request) {
-	if !localPost(w, r) {
+func (wb *Launcher) handleOpen(w http.ResponseWriter, r *http.Request) {
+	if !httpx.LocalPost(w, r) {
 		return
 	}
 	var body struct {
@@ -1043,21 +1058,21 @@ func (wb *workbench) handleOpen(w http.ResponseWriter, r *http.Request) {
 		Clone string `json:"clone"`
 	}
 	if err := readJSONBody(r, &body); err != nil {
-		fail(w, http.StatusBadRequest, "bad request")
+		httpx.Fail(w, http.StatusBadRequest, "bad request")
 		return
 	}
-	var it wbItem
+	var it item
 	if body.ID != "" {
-		known, ok := wb.store.Get(body.ID)
+		known, ok := wb.store.get(body.ID)
 		if !ok {
-			fail(w, http.StatusNotFound, "unknown workspace")
+			httpx.Fail(w, http.StatusNotFound, "unknown workspace")
 			return
 		}
 		it = known
 	} else {
 		var err error
 		if it, err = wb.resolveTarget(body.Target); err != nil {
-			fail(w, http.StatusBadRequest, err.Error())
+			httpx.Fail(w, http.StatusBadRequest, err.Error())
 			return
 		}
 	}
@@ -1066,7 +1081,7 @@ func (wb *workbench) handleOpen(w http.ResponseWriter, r *http.Request) {
 		case "":
 			if wb.findClone(r.Context(), it.Repo) == "" {
 				// Let the page ask where the clone is, before anything is recorded.
-				writeJSON(w, map[string]any{"needClone": true, "repo": it.Repo, "managed": tildePath(managedCloneDir(it.Repo))})
+				httpx.WriteJSON(w, map[string]any{"needClone": true, "repo": it.Repo, "managed": tildePath(managedCloneDir(it.Repo))})
 				return
 			}
 		case "managed":
@@ -1074,68 +1089,68 @@ func (wb *workbench) handleOpen(w http.ResponseWriter, r *http.Request) {
 		default:
 			dir, err := expandPath(body.Clone, wb.cwd)
 			if err != nil {
-				fail(w, http.StatusBadRequest, err.Error())
+				httpx.Fail(w, http.StatusBadRequest, err.Error())
 				return
 			}
 			top := cloneOf(dir, it.Repo)
 			if top == "" {
-				fail(w, http.StatusBadRequest, fmt.Sprintf("%s is not a clone of %s: none of its remotes points there", tildePath(dir), it.Repo))
+				httpx.Fail(w, http.StatusBadRequest, fmt.Sprintf("%s is not a clone of %s: none of its remotes points there", tildePath(dir), it.Repo))
 				return
 			}
 			wb.rememberClone(it.Repo, top)
 		}
 	}
-	_, known := wb.store.Get(it.ID)
-	if err := wb.store.Record(it); err != nil {
-		fail(w, http.StatusInternalServerError, err.Error())
+	_, known := wb.store.get(it.ID)
+	if err := wb.store.record(it); err != nil {
+		httpx.Fail(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	wb.start(it, !known)
-	writeJSON(w, map[string]any{"id": it.ID, "href": wb.childBase(it.ID)})
+	httpx.WriteJSON(w, map[string]any{"id": it.ID, "href": wb.childBase(it.ID)})
 }
 
-func (wb *workbench) resolveTarget(target string) (wbItem, error) {
+func (wb *Launcher) resolveTarget(target string) (item, error) {
 	target = strings.TrimSpace(target)
 	if target == "" {
-		return wbItem{}, errors.New("enter a directory path or a pull request URL")
+		return item{}, errors.New("enter a directory path or a pull request URL")
 	}
 	if _, pt, ok := forge.DetectPRURL(target); ok {
 		if git.Disabled() {
-			return wbItem{}, errors.New("git is required for PR review; restart faah without -no-git")
+			return item{}, errors.New("git is required for PR review; restart faah without -no-git")
 		}
-		return wbPRItem(pt), nil
+		return prItem(pt), nil
 	}
 	if strings.HasPrefix(target, "http://") || strings.HasPrefix(target, "https://") {
-		return wbItem{}, errors.New("not a pull or merge request URL (e.g. " + forge.PRURLExamples + ")")
+		return item{}, errors.New("not a pull or merge request URL (e.g. " + forge.PRURLExamples + ")")
 	}
 	p, err := expandPath(target, wb.cwd)
 	if err != nil {
-		return wbItem{}, err
+		return item{}, err
 	}
-	root, _, _, err := resolveTarget(p)
+	root, _, _, err := wb.resolve(p)
 	if err != nil {
-		return wbItem{}, err
+		return item{}, err
 	}
-	return wbDirItem(root), nil
+	return dirItem(root), nil
 }
 
-func (wb *workbench) handleStop(w http.ResponseWriter, r *http.Request) {
-	if !localPost(w, r) {
+func (wb *Launcher) handleStop(w http.ResponseWriter, r *http.Request) {
+	if !httpx.LocalPost(w, r) {
 		return
 	}
 	var body struct {
 		ID string `json:"id"`
 	}
 	if readJSONBody(r, &body) != nil || body.ID == "" {
-		fail(w, http.StatusBadRequest, "id is required")
+		httpx.Fail(w, http.StatusBadRequest, "id is required")
 		return
 	}
 	wb.stop(body.ID)
-	writeJSON(w, map[string]any{"ok": true})
+	httpx.WriteJSON(w, map[string]any{"ok": true})
 }
 
-func (wb *workbench) handlePin(w http.ResponseWriter, r *http.Request) {
-	if !localPost(w, r) {
+func (wb *Launcher) handlePin(w http.ResponseWriter, r *http.Request) {
+	if !httpx.LocalPost(w, r) {
 		return
 	}
 	var body struct {
@@ -1143,10 +1158,10 @@ func (wb *workbench) handlePin(w http.ResponseWriter, r *http.Request) {
 		Pinned bool   `json:"pinned"`
 	}
 	if readJSONBody(r, &body) != nil || body.ID == "" {
-		fail(w, http.StatusBadRequest, "id is required")
+		httpx.Fail(w, http.StatusBadRequest, "id is required")
 		return
 	}
-	err := wb.store.Update(func(f *wbFile) {
+	err := wb.store.update(func(f *file) {
 		for i := range f.Items {
 			if f.Items[i].ID == body.ID {
 				f.Items[i].Pinned = body.Pinned
@@ -1154,39 +1169,39 @@ func (wb *workbench) handlePin(w http.ResponseWriter, r *http.Request) {
 		}
 	})
 	if err != nil {
-		fail(w, http.StatusInternalServerError, err.Error())
+		httpx.Fail(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	writeJSON(w, map[string]any{"ok": true})
+	httpx.WriteJSON(w, map[string]any{"ok": true})
 }
 
-func (wb *workbench) handleRemove(w http.ResponseWriter, r *http.Request) {
-	if !localPost(w, r) {
+func (wb *Launcher) handleRemove(w http.ResponseWriter, r *http.Request) {
+	if !httpx.LocalPost(w, r) {
 		return
 	}
 	var body struct {
 		ID string `json:"id"`
 	}
 	if readJSONBody(r, &body) != nil || body.ID == "" {
-		fail(w, http.StatusBadRequest, "id is required")
+		httpx.Fail(w, http.StatusBadRequest, "id is required")
 		return
 	}
 	wb.stop(body.ID)
 	wb.mu.Lock()
 	delete(wb.children, body.ID)
 	wb.mu.Unlock()
-	err := wb.store.Update(func(f *wbFile) { f.Items = withoutItem(f.Items, body.ID) })
+	err := wb.store.update(func(f *file) { f.Items = withoutItem(f.Items, body.ID) })
 	if err != nil {
-		fail(w, http.StatusInternalServerError, err.Error())
+		httpx.Fail(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	writeJSON(w, map[string]any{"ok": true})
+	httpx.WriteJSON(w, map[string]any{"ok": true})
 }
 
 // handleWorkspace serves /w/<id>/...: proxied to the running child, or, for
 // the page itself, a holding page that starts the child and polls until it is
 // ready. A bookmarked or reloaded review therefore just reopens.
-func (wb *workbench) handleWorkspace(w http.ResponseWriter, r *http.Request) {
+func (wb *Launcher) handleWorkspace(w http.ResponseWriter, r *http.Request) {
 	rest := strings.TrimPrefix(r.URL.Path, wb.route("/w/"))
 	id, _, hasSlash := strings.Cut(rest, "/")
 	if id == "" {
@@ -1219,25 +1234,25 @@ func (wb *workbench) handleWorkspace(w http.ResponseWriter, r *http.Request) {
 
 	isPage := r.URL.Path == wb.childBase(id) && r.Method == http.MethodGet
 	if !isPage {
-		fail(w, http.StatusServiceUnavailable, "workspace is not running; reload the page to start it")
+		httpx.Fail(w, http.StatusServiceUnavailable, "workspace is not running; reload the page to start it")
 		return
 	}
 	if !trustedGet(w, r) {
 		return
 	}
-	var snap wbChild
+	var snap child
 	if c != nil {
 		wb.mu.Lock()
-		snap = wbChild{state: c.state, err: c.err, title: c.title, gone: c.gone, noClone: c.noClone}
+		snap = child{state: c.state, err: c.err, title: c.title, gone: c.gone, noClone: c.noClone}
 		wb.mu.Unlock()
 	}
 	if snap.state == "failed" && r.URL.Query().Get("retry") == "" {
 		p := holdingPage{Title: snap.title, Error: snap.err}
-		if it, ok := wb.store.Get(id); ok {
+		if it, ok := wb.store.get(id); ok {
 			p.Title, p.Sub = holdingNames(it)
 			p.PR = it.Kind == "pr"
 		}
-		if it, ok := wb.store.Get(id); ok && snap.noClone {
+		if it, ok := wb.store.get(id); ok && snap.noClone {
 			p.Choose = wb.basePath + "?open=" + url.QueryEscape(it.URL)
 		} else if !snap.gone {
 			p.Retry = wb.childBase(id) + "?retry=1"
@@ -1245,7 +1260,7 @@ func (wb *workbench) handleWorkspace(w http.ResponseWriter, r *http.Request) {
 		wb.renderHolding(w, p)
 		return
 	}
-	it, ok := wb.store.Get(id)
+	it, ok := wb.store.get(id)
 	if !ok {
 		w.WriteHeader(http.StatusNotFound)
 		wb.renderHolding(w, holdingPage{Title: "Not found", Error: "This workspace is not in the workbench any more."})
@@ -1253,7 +1268,7 @@ func (wb *workbench) handleWorkspace(w http.ResponseWriter, r *http.Request) {
 	}
 	// The refresh drops ?retry, so a second failure stops on the error page.
 	if snap.state != "starting" {
-		_ = wb.store.Record(it)
+		_ = wb.store.record(it)
 		c = wb.start(it, false)
 	}
 	wb.mu.Lock()
@@ -1263,7 +1278,7 @@ func (wb *workbench) handleWorkspace(w http.ResponseWriter, r *http.Request) {
 	wb.renderHolding(w, holdingPage{Title: title, Sub: sub, PR: it.Kind == "pr", Self: wb.childBase(id), Progress: progress, Starting: true})
 }
 
-func withoutItem(items []wbItem, id string) []wbItem {
+func withoutItem(items []item, id string) []item {
 	kept := items[:0]
 	for _, it := range items {
 		if it.ID != id {
@@ -1274,7 +1289,7 @@ func withoutItem(items []wbItem, id string) []wbItem {
 }
 
 // holdingNames splits an item into the holding page's title and subtitle.
-func holdingNames(it wbItem) (title, sub string) {
+func holdingNames(it item) (title, sub string) {
 	if it.Kind == "pr" {
 		sub = fmt.Sprintf("%s#%d", it.Repo, it.Number)
 		if it.Title != "" {
@@ -1285,7 +1300,7 @@ func holdingNames(it wbItem) (title, sub string) {
 	return filepath.Base(it.Path), it.Path
 }
 
-func itemTitle(it wbItem) string {
+func itemTitle(it item) string {
 	if it.Kind == "pr" {
 		t := fmt.Sprintf("%s#%d", it.Repo, it.Number)
 		if it.Title != "" {
@@ -1300,7 +1315,7 @@ type holdingPage struct {
 	Base, Theme, Title, Error, Retry, Self, Progress string
 	Sub                                              string // the PR's repo#number, or the folder's path
 	PR                                               bool
-	Choose                                           string // workbench URL that asks where the PR's clone is
+	Choose                                           string // Launcher URL that asks where the PR's clone is
 	Starting                                         bool
 }
 
@@ -1325,31 +1340,31 @@ var holdingTmpl = template.Must(template.New("holding").Funcs(template.FuncMap{
 </html>
 `))
 
-func (wb *workbench) renderHolding(w http.ResponseWriter, p holdingPage) {
-	p.Base, p.Theme = wb.basePath, wbTheme()
+func (wb *Launcher) renderHolding(w http.ResponseWriter, p holdingPage) {
+	p.Base, p.Theme = wb.basePath, wb.theme()
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	holdingTmpl.Execute(w, p)
 }
 
 /* ---------- single instance ---------- */
 
-type wbLock struct {
+type lock struct {
 	PID int    `json:"pid"`
 	URL string `json:"url"`
 }
 
-// runningWorkbench returns the URL of a workbench that is already serving,
+// RunningURL returns the URL of a workbench that is already serving,
 // so a second bare `faah` opens it instead of starting another.
-func runningWorkbench() string {
-	b, err := os.ReadFile(workbenchLockPath())
+func RunningURL() string {
+	b, err := os.ReadFile(lockPath())
 	if err != nil {
 		return ""
 	}
-	var l wbLock
+	var l lock
 	if json.Unmarshal(b, &l) != nil || l.URL == "" {
 		return ""
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), wbPingTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), pingTimeout)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, strings.TrimSuffix(l.URL, "/")+"/api/wb/ping", nil)
 	if err != nil {
@@ -1369,19 +1384,19 @@ func runningWorkbench() string {
 	return l.URL
 }
 
-func writeWorkbenchLock(u string) {
-	_ = writeFileAtomic(workbenchLockPath(), wbLock{PID: os.Getpid(), URL: u})
+func WriteLock(u string) error {
+	return writeFileAtomic(lockPath(), lock{PID: os.Getpid(), URL: u})
 }
 
-// removeWorkbenchLock deletes the lock only if it is still this process's.
-func removeWorkbenchLock() {
-	b, err := os.ReadFile(workbenchLockPath())
+// RemoveLock deletes the lock only if it is still this process's.
+func RemoveLock() {
+	b, err := os.ReadFile(lockPath())
 	if err != nil {
 		return
 	}
-	var l wbLock
+	var l lock
 	if json.Unmarshal(b, &l) == nil && l.PID == os.Getpid() {
-		os.Remove(workbenchLockPath())
+		os.Remove(lockPath())
 	}
 }
 
@@ -1403,19 +1418,19 @@ func removeWorkbenchLock() {
 // every later PR of that repository.
 
 const (
-	wbScanDepth   = 3                       // folder levels below each scan root
-	wbScanBudget  = 20000                   // folders looked at per scan, at most
-	wbScanTimeout = 1500 * time.Millisecond // wall-clock cap on one scan
+	scanDepth   = 3                       // folder levels below each scan root
+	scanBudget  = 20000                   // folders looked at per scan, at most
+	scanTimeout = 1500 * time.Millisecond // wall-clock cap on one scan
 )
 
-// wbScanSkip are folder names never worth descending into for a clone.
-var wbScanSkip = map[string]bool{
+// scanSkip are folder names never worth descending into for a clone.
+var scanSkip = map[string]bool{
 	"node_modules": true, "vendor": true, "target": true, "build": true, "dist": true,
 	"Library": true, "Applications": true, "AppData": true, "venv": true, "__pycache__": true,
 }
 
-// wbScanRoots are where people usually keep clones, relative to home.
-var wbScanRoots = []string{
+// usualScanRoots are where people usually keep clones, relative to home.
+var usualScanRoots = []string{
 	"workspace", "workspaces", "code", "src", "projects", "dev", "repos", "git",
 	"github", "work", "Developer", "Documents/GitHub", "go/src/github.com", "",
 }
@@ -1430,20 +1445,20 @@ func splitRepo(repo string) (owner, name string) {
 // managedCloneDir is where faah makes a clone when the user asks it to.
 func managedCloneDir(repo string) string {
 	owner, name := splitRepo(repo)
-	return filepath.Join(workbenchStateDir(), "repos", owner, name)
+	return filepath.Join(stateDir(), "repos", owner, name)
 }
 
 // cloneOf returns the top level of dir's repository when one of its remotes
 // is repo ("owner/name"), or "".
 func cloneOf(dir, repo string) string {
 	owner, name := splitRepo(repo)
-	top, _ := prpkg.FindRemote(dir, owner, name)
+	top, _ := forge.FindRemote(dir, owner, name)
 	return top
 }
 
 // knownClone looks only where it is cheap to: the remembered clone, the
 // recorded directories, and extra (the current directory).
-func knownClone(f wbFile, repo string, extra ...string) string {
+func knownClone(f file, repo string, extra ...string) string {
 	if p := f.Clones[repoKey(repo)]; p != "" {
 		if top := cloneOf(p, repo); top != "" {
 			return top
@@ -1472,7 +1487,7 @@ func knownClone(f wbFile, repo string, extra ...string) string {
 // named like the repository that is a clone of it. Bounded in folders and time.
 func scanForClone(ctx context.Context, roots []string, repo string) string {
 	_, name := splitRepo(repo)
-	ctx, cancel := context.WithTimeout(ctx, wbScanTimeout)
+	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
 	defer cancel()
 	type node struct {
 		path  string
@@ -1486,7 +1501,7 @@ func scanForClone(ctx context.Context, roots []string, repo string) string {
 			queue = append(queue, node{r, 0})
 		}
 	}
-	budget := wbScanBudget
+	budget := scanBudget
 	for len(queue) > 0 && budget > 0 && ctx.Err() == nil {
 		n := queue[0]
 		queue = queue[1:]
@@ -1496,7 +1511,7 @@ func scanForClone(ctx context.Context, roots []string, repo string) string {
 		}
 		for _, e := range ents {
 			budget--
-			if !e.IsDir() || strings.HasPrefix(e.Name(), ".") || wbScanSkip[e.Name()] {
+			if !e.IsDir() || strings.HasPrefix(e.Name(), ".") || scanSkip[e.Name()] {
 				continue
 			}
 			p := filepath.Join(n.path, e.Name())
@@ -1511,7 +1526,7 @@ func scanForClone(ctx context.Context, roots []string, repo string) string {
 					}
 				}
 			}
-			if n.depth+1 < wbScanDepth {
+			if n.depth+1 < scanDepth {
 				queue = append(queue, node{p, n.depth + 1})
 			}
 		}
@@ -1521,10 +1536,10 @@ func scanForClone(ctx context.Context, roots []string, repo string) string {
 
 // scanRoots lists the usual code folders under home plus the parents of the
 // recorded directories, which is where other clones tend to sit.
-func scanRoots(f wbFile, cwd string) []string {
+func scanRoots(f file, cwd string) []string {
 	var roots []string
 	if home, err := os.UserHomeDir(); err == nil && home != "" {
-		for _, r := range wbScanRoots {
+		for _, r := range usualScanRoots {
 			roots = append(roots, filepath.Join(home, r))
 		}
 	}
@@ -1540,8 +1555,8 @@ func scanRoots(f wbFile, cwd string) []string {
 }
 
 // findClone finds and remembers the local clone of repo, or returns "".
-func (wb *workbench) findClone(ctx context.Context, repo string) string {
-	f := wb.store.Load()
+func (wb *Launcher) findClone(ctx context.Context, repo string) string {
+	f := wb.store.snapshot()
 	top := knownClone(f, repo, wb.cwd)
 	if top == "" {
 		top = scanForClone(ctx, scanRoots(f, wb.cwd), repo)
@@ -1552,8 +1567,8 @@ func (wb *workbench) findClone(ctx context.Context, repo string) string {
 	return top
 }
 
-func (wb *workbench) rememberClone(repo, dir string) {
-	_ = wb.store.Update(func(f *wbFile) {
+func (wb *Launcher) rememberClone(repo, dir string) {
+	_ = wb.store.update(func(f *file) {
 		if f.Clones == nil {
 			f.Clones = map[string]string{}
 		}
@@ -1565,8 +1580,8 @@ var errNoClone = errors.New("no local clone")
 
 // prClone returns the clone a PR's child should start in. The remembered
 // clone wins; a remembered faah-made clone that is missing is made again.
-func (wb *workbench) prClone(c *wbChild, it wbItem) (string, error) {
-	f := wb.store.Load()
+func (wb *Launcher) prClone(c *child, it item) (string, error) {
+	f := wb.store.snapshot()
 	remembered := f.Clones[repoKey(it.Repo)]
 	if remembered != "" && remembered == managedCloneDir(it.Repo) {
 		if top := cloneOf(remembered, it.Repo); top != "" {
@@ -1588,7 +1603,7 @@ var cloneLocks sync.Map
 // makeClone clones the PR's repository into managedCloneDir, once. The clone
 // is partial (blobs on demand) and has no checkout of its own: worktrees are
 // all it is for.
-func (wb *workbench) makeClone(c *wbChild, it wbItem) (string, error) {
+func (wb *Launcher) makeClone(c *child, it item) (string, error) {
 	mu, _ := cloneLocks.LoadOrStore(repoKey(it.Repo), &sync.Mutex{})
 	mu.(*sync.Mutex).Lock()
 	defer mu.(*sync.Mutex).Unlock()
@@ -1655,4 +1670,30 @@ func tildePath(p string) string {
 		}
 	}
 	return p
+}
+
+// BaseOf turns a workspace's base path (/<wb>/w/<id>/) back into the
+// workbench's own.
+func BaseOf(childBase string) string {
+	trimmed := strings.TrimSuffix(childBase, "/")
+	if i := strings.LastIndex(trimmed, "/w/"); i >= 0 {
+		return trimmed[:i+1]
+	}
+	return "/"
+}
+
+// RecordDirectory records a directory opened outside the launcher.
+func RecordDirectory(root string) error { return recordRecent(dirItem(root)) }
+
+// RecordPR records a pull request opened outside the launcher.
+func RecordPR(pt forge.PRTarget, title string) error {
+	it := prItem(pt)
+	it.Title = title
+	return recordRecent(it)
+}
+
+// KnownClone returns a remembered local clone for repo.
+func KnownClone(repo string) string {
+	st := &store{path: storePath()}
+	return knownClone(st.snapshot(), repo)
 }

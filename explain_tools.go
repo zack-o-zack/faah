@@ -16,6 +16,7 @@ import (
 	"faah/internal/agents"
 	"faah/internal/explain"
 	"faah/internal/explain/notes"
+	"faah/internal/httpx"
 	"faah/internal/mcp"
 )
 
@@ -296,13 +297,13 @@ func (s *Server) handleExplainNotes(w http.ResponseWriter, r *http.Request) {
 	_, rel, ok := s.safePath(r.URL.Query().Get("path"))
 	abs, inside := explain.Resolve(s.ix.Root(), rel)
 	if !ok || !inside || rel == "" {
-		fail(w, http.StatusBadRequest, "bad path")
+		httpx.Fail(w, http.StatusBadRequest, "bad path")
 		return
 	}
 	lines, err := explain.ReadLines(abs)
 	if err != nil {
-		fail(w, http.StatusNotFound, err.Error())
+		httpx.Fail(w, http.StatusNotFound, err.Error())
 		return
 	}
-	writeJSON(w, map[string]any{"notes": s.threads.FileNotes(rel, lines)})
+	httpx.WriteJSON(w, map[string]any{"notes": s.threads.FileNotes(rel, lines)})
 }
