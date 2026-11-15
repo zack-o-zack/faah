@@ -29,6 +29,7 @@ import (
 	"faah/internal/metrics"
 	prpkg "faah/internal/pr"
 	"faah/internal/render"
+	"faah/internal/review"
 	"faah/internal/session"
 	"faah/internal/settings"
 	"faah/internal/symbols"
@@ -62,7 +63,7 @@ type Server struct {
 
 	workbenchURL string // the workbench's base path, when this faah is one of its workspaces
 
-	reviewFlow *ReviewWorkflowManager
+	reviewFlow *review.Manager
 
 	lastReq atomic.Int64 // unix nanos of the most recent request
 
@@ -230,7 +231,12 @@ func NewServer(ix *workspace.Index, lsp *lsppkg.Manager, assets fs.FS, devRoot s
 	s.session = session.New(s.basePath, ix.Root())
 	s.gitWatcher = workspace.NewWatcher(ix)
 	s.gitWatcher.Start(context.Background())
-	s.reviewFlow = newReviewWorkflowManager(s)
+	s.reviewFlow = review.New(ix.Root(), nil, func() string {
+		if s.pr != nil {
+			return "pr"
+		}
+		return ""
+	})
 	s.registerRoutes()
 	s.lastReq.Store(time.Now().UnixNano())
 	go s.scavenge()
@@ -378,6 +384,13 @@ func (s *Server) SetAgent(a *agentManager) {
 				s.gitWatcher.Trigger()
 			}
 		}})
+	}
+	if s.reviewFlow != nil {
+		var source review.Threads
+		if s.threads != nil {
+			source = s.threads.Manager
+		}
+		s.reviewFlow.SetThreads(source)
 	}
 }
 
@@ -1524,8 +1537,8 @@ func (s *Server) subscribeStreamFeeds(r *http.Request, w io.Writer, flusher http
 	}
 
 	if s.reviewFlow != nil && q.Get("review") == "1" {
-		ch, unsub := s.reviewFlow.subscribe()
-		if runData, err := json.Marshal(s.reviewFlow.getRun()); err == nil {
+		ch, unsub := s.reviewFlow.Subscribe()
+		if runData, err := json.Marshal(s.reviewFlow.CurrentRun()); err == nil {
 			snapshots = append(snapshots, fmt.Sprintf("event: review:snapshot\ndata: %s\n\n", runData)...)
 		}
 		frames := make(chan []byte)

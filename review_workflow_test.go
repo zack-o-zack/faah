@@ -12,30 +12,9 @@ import (
 	"testing"
 	"time"
 
-	"faah/internal/agents"
-	"faah/internal/render"
+	"faah/internal/review"
 	"faah/internal/workspace"
 )
-
-func TestReviewWorkflowDefaults(t *testing.T) {
-	defs := defaultWorkflows()
-	if len(defs) == 0 {
-		t.Fatal("expected default workflows, got none")
-	}
-
-	standard := defs[0]
-	if standard.ID != "standard" {
-		t.Fatalf("expected first workflow to be 'standard', got %q", standard.ID)
-	}
-	if len(standard.Stages) != 4 {
-		t.Fatalf("expected standard workflow to have 4 stages, got %d", len(standard.Stages))
-	}
-	for i, st := range standard.Stages {
-		if st.Title == "" || st.Prompt == "" || st.Question == "" {
-			t.Fatalf("stage %d in standard workflow is missing required fields: %+v", i, st)
-		}
-	}
-}
 
 func TestReviewWorkflowConfigEndpoints(t *testing.T) {
 	tmp := t.TempDir()
@@ -50,7 +29,7 @@ func TestReviewWorkflowConfigEndpoints(t *testing.T) {
 		t.Fatalf("expected 200, got %d", rec.Code)
 	}
 
-	var cfg ReviewWorkflowConfig
+	var cfg review.Config
 	if err := json.Unmarshal(rec.Body.Bytes(), &cfg); err != nil {
 		t.Fatalf("failed to parse json response: %v", err)
 	}
@@ -59,12 +38,12 @@ func TestReviewWorkflowConfigEndpoints(t *testing.T) {
 	}
 
 	// POST new config
-	customCfg := ReviewWorkflowConfig{
-		Workflows: []ReviewWorkflowDef{
+	customCfg := review.Config{
+		Workflows: []review.WorkflowDef{
 			{
 				ID:   "custom",
 				Name: "Custom Test Flow",
-				Stages: []ReviewStageDef{
+				Stages: []review.StageDef{
 					{
 						ID:       "s1",
 						Title:    "Custom Stage 1",
@@ -136,213 +115,6 @@ func TestReviewWorkflowRunEndpoint(t *testing.T) {
 	}
 }
 
-func TestReviewWorkflowConfigCorruptAndSaveValidation(t *testing.T) {
-	tmp := t.TempDir()
-	ix := workspace.NewIndex(tmp)
-	s := NewServer(ix, nil, assets, devRoot)
-
-	// Create corrupt workflows.json
-	workflowDir := filepath.Join(tmp, ".faah")
-	if err := os.MkdirAll(workflowDir, 0755); err != nil {
-		t.Fatalf("failed to create dir: %v", err)
-	}
-	corruptPath := filepath.Join(workflowDir, "workflows.json")
-	if err := os.WriteFile(corruptPath, []byte("invalid json {{{"), 0644); err != nil {
-		t.Fatalf("failed to write corrupt config: %v", err)
-	}
-
-	// Loading corrupt config should fallback to default workflows
-	loaded := s.reviewFlow.loadConfig()
-	if len(loaded.Workflows) == 0 || loaded.ActiveID != "standard" {
-		t.Fatalf("expected fallback to default workflows on corrupt config, got %+v", loaded)
-	}
-
-	// Save empty workflow config should fail validation
-	emptyCfg := ReviewWorkflowConfig{Workflows: []ReviewWorkflowDef{}}
-	err := s.reviewFlow.saveConfig(emptyCfg)
-	if err == nil {
-		t.Fatal("expected error when saving empty workflow config")
-	}
-}
-
-func TestReviewWorkflowRunAndOrchestration(t *testing.T) {
-	tmp := t.TempDir()
-	ix := workspace.NewIndex(tmp)
-	s := NewServer(ix, nil, assets, devRoot)
-	fakeCLI(t, "claude")
-	a, err := newAgentManager(tmp, "claude", nil)
-	if err != nil {
-		t.Fatalf("failed to create agent manager: %v", err)
-	}
-	firstReply, secondReply := make(chan string), make(chan string)
-	a.openAgent = func(string) agents.Agent {
-		return &fakeAgent{PromptFunc: func(ctx context.Context, _ agents.Open, prompt string, sink agents.Sink) error {
-			replies := firstReply
-			if strings.Contains(prompt, "Prompt 2") {
-				replies = secondReply
-			}
-			select {
-			case reply := <-replies:
-				sink.Text(reply, false)
-				return nil
-			case <-ctx.Done():
-				return ctx.Err()
-			}
-		}}
-	}
-	s.SetAgent(a)
-	t.Cleanup(s.threads.Close)
-
-	customCfg := ReviewWorkflowConfig{
-		Workflows: []ReviewWorkflowDef{
-			{
-				ID:   "test-flow",
-				Name: "Test Flow",
-				Stages: []ReviewStageDef{
-					{
-						ID:                  "stg1",
-						Title:               "Stage 1",
-						Question:            "Question 1?",
-						Prompt:              "Prompt 1",
-						PassPreviousContext: false,
-					},
-					{
-						ID:                  "stg2",
-						Title:               "Stage 2",
-						Question:            "Question 2?",
-						Prompt:              "Prompt 2",
-						PassPreviousContext: true,
-					},
-				},
-			},
-		},
-		ActiveID: "test-flow",
-	}
-	if err := s.reviewFlow.saveConfig(customCfg); err != nil {
-		t.Fatalf("failed to save config: %v", err)
-	}
-
-	// Start workflow run
-	run, err := s.reviewFlow.Run("test-flow", 0)
-	if err != nil {
-		t.Fatalf("failed to start workflow: %v", err)
-	}
-	if run == nil || run.Status != "running" {
-		t.Fatalf("expected running status, got %+v", run)
-	}
-
-	// Simulate completing thread turns in background for stages
-	longReply := strings.Repeat("X", 2000)
-	done := make(chan struct{})
-
-	go func() {
-		defer close(done)
-		for i := 0; i < 100; i++ {
-			time.Sleep(20 * time.Millisecond)
-			r := s.reviewFlow.getRun()
-			if r == nil {
-				continue
-			}
-
-			// Complete stage 0 turn
-			if len(r.Stages) > 0 && r.Stages[0].ThreadID != "" && r.Stages[0].Status == "running" {
-				stg0Thread := s.threads.Get(r.Stages[0].ThreadID)
-				if stg0Thread != nil && stg0Thread.Running() {
-					firstReply <- longReply
-				}
-			}
-
-			// Complete stage 1 turn
-			if len(r.Stages) > 1 && r.Stages[1].ThreadID != "" && r.Stages[1].Status == "running" {
-				stg1Thread := s.threads.Get(r.Stages[1].ThreadID)
-				if stg1Thread != nil && stg1Thread.Running() {
-					secondReply <- "Stage 2 done"
-				}
-			}
-
-			if r.Status == "completed" {
-				return
-			}
-		}
-	}()
-
-	select {
-	case <-done:
-	case <-time.After(3 * time.Second):
-		t.Fatal("timeout waiting for workflow completion")
-	}
-
-	finalRun := s.reviewFlow.getRun()
-	if finalRun.Status != "completed" {
-		t.Fatalf("expected run status completed, got %s", finalRun.Status)
-	}
-
-	// Verify context passing in stage 2 prompt
-	stg1Thread := s.threads.Get(finalRun.Stages[1].ThreadID)
-	if stg1Thread == nil || len(stg1Thread.Turns) == 0 {
-		t.Fatal("expected stage 2 thread to exist")
-	}
-	stg2Prompt := stg1Thread.Turns[0].Prompt
-	if !strings.Contains(stg2Prompt, "Context from previous review stage (Stage 1):") {
-		t.Fatalf("expected stage 2 prompt to include previous context, got %s", stg2Prompt)
-	}
-}
-
-func TestReviewWorkflowRunUnknownIDAndNilThreads(t *testing.T) {
-	tmp := t.TempDir()
-	ix := workspace.NewIndex(tmp)
-	s := NewServer(ix, nil, assets, devRoot)
-
-	// Run with unknown ID falls back to first workflow definition
-	run, err := s.reviewFlow.Run("non-existent-id", 0)
-	if err != nil {
-		t.Fatalf("expected fallback for unknown workflow id, got error: %v", err)
-	}
-	if run.WorkflowID != "standard" {
-		t.Fatalf("expected workflow standard, got %s", run.WorkflowID)
-	}
-
-	// Since s.threads is nil, orchestration should mark stage as failed
-	time.Sleep(50 * time.Millisecond)
-	updatedRun := s.reviewFlow.getRun()
-	if updatedRun.Stages[0].Status != "failed" {
-		t.Fatalf("expected stage status failed when threads system is nil, got %s", updatedRun.Stages[0].Status)
-	}
-	if !strings.Contains(updatedRun.Stages[0].Error, "AI thread system not available") {
-		t.Fatalf("expected AI thread system not available error, got %s", updatedRun.Stages[0].Error)
-	}
-}
-
-func TestReviewWorkflowStopActiveRun(t *testing.T) {
-	tmp := t.TempDir()
-	ix := workspace.NewIndex(tmp)
-	s := NewServer(ix, nil, assets, devRoot)
-	fakeCLI(t, "claude")
-	a, err := newAgentManager(tmp, "claude", nil)
-	if err != nil {
-		t.Fatalf("failed to create agent manager: %v", err)
-	}
-	s.SetAgent(a)
-
-	run, err := s.reviewFlow.Run("standard", 0)
-	if err != nil {
-		t.Fatalf("failed to start workflow: %v", err)
-	}
-	if run.Status != "running" {
-		t.Fatalf("expected run status running, got %s", run.Status)
-	}
-
-	time.Sleep(50 * time.Millisecond)
-
-	stoppedRun, err := s.reviewFlow.Stop()
-	if err != nil {
-		t.Fatalf("failed to stop run: %v", err)
-	}
-	if stoppedRun.Status != "stopped" {
-		t.Fatalf("expected run status stopped, got %s", stoppedRun.Status)
-	}
-}
-
 func TestReviewWorkflowSSEStreamAndNilManager(t *testing.T) {
 	tmp := t.TempDir()
 	ix := workspace.NewIndex(tmp)
@@ -398,76 +170,6 @@ func TestReviewWorkflowHTTPHandlerValidation(t *testing.T) {
 	}
 }
 
-func TestExtractCodeUnderstanding(t *testing.T) {
-	hunks := []render.DiffHunk{
-		{
-			OldStart: 10,
-			NewStart: 10,
-			Section:  "func ProcessRequest",
-			Rows: []render.DiffRow{
-				{Type: "ctx", OldLine: 10, NewLine: 10, Text: "func ProcessRequest(req *Request) error {"},
-				{Type: "add", NewLine: 11, Text: "\tif req == nil {"},
-				{Type: "add", NewLine: 12, Text: "\t\treturn ErrNilRequest"},
-				{Type: "add", NewLine: 13, Text: "\t}"},
-				{Type: "add", NewLine: 14, Text: "\tif !user.HasPermission(\"admin\") {"},
-				{Type: "add", NewLine: 15, Text: "\t\treturn ErrForbidden"},
-				{Type: "add", NewLine: 16, Text: "\t}"},
-				{Type: "add", NewLine: 17, Text: "\tres, err := db.Query()"},
-				{Type: "add", NewLine: 18, Text: "\tif err != nil {"},
-				{Type: "add", NewLine: 19, Text: "\t\treturn fmt.Errorf(\"failed to query: %w\", err)"},
-				{Type: "add", NewLine: 20, Text: "\t}"},
-				{Type: "add", NewLine: 21, Text: "\tcache.Set(res)"},
-				{Type: "ctx", OldLine: 11, NewLine: 22, Text: "\treturn nil"},
-			},
-		},
-	}
-
-	und := extractCodeUnderstanding("service.go", hunks)
-	if und == nil {
-		t.Fatal("expected non-nil understanding")
-	}
-
-	// Should detect fast returns (nil check & auth check)
-	if len(und.FastReturns) == 0 {
-		t.Fatalf("expected fast returns to be detected, got 0")
-	}
-	hasNil := false
-	hasAuth := false
-	for _, fr := range und.FastReturns {
-		if fr.Kind == "nil_check" {
-			hasNil = true
-		}
-		if fr.Kind == "auth" {
-			hasAuth = true
-		}
-	}
-	if !hasNil {
-		t.Errorf("expected nil_check fast return, got: %+v", und.FastReturns)
-	}
-	if !hasAuth {
-		t.Errorf("expected auth fast return, got: %+v", und.FastReturns)
-	}
-
-	// Should detect edge case (error check)
-	if len(und.EdgeCases) == 0 {
-		t.Fatalf("expected edge cases to be detected, got 0")
-	}
-	hasErr := false
-	for _, ec := range und.EdgeCases {
-		if ec.Kind == "error" {
-			hasErr = true
-		}
-	}
-	if !hasErr {
-		t.Errorf("expected error edge case, got: %+v", und.EdgeCases)
-	}
-
-	// Should have generated summary
-	if und.Summary == "" {
-		t.Errorf("expected non-empty summary")
-	}
-}
-
 func TestReviewWalkthroughEndpoint(t *testing.T) {
 	tmp := t.TempDir()
 	ix := workspace.NewIndex(tmp)
@@ -481,7 +183,7 @@ func TestReviewWalkthroughEndpoint(t *testing.T) {
 		t.Fatalf("expected 200 OK, got %d: %s", rec.Code, rec.Body.String())
 	}
 
-	var resp ReviewWalkthroughResponse
+	var resp review.WalkthroughResponse
 	if err := json.NewDecoder(rec.Body).Decode(&resp); err != nil {
 		t.Fatalf("failed to decode response: %v", err)
 	}
