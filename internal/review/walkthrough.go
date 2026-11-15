@@ -1,6 +1,7 @@
 package review
 
 import (
+	"os"
 	"os/exec"
 	"sort"
 	"strings"
@@ -166,7 +167,16 @@ func buildWalkthroughFile(o WalkthroughOptions, baseRef string, fallback bool, e
 	if o.IgnoreWhitespace {
 		readDiff = git.DiffPathsIgnoringWhitespace
 	}
-	diffText := readDiff(o.Root, baseRef, head, paths...)
+	var diffText string
+	if !o.IsPR && target.status == "U" {
+		// Git diff against a ref omits untracked paths. Compare them to an empty
+		// file instead; exit code 1 means differences were found.
+		out, _ := exec.Command("git", "-C", o.Root, "diff", "--no-index", "--no-color", "--no-ext-diff", "--", os.DevNull, target.path).Output()
+		diffText = string(out)
+		target.status = "A"
+	} else {
+		diffText = readDiff(o.Root, baseRef, head, paths...)
+	}
 	if diffText == "" && target.oldPath == "" {
 		if o.IgnoreWhitespace && exactPaths[target.path] {
 			return WalkthroughFile{}, true, false
