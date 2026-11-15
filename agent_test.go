@@ -540,8 +540,8 @@ func TestAgentCancelJob(t *testing.T) {
 		t.Fatalf("cancelled = false, want true")
 	}
 
-	// Job should be stopped
-	time.Sleep(100 * time.Millisecond)
+	// Cancellation finishes asynchronously, including Git snapshot bookkeeping.
+	waitIdleID(t, s, id)
 	code, job := get(t, s, fmt.Sprintf("/api/agent/job?id=%d", id))
 	if code != http.StatusOK {
 		t.Fatalf("job = %d, want 200", code)
