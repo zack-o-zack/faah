@@ -184,3 +184,16 @@ test('leaving one note does not clear another note hovered during the card grace
   fixture.view.unmount();
   vi.unstubAllGlobals();
 });
+
+test('reloading notes releases hover owned by the removed ghost', async () => {
+  const fixture = setup();
+  const editor = fixture.editor;
+  await editor.actions.openFile('a.go');
+  const button = await screen.findByRole('button', { name: 'Explains the call' });
+  await fireEvent.mouseEnter(required(button.closest('[data-note]')));
+  expect(editor.notes.hovered()?.index).toBe(0);
+  await editor.notes.refetch();
+  expect(editor.notes.hovered()).toBeNull();
+  fixture.view.unmount();
+  vi.unstubAllGlobals();
+});

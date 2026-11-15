@@ -33,7 +33,11 @@ export function MarginNotes(props: { first: number; last: number }): JSX.Element
         {(note, index) => {
           const [open, setOpen] = createSignal(false);
           let timer: ReturnType<typeof setTimeout> | undefined;
-          onCleanup(() => clearTimeout(timer));
+          onCleanup(() => {
+            clearTimeout(timer);
+            const current = editor.notes.hovered();
+            if (current && noteKey(current) === noteKey(note)) editor.notes.setHovered(null);
+          });
           const enter = () => {
             clearTimeout(timer);
             setOpen(true);

@@ -9,7 +9,11 @@ function Ghost(props: { note: NoteView; indent: number }): JSX.Element {
   const editor = useEditor();
   const [open, setOpen] = createSignal(false);
   let timer: ReturnType<typeof setTimeout> | undefined;
-  onCleanup(() => clearTimeout(timer));
+  onCleanup(() => {
+    clearTimeout(timer);
+    const current = editor.notes.hovered();
+    if (current && noteKey(current) === noteKey(props.note)) editor.notes.setHovered(null);
+  });
   const enter = () => {
     clearTimeout(timer);
     setOpen(true);
