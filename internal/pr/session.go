@@ -67,9 +67,6 @@ func (p *Session) remoteHead() string {
 	return p.meta.HeadSHA
 }
 
-// errMergedCancelled is returned when opening an already-merged PR is cancelled.
-var errMergedCancelled = errors.New("PR is already merged; opening cancelled")
-
 // computeDiffBase fetches the PR's base branch into worktree and returns a
 // merge-base with HEAD to diff against, so review diffs show exactly what
 // the PR changes rather than the head's full HEAD diff. Best-effort: if it

@@ -1,18 +1,13 @@
 package pr
 
 import (
-	"context"
 	"errors"
-	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"faah/internal/forge"
-	"faah/internal/forge/forgetest"
 	"faah/internal/git"
 	"faah/internal/git/gittest"
 	"faah/internal/pr/prtest"
@@ -204,49 +199,6 @@ func TestPRSessionPush(t *testing.T) {
 	}
 	if p.remoteHead() != pushed {
 		t.Fatalf("remoteHead = %q, want %s", p.remoteHead(), pushed)
-	}
-}
-
-func TestCheckoutPRMergedAlwaysProceeds(t *testing.T) {
-	orig := http.DefaultTransport
-	defer func() { http.DefaultTransport = orig }()
-
-	localRepo := t.TempDir()
-	gittest.Run(t, localRepo, "init")
-	gittest.Run(t, localRepo, "config", "user.name", "Tester")
-	gittest.Run(t, localRepo, "config", "user.email", "test@example.com")
-	gittest.Run(t, localRepo, "checkout", "-b", "feature-x")
-	os.WriteFile(filepath.Join(localRepo, "f.txt"), []byte("hi"), 0644)
-	gittest.Run(t, localRepo, "add", "f.txt")
-	gittest.Run(t, localRepo, "commit", "-m", "init")
-
-	http.DefaultTransport = forgetest.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
-		body := fmt.Sprintf(`{
-			"number": 77,
-			"title": "Already merged PR",
-			"state": "closed",
-			"merged": true,
-			"merged_at": "2026-09-21T08:00:00Z",
-			"user": {"login": "bob"},
-			"base": {"ref": "main"},
-			"head": {
-				"ref": "feature-x",
-				"sha": "1234567890ab",
-				"repo": {"clone_url": %q, "full_name": "px0-ai/px0"}
-			}
-		}`, localRepo)
-		return &http.Response{
-			StatusCode: http.StatusOK,
-			Body:       io.NopCloser(strings.NewReader(body)),
-			Header:     make(http.Header),
-		}, nil
-	})
-
-	target := forge.PRTarget{Provider: "github", Owner: "px0-ai", Repo: "px0", Number: 77}
-	_, err := Checkout(context.Background(), &forge.GitHub{}, target, t.TempDir(), nil)
-	// Must not be errMergedCancelled; merged PRs are always opened without blocking.
-	if errors.Is(err, errMergedCancelled) {
-		t.Errorf("err = %v, did not want ErrPRMergedCancelled", err)
 	}
 }
 
