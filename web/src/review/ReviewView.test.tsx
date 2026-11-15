@@ -127,7 +127,7 @@ test('review preserves server syntax tokens and decodes source text safely', asy
   await screen.findByText('func');
   expect(document.querySelector('.diff-col-code .k')?.textContent).toBe('func');
   expect(document.querySelector('.diff-col-code .nf')?.textContent).toBe('main');
-  expect(document.querySelector('.diff-col-code')?.textContent).toBe('func main() { x < 2 }');
+  expect(document.querySelector('.diff-type-add .diff-col-code')?.textContent).toBe('func main() { x < 2 }');
 });
 
 test('a changed binary move keeps its origin without a pure move badge', async () => {
@@ -152,4 +152,34 @@ test('a changed binary move keeps its origin without a pure move badge', async (
   expect(screen.queryByText('Moved')).toBe(null);
   expect(screen.queryByText('Moved from old.bin, no content changes')).toBe(null);
   expect(screen.getByText('No diff hunks to display.')).toBeTruthy();
+});
+
+test('walkthrough follows the shared split and unified preference', async () => {
+  const editor = mount(
+    {},
+    {
+      files: [
+        {
+          path: 'main.go',
+          group: 'core',
+          hunks: [
+            {
+              oldStart: 1,
+              newStart: 1,
+              rows: [
+                { type: 'del', oldLine: 1, text: 'old value' },
+                { type: 'add', newLine: 1, text: 'new value' },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  );
+  editor.actions.setReviewMode('review');
+  await screen.findByTitle('main.go');
+  expect(document.querySelectorAll('.review-diff-table .diff-row-pair')).toHaveLength(1);
+  void editor.store.settings.actions.setSetting('diffEditor.renderSideBySide', false);
+  expect(document.querySelectorAll('.review-diff-table .diff-row-pair')).toHaveLength(0);
+  expect(document.querySelectorAll('.review-diff-row')).toHaveLength(2);
 });
