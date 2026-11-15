@@ -39,16 +39,18 @@ export function WalkthroughDiff(props: WalkthroughDiffProps): JSX.Element {
     <section
       id="review-diff-pane"
       ref={pane}
-      class="relative h-full min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain p-3"
+      class="relative h-full min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain px-3 pb-3"
       onScroll={onScroll}
     >
-      <For each={props.files}>
-        {(file) => (
-          <div ref={(element) => blocks.set(file.path, element)}>
-            <WalkthroughFile file={file} />
-          </div>
-        )}
-      </For>
+      <div class="pt-3">
+        <For each={props.files}>
+          {(file) => (
+            <div ref={(element) => blocks.set(file.path, element)}>
+              <WalkthroughFile file={file} />
+            </div>
+          )}
+        </For>
+      </div>
     </section>
   );
 }

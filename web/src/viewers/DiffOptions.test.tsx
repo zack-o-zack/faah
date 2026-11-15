@@ -1,3 +1,4 @@
+import { prMeta } from '../pr/test-editor.ts';
 import { fireEvent, render, screen, waitFor } from '@solidjs/testing-library';
 import { afterEach, expect, test, vi } from 'vitest';
 import { createAppStore } from '../app/store.ts';
@@ -5,15 +6,17 @@ import { createEditorStore } from '../editor/store.ts';
 import { EditorProvider } from '../editor/context.tsx';
 import { FileActions } from '../editor/FileActions.tsx';
 import { ReviewTabs } from '../review/ReviewTabs.tsx';
+import { WalkthroughFile } from '../review/WalkthroughFile.tsx';
 import { DiffViewer } from './DiffViewer.tsx';
 import { required } from '../lib/test-values.ts';
 import { api, apiPostJson } from '../lib/api.ts';
-import { createRoot } from 'solid-js';
+import { createRoot, Show } from 'solid-js';
 import { record } from '../lib/decode.ts';
 import { createDiffActions } from './diff-actions.ts';
 
 vi.mock('../lib/api.ts', () => ({ api: vi.fn(), apiPost: vi.fn(), apiPostJson: vi.fn() }));
 const disposers: (() => void)[] = [];
+const reviewRequest = vi.fn(async () => ({ files: [] }));
 afterEach(() => {
   disposers.splice(0).forEach((dispose) => dispose());
   vi.restoreAllMocks();
@@ -21,7 +24,7 @@ afterEach(() => {
   Reflect.deleteProperty(HTMLElement.prototype, 'scrollIntoView');
 });
 
-async function mount(working = false) {
+async function mount(working = false, walkthrough = false) {
   vi.clearAllMocks();
   Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
     configurable: true,
@@ -61,7 +64,7 @@ async function mount(working = false) {
   });
   const editor = createRoot((dispose) => {
     disposers.push(dispose);
-    return createEditorStore(app, { review: { request: async () => ({ files: [] }) } });
+    return createEditorStore(app, { review: { request: reviewRequest } });
   });
   await app.actions.openDocument('file.go');
   const doc = required(app.activeDocument());
@@ -76,6 +79,28 @@ async function mount(working = false) {
       <FileActions />
       <DiffViewer />
       <ReviewTabs />
+      <Show when={walkthrough}>
+        <div data-testid="walkthrough-file">
+          <WalkthroughFile
+            file={{
+              path: 'file.go',
+              group: 'core',
+              additions: 1,
+              deletions: 1,
+              hunks: [
+                {
+                  oldStart: 1,
+                  newStart: 1,
+                  rows: [
+                    { type: 'del', oldLine: 1, text: 'old' },
+                    { type: 'add', newLine: 1, text: 'new' },
+                  ],
+                },
+              ],
+            }}
+          />
+        </div>
+      </Show>
     </EditorProvider>
   ));
   await waitFor(() => expect(document.querySelector('.diff-split')).not.toBeNull());
@@ -102,7 +127,9 @@ test('editor layout choice updates shared settings and open diff rows', async ()
 
 test('editor and walkthrough options derive distinct switch ids and share settings', async () => {
   const editor = await mount();
+  editor.store.actions.setWorkspace({ git: true, pr: prMeta() });
   editor.actions.setReviewMode('review');
+  editor.actions.setReviewTab('walkthrough');
   fireEvent.click(required(document.getElementById('diff-options')));
   const first = screen.getByRole('switch', { name: 'Ignore whitespace' }).id;
   fireEvent.click(screen.getByRole('switch', { name: 'Ignore whitespace' }));
@@ -171,5 +198,74 @@ test.each(['stage', 'unstage', 'discard', 'expand'] as const)(
     expect(apiPostJson).not.toHaveBeenCalled();
     expect(api).not.toHaveBeenCalled();
     expect(confirm).not.toHaveBeenCalled();
+  },
+);
+
+test('both changed-word switches have unique labels and write the shared setting', async () => {
+  const editor = await mount();
+  const write = vi.spyOn(editor.settings.actions, 'setSetting');
+  editor.store.actions.setWorkspace({ git: true, pr: prMeta() });
+  editor.actions.setReviewMode('review');
+  editor.actions.setReviewTab('walkthrough');
+  fireEvent.click(required(document.getElementById('diff-options')));
+  fireEvent.click(required(document.getElementById('btn-walkthrough-options')));
+  const switches = screen.getAllByRole('switch', { name: 'Highlight changed words' });
+  expect(switches).toHaveLength(2);
+  expect(new Set(switches.map((input) => input.id)).size).toBe(2);
+  for (const input of switches) {
+    expect(input.getAttribute('aria-checked')).toBe('true');
+    expect(document.querySelector(`label[for="${input.id}"]`)?.textContent).toBe(
+      'Highlight changed words',
+    );
+    expect(input.parentElement?.textContent).toContain(
+      'Marks the exact words that changed in a line',
+    );
+  }
+  for (const [index, value] of [
+    [0, false],
+    [1, true],
+  ] as const) {
+    fireEvent.click(required(switches[index]));
+    expect(write).toHaveBeenLastCalledWith('diffEditor.highlightChangedWords', value);
+    await waitFor(() => {
+      for (const input of switches) expect(input.getAttribute('aria-checked')).toBe(String(value));
+    });
+  }
+});
+
+test.each([true, false])(
+  'changed-word toggle updates both rendered views without refetching (split=%s)',
+  async (split) => {
+    const editor = await mount(false, true);
+    await editor.settings.actions.setSetting('diffEditor.renderSideBySide', split);
+    const views = [
+      required(document.getElementById('diffview')),
+      screen.getByTestId('walkthrough-file'),
+    ];
+    const before = views.map((view) => view.innerHTML);
+    for (const view of views) expect(view.querySelector('[class*="diff-char-"]')).not.toBeNull();
+    const requests = vi.mocked(api).mock.calls.length;
+    const posts = vi.mocked(apiPostJson).mock.calls.length;
+    const reviewRequests = reviewRequest.mock.calls.length;
+    fireEvent.click(required(document.getElementById('diff-options')));
+    fireEvent.click(screen.getByRole('switch', { name: 'Highlight changed words' }));
+    await waitFor(() => {
+      for (const view of views) expect(view.querySelector('[class*="diff-char-"]')).toBeNull();
+    });
+    for (const view of views) {
+      expect(view.querySelector('.diff-add, .diff-type-add')).not.toBeNull();
+      expect(view.querySelector('.diff-del, .diff-type-del')).not.toBeNull();
+      expect(view.querySelector('.diff-mk, .diff-col-sign')?.textContent).toMatch(/[-−]/);
+      expect(view.querySelector('.diff-ln, .diff-col-num')?.textContent).toContain('1');
+      expect([...view.querySelectorAll('.diff-code')].map((code) => code.textContent)).toEqual([
+        'old',
+        'new',
+      ]);
+    }
+    fireEvent.click(screen.getByRole('switch', { name: 'Highlight changed words' }));
+    await waitFor(() => expect(views.map((view) => view.innerHTML)).toEqual(before));
+    expect(api).toHaveBeenCalledTimes(requests);
+    expect(apiPostJson).toHaveBeenCalledTimes(posts);
+    expect(reviewRequest).toHaveBeenCalledTimes(reviewRequests);
   },
 );

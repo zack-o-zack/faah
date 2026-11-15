@@ -6,6 +6,7 @@ import { Popover } from '../lib/Popover.tsx';
 export function DiffOptions(props: { id: string }): JSX.Element {
   const editor = useEditor();
   const whitespaceId = () => props.id + '-ignore-whitespace';
+  const changedWordsId = () => props.id + '-highlight-changed-words';
   return (
     <Popover
       triggerId={props.id}
@@ -67,6 +68,27 @@ export function DiffOptions(props: { id: string }): JSX.Element {
             onChange={(event) =>
               void editor.settings.actions.setSetting(
                 'diffEditor.ignoreWhitespace',
+                event.currentTarget.checked,
+              )
+            }
+          />
+        </div>
+        <div class="field" data-orientation="horizontal">
+          <section>
+            <label for={changedWordsId()}>Highlight changed words</label>
+            <p>Marks the exact words that changed in a line</p>
+          </section>
+          <input
+            id={changedWordsId()}
+            type="checkbox"
+            role="switch"
+            class="input"
+            aria-label="Highlight changed words"
+            checked={editor.settings.preferences().highlightChangedWords}
+            aria-checked={editor.settings.preferences().highlightChangedWords}
+            onChange={(event) =>
+              void editor.settings.actions.setSetting(
+                'diffEditor.highlightChangedWords',
                 event.currentTarget.checked,
               )
             }

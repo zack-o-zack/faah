@@ -307,6 +307,14 @@ var Schema = []SchemaItem{
 		Default:     false,
 	},
 	{
+		Key:         "diffEditor.highlightChangedWords",
+		Title:       "Diff: Highlight Changed Words",
+		Description: "Highlights the words that changed inside a changed line.",
+		Category:    "Git & Diff",
+		Type:        "boolean",
+		Default:     true,
+	},
+	{
 		Key:         "git.gutterIndicators",
 		Title:       "Git Gutter Indicators",
 		Description: "Controls whether changed line indicators are shown in the editor gutter.",

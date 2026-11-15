@@ -125,9 +125,9 @@ test('review preserves server syntax tokens and decodes source text safely', asy
   );
   editor.actions.setReviewMode('review');
   await screen.findByText('func');
-  expect(document.querySelector('.diff-col-code .k')?.textContent).toBe('func');
-  expect(document.querySelector('.diff-col-code .nf')?.textContent).toBe('main');
-  expect(document.querySelector('.diff-type-add .diff-col-code')?.textContent).toBe(
+  expect(document.querySelector('.diff-code .k')?.textContent).toBe('func');
+  expect(document.querySelector('.diff-code .nf')?.textContent).toBe('main');
+  expect(document.querySelector('.diff-type-add .diff-code')?.textContent).toBe(
     'func main() { x < 2 }',
   );
 });
@@ -200,7 +200,9 @@ test('diff options read and write shared settings and stay open', async () => {
   expect(screen.getByRole('button', { name: 'Unified' }).getAttribute('aria-pressed')).toBe('true');
   fireEvent.click(screen.getByRole('switch', { name: 'Ignore whitespace' }));
   expect(write).toHaveBeenCalledWith('diffEditor.ignoreWhitespace', true);
-  expect(screen.getByRole('switch').getAttribute('aria-checked')).toBe('true');
+  expect(
+    screen.getByRole('switch', { name: 'Ignore whitespace' }).getAttribute('aria-checked'),
+  ).toBe('true');
   fireEvent.keyDown(document, { key: 'Escape' });
   expect(screen.queryByRole('dialog', { name: 'Diff options' })).toBe(null);
   fireEvent.click(screen.getByRole('button', { name: 'Diff options' }));

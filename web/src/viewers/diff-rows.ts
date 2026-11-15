@@ -41,9 +41,9 @@ function parts(
 ): PaintedRow | null {
   return row ? { ...row, parts: syntaxParts(row.text || '', row.html, mask, bars, kind) } : null;
 }
-export function splitRows(rows: DiffRow[]): PaintedPair[] {
+export function splitRows(rows: DiffRow[], highlightChangedWords: boolean): PaintedPair[] {
   return pairRows(rows).map(({ left, right }) => {
-    if (left?.type === 'del' && right?.type === 'add') {
+    if (highlightChangedWords && left?.type === 'del' && right?.type === 'add') {
       const ranges = changedRanges(left.text, right.text);
       return {
         left: parts(left, ranges.old, ranges.oldBars, 'del'),
@@ -53,8 +53,8 @@ export function splitRows(rows: DiffRow[]): PaintedPair[] {
     return { left: parts(left), right: parts(right) };
   });
 }
-export function unifiedRows(rows: DiffRow[]): PaintedRow[] {
-  const paired = splitRows(rows);
+export function unifiedRows(rows: DiffRow[], highlightChangedWords: boolean): PaintedRow[] {
+  const paired = splitRows(rows, highlightChangedWords);
   const byRow = new Map<number | undefined, PaintedRow>();
   for (const pair of paired) {
     if (pair.left) byRow.set(pair.left.oldLine, pair.left);

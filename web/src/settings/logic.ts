@@ -231,6 +231,7 @@ export interface Preferences {
   minimap: boolean;
   colorTheme: string;
   splitDiff: boolean;
+  highlightChangedWords: boolean;
   markdownPreview: boolean;
   tablePreview: boolean;
   hover: boolean;
@@ -263,6 +264,7 @@ export function preferences(values: SettingsValues): Preferences {
     minimap: truthy(values['editor.minimap.enabled'], true),
     colorTheme: String(values['workbench.colorTheme'] ?? ''),
     splitDiff: truthy(values['diffEditor.renderSideBySide'], true),
+    highlightChangedWords: truthy(values['diffEditor.highlightChangedWords'], true),
     markdownPreview: truthy(values['markdown.preview.open'], true),
     tablePreview: truthy(values['table.preview.open'], true),
     hover: truthy(values['lsp.enabled'], true) && truthy(values['lsp.hover.enabled'], true),

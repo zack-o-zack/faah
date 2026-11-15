@@ -19,6 +19,7 @@ export function WalkthroughFile(props: WalkthroughFileProps): JSX.Element {
   const target = () => review.state.target;
   const targetLine = () => (target().path === props.file.path ? target().line : -1);
   const split = () => editor.store.settings.preferences().splitDiff;
+  const highlightChangedWords = () => editor.settings.preferences().highlightChangedWords;
   const renderRow = (row: PaintedRow | null, side?: 'left' | 'right') => (
     <div
       ref={(element) => {
@@ -34,7 +35,7 @@ export function WalkthroughFile(props: WalkthroughFileProps): JSX.Element {
         <span class="diff-col-num">{row?.newLine || ''}</span>
       </Show>
       <span class="diff-col-sign">{SIGN[row?.type || ''] || ' '}</span>
-      <span class="diff-col-code c">
+      <span class="diff-code c">
         <For each={row?.parts}>{(part) => <span class={part.className}>{part.text}</span>}</For>
       </span>
     </div>
@@ -103,9 +104,13 @@ export function WalkthroughFile(props: WalkthroughFileProps): JSX.Element {
               </div>
               <Show
                 when={split()}
-                fallback={<For each={unifiedRows(hunk.rows)}>{(row) => renderRow(row)}</For>}
+                fallback={
+                  <For each={unifiedRows(hunk.rows, highlightChangedWords())}>
+                    {(row) => renderRow(row)}
+                  </For>
+                }
               >
-                <For each={splitRows(hunk.rows)}>
+                <For each={splitRows(hunk.rows, highlightChangedWords())}>
                   {(pair) => (
                     <div class="diff-row-pair">
                       <div class="diff-side diff-side-left">{renderRow(pair.left, 'left')}</div>
