@@ -10,8 +10,6 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
-
-	"faah/internal/threads/threadstest"
 )
 
 func TestACPBridgeTestBinary(t *testing.T) {
@@ -45,6 +43,5 @@ func TestMain(m *testing.M) {
 	if len(os.Args) > 1 && os.Args[1] == "acp-mcp-bridge" {
 		os.Exit(runACPBridge())
 	}
-	threadstest.RunCLIHelper()
 	os.Exit(m.Run())
 }

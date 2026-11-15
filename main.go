@@ -28,6 +28,7 @@ import (
 	lsppkg "faah/internal/lsp"
 	"faah/internal/mcp"
 	prpkg "faah/internal/pr"
+	"faah/internal/server"
 	"faah/internal/settings"
 	"faah/internal/telemetry"
 	"faah/internal/ui"
@@ -228,25 +229,29 @@ func main() {
 		configuredBasePath = httpx.CleanBasePath(*cfg.ServerBasePath)
 	}
 
-	pxSrv := NewServer(ix, lsp, assets, devRoot, configuredBasePath)
-	pxSrv.tel = tel
+	workbenchURL := ""
 	if *wbChild {
-		pxSrv.workbenchURL = workbench.BaseOf(configuredBasePath)
-	} else if pr != nil {
-		go workbench.RecordPR(prTarget, pr.Snapshot().Meta.Title)
-	} else {
-		go workbench.RecordDirectory(root)
+		workbenchURL = workbench.BaseOf(configuredBasePath)
+	}
+	pxSrv := server.New(server.Options{
+		Assets: assets, Version: version, DevRoot: devRoot, BasePath: configuredBasePath,
+		WorkbenchURL: workbenchURL, Workspace: ix, LSP: lsp, Telemetry: tel,
+	})
+	if !*wbChild {
+		if pr != nil {
+			go workbench.RecordPR(prTarget, pr.Snapshot().Meta.Title)
+		} else {
+			go workbench.RecordDirectory(root)
+		}
 	}
 	if pr != nil {
 		pxSrv.SetPR(pr)
 	}
-	var agent *agentManager
 	if !*noAgent {
-		agent, err = newAgentManager(root, *agentCmd, lsp)
+		err = pxSrv.SetAgent(*agentCmd)
 		if err != nil {
 			fatal(fmt.Errorf("-agent: %w", err))
 		}
-		pxSrv.SetAgent(agent)
 		pxSrv.SetToolsAddr(addr)
 	}
 	initDur := time.Since(tInit)
@@ -301,9 +306,7 @@ func main() {
 	// Index workspace asynchronously so the server and UI respond in <1ms.
 	go func() {
 		ix.Build()
-		if pxSrv.gitWatcher != nil {
-			pxSrv.gitWatcher.Trigger()
-		}
+		pxSrv.NotifyIndexRefresh()
 		n, _, ms := ix.Stats()
 		ui.Status("ok", fmt.Sprintf("indexed %d files", n), fmt.Sprintf("%dms", ms), 0, os.Stdout)
 		tLSP := time.Now()
@@ -318,18 +321,9 @@ func main() {
 		} else if ui.Verbose {
 			ui.Status("ok", "checked language servers (none installed)", ui.FmtDuration(lspDur), 0, os.Stdout)
 		}
-		if agent != nil {
+		if !*noAgent {
 			tAgent := time.Now()
-			var found []string
-			for _, h := range agent.Detect() {
-				if h.Installed {
-					item := h.Name
-					if h.Model != "" {
-						item = fmt.Sprintf("%s (%s)", h.Name, h.Model)
-					}
-					found = append(found, item)
-				}
-			}
+			found := pxSrv.DetectedAgents()
 			agentDur := time.Since(tAgent)
 			if ui.Verbose {
 				if len(found) > 0 {
@@ -390,7 +384,7 @@ func main() {
 		<-shutDown
 	}
 	lsp.Close()
-	agent.Close()
+	pxSrv.CloseAgent()
 	pxSrv.CloseThreads()
 	pr.Close()
 
