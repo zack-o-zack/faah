@@ -66,7 +66,7 @@ func TestWalkthroughGroups(t *testing.T) {
 }
 
 func TestWalkthroughMoves(t *testing.T) {
-	for _, mode := range []string{"pr", "fallback", "staged"} {
+	for _, mode := range []string{"pr", "pr-relative", "fallback", "staged"} {
 		for _, edit := range []bool{false, true} {
 			t.Run(mode+map[bool]string{false: "/pure", true: "/edited"}[edit], func(t *testing.T) {
 				root := gittest.Repo(t)
@@ -86,14 +86,17 @@ func TestWalkthroughMoves(t *testing.T) {
 					gittest.Run(t, root, "commit", "-qm", "move")
 					statuses = nil
 				}
-				if mode == "pr" {
+				if strings.HasPrefix(mode, "pr") {
 					statuses = git.FilesBetween(root, base, "HEAD")
 				}
 				diffBase := "HEAD"
-				if mode == "pr" {
+				if strings.HasPrefix(mode, "pr") {
 					diffBase = base
 				}
-				response := BuildWalkthrough(root, diffBase, "HEAD", mode == "pr", statuses)
+				if mode == "pr-relative" {
+					diffBase = "HEAD~1"
+				}
+				response := BuildWalkthrough(root, diffBase, "HEAD", strings.HasPrefix(mode, "pr"), statuses)
 				data, _ := json.Marshal(response)
 				var decoded struct {
 					Files []struct{ Path, OldPath, Status string }

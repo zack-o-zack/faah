@@ -40,6 +40,7 @@ func BuildWalkthrough(root, diffBase, diffHead string, isPR bool, statuses map[s
 		headRef          = "working-tree"
 		totalAdditions   = 0
 		totalDeletions   = 0
+		fallback         = false
 	)
 
 	type targetFile struct {
@@ -68,6 +69,7 @@ func BuildWalkthrough(root, diffBase, diffHead string, isPR bool, statuses map[s
 				headSHA := strings.TrimSpace(string(headOut))
 				if cfList := git.CommitFiles(root, headSHA); len(cfList) > 0 {
 					baseRef = "HEAD~1"
+					fallback = true
 					if len(headSHA) > 7 {
 						headRef = headSHA[:7]
 					} else {
@@ -81,7 +83,7 @@ func BuildWalkthrough(root, diffBase, diffHead string, isPR bool, statuses map[s
 		}
 	}
 
-	if baseRef != "HEAD~1" && len(targets) > 0 {
+	if !fallback && len(targets) > 0 {
 		head := ""
 		if isPR {
 			head = diffHead
@@ -122,7 +124,7 @@ func BuildWalkthrough(root, diffBase, diffHead string, isPR bool, statuses map[s
 		head := ""
 		if isPR {
 			head = diffHead
-		} else if baseRef == "HEAD~1" {
+		} else if fallback {
 			head = "HEAD"
 		}
 		paths := []string{target.path}
