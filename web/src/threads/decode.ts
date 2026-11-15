@@ -103,7 +103,7 @@ export function decodeEvidence(value: unknown): Evidence {
     identifiers: number(v.identifiers),
   };
 }
-function decodeCitations(value: unknown): Record<string, Citation> {
+export function decodeCitations(value: unknown): Record<string, Citation> {
   return Object.fromEntries(
     Object.entries(record(value)).map(([key, item]) => {
       const r = record(item);
@@ -135,20 +135,7 @@ export function decodeTurn(value: unknown): ThreadTurn {
     ms: number(v.ms),
     firstMs: number(v.firstMs),
     refs: v.refs ? decodeCitations(v.refs) : undefined,
-    notes: list(v.notes).map((item) => {
-      const n = record(item);
-      return {
-        path: text(n.path),
-        l1: number(n.l1),
-        l2: number(n.l2),
-        symbol: text(n.symbol),
-        summary: text(n.summary),
-        detail: text(n.detail),
-        refs: text(n.refs),
-        text: text(n.text),
-        kind: text(n.kind),
-      };
-    }),
+    notes: list(v.notes).map(decodeNote),
     walkthroughs: list(v.walkthroughs).map((item) => {
       const w = record(item);
       return {
@@ -244,5 +231,20 @@ function decodeExplainTarget(value: unknown): ExplainTarget {
     c1: v.c1 == null ? undefined : number(v.c1),
     c2: v.c2 == null ? undefined : number(v.c2),
     text: text(v.text),
+  };
+}
+
+export function decodeNote(value: unknown): Note {
+  const n = record(value);
+  return {
+    path: text(n.path),
+    l1: number(n.l1),
+    l2: number(n.l2),
+    symbol: text(n.symbol),
+    summary: text(n.summary),
+    detail: text(n.detail),
+    refs: text(n.refs),
+    text: text(n.text),
+    kind: text(n.kind),
   };
 }

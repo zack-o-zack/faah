@@ -12,6 +12,7 @@ import {
 } from './decode.ts';
 import { record, text, isAbort, errorMessage } from '../lib/decode.ts';
 export interface ThreadOptions {
+  onNotesChanged?: () => void;
   request?: Request;
   post?: Request;
 }
@@ -109,8 +110,10 @@ function buildThreadStore(editor: ThreadHost, options: ThreadOptions = {}) {
       else set('list', state.list.length, summary);
     });
     editor.actions.orbThread(thread);
+    options.onNotesChanged?.();
   }
   function acceptSummary(summary: ThreadSummary): void {
+    if (summary.kind === 'explain') options.onNotesChanged?.();
     const old = state.list.find((thread) => thread.id === summary.id);
     if (old?.running && !summary.running && summary.touched)
       void editor.actions.reloadWorkspace().catch((error) => set('error', errorMessage(error)));
@@ -141,6 +144,7 @@ function buildThreadStore(editor: ThreadHost, options: ThreadOptions = {}) {
     set({ current: '', draft: null, message: '', pending: '', error: '' });
   }
   function removeThread(id: string): void {
+    options.onNotesChanged?.();
     requests.get(id)?.controller.abort();
     set('list', (list) => list.filter((thread) => thread.id !== id));
     set(

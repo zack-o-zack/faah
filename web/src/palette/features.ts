@@ -40,6 +40,7 @@ export function registerFeatureCommands(editor: EditorStore, theme?: ThemeStore)
         await actions.revealFile(current.path);
       }
     }),
+    command('Explain: Toggle Notes', () => editor.notes.toggle()),
     command('Toggle Word Wrap', () => actions.toggleWrap()),
     command('Toggle Markdown / Table Preview', () => {
       const current = document();

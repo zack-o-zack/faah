@@ -42,6 +42,7 @@ import { createStore } from 'solid-js/store';
 import { batch, createMemo, createSignal, onCleanup } from 'solid-js';
 import { apiPostJson } from '../lib/api.ts';
 import { toast } from '../lib/toast.tsx';
+import { createNotesStore } from '../notes/store.ts';
 import { codeWidth, LH } from './layout.ts';
 import { movePosition } from './cursor.ts';
 import { initialVimState } from './vim.ts';
@@ -77,6 +78,7 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
   const [ui, setUI] = createStore(initialState());
   const [revision, bump] = createSignal(0);
   const [geometry, setGeometry] = createStore<Geometry>({
+    left: 0,
     width: 800,
     height: 600,
     top: 0,
@@ -97,14 +99,28 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
     if (document) store.actions.patchDocument(document.path, update);
   };
   const refresh = () => bump((value) => value + 1);
+  const notes = createNotesStore(
+    () => {
+      const doc = active();
+      return doc && !doc.isEditing && !doc.diffMode
+        ? {
+            path: doc.path,
+            version: `${buffer()?.generation}:${doc.viewerRevision}:${store.state.explanation.model?.phase}:${store.state.explanation.model?.notes}`,
+          }
+        : false;
+    },
+    () => geometry.width,
+    options.threads,
+  );
   function offsets() {
     revision();
     buffer()?.revision();
     return (
       buffer()?.layout({
         wrap: store.settings.preferences().wrap,
+        extraRows: notes.extraRows(),
         width: codeWidth(
-          geometry.width,
+          geometry.width - notes.margin(),
           active()?.total,
           geometry.charWidth,
           store.settings.preferences().lineNumbers,
@@ -346,7 +362,10 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
   });
   const agents = createAgentStore(editor, options.agents);
   const agentEditor = Object.assign(editor, { agents });
-  const threads = createThreadStore(agentEditor, options.threads);
+  const threads = createThreadStore(agentEditor, {
+    ...options.threads,
+    onNotesChanged: notes.scheduleReload,
+  });
   const threadEditor = Object.assign(agentEditor, { threads });
   const review = createReviewStore(threadEditor, options.review);
   const reviewEditor = Object.assign(threadEditor, { review });
@@ -404,6 +423,7 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
     },
   });
   const result = {
+    notes,
     ...prEditor,
     merge,
     forge,

@@ -26,6 +26,7 @@ export interface WordPosition {
   imprecise?: boolean;
 }
 export interface Geometry {
+  left: number;
   width: number;
   height: number;
   top: number;

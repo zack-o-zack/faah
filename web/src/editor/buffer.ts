@@ -38,6 +38,7 @@ function buildDocumentBuffer(
   let layoutKey = '';
   let measureKey = '';
   let wrapping = false;
+  let ghostHeights: Record<number, number> = {};
   const heights = new Map<number, number>();
   let offsets: Float64Array = new Float64Array(1);
   const changed = () => {
@@ -182,7 +183,13 @@ function buildDocumentBuffer(
       let dirty = false;
       for (const [index, height] of entries) {
         if (index < 0 || index >= lines.length || height <= 0) continue;
-        if (Math.abs(height - ((offsets[index + 1] || 0) - (offsets[index] || 0))) < 0.5) continue;
+        if (
+          Math.abs(
+            height -
+              ((offsets[index + 1] || 0) - (offsets[index] || 0) - (ghostHeights[index] || 0)),
+          ) < 0.5
+        )
+          continue;
         heights.set(index, height);
         dirty = true;
       }
@@ -191,6 +198,12 @@ function buildDocumentBuffer(
     layout(options: LayoutOptions) {
       const key = JSON.stringify(options);
       wrapping = !!options.wrap;
+      ghostHeights = Object.fromEntries(
+        Object.entries(options.extraRows || {}).map(([line, count]) => [
+          line,
+          count * (options.lineHeight || 20),
+        ]),
+      );
       if (measureKey !== key) {
         heights.clear();
         measureKey = key;

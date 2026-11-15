@@ -1,4 +1,5 @@
 export interface LayoutOptions {
+  extraRows?: Record<number, number>;
   wrap?: boolean;
   width?: number;
   charWidth?: number;
@@ -47,6 +48,7 @@ export function lineOffsets(
     lineHeight = LH,
     estimate = 0,
     heights,
+    extraRows,
   }: LayoutOptions = {},
 ): Float64Array {
   const offsets = new Float64Array(columns.length + 1);
@@ -56,7 +58,9 @@ export function lineOffsets(
     const length = column < 0 ? estimate : column;
     const rows = wrap ? Math.max(1, Math.ceil(length / capacity)) : 1;
     offsets[index + 1] =
-      (offsets[index] || 0) + ((wrap && heights?.get(index)) || rows * lineHeight);
+      (offsets[index] || 0) +
+      ((wrap && heights?.get(index)) || rows * lineHeight) +
+      (extraRows?.[index] || 0) * lineHeight;
   }
   return offsets;
 }
