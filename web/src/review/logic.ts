@@ -190,7 +190,12 @@ export const FILE_GROUPS: { id: FileGroup; label: string; icon: string; title: s
     icon: 'icon-[lucide--flask-conical]',
     title: 'Test files and fixtures',
   },
-  { id: 'config', label: 'Config', icon: 'icon-[lucide--settings]', title: 'Configuration files' },
+  {
+    id: 'config',
+    label: 'Config',
+    icon: 'icon-[lucide--sliders-horizontal]',
+    title: 'Configuration files',
+  },
   { id: 'docs', label: 'Docs', icon: 'icon-[lucide--book-open]', title: 'Documentation files' },
   {
     id: 'generated',

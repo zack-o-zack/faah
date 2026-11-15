@@ -104,8 +104,17 @@ function buildReviewStore(editor: ReviewHost, options: ReviewOptions = {}) {
   const active = () => stages()[state.active] || null;
   const running = () => isRunning(state.run);
   const [walkthrough] = createResource(
-    () => state.mode === 'review' && revision(),
-    async () => decodeWalkthrough(await walkthroughRequest('api/review/walkthrough')),
+    () =>
+      state.mode === 'review' && {
+        revision: revision(),
+        ignoreWhitespace: app.settings.value('diffEditor.ignoreWhitespace') === true,
+      },
+    async ({ ignoreWhitespace }) =>
+      decodeWalkthrough(
+        await walkthroughRequest(
+          'api/review/walkthrough' + (ignoreWhitespace ? '?ignoreWhitespace=1' : ''),
+        ),
+      ),
   );
 
   // The stage on screen follows its thread on the shared stream; the thread store

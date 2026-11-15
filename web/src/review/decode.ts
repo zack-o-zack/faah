@@ -101,6 +101,7 @@ export function decodeWalkthrough(value: unknown): WalkthroughReply {
         oldPath: text(f.oldPath),
       };
     }),
+    hiddenWhitespaceFiles: number(v.hiddenWhitespaceFiles),
     totalFiles: number(v.totalFiles),
     totalAdditions: number(v.totalAdditions),
     totalDeletions: number(v.totalDeletions),

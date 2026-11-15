@@ -18,6 +18,11 @@ export function WalkthroughFiles(props: WalkthroughFilesProps): JSX.Element {
     >
       <div class="flex flex-col gap-1 px-3 pt-3">
         <span class="text-sm font-semibold">Changed files</span>
+        <Show when={props.data?.hiddenWhitespaceFiles}>
+          <span class="text-xs text-muted-foreground">
+            {props.data?.hiddenWhitespaceFiles} whitespace-only files hidden
+          </span>
+        </Show>
         <span class="text-xs text-muted-foreground">
           {props.data?.totalFiles || props.data?.files.length || 0} files ·{' '}
           <LineStats

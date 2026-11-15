@@ -141,3 +141,25 @@ test('the walkthrough count finishes loading after switching to the pipeline', a
     dispose();
   }
 });
+
+test('walkthrough refetches with the whitespace query only when enabled', async () => {
+  const request = vi.fn<NonNullable<ReviewOptions['request']>>(async () => ({ files: [] }));
+  const { review, app, dispose } = fixture({ request });
+  review.actions.setReviewMode('review');
+  await vi.waitFor(() =>
+    expect(request.mock.calls.some(([path]) => path === 'api/review/walkthrough')).toBe(true),
+  );
+  void app.settings.actions.setSetting('diffEditor.ignoreWhitespace', true);
+  await vi.waitFor(() =>
+    expect(
+      request.mock.calls.some(([path]) => path === 'api/review/walkthrough?ignoreWhitespace=1'),
+    ).toBe(true),
+  );
+  request.mockClear();
+  void app.settings.actions.setSetting('diffEditor.ignoreWhitespace', false);
+  await vi.waitFor(() =>
+    expect(request.mock.calls.some(([path]) => path === 'api/review/walkthrough')).toBe(true),
+  );
+  expect(request.mock.calls.some(([path]) => path.includes('ignoreWhitespace'))).toBe(false);
+  dispose();
+});

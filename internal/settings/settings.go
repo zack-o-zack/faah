@@ -183,7 +183,7 @@ var Schema = []SchemaItem{
 	{
 		Key:         "diffEditor.renderSideBySide",
 		Title:       "Diff Side By Side",
-		Description: "Controls whether the diff editor shows changes in split (side-by-side) or unified mode.",
+		Description: "Controls whether the diff editor and review walkthrough show changes side by side or unified.",
 		Category:    "Workbench",
 		Type:        "boolean",
 		Default:     true,

@@ -127,7 +127,9 @@ test('review preserves server syntax tokens and decodes source text safely', asy
   await screen.findByText('func');
   expect(document.querySelector('.diff-col-code .k')?.textContent).toBe('func');
   expect(document.querySelector('.diff-col-code .nf')?.textContent).toBe('main');
-  expect(document.querySelector('.diff-type-add .diff-col-code')?.textContent).toBe('func main() { x < 2 }');
+  expect(document.querySelector('.diff-type-add .diff-col-code')?.textContent).toBe(
+    'func main() { x < 2 }',
+  );
 });
 
 test('a changed binary move keeps its origin without a pure move badge', async () => {
@@ -183,3 +185,35 @@ test('walkthrough follows the shared split and unified preference', async () => 
   expect(document.querySelectorAll('.review-diff-table .diff-row-pair')).toHaveLength(0);
   expect(document.querySelectorAll('.review-diff-row')).toHaveLength(2);
 });
+
+test('diff options read and write shared settings and stay open', async () => {
+  const editor = mount({});
+  editor.actions.setReviewMode('review');
+  await screen.findByText('Working tree is clean');
+  const write = vi.spyOn(editor.store.settings.actions, 'setSetting');
+  fireEvent.click(screen.getByRole('button', { name: 'Diff options' }));
+  expect(screen.getByRole('button', { name: 'Side by side' }).getAttribute('aria-pressed')).toBe(
+    'true',
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Unified' }));
+  expect(write).toHaveBeenCalledWith('diffEditor.renderSideBySide', false);
+  expect(screen.getByRole('button', { name: 'Unified' }).getAttribute('aria-pressed')).toBe('true');
+  fireEvent.click(screen.getByRole('switch', { name: 'Ignore whitespace' }));
+  expect(write).toHaveBeenCalledWith('diffEditor.ignoreWhitespace', true);
+  expect(screen.getByRole('switch').getAttribute('aria-checked')).toBe('true');
+  fireEvent.keyDown(document, { key: 'Escape' });
+  expect(screen.queryByRole('dialog', { name: 'Diff options' })).toBe(null);
+  fireEvent.click(screen.getByRole('button', { name: 'Diff options' }));
+  fireEvent.pointerDown(document.body);
+  expect(screen.queryByRole('dialog', { name: 'Diff options' })).toBe(null);
+});
+
+test.each([0, 2])(
+  'hidden whitespace count %s appears only when positive, even with no visible files',
+  async (count) => {
+    const editor = mount({}, { files: [], hiddenWhitespaceFiles: count });
+    editor.actions.setReviewMode('review');
+    await waitFor(() => expect(editor.review.walkthroughData()).toBeTruthy());
+    expect(screen.queryByText(count + ' whitespace-only files hidden') !== null).toBe(count > 0);
+  },
+);

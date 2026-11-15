@@ -24,13 +24,13 @@ export function Walkthrough(): JSX.Element {
         <Match when={!review.walkthroughData()}>
           <EmptyState spinner title="Loading changed files…" />
         </Match>
-        <Match when={!files().length}>
+        <Match when={!files().length && !review.walkthroughData()?.hiddenWhitespaceFiles}>
           <EmptyState icon="icon-[lucide--check]" title="Working tree is clean">
             No modified files or uncommitted diffs found against{' '}
             {review.walkthroughData()?.baseRef || 'HEAD'}.
           </EmptyState>
         </Match>
-        <Match when={files().length}>
+        <Match when={files().length || review.walkthroughData()?.hiddenWhitespaceFiles}>
           <WalkthroughFiles data={review.walkthroughData()} />
           <WalkthroughDiff files={visibleFiles(files(), review.groupFilter())} />
         </Match>

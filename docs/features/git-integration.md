@@ -142,7 +142,7 @@ Git behavior can be customized in Settings (`Cmd/Ctrl+,`):
 
 - **Git: Gutter Indicators** (`git.gutterIndicators`): Enable or disable real-time change indicator bars in the editor gutter (defaults to `true`).
 - **Diff Editor: Render Side-by-Side** (`diffEditor.renderSideBySide`): Default layout for the diff view (`true` for split, `false` for unified).
-- **Diff Editor: Ignore Trim Whitespace** (`diffEditor.ignoreTrimWhitespace`): Ignore leading and trailing whitespace diffs (defaults to `true`).
+- **Diff: Ignore Whitespace** (`diffEditor.ignoreWhitespace`): Hide walkthrough changes in spaces and blank lines (defaults to `false`).
 - **Commit Message Instructions** (`git.commitMessageInstruction`): Free-text instructions appended to the prompt **✨ Commit** (empty message) sends to your coding harness (e.g. *"Follow Conventional Commits"* or *"Reference the ticket number in the branch name"*). Defaults to empty. This setting renders as a multi-line textarea in the Settings UI.
 - **Coding Harness & Model**: **✨ Commit** (empty message) uses the same globally selected harness and model as inline agent edits (`agent.harness`, and its persisted model) — see [Editing with Coding Agents](agent-editing.md).
 - **CLI Flag `-no-git`**: Launch faah with Git features completely disabled (`faah -no-git`) for environments where Git is not installed or when viewing plain directory archives.

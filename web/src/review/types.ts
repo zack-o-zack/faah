@@ -52,6 +52,7 @@ export interface WalkthroughFile {
   oldPath?: string;
 }
 export interface WalkthroughReply {
+  hiddenWhitespaceFiles: number;
   files: WalkthroughFile[];
   totalFiles: number;
   totalAdditions: number;
