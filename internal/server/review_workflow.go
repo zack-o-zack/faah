@@ -149,5 +149,5 @@ func (s *Server) handleReviewWalkthrough(w http.ResponseWriter, r *http.Request)
 	} else {
 		statuses = s.ix.GitStatusMap()
 	}
-	httpx.WriteJSON(w, review.BuildWalkthrough(s.ix.Root(), s.diffBase, s.prHeadSHA, isPR, statuses, r.URL.Query().Get("ignoreWhitespace") == "1"))
+	httpx.WriteJSON(w, review.BuildWalkthrough(review.WalkthroughOptions{Root: s.ix.Root(), DiffBase: s.diffBase, DiffHead: s.prHeadSHA, IsPR: isPR, Statuses: statuses, IgnoreWhitespace: r.URL.Query().Get("ignoreWhitespace") == "1"}))
 }

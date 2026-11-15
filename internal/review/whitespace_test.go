@@ -23,7 +23,7 @@ func TestWalkthroughWhitespace(t *testing.T) {
 	gittest.Run(t, root, "add", "new.go")
 	writeWalkFile(t, root, "untracked.go", "")
 	statuses := map[string]string{"mixed.go": "M", "indent.go": "M", "old.go": "D", "new.go": "A", "untracked.go": "?"}
-	exact := BuildWalkthrough(root, "HEAD", "", false, statuses, false)
+	exact := BuildWalkthrough(WalkthroughOptions{Root: root, DiffBase: "HEAD", DiffHead: "", IsPR: false, Statuses: statuses, IgnoreWhitespace: false})
 	if exact.HiddenWhitespaceFiles != 0 || exact.TotalFiles != 3 {
 		t.Fatalf("exact: %+v", exact)
 	}
@@ -36,7 +36,7 @@ func TestWalkthroughWhitespace(t *testing.T) {
 			t.Fatalf("default changed %s", f.Path)
 		}
 	}
-	filtered := BuildWalkthrough(root, "HEAD", "", false, statuses, true)
+	filtered := BuildWalkthrough(WalkthroughOptions{Root: root, DiffBase: "HEAD", DiffHead: "", IsPR: false, Statuses: statuses, IgnoreWhitespace: true})
 	if filtered.HiddenWhitespaceFiles != 1 || filtered.TotalFiles != 2 {
 		t.Fatalf("filtered: %+v", filtered)
 	}

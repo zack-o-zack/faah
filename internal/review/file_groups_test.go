@@ -42,7 +42,7 @@ func TestWalkthroughGroups(t *testing.T) {
 		}
 	}
 	gittest.Run(t, root, "add", "-A")
-	response := BuildWalkthrough(root, "HEAD", "", false, statuses, false)
+	response := BuildWalkthrough(WalkthroughOptions{Root: root, DiffBase: "HEAD", DiffHead: "", IsPR: false, Statuses: statuses, IgnoreWhitespace: false})
 	data, _ := json.Marshal(response)
 	var decoded struct {
 		Files []struct{ Path, Group string }
@@ -96,7 +96,7 @@ func TestWalkthroughMoves(t *testing.T) {
 				if mode == "pr-relative" {
 					diffBase = "HEAD~1"
 				}
-				response := BuildWalkthrough(root, diffBase, "HEAD", strings.HasPrefix(mode, "pr"), statuses, false)
+				response := BuildWalkthrough(WalkthroughOptions{Root: root, DiffBase: diffBase, DiffHead: "HEAD", IsPR: strings.HasPrefix(mode, "pr"), Statuses: statuses, IgnoreWhitespace: false})
 				data, _ := json.Marshal(response)
 				var decoded struct {
 					Files []struct{ Path, OldPath, Status string }
@@ -141,7 +141,7 @@ func TestWalkthroughBinaryMoves(t *testing.T) {
 				base = "HEAD~1"
 				statuses = git.FilesBetween(root, base, "HEAD")
 			}
-			response := BuildWalkthrough(root, base, "HEAD", mode == "pr", statuses, false)
+			response := BuildWalkthrough(WalkthroughOptions{Root: root, DiffBase: base, DiffHead: "HEAD", IsPR: mode == "pr", Statuses: statuses, IgnoreWhitespace: false})
 			if len(response.Files) != 1 {
 				t.Fatalf("want one renamed binary, got %+v", response.Files)
 			}
