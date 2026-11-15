@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"faah/internal/git"
 	"faah/internal/render"
 )
 
@@ -969,10 +970,10 @@ func (s *Server) handleReviewWalkthrough(w http.ResponseWriter, r *http.Request)
 		}
 
 		// If working tree is clean, fallback to HEAD~1..HEAD so the reviewer has immediate diff to inspect
-		if len(targets) == 0 && gitAvailable(root) {
+		if len(targets) == 0 && git.Available(root) {
 			if headOut, err := exec.Command("git", "-C", root, "rev-parse", "--verify", "HEAD").Output(); err == nil {
 				headSHA := strings.TrimSpace(string(headOut))
-				if cfList := gitCommitFiles(root, headSHA); len(cfList) > 0 {
+				if cfList := git.CommitFiles(root, headSHA); len(cfList) > 0 {
 					baseRef = "HEAD~1"
 					if len(headSHA) > 7 {
 						headRef = headSHA[:7]
@@ -994,14 +995,14 @@ func (s *Server) handleReviewWalkthrough(w http.ResponseWriter, r *http.Request)
 	for _, target := range targets {
 		var diffText string
 		if isPR {
-			diffText = gitDiffBetween(root, target.path, s.diffBase, s.prHeadSHA)
+			diffText = git.DiffBetween(root, target.path, s.diffBase, s.prHeadSHA)
 			if diffText == "" {
-				diffText = gitDiffAgainst(root, target.path, s.diffBase)
+				diffText = git.DiffAgainst(root, target.path, s.diffBase)
 			}
 		} else if baseRef == "HEAD~1" {
-			diffText = gitDiffBetween(root, target.path, "HEAD~1", "HEAD")
+			diffText = git.DiffBetween(root, target.path, "HEAD~1", "HEAD")
 		} else {
-			diffText = gitDiffAgainst(root, target.path, baseRef)
+			diffText = git.DiffAgainst(root, target.path, baseRef)
 		}
 
 		if diffText == "" {

@@ -38,6 +38,7 @@ import (
 	"sync"
 	"time"
 
+	"faah/internal/git"
 	"faah/internal/metrics"
 	"faah/internal/settings"
 	"faah/internal/ui"
@@ -814,7 +815,7 @@ func (wb *workbench) handleBrowse(w http.ResponseWriter, r *http.Request) {
 	if parent == dir {
 		parent = ""
 	}
-	writeJSON(w, map[string]any{"path": dir, "parent": parent, "git": hasGitMarker(dir) || gitAvailable(dir), "entries": out})
+	writeJSON(w, map[string]any{"path": dir, "parent": parent, "git": hasGitMarker(dir) || git.Available(dir), "entries": out})
 }
 
 // handleMkdir creates a folder for Browse's New folder. The path is a name
@@ -1098,7 +1099,7 @@ func (wb *workbench) resolveTarget(target string) (wbItem, error) {
 		return wbItem{}, errors.New("enter a directory path or a pull request URL")
 	}
 	if _, pt, ok := DetectPRURL(target); ok {
-		if gitDisabled {
+		if git.Disabled() {
 			return wbItem{}, errors.New("git is required for PR review; restart faah without -no-git")
 		}
 		return wbPRItem(pt), nil
@@ -1612,9 +1613,9 @@ func (wb *workbench) makeClone(c *wbChild, it wbItem) (string, error) {
 	}
 	defer os.RemoveAll(tmp)
 	auth := provider.GitAuth(pt, token)
-	cmd := gitAuthCmd(auth, "clone", "--filter=blob:none", "--no-checkout", provider.CloneURL(pt), tmp)
+	cmd := git.AuthCmd(auth, "clone", "--filter=blob:none", "--no-checkout", provider.CloneURL(pt), tmp)
 	if out, err := runCtx(c.ctx, cmd); err != nil {
-		return "", fmt.Errorf("git clone %s: %w: %s", it.Repo, err, auth.redact(strings.TrimSpace(string(out))))
+		return "", fmt.Errorf("git clone %s: %w: %s", it.Repo, err, auth.Redact(strings.TrimSpace(string(out))))
 	}
 	os.RemoveAll(dest) // a broken earlier attempt
 	if err := os.Rename(tmp, dest); err != nil {

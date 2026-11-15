@@ -16,6 +16,8 @@ import (
 	"time"
 
 	"faah/internal/settings"
+
+	"faah/internal/git/gittest"
 )
 
 func newTestStore(t *testing.T) *wbStore {
@@ -389,13 +391,9 @@ func TestWorkbenchForgetsNewItemThatFails(t *testing.T) {
 func gitRepoWithRemotes(t *testing.T, remotes map[string]string) string {
 	t.Helper()
 	dir := t.TempDir()
-	if out, err := exec.Command("git", "init", "-q", dir).CombinedOutput(); err != nil {
-		t.Fatalf("git init: %v %s", err, out)
-	}
+	gittest.Run(t, dir, "init", "-q")
 	for name, u := range remotes {
-		if out, err := exec.Command("git", "-C", dir, "remote", "add", name, u).CombinedOutput(); err != nil {
-			t.Fatalf("git remote add: %v %s", err, out)
-		}
+		gittest.Run(t, dir, "remote", "add", name, u)
 	}
 	resolved, _ := filepath.EvalSymlinks(dir)
 	return resolved
@@ -426,10 +424,8 @@ func TestScanForCloneFindsNestedClone(t *testing.T) {
 	root := t.TempDir()
 	clone := filepath.Join(root, "work", "px0")
 	os.MkdirAll(filepath.Join(root, "work", "node_modules", "px0"), 0o755)
-	if out, err := exec.Command("git", "init", "-q", clone).CombinedOutput(); err != nil {
-		t.Fatalf("%v %s", err, out)
-	}
-	exec.Command("git", "-C", clone, "remote", "add", "origin", "git@github.com:px0-ai/px0.git").Run()
+	gittest.Run(t, filepath.Dir(clone), "init", "-q", clone)
+	gittest.Run(t, clone, "remote", "add", "origin", "git@github.com:px0-ai/px0.git")
 	want, _ := filepath.EvalSymlinks(clone)
 	if got := scanForClone(context.Background(), []string{root}, "px0-ai/px0"); got != want {
 		t.Fatalf("got %q, want %q", got, want)

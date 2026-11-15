@@ -17,6 +17,7 @@ import (
 	"sync"
 	"time"
 
+	"faah/internal/git"
 	"faah/internal/render"
 	"faah/internal/settings"
 )
@@ -92,12 +93,12 @@ func computeDiffBase(worktree, srcRepo, srcRemote string, fg forgeGit, baseRef s
 	}
 	fetchErr := fetchPRBase(worktree, srcRepo, srcRemote, fg, baseRef, num)
 	if fetchErr == "" {
-		if mb := gitMergeBase(worktree, "HEAD", prBaseRef(num)); mb != "" {
+		if mb := git.MergeBase(worktree, "HEAD", prBaseRef(num)); mb != "" {
 			diffBase = mb
 		}
 	}
 	if diffBase == "HEAD" && srcRepo != "" {
-		if mb := gitMergeBase(worktree, "HEAD", srcRemote+"/"+baseRef); mb != "" {
+		if mb := git.MergeBase(worktree, "HEAD", srcRemote+"/"+baseRef); mb != "" {
 			diffBase = mb
 			fetchErr = "" // recovered via the local clone's own remote-tracking ref
 		}
@@ -117,9 +118,9 @@ func computeDiffBase(worktree, srcRepo, srcRemote string, fg forgeGit, baseRef s
 
 // forgeGit is how plain git reaches the PR's repository on its forge.
 type forgeGit struct {
-	CloneURL string  // https clone URL of the base repository
-	HeadRef  string  // the forge's ref for the PR head, "" if it has none
-	Auth     gitAuth // empty without a token
+	CloneURL string   // https clone URL of the base repository
+	HeadRef  string   // the forge's ref for the PR head, "" if it has none
+	Auth     git.Auth // empty without a token
 }
 
 func newForgeGit(provider GitProvider, target PRTarget, token string) forgeGit {
@@ -153,11 +154,11 @@ func fetchPRBase(worktree, srcRepo, srcRemote string, fg forgeGit, baseRef strin
 		baseRemote = fg.CloneURL
 	}
 	refspec := fmt.Sprintf("+refs/heads/%s:%s", baseRef, prBaseRef(num))
-	out, err := gitAuthCmd(fg.Auth, "-C", worktree, "fetch", "--no-tags", baseRemote, refspec).CombinedOutput()
+	out, err := git.AuthCmd(fg.Auth, "-C", worktree, "fetch", "--no-tags", baseRemote, refspec).CombinedOutput()
 	if err == nil {
 		return ""
 	}
-	if msg := fg.Auth.redact(strings.TrimSpace(string(out))); msg != "" {
+	if msg := fg.Auth.Redact(strings.TrimSpace(string(out))); msg != "" {
 		return msg
 	}
 	return err.Error()
@@ -186,7 +187,7 @@ func checkoutPR(ctx context.Context, provider GitProvider, target PRTarget, cwd 
 	}
 	// macOS TempDir lives under /var -> /private/var; git rev-parse
 	// --show-toplevel reports the resolved path, so leaving tmp unresolved
-	// makes gitStatusAgainst's toplevel-relative prefix check fail for every
+	// makes git.StatusAgainst's toplevel-relative prefix check fail for every
 	// file, silently emptying the PR's diff/status view.
 	if resolved, err := filepath.EvalSymlinks(tmp); err == nil {
 		tmp = resolved
@@ -202,14 +203,14 @@ func checkoutPR(ctx context.Context, provider GitProvider, target PRTarget, cwd 
 			onProgress(fmt.Sprintf("Fetching PR #%d head and preparing worktree...", num))
 		}
 		headRefspec := fmt.Sprintf("%s:refs/faah/pr/%d", fg.HeadRef, num)
-		if out, err := gitLocalThenToken(fg.Auth, "-C", srcRepo, "fetch", "--no-tags", srcRemote, headRefspec); err != nil {
+		if out, err := git.LocalThenToken(fg.Auth, "-C", srcRepo, "fetch", "--no-tags", srcRemote, headRefspec); err != nil {
 			cleanup()
-			return nil, fmt.Errorf("git fetch PR head: %w: %s", err, fg.Auth.redact(strings.TrimSpace(string(out))))
+			return nil, fmt.Errorf("git fetch PR head: %w: %s", err, fg.Auth.Redact(strings.TrimSpace(string(out))))
 		}
 		// A partial clone (the workbench's own) fetches file contents here.
-		if out, err := gitLocalThenToken(fg.Auth, "-C", srcRepo, "worktree", "add", "--detach", tmp, fmt.Sprintf("refs/faah/pr/%d", num)); err != nil {
+		if out, err := git.LocalThenToken(fg.Auth, "-C", srcRepo, "worktree", "add", "--detach", tmp, fmt.Sprintf("refs/faah/pr/%d", num)); err != nil {
 			cleanup()
-			return nil, fmt.Errorf("git worktree add: %w: %s", err, fg.Auth.redact(strings.TrimSpace(string(out))))
+			return nil, fmt.Errorf("git worktree add: %w: %s", err, fg.Auth.Redact(strings.TrimSpace(string(out))))
 		}
 	} else {
 		// No local clone, or a forge with no PR head ref: clone the head
@@ -222,9 +223,9 @@ func checkoutPR(ctx context.Context, provider GitProvider, target PRTarget, cwd 
 		if cloneURL == "" {
 			cloneURL = fg.CloneURL
 		}
-		if out, err := gitAuthCmd(fg.Auth, "clone", "--filter=blob:none", "--branch", meta.HeadRef, "--single-branch", cloneURL, tmp).CombinedOutput(); err != nil {
+		if out, err := git.AuthCmd(fg.Auth, "clone", "--filter=blob:none", "--branch", meta.HeadRef, "--single-branch", cloneURL, tmp).CombinedOutput(); err != nil {
 			cleanup()
-			return nil, fmt.Errorf("git clone PR head: %w: %s", err, fg.Auth.redact(strings.TrimSpace(string(out))))
+			return nil, fmt.Errorf("git clone PR head: %w: %s", err, fg.Auth.Redact(strings.TrimSpace(string(out))))
 		}
 	}
 
@@ -256,11 +257,11 @@ func findPRRemote(dir, owner, repo string) (toplevel, remote string) {
 	if owner == "" || repo == "" {
 		return "", ""
 	}
-	info := gitProbe(dir)
-	if !info.ok || info.toplevel == "" {
+	info := git.Probe(dir)
+	if !info.OK() || info.Root() == "" {
 		return "", ""
 	}
-	out, err := exec.Command("git", "-C", info.toplevel, "remote").Output()
+	out, err := exec.Command("git", "-C", info.Root(), "remote").Output()
 	if err != nil {
 		return "", ""
 	}
@@ -276,9 +277,9 @@ func findPRRemote(dir, owner, repo string) (toplevel, remote string) {
 	}
 	sort.SliceStable(names, func(i, j int) bool { return rank(names[i]) < rank(names[j]) })
 	for _, name := range names {
-		u, err := exec.Command("git", "-C", info.toplevel, "remote", "get-url", name).Output()
+		u, err := exec.Command("git", "-C", info.Root(), "remote", "get-url", name).Output()
 		if err == nil && remoteMatchesRepo(string(u), owner, repo) {
-			return info.toplevel, name
+			return info.Root(), name
 		}
 	}
 	return "", ""
@@ -352,44 +353,6 @@ func httpsRemoteURL(raw string) string {
 	return raw
 }
 
-// gitAuthCmd builds a git command that authenticates to the forge over
-// https with its token -- what a token-in-the-URL does, minus the token in the
-// URL (and so in argv, in git's remote config, and in error text). The header
-// travels in the environment, scoped to the forge's URL prefix, and terminal
-// prompts are off so a bad or missing token fails fast instead of hanging on a
-// password prompt. With no auth it is plain git.
-func gitAuthCmd(auth gitAuth, args ...string) *exec.Cmd {
-	cmd := exec.Command("git", args...)
-	env := append(os.Environ(), "GIT_TERMINAL_PROMPT=0")
-	if auth.Header != "" {
-		env = append(env,
-			"GIT_CONFIG_COUNT=1",
-			"GIT_CONFIG_KEY_0=http."+auth.Prefix+".extraheader",
-			"GIT_CONFIG_VALUE_0="+auth.Header,
-		)
-	}
-	cmd.Env = env
-	return cmd
-}
-
-// gitLocalThenToken runs git as the local clone is set up to, and only if
-// that fails and there is a token, again with the token: a clone's own
-// credentials may well reach more than the token does.
-func gitLocalThenToken(auth gitAuth, args ...string) ([]byte, error) {
-	out, err := gitAuthCmd(gitAuth{}, args...).CombinedOutput()
-	if err != nil && auth.Header != "" {
-		out, err = gitAuthCmd(auth, args...).CombinedOutput()
-	}
-	return out, err
-}
-
-func redactToken(s, token string) string {
-	if token == "" {
-		return s
-	}
-	return strings.ReplaceAll(s, token, "***")
-}
-
 // writeScopeFile puts content in a per-session temp dir (outside the worktree, so
 // it never shows up as an untracked change) and returns its path, or "" if it
 // could not be written.
@@ -434,7 +397,7 @@ func (p *prSession) Pull() (info string, err error) {
 	p.mu.Unlock()
 	fg := p.git()
 
-	if gitHasUncommittedChanges(worktree) {
+	if git.HasUncommittedChanges(worktree) {
 		return "", errors.New("commit or discard your local changes before pulling")
 	}
 
@@ -455,8 +418,8 @@ func (p *prSession) Pull() (info string, err error) {
 		if cloneURL == "" {
 			cloneURL = fg.CloneURL
 		}
-		if out, err := gitAuthCmd(fg.Auth, "-C", worktree, "fetch", "--no-tags", cloneURL, "+refs/heads/"+headRef).CombinedOutput(); err != nil {
-			return "", fmt.Errorf("git fetch PR head: %w: %s", err, fg.Auth.redact(strings.TrimSpace(string(out))))
+		if out, err := git.AuthCmd(fg.Auth, "-C", worktree, "fetch", "--no-tags", cloneURL, "+refs/heads/"+headRef).CombinedOutput(); err != nil {
+			return "", fmt.Errorf("git fetch PR head: %w: %s", err, fg.Auth.Redact(strings.TrimSpace(string(out))))
 		}
 	}
 
@@ -545,9 +508,9 @@ func (p *prSession) refreshDiffBase() {
 	p.mu.Lock()
 	worktree, srcRepo, srcRemote, baseRef, num := p.worktree, p.srcRepo, p.srcRemote, p.meta.BaseRef, p.meta.Number
 	p.mu.Unlock()
-	mb := gitMergeBase(worktree, "HEAD", prBaseRef(num))
+	mb := git.MergeBase(worktree, "HEAD", prBaseRef(num))
 	if mb == "" && srcRepo != "" && srcRemote != "" {
-		mb = gitMergeBase(worktree, "HEAD", srcRemote+"/"+baseRef)
+		mb = git.MergeBase(worktree, "HEAD", srcRemote+"/"+baseRef)
 	}
 	if mb == "" {
 		return
@@ -566,7 +529,7 @@ func (p *prSession) Rewritten() bool {
 	p.mu.Lock()
 	worktree, head := p.worktree, p.remoteHead()
 	p.mu.Unlock()
-	return validSHA(head) && !gitIsAncestor(worktree, head, "HEAD")
+	return git.ValidSHA(head) && !git.IsAncestor(worktree, head, "HEAD")
 }
 
 // Push pushes the worktree's current commit to the PR's actual head branch
@@ -583,7 +546,7 @@ func (p *prSession) Push(force bool) error {
 	token := p.token
 	lease := p.remoteHead()
 	p.mu.Unlock()
-	if force && !validSHA(lease) {
+	if force && !git.ValidSHA(lease) {
 		return errors.New("can't force-push: the PR head this checkout started from is unknown")
 	}
 	fg := p.git()
@@ -602,9 +565,9 @@ func (p *prSession) Push(force bool) error {
 	if force {
 		args = append(args, fmt.Sprintf("--force-with-lease=refs/heads/%s:%s", headRef, lease))
 	}
-	out, err := gitAuthCmd(fg.Auth, append(args, pushURL, refspec)...).CombinedOutput()
+	out, err := git.AuthCmd(fg.Auth, append(args, pushURL, refspec)...).CombinedOutput()
 	if err != nil {
-		msg := fg.Auth.redact(strings.TrimSpace(string(out)))
+		msg := fg.Auth.Redact(strings.TrimSpace(string(out)))
 		if force && strings.Contains(msg, "stale info") {
 			return fmt.Errorf("git push: someone else pushed to %s since this checkout; pull their commits and rebase again: %s", headRef, msg)
 		}
@@ -898,7 +861,7 @@ type prMergeMessage struct {
 // prefills for each method that writes a commit: the conventions GitHub,
 // GitLab and Gitea all default to. Rebase writes no commit of its own.
 // commits is newest first, as git log lists them.
-func prMergeDefaults(meta PRMeta, commits []UnpushedCommit) map[string]prMergeMessage {
+func prMergeDefaults(meta PRMeta, commits []git.UnpushedCommit) map[string]prMergeMessage {
 	var body strings.Builder
 	for i := len(commits) - 1; i >= 0; i-- {
 		fmt.Fprintf(&body, "* %s\n", commits[i].Subject)
@@ -910,15 +873,15 @@ func prMergeDefaults(meta PRMeta, commits []UnpushedCommit) map[string]prMergeMe
 }
 
 // prCommits lists the PR's own commits (merge-base..PR head), newest first.
-func (s *Server) prCommits() []UnpushedCommit {
+func (s *Server) prCommits() []git.UnpushedCommit {
 	p := s.pr
 	p.mu.Lock()
 	from, to := p.diffBase, p.meta.HeadSHA
 	p.mu.Unlock()
-	if !validSHA(from) || !validSHA(to) {
+	if !git.ValidSHA(from) || !git.ValidSHA(to) {
 		return nil
 	}
-	return gitCommitsInRange(s.ix.Root(), from+".."+to, 200)
+	return git.CommitsInRange(s.ix.Root(), from+".."+to, 200)
 }
 
 func validMergeMethod(m string) bool {
@@ -942,7 +905,7 @@ func (s *Server) handlePRMergeStatus(w http.ResponseWriter, r *http.Request) {
 	}
 	commits := s.prCommits()
 	if commits == nil {
-		commits = []UnpushedCommit{}
+		commits = []git.UnpushedCommit{}
 	}
 	p.mu.Lock()
 	meta, writeAccess := p.meta, p.writeAccess
@@ -959,8 +922,8 @@ func (s *Server) handlePRMergeStatus(w http.ResponseWriter, r *http.Request) {
 		// would land code nobody here reviewed. Pull first.
 		"stale":          st.HeadSHA != "" && st.HeadSHA != meta.HeadSHA,
 		"rewritten":      p.Rewritten(),
-		"inProgress":     gitOpInProgress(root),
-		"unpushed":       gitCountSince(root, meta.HeadSHA),
+		"inProgress":     git.OpInProgress(root),
+		"unpushed":       git.CountSince(root, meta.HeadSHA),
 		"defaults":       prMergeDefaults(meta, commits),
 		"commits":        commits,
 		"base":           meta.BaseRef,
@@ -996,7 +959,7 @@ func (s *Server) handlePRMerge(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, "method must be merge, squash, or rebase")
 		return
 	}
-	if op := gitOpInProgress(s.ix.Root()); op != "" {
+	if op := git.OpInProgress(s.ix.Root()); op != "" {
 		fail(w, http.StatusConflict, "a "+op+" is in progress in this checkout; finish or abort it first")
 		return
 	}
@@ -1068,7 +1031,7 @@ func (s *Server) handlePRMergeMessage(w http.ResponseWriter, r *http.Request) {
 	p.mu.Lock()
 	meta, from := p.meta, p.diffBase
 	p.mu.Unlock()
-	if !validSHA(from) {
+	if !git.ValidSHA(from) {
 		fail(w, http.StatusConflict, "the PR's merge base is unresolved, so there is no diff to describe")
 		return
 	}
@@ -1084,7 +1047,7 @@ func (s *Server) handlePRMergeMessage(w http.ResponseWriter, r *http.Request) {
 	}
 	draft := strings.TrimSpace(strings.TrimSpace(body.Title) + "\n\n" + strings.TrimSpace(body.Message))
 	prompt := mergeMessagePrompt(body.Method, meta, s.prCommits(),
-		gitRangeStat(root, from, meta.HeadSHA), gitRangeDiff(root, from, meta.HeadSHA), draft, instructions)
+		git.RangeStat(root, from, meta.HeadSHA), git.RangeDiff(root, from, meta.HeadSHA), draft, instructions)
 	job, err := s.agent.StartPrompt(body.Method+" message", prompt)
 	if err != nil {
 		code := http.StatusBadGateway
@@ -1143,10 +1106,10 @@ func (s *Server) forgeTarget() (GitProvider, PRTarget, bool) {
 		return s.pr.provider, s.pr.target, s.pr.provider != nil
 	}
 	root := s.ix.Root()
-	if !gitAvailable(root) {
+	if !git.Available(root) {
 		return nil, PRTarget{}, false
 	}
-	remote := gitRemoteURL(root, gitCurrentBranch(root))
+	remote := git.RemoteURL(root, git.CurrentBranch(root))
 	p := ForgeForRemote(remote)
 	if p == nil {
 		return nil, PRTarget{}, false
@@ -1244,7 +1207,7 @@ func (s *Server) handleForgeConnect(w http.ResponseWriter, r *http.Request) {
 			if persist {
 				settings.UpdateMap(prev)
 			}
-			fail(w, http.StatusBadRequest, info.Label+" didn't accept this token: "+redactToken(err.Error(), token))
+			fail(w, http.StatusBadRequest, info.Label+" didn't accept this token: "+git.RedactToken(err.Error(), token))
 			return
 		}
 		validated = true

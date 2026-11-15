@@ -284,4 +284,3 @@ func BenchmarkFuzzyFindShortQuery_50K(b *testing.B) {
 		_ = Find(files, "in", 50)
 	}
 }
-

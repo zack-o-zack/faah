@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"faah/internal/git"
 	"faah/internal/settings"
 )
 
@@ -120,23 +121,13 @@ var (
 	ErrPRNotMergeable = errors.New("the PR cannot be merged")
 )
 
-// gitAuth is how plain git authenticates to a forge over https: one extra
-// header, scoped to the forge's URL prefix and passed in the environment
-// (gitAuthCmd), so the token never appears in argv, remote config or URLs.
-// The zero value is no auth.
-type gitAuth struct {
-	Prefix string // URL prefix the header applies to, e.g. "https://gitlab.com/"
-	Header string // e.g. "Authorization: Basic ..."
-	Token  string // the raw token, only to redact it from git's error text
-}
-
 // basicGitAuth is the https Basic auth most forges accept for git with a
 // token as the password; user is whatever name the forge expects with it.
-func basicGitAuth(host, user, token string) gitAuth {
+func basicGitAuth(host, user, token string) git.Auth {
 	if token == "" {
-		return gitAuth{}
+		return git.Auth{}
 	}
-	return gitAuth{
+	return git.Auth{
 		Prefix: "https://" + host + "/",
 		Header: "Authorization: Basic " + base64.StdEncoding.EncodeToString([]byte(user+":"+token)),
 		Token:  token,
@@ -155,9 +146,6 @@ func normalizeHost(h, def string) string {
 	}
 	return strings.ToLower(strings.TrimSuffix(h, "/"))
 }
-
-// redact strips the token from text git printed.
-func (a gitAuth) redact(s string) string { return redactToken(s, a.Token) }
 
 // ForgeInfo is what the UI needs to name the forge and send the user to the
 // right token setting.
@@ -217,7 +205,7 @@ type GitProvider interface {
 	PRHeadRef(target PRTarget) string
 
 	// GitAuth is how git authenticates to the forge with token.
-	GitAuth(target PRTarget, token string) gitAuth
+	GitAuth(target PRTarget, token string) git.Auth
 
 	// MatchURL reports whether this provider recognizes and handles the given URL.
 	MatchURL(rawURL string) bool
@@ -507,7 +495,7 @@ func (g *GitHubProvider) PRHeadRef(target PRTarget) string {
 	return fmt.Sprintf("refs/pull/%d/head", target.Number)
 }
 
-func (g *GitHubProvider) GitAuth(target PRTarget, token string) gitAuth {
+func (g *GitHubProvider) GitAuth(target PRTarget, token string) git.Auth {
 	return basicGitAuth("github.com", "x-access-token", token)
 }
 
@@ -1041,7 +1029,7 @@ func (g *GitLabProvider) PRHeadRef(target PRTarget) string {
 
 // GitLab takes any username with a token as the password; "oauth2" is the
 // one it documents, and it works for personal access tokens too.
-func (g *GitLabProvider) GitAuth(target PRTarget, token string) gitAuth {
+func (g *GitLabProvider) GitAuth(target PRTarget, token string) git.Auth {
 	return basicGitAuth(target.Host, "oauth2", token)
 }
 
@@ -1655,7 +1643,7 @@ func (g *GiteaProvider) PRHeadRef(t PRTarget) string {
 }
 
 // Gitea reads the password as the token; the username is not checked.
-func (g *GiteaProvider) GitAuth(t PRTarget, token string) gitAuth {
+func (g *GiteaProvider) GitAuth(t PRTarget, token string) git.Auth {
 	return basicGitAuth(t.Host, "faah", token)
 }
 
@@ -2112,7 +2100,7 @@ func (b *BitbucketProvider) PRHeadRef(t PRTarget) string { return "" }
 
 // Access tokens authenticate git as "x-token-auth"; API tokens as the fixed
 // name Atlassian documents for them.
-func (b *BitbucketProvider) GitAuth(t PRTarget, token string) gitAuth {
+func (b *BitbucketProvider) GitAuth(t PRTarget, token string) git.Auth {
 	if bitbucketEmail(settings.Read()) != "" {
 		return basicGitAuth("bitbucket.org", "x-bitbucket-api-token-auth", token)
 	}

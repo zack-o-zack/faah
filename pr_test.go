@@ -9,12 +9,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
 
+	"faah/internal/git"
+	"faah/internal/git/gittest"
 	"faah/internal/settings"
 )
 
@@ -168,17 +169,11 @@ func TestPRSessionCloseRefCleanup(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping in short mode")
 	}
-	if !gitInstalled() {
+	if !gittest.Installed() {
 		t.Skip("git not installed")
 	}
 	root := t.TempDir()
-	run := func(args ...string) {
-		cmd := exec.Command("git", args...)
-		cmd.Dir = root
-		if out, err := cmd.CombinedOutput(); err != nil {
-			t.Fatalf("git %v: %v\n%s", args, err, out)
-		}
-	}
+	run := func(args ...string) { gittest.Run(t, root, args...) }
 	run("init")
 	run("config", "user.name", "test")
 	run("config", "user.email", "test@test.local")
@@ -195,11 +190,11 @@ func TestPRSessionCloseRefCleanup(t *testing.T) {
 	}
 	p.Close()
 
-	checkRef := exec.Command("git", "-C", root, "rev-parse", "--verify", "refs/faah/pr/99")
+	checkRef := gittest.Command(t, root, "rev-parse", "--verify", "refs/faah/pr/99")
 	if err := checkRef.Run(); err == nil {
 		t.Errorf("refs/faah/pr/99 was not deleted on Close")
 	}
-	checkBase := exec.Command("git", "-C", root, "rev-parse", "--verify", "refs/faah/base/99")
+	checkBase := gittest.Command(t, root, "rev-parse", "--verify", "refs/faah/base/99")
 	if err := checkBase.Run(); err == nil {
 		t.Errorf("refs/faah/base/99 was not deleted on Close")
 	}
@@ -212,7 +207,7 @@ func TestPRSessionCloseRefCleanup(t *testing.T) {
 // local commit in the worktree that then diverges from a further PR push
 // must be refused with errPRDiverged, leaving the worktree untouched.
 func TestPRSessionPullFastForwardAndDiverge(t *testing.T) {
-	if !gitInstalled() {
+	if !gittest.Installed() {
 		t.Skip("git not installed")
 	}
 	base := t.TempDir()
@@ -225,33 +220,33 @@ func TestPRSessionPullFastForwardAndDiverge(t *testing.T) {
 	if err := os.MkdirAll(upstream, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	gitTestRun(t, upstream, "init", "--bare", "-b", "main")
+	gittest.Run(t, upstream, "init", "--bare", "-b", "main")
 
-	gitTestRun(t, base, "clone", upstream, "src")
+	gittest.Run(t, base, "clone", upstream, "src")
 	for _, cfg := range [][2]string{{"user.email", "t@example.com"}, {"user.name", "T"}, {"commit.gpgsign", "false"}} {
-		gitTestRun(t, srcRepo, "config", cfg[0], cfg[1])
+		gittest.Run(t, srcRepo, "config", cfg[0], cfg[1])
 	}
 	if err := os.WriteFile(filepath.Join(srcRepo, "base.txt"), []byte("base\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	gitTestRun(t, srcRepo, "add", "base.txt")
-	gitTestRun(t, srcRepo, "commit", "-qm", "base commit")
-	gitTestRun(t, srcRepo, "push", "origin", "main")
+	gittest.Run(t, srcRepo, "add", "base.txt")
+	gittest.Run(t, srcRepo, "commit", "-qm", "base commit")
+	gittest.Run(t, srcRepo, "push", "origin", "main")
 
 	// A "PR branch" pushed to upstream as refs/pull/99/head, the way GitHub does.
-	gitTestRun(t, srcRepo, "checkout", "-qb", "feature")
+	gittest.Run(t, srcRepo, "checkout", "-qb", "feature")
 	if err := os.WriteFile(filepath.Join(srcRepo, "feature.txt"), []byte("one\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	gitTestRun(t, srcRepo, "add", "feature.txt")
-	gitTestRun(t, srcRepo, "commit", "-qm", "pr commit 1")
-	gitTestRun(t, srcRepo, "push", "origin", "feature:refs/pull/99/head")
-	gitTestRun(t, srcRepo, "checkout", "-q", "main")
+	gittest.Run(t, srcRepo, "add", "feature.txt")
+	gittest.Run(t, srcRepo, "commit", "-qm", "pr commit 1")
+	gittest.Run(t, srcRepo, "push", "origin", "feature:refs/pull/99/head")
+	gittest.Run(t, srcRepo, "checkout", "-q", "main")
 
 	// Check out the PR into a worktree, same as checkoutPR does.
-	gitTestRun(t, srcRepo, "fetch", "--no-tags", "origin", "refs/pull/99/head:refs/faah/pr/99")
+	gittest.Run(t, srcRepo, "fetch", "--no-tags", "origin", "refs/pull/99/head:refs/faah/pr/99")
 	worktree := filepath.Join(base, "wt")
-	gitTestRun(t, srcRepo, "worktree", "add", "--detach", worktree, "refs/faah/pr/99")
+	gittest.Run(t, srcRepo, "worktree", "add", "--detach", worktree, "refs/faah/pr/99")
 
 	p := &prSession{
 		worktree: worktree,
@@ -261,13 +256,13 @@ func TestPRSessionPullFastForwardAndDiverge(t *testing.T) {
 	}
 
 	// Someone pushes a second commit to the PR head -- Pull should fast-forward cleanly.
-	gitTestRun(t, srcRepo, "checkout", "-q", "feature")
+	gittest.Run(t, srcRepo, "checkout", "-q", "feature")
 	if err := os.WriteFile(filepath.Join(srcRepo, "feature.txt"), []byte("two\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	gitTestRun(t, srcRepo, "commit", "-aqm", "pr commit 2")
-	gitTestRun(t, srcRepo, "push", "origin", "feature:refs/pull/99/head")
-	gitTestRun(t, srcRepo, "checkout", "-q", "main")
+	gittest.Run(t, srcRepo, "commit", "-aqm", "pr commit 2")
+	gittest.Run(t, srcRepo, "push", "origin", "feature:refs/pull/99/head")
+	gittest.Run(t, srcRepo, "checkout", "-q", "main")
 
 	info, err := p.Pull()
 	if err != nil {
@@ -288,15 +283,15 @@ func TestPRSessionPullFastForwardAndDiverge(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(worktree, "feature.txt"), []byte("local edit\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	gitTestRun(t, worktree, "commit", "-aqm", "reviewer's local commit")
+	gittest.Run(t, worktree, "commit", "-aqm", "reviewer's local commit")
 
-	gitTestRun(t, srcRepo, "checkout", "-q", "feature")
+	gittest.Run(t, srcRepo, "checkout", "-q", "feature")
 	if err := os.WriteFile(filepath.Join(srcRepo, "feature.txt"), []byte("three\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	gitTestRun(t, srcRepo, "commit", "-aqm", "pr commit 3")
-	gitTestRun(t, srcRepo, "push", "origin", "feature:refs/pull/99/head")
-	gitTestRun(t, srcRepo, "checkout", "-q", "main")
+	gittest.Run(t, srcRepo, "commit", "-aqm", "pr commit 3")
+	gittest.Run(t, srcRepo, "push", "origin", "feature:refs/pull/99/head")
+	gittest.Run(t, srcRepo, "checkout", "-q", "main")
 
 	if _, err := p.Pull(); !errors.Is(err, errPRDiverged) {
 		t.Fatalf("expected errPRDiverged, got %v", err)
@@ -310,7 +305,7 @@ func TestPRSessionPullFastForwardAndDiverge(t *testing.T) {
 // actual head branch (meta.HeadRepoCloneURL/HeadRef), not wherever the
 // worktree happens to be checked out from.
 func TestPRSessionPush(t *testing.T) {
-	if !gitInstalled() {
+	if !gittest.Installed() {
 		t.Skip("git not installed")
 	}
 	base := t.TempDir()
@@ -321,21 +316,21 @@ func TestPRSessionPush(t *testing.T) {
 	if err := os.MkdirAll(upstream, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	gitTestRun(t, upstream, "init", "--bare", "-b", "main")
+	gittest.Run(t, upstream, "init", "--bare", "-b", "main")
 
 	worktree := filepath.Join(base, "wt")
 	if err := os.MkdirAll(worktree, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	gitTestRun(t, worktree, "init", "-q", "-b", "feature")
+	gittest.Run(t, worktree, "init", "-q", "-b", "feature")
 	for _, cfg := range [][2]string{{"user.email", "t@example.com"}, {"user.name", "T"}, {"commit.gpgsign", "false"}} {
-		gitTestRun(t, worktree, "config", cfg[0], cfg[1])
+		gittest.Run(t, worktree, "config", cfg[0], cfg[1])
 	}
 	if err := os.WriteFile(filepath.Join(worktree, "f.txt"), []byte("pushed\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	gitTestRun(t, worktree, "add", "f.txt")
-	gitTestRun(t, worktree, "commit", "-qm", "reviewer commit")
+	gittest.Run(t, worktree, "add", "f.txt")
+	gittest.Run(t, worktree, "commit", "-qm", "reviewer commit")
 
 	p := &prSession{
 		worktree: worktree,
@@ -346,11 +341,11 @@ func TestPRSessionPush(t *testing.T) {
 		t.Fatalf("Push failed: %v", err)
 	}
 
-	out := gitTestRun(t, upstream, "log", "--oneline", "-1", "refs/heads/feature")
+	out := gittest.Run(t, upstream, "log", "--oneline", "-1", "refs/heads/feature")
 	if !strings.Contains(out, "reviewer commit") {
 		t.Fatalf("expected upstream's refs/heads/feature to carry the pushed commit, got %q", out)
 	}
-	pushed := strings.TrimSpace(gitTestRun(t, worktree, "rev-parse", "HEAD"))
+	pushed := strings.TrimSpace(gittest.Run(t, worktree, "rev-parse", "HEAD"))
 	if p.meta.HeadSHA != pushed {
 		t.Fatalf("Push should move the PR head (meta.HeadSHA) to %s, got %q", pushed, p.meta.HeadSHA)
 	}
@@ -363,37 +358,37 @@ func TestPRSessionPush(t *testing.T) {
 // no upstream, so commits made in the IDE must still count as unpushed
 // (measured from the PR head), and stop counting once that head moves.
 func TestPRAheadCountsFromPRHead(t *testing.T) {
-	if !gitInstalled() {
+	if !gittest.Installed() {
 		t.Skip("git not installed")
 	}
 	root := t.TempDir()
 	if r, err := filepath.EvalSymlinks(root); err == nil {
 		root = r
 	}
-	gitTestRun(t, root, "init", "-q", "-b", "main")
+	gittest.Run(t, root, "init", "-q", "-b", "main")
 	for _, cfg := range [][2]string{{"user.email", "t@example.com"}, {"user.name", "T"}, {"commit.gpgsign", "false"}} {
-		gitTestRun(t, root, "config", cfg[0], cfg[1])
+		gittest.Run(t, root, "config", cfg[0], cfg[1])
 	}
 	os.WriteFile(filepath.Join(root, "a.txt"), []byte("1\n"), 0o644)
-	gitTestRun(t, root, "add", ".")
-	gitTestRun(t, root, "commit", "-qm", "pr commit")
-	head := strings.TrimSpace(gitTestRun(t, root, "rev-parse", "HEAD"))
-	gitTestRun(t, root, "checkout", "-q", "--detach")
+	gittest.Run(t, root, "add", ".")
+	gittest.Run(t, root, "commit", "-qm", "pr commit")
+	head := strings.TrimSpace(gittest.Run(t, root, "rev-parse", "HEAD"))
+	gittest.Run(t, root, "checkout", "-q", "--detach")
 
-	if n := gitCountSince(root, head); n != 0 {
+	if n := git.CountSince(root, head); n != 0 {
 		t.Fatalf("fresh checkout: ahead = %d, want 0", n)
 	}
 	os.WriteFile(filepath.Join(root, "a.txt"), []byte("2\n"), 0o644)
-	gitTestRun(t, root, "commit", "-qam", "my change")
-	if n := gitCountSince(root, head); n != 1 {
+	gittest.Run(t, root, "commit", "-qam", "my change")
+	if n := git.CountSince(root, head); n != 1 {
 		t.Fatalf("after IDE commit: ahead = %d, want 1", n)
 	}
-	cs := gitCommitsSince(root, head, 0)
+	cs := git.CommitsSince(root, head, 0)
 	if len(cs) != 1 || cs[0].Subject != "my change" {
 		t.Fatalf("unpushed = %+v", cs)
 	}
-	head = strings.TrimSpace(gitTestRun(t, root, "rev-parse", "HEAD"))
-	if n := gitCountSince(root, head); n != 0 {
+	head = strings.TrimSpace(gittest.Run(t, root, "rev-parse", "HEAD"))
+	if n := git.CountSince(root, head); n != 0 {
 		t.Fatalf("after push moved the head: ahead = %d, want 0", n)
 	}
 }
@@ -444,13 +439,13 @@ func TestCheckoutPRMergedAlwaysProceeds(t *testing.T) {
 	defer func() { githubHTTPClient.Transport = orig }()
 
 	localRepo := t.TempDir()
-	gitTestRun(t, localRepo, "init")
-	gitTestRun(t, localRepo, "config", "user.name", "Tester")
-	gitTestRun(t, localRepo, "config", "user.email", "test@example.com")
-	gitTestRun(t, localRepo, "checkout", "-b", "feature-x")
+	gittest.Run(t, localRepo, "init")
+	gittest.Run(t, localRepo, "config", "user.name", "Tester")
+	gittest.Run(t, localRepo, "config", "user.email", "test@example.com")
+	gittest.Run(t, localRepo, "checkout", "-b", "feature-x")
 	os.WriteFile(filepath.Join(localRepo, "f.txt"), []byte("hi"), 0644)
-	gitTestRun(t, localRepo, "add", "f.txt")
-	gitTestRun(t, localRepo, "commit", "-m", "init")
+	gittest.Run(t, localRepo, "add", "f.txt")
+	gittest.Run(t, localRepo, "commit", "-m", "init")
 
 	githubHTTPClient.Transport = roundTripperFunc(func(req *http.Request) (*http.Response, error) {
 		body := fmt.Sprintf(`{
@@ -505,31 +500,31 @@ func TestGitHubProviderInterface(t *testing.T) {
 // TestGitFilesBetween is the PR's own file set: what changed between the
 // merge-base and the PR head, never what the reviewer committed afterwards.
 func TestGitFilesBetween(t *testing.T) {
-	if !gitInstalled() {
+	if !gittest.Installed() {
 		t.Skip("git not installed")
 	}
 	root := t.TempDir()
 	if r, err := filepath.EvalSymlinks(root); err == nil {
 		root = r
 	}
-	gitTestRun(t, root, "init", "-q", "-b", "main")
+	gittest.Run(t, root, "init", "-q", "-b", "main")
 	for _, cfg := range [][2]string{{"user.email", "t@example.com"}, {"user.name", "T"}, {"commit.gpgsign", "false"}} {
-		gitTestRun(t, root, "config", cfg[0], cfg[1])
+		gittest.Run(t, root, "config", cfg[0], cfg[1])
 	}
 	write := func(name string) { os.WriteFile(filepath.Join(root, name), []byte(name+"\n"), 0o644) }
 	write("base.txt")
-	gitTestRun(t, root, "add", ".")
-	gitTestRun(t, root, "commit", "-qm", "base")
-	base := strings.TrimSpace(gitTestRun(t, root, "rev-parse", "HEAD"))
+	gittest.Run(t, root, "add", ".")
+	gittest.Run(t, root, "commit", "-qm", "base")
+	base := strings.TrimSpace(gittest.Run(t, root, "rev-parse", "HEAD"))
 	write("pr.txt")
-	gitTestRun(t, root, "add", ".")
-	gitTestRun(t, root, "commit", "-qm", "pr")
-	head := strings.TrimSpace(gitTestRun(t, root, "rev-parse", "HEAD"))
+	gittest.Run(t, root, "add", ".")
+	gittest.Run(t, root, "commit", "-qm", "pr")
+	head := strings.TrimSpace(gittest.Run(t, root, "rev-parse", "HEAD"))
 	write("mine.txt")
-	gitTestRun(t, root, "add", ".")
-	gitTestRun(t, root, "commit", "-qm", "mine")
+	gittest.Run(t, root, "add", ".")
+	gittest.Run(t, root, "commit", "-qm", "mine")
 
-	got := gitFilesBetween(root, base, head)
+	got := git.FilesBetween(root, base, head)
 	if len(got) != 1 || got["pr.txt"] != "A" {
 		t.Fatalf("PR files = %v, want map[pr.txt:A]", got)
 	}
@@ -553,7 +548,7 @@ func TestHTTPSRemoteURL(t *testing.T) {
 // fast-forward, but with nothing of the reviewer's in the checkout Pull follows
 // it instead of leaving stale content behind; with local commits it still refuses.
 func TestPRSessionPullFollowsForcePush(t *testing.T) {
-	if !gitInstalled() {
+	if !gittest.Installed() {
 		t.Skip("git not installed")
 	}
 	base := t.TempDir()
@@ -562,25 +557,25 @@ func TestPRSessionPullFollowsForcePush(t *testing.T) {
 	}
 	upstream := filepath.Join(base, "upstream.git")
 	os.MkdirAll(upstream, 0o755)
-	gitTestRun(t, upstream, "init", "--bare", "-b", "feature")
+	gittest.Run(t, upstream, "init", "--bare", "-b", "feature")
 
 	work := filepath.Join(base, "work")
 	os.MkdirAll(work, 0o755)
-	gitTestRun(t, work, "init", "-q", "-b", "feature")
+	gittest.Run(t, work, "init", "-q", "-b", "feature")
 	for _, cfg := range [][2]string{{"user.email", "t@example.com"}, {"user.name", "T"}, {"commit.gpgsign", "false"}} {
-		gitTestRun(t, work, "config", cfg[0], cfg[1])
+		gittest.Run(t, work, "config", cfg[0], cfg[1])
 	}
 	os.WriteFile(filepath.Join(work, "f.txt"), []byte("one\n"), 0o644)
-	gitTestRun(t, work, "add", ".")
-	gitTestRun(t, work, "commit", "-qm", "one")
-	gitTestRun(t, work, "push", "-q", upstream, "feature")
+	gittest.Run(t, work, "add", ".")
+	gittest.Run(t, work, "commit", "-qm", "one")
+	gittest.Run(t, work, "push", "-q", upstream, "feature")
 
 	wt := filepath.Join(base, "wt")
-	gitTestRun(t, base, "clone", "-q", upstream, "wt")
+	gittest.Run(t, base, "clone", "-q", upstream, "wt")
 	for _, cfg := range [][2]string{{"user.email", "t@example.com"}, {"user.name", "T"}, {"commit.gpgsign", "false"}} {
-		gitTestRun(t, wt, "config", cfg[0], cfg[1])
+		gittest.Run(t, wt, "config", cfg[0], cfg[1])
 	}
-	head := strings.TrimSpace(gitTestRun(t, wt, "rev-parse", "HEAD"))
+	head := strings.TrimSpace(gittest.Run(t, wt, "rev-parse", "HEAD"))
 	p := &prSession{
 		worktree: wt,
 		target:   PRTarget{Owner: "o", Repo: "r"},
@@ -589,8 +584,8 @@ func TestPRSessionPullFollowsForcePush(t *testing.T) {
 
 	// Rewrite the PR branch: amend and force-push.
 	os.WriteFile(filepath.Join(work, "f.txt"), []byte("rewritten\n"), 0o644)
-	gitTestRun(t, work, "commit", "-aqm", "one (amended)", "--amend")
-	gitTestRun(t, work, "push", "-qf", upstream, "feature")
+	gittest.Run(t, work, "commit", "-aqm", "one (amended)", "--amend")
+	gittest.Run(t, work, "push", "-qf", upstream, "feature")
 
 	if _, err := p.Pull(); err != nil {
 		t.Fatalf("Pull should follow a force-push when nothing local is at stake: %v", err)
@@ -604,10 +599,10 @@ func TestPRSessionPullFollowsForcePush(t *testing.T) {
 
 	// With a local commit in the way, the same situation is refused.
 	os.WriteFile(filepath.Join(wt, "f.txt"), []byte("mine\n"), 0o644)
-	gitTestRun(t, wt, "commit", "-aqm", "mine")
+	gittest.Run(t, wt, "commit", "-aqm", "mine")
 	os.WriteFile(filepath.Join(work, "f.txt"), []byte("rewritten again\n"), 0o644)
-	gitTestRun(t, work, "commit", "-aqm", "again", "--amend")
-	gitTestRun(t, work, "push", "-qf", upstream, "feature")
+	gittest.Run(t, work, "commit", "-aqm", "again", "--amend")
+	gittest.Run(t, work, "push", "-qf", upstream, "feature")
 	if _, err := p.Pull(); !errors.Is(err, errPRDiverged) {
 		t.Fatalf("expected errPRDiverged with a local commit, got %v", err)
 	}
@@ -849,7 +844,7 @@ func TestMergePRRequestAndErrors(t *testing.T) {
 
 func TestPRMergeDefaults(t *testing.T) {
 	meta := PRMeta{Number: 12, Title: "Add widgets", HeadRef: "widgets"}
-	d := prMergeDefaults(meta, []UnpushedCommit{{Subject: "second"}, {Subject: "first"}})
+	d := prMergeDefaults(meta, []git.UnpushedCommit{{Subject: "second"}, {Subject: "first"}})
 	if d[MergeMethodSquash].Title != "Add widgets (#12)" || d[MergeMethodSquash].Message != "* first\n* second" {
 		t.Fatalf("squash default = %+v", d[MergeMethodSquash])
 	}
@@ -860,7 +855,7 @@ func TestPRMergeDefaults(t *testing.T) {
 
 func TestMergeMessagePrompt(t *testing.T) {
 	meta := PRMeta{Number: 3, Title: "Fix race", BaseRef: "main", HeadRef: "fix"}
-	p := mergeMessagePrompt(MergeMethodSquash, meta, []UnpushedCommit{{Subject: "fixup"}, {Subject: "fix the race"}}, "a.go | 2 +-", "diff --git", "Fix race (#3)", []string{"Follow Conventional Commits", "Mention ticket PX-9"})
+	p := mergeMessagePrompt(MergeMethodSquash, meta, []git.UnpushedCommit{{Subject: "fixup"}, {Subject: "fix the race"}}, "a.go | 2 +-", "diff --git", "Fix race (#3)", []string{"Follow Conventional Commits", "Mention ticket PX-9"})
 	for _, want := range []string{"squash-merging pull request #3", "Follow Conventional Commits", "Mention ticket PX-9", "rewriting", "Fix race (#3)", "- fix the race\n- fixup", "Output ONLY"} {
 		if !strings.Contains(p, want) {
 			t.Errorf("prompt missing %q:\n%s", want, p)
@@ -869,7 +864,7 @@ func TestMergeMessagePrompt(t *testing.T) {
 }
 
 func TestGitSyncPromptPR(t *testing.T) {
-	st := gitSyncState{PR: 9, Branch: "feat", Upstream: "main", Ahead: 2, Behind: 5, ontoRef: "refs/faah/base/9"}
+	st := git.SyncState{PR: 9, Branch: "feat", Upstream: "main", Ahead: 2, Behind: 5, OntoRef: "refs/faah/base/9"}
 	p := gitSyncPrompt("rebase", st)
 	for _, want := range []string{"Pull request #9", "git rebase refs/faah/base/9", "do not run git fetch", "do not push"} {
 		if !strings.Contains(p, want) {
@@ -889,7 +884,7 @@ func TestGitSyncPromptPR(t *testing.T) {
 // force-push with lease replaces the PR branch -- unless someone else pushed
 // to it meanwhile, in which case the lease refuses and their commit survives.
 func TestPRForcePushAfterRebase(t *testing.T) {
-	if !gitInstalled() {
+	if !gittest.Installed() {
 		t.Skip("git not installed")
 	}
 	base := t.TempDir()
@@ -898,37 +893,37 @@ func TestPRForcePushAfterRebase(t *testing.T) {
 	}
 	cfg := func(dir string) {
 		for _, c := range [][2]string{{"user.email", "t@example.com"}, {"user.name", "T"}, {"commit.gpgsign", "false"}} {
-			gitTestRun(t, dir, "config", c[0], c[1])
+			gittest.Run(t, dir, "config", c[0], c[1])
 		}
 	}
 	upstream := filepath.Join(base, "upstream.git")
 	os.MkdirAll(upstream, 0o755)
-	gitTestRun(t, upstream, "init", "-q", "--bare", "-b", "main")
+	gittest.Run(t, upstream, "init", "-q", "--bare", "-b", "main")
 
 	work := filepath.Join(base, "work")
 	os.MkdirAll(work, 0o755)
-	gitTestRun(t, work, "init", "-q", "-b", "main")
+	gittest.Run(t, work, "init", "-q", "-b", "main")
 	cfg(work)
 	os.WriteFile(filepath.Join(work, "a.txt"), []byte("a\n"), 0o644)
-	gitTestRun(t, work, "add", ".")
-	gitTestRun(t, work, "commit", "-qm", "base")
-	gitTestRun(t, work, "push", "-q", upstream, "main")
-	gitTestRun(t, work, "checkout", "-qb", "feature")
+	gittest.Run(t, work, "add", ".")
+	gittest.Run(t, work, "commit", "-qm", "base")
+	gittest.Run(t, work, "push", "-q", upstream, "main")
+	gittest.Run(t, work, "checkout", "-qb", "feature")
 	os.WriteFile(filepath.Join(work, "f.txt"), []byte("f\n"), 0o644)
-	gitTestRun(t, work, "add", ".")
-	gitTestRun(t, work, "commit", "-qm", "feature")
-	gitTestRun(t, work, "push", "-q", upstream, "feature")
-	head := strings.TrimSpace(gitTestRun(t, work, "rev-parse", "HEAD"))
-	gitTestRun(t, work, "checkout", "-q", "main")
+	gittest.Run(t, work, "add", ".")
+	gittest.Run(t, work, "commit", "-qm", "feature")
+	gittest.Run(t, work, "push", "-q", upstream, "feature")
+	head := strings.TrimSpace(gittest.Run(t, work, "rev-parse", "HEAD"))
+	gittest.Run(t, work, "checkout", "-q", "main")
 	os.WriteFile(filepath.Join(work, "b.txt"), []byte("b\n"), 0o644)
-	gitTestRun(t, work, "add", ".")
-	gitTestRun(t, work, "commit", "-qm", "main moves on")
-	gitTestRun(t, work, "push", "-q", upstream, "main")
+	gittest.Run(t, work, "add", ".")
+	gittest.Run(t, work, "commit", "-qm", "main moves on")
+	gittest.Run(t, work, "push", "-q", upstream, "main")
 
 	wt := filepath.Join(base, "wt")
-	gitTestRun(t, base, "clone", "-q", "-b", "feature", upstream, "wt")
+	gittest.Run(t, base, "clone", "-q", "-b", "feature", upstream, "wt")
 	cfg(wt)
-	gitTestRun(t, wt, "fetch", "-q", upstream, "+refs/heads/main:"+prBaseRef(1))
+	gittest.Run(t, wt, "fetch", "-q", upstream, "+refs/heads/main:"+prBaseRef(1))
 	p := &prSession{
 		worktree: wt,
 		target:   PRTarget{Owner: "o", Repo: "r"},
@@ -937,11 +932,11 @@ func TestPRForcePushAfterRebase(t *testing.T) {
 	if p.Rewritten() {
 		t.Fatal("fresh checkout reported as rewritten")
 	}
-	if a, b := gitAheadBehindRef(wt, prBaseRef(1)); a != 1 || b != 1 {
+	if a, b := git.AheadBehindRef(wt, prBaseRef(1)); a != 1 || b != 1 {
 		t.Fatalf("ahead/behind base = %d/%d, want 1/1", a, b)
 	}
 
-	gitTestRun(t, wt, "rebase", "-q", prBaseRef(1))
+	gittest.Run(t, wt, "rebase", "-q", prBaseRef(1))
 	if !p.Rewritten() {
 		t.Fatal("rebased checkout not reported as rewritten")
 	}
@@ -951,33 +946,33 @@ func TestPRForcePushAfterRebase(t *testing.T) {
 
 	// Someone else pushes to the PR branch: the lease must refuse.
 	other := filepath.Join(base, "other")
-	gitTestRun(t, base, "clone", "-q", "-b", "feature", upstream, "other")
+	gittest.Run(t, base, "clone", "-q", "-b", "feature", upstream, "other")
 	cfg(other)
 	os.WriteFile(filepath.Join(other, "o.txt"), []byte("o\n"), 0o644)
-	gitTestRun(t, other, "add", ".")
-	gitTestRun(t, other, "commit", "-qm", "theirs")
-	gitTestRun(t, other, "push", "-q", "origin", "feature")
-	theirs := strings.TrimSpace(gitTestRun(t, other, "rev-parse", "HEAD"))
+	gittest.Run(t, other, "add", ".")
+	gittest.Run(t, other, "commit", "-qm", "theirs")
+	gittest.Run(t, other, "push", "-q", "origin", "feature")
+	theirs := strings.TrimSpace(gittest.Run(t, other, "rev-parse", "HEAD"))
 	if err := p.Push(true); err == nil {
 		t.Fatal("force-push should be refused by the lease after someone else pushed")
 	}
-	if got := strings.TrimSpace(gitTestRun(t, upstream, "rev-parse", "refs/heads/feature")); got != theirs {
+	if got := strings.TrimSpace(gittest.Run(t, upstream, "rev-parse", "refs/heads/feature")); got != theirs {
 		t.Fatalf("their commit was overwritten: feature = %s, want %s", got, theirs)
 	}
 
 	// Lease on what is actually there (as a pull would): the force-push lands.
-	gitTestRun(t, upstream, "update-ref", "refs/heads/feature", head)
+	gittest.Run(t, upstream, "update-ref", "refs/heads/feature", head)
 	if err := p.Push(true); err != nil {
 		t.Fatalf("force-push with a valid lease: %v", err)
 	}
-	rebased := strings.TrimSpace(gitTestRun(t, wt, "rev-parse", "HEAD"))
-	if got := strings.TrimSpace(gitTestRun(t, upstream, "rev-parse", "refs/heads/feature")); got != rebased {
+	rebased := strings.TrimSpace(gittest.Run(t, wt, "rev-parse", "HEAD"))
+	if got := strings.TrimSpace(gittest.Run(t, upstream, "rev-parse", "refs/heads/feature")); got != rebased {
 		t.Fatalf("feature = %s, want the rebased head %s", got, rebased)
 	}
 	if p.Rewritten() || p.meta.HeadSHA != rebased {
 		t.Fatalf("after push: rewritten=%v head=%s", p.Rewritten(), p.meta.HeadSHA)
 	}
-	mainTip := strings.TrimSpace(gitTestRun(t, wt, "rev-parse", prBaseRef(1)))
+	mainTip := strings.TrimSpace(gittest.Run(t, wt, "rev-parse", prBaseRef(1)))
 	if p.diffBase != mainTip {
 		t.Fatalf("diffBase = %q, want the new merge-base %s", p.diffBase, mainTip)
 	}
@@ -1402,10 +1397,10 @@ func TestGitLabGitTransport(t *testing.T) {
 		t.Errorf("PRHeadRef = %q", got)
 	}
 	a := g.GitAuth(tg, "tok")
-	if a.Prefix != "https://git.example.org/" || !strings.HasPrefix(a.Header, "Authorization: Basic ") || a.redact("x tok y") != "x *** y" {
+	if a.Prefix != "https://git.example.org/" || !strings.HasPrefix(a.Header, "Authorization: Basic ") || a.Redact("x tok y") != "x *** y" {
 		t.Errorf("GitAuth = %+v", a)
 	}
-	if (g.GitAuth(tg, "") != gitAuth{}) {
+	if (g.GitAuth(tg, "") != git.Auth{}) {
 		t.Error("no token should mean no auth")
 	}
 	if gh := (&GitHubProvider{}).GitAuth(PRTarget{}, "t"); gh.Prefix != "https://github.com/" {

@@ -269,4 +269,3 @@ func BenchmarkSniffDelim(b *testing.B) {
 		_ = SniffDelim(data, ',')
 	}
 }
-
