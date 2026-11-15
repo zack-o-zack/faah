@@ -60,3 +60,7 @@ The document entry holds the caret (`cur`, `col`) and the selection anchor (`sel
 `Mod+A` outside a field does not use the browser's select-all, which would select sidebar text and miss off-screen lines. `selectAll` in [`selection-actions.js`](../../web/src/editor/selection-actions.js) reads the file once from `/api/raw` and sets a selection covering every line; `Mod+C` then copies all of it. Esc or a click clears it.
 
 Any selection drives the footer selection bar (`#footer-sel`) and the right-click menu in [`SelectionBar.tsx`](../../web/src/editor/SelectionBar.tsx): Copy Ref, Copy with Context, Edit Inline, Find Usages and the `Alt` shortcuts. `runSelectionAction` performs them. A right click on a selection neither moves the caret nor collapses the selection. See [Harness Editing & Agent Dispatch](agent-editing.md).
+
+## Explanation rows
+
+`web/src/notes/store.ts` groups ghosts by source line. `lineOffsets` includes their fixed heights through `extraRows`, while measured heights describe only the code row. Ghosts are siblings of source rows, marked `data-note`; source DOM positions, selection text, find and copying continue to use only `.c` text and the document buffer. Margin cards render only for blocks intersecting the visible range, use the same offsets, and reserve code width under word wrap. Card heights are measured with ResizeObserver; overlapping cards move down with a connector to their bracket.

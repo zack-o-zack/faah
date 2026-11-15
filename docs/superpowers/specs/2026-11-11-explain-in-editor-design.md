@@ -1,7 +1,7 @@
 # Explain in the Editor: Design
 
 Date: 2026-11-11
-Status: Runtime and tool delivery done; editor displays planned
+Status: Runtime, tool delivery, orb and editor notes done; walkthrough display planned
 
 Backlog items 3 (other displays) and 4 (walkthroughs) of [Explain This](2026-11-10-explain-this-design.md), with the delivery part of item 5 (IDE context as harness tools).
 
@@ -158,7 +158,7 @@ Each phase is a pull request, based on the one before it.
 1. **Tools and the MCP endpoint** (done). Endpoint credentials, validation, saving, staleness, prompt, and API. Notes show as a list in the thread.
 2. **Native sessions and MCP for every agent** (done). Antigravity over ACP, the stdio bridge, shared native servers, and the Cursor SDK helper.
 3. **Orb,** and Explain no longer opening the sidebar (done).
-4. **Notes in the editor.** Virtual rows, ghost summaries, margin notes, hover dimming, Refresh, dismiss, and Toggle Notes.
+4. **Notes in the editor** (done). Virtual rows, ghost summaries, margin notes, hover dimming, Refresh, dismiss, and Toggle Notes.
 5. **Walkthrough.** Spotlight, navigation, gutter badges, and the summary view.
 6. **Ways to start.** The hover card action and the ask box.
 
