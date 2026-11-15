@@ -1,6 +1,6 @@
 # Agent editing and dispatch
 
-`agent.go` owns selection. `internal/threads/prompts.go` owns commit, sync and merge prompts; `internal/threads/jobs.go` owns jobs and changed-file detection. Inline and batch edits run through the [thread manager](threads.md); [native adapters](agents.md) own process execution and protocols.
+`internal/server/agent.go` owns selection. `internal/threads/prompts.go` owns commit, sync and merge prompts; `internal/threads/jobs.go` owns jobs and changed-file detection. Inline and batch edits run through the [thread manager](threads.md); [native adapters](agents.md) own process execution and protocols.
 
 ## Discovery and selection
 

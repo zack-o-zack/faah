@@ -1,6 +1,6 @@
 # Language Server Protocol (LSP) Architecture & Intelligence
 
-This document details the architecture, lifecycle management, and security boundaries of faah's Language Server Protocol subsystem ([`internal/lsp`](../../internal/lsp) and [`server.go`](../../server.go)).
+This document details the architecture, lifecycle management, and security boundaries of faah's Language Server Protocol subsystem ([`internal/lsp`](../../internal/lsp) and [`internal/server/lsp.go`](../../internal/server/lsp.go)).
 
 ## 1. Zero-Cost Lazy Architecture
 
