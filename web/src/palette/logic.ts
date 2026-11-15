@@ -1,3 +1,4 @@
+import { filterByText } from '../lib/list.ts';
 import type { Command, PaletteItem, PaletteMode } from './types.ts';
 export const MODES = {
   file: {
@@ -40,18 +41,9 @@ export function fuzzyParts(
   return parts;
 }
 export function rankCommands(commands: Command[], query: string): PaletteItem[] {
-  const needle = query.toLowerCase();
-  return commands
-    .filter((command) => command.name.toLowerCase().includes(needle))
-    .map((command) => ({ kind: 'command', command, label: command.name }));
-}
-export function scrollToItem(
-  top: number,
-  height: number,
-  itemTop: number,
-  itemHeight: number,
-): number {
-  if (itemTop < top) return itemTop;
-  if (itemTop + itemHeight > top + height) return itemTop + itemHeight - height;
-  return top;
+  return filterByText(commands, query, (command) => command.name).map((command) => ({
+    kind: 'command',
+    command,
+    label: command.name,
+  }));
 }

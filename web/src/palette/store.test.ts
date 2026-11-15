@@ -1,3 +1,4 @@
+import { scrollToItem } from '../lib/list.ts';
 import { record, text } from '../lib/decode.ts';
 import type { Request } from '../lib/api.ts';
 import type { PaletteItem } from './types.ts';
@@ -7,7 +8,7 @@ function filePath(item: PaletteItem | undefined): string | undefined {
 import { createRoot } from 'solid-js';
 import { afterEach, expect, test, vi } from 'vitest';
 import { createPaletteStore } from './store.ts';
-import { fuzzyParts, paletteQuery, scrollToItem } from './logic.ts';
+import { fuzzyParts, paletteQuery } from './logic.ts';
 const disposers: (() => void)[] = [];
 afterEach(() => disposers.splice(0).forEach((dispose) => dispose()));
 function fixture(request: Request = vi.fn()) {
