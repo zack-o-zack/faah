@@ -6,11 +6,13 @@ interface WalkthroughFilesProps {
 import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
-import { groupedFiles, movedOnly, shortRef } from './logic.ts';
+import { BasePicker } from './BasePicker.tsx';
+import { groupedFiles, movedOnly, shortRef, fileCount } from './logic.ts';
 import { LineStats } from './LineStats.tsx';
 // Group summaries keep the file list easy to scan.
 export function WalkthroughFiles(props: WalkthroughFilesProps): JSX.Element {
-  const review = useEditor().review;
+  const editor = useEditor();
+  const review = editor.review;
   return (
     <aside
       id="review-files-pane"
@@ -20,21 +22,41 @@ export function WalkthroughFiles(props: WalkthroughFilesProps): JSX.Element {
         <span class="text-sm font-semibold">Changed files</span>
         <Show when={props.data?.hiddenWhitespaceFiles}>
           <span class="text-xs text-muted-foreground">
-            {props.data?.hiddenWhitespaceFiles} whitespace-only files hidden
+            {props.data?.hiddenWhitespaceFiles} whitespace-only{' '}
+            {props.data?.hiddenWhitespaceFiles === 1 ? 'file' : 'files'} hidden
           </span>
         </Show>
         <span class="text-xs text-muted-foreground">
-          {props.data?.totalFiles || props.data?.files.length || 0} files ·{' '}
+          {fileCount(props.data?.totalFiles || props.data?.files.length || 0)} ·{' '}
           <LineStats
             additions={props.data?.totalAdditions}
             deletions={props.data?.totalDeletions}
           />{' '}
           ·{' '}
-          <span class="font-mono">
-            {shortRef(props.data?.baseRef || 'HEAD')}{' '}
-            <span class="icon-[lucide--arrow-right] size-3 align-[-2px]" aria-hidden="true" />{' '}
-            {shortRef(props.data?.headRef || 'now')}
-          </span>
+          <Show
+            when={
+              !props.data?.prMode &&
+              !editor.store.state.workspace.meta?.pr &&
+              editor.store.state.workspace.meta?.git
+            }
+            fallback={
+              <span class="font-mono">
+                {shortRef(props.data?.baseRef || 'HEAD')}{' '}
+                <span class="icon-[lucide--arrow-right] size-3 align-[-2px]" aria-hidden="true" />{' '}
+                {shortRef(props.data?.headRef || 'now')}
+              </span>
+            }
+          >
+            <BasePicker
+              label={
+                <span class="font-mono">
+                  {shortRef(props.data?.baseRef || 'HEAD')}{' '}
+                  <span class="icon-[lucide--arrow-right] size-3 align-[-2px]" aria-hidden="true" />{' '}
+                  {shortRef(props.data?.headRef || 'now')}
+                </span>
+              }
+            />
+          </Show>
         </span>
       </div>
       <div

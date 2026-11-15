@@ -8,6 +8,7 @@ import type {
   ReviewEvent,
   FileGroup,
   WalkthroughReply,
+  ReviewBases,
 } from './types.ts';
 export function decodeStageDef(value: unknown): StageDef {
   const v = record(value);
@@ -108,5 +109,18 @@ export function decodeWalkthrough(value: unknown): WalkthroughReply {
     baseRef: text(v.baseRef),
     headRef: text(v.headRef),
     prMode: boolean(v.prMode),
+  };
+}
+
+export function decodeReviewBases(value: unknown): ReviewBases {
+  const v = record(value);
+  return {
+    current: text(v.current),
+    defaultRemote: text(v.defaultRemote),
+    upstream: text(v.upstream),
+    branches: list(v.branches).map((item) => {
+      const b = record(item);
+      return { name: text(b.name), remote: boolean(b.remote) };
+    }),
   };
 }

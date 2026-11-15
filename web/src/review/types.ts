@@ -61,3 +61,10 @@ export interface WalkthroughReply {
   headRef: string;
   prMode: boolean;
 }
+
+export interface ReviewBases {
+  current: string;
+  defaultRemote: string;
+  upstream: string;
+  branches: { name: string; remote: boolean }[];
+}

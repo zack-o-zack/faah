@@ -2,7 +2,12 @@ import type { AppStore } from '../app/store.ts';
 import type { Request } from '../lib/api.ts';
 import type { CoreActions } from '../editor/contracts.ts';
 import type { StageDraft, ReviewRun, ReviewConfig, ReviewEvent } from './types.ts';
-import { decodeReviewEvent, decodeReviewStatus, decodeWalkthrough } from './decode.ts';
+import {
+  decodeReviewEvent,
+  decodeReviewStatus,
+  decodeWalkthrough,
+  decodeReviewBases,
+} from './decode.ts';
 import { decodeThread } from '../threads/decode.ts';
 import { isAbort, errorMessage } from '../lib/decode.ts';
 export interface ReviewOptions {
@@ -22,6 +27,7 @@ interface ReviewState {
   edit: { index: number; value: StageDraft } | null;
   followup: string;
   filter: string;
+  base: string;
   target: { path: string; line: number; sequence: number };
   activeFile: string;
   viewed: Record<string, boolean>;
@@ -75,6 +81,7 @@ function initialState(): ReviewState {
     edit: null,
     followup: '',
     filter: 'all',
+    base: 'HEAD',
     target: { path: '', line: 0, sequence: 0 },
     activeFile: '',
     viewed: {},
@@ -107,14 +114,33 @@ function buildReviewStore(editor: ReviewHost, options: ReviewOptions = {}) {
     () =>
       state.mode === 'review' && {
         revision: revision(),
+        base: app.state.workspace.meta?.pr ? 'HEAD' : state.base,
         ignoreWhitespace: app.settings.value('diffEditor.ignoreWhitespace') === true,
       },
-    async ({ ignoreWhitespace }) =>
-      decodeWalkthrough(
-        await walkthroughRequest(
-          'api/review/walkthrough' + (ignoreWhitespace ? '?ignoreWhitespace=1' : ''),
-        ),
-      ),
+    async ({ ignoreWhitespace, base }) => {
+      const query = new URLSearchParams();
+      if (ignoreWhitespace) query.set('ignoreWhitespace', '1');
+      if (base !== 'HEAD') query.set('base', base);
+      try {
+        return decodeWalkthrough(
+          await walkthroughRequest('api/review/walkthrough' + (query.size ? '?' + query : '')),
+        );
+      } catch (error) {
+        if (
+          base !== 'HEAD' &&
+          state.base === base &&
+          !isAbort(error) &&
+          typeof error === 'object' &&
+          error !== null &&
+          'status' in error &&
+          error.status === 400
+        ) {
+          toast('error', errorMessage(error));
+          set('base', 'HEAD');
+        }
+        throw error;
+      }
+    },
   );
 
   // The stage on screen follows its thread on the shared stream; the thread store
@@ -369,6 +395,8 @@ function buildReviewStore(editor: ReviewHost, options: ReviewOptions = {}) {
       },
       setReviewFollowup: (value: string) => set('followup', value),
       refreshWalkthrough: () => setRevision((value) => value + 1),
+      loadBases: async () => decodeReviewBases(await request('api/review/bases')),
+      setComparisonBase: (base: string) => set('base', base),
       setGroupFilter: (filter: string) => set('filter', filter),
       setWalkthroughViewed: (path: string, viewed: boolean) => set('viewed', path, viewed),
       setActiveWalkthroughFile: (path: string) => set('activeFile', path),

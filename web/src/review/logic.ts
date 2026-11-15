@@ -1,4 +1,5 @@
 import type {
+  ReviewBases,
   StageDraft,
   StageDef,
   StageState,
@@ -247,4 +248,24 @@ export function activeBlock(tops: number[], anchor: number): number {
     active = index;
   }
   return active;
+}
+
+export function fileCount(count: number): string {
+  return `${count} ${count === 1 ? 'file' : 'files'}`;
+}
+
+export function baseSuggestions(bases: ReviewBases) {
+  return [
+    {
+      label: 'Remote default branch',
+      value: bases.defaultRemote,
+      hint: "Everything on this branch that the default branch doesn't have",
+    },
+    {
+      label: 'Remote branch (current)',
+      value: bases.upstream !== bases.defaultRemote ? bases.upstream : '',
+      hint: 'Everything not pushed yet',
+    },
+    { label: 'Committed changes', value: 'HEAD', hint: 'Uncommitted changes only' },
+  ].filter((row) => row.value);
 }

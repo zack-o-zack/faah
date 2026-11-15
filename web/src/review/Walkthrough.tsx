@@ -21,10 +21,11 @@ export function Walkthrough(): JSX.Element {
             <span class="text-destructive">{review.walkthrough.error.message}</span>
           </EmptyState>
         </Match>
-        <Match when={!review.walkthroughData()}>
+        <Match when={review.walkthrough.loading || !review.walkthroughData()}>
           <EmptyState spinner title="Loading changed files…" />
         </Match>
         <Match when={!files().length && !review.walkthroughData()?.hiddenWhitespaceFiles}>
+          <WalkthroughFiles data={review.walkthroughData()} />
           <EmptyState icon="icon-[lucide--check]" title="Working tree is clean">
             No modified files or uncommitted diffs found against{' '}
             {review.walkthroughData()?.baseRef || 'HEAD'}.
