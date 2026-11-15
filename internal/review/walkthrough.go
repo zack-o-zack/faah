@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 
+	"faah/internal/diffview"
 	"faah/internal/git"
 	"faah/internal/render"
 )
@@ -194,19 +195,17 @@ func buildWalkthroughFile(o WalkthroughOptions, baseRef string, fallback bool, e
 	if target.oldPath != "" {
 		paths = append(paths, target.oldPath)
 	}
-	readDiff := git.DiffPaths
-	if o.IgnoreWhitespace {
-		readDiff = git.DiffPathsIgnoringWhitespace
-	}
 	var diffText string
+	var hunks []render.DiffHunk
 	if !o.IsPR && target.status == "U" {
 		// Git diff against a ref omits untracked paths. Compare them to an empty
 		// file instead; exit code 1 means differences were found.
 		out, _ := exec.Command("git", "-C", o.Root, "diff", "--no-index", "--no-color", "--no-ext-diff", "--", os.DevNull, target.path).Output()
 		diffText = string(out)
+		hunks = diffview.Highlight(target.path, diffText, o.IgnoreWhitespace)
 		target.status = "A"
 	} else {
-		diffText = readDiff(o.Root, baseRef, head, paths...)
+		diffText, hunks = diffview.Read(o.Root, target.path, baseRef, head, o.IgnoreWhitespace, paths[1:]...)
 	}
 	if diffText == "" && target.oldPath == "" {
 		if o.IgnoreWhitespace && exactPaths[target.path] {
@@ -215,20 +214,7 @@ func buildWalkthroughFile(o WalkthroughOptions, baseRef string, fallback bool, e
 		return WalkthroughFile{}, false, false
 	}
 
-	hunks := render.HighlightDiff(target.path, diffText)
 	if o.IgnoreWhitespace {
-		// Git suppresses wholly blank hunks, but leaves blank edits in mixed
-		// hunks. Keep the parser's line numbers when hiding those rows.
-		for i := range hunks {
-			rows := hunks[i].Rows[:0]
-			for _, row := range hunks[i].Rows {
-				if row.Type != "ctx" && strings.TrimSpace(row.Text) == "" {
-					continue
-				}
-				rows = append(rows, row)
-			}
-			hunks[i].Rows = rows
-		}
 		if target.oldPath != "" && len(hunks) == 0 &&
 			!strings.Contains(diffText, "Binary files ") && !strings.Contains(diffText, "old mode ") {
 			diffText = ""

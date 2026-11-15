@@ -33,6 +33,7 @@ function buildDiffActions(
     !controller.signal.aborted && editor.store.state.documents.tabs.includes(document());
   return {
     async apply(hunk: DiffHunk, action: 'stage' | 'unstage' | 'discard'): Promise<void> {
+      if (editor.settings.value('diffEditor.ignoreWhitespace') === true) return;
       if (
         action === 'discard' &&
         !confirm('Discard this hunk in the working tree? This cannot be undone.')
@@ -55,6 +56,7 @@ function buildDiffActions(
       }
     },
     async expand(hunk: DiffHunk): Promise<void> {
+      if (editor.settings.value('diffEditor.ignoreWhitespace') === true) return;
       try {
         if (!fullFile) {
           pending ||= api(

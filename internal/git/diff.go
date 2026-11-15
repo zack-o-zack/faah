@@ -173,10 +173,23 @@ func DiffFull(root string, max int, refs ...string) string {
 // commit. This is the ref form of DiffAgainst: the working tree isn't
 // involved at all, so the result is frozen no matter what is edited since.
 func DiffCommit(root, relpath, sha string) string {
+	return diffCommit(root, relpath, sha, false)
+}
+
+func DiffCommitIgnoringWhitespace(root, relpath, sha string) string {
+	return diffCommit(root, relpath, sha, true)
+}
+
+var whitespaceDiffArgs = []string{"--ignore-all-space", "--ignore-blank-lines"}
+
+func diffCommit(root, relpath, sha string, ignoreWhitespace bool) string {
 	if !Available(root) || !ValidSHA(sha) {
 		return ""
 	}
 	args := append([]string{"-C", root, "diff-tree", "-p", "--no-color"}, commitDiffArgs...)
+	if ignoreWhitespace {
+		args = append(args, whitespaceDiffArgs...)
+	}
 	args = append(args, sha, "--", relpath)
 	out, err := exec.Command("git", args...).Output()
 	if err != nil {
@@ -225,7 +238,7 @@ func diffPaths(root, base, head string, ignoreWhitespace bool, paths ...string) 
 	argsForBase := func(base string) []string {
 		args := []string{"-C", root, "diff", "--no-color", "--find-renames"}
 		if ignoreWhitespace {
-			args = append(args, "--ignore-all-space", "--ignore-blank-lines")
+			args = append(args, whitespaceDiffArgs...)
 		}
 		args = append(args, base)
 		if head != "" {

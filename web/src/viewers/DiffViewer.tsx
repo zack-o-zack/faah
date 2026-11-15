@@ -19,6 +19,10 @@ function DiffDocument(props: DiffScrollProps): JSX.Element {
     () => props.document,
     'api/diff',
     decodeDiff,
+    () =>
+      editor.settings.value('diffEditor.ignoreWhitespace') === true
+        ? { ignoreWhitespace: '1' }
+        : {},
   );
   return (
     <Show

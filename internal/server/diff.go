@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"faah/internal/diffview"
 	"faah/internal/git"
 	"faah/internal/httpx"
 	"faah/internal/render"
@@ -23,6 +24,7 @@ import (
 // the frontend can label the two apart instead of showing one blended diff
 // that looks the same whether or not the reviewer has touched anything.
 func (s *Server) handleDiff(w http.ResponseWriter, r *http.Request) {
+	ignoreWhitespace := r.URL.Query().Get("ignoreWhitespace") == "1"
 	_, rel, ok := s.resolvePath(r.URL.Query().Get("path"))
 	if !ok {
 		httpx.Fail(w, 400, "bad path")
@@ -39,13 +41,25 @@ func (s *Server) handleDiff(w http.ResponseWriter, r *http.Request) {
 		} else {
 			diff = git.DiffCommit(s.ix.Root(), rel, ref)
 		}
+		available := diff != ""
+		var hunks []render.DiffHunk
+		if ignoreWhitespace {
+			if base != "" && git.ValidSHA(base) && git.ValidSHA(ref) {
+				diff, hunks = diffview.Read(s.ix.Root(), rel, base, ref, true)
+			} else {
+				diff = git.DiffCommitIgnoringWhitespace(s.ix.Root(), rel, ref)
+				hunks = diffview.Highlight(rel, diff, true)
+			}
+		} else {
+			hunks = render.HighlightDiff(rel, diff)
+		}
 		httpx.WriteJSON(w, map[string]any{
 			"path":      rel,
 			"ref":       ref,
 			"base":      base,
 			"diff":      diff,
-			"hunks":     render.HighlightDiff(rel, diff),
-			"available": diff != "",
+			"hunks":     hunks,
+			"available": available,
 		})
 		return
 	}
@@ -59,19 +73,33 @@ func (s *Server) handleDiff(w http.ResponseWriter, r *http.Request) {
 		ui.Status("info", "diff", fmt.Sprintf("%s · %s", rel, status), 0, os.Stdout)
 	}
 	avail := diff != ""
+	var hunks []render.DiffHunk
+	if ignoreWhitespace {
+		diff, hunks = diffview.Read(s.ix.Root(), rel, s.diffBase, "", true)
+	} else {
+		hunks = render.HighlightDiff(rel, diff)
+	}
 	resp := map[string]any{
 		"path":  rel,
 		"diff":  diff,
-		"hunks": render.HighlightDiff(rel, diff),
+		"hunks": hunks,
 	}
 	if s.pr != nil {
 		prDiff := git.DiffBetween(s.ix.Root(), rel, s.diffBase, s.prHeadSHA)
 		yourDiff := git.DiffAgainst(s.ix.Root(), rel, s.prHeadSHA)
+		avail = avail || prDiff != "" || yourDiff != ""
+		var prHunks, yourHunks []render.DiffHunk
+		if ignoreWhitespace {
+			prDiff, prHunks = diffview.Read(s.ix.Root(), rel, s.diffBase, s.prHeadSHA, true)
+			yourDiff, yourHunks = diffview.Read(s.ix.Root(), rel, s.prHeadSHA, "", true)
+		} else {
+			prHunks = render.HighlightDiff(rel, prDiff)
+			yourHunks = render.HighlightDiff(rel, yourDiff)
+		}
 		resp["prDiff"] = prDiff
 		resp["yourDiff"] = yourDiff
-		resp["prHunks"] = render.HighlightDiff(rel, prDiff)
-		resp["yourHunks"] = render.HighlightDiff(rel, yourDiff)
-		avail = avail || prDiff != "" || yourDiff != ""
+		resp["prHunks"] = prHunks
+		resp["yourHunks"] = yourHunks
 	}
 	resp["available"] = avail
 	httpx.WriteJSON(w, resp)

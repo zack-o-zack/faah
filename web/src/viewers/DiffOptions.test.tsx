@@ -9,6 +9,8 @@ import { DiffViewer } from './DiffViewer.tsx';
 import { required } from '../lib/test-values.ts';
 import { api, apiPostJson } from '../lib/api.ts';
 import { createRoot } from 'solid-js';
+import { record } from '../lib/decode.ts';
+import { createDiffActions } from './diff-actions.ts';
 
 vi.mock('../lib/api.ts', () => ({ api: vi.fn(), apiPost: vi.fn(), apiPostJson: vi.fn() }));
 const disposers: (() => void)[] = [];
@@ -16,9 +18,15 @@ afterEach(() => {
   disposers.splice(0).forEach((dispose) => dispose());
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
+  Reflect.deleteProperty(HTMLElement.prototype, 'scrollIntoView');
 });
 
-async function mount() {
+async function mount(working = false) {
+  vi.clearAllMocks();
+  Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+    configurable: true,
+    value: () => {},
+  });
   vi.stubGlobal(
     'ResizeObserver',
     class {
@@ -45,7 +53,11 @@ async function mount() {
   vi.mocked(apiPostJson).mockResolvedValue({ ok: true });
   const app = createRoot((dispose) => {
     disposers.push(dispose);
-    return createAppStore({ fetcher: async () => ({ lines: ['new'], total: 1, exact: true }) });
+    const saved: Record<string, unknown> = {};
+    return createAppStore({
+      fetcher: async () => ({ lines: ['new'], total: 1, exact: true }),
+      settings: { post: async (_, body) => ({ settings: Object.assign(saved, record(body)) }) },
+    });
   });
   const editor = createRoot((dispose) => {
     disposers.push(dispose);
@@ -55,7 +67,8 @@ async function mount() {
   const doc = required(app.activeDocument());
   app.actions.patchDocument(doc.path, {
     diffMode: 'split',
-    diffRef: 'abc1234',
+    diffRef: working ? '' : 'abc1234',
+    diffBase: 'abc1234',
     turnFiles: ['file.go'],
   });
   render(() => (
@@ -83,7 +96,7 @@ test('editor layout choice updates shared settings and open diff rows', async ()
   fireEvent.click(required(document.getElementById('diff-options')));
   fireEvent.click(screen.getByRole('button', { name: 'Unified' }));
   expect(write).toHaveBeenCalledWith('diffEditor.renderSideBySide', false);
-  expect(document.querySelector('.diff-unified')).not.toBeNull();
+  await waitFor(() => expect(document.querySelector('.diff-unified')).not.toBeNull());
   expect(document.querySelector('.diff-split')).toBeNull();
 });
 
@@ -93,12 +106,70 @@ test('editor and walkthrough options derive distinct switch ids and share settin
   fireEvent.click(required(document.getElementById('diff-options')));
   const first = screen.getByRole('switch', { name: 'Ignore whitespace' }).id;
   fireEvent.click(screen.getByRole('switch', { name: 'Ignore whitespace' }));
-  fireEvent.keyDown(document, { key: 'Escape' });
   fireEvent.click(required(document.getElementById('btn-walkthrough-options')));
-  expect(screen.getByRole('switch', { name: 'Ignore whitespace' }).id).not.toBe(first);
-  expect(
-    screen.getByRole('switch', { name: 'Ignore whitespace' }).getAttribute('aria-checked'),
-  ).toBe('true');
-  fireEvent.click(screen.getByRole('button', { name: 'Unified' }));
-  expect(document.querySelector('.diff-unified')).not.toBeNull();
+  const switches = screen.getAllByRole('switch', { name: 'Ignore whitespace' });
+  expect(switches).toHaveLength(2);
+  expect(new Set(switches.map((input) => input.id)).size).toBe(2);
+  expect(switches.map((input) => input.id)).toContain(first);
+  for (const input of switches) {
+    expect(input.getAttribute('aria-checked')).toBe('true');
+    expect(document.querySelector(`label[for="${input.id}"]`)).not.toBeNull();
+  }
+  fireEvent.click(required(screen.getAllByRole('button', { name: 'Unified' }).at(-1)));
+  await waitFor(() => expect(document.querySelector('.diff-unified')).not.toBeNull());
 });
+
+test('whitespace switch reloads the editor diff with an optional query parameter', async () => {
+  await mount();
+  const diffCalls = () => vi.mocked(api).mock.calls.filter(([path]) => path === 'api/diff');
+  expect(diffCalls().at(-1)?.[1]).not.toHaveProperty('ignoreWhitespace');
+  fireEvent.click(required(document.getElementById('diff-options')));
+  fireEvent.click(screen.getByRole('switch', { name: 'Ignore whitespace' }));
+  await waitFor(() => expect(diffCalls().at(-1)?.[1]).toHaveProperty('ignoreWhitespace', '1'));
+  fireEvent.click(screen.getByRole('switch', { name: 'Ignore whitespace' }));
+  await waitFor(() => expect(diffCalls()).toHaveLength(3));
+  expect(diffCalls().at(-1)?.[1]).not.toHaveProperty('ignoreWhitespace');
+});
+
+test('an empty filtered diff stays open and explains whitespace-only changes', async () => {
+  const editor = await mount();
+  vi.mocked(api).mockResolvedValue({ path: 'file.go', diff: '', hunks: [], available: true });
+  await editor.settings.actions.setSetting('diffEditor.ignoreWhitespace', true);
+  await screen.findByText('Only whitespace changes');
+  expect(screen.queryByText('No changes.')).toBeNull();
+  expect(document.getElementById('diff-options')).not.toBeNull();
+});
+
+test.each(['Stage', 'Unstage', 'Discard', 'Expand'])(
+  '%s cannot act on filtered rows',
+  async (action) => {
+    const editor = await mount(true);
+    expect(screen.getByRole('button', { name: action })).toBeTruthy();
+    await editor.settings.actions.setSetting('diffEditor.ignoreWhitespace', true);
+    await waitFor(() => expect(screen.queryByRole('button', { name: action })).toBeNull());
+    await editor.settings.actions.setSetting('diffEditor.ignoreWhitespace', false);
+    await screen.findByRole('button', { name: action });
+  },
+);
+
+test.each(['stage', 'unstage', 'discard', 'expand'] as const)(
+  'a stale %s callback cannot submit a filtered hunk',
+  async (action) => {
+    const editor = await mount(true);
+    const actions = createRoot((dispose) => {
+      disposers.push(dispose);
+      return createDiffActions(editor, () => required(editor.active()), vi.fn(), vi.fn());
+    });
+    await editor.settings.actions.setSetting('diffEditor.ignoreWhitespace', true);
+    vi.mocked(api).mockClear();
+    vi.mocked(apiPostJson).mockClear();
+    const confirm = vi.fn(() => true);
+    vi.stubGlobal('confirm', confirm);
+    const hunk = { oldStart: 1, newStart: 1, rows: [] };
+    if (action === 'expand') await actions.expand(hunk);
+    else await actions.apply(hunk, action);
+    expect(apiPostJson).not.toHaveBeenCalled();
+    expect(api).not.toHaveBeenCalled();
+    expect(confirm).not.toHaveBeenCalled();
+  },
+);

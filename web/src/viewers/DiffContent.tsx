@@ -52,73 +52,90 @@ export function DiffContent(props: DiffContentProps): JSX.Element {
     <div id="diffcontent">
       <DiffStrip document={props.document} stepHunk={props.stepHunk} />
       <Show
-        when={isPR()}
+        when={
+          props.data.available &&
+          editor.settings.value('diffEditor.ignoreWhitespace') === true &&
+          !props.data.diff &&
+          !props.data.prDiff &&
+          !props.data.yourDiff
+        }
         fallback={
-          <DiffSection
-            bare={!props.document.diffRef}
-            document={props.document}
-            kind={props.document.diffRef ? 'commit' : 'you'}
-            title={
-              props.document.turnLabel ||
-              (props.document.diffRef
-                ? 'In commit ' + props.document.diffRef.slice(0, 7)
-                : 'Changes')
-            }
-            subtitle={
-              props.document.diffRef ? 'this commit only, not the working tree' : 'against HEAD'
-            }
-            hunks={hunks()}
-            expanded={expanded()}
-            diagnostics={diagnostics()}
-            actions={actions}
-            canAct={!props.document.diffRef}
-            reviewable={!props.document.diffRef}
-            registerRows={props.registerRows}
-            top={props.top}
-            height={props.height}
-            jump={jump}
-          />
+          <>
+            <Show
+              when={isPR()}
+              fallback={
+                <DiffSection
+                  bare={!props.document.diffRef}
+                  document={props.document}
+                  kind={props.document.diffRef ? 'commit' : 'you'}
+                  title={
+                    props.document.turnLabel ||
+                    (props.document.diffRef
+                      ? 'In commit ' + props.document.diffRef.slice(0, 7)
+                      : 'Changes')
+                  }
+                  subtitle={
+                    props.document.diffRef
+                      ? 'this commit only, not the working tree'
+                      : 'against HEAD'
+                  }
+                  hunks={hunks()}
+                  expanded={expanded()}
+                  diagnostics={diagnostics()}
+                  actions={actions}
+                  canAct={!props.document.diffRef}
+                  reviewable={!props.document.diffRef}
+                  registerRows={props.registerRows}
+                  top={props.top}
+                  height={props.height}
+                  jump={jump}
+                />
+              }
+            >
+              <DiffSection
+                document={props.document}
+                defaultCollapsed={props.document.diffScope === 'yours' && yourHunks().length > 0}
+                kind="pr"
+                title="PR changes"
+                subtitle={'from ' + (editor.store.state.workspace.meta?.pr?.base || 'base')}
+                hunks={prHunks()}
+                expanded={expanded()}
+                diagnostics={diagnostics()}
+                actions={actions}
+                canAct={false}
+                reviewable
+                registerRows={props.registerRows}
+                top={props.top}
+                height={props.height}
+                jump={jump}
+              />
+              <DiffSection
+                document={props.document}
+                defaultCollapsed={props.document.diffScope === 'pr' && prHunks().length > 0}
+                kind="you"
+                title="Not pushed"
+                subtitle="since checkout"
+                hunks={yourHunks()}
+                expanded={expanded()}
+                diagnostics={diagnostics()}
+                actions={actions}
+                canAct
+                reviewable={false}
+                registerRows={props.registerRows}
+                top={props.top}
+                height={props.height}
+                jump={jump}
+              />
+            </Show>
+            <Show when={!hunks().length && !isPR()}>
+              <div data-ui="diff-empty" class="p-3 text-muted-foreground">
+                No changes.
+              </div>
+            </Show>
+          </>
         }
       >
-        <DiffSection
-          document={props.document}
-          defaultCollapsed={props.document.diffScope === 'yours' && yourHunks().length > 0}
-          kind="pr"
-          title="PR changes"
-          subtitle={'from ' + (editor.store.state.workspace.meta?.pr?.base || 'base')}
-          hunks={prHunks()}
-          expanded={expanded()}
-          diagnostics={diagnostics()}
-          actions={actions}
-          canAct={false}
-          reviewable
-          registerRows={props.registerRows}
-          top={props.top}
-          height={props.height}
-          jump={jump}
-        />
-        <DiffSection
-          document={props.document}
-          defaultCollapsed={props.document.diffScope === 'pr' && prHunks().length > 0}
-          kind="you"
-          title="Not pushed"
-          subtitle="since checkout"
-          hunks={yourHunks()}
-          expanded={expanded()}
-          diagnostics={diagnostics()}
-          actions={actions}
-          canAct
-          reviewable={false}
-          registerRows={props.registerRows}
-          top={props.top}
-          height={props.height}
-          jump={jump}
-        />
-      </Show>
-      <Show when={!hunks().length && !isPR()}>
-        <div data-ui="diff-empty" class="p-3 text-muted-foreground">
-          No changes.
-        </div>
+        <p class="p-3 text-muted-foreground">Only whitespace changes</p>
       </Show>
     </div>
   );
