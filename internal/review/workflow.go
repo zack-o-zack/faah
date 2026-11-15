@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"faah/internal/threads"
 )
@@ -170,18 +171,18 @@ func (m *Manager) loadConfig() Config {
 		if data, err := os.ReadFile(p); err == nil {
 			var loaded Config
 			if err := json.Unmarshal(data, &loaded); err == nil {
-				if len(loaded.Stages) > 0 {
+				if len(loaded.Workflows) > 0 {
+					cfg.Workflows = loaded.Workflows
+					cfg.Name = loaded.Workflows[0].Name
+					cfg.Stages = loaded.Workflows[0].Stages
+					cfg.ActiveID = loaded.Workflows[0].ID
+				} else if len(loaded.Stages) > 0 {
 					cfg.Stages = loaded.Stages
 					if loaded.Name != "" {
 						cfg.Name = loaded.Name
 					}
 					cfg.Workflows = []WorkflowDef{{ID: "standard", Name: cfg.Name, Stages: cfg.Stages}}
 					cfg.ActiveID = "standard"
-				} else if len(loaded.Workflows) > 0 {
-					cfg.Workflows = loaded.Workflows
-					cfg.Name = loaded.Workflows[0].Name
-					cfg.Stages = loaded.Workflows[0].Stages
-					cfg.ActiveID = loaded.Workflows[0].ID
 				}
 			}
 		}
@@ -311,17 +312,31 @@ func (m *Manager) broadcastLocked(name string, v any) {
 func (m *Manager) Run(workflowID string, startStageIndex int) (*Run, error) {
 	m.mu.Lock()
 
-	// Find the workflow definition
-	var targetDef *WorkflowDef
-	if len(m.config.Stages) > 0 {
-		targetDef = &WorkflowDef{
-			ID:     "standard",
-			Name:   m.config.Name,
-			Stages: m.config.Stages,
+	// An omitted ID uses the configured default; an explicit ID must match.
+	if workflowID == "" {
+		workflowID = m.config.ActiveID
+		if workflowID == "" && len(m.config.Workflows) > 0 {
+			workflowID = m.config.Workflows[0].ID
 		}
-	} else if len(m.config.Workflows) > 0 {
-		targetDef = &m.config.Workflows[0]
-	} else {
+		if workflowID == "" {
+			workflowID = "standard"
+		}
+	}
+	var targetDef *WorkflowDef
+	for i := range m.config.Workflows {
+		if m.config.Workflows[i].ID == workflowID {
+			targetDef = &m.config.Workflows[i]
+			break
+		}
+	}
+	if targetDef == nil && workflowID == "standard" && len(m.config.Workflows) == 0 && len(m.config.Stages) > 0 {
+		targetDef = &WorkflowDef{ID: "standard", Name: m.config.Name, Stages: m.config.Stages}
+	}
+	if targetDef == nil {
+		m.mu.Unlock()
+		return nil, fmt.Errorf("unknown review workflow %q", workflowID)
+	}
+	if len(targetDef.Stages) == 0 {
 		m.mu.Unlock()
 		return nil, errors.New("no stages defined in review workflow")
 	}
@@ -409,8 +424,14 @@ func (m *Manager) Stop() (*Run, error) {
 func (m *Manager) orchestrate(ctx context.Context, run *Run, startIdx int) {
 	defer func() {
 		m.mu.Lock()
-		if m.run != nil && m.run.ID == run.ID && m.run.Status == "running" {
-			m.run.Status = "completed"
+		if m.run == run && run.Status == "running" {
+			run.Status = "completed"
+			for _, stage := range run.Stages {
+				if stage.Status == "failed" || stage.Status == "stopped" {
+					run.Status = stage.Status
+					break
+				}
+			}
 			m.run.Updated = time.Now().UnixMilli()
 			m.broadcastLocked("run_completed", m.run)
 		}
@@ -445,7 +466,11 @@ func (m *Manager) orchestrate(ctx context.Context, run *Run, startIdx int) {
 				if prevT := m.threads.Get(prevStage.ThreadID); prevT != nil && len(prevT.Turns) > 0 {
 					prevReply := strings.TrimSpace(prevT.Turns[len(prevT.Turns)-1].Reply)
 					if len(prevReply) > 1800 {
-						prevReply = prevReply[:1800] + "..."
+						end := 1800
+						for !utf8.RuneStart(prevReply[end]) {
+							end--
+						}
+						prevReply = prevReply[:end] + "..."
 					}
 					if prevReply != "" {
 						fullPrompt = fmt.Sprintf("Context from previous review stage (%s):\n\"\"\"\n%s\n\"\"\"\n\nReview Question for this stage:\n%s\n\nInstructions:\n%s",
@@ -540,7 +565,7 @@ func (m *Manager) waitForThreadTurn(ctx context.Context, threadID string) error 
 		var t threads.Thread
 		if err := json.Unmarshal(initial.Data, &t); err == nil {
 			if !t.Running() {
-				return nil
+				return threadTurnError(&t)
 			}
 		}
 	}
@@ -558,18 +583,24 @@ func (m *Manager) waitForThreadTurn(ctx context.Context, threadID string) error 
 				var t threads.Thread
 				if err := json.Unmarshal(ev.Data, &t); err == nil {
 					if !t.Running() {
-						if len(t.Turns) > 0 {
-							lastTurn := t.Turns[len(t.Turns)-1]
-							if lastTurn.Error != "" && lastTurn.Reply == "" {
-								return errors.New(lastTurn.Error)
-							}
-						}
-						return nil
+						return threadTurnError(&t)
 					}
 				}
 			}
 		}
 	}
+}
+
+// threadTurnError preserves replies that arrived before an agent error, while
+// treating an error without a reply as a failed stage on either completion path.
+func threadTurnError(t *threads.Thread) error {
+	if len(t.Turns) > 0 {
+		last := t.Turns[len(t.Turns)-1]
+		if last.Error != "" && last.Reply == "" {
+			return errors.New(last.Error)
+		}
+	}
+	return nil
 }
 
 func (m *Manager) Subscribe() (chan Event, func()) {

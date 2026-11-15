@@ -184,13 +184,15 @@ func TestReviewWorkflowRunUnknownIDAndNilThreads(t *testing.T) {
 	tmp := t.TempDir()
 	mgr := New(tmp, nil, nil)
 
-	// Run with unknown ID falls back to first workflow definition
-	run, err := mgr.Run("non-existent-id", 0)
-	if err != nil {
-		t.Fatalf("expected fallback for unknown workflow id, got error: %v", err)
+	// Unknown IDs must be rejected without starting a fallback run.
+	if run, err := mgr.Run("non-existent-id", 0); err == nil || run != nil {
+		t.Fatalf("unknown workflow: run=%+v, err=%v", run, err)
 	}
-	if run.WorkflowID != "standard" {
-		t.Fatalf("expected workflow standard, got %s", run.WorkflowID)
+	if mgr.CurrentRun() != nil {
+		t.Fatal("unknown ID started a run")
+	}
+	if _, err := mgr.Run("standard", 0); err != nil {
+		t.Fatal(err)
 	}
 
 	// Since s.threads is nil, orchestration should mark stage as failed
