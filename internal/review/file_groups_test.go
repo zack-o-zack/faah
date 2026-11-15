@@ -113,10 +113,48 @@ func TestWalkthroughMoves(t *testing.T) {
 				if f.Additions != n || f.Deletions != n || response.TotalAdditions != n || response.TotalDeletions != n {
 					t.Fatalf("counts: %s", data)
 				}
-				if !edit && len(f.Hunks) != 0 {
+				if !edit && (len(f.Hunks) != 0 || f.Diff != "") {
 					t.Fatalf("pure move hunks: %s", data)
 				}
 			})
 		}
+	}
+}
+
+func TestWalkthroughBinaryMoves(t *testing.T) {
+	for _, mode := range []string{"pr", "fallback"} {
+		t.Run(mode, func(t *testing.T) {
+			root := gittest.Repo(t)
+			gittest.Run(t, root, "reset", "--hard", "HEAD")
+			gittest.Run(t, root, "clean", "-fd")
+			body := strings.Repeat("binary\x00payload\n", 128)
+			writeWalkFile(t, root, "old.bin", body)
+			gittest.Run(t, root, "add", "-A")
+			gittest.Run(t, root, "commit", "-qm", "base")
+			gittest.Run(t, root, "mv", "old.bin", "new.bin")
+			writeWalkFile(t, root, "new.bin", body+"changed\x00bytes\n")
+			gittest.Run(t, root, "add", "-A")
+			gittest.Run(t, root, "commit", "-qm", "move and edit binary")
+			var statuses map[string]string
+			base := "HEAD"
+			if mode == "pr" {
+				base = "HEAD~1"
+				statuses = git.FilesBetween(root, base, "HEAD")
+			}
+			response := BuildWalkthrough(root, base, "HEAD", mode == "pr", statuses)
+			if len(response.Files) != 1 {
+				t.Fatalf("want one renamed binary, got %+v", response.Files)
+			}
+			f := response.Files[0]
+			if f.Path != "new.bin" || f.OldPath != "old.bin" || f.Status != "R" {
+				t.Fatalf("rename metadata: %+v", f)
+			}
+			if f.Diff == "" || !strings.Contains(f.Diff, "Binary files") || len(f.Hunks) != 0 {
+				t.Fatalf("want binary diff without text hunks, got %+v", f)
+			}
+			if f.Additions != 0 || f.Deletions != 0 || response.TotalAdditions != 0 || response.TotalDeletions != 0 {
+				t.Fatalf("binary line counts: %+v", response)
+			}
+		})
 	}
 }

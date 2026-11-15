@@ -225,7 +225,7 @@ export function groupedFiles(files: WalkthroughFile[], filter: string) {
     };
   }).filter((group) => group.files.length);
 }
-export const movedOnly = (file: WalkthroughFile): boolean => !!file.oldPath && !file.hunks?.length;
+export const movedOnly = (file: WalkthroughFile): boolean => !!file.oldPath && !file.diff;
 
 /** A full commit hash says nothing a short one doesn't, at a fifth the width. */
 export const shortRef = (ref: string): string =>

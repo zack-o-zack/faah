@@ -129,3 +129,27 @@ test('overview preserves server syntax tokens and decodes source text safely', a
   expect(document.querySelector('.diff-col-code .nf')?.textContent).toBe('main');
   expect(document.querySelector('.diff-col-code')?.textContent).toBe('func main() { x < 2 }');
 });
+
+test('a changed binary move keeps its origin without a pure move badge', async () => {
+  const editor = mount(
+    { config: { stages: [] } },
+    {
+      totalFiles: 1,
+      files: [
+        {
+          path: 'new.bin',
+          oldPath: 'old.bin',
+          group: 'core',
+          diff: 'Binary files a/old.bin and b/new.bin differ',
+          hunks: [],
+        },
+      ],
+    },
+  );
+  editor.actions.setReviewMode('review');
+  await screen.findByTitle('new.bin');
+  expect(screen.getAllByTitle('old.bin')).toHaveLength(2);
+  expect(screen.queryByText('Moved')).toBe(null);
+  expect(screen.queryByText('Moved from old.bin, no content changes')).toBe(null);
+  expect(screen.getByText('No diff hunks to display.')).toBeTruthy();
+});

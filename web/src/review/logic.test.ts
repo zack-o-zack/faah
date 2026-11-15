@@ -128,6 +128,7 @@ test('group filters count files and fall back when the selected group disappears
     movedOnly({
       ...required(files[0]),
       oldPath: 'old.go',
+      diff: '@@ -1 +1 @@\n-before\n+after',
       hunks: [{ oldStart: 1, newStart: 1, section: '', rows: [] }],
     }),
   ).toBe(false);
@@ -143,4 +144,16 @@ test('the selected stage follows a move and stays in range after removal', () =>
 test('the active diff block is the last one starting above the anchor', () => {
   expect(activeBlock([0, 100, 300], 150)).toBe(1);
   expect(activeBlock([200, 400], 70)).toBe(0);
+});
+
+test('a moved binary with content changes is not a pure move', () => {
+  expect(
+    movedOnly({
+      path: 'new.bin',
+      oldPath: 'old.bin',
+      group: 'core',
+      diff: 'Binary files a/old.bin and b/new.bin differ',
+      hunks: [],
+    }),
+  ).toBe(false);
 });
