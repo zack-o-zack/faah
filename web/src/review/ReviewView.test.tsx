@@ -91,6 +91,7 @@ test('walkthrough filters list files by group', async () => {
   await waitFor(() => expect(screen.getAllByTitle('src/b.go')).toHaveLength(1));
   fireEvent.click(screen.getByRole('button', { name: /Tests/ }));
   expect(screen.queryByTitle('src/b.go')).toBe(null);
+  expect(document.getElementById('review-diff-pane')?.textContent).not.toContain('src/b.go');
   expect(screen.getByText('Moved from old/a.go, no content changes')).toBeTruthy();
 });
 

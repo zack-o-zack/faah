@@ -7,6 +7,7 @@ interface EmptyStateProps {
 import type { JSX } from 'solid-js';
 import { Match, Show, Switch } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
+import { visibleFiles } from './logic.ts';
 import { WalkthroughFiles } from './WalkthroughFiles.tsx';
 import { WalkthroughDiff } from './WalkthroughDiff.tsx';
 export function Walkthrough(): JSX.Element {
@@ -31,7 +32,7 @@ export function Walkthrough(): JSX.Element {
         </Match>
         <Match when={files().length}>
           <WalkthroughFiles data={review.walkthroughData()} />
-          <WalkthroughDiff files={files()} />
+          <WalkthroughDiff files={visibleFiles(files(), review.groupFilter())} />
         </Match>
       </Switch>
     </div>
