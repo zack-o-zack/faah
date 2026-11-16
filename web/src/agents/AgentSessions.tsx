@@ -36,7 +36,7 @@ export function AgentSessions(): JSX.Element {
         <div id="agent-batch-bar" data-ui="agent-batch-bar" class="card flex flex-col gap-2 p-3">
           <div data-ui="agent-batch-header" class="flex flex-col gap-2">
             <div data-ui="agent-batch-title-row" class="flex items-center gap-2 font-mono">
-              <span class="badge" data-variant="secondary" data-control="agent-batch-badge">
+              <span class="badge" data-tone="agent" data-control="agent-batch-badge">
                 Batch
               </span>
               <span id="agent-batch-count" data-ui="agent-batch-count" class="font-mono">

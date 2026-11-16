@@ -24,7 +24,7 @@ export function ExplainOrb(): JSX.Element {
           id="explain-orb"
           class={
             hasWalkthrough()
-              ? 'card group max-w-full bg-popover text-popover-foreground shadow-md data-[phase=done]:bg-popover/70 data-[phase=done]:backdrop-blur-sm'
+              ? 'card group max-w-full bg-popover text-popover-foreground shadow-pop data-[phase=done]:bg-popover/70 data-[phase=done]:backdrop-blur-sm'
               : 'group flex max-w-full flex-col gap-1'
           }
           data-size={hasWalkthrough() ? 'sm' : undefined}
@@ -53,7 +53,7 @@ export function ExplainOrb(): JSX.Element {
             class={
               hasWalkthrough()
                 ? 'group flex min-w-0 w-full items-start'
-                : 'group flex w-full items-center overflow-hidden rounded-full border bg-popover text-popover-foreground shadow-md data-[phase=done]:items-start data-[phase=done]:rounded-xl data-[phase=done]:bg-popover/70 data-[phase=done]:backdrop-blur-sm'
+                : 'group flex w-full items-center overflow-hidden rounded-pill border bg-popover text-popover-foreground shadow-pop data-[phase=done]:items-start data-[phase=done]:bg-popover/70 data-[phase=done]:backdrop-blur-sm'
             }
           >
             <button

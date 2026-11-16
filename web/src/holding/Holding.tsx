@@ -58,7 +58,7 @@ export function Holding(props: HoldingProps): JSX.Element {
           <img class="h-5 dark:hidden" src="static/logo-light.svg" alt="faah" />
         </header>
         <section class="flex items-center gap-3">
-          <figure class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+          <figure class="flex size-10 shrink-0 items-center justify-center rounded-md bg-muted">
             <span
               class={
                 data().PR

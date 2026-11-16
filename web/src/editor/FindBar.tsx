@@ -18,7 +18,7 @@ export function FindBar(): JSX.Element {
   return (
     <div
       id="findbar"
-      class={`card absolute top-2 right-2 z-30 flex w-96 max-w-full flex-row flex-wrap
+      class={`card shadow-pop absolute top-2 right-2 z-30 flex w-96 max-w-full flex-row flex-wrap
         items-center gap-2`}
       hidden={!editor.ui.findOpen}
     >

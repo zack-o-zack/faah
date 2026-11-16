@@ -31,7 +31,7 @@ function Peek(
       data-ui="thr-peek"
       open={!props.folded}
       onToggle={(event) => props.fold(!event.currentTarget.open)}
-      class="group/peek overflow-hidden rounded-md border text-xs"
+      class="group/peek overflow-hidden rounded-xl border text-xs"
     >
       <summary class="flex cursor-pointer gap-2 px-2 py-1 font-mono text-muted-foreground">
         <span>

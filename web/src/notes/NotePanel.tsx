@@ -43,7 +43,7 @@ export function NotePanel(props: {
       id={props.id}
       data-note-panel
       aria-label="Explanation detail"
-      class="border-y border-special/20 bg-special/5 px-3 py-2 text-xs leading-5 font-sans text-foreground wrap-anywhere"
+      class="rounded-xl shadow-pop border-y border-special/20 bg-special/5 px-3 py-2 text-xs leading-5 font-sans text-foreground wrap-anywhere"
     >
       <Markdown
         text={props.note.detail}

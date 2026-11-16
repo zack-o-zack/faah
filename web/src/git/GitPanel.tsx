@@ -80,7 +80,7 @@ export function GitPanel(): JSX.Element {
                 fallback={
                   <div
                     id="git-clean-state"
-                    class="git-clean-state flex min-w-0 flex-1 items-center justify-center gap-2 rounded border border-dashed px-3 py-1.5 text-xs text-muted-foreground [&_svg]:shrink-0 [&_svg]:text-primary"
+                    class="git-clean-state flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg border border-dashed px-3 py-1.5 text-xs text-muted-foreground [&_svg]:shrink-0 [&_svg]:text-primary"
                   >
                     <span class="icon-[lucide--check] size-3.5 shrink-0" aria-hidden="true" />
                     <span>Working tree clean</span>

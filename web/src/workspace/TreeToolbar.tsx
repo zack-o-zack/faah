@@ -25,7 +25,7 @@ export function TreeToolbar(): JSX.Element {
         />
         <button
           id="st-ver"
-          class="status-ver min-w-0 truncate cursor-pointer rounded px-1 font-mono text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+          class="status-ver min-w-0 truncate cursor-pointer rounded-sm px-1 font-mono text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
           title="Keyboard shortcuts"
           onClick={() => editor.actions.showHelp()}
         >

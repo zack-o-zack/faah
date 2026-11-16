@@ -24,7 +24,7 @@ export function ThreadArtifacts(props: ThreadArtifactsProps): JSX.Element {
       </Show>
       <For each={props.turn.walkthroughs}>
         {(walk) => (
-          <div data-ui="thr-shown" class="rounded-md border px-2 py-1.5 text-xs">
+          <div data-ui="thr-shown" class="rounded-xl border px-2 py-1.5 text-xs">
             <div class="mb-1 font-mono text-muted-foreground">Walkthrough: {walk.title}</div>
             <ol class="list-decimal pl-4">
               <For each={walk.steps}>

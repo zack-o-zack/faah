@@ -21,7 +21,7 @@ export function ThreadsPanel(): JSX.Element {
           <span class="threads-head-label text-xs font-medium">Threads</span>
           <span
             class="badge"
-            data-variant="secondary"
+            data-tone="agent"
             data-control="thr-tab-count"
             hidden={!editor.agents.state.sessions.length}
           >
@@ -86,7 +86,7 @@ export function ThreadsToggle(): JSX.Element {
       <span>Threads</span>
       <span
         class="badge"
-        data-variant="secondary"
+        data-tone="agent"
         data-control="thr-tab-count"
         title={`${waiting()} ${waiting() === 1 ? 'comment' : 'comments'} waiting to be applied`}
         hidden={!waiting()}

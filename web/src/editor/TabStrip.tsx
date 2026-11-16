@@ -53,7 +53,7 @@ export function TabStrip(props: { children?: JSX.Element }): JSX.Element {
         <For each={editor.store.state.documents.tabs}>
           {(tab, index) => (
             <div
-              class="tab flex shrink-0 max-w-64 cursor-pointer select-none items-center gap-2 rounded px-3 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground [&.active]:bg-accent [&.active]:text-foreground [&.tab-deleted_.tn]:line-through"
+              class="tab flex shrink-0 max-w-64 cursor-pointer select-none items-center gap-2 rounded-md px-3 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground [&.active]:bg-accent [&.active]:text-foreground [&.tab-deleted_.tn]:line-through"
               classList={{
                 active: index() === editor.store.state.documents.active,
                 'tab-dirty': tab.dirty,
@@ -86,7 +86,7 @@ export function TabStrip(props: { children?: JSX.Element }): JSX.Element {
                 />
               </Show>
               <button
-                class="tn min-h-6 min-w-6 truncate text-left focus-visible:outline focus-visible:outline-ring"
+                class="tn min-h-6 min-w-6 truncate text-left"
                 aria-pressed={index() === editor.store.state.documents.active}
                 onClick={() => editor.actions.switchTab(index())}
               >

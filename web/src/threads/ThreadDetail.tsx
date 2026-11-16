@@ -78,7 +78,7 @@ export function ThreadDetail(): JSX.Element {
                 type="button"
                 id="thr-anchor"
                 data-ui="thr-anchor"
-                class="inline-flex max-w-full min-w-0 items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground [&.jump]:cursor-pointer [&.jump]:hover:text-foreground jump"
+                class="inline-flex max-w-full min-w-0 items-center gap-1 rounded-pill bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground [&.jump]:cursor-pointer [&.jump]:hover:text-foreground jump"
                 onClick={() =>
                   editor.actions.openFile(thread()?.path || '', { line: thread()?.l1 })
                 }
@@ -147,14 +147,14 @@ export function ThreadDetail(): JSX.Element {
               <AgentPicker
                 id="thr-agent"
                 compact
-                triggerClass="btn max-w-full h-7! text-foreground! border-transparent! bg-transparent! px-2! text-xs! shadow-none! hover:bg-accent!"
+                triggerClass="btn max-w-full h-7! text-foreground! border-transparent! bg-transparent! px-2! text-xs! hover:bg-accent!"
                 disabled={editor.threads.running()}
               />
             </div>
             <span class="flex-1" />
             <button
               id="thr-send"
-              class="btn rounded-full gap-1.5"
+              class="btn gap-1.5"
               data-control="agent-send"
               data-variant="primary"
               data-size="sm"

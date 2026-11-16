@@ -50,7 +50,7 @@ export function AgentPicker(props: AgentPickerProps): JSX.Element {
         triggerClass={
           props.triggerClass ||
           (props.compact
-            ? 'btn max-w-full h-7! text-muted-foreground! border-transparent! bg-transparent! px-2! text-xs! shadow-none! hover:bg-accent! hover:text-foreground!'
+            ? 'btn max-w-full h-7! text-muted-foreground! border-transparent! bg-transparent! px-2! text-xs! hover:bg-accent! hover:text-foreground!'
             : 'btn max-w-full')
         }
         variant={props.compact ? 'ghost' : 'outline'}
@@ -68,7 +68,7 @@ export function AgentPicker(props: AgentPickerProps): JSX.Element {
             />
           </>
         }
-        panelClass="fixed m-0 overflow-hidden rounded-lg border bg-popover p-0 text-popover-foreground shadow-lg z-[70]"
+        panelClass="fixed m-0 overflow-hidden border bg-popover p-0 text-popover-foreground z-[70]"
         placement={place}
         accessibleLabel="Coding harness and model"
         disabled={props.disabled || !agents.state.harnesses.some((agent) => agent.installed)}
@@ -129,7 +129,7 @@ function PickerPanel(props: { height: number; close: () => void }): JSX.Element 
         <For each={groups()}>
           {(group) => (
             <button
-              class="flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-2 text-left text-sm outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring aria-selected:bg-accent aria-selected:text-accent-foreground flex-col items-start! gap-0.5! disabled:opacity-50"
+              class="flex w-full min-w-0 items-center gap-2 rounded-sm px-2 py-2 text-left text-sm hover:bg-accent aria-selected:bg-accent aria-selected:text-accent-foreground flex-col items-start! gap-0.5! disabled:opacity-50"
               classList={{
                 'bg-primary/10': active()?.harness === group.harness,
                 'text-primary-text': active()?.harness === group.harness,
@@ -156,7 +156,7 @@ function PickerPanel(props: { height: number; close: () => void }): JSX.Element 
           />
           <input
             ref={input}
-            class="min-w-0 w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+            class="min-w-0 w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground"
             placeholder="Search models…"
             autocomplete="off"
             spellcheck={false}
@@ -201,7 +201,7 @@ function PickerPanel(props: { height: number; close: () => void }): JSX.Element 
           <For each={models()}>
             {(model, index) => (
               <button
-                class="flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-2 text-left text-sm outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring aria-selected:bg-accent aria-selected:text-accent-foreground cursor-pointer aria-selected:bg-primary/10! aria-selected:text-primary-text!"
+                class="flex w-full min-w-0 items-center gap-2 rounded-sm px-2 py-2 text-left text-sm hover:bg-accent aria-selected:bg-accent aria-selected:text-accent-foreground cursor-pointer aria-selected:bg-primary/10! aria-selected:text-primary-text!"
                 role="option"
                 aria-selected={
                   agents.state.selected === active()?.harness && agents.state.model === model.value

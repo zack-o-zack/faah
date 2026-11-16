@@ -66,7 +66,7 @@ export function HoverCard(): JSX.Element {
       aria-label="Symbol documentation"
       tabindex="-1"
       hidden={!editor.ui.hover}
-      class="card absolute z-[60] w-[calc(100%_-_24px)] max-w-[560px] max-h-[min(70vh,calc(100%_-_16px))] overflow-auto gap-0 py-0"
+      class="card shadow-pop absolute z-[60] w-[calc(100%_-_24px)] max-w-[560px] max-h-[min(70vh,calc(100%_-_16px))] overflow-auto gap-0 py-0"
       style={{ left: `${position().left}px`, top: `${position().top}px` }}
     >
       <Show when={editor.ui.hover}>

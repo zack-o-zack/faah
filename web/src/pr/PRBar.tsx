@@ -25,7 +25,7 @@ export function PRBar(): JSX.Element {
         <div class="flex min-w-0 items-center gap-2">
           <a
             id="pr-link"
-            class="group flex items-center min-w-40 gap-2 rounded-md -mx-1.5 px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            class="group flex items-center min-w-40 gap-2 rounded-sm -mx-1.5 px-1.5 py-1"
             href={pr()?.url || '#'}
             title={'Open on ' + forge().label}
             target="_blank"

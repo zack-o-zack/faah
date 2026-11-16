@@ -27,7 +27,7 @@ export function ThreadTurn(props: ThreadTurnProps): JSX.Element {
     <>
       <div
         data-ui="thr-msg"
-        class="thr-user ml-8 self-end min-w-0 rounded-lg bg-muted px-3 py-2 text-sm"
+        class="thr-user ml-8 self-end min-w-0 rounded-2xl bg-muted px-3 py-2 text-sm"
       >
         <Markdown text={props.turn.prompt || ''} onOpen={open} />
       </div>

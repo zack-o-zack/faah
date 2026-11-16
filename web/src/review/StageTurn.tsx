@@ -18,12 +18,12 @@ export function StageTurn(props: StageTurnProps): JSX.Element {
       <Show
         when={props.first}
         fallback={
-          <div class="ml-8 min-w-0 self-end rounded-lg bg-muted px-3 py-2 text-sm">
+          <div class="ml-8 min-w-0 self-end rounded-2xl bg-muted px-3 py-2 text-sm">
             <Markdown text={props.turn.prompt || ''} onOpen={open} />
           </div>
         }
       >
-        <details class="group/instr rounded-md border px-3 py-2 text-xs text-muted-foreground">
+        <details class="group/instr rounded-xl border px-3 py-2 text-xs text-muted-foreground">
           <summary class="flex cursor-pointer list-none items-center gap-1.5">
             <span
               class="icon-[lucide--chevron-right] size-3 shrink-0 group-open/instr:rotate-90"

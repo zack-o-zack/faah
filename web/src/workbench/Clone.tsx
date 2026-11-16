@@ -7,7 +7,7 @@ export function Clone(): JSX.Element {
   const { state, actions } = useWorkbench();
   const [path, setPath] = createSignal('');
   return (
-    <section class="flex flex-col gap-3 rounded-lg border bg-card p-4">
+    <section class="card flex flex-col gap-3 border bg-card p-4">
       <header>
         <h2>No local clone of {state.clone?.repo} found</h2>
         <p class="text-sm text-muted-foreground">

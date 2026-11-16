@@ -80,23 +80,23 @@ function OverviewSkeleton(): JSX.Element {
       <OverviewLayout
         sidebar={
           <div aria-hidden="true" class="space-y-6">
-            <div class="skeleton h-4 w-24 rounded motion-reduce:animate-none" />
+            <div class="skeleton h-4 w-24 motion-reduce:animate-none" />
             <For each={[0, 1, 2, 3]}>
-              {() => <div class="skeleton h-6 w-full rounded motion-reduce:animate-none" />}
+              {() => <div class="skeleton h-6 w-full motion-reduce:animate-none" />}
             </For>
             <hr role="separator" class="border-border" />
-            <div class="skeleton h-4 w-24 rounded motion-reduce:animate-none" />
+            <div class="skeleton h-4 w-24 motion-reduce:animate-none" />
             <For each={[0, 1, 2]}>
-              {() => <div class="skeleton h-7 w-full rounded motion-reduce:animate-none" />}
+              {() => <div class="skeleton h-7 w-full motion-reduce:animate-none" />}
             </For>
           </div>
         }
       >
         <div aria-hidden="true" class="space-y-5">
-          <div class="skeleton h-7 w-40 rounded motion-reduce:animate-none" />
-          <div class="skeleton h-9 w-3/4 rounded motion-reduce:animate-none" />
+          <div class="skeleton h-7 w-40 motion-reduce:animate-none" />
+          <div class="skeleton h-9 w-3/4 motion-reduce:animate-none" />
           <For each={[0, 1, 2, 3, 4, 5]}>
-            {() => <div class="skeleton h-4 w-full rounded motion-reduce:animate-none" />}
+            {() => <div class="skeleton h-4 w-full motion-reduce:animate-none" />}
           </For>
         </div>
       </OverviewLayout>

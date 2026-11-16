@@ -124,7 +124,7 @@ export function MergeDialog(): JSX.Element {
                           type="button"
                           role="menuitemradio"
                           aria-checked={value === dialog().method}
-                          class="flex w-full items-start gap-2 rounded-md p-2 text-left hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
+                          class="flex w-full items-start gap-2 p-2 text-left hover:bg-accent focus-visible:bg-accent"
                           onClick={() => editor.actions.chooseMergeMethod(value)}
                         >
                           <span class="size-4 shrink-0">

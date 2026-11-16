@@ -62,7 +62,7 @@ export function WalkthroughPanel(): JSX.Element {
         id="walkthrough-panel"
         tabindex="-1"
         aria-label="Walkthrough"
-        class="flex min-w-0 flex-col gap-3 border-t pt-3 focus-visible:outline-2 focus-visible:outline-ring"
+        class="flex min-w-0 flex-col gap-3 border-t pt-3"
         onKeyDown={onArrow}
       >
         <div class="flex min-w-0 items-center gap-2">

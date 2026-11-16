@@ -8,7 +8,7 @@ export function CommitForm(): JSX.Element {
     <Show when={editor.git.counts().hasChanges}>
       <div id="git-commit-section" class="git-commit-section flex flex-col gap-2">
         <div
-          class="input-group border-border bg-background shadow-none dark:bg-background focus-within:border-ring focus-within:ring-1 focus-within:ring-ring/40"
+          class="input-group border-border bg-background dark:bg-background focus-within:border-ring"
           data-orientation="vertical"
         >
           <textarea

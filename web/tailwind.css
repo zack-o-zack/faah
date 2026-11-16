@@ -12,6 +12,16 @@
 @custom-variant win-linux (&:where([data-platform="win"], [data-platform="linux"], [data-platform="win"] *, [data-platform="linux"] *));
 
 @theme inline {
+  /* Inline bridges use the values owned by :root, not Basecoat's radius math. */
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
+  --radius-pill: var(--radius-pill);
+  --shadow-raise: var(--shadow-raise);
+  --shadow-pop: var(--shadow-pop);
+  --shadow-dialog: var(--shadow-dialog);
   --font-sans: var(--ui);
   --font-mono: var(--mono);
   --color-faint: var(--faint);
@@ -37,6 +47,33 @@
 
 @layer base {
   :root {
+    /* Brand shape and motion are shared by every theme. */
+    --radius: 0.625rem;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 20px;
+    --radius-2xl: 24px;
+    --radius-pill: 999px;
+    --duration-fast: 120ms;
+    --duration-base: 200ms;
+    --duration-slow: 300ms;
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    /* Existing user themes can keep their original colour and shadow contract. */
+    --pistachio: var(--primary);
+    --periwinkle: color-mix(in oklab, var(--special) 30%, var(--background));
+    --aqua: color-mix(in oklab, var(--gi) 30%, var(--background));
+    --lemon: color-mix(in oklab, var(--warn) 30%, var(--background));
+    --bubblegum: color-mix(in oklab, var(--sel) 30%, var(--background));
+    --on-pastel: var(--foreground);
+    --spiral: var(--primary-text);
+    --shadow-raise: var(--shadow, 0 1px 2px color-mix(in oklab, var(--foreground) 10%, transparent));
+    --shadow-pop: var(--shadow, 0 6px 16px -4px color-mix(in oklab, var(--foreground) 18%, transparent));
+    --shadow-dialog: var(--shadow, 0 24px 48px -12px color-mix(in oklab, var(--foreground) 25%, transparent));
+
     --lh: 21px;
     --mono: ui-monospace, monospace;
     --ui: system-ui, sans-serif;
@@ -75,11 +112,91 @@
 }
 
 @layer components {
-  /* Agent actions use the theme's dedicated special ink. */
-  .btn[data-variant='special'] {
-    @apply border border-special/30 bg-special/10 text-special hover:bg-special/20 focus-visible:border-special/50 focus-visible:ring-special/25 aria-expanded:bg-special/20 disabled:opacity-50;
+  /* fibo layer: shape, depth and focus. Keep this in components, after Vega,
+     so explicit Tailwind utilities still win. No new specificity outside this layer. */
+
+  /* Match Vega's size selectors, including its compact and icon buttons. */
+  .btn, .btn[data-size], .badge { border-radius: var(--radius-pill); }
+
+  /* One group, one pill. Vega's last-end rule is important; supply its token
+     locally rather than adding another important declaration. The other ends
+     match Basecoat's structural selectors, including wrapped menu triggers. */
+  .button-group > .btn,
+  .button-group > :is(.dropdown-menu, .popover, .select) > .btn { border-radius: 0; }
+  .button-group:not([data-orientation='vertical']) > .btn:first-child,
+  .button-group:not([data-orientation='vertical']) > :is(.dropdown-menu, .popover, .select):first-child > .btn {
+    border-start-start-radius: var(--radius-pill);
+    border-end-start-radius: var(--radius-pill);
+  }
+  .button-group:not([data-orientation='vertical']) > .btn:last-child,
+  .button-group:not([data-orientation='vertical']) > :is(.dropdown-menu, .popover, .select):last-child > .btn { --radius-md: var(--radius-pill); }
+  .button-group[data-orientation='vertical'] > .btn:first-child,
+  .button-group[data-orientation='vertical'] > :is(.dropdown-menu, .popover, .select):first-child > .btn { border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+  .button-group[data-orientation='vertical'] > .btn:last-child,
+  .button-group[data-orientation='vertical'] > :is(.dropdown-menu, .popover, .select):last-child > .btn { --radius-md: var(--radius-lg); }
+  .button-group:is([data-orientation='vertical'], :not([data-orientation='vertical'])) > .btn:only-child,
+  .button-group:is([data-orientation='vertical'], :not([data-orientation='vertical'])) > :is(.dropdown-menu, .popover, .select):only-child > .btn {
+    --radius-md: var(--radius-pill);
+    border-radius: var(--radius-pill);
+  }
+  .button-group > .btn[aria-pressed='true'] { background-color: var(--accent); color: var(--foreground); }
+  .button-group > .btn[aria-pressed='false'] { color: var(--muted-foreground); }
+  .button-group > .btn[aria-pressed='false']:hover { color: var(--foreground); }
+
+  /* Flat controls; Tailwind's composed shadow keeps structural rings intact. */
+  .btn, .btn[data-variant], .card, .field > :is(input, select, textarea), .input,
+  .input-group { --tw-shadow: 0 0 transparent; }
+  .tabs > [role='tablist']:not([data-variant='line']) > [role='tab'][aria-selected='true'] { --tw-shadow: var(--shadow-raise); }
+  .tab.active { @apply shadow-raise; }
+  [data-popover], .dropdown-menu > [data-popover], .combobox [data-popover],
+  .select:not(select) [data-popover], .toast-content { --tw-shadow: var(--shadow-pop); }
+  .dialog > *, .alert-dialog > *, .command-dialog > .command { --tw-shadow: var(--shadow-dialog); }
+  /* A modal surface has one elevation, including nested selected tabs. */
+  :is(.dialog, .alert-dialog, .command-dialog) :is([data-popover], .toast-content, .card, .input-group, .tab.active, .tabs > [role='tablist'] > [role='tab'][aria-selected='true']) { --tw-shadow: 0 0 transparent; }
+
+  /* The prompt is a raised surface only while it contains keyboard focus. */
+  .input-group { border-radius: var(--radius-xl); }
+  .input-group:focus-within { --tw-ring-shadow: 0 0 transparent; }
+  .input-group:has(:focus-visible) { --tw-shadow: var(--shadow-raise); }
+
+  /* Cover Basecoat and custom controls with the same keyboard outline. The
+     structural tab/field selectors match Vega's focus rule specificity. */
+  :is(.btn, .badge, .input, .field > :is(input, select, textarea),
+      .tabs > [role='tablist'] > [role='tab'], a.item, .item[role='button'],
+      .item[role='option'], [role='menuitem'], [role='menuitemcheckbox'],
+      [role='menuitemradio'], button, a[href], input, select, textarea, summary, [tabindex]):focus-visible,
+  :is(.field > input, .input):is([type='checkbox'], [type='radio']):not([disabled]):focus-visible {
+    outline: 2px solid var(--focus, var(--ring));
+    outline-offset: 2px;
+    --tw-ring-shadow: 0 0 transparent;
+    --tw-inset-ring-shadow: 0 0 transparent;
   }
 
+  /* Pastels are fills. Action/link text keeps the theme's readable ink. */
+  :is(.field > input, .input):is([type='checkbox'], [type='radio']):not([role='switch']):checked,
+  :is(.field > input, .input):is([type='checkbox'], [type='radio']):not([role='switch']):checked[aria-invalid='true'],
+  .field > input[type='checkbox'][role='switch']:checked,
+  .input[type='checkbox'][role='switch']:checked { border-color: var(--spiral); }
+  .btn[data-variant='special'] {
+    background-color: var(--periwinkle);
+    color: var(--on-pastel);
+    border-color: transparent;
+    transition-duration: var(--duration-fast);
+    transition-timing-function: var(--ease-out);
+  }
+  .btn[data-variant='special']:hover,
+  .btn[data-variant='special'][aria-expanded='true'] { background-color: color-mix(in oklab, var(--periwinkle) 82%, var(--ink, var(--foreground))); }
+  .badge[data-tone], a.badge[data-tone]:hover {
+    background-color: var(--badge-tone); color: var(--on-pastel); border-color: transparent;
+  }
+  .badge[data-tone='brand'] { --badge-tone: var(--pistachio); }
+  .badge[data-tone='agent'] { --badge-tone: var(--periwinkle); }
+  .badge[data-tone='added'] { --badge-tone: var(--aqua); }
+  .badge[data-tone='waiting'] { --badge-tone: var(--lemon); }
+  .badge[data-tone='file'] { --badge-tone: var(--bubblegum); }
+  .btn[data-variant='link'], .badge[data-variant='link'], a.badge[data-variant='link']:hover,
+  :is(.empty > header > p, .item p, .field > p) > a:hover { color: var(--primary-text); }
+  /* End fibo layer. */
 
   /* A shared 4px split bar with a transparent 8px grab area. Positioning utilities
      on docked handles override relative without changing their hit area. */
@@ -94,9 +211,6 @@
 
   /* An empty state that is only a sentence flows as text, so inline keys and code stay in the line. */
   .empty:not(:has(> :is(header, section, footer, figure))) { @apply block; }
-
-  /* Segmented toggles: the off segments recede so the chosen one reads at a glance. */
-  .button-group > .btn[aria-pressed='false'] { @apply text-muted-foreground hover:text-foreground; }
 
   @keyframes explorer-progress { 50% { opacity: .45; } }
 
@@ -309,11 +423,11 @@
     position: sticky; top: 8px; left: 8px; z-index: 2; grid-area: 1 / 1;
     align-self: start; justify-self: start; display: inline-flex; overflow: hidden;
     background: var(--muted); border: 1px solid var(--border); border-radius: var(--radius-sm);
-    opacity: 0; transition: opacity .12s; box-shadow: var(--shadow);
+    opacity: 0; transition: opacity .12s; box-shadow: var(--shadow-pop);
   }
   .md-mermaid.is-fullscreen .md-mermaid-controls {
     position: fixed; top: 14px; left: 14px;
-    opacity: 1; box-shadow: var(--shadow);
+    opacity: 1; box-shadow: var(--shadow-pop);
   }
   .md-pre:hover .md-mermaid-controls, .md-mermaid:hover .md-mermaid-controls, .md-mermaid-controls:focus-within { opacity: 1; }
 
@@ -399,7 +513,7 @@
 
 
   .md img.md-zoomable { cursor: zoom-in; transition: transform 0.15s ease, box-shadow 0.15s ease; border-radius: var(--radius-sm); max-width: 100%; }
-  .md img.md-zoomable:hover { box-shadow: 0 0 0 2px var(--primary), var(--shadow); }
+  .md img.md-zoomable:hover { box-shadow: 0 0 0 2px var(--primary), var(--shadow-pop); }
   .md-img-broken { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--sidebar); border: 1px dashed var(--border); border-radius: var(--radius-md); color: var(--faint); font-size: var(--t-12); margin: 8px 0; font-family: var(--font-mono); }
   .md-img-broken svg { color: var(--destructive); width: 16px; height: 16px; flex-shrink: 0; }
 
@@ -600,4 +714,10 @@
   #imgview-canvas.bg-light { background: var(--image-light); }
   #imgview-img.render-pixelated { image-rendering: pixelated; }
   #imgview-viewport.panning { cursor: grabbing; }
+}
+
+/* Custom floating cards use the same utility as popovers. Keep them flat when
+   rendered inside a modal, in the utility layer that owns their elevation. */
+@utility shadow-pop {
+  &:where(.dialog *, .alert-dialog *, .command-dialog *) { --tw-shadow: 0 0 transparent; }
 }

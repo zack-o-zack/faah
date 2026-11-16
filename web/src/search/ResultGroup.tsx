@@ -40,7 +40,7 @@ export function ResultGroup(props: ResultGroupProps): JSX.Element {
           aria-hidden="true"
         />
         <Show when={props.file.ext}>
-          <span data-ui="ext" class="badge">
+          <span data-ui="ext" class="badge" data-tone="file">
             {props.file.ext}
           </span>
         </Show>

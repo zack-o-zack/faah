@@ -30,7 +30,7 @@ export function CommitFiles(props: CommitFilesProps): JSX.Element {
           <div
             role="button"
             tabindex="0"
-            class="flex min-w-0 items-center gap-2 rounded px-2 py-1 text-xs cursor-pointer hover:bg-accent [&.sel]:bg-accent"
+            class="flex min-w-0 items-center gap-2 rounded-sm px-2 py-1 text-xs cursor-pointer hover:bg-accent [&.sel]:bg-accent"
             data-commit-file
             data-path={file.path}
             classList={{

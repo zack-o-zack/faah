@@ -20,13 +20,13 @@ export function StageCard(props: StageCardProps): JSX.Element {
   const status = () => stageStatus(props.stage);
   const selected = () => review.state.active === props.index;
   return (
-    <li class="group relative flex rounded-md" classList={{ 'bg-accent': selected() }}>
+    <li class="group relative flex rounded-sm" classList={{ 'bg-accent': selected() }}>
       <ContextMenu label="Stage actions" menu={<StageMenuItems index={props.index} />}>
         <button
           type="button"
           aria-pressed={selected()}
           aria-label={`Stage ${props.index + 1}: ${title()}, ${STAGE_STATUS[status()].label}`}
-          class="flex w-full min-w-0 items-start gap-2.5 rounded-md px-2 py-2 pr-8 text-left hover:bg-accent/50 focus-visible:outline focus-visible:outline-ring"
+          class="flex w-full min-w-0 items-start gap-2.5 rounded-sm px-2 py-2 pr-8 text-left hover:bg-accent/50"
           onClick={() => editor.actions.selectReviewStage(props.index)}
         >
           <span class="relative flex w-2 shrink-0 justify-center self-stretch pt-1.5">

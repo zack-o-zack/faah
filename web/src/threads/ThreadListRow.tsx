@@ -50,7 +50,7 @@ export function ThreadListRow(props: ThreadListRowProps): JSX.Element {
           {props.thread.title}
         </span>
         <Show when={props.thread.kind}>
-          <span class="badge" data-variant="secondary" data-control="thr-kind">
+          <span class="badge" data-tone="agent" data-control="thr-kind">
             {['batch', 'explain'].includes(props.thread.kind || '') ? props.thread.kind : 'inline'}
           </span>
         </Show>

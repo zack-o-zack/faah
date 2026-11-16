@@ -25,7 +25,7 @@ export function Recent(): JSX.Element {
       <Show when={!state.items.length}>
         <div class="empty py-12">
           <header>
-            <figure class="flex size-10 items-center justify-center rounded-lg bg-muted">
+            <figure class="flex size-10 items-center justify-center rounded-md bg-muted">
               <span class="icon-[lucide--folder-open] size-5" aria-hidden="true" />
             </figure>
             <h2>Nothing opened yet</h2>

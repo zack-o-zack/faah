@@ -119,7 +119,7 @@ export function CommentsPanel(props: { ref?: (element: HTMLDivElement) => void }
                   disabled={!pr.state.issue.body.trim() || pr.state.issue.pending}
                   title={withKeys('Post comment ({Mod+Enter})')}
                   aria-label="Post comment"
-                  class="btn rounded-full"
+                  class="btn"
                   data-variant="primary"
                   data-size="icon-sm"
                   onClick={() => void editor.actions.sendIssueComment()}

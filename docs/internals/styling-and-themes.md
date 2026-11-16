@@ -151,7 +151,7 @@ Define these after the fibo colours, using references rather than repeated hex.
 | `--input` | `--line-strong` |
 | `--ring`, `--sidebar-ring` | `--focus` |
 
-Basecoat continues to supply shapes and control sizes.
+Basecoat supplies control sizes; the fibo layer below owns their shapes.
 
 ### App tokens
 
@@ -166,13 +166,29 @@ Basecoat continues to supply shapes and control sizes.
 | `--gi`, `--gd` | Readable addition/removal ink |
 | `--gi-bg`, `--gd-bg` | Translucent addition/removal row fills |
 | `--destructive`, `--err` | Error ink for controls and syntax |
-| `--shadow` | Floating-surface shadow, using the theme's shadow-pop value |
+| `--shadow-raise`, `--shadow-pop`, `--shadow-dialog` | Selected/focused, floating and modal elevation |
 
 Root fallbacks are `--special: var(--nf)`, `--warn: var(--mark-active)`,
 `--on-mark-active: var(--background)` and `--on-badge: var(--background)`.
 The fibo themes explicitly replace the first three. `--on-badge` is optional;
-it is text over syntax-coloured badges. Other contract tokens have no app-level
-fallback and must be defined by a complete theme.
+it is text over syntax-coloured badges. The shape layer also supplies these fallbacks for older user themes:
+
+| Optional token | Root fallback |
+| --- | --- |
+| `--pistachio` | `var(--primary)` |
+| `--periwinkle` | `color-mix(in oklab, var(--special) 30%, var(--background))` |
+| `--aqua` | `color-mix(in oklab, var(--gi) 30%, var(--background))` |
+| `--lemon` | `color-mix(in oklab, var(--warn) 30%, var(--background))` |
+| `--bubblegum` | `color-mix(in oklab, var(--sel) 30%, var(--background))` |
+| `--on-pastel` | `var(--foreground)` |
+| `--spiral` | `var(--primary-text)` |
+| `--shadow-raise`, `--shadow-pop`, `--shadow-dialog` | The legacy `--shadow`, if present; otherwise a foreground-tinted shadow for each elevation |
+
+The bundled themes provide explicit pastel and elevation values. A user theme
+can override any optional token. Check `on-pastel` contrast against its fills;
+the fallback preserves the theme's foreground rather than guaranteeing contrast
+for every possible custom palette. Other contract tokens must be defined by a
+complete theme.
 
 ### Syntax tokens
 
@@ -273,7 +289,9 @@ colours and keep aliases as references; check contrast after editing.
   --gd-bg: rgba(90, 37, 48, 0.35);
   --destructive: var(--danger);
   --err: var(--danger);
-  --shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.55);
+  --shadow-raise: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-pop: 0 8px 20px -4px rgba(0, 0, 0, 0.55);
+  --shadow-dialog: 0 24px 56px -8px rgba(0, 0, 0, 0.7);
 
   /* Syntax: indigo keywords; teal strings/built-ins; rose numbers/constants;
      green functions/tags; amber types/classes; muted comments/punctuation. */
@@ -300,6 +318,66 @@ colours and keep aliases as references; check contrast after editing.
 Colours live in theme files. Components use semantic utilities or `var(...)`.
 Derived colours may use `color-mix` with tokens and `transparent`; do not add
 colour literals outside theme files.
+
+## Shape, depth and keyboard focus
+
+Brand shape and motion live in the base `:root` of `web/tailwind.css`, shared by
+all themes. `@theme inline` bridges the radius and shadow names to utilities
+without another set of values. The explicit radius scale replaces Basecoat's
+calculated scale. `--radius` keeps Basecoat's 0.625rem base; each named radius
+is explicit, so its old calculated offsets do not alter the fibo scale.
+
+| Token | Value | Used for |
+| --- | --- | --- |
+| `--radius-sm` | 6px | Keys and menu rows |
+| `--radius-md` | 10px | Inputs, tabs, dropdowns and popovers |
+| `--radius-lg` | 14px | Tab rails and empty states |
+| `--radius-xl` | 20px | Cards, dialogs, command palette and prompt boxes |
+| `--radius-2xl` | 24px | Toasts and chat bubbles |
+| `--radius-pill` | 999px | Buttons, badges and chips |
+
+The commented **fibo layer** follows the Basecoat imports inside
+`@layer components`. It matches Vega's compact-button, tab, field and popover
+selectors where necessary. Utilities retain their later cascade layer, so an
+explicit `rounded-md` still overrides a button's pill shape. Avoid those
+exceptions in product markup; use the component's shape by default.
+
+Button groups have square seams and rounded outer ends, including vertical,
+single-child and wrapped menu triggers. Vega marks its last-end radius important;
+the group scopes its `--radius-md` input to the pill or vertical-end token rather
+than adding important declarations. Icon-only buttons keep Basecoat's square
+size and become circles. Cards, inputs and buttons remain flat. Selected tabs
+use `shadow-raise`; focused prompt boxes use it only during keyboard focus.
+Popovers, dropdowns, toasts and floating custom cards use `shadow-pop`.
+Dialogs and the command palette use `shadow-dialog`, with nested floating
+components flattened. Shadows set `--tw-shadow` to preserve Tailwind's composed
+border rings. The old `--shadow` has no direct consumers and is supported only as
+an optional legacy fallback for user themes.
+
+Every keyboard-focusable control gets a solid 2px `--focus` outline with a 2px
+offset, falling back to Basecoat's `--ring` in older themes. This includes custom
+editor tabs, tree rows, note summaries and explain controls. Focus shadows are
+cleared so they do not stack with the outline. Checked checkbox/radio edges use
+`--spiral`, falling back to `--primary-text`.
+
+The `special` button variant uses periwinkle fill and `on-pastel` text. Hover
+and expanded states mix that fill at 82% with ink; disabled controls keep
+Basecoat's disabled treatment. Badge `data-tone` values are `brand` (pistachio),
+`agent` (periwinkle), `added` (aqua), `waiting` (lemon) and `file` (bubblegum).
+Use them only when the existing label has that meaning. Link variants use
+`--primary-text` for readable text.
+
+Motion tokens are `--duration-fast: 120ms`, `--duration-base: 200ms` and
+`--duration-slow: 300ms`. Curves are `--ease-out:
+cubic-bezier(0.22, 1, 0.36, 1)`, `--ease-in-out:
+cubic-bezier(0.65, 0, 0.35, 1)` and `--ease-spring:
+cubic-bezier(0.34, 1.56, 0.64, 1)`. This phase uses fast/out for the special
+variant; unrelated motion is unchanged.
+
+The browser regression fixture at `web/tests/fibo-shape.html` uses the actual
+compiled app CSS and served themes. Build the frontend, serve a dev asset root,
+and open `/static/tests/fibo-shape.html`. Its result is also available as
+`window.fiboShapeResults`; it throws on a failed computed-style assertion.
 
 ## Desktop shell and type scale
 
