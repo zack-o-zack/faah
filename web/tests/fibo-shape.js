@@ -36,6 +36,21 @@ function shadow(element, expected, name) {
     check(`${name} painted shadow`, style(element).boxShadow.includes(resolved), true);
   probe.remove();
 }
+function contrast(foreground, background) {
+  const luminance = (color) => {
+    const channels = color
+      .match(/[\d.]+/g)
+      .slice(0, 3)
+      .map(Number)
+      .map((channel) => {
+        const value = channel / 255;
+        return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+      });
+    return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+  };
+  const values = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
+  return (values[0] + 0.05) / (values[1] + 0.05);
+}
 function corners(element) {
   const s = style(element);
   return [
@@ -140,14 +155,32 @@ for (const theme of ['fibo-light', 'fibo-dark']) {
     );
   }
   const pressed = mount(
-    '<div class="button-group"><button class="btn" aria-pressed="true">On</button><button class="btn" aria-pressed="false">Off</button></div>',
+    '<div class="button-group"><button class="btn" data-variant="outline" aria-pressed="true">On</button><button class="btn" data-variant="outline" aria-pressed="false">Off</button></div>',
   );
   test(
     'pressed group fill',
     style(pressed.children[0]).backgroundColor,
-    token('background-color', '--accent'),
+    token('background-color', '--foreground'),
   );
-  test('pressed group ink', style(pressed.children[0]).color, token('color', '--foreground'));
+  test(
+    'group segments share border colour',
+    style(pressed.children[0]).borderTopColor,
+    style(pressed.children[1]).borderTopColor,
+  );
+  test('group pressed has border', style(pressed.children[0]).borderTopWidth, '1px');
+  test('group off has border', style(pressed.children[1]).borderTopWidth, '1px');
+  test('group off has square inner seam', style(pressed.children[1]).borderTopLeftRadius, '0px');
+  test('pressed group ink', style(pressed.children[0]).color, token('color', '--background'));
+  test(
+    'group border uses input token',
+    style(pressed.children[0]).borderTopColor,
+    token('border-color', '--input'),
+  );
+  test(
+    'pressed group text contrast at least 7:1',
+    contrast(style(pressed.children[0]).color, style(pressed.children[0]).backgroundColor) >= 7,
+    true,
+  );
   test(
     'unpressed group ink',
     style(pressed.children[1]).color,
@@ -305,12 +338,49 @@ for (const theme of ['fibo-light', 'fibo-dark']) {
     '<div class="tabs"><nav role="tablist"><button role="tab" aria-selected="true">Selected</button></nav></div>',
   );
   shadow(tabs.querySelector('button'), '--shadow-raise', `${theme}: selected tab`);
+  test(
+    'selected rail background',
+    style(tabs.querySelector('button')).backgroundColor,
+    token('background-color', '--foreground'),
+  );
+  test(
+    'rail muted background',
+    style(tabs.querySelector('nav')).backgroundColor,
+    token('background-color', '--muted'),
+  );
+  test(
+    'selected rail ink',
+    style(tabs.querySelector('button')).color,
+    token('color', '--background'),
+  );
+  test(
+    'rail continuous border colour',
+    style(tabs.querySelector('nav')).borderTopColor,
+    token('border-color', '--input'),
+  );
+  test('rail continuous border width', style(tabs.querySelector('nav')).borderTopWidth, '1px');
+  test(
+    'selected rail text contrast at least 7:1',
+    contrast(
+      style(tabs.querySelector('button')).color,
+      style(tabs.querySelector('button')).backgroundColor,
+    ) >= 7,
+    true,
+  );
+  for (const [size, height] of [
+    ['xs', '24px'],
+    ['sm', '32px'],
+  ]) {
+    tabs.dataset.size = size;
+    test(`compact rail ${size} height`, style(tabs.querySelector('nav')).height, height);
+  }
   const dialog = mount(
     '<dialog class="dialog" open><section><div class="popover"><div data-popover>Nested</div></div><div class="card shadow-pop">Nested card</div><div class="tabs"><nav role="tablist"><button role="tab" aria-selected="true">Nested tab</button></nav></div></section></dialog>',
   );
   shadow(dialog.firstElementChild, '--shadow-dialog', `${theme}: dialog elevation`);
-  for (const element of dialog.querySelectorAll('[data-popover],.card,[role="tab"]'))
+  for (const element of dialog.querySelectorAll('[data-popover],.card'))
     shadow(element, '--flat-shadow', `${theme}: flat dialog child ${element.className}`);
+  shadow(dialog.querySelector('[role="tab"]'), '--shadow-raise', `${theme}: selected dialog tab`);
   const command = mount(
     '<dialog class="command-dialog" open><div class="command">Commands</div></dialog>',
   );

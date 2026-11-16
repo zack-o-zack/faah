@@ -99,7 +99,7 @@ export function ThreadDetail(): JSX.Element {
                 <For each={['pr', 'mine', 'selection']}>
                   {(scope) => (
                     <button
-                      class="btn h-6 px-2 text-xs"
+                      class="btn"
                       data-variant="outline"
                       data-size="xs"
                       data-scope={scope}

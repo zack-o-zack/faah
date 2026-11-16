@@ -1,3 +1,4 @@
+import { TabRail } from '../lib/TabRail.tsx';
 import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
@@ -13,32 +14,39 @@ export function Calls(): JSX.Element {
         <span id="right-calls-target" class="inspector-sym-title truncate font-mono font-semibold">
           {language.state.calls?.word}
         </span>
-        <div role="group" id="calls-dir" class="button-group">
+        <TabRail id="calls-dir" label="Call direction">
           <button
-            class="btn"
+            id="calls-in"
             data-dir="in"
             data-control="opt"
-            data-size="xs"
-            data-variant={language.state.direction === 'in' ? 'secondary' : 'outline'}
-            aria-pressed={language.state.direction === 'in' ? true : undefined}
+            role="tab"
+            aria-controls="right-calls-list"
+            tabindex={language.state.direction === 'in' ? 0 : -1}
+            aria-selected={language.state.direction === 'in'}
             onClick={() => editor.actions.setCallDirection('in')}
           >
             Callers
           </button>
           <button
-            class="btn"
+            id="calls-out"
             data-dir="out"
             data-control="opt"
-            data-size="xs"
-            data-variant={language.state.direction === 'out' ? 'secondary' : 'outline'}
-            aria-pressed={language.state.direction === 'out' ? true : undefined}
+            role="tab"
+            aria-controls="right-calls-list"
+            tabindex={language.state.direction === 'out' ? 0 : -1}
+            aria-selected={language.state.direction === 'out'}
             onClick={() => editor.actions.setCallDirection('out')}
           >
             Callees
           </button>
-        </div>
+        </TabRail>
       </div>
-      <div class="panel-body min-h-0 flex-1 overflow-auto pb-4" id="right-calls-list">
+      <div
+        class="panel-body min-h-0 flex-1 overflow-auto pb-4"
+        id="right-calls-list"
+        role="tabpanel"
+        aria-labelledby={language.state.direction === 'in' ? 'calls-in' : 'calls-out'}
+      >
         <Show
           when={['off', 'failed'].includes(editor.active()?.lsp?.state || 'off')}
           fallback={

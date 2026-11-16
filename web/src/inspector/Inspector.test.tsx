@@ -8,6 +8,7 @@ import { createAppStore } from '../app/store.ts';
 import { EditorProvider } from '../editor/context.tsx';
 import { InspectorToolbar } from './InspectorToolbar.tsx';
 import { Symbols } from './Symbols.tsx';
+import { Calls } from './Calls.tsx';
 import { LspSetup } from '../lsp/LspSetup.tsx';
 test('fresh inspector tabs and symbol filtering invoke named navigation actions', () => {
   const centerLine = vi.fn();
@@ -44,6 +45,14 @@ test('fresh inspector tabs and symbol filtering invoke named navigation actions'
   expect(screen.getByRole('tab', { name: 'References' }).getAttribute('aria-selected')).toBe(
     'true',
   );
+  const references = screen.getByRole<HTMLButtonElement>('tab', { name: 'References' });
+  references.focus();
+  fireEvent.keyDown(references, { key: 'ArrowLeft' });
+  const search = screen.getByRole<HTMLButtonElement>('tab', { name: 'Search' });
+  expect(document.activeElement).toBe(search);
+  expect(search.getAttribute('aria-selected')).toBe('true');
+  expect(references.tabIndex).toBe(-1);
+  expect(search.getAttribute('aria-controls')).toBe('pane-right-search');
 });
 test('setup explains a disabled language service without offering installation', () => {
   render(() => {
@@ -59,4 +68,26 @@ test('setup explains a disabled language service without offering installation',
   });
   expect(screen.getByText(/Restart it without that flag/)).toBeTruthy();
   expect(screen.queryByRole('button', { name: 'Install' })).toBeNull();
+});
+
+test('call direction rail relabels its shared panel and supports keyboard activation', () => {
+  render(() => {
+    const base = createEditorStore(createAppStore(), {
+      language: { request: async () => ({ enabled: false }) },
+    });
+    return (
+      <EditorProvider value={base}>
+        <Calls />
+      </EditorProvider>
+    );
+  });
+  const callers = screen.getByRole<HTMLButtonElement>('tab', { name: 'Callers' });
+  const callees = screen.getByRole<HTMLButtonElement>('tab', { name: 'Callees' });
+  callers.focus();
+  fireEvent.keyDown(callers, { key: 'ArrowRight' });
+  expect(document.activeElement).toBe(callees);
+  expect(callees.getAttribute('aria-selected')).toBe('true');
+  expect(callers.tabIndex).toBe(-1);
+  expect(screen.getByRole('tabpanel').getAttribute('aria-labelledby')).toBe(callees.id);
+  expect(callees.getAttribute('aria-controls')).toBe(screen.getByRole('tabpanel').id);
 });

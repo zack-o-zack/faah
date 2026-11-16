@@ -1,3 +1,4 @@
+import { TabRail } from '../lib/TabRail.tsx';
 import type { JSX } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { Brand } from '../brand/Brand.tsx';
@@ -23,14 +24,14 @@ export function TreeToolbar(): JSX.Element {
         </button>
       </span>
       <span class="panel-actions ml-auto flex shrink-0 items-center gap-1">
-        <div class="button-group mr-1" role="group" aria-label="Explorer view mode">
+        <TabRail label="Explorer view mode" size="xs">
           <button
             id="btn-files"
-            class="btn"
-            aria-pressed={tree.mode() === 'files'}
-            data-variant={tree.mode() === 'files' ? 'secondary' : 'outline'}
+            role="tab"
+            aria-controls="tree-panel"
+            tabindex={tree.mode() === 'files' ? 0 : -1}
+            aria-selected={tree.mode() === 'files'}
             onClick={() => void editor.actions.setTreeMode('files')}
-            data-size="xs"
             data-control="view-choice"
           >
             <span class="icon-[lucide--folder] size-3 shrink-0" aria-hidden="true" />
@@ -38,17 +39,17 @@ export function TreeToolbar(): JSX.Element {
           </button>
           <button
             id="btn-changed"
-            class="btn"
-            aria-pressed={tree.mode() === 'git'}
-            data-variant={tree.mode() === 'git' ? 'secondary' : 'outline'}
+            role="tab"
+            aria-controls="tree-panel"
+            tabindex={tree.mode() === 'git' ? 0 : -1}
+            aria-selected={tree.mode() === 'git'}
             onClick={() => void editor.actions.setTreeMode('git')}
-            data-size="xs"
             data-control="view-choice"
           >
             <span class="icon-[lucide--git-branch] size-3 shrink-0" aria-hidden="true" />
             <span>Diff</span>
           </button>
-        </div>
+        </TabRail>
         <button
           id="btn-new-file"
           class="btn ml-auto"

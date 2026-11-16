@@ -202,7 +202,9 @@
     --radius-md: var(--radius-pill);
     border-radius: var(--radius-pill);
   }
-  .button-group > .btn[aria-pressed='true'] { background-color: var(--accent); color: var(--foreground); }
+  /* Ink selection keeps both states distinct without mixing button variants. */
+  .button-group > .btn[aria-pressed] { border-color: var(--input); }
+  .button-group > .btn[aria-pressed='true'] { background-color: var(--foreground); color: var(--background); }
   .button-group > .btn[aria-pressed='false'] { color: var(--muted-foreground); }
   .button-group > .btn[aria-pressed='false']:hover { color: var(--foreground); }
 
@@ -211,14 +213,32 @@
   /* Vega nests every input alias under its most specific header exclusion. */
   :is(.input, .textarea, .field > :is(input, select, textarea),
       .field > input[type='text']:not(:is(.command > header input, .dialog > * > header input))) { --tw-shadow: 0 0 transparent; }
-  .tabs > [role='tablist']:not([data-variant='line']) > [role='tab'][aria-selected='true'] { --tw-shadow: var(--shadow-raise); }
+  .tabs > [role='tablist']:not([data-variant='line']) { border: 1px solid var(--input); }
+  .tabs > [role='tablist']:not([data-variant='line']) > [role='tab'][aria-selected='true'] {
+    background-color: var(--foreground);
+    color: var(--background);
+    border-color: var(--foreground);
+    --tw-shadow: var(--shadow-raise);
+  }
+  /* Toolbar rails preserve the previous xs/sm control and toolbar heights. */
+  .tabs:is([data-size='xs'], [data-size='sm']) > [role='tablist'] {
+    height: var(--tab-rail-height);
+    padding: 2px;
+  }
+  .tabs[data-size='xs'] { --tab-rail-height: 1.5rem; }
+  .tabs[data-size='sm'] { --tab-rail-height: 2rem; }
+  .tabs:is([data-size='xs'], [data-size='sm']) > [role='tablist'] > [role='tab'] {
+    height: 100%;
+    padding-block: 0;
+  }
+  .tabs[data-size] > [role='tablist'] > [role='tab'] { font-size: var(--text-xs); }
   .tab.active { @apply shadow-raise; }
   [data-popover], .dropdown-menu > [data-popover], .combobox [data-popover],
   .select:not(select) [data-popover], .toast-content { --tw-shadow: var(--shadow-pop); }
   .dialog > *, .alert-dialog > *, .command-dialog > .command { --tw-shadow: var(--shadow-dialog); }
-  /* Flatten nested modal surfaces and selected tabs. Focused field groups
+  /* Flatten nested modal surfaces. Selected tabs and focused field groups
      keep their own focus elevation. */
-  :is(.dialog, .alert-dialog, .command-dialog) :is([data-popover], .toast-content, .card, .tab.active, .tabs > [role='tablist'] > [role='tab'][aria-selected='true']) { --tw-shadow: 0 0 transparent; }
+  :is(.dialog, .alert-dialog, .command-dialog) :is([data-popover], .toast-content, .card, .tab.active) { --tw-shadow: 0 0 transparent; }
 
   /* The group owns the fill and focus mark for its chromeless text controls.
      Basecoat already makes direct input/textarea/select children transparent,

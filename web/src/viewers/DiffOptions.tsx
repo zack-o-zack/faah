@@ -34,11 +34,7 @@ export function DiffOptions(props: { id: string }): JSX.Element {
                   class="btn"
                   data-size="sm"
                   aria-pressed={editor.settings.preferences().splitDiff === option.split}
-                  data-variant={
-                    editor.settings.preferences().splitDiff === option.split
-                      ? 'secondary'
-                      : 'outline'
-                  }
+                  data-variant="outline"
                   onClick={() =>
                     void editor.settings.actions.setSetting(
                       'diffEditor.renderSideBySide',

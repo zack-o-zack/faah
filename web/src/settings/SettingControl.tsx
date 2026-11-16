@@ -22,7 +22,7 @@ const Segments: Component<{ item: SettingItem; options: (string | number)[]; lab
             class="btn"
             data-size="sm"
             aria-pressed={current() === String(option)}
-            data-variant={current() === String(option) ? 'secondary' : 'outline'}
+            data-variant="outline"
             onClick={() =>
               void settings.actions.setSetting(
                 props.item.key,

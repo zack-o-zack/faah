@@ -15,6 +15,7 @@ export function TreeScope(): JSX.Element {
       <div class="button-group w-full" role="group" aria-label="Changes to show">
         <button
           class="btn flex-1"
+          data-variant="outline"
           data-scope="all"
           aria-pressed={editor.tree.scope() === 'all'}
           onClick={() => void editor.actions.setTreeScope('all')}
@@ -23,6 +24,7 @@ export function TreeScope(): JSX.Element {
         </button>
         <button
           class="btn flex-1"
+          data-variant="outline"
           data-scope="yours"
           aria-pressed={editor.tree.scope() === 'yours'}
           onClick={() => void editor.actions.setTreeScope('yours')}

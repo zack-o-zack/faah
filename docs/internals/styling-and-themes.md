@@ -342,6 +342,12 @@ selectors where necessary. Utilities retain their later cascade layer, so an
 explicit `rounded-md` still overrides a button's pill shape. Avoid those
 exceptions in product markup; use the component's shape by default.
 
+View switches use the tabs rail. One-choice filters and options use ButtonGroup
+with one variant for every segment, never swap variants per segment. The Ink
+selection uses `foreground` fill and `background` text for selected rail tabs
+and pressed group segments. Rails have one `input` border; every group segment
+keeps that same border colour in either state.
+
 Button groups have square seams and rounded outer ends, including vertical,
 single-child and wrapped menu triggers. Vega marks its last-end radius important;
 the group scopes its `--radius-md` input to the pill or vertical-end token rather
@@ -350,9 +356,10 @@ size and become circles. Cards, inputs and buttons remain flat. Selected tabs
 use `shadow-raise`; text-field groups use it during mouse or keyboard focus.
 Popovers, dropdowns, toasts and floating custom cards use `shadow-pop`.
 Dialogs and the command palette use `shadow-dialog`, with nested floating
-components flattened. Shadows set `--tw-shadow` to preserve Tailwind's composed
-border rings. The old `--shadow` has no direct consumers and is supported only as
-an optional legacy fallback for user themes.
+components flattened. Selected rail tabs retain `shadow-raise` inside dialogs.
+Shadows set `--tw-shadow` to preserve Tailwind's composed border rings. The old
+`--shadow` has no direct consumers and is supported only as an optional legacy
+fallback for user themes.
 
 Standalone Basecoat fields (`.input`, `.textarea` and `.field > input/select/textarea`),
 buttons, badges, tabs, items and menus get a solid 2px `--focus` keyboard outline

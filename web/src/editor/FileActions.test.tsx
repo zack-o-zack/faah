@@ -152,3 +152,35 @@ test('unsupported binary files never expose the explain action', async () => {
   expect(screen.queryByRole('button', { name: 'Explain this file' })).toBeNull();
   fixture.view.unmount();
 });
+
+test('file view rails retain hooks, activate with arrows and rove the keyboard stop', async () => {
+  const fixture = setup();
+  await fixture.editor.actions.openFile('a.go');
+  fixture.editor.store.actions.setWorkspace({ git: true, gitFiles: ['a.go'] });
+  fixture.editor.actions.patch({ diffAvailable: true });
+  const file = screen.getByRole<HTMLButtonElement>('tab', { name: 'File' });
+  const changes = screen.getByRole<HTMLButtonElement>('tab', { name: 'Changes' });
+  expect(file.id).toBe('diff-source');
+  expect(changes.id).toBe('diff-btn');
+  expect(file.getAttribute('aria-controls')).toBe('editor');
+  expect(file.getAttribute('aria-selected')).toBe('true');
+  expect(file.tabIndex).toBe(0);
+  file.focus();
+  fireEvent.keyDown(file, { key: 'ArrowRight' });
+  expect(document.activeElement).toBe(changes);
+  expect(changes.getAttribute('aria-selected')).toBe('true');
+  expect(file.tabIndex).toBe(-1);
+  fireEvent.keyDown(changes, { key: 'Home' });
+  expect(file.getAttribute('aria-selected')).toBe('true');
+  fixture.editor.actions.patch({ path: 'a.md', view: 'source', lang: 'Markdown' });
+  const preview = screen.getByRole<HTMLButtonElement>('tab', { name: 'Preview' });
+  const source = screen.getByRole<HTMLButtonElement>('tab', { name: 'Source' });
+  expect(preview.dataset.md).toBe('preview');
+  expect(source.dataset.md).toBe('source');
+  fireEvent.click(preview);
+  expect(preview.getAttribute('aria-selected')).toBe('true');
+  fireEvent.keyDown(preview, { key: 'End' });
+  expect(document.activeElement).toBe(source);
+  expect(source.getAttribute('aria-selected')).toBe('true');
+  fixture.view.unmount();
+});

@@ -52,7 +52,13 @@ test.each([
   [true, true],
 ])('local workflows have no Review section (git=%s, changed=%s)', (git, changed) => {
   const editor = mount(git, changed);
-  fireEvent.click(screen.getByRole('button', { name: 'Diff' }));
+  fireEvent.click(screen.getByRole('tab', { name: 'Diff' }));
+  const diff = screen.getByRole<HTMLButtonElement>('tab', { name: 'Diff' });
+  expect(diff.getAttribute('aria-controls')).toBe('tree-panel');
+  expect(document.getElementById('tree-panel')?.getAttribute('aria-labelledby')).toBe(diff.id);
+  fireEvent.keyDown(diff, { key: 'Home' });
+  expect(screen.getByRole('tab', { name: 'Files' }).getAttribute('aria-selected')).toBe('true');
+  expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Files' }));
   expect(document.getElementById('btn-review')).toBeNull();
   expect(document.getElementById('btn-pr-toggle')).toBeNull();
   pressReviewShortcut();

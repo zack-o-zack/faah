@@ -10,6 +10,7 @@ import { ReviewToggle } from '../review/ReviewToggle.tsx';
 import { ReviewView } from '../review/ReviewView.tsx';
 import { PRPanels } from '../pr/PRPanels.tsx';
 import { TabStrip } from '../editor/TabStrip.tsx';
+import { canDiff, previewKind, viewMode } from '../viewers/view.ts';
 import { FileActions } from '../editor/FileActions.tsx';
 import { Viewport } from '../editor/Viewport.tsx';
 import { EditView } from '../editor/EditView.tsx';
@@ -19,11 +20,12 @@ import { Minimap } from '../editor/Minimap.tsx';
 import { Viewers } from '../viewers/Viewers.tsx';
 import { EditorCorner } from '../viewers/EditorCorner.tsx';
 import { Welcome } from './Welcome.tsx';
+import type { DocTab } from '../editor/types.ts';
 import type { WorkspaceMeta } from './types.ts';
 
 /** What the page layout reads from the editor store. */
 interface ShellEditor {
-  active: () => object | null;
+  active: () => DocTab | null;
   store: { state: { workspace: { meta: WorkspaceMeta | null }; layout: { right: boolean } } };
   review: { state: { mode: 'code' | 'review' } };
   actions: { togglePanel: (panel: 'right') => void };
@@ -104,6 +106,15 @@ const TopBar: Component = () => {
 /** The page: file tree, editor column, inspector and threads, side by side. */
 export const AppShell: Component = () => {
   const editor: ShellEditor = useEditor();
+  const viewTab = () => {
+    const file = editor.active();
+    if (!file || file.isEditing) return undefined;
+    if (previewKind(file) && !file.diffMode)
+      return ['markdown', 'table'].includes(viewMode(file)) ? 'md-preview' : 'md-source';
+    if (canDiff(file, editor.store.state.workspace.meta))
+      return file.diffMode ? 'diff-btn' : 'diff-source';
+    return undefined;
+  };
   return (
     <div id="app" class="flex h-dvh overflow-hidden">
       <Sidebar />
@@ -115,6 +126,8 @@ export const AppShell: Component = () => {
         </TabStrip>
         <div
           id="editor"
+          role={viewTab() ? 'tabpanel' : undefined}
+          aria-labelledby={viewTab()}
           class="relative min-h-0 flex-1 overflow-hidden bg-background"
           hidden={editor.review.state.mode === 'review'}
         >

@@ -1,3 +1,4 @@
+import { TabRail } from '../lib/TabRail.tsx';
 import { onCleanup, onMount, Show, type Component } from 'solid-js';
 import { useSettings } from './context.ts';
 
@@ -62,15 +63,15 @@ export const SettingsToolbar: Component = () => {
           </button>
         </div>
       </Show>
-      <div class="button-group" role="group" aria-label="Settings view">
+      <TabRail label="Settings view" size="sm">
         <button
           type="button"
           id="settings-mode-ui"
           title="Settings UI"
-          class="btn"
-          data-size="sm"
-          aria-pressed={dialog().mode === 'ui'}
-          data-variant={dialog().mode === 'ui' ? 'secondary' : 'outline'}
+          role="tab"
+          aria-controls="settings-body"
+          tabindex={dialog().mode === 'ui' ? 0 : -1}
+          aria-selected={dialog().mode === 'ui'}
           onClick={() => settings.actions.setSettingsMode('ui')}
         >
           UI
@@ -79,15 +80,15 @@ export const SettingsToolbar: Component = () => {
           type="button"
           id="settings-mode-json"
           title="Edit settings.json"
-          class="btn"
-          data-size="sm"
-          aria-pressed={dialog().mode === 'json'}
-          data-variant={dialog().mode === 'json' ? 'secondary' : 'outline'}
+          role="tab"
+          aria-controls="settings-body"
+          tabindex={dialog().mode === 'json' ? 0 : -1}
+          aria-selected={dialog().mode === 'json'}
           onClick={() => settings.actions.setSettingsMode('json')}
         >
           JSON
         </button>
-      </div>
+      </TabRail>
       <button
         id="settings-close"
         type="button"

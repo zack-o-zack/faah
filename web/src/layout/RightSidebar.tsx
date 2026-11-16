@@ -18,6 +18,8 @@ export function RightSidebar(): JSX.Element {
       <InspectorToolbar />
       <section
         id="pane-right-refs"
+        role="tabpanel"
+        aria-labelledby="inspector-tab-refs"
         class="flex min-h-0 flex-1 flex-col overflow-hidden"
         hidden={layout().inspector !== 'refs'}
       >
@@ -25,6 +27,8 @@ export function RightSidebar(): JSX.Element {
       </section>
       <section
         id="pane-right-symbols"
+        role="tabpanel"
+        aria-labelledby="inspector-tab-symbols"
         class="flex min-h-0 flex-1 flex-col overflow-hidden"
         hidden={layout().inspector !== 'symbols'}
       >
@@ -32,6 +36,8 @@ export function RightSidebar(): JSX.Element {
       </section>
       <section
         id="pane-right-calls"
+        role="tabpanel"
+        aria-labelledby="inspector-tab-calls"
         class="flex min-h-0 flex-1 flex-col overflow-hidden"
         hidden={layout().inspector !== 'calls'}
       >
@@ -39,6 +45,8 @@ export function RightSidebar(): JSX.Element {
       </section>
       <section
         id="pane-right-search"
+        role="tabpanel"
+        aria-labelledby="inspector-tab-search"
         class="flex min-h-0 flex-1 flex-col overflow-hidden"
         hidden={layout().inspector !== 'search'}
       >
