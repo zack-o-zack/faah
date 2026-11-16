@@ -44,7 +44,7 @@ export function GitSyncMenu(): JSX.Element {
         title="git sync: pull, then push"
         aria-label="git sync"
         class="btn gap-1 px-2!"
-        data-variant="secondary"
+        data-variant="outline"
         data-size="sm"
         disabled={!!editor.git.state.pending}
         onClick={() => void editor.actions.syncGit()}
@@ -63,8 +63,8 @@ export function GitSyncMenu(): JSX.Element {
       </button>
       <DropdownMenu
         triggerId="git-sync-caret"
-        triggerClass="btn border-l border-background"
-        variant="secondary"
+        triggerClass="btn"
+        variant="outline"
         size="icon-sm"
         panelId="git-sync-menu"
         accessibleLabel="Sync actions"

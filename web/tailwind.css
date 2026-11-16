@@ -203,8 +203,10 @@
     border-radius: var(--radius-pill);
   }
   /* Ink selection keeps both states distinct without mixing button variants. */
-  .button-group > .btn[aria-pressed] { border-color: var(--input); }
-  .button-group > .btn[aria-pressed='true'] { background-color: var(--foreground); color: var(--background); }
+  .button-group > .btn:is([aria-pressed], [aria-checked]),
+  .button-group > .btn[data-variant='outline'],
+  .button-group > :is(.dropdown-menu, .popover, .select) > .btn[data-variant='outline'] { border-color: var(--input); }
+  .button-group > .btn:is([aria-pressed='true'], [aria-checked='true']) { background-color: var(--foreground); color: var(--background); }
   .button-group > .btn[aria-pressed='false'] { color: var(--muted-foreground); }
   .button-group > .btn[aria-pressed='false']:hover { color: var(--foreground); }
 
@@ -281,9 +283,23 @@
   }
   .btn[data-variant='special']:hover,
   .btn[data-variant='special'][aria-expanded='true'] { background-color: color-mix(in oklab, var(--periwinkle) 82%, var(--ink, var(--foreground))); }
-  .badge[data-tone], a.badge[data-tone]:hover {
-    background-color: var(--badge-tone); color: var(--on-pastel); border-color: transparent;
+  /* Badge surfaces must read independently of the surrounding panel. */
+  .badge { border-color: var(--input); }
+  .badge[data-variant='secondary'] {
+    background-color: var(--foreground); color: var(--background); border-color: var(--foreground);
   }
+  .badge[data-variant='outline'] { border-color: var(--input); }
+  .badge[data-variant='destructive'] {
+    background-color: var(--destructive); color: var(--destructive-foreground); border-color: var(--destructive);
+  }
+  .badge:is([data-variant='ghost'], [data-variant='link']) { border-color: transparent; }
+  .badge[data-tone], .badge[data-k], a.badge[data-tone]:hover {
+    background-color: var(--badge-tone); color: var(--on-pastel); border-color: var(--input);
+  }
+  .badge[data-k] { --badge-tone: var(--bubblegum); }
+  .badge[data-k]:is([data-k='func'], [data-k='method'], [data-k='fn'], [data-k='def'], [data-k='defp']) { --badge-tone: var(--pistachio); }
+  .badge[data-k]:is([data-k='class'], [data-k='struct'], [data-k='interface'], [data-k='type'], [data-k='enum'], [data-k='trait'], [data-k='record'], [data-k='protocol']) { --badge-tone: var(--lemon); }
+  .badge[data-k]:is([data-k='module'], [data-k='mod'], [data-k='namespace'], [data-k='defmodule'], [data-k='impl'], [data-k='extension']) { --badge-tone: var(--periwinkle); }
   .badge[data-tone='brand'] { --badge-tone: var(--pistachio); }
   .badge[data-tone='agent'] { --badge-tone: var(--periwinkle); }
   .badge[data-tone='added'] { --badge-tone: var(--aqua); }
@@ -291,6 +307,16 @@
   .badge[data-tone='file'] { --badge-tone: var(--bubblegum); }
   .btn[data-variant='link'], .badge[data-variant='link'], a.badge[data-variant='link']:hover,
   :is(.empty > header > p, .item p, .field > p) > a:hover { color: var(--primary-text); }
+  .badge[data-variant='link'], a.badge[data-variant='link']:hover { background-color: transparent; border-color: transparent; }
+  /* A gap and outlined neutral segments distinguish status without colour alone. */
+  .progress[data-checks] { height: 0.5rem; gap: 2px; background-color: var(--background); }
+  .progress[data-checks] > span { flex-basis: 0; min-width: 2px; border-radius: var(--radius-pill); }
+  .progress[data-checks] > span[data-state='passed'] { background-color: var(--gi); }
+  .progress[data-checks] > span[data-state='failed'] { background-color: var(--destructive); }
+  .progress[data-checks] > span[data-state='running'] { background-color: var(--warn); }
+  .progress[data-checks] > span:is([data-state='neutral'], [data-state='skipped']) {
+    background-color: var(--background); outline: 1px solid var(--input); outline-offset: -1px;
+  }
   /* End fibo layer. */
 
   /* A shared 4px split bar with a transparent 8px grab area. Positioning utilities
@@ -677,13 +703,6 @@
   .thr-body .thr-alert-important { --alert: var(--nc); --alert-icon: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 256 256%22%3E%3Cpath fill=%22black%22 d=%22M88 104a8 8 0 0 1 8-8h64a8 8 0 0 1 0 16H96a8 8 0 0 1-8-8m8 40h64a8 8 0 0 0 0-16H96a8 8 0 0 0 0 16m136-88v128a16 16 0 0 1-16 16h-60.43l-13.68 23.94a16 16 0 0 1-27.78 0L100.43 200H40a16 16 0 0 1-16-16V56a16 16 0 0 1 16-16h176a16 16 0 0 1 16 16m-16 0H40v128h65.07a8 8 0 0 1 7 4l16 28l16-28a8 8 0 0 1 7-4H216Z%22/%3E%3C/svg%3E"); }
   .thr-body .thr-alert-warning { --alert: var(--mark-active); --alert-icon: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 256 256%22%3E%3Cpath fill=%22black%22 d=%22M236.8 188.09L149.35 36.22a24.76 24.76 0 0 0-42.7 0L19.2 188.09a23.51 23.51 0 0 0 0 23.72A24.35 24.35 0 0 0 40.55 224h174.9a24.35 24.35 0 0 0 21.33-12.19a23.51 23.51 0 0 0 .02-23.72m-13.87 15.71a8.5 8.5 0 0 1-7.48 4.2H40.55a8.5 8.5 0 0 1-7.48-4.2a7.59 7.59 0 0 1 0-7.72l87.45-151.87a8.75 8.75 0 0 1 15 0l87.45 151.87a7.59 7.59 0 0 1-.04 7.72M120 144v-40a8 8 0 0 1 16 0v40a8 8 0 0 1-16 0m20 36a12 12 0 1 1-12-12a12 12 0 0 1 12 12%22/%3E%3C/svg%3E"); }
   .thr-body .thr-alert-caution { --alert: var(--destructive); --alert-icon: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 256 256%22%3E%3Cpath fill=%22black%22 d=%22M120 136V80a8 8 0 0 1 16 0v56a8 8 0 0 1-16 0m112-44.45v72.9a15.86 15.86 0 0 1-4.69 11.31l-51.55 51.55a15.86 15.86 0 0 1-11.31 4.69h-72.9a15.86 15.86 0 0 1-11.31-4.69l-51.55-51.55A15.86 15.86 0 0 1 24 164.45v-72.9a15.86 15.86 0 0 1 4.69-11.31l51.55-51.55A15.86 15.86 0 0 1 91.55 24h72.9a15.86 15.86 0 0 1 11.31 4.69l51.55 51.55A15.86 15.86 0 0 1 232 91.55m-16 0L164.45 40h-72.9L40 91.55v72.9L91.55 216h72.9L216 164.45ZM128 160a12 12 0 1 0 12 12a12 12 0 0 0-12-12%22/%3E%3C/svg%3E"); }
-  /* The sparkle marks an action the coding harness runs; turn it a quarter
-     on hover. */
-  [class~="icon-[ph--sparkle]"] { transition: transform 450ms cubic-bezier(.16, 1, .3, 1); }
-  :is(button, a):hover:not(:disabled) [class~="icon-[ph--sparkle]"] { transform: rotate(90deg); }
-  @media (prefers-reduced-motion: reduce) {
-    [class~="icon-[ph--sparkle]"] { transition: none; }
-  }
 
   /* Text links that leave the app say so. */
   a[target="_blank"]:not(.btn, #pr-link, [data-ui~=cc-who], :has(img))::after {

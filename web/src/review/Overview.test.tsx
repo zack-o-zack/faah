@@ -396,3 +396,25 @@ test('segmented tabs stay single-line with plain counts and no second-line layou
   expect(tabs[1]?.querySelector('[data-tab-info]')?.textContent).toBe('0');
   expect(tabs[1]?.parentElement?.className).not.toContain('h-auto!');
 });
+
+test('check progress keeps counts as flex weights and distinguishes skipped segments', async () => {
+  const { editor } = mount({
+    ...overview,
+    checks: [
+      ...Array.from({ length: 6 }, (_, index) => ({ name: `Check ${index}`, state: 'passed' })),
+      { name: 'Optional check', state: 'skipped' },
+    ],
+  });
+  editor.actions.setReviewMode('review');
+  const progress = await screen.findByRole('img', {
+    name: 'Check proportions: 6 passed, 1 skipped',
+  });
+  expect(progress.classList.contains('progress')).toBe(true);
+  const segments = progress.querySelectorAll<HTMLSpanElement>('[data-state]');
+  expect([...segments].map((segment) => [segment.dataset.state, segment.style.flexGrow])).toEqual([
+    ['passed', '6'],
+    ['skipped', '1'],
+  ]);
+  expect(screen.getByText('6 passed')).toBeTruthy();
+  expect(screen.getByText('1 skipped')).toBeTruthy();
+});

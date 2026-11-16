@@ -362,7 +362,7 @@ exceptions in product markup; use the component's shape by default.
 View switches use the tabs rail. One-choice filters and options use ButtonGroup
 with one variant for every segment, never swap variants per segment. The Ink
 selection uses `foreground` fill and `background` text for selected rail tabs
-and pressed group segments. Rails have one `input` border; every group segment
+and pressed group segments, including checked review verdict radios. Rails have one `input` border; every group segment
 keeps that same border colour in either state.
 
 Button groups have square seams and rounded outer ends, including vertical,
@@ -407,7 +407,19 @@ The `special` button variant uses periwinkle fill and `on-pastel` text. Hover
 and expanded states mix that fill at 82% with ink; disabled controls keep
 Basecoat's disabled treatment. Badge `data-tone` values are `brand` (pistachio),
 `agent` (periwinkle), `added` (aqua), `waiting` (lemon) and `file` (bubblegum).
-Use them only when the existing label has that meaning. Link variants use
+Use them only when the existing label has that meaning. Secondary count badges
+use Ink (foreground fill, background text). Outline and pastel badges use the
+input border so their edges remain visible on panel surfaces. Destructive badges
+use solid destructive fill and the theme's paired destructive foreground. Symbol
+kind badges use the shared pastel tones instead of source-code syntax colours.
+
+Check proportions use Basecoat progress markup. Passed, failed and running
+segments have semantic solid fills; skipped and neutral segments have an input
+outline with background fill. Two-pixel gaps distinguish adjoining states, and
+flex weights preserve their relative proportions. Review verdict radios have one
+keyboard stop, with arrows and Home/End selecting enabled choices. The Git sync
+split action uses outline on both buttons with one shared border colour. Text counts and icons remain
+available so colour is not the only signal. Link variants use
 `--primary-text` for readable text.
 
 Motion tokens are `--duration-fast: 120ms`, `--duration-base: 200ms` and
@@ -482,6 +494,9 @@ replace `--mono` for diffs, code peeks, Markdown, paths, commands or keys.
 Clearing the setting restores `var(--mono)`. `EditorMeasure` measures after
 `document.fonts.ready` and every `loadingdone` event, and removes the listener
 on cleanup so delayed font swaps cannot leave stale column widths.
+
+The large Memory and CPU values in the metrics popover use bundled JetBrains
+Mono with tabular digits. Their labels retain Figtree.
 
 ### Type roles
 

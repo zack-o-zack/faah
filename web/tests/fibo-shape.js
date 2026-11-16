@@ -186,6 +186,33 @@ for (const theme of ['fibo-light', 'fibo-dark']) {
     style(pressed.children[1]).color,
     token('color', '--muted-foreground'),
   );
+  const verdicts = mount(
+    '<div class="button-group" role="radiogroup"><button class="btn" data-variant="outline" aria-checked="true">Comment</button><button class="btn" data-variant="outline" aria-checked="false">Approve</button></div>',
+  );
+  test(
+    'selected verdict Ink fill',
+    style(verdicts.children[0]).backgroundColor,
+    token('background-color', '--foreground'),
+  );
+  test(
+    'selected verdict text contrast',
+    contrast(style(verdicts.children[0]).color, style(verdicts.children[0]).backgroundColor) >= 7,
+    true,
+  );
+  test(
+    'verdict shared border colour',
+    style(verdicts.children[0]).borderTopColor,
+    style(verdicts.children[1]).borderTopColor,
+  );
+  const split = mount(
+    '<div class="button-group"><button class="btn" data-variant="outline">Sync</button><div class="dropdown-menu"><button class="btn" data-variant="outline">Menu</button></div></div>',
+  );
+  for (const button of split.querySelectorAll('button'))
+    test(
+      'sync outline edge contrast',
+      contrast(style(button).borderTopColor, token('background-color', '--background')) >= 3,
+      true,
+    );
   const special = mount('<button class="btn" data-variant="special">Explain</button>');
   test('special fill', style(special).backgroundColor, token('background-color', '--periwinkle'));
   test('special ink', style(special).color, token('color', '--on-pastel'));
@@ -214,7 +241,126 @@ for (const theme of ['fibo-light', 'fibo-dark']) {
       token('background-color', `--${fill}`),
     );
     test(`badge ${tone} ink`, style(badge).color, token('color', '--on-pastel'));
-    test(`badge ${tone} border`, style(badge).borderTopColor, 'rgba(0, 0, 0, 0)');
+    test(`badge ${tone} border`, style(badge).borderTopColor, token('border-color', '--input'));
+    test(
+      `badge ${tone} text contrast`,
+      contrast(style(badge).color, style(badge).backgroundColor) >= 4.5,
+      true,
+    );
+  }
+  for (const surface of ['--background', '--card', '--sidebar']) {
+    for (const variant of ['primary', 'secondary', 'outline', 'destructive', 'ghost', 'link']) {
+      const root = mount(
+        `<div style="background:var(${surface})"><a class="badge" data-variant="${variant}">Badge</a></div>`,
+      );
+      const badge = root.firstElementChild;
+      const fill =
+        style(badge).backgroundColor === 'rgba(0, 0, 0, 0)'
+          ? style(root).backgroundColor
+          : style(badge).backgroundColor;
+      test(
+        `badge ${variant} on ${surface} text contrast`,
+        contrast(style(badge).color, fill) >= 4.5,
+        true,
+      );
+      if (variant === 'secondary') {
+        test(
+          'count badge Ink fill',
+          style(badge).backgroundColor,
+          token('background-color', '--foreground'),
+        );
+        test('count badge Ink text', style(badge).color, token('color', '--background'));
+      }
+      if (variant === 'outline')
+        test(
+          `outline badge edge on ${surface}`,
+          contrast(style(badge).borderTopColor, style(root).backgroundColor) >= 3,
+          true,
+        );
+    }
+  }
+  for (const kind of [
+    'func',
+    'method',
+    'fn',
+    'def',
+    'defp',
+    'class',
+    'struct',
+    'interface',
+    'type',
+    'enum',
+    'trait',
+    'record',
+    'protocol',
+    'const',
+    'var',
+    'let',
+    'val',
+    'module',
+    'mod',
+    'namespace',
+    'defmodule',
+    'impl',
+    'extension',
+    'unknown',
+  ]) {
+    const badge = mount(
+      `<span class="badge" data-variant="secondary" data-k="${kind}">${kind}</span>`,
+    );
+    test(
+      `symbol ${kind} text contrast`,
+      contrast(style(badge).color, style(badge).backgroundColor) >= 4.5,
+      true,
+    );
+    test(`symbol ${kind} uses pastel text`, style(badge).color, token('color', '--on-pastel'));
+  }
+  const progress = mount(
+    '<div class="progress" data-checks><span data-state="passed" style="flex-grow:6"></span><span data-state="skipped" style="flex-grow:1"></span></div>',
+  );
+  test('check progress height', style(progress).height, '8px');
+  test('check progress gap', style(progress).columnGap, '2px');
+  test(
+    'passed progress fill',
+    style(progress.children[0]).backgroundColor,
+    token('background-color', '--gi'),
+  );
+  test(
+    'passed progress contrast',
+    contrast(style(progress.children[0]).backgroundColor, style(progress).backgroundColor) >= 3,
+    true,
+  );
+  test(
+    'skipped progress fill',
+    style(progress.children[1]).backgroundColor,
+    style(progress).backgroundColor,
+  );
+  test('skipped progress outline width', style(progress.children[1]).outlineWidth, '1px');
+  test(
+    'skipped progress outline contrast',
+    contrast(style(progress.children[1]).outlineColor, style(progress).backgroundColor) >= 3,
+    true,
+  );
+  test(
+    'check progress proportions',
+    Math.abs(
+      progress.children[0].getBoundingClientRect().width /
+        progress.children[1].getBoundingClientRect().width -
+        6,
+    ) < 0.01,
+    true,
+  );
+  for (const state of ['failed', 'running', 'neutral']) {
+    progress.children[0].dataset.state = state;
+    const segment = style(progress.children[0]);
+    test(
+      `${state} progress contrast`,
+      contrast(
+        state === 'neutral' ? segment.outlineColor : segment.backgroundColor,
+        style(progress).backgroundColor,
+      ) >= 3,
+      true,
+    );
   }
   for (const component of ['btn', 'badge']) {
     const link = mount(`<a href="#" class="${component}" data-variant="link">Open</a>`);
@@ -224,6 +370,12 @@ for (const theme of ['fibo-light', 'fibo-dark']) {
     '<a href="#" class="badge" data-variant="link" data-tone="file">File link</a>',
   );
   test('toned badge link ink', style(tonedLink).color, token('color', '--primary-text'));
+  test('toned badge link background', style(tonedLink).backgroundColor, 'rgba(0, 0, 0, 0)');
+  test(
+    'toned badge link contrast',
+    contrast(style(tonedLink).color, token('background-color', '--background')) >= 4.5,
+    true,
+  );
   for (const type of ['checkbox', 'radio']) {
     const input = mount(`<input class="input" type="${type}" checked>`);
     test(`checked ${type} edge`, style(input).borderColor, token('border-color', '--spiral'));

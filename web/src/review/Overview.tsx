@@ -202,17 +202,6 @@ function Checks(props: { checks: PRCheck[]; truncated: boolean; total: number })
     counts()
       .map((row) => `${row.count} ${row.state}`)
       .join(', ');
-  const segments = () =>
-    counts().map((row) => ({
-      count: row.count,
-      color: {
-        failed: 'bg-destructive',
-        running: 'bg-warn',
-        passed: 'bg-gi',
-        neutral: 'bg-muted-foreground',
-        skipped: 'bg-muted-foreground',
-      }[row.state],
-    }));
   return (
     <section aria-label="Checks" class="min-w-0">
       <header class="mb-3 space-y-2">
@@ -233,16 +222,14 @@ function Checks(props: { checks: PRCheck[]; truncated: boolean; total: number })
             </For>
           </div>
           <div
-            class="flex h-1.5 overflow-hidden rounded-full"
+            class="progress"
+            data-checks
             role="img"
             aria-label={'Check proportions: ' + summary()}
           >
-            <For each={segments()}>
+            <For each={counts()}>
               {(segment) => (
-                <span
-                  class={segment.color}
-                  style={{ width: `${(segment.count / props.checks.length) * 100}%` }}
-                />
+                <span data-state={segment.state} style={{ 'flex-grow': segment.count }} />
               )}
             </For>
           </div>

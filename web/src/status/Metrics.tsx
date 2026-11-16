@@ -23,7 +23,10 @@ export function MetricsPopover(props: MetricsProps): JSX.Element {
     >
       <div data-ui="metrics-stats" class="grid grid-cols-2 gap-6 px-3 pt-2.5 pb-2">
         <div data-ui="metrics-stat" class="flex flex-col">
-          <span data-ui="metrics-val" class="text-lg font-semibold tabular-nums leading-tight">
+          <span
+            data-ui="metrics-val"
+            class="font-mono text-lg font-semibold tabular-nums leading-tight"
+          >
             {fmtBytes(metrics()?.rssBytes)}
           </span>
           <span data-ui="metrics-label" class="text-xs text-muted-foreground">
@@ -31,7 +34,10 @@ export function MetricsPopover(props: MetricsProps): JSX.Element {
           </span>
         </div>
         <div data-ui="metrics-stat" class="flex flex-col">
-          <span data-ui="metrics-val" class="text-lg font-semibold tabular-nums leading-tight">
+          <span
+            data-ui="metrics-val"
+            class="font-mono text-lg font-semibold tabular-nums leading-tight"
+          >
             {fmtCpu(metrics())}
           </span>
           <span data-ui="metrics-label" class="text-xs text-muted-foreground">

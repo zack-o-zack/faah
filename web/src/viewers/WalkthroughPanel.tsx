@@ -193,18 +193,14 @@ export function WalkthroughPanel(): JSX.Element {
                       {step().path}:{step().l1}-{step().l2}
                     </span>
                   </button>
-                  {/* Vega has no warning badge variant; add the existing warning tokens to its outline badge. */}
+                  {/* Warning badges use the shared waiting tone and its paired text colour. */}
                   <Show when={editor.walkthrough.missing()}>
-                    <span
-                      class="badge border-warn/20 bg-warn/10 text-warn"
-                      data-variant="outline"
-                      role="status"
-                    >
+                    <span class="badge" data-tone="waiting" data-variant="outline" role="status">
                       file not found
                     </span>
                   </Show>
                   <Show when={editor.walkthrough.outdated()}>
-                    <span class="badge border-warn/20 bg-warn/10 text-warn" data-variant="outline">
+                    <span class="badge" data-tone="waiting" data-variant="outline">
                       may be outdated
                     </span>
                   </Show>

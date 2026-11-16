@@ -48,11 +48,7 @@ export function PRBar(): JSX.Element {
             </span>
             <span class="icon-[ph--arrow-square-out] size-3.5 shrink-0 text-muted-foreground group-hover:text-foreground group-focus-visible:text-foreground" />
           </a>
-          <span
-            id="pr-state-badge"
-            class={`badge gap-1 border-current/30 bg-current/10 ${state().color}`}
-            data-variant="outline"
-          >
+          <span id="pr-state-badge" class={`badge gap-1 ${state().color}`} data-variant="outline">
             <span class={`${state().icon} size-3 shrink-0`} aria-hidden="true" />
             <span class="text-foreground">{state().label}</span>
           </span>
