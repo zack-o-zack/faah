@@ -27,7 +27,7 @@ export function StageTurn(props: StageTurnProps): JSX.Element {
         <details class="group/instr rounded-xl border px-3 py-2 text-xs text-muted-foreground">
           <summary class="flex cursor-pointer list-none items-center gap-1.5">
             <span
-              class="icon-[ph--caret-right] size-3 shrink-0 group-open/instr:rotate-90"
+              class="icon-[ph--caret-right] shrink-0 group-open/instr:rotate-90"
               aria-hidden="true"
             />
             Instructions sent to the harness
@@ -40,14 +40,14 @@ export function StageTurn(props: StageTurnProps): JSX.Element {
       <Show when={props.turn.reply || props.turn.running}>
         <div class="flex min-w-0 flex-col gap-2">
           <span class="flex items-center gap-1.5 text-xs font-medium text-special">
-            <span class="icon-[ph--sparkle] size-3 shrink-0" aria-hidden="true" />
+            <span class="icon-[ph--sparkle] shrink-0" aria-hidden="true" />
             {props.turn.model || 'Coding harness'}
           </span>
           <Show when={props.turn.tools?.length}>
             <details class="group/steps text-xs text-muted-foreground">
               <summary class="flex cursor-pointer list-none items-center gap-1.5">
                 <span
-                  class="icon-[ph--caret-right] size-3 shrink-0 group-open/steps:rotate-90"
+                  class="icon-[ph--caret-right] shrink-0 group-open/steps:rotate-90"
                   aria-hidden="true"
                 />
                 {props.turn.tools?.length} step{props.turn.tools?.length === 1 ? '' : 's'}
@@ -61,7 +61,7 @@ export function StageTurn(props: StageTurnProps): JSX.Element {
             when={props.turn.reply}
             fallback={
               <span class="inline-flex items-center gap-2 text-sm text-muted-foreground">
-                <Spiral state="thinking" size={14} />
+                <Spiral state="thinking" size={18} />
                 Reading the changes…
               </span>
             }

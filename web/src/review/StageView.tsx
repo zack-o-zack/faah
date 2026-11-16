@@ -45,7 +45,7 @@ export function StageView(): JSX.Element {
                 disabled={review.running() || review.state.pending === 'run'}
                 onClick={() => void editor.actions.runReview(review.state.active)}
               >
-                <span class="icon-[ph--sparkle] size-3.5 shrink-0" aria-hidden="true" />
+                <span class="icon-[ph--sparkle] shrink-0" aria-hidden="true" />
                 Run this stage
               </button>
             </div>
@@ -53,7 +53,7 @@ export function StageView(): JSX.Element {
         </Match>
         <Match when={!thread() && review.state.loadingThread === stage()?.threadId}>
           <p class="flex flex-1 items-center justify-center gap-2 text-sm text-muted-foreground">
-            <Spiral state="thinking" size={14} />
+            <Spiral state="thinking" size={18} />
             Loading the answer…
           </p>
         </Match>
@@ -128,7 +128,7 @@ function StageHeader(): JSX.Element {
           data-size="icon-sm"
           onClick={() => editor.actions.openStageEditor(review.state.active)}
         >
-          <span class="icon-[ph--note-pencil] size-3.5 shrink-0" aria-hidden="true" />
+          <span class="icon-[ph--note-pencil] shrink-0" aria-hidden="true" />
         </button>
         <button
           id="btn-rerun-stage"
@@ -140,7 +140,7 @@ function StageHeader(): JSX.Element {
           disabled={review.running() || review.state.pending === 'run'}
           onClick={() => void editor.actions.runReview(review.state.active)}
         >
-          <span class="icon-[ph--arrow-clockwise] size-3.5 shrink-0" aria-hidden="true" />
+          <span class="icon-[ph--arrow-clockwise] shrink-0" aria-hidden="true" />
         </button>
       </div>
     </header>

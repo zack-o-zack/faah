@@ -62,7 +62,7 @@ export function MermaidControls(props: MermaidControlsProps): JSX.Element {
         aria-label="Close full screen"
         onClick={() => props.toggleFullscreen()}
       >
-        <span class="icon-[ph--x] size-3.5 shrink-0" aria-hidden="true" />
+        <span class="icon-[ph--x] shrink-0" aria-hidden="true" />
       </button>
     </>
   );
@@ -86,7 +86,7 @@ function DiagramButton(props: {
       disabled={props.disabled}
       onClick={() => props.onClick()}
     >
-      <span class={`${props.icon} size-3.5`} aria-hidden="true" />
+      <span class={`${props.icon}`} aria-hidden="true" />
     </button>
   );
 }

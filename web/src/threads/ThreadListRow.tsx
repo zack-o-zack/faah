@@ -35,12 +35,12 @@ export function ThreadListRow(props: ThreadListRowProps): JSX.Element {
       <div data-ui="thr-item-title" class="flex min-w-0 items-center gap-2 text-sm font-medium">
         <Show when={props.thread.running}>
           <span data-ui="thr-spin" class="inline-flex shrink-0" title="Working">
-            <Spiral state="thinking" size={14} />
+            <Spiral state="thinking" size={18} />
           </span>
         </Show>
         <Show when={!props.thread.running && props.thread.failed}>
           <span data-ui="thr-fail" class="inline-flex shrink-0" title="Last reply failed">
-            <Spiral state="error" size={14} label="Failed" />
+            <Spiral state="error" size={18} label="Failed" />
           </span>
         </Show>
         <span data-ui="thr-item-title-text" class="min-w-0 flex-1 truncate">
@@ -64,7 +64,7 @@ export function ThreadListRow(props: ThreadListRowProps): JSX.Element {
             props.onDelete();
           }}
         >
-          <span class="icon-[ph--trash] size-3 shrink-0" aria-hidden="true" />
+          <span class="icon-[ph--trash] shrink-0" aria-hidden="true" />
         </button>
       </div>
       <div data-ui="thr-item-meta" class="flex justify-between gap-2 text-xs text-muted-foreground">

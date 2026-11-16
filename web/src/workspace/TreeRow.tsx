@@ -118,7 +118,7 @@ export function TreeRow(props: TreeRowProps): JSX.Element {
           >
             <span
               data-ui="ar"
-              class="icon-[ph--caret-right] size-3 shrink-0 text-muted-foreground group-[.open]:rotate-90"
+              class="icon-[ph--caret-right] shrink-0 text-muted-foreground group-[.open]:rotate-90"
               aria-hidden="true"
             />
           </Show>
@@ -174,7 +174,7 @@ export function TreeRow(props: TreeRowProps): JSX.Element {
               aria-label="Actions"
               onClick={menu.open}
             >
-              <span class="icon-[ph--dots-three] size-3 shrink-0" aria-hidden="true" />
+              <span class="icon-[ph--dots-three] shrink-0" aria-hidden="true" />
             </button>
           </span>
         </div>

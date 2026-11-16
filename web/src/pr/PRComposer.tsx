@@ -43,7 +43,7 @@ export function PRComposer(props: PRComposerProps): JSX.Element {
           data-size="icon-xs"
           onClick={() => editor.actions.closeComposer(props.composer.id)}
         >
-          <span class="icon-[ph--x] size-3.5" aria-hidden="true" />
+          <span class="icon-[ph--x]" aria-hidden="true" />
         </button>
       </div>
       <textarea

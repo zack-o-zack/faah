@@ -136,10 +136,7 @@ function CheckRow(props: { check: PRCheck; grouped?: boolean }): JSX.Element {
       </section>
       <Show when={safeMarkdownURL(props.check.url)}>
         <aside class="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">
-          <span
-            class="icon-[ph--arrow-square-out] size-3 text-muted-foreground"
-            aria-hidden="true"
-          />
+          <span class="icon-[ph--arrow-square-out] text-muted-foreground" aria-hidden="true" />
         </aside>
       </Show>
     </li>

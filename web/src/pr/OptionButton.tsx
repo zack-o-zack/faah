@@ -52,7 +52,7 @@ export function OptionButton(props: {
     >
       <Show when={props.icon}>
         <span
-          class={`${props.icon} size-4 shrink-0`}
+          class={`${props.icon} shrink-0`}
           style={{ color: props.selected ? 'inherit' : undefined }}
           aria-hidden="true"
         />

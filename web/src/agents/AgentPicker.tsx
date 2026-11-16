@@ -62,10 +62,7 @@ export function AgentPicker(props: AgentPickerProps): JSX.Element {
                 ? selected() + (agents.state.model ? ' · ' + agents.state.model : '')
                 : 'No harness'}
             </span>
-            <i
-              class="icon-[ph--caret-up-down] size-3.5 shrink-0 text-muted-foreground"
-              aria-hidden="true"
-            />
+            <i class="icon-[ph--caret-up-down] shrink-0 text-muted-foreground" aria-hidden="true" />
           </>
         }
         panelClass="fixed m-0 overflow-hidden border bg-popover p-0 text-popover-foreground z-[70]"
@@ -151,7 +148,7 @@ function PickerPanel(props: { height: number; close: () => void }): JSX.Element 
       <section class="flex min-h-0 min-w-0 flex-col">
         <header class="mx-3 flex shrink-0 items-center gap-2 border-b py-3 focus-within:border-ring">
           <span
-            class="icon-[ph--magnifying-glass] size-4 shrink-0 text-muted-foreground"
+            class="icon-[ph--magnifying-glass] shrink-0 text-muted-foreground"
             aria-hidden="true"
           />
           <input
@@ -216,7 +213,7 @@ function PickerPanel(props: { height: number; close: () => void }): JSX.Element 
                     agents.state.model === model.value
                   }
                 >
-                  <span class="icon-[ph--check] size-3.5 shrink-0" aria-hidden="true" />
+                  <span class="icon-[ph--check] shrink-0" aria-hidden="true" />
                 </Show>
               </button>
             )}

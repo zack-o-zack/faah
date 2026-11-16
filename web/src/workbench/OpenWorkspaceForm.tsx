@@ -36,7 +36,7 @@ export function OpenWorkspaceForm(): JSX.Element {
         group
         leading={
           <span data-align="inline-start">
-            <span id="wb-kind" class="icon-[ph--magnifying-glass] size-4" aria-hidden="true" />
+            <span id="wb-kind" class="icon-[ph--magnifying-glass]" aria-hidden="true" />
           </span>
         }
         trailing={

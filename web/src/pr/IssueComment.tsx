@@ -19,7 +19,7 @@ export function IssueComment(props: IssueCommentProps): JSX.Element {
     >
       <summary class="flex min-w-0 cursor-pointer items-center gap-2">
         <span
-          class="icon-[ph--caret-right] size-3 shrink-0 text-muted-foreground group-open/accordion:rotate-90"
+          class="icon-[ph--caret-right] shrink-0 text-muted-foreground group-open/accordion:rotate-90"
           aria-hidden="true"
         />
         <span class="shrink-0 font-medium">{props.comment.author || 'unknown'}</span>
@@ -40,7 +40,7 @@ export function IssueComment(props: IssueCommentProps): JSX.Element {
             props.onReply(props.comment.author || '');
           }}
         >
-          <span class="icon-[ph--arrow-u-up-left] size-3.5 shrink-0" aria-hidden="true" />
+          <span class="icon-[ph--arrow-u-up-left] shrink-0" aria-hidden="true" />
         </button>
       </summary>
       <div class="mt-2 flex flex-col gap-2">

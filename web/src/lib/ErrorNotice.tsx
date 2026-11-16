@@ -21,10 +21,7 @@ export function ErrorNotice(props: ErrorNoticeProps): JSX.Element {
         data-variant="destructive"
         role="alert"
       >
-        <span
-          class="icon-[ph--warning-circle] row-span-2 size-4 translate-y-0.5"
-          aria-hidden="true"
-        />
+        <span class="icon-[ph--warning-circle] row-span-2 translate-y-0.5" aria-hidden="true" />
         <h2 class="col-start-2 whitespace-pre-wrap wrap-anywhere">{head()}</h2>
         <section class="col-start-2 min-w-0 [&_p]:mb-0!">
           <Show when={props.title}>
@@ -40,7 +37,7 @@ export function ErrorNotice(props: ErrorNoticeProps): JSX.Element {
               data-size="xs"
               onClick={() => void copyText(full())}
             >
-              <span class="icon-[ph--copy] size-3.5" aria-hidden="true" />
+              <span class="icon-[ph--copy]" aria-hidden="true" />
               <span data-ui="label">Copy full error</span>
             </button>
           </Show>

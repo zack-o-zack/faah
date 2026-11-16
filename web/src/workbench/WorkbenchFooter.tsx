@@ -33,7 +33,7 @@ export function WorkbenchFooter(props: WorkbenchFooterProps): JSX.Element {
         rel="noopener"
         aria-label="fibo on GitHub"
       >
-        <span class="icon-[ph--github-logo] size-3.5 shrink-0" aria-hidden="true" />
+        <span class="icon-[ph--github-logo] shrink-0" aria-hidden="true" />
       </a>
       <ThemeMenu />
     </footer>

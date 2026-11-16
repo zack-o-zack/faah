@@ -22,7 +22,7 @@ export function MenuItem(props: MenuItemProps): JSX.Element {
       onClick={() => props.onSelect()}
     >
       <Show when={props.icon}>
-        <span class={`${props.icon} size-3.5 shrink-0`} aria-hidden="true" />
+        <span class={`${props.icon} shrink-0`} aria-hidden="true" />
       </Show>
       {props.children}
     </button>

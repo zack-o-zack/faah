@@ -43,7 +43,7 @@ export function CommentThread(props: CommentThreadProps): JSX.Element {
     >
       <summary class="flex min-w-0 cursor-pointer items-center gap-2">
         <span
-          class="icon-[ph--caret-right] size-3 shrink-0 text-muted-foreground group-open/accordion:rotate-90"
+          class="icon-[ph--caret-right] shrink-0 text-muted-foreground group-open/accordion:rotate-90"
           aria-hidden="true"
         />
         <button
@@ -109,7 +109,7 @@ function DraftCard(props: DraftCardProps): JSX.Element {
             if (props.draft.id !== undefined) void editor.actions.deleteDraft(props.draft.id);
           }}
         >
-          <span class="icon-[ph--trash] size-3.5 shrink-0" aria-hidden="true" />
+          <span class="icon-[ph--trash] shrink-0" aria-hidden="true" />
         </button>
       </div>
     </div>

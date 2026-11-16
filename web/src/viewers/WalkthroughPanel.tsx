@@ -66,7 +66,7 @@ export function WalkthroughPanel(): JSX.Element {
         onKeyDown={onArrow}
       >
         <div class="flex min-w-0 items-center gap-2">
-          <span class="icon-[ph--path] size-3.5 shrink-0 text-special" aria-hidden="true" />
+          <span class="icon-[ph--path] shrink-0 text-special" aria-hidden="true" />
           <Show
             when={!state.compact && (state.model?.walkthroughs.length || 0) > 1}
             fallback={
@@ -116,7 +116,7 @@ export function WalkthroughPanel(): JSX.Element {
           <Show when={state.compact}>
             <Show when={warning()}>
               <span title={warning()} class="flex shrink-0 items-center text-warn">
-                <span class="icon-[ph--warning] size-3.5" aria-hidden="true" />
+                <span class="icon-[ph--warning]" aria-hidden="true" />
                 <span class="sr-only">{warning()}</span>
               </span>
             </Show>
@@ -129,7 +129,7 @@ export function WalkthroughPanel(): JSX.Element {
               disabled={!step() || step()?.n === 1}
               onClick={() => move(-1)}
             >
-              <span class="icon-[ph--caret-left] size-3.5" />
+              <span class="icon-[ph--caret-left]" />
             </button>
             <button
               class="btn shrink-0"
@@ -142,9 +142,7 @@ export function WalkthroughPanel(): JSX.Element {
             >
               <span
                 class={
-                  step() && step()?.n === step()?.of
-                    ? 'icon-[ph--check] size-3.5'
-                    : 'icon-[ph--caret-right] size-3.5'
+                  step() && step()?.n === step()?.of ? 'icon-[ph--check]' : 'icon-[ph--caret-right]'
                 }
               />
             </button>

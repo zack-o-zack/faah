@@ -322,13 +322,13 @@ colour literals outside theme files.
 ## Icons
 
 Icons are Phosphor, regular weight, from `@iconify-json/ph` via the Tailwind
-Iconify plugin: `icon-[ph--name]`. 16px in toolbars, in `ink` or `ink-muted`.
+Iconify plugin: `icon-[ph--name]`, in `ink` or `ink-muted`.
 Use `-fill` only for a filled state mark. No emoji as icons.
 
-Disclosure carets have two sizes. A caret that opens a row (tree folders,
-commits, thread steps, comment threads) is `icon-[ph--caret-right] size-3`
-and turns with `rotate-90` when open. A caret inside a button or menu trigger
-is `size-3.5`. Don't draw carets with borders.
+Every icon is one size, `--icon-size` (16px), set by one unlayered rule in
+`web/tailwind.css` that also stops icons from shrinking in flex rows. Don't add
+`size-*` utilities to icons. A caret that opens a row turns with `rotate-90`.
+Don't draw carets with borders. Live spirals are 18px wide.
 
 Existing `size-*` utilities size the masks at `1em`; the 256-unit viewBox does
 not change the CSS size. Use `circle-notch animate-spin` for plain spinners.

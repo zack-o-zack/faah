@@ -85,7 +85,7 @@ export function TabStatus(props: TabStatusProps): JSX.Element {
           aria-label={value().title}
         >
           <Show when={value().icon}>
-            <span class={`${value().icon} size-3 shrink-0`} aria-hidden="true" />
+            <span class={`${value().icon} shrink-0`} aria-hidden="true" />
           </Show>
           {value().text}
         </span>

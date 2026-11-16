@@ -45,7 +45,7 @@ export function StageCard(props: StageCardProps): JSX.Element {
       </ContextMenu>
       <div class="absolute top-1.5 right-1.5 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 has-[[aria-expanded=true]]:opacity-100">
         <DropdownMenu
-          label={<span class="icon-[ph--dots-three] size-3.5 shrink-0" aria-hidden="true" />}
+          label={<span class="icon-[ph--dots-three] shrink-0" aria-hidden="true" />}
           accessibleLabel={`Actions for ${title()}`}
           size="icon-xs"
           control="review-stage-menu-btn"

@@ -46,17 +46,16 @@ export function PRBar(): JSX.Element {
             >
               {pr()?.title}
             </span>
-            <span class="icon-[ph--arrow-square-out] size-3.5 shrink-0 text-muted-foreground group-hover:text-foreground group-focus-visible:text-foreground" />
+            <span class="icon-[ph--arrow-square-out] shrink-0 text-muted-foreground group-hover:text-foreground group-focus-visible:text-foreground" />
           </a>
           <span id="pr-state-badge" class={`badge gap-1 ${state().color}`} data-variant="outline">
-            <span class={`${state().icon} size-3 shrink-0`} aria-hidden="true" />
+            <span class={`${state().icon} shrink-0`} aria-hidden="true" />
             <span class="text-foreground">{state().label}</span>
           </span>
         </div>
         <div class="flex min-w-0 items-center gap-3 pl-px text-xs text-muted-foreground">
           <span id="pr-refs" class="min-w-0 shrink-[4] truncate font-mono">
-            {pr().base}{' '}
-            <span class="icon-[ph--arrow-left] size-3 align-[-2px]" aria-hidden="true" />{' '}
+            {pr().base} <span class="icon-[ph--arrow-left] align-[-2px]" aria-hidden="true" />{' '}
             {pr().head}
           </span>
           <MergePill />
@@ -66,7 +65,7 @@ export function PRBar(): JSX.Element {
               class="inline-flex shrink-0 items-center gap-1 text-destructive"
               title={pr().diffBaseWarning}
             >
-              <span class="icon-[ph--warning] size-3.5 shrink-0" aria-hidden="true" />
+              <span class="icon-[ph--warning] shrink-0" aria-hidden="true" />
               Diff base differs
             </span>
           </Show>
@@ -123,7 +122,7 @@ function MergeFix(): JSX.Element {
         onClick={editor.actions.runMergeFix}
       >
         <span
-          class={`${pill()?.act === 'resolve' ? 'icon-[ph--sparkle]' : 'icon-[ph--arrow-up]'} size-3.5 shrink-0`}
+          class={`${pill()?.act === 'resolve' ? 'icon-[ph--sparkle]' : 'icon-[ph--arrow-up]'} shrink-0`}
           aria-hidden="true"
         />
         {pill()?.fix}
@@ -147,7 +146,7 @@ function BatchApply(): JSX.Element {
         onClick={() => void editor.actions.applyDrafts()}
         data-control="bar-action pr-btn-batch-apply"
       >
-        <span class="icon-[ph--sparkle] size-3.5 shrink-0" aria-hidden="true" />
+        <span class="icon-[ph--sparkle] shrink-0" aria-hidden="true" />
         <span>{batch().pending ? `Applying… ${batch().seconds}s` : 'Apply drafts'}</span>
       </button>
     </Show>

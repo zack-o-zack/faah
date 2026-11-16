@@ -29,7 +29,7 @@ export function GitPanel(): JSX.Element {
         />
         <div class="git-panel-head flex shrink-0 items-center gap-2 border-b px-3 py-2 text-xs font-medium">
           <span
-            class="icon-[ph--git-branch] size-3.5 shrink-0 git-panel-icon text-primary"
+            class="icon-[ph--git-branch] shrink-0 git-panel-icon text-primary"
             title="Git Panel"
             aria-hidden="true"
           />
@@ -51,7 +51,7 @@ export function GitPanel(): JSX.Element {
             aria-label="Collapse Git panel"
             onClick={() => editor.actions.setGitPanelCollapsed(!git.state.collapsed)}
           >
-            <span class="icon-[ph--caret-down] size-3.5 shrink-0" aria-hidden="true" />
+            <span class="icon-[ph--caret-down] shrink-0" aria-hidden="true" />
           </button>
         </div>
         <Show when={!git.state.collapsed}>
@@ -68,7 +68,7 @@ export function GitPanel(): JSX.Element {
                 data-size="xs"
                 onClick={() => editor.actions.openForgeConnect()}
               >
-                <span class="icon-[ph--warning-circle] size-3 shrink-0" aria-hidden="true" />
+                <span class="icon-[ph--warning-circle] shrink-0" aria-hidden="true" />
                 <span>No forge token configured — add one</span>
               </button>
             </Show>
@@ -82,7 +82,7 @@ export function GitPanel(): JSX.Element {
                     id="git-clean-state"
                     class="git-clean-state flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg border border-dashed px-3 py-1.5 text-xs text-muted-foreground [&_svg]:shrink-0 [&_svg]:text-primary"
                   >
-                    <span class="icon-[ph--check] size-3.5 shrink-0" aria-hidden="true" />
+                    <span class="icon-[ph--check] shrink-0" aria-hidden="true" />
                     <span>Working tree clean</span>
                   </div>
                 }
@@ -96,11 +96,7 @@ export function GitPanel(): JSX.Element {
                   disabled={!!git.state.pending}
                   onClick={() => void editor.actions.commit()}
                 >
-                  <span
-                    data-ui="icon"
-                    class="icon-[ph--sparkle] size-3.5 shrink-0"
-                    aria-hidden="true"
-                  />
+                  <span data-ui="icon" class="icon-[ph--sparkle] shrink-0" aria-hidden="true" />
                   <span data-ui="label">{git.state.pending || 'Commit'}</span>
                 </button>
               </Show>
@@ -131,7 +127,7 @@ export function GitPanel(): JSX.Element {
                     }
                   }}
                 >
-                  <span class="icon-[ph--arrow-square-out] size-3.5 shrink-0" aria-hidden="true" />
+                  <span class="icon-[ph--arrow-square-out] shrink-0" aria-hidden="true" />
                 </a>
               </div>
               <div id="git-commits-list" class="git-commits-list flex flex-col gap-1">

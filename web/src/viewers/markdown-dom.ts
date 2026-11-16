@@ -261,7 +261,7 @@ export function enhanceMarkdown(mdArticle: HTMLElement): void {
     copy.setAttribute('aria-label', 'Copy code');
     // An icon, not a label: find in the preview walks text nodes.
     const icon = document.createElement('span');
-    icon.className = 'icon-[ph--copy] size-3.5 shrink-0';
+    icon.className = 'icon-[ph--copy] shrink-0';
     icon.setAttribute('aria-hidden', 'true');
     copy.append(icon);
     const toolbar = document.createElement('div');
@@ -504,7 +504,7 @@ export function brokenImageCard(img: HTMLElement): HTMLDivElement {
   const card = document.createElement('div');
   card.className = 'md-img-broken';
   const icon = document.createElement('span');
-  icon.className = 'icon-[ph--image-broken] size-4 shrink-0';
+  icon.className = 'icon-[ph--image-broken] shrink-0';
   icon.setAttribute('aria-hidden', 'true');
   const text = document.createElement('span');
   const path = img.dataset.rawPath || img.dataset.origSrc || img.getAttribute('src') || 'image';

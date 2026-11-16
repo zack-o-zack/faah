@@ -22,7 +22,7 @@ export function MarkdownCopy(props: { text: string }): JSX.Element {
       onClick={() => void copy()}
     >
       <span
-        class={`${copied() ? 'icon-[ph--check] text-gi' : 'icon-[ph--copy]'} size-3.5`}
+        class={`${copied() ? 'icon-[ph--check] text-gi' : 'icon-[ph--copy]'}`}
         aria-hidden="true"
       />
     </button>

@@ -31,7 +31,7 @@ export const SettingsToolbar: Component = () => {
       <Show when={dialog().mode === 'ui'}>
         <div id="settings-search-bar" data-ui="settings-search-bar" class="input-group w-72">
           <span data-align="inline-start">
-            <span class="icon-[ph--magnifying-glass] size-3.5" aria-hidden="true" />
+            <span class="icon-[ph--magnifying-glass]" aria-hidden="true" />
           </span>
           <input
             ref={search}
@@ -59,7 +59,7 @@ export const SettingsToolbar: Component = () => {
               search?.focus();
             }}
           >
-            <span class="icon-[ph--x] size-3.5 shrink-0" aria-hidden="true" />
+            <span class="icon-[ph--x] shrink-0" aria-hidden="true" />
           </button>
         </div>
       </Show>
@@ -100,7 +100,7 @@ export const SettingsToolbar: Component = () => {
         data-size="icon-sm"
         onClick={settings.actions.closeSettings}
       >
-        <span class="icon-[ph--x] size-3.5 shrink-0" aria-hidden="true" />
+        <span class="icon-[ph--x] shrink-0" aria-hidden="true" />
       </button>
     </header>
   );

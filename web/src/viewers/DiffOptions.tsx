@@ -15,7 +15,7 @@ export function DiffOptions(props: { id: string }): JSX.Element {
       variant="ghost"
       size="icon-xs"
       autofocus
-      label={<span class="icon-[ph--gear-six] size-3.5 shrink-0" aria-hidden="true" />}
+      label={<span class="icon-[ph--gear-six] shrink-0" aria-hidden="true" />}
     >
       <div class="flex flex-col gap-3 p-3 text-xs">
         <h3 class="font-medium">Diff options</h3>

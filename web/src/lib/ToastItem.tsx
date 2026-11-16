@@ -24,7 +24,7 @@ export function ToastItem(props: ToastItemProps): JSX.Element {
     >
       <div class="toast-content">
         <Show when={props.item.icon}>
-          <span class={`${props.item.icon} size-4 shrink-0 ${color()}`} aria-hidden="true" />
+          <span class={`${props.item.icon} shrink-0 ${color()}`} aria-hidden="true" />
         </Show>
         <section>
           <h2>{props.item.title}</h2>

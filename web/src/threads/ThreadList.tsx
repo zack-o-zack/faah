@@ -33,7 +33,7 @@ export function ThreadList(): JSX.Element {
           data-size="xs"
           data-control="thr-btn-primary"
         >
-          <span class="icon-[ph--plus] size-3.5" aria-hidden="true" />
+          <span class="icon-[ph--plus]" aria-hidden="true" />
           New
         </button>
       </header>

@@ -50,7 +50,7 @@ export function CommentsPanel(props: { ref?: (element: HTMLDivElement) => void }
           data-size="icon-xs"
         >
           <span
-            class={`${panel().collapsed ? 'icon-[ph--caret-up]' : 'icon-[ph--caret-down]'} size-3.5 text-muted-foreground`}
+            class={`${panel().collapsed ? 'icon-[ph--caret-up]' : 'icon-[ph--caret-down]'} text-muted-foreground`}
             aria-hidden="true"
           />
         </button>
@@ -124,7 +124,7 @@ export function CommentsPanel(props: { ref?: (element: HTMLDivElement) => void }
                   data-size="icon-sm"
                   onClick={() => void editor.actions.sendIssueComment()}
                 >
-                  <span class="icon-[ph--arrow-up] size-4" aria-hidden="true" />
+                  <span class="icon-[ph--arrow-up]" aria-hidden="true" />
                 </button>
               </footer>
             </div>

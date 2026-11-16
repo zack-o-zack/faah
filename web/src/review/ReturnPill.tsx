@@ -11,7 +11,7 @@ export function ReturnPill(): JSX.Element {
         id="review-return-pill"
         class="card fixed right-6 bottom-12 z-50 flex flex-row items-center gap-2 p-3"
       >
-        <span class="icon-[ph--arrow-bend-up-left] size-3.5 shrink-0 text-primary-text" />
+        <span class="icon-[ph--arrow-bend-up-left] shrink-0 text-primary-text" />
         <span>Jumped from: {review.state.returnTo?.title}</span>
         <button
           id="btn-return-to-review"
@@ -32,7 +32,7 @@ export function ReturnPill(): JSX.Element {
           data-size="icon-xs"
           onClick={editor.actions.dismissReviewReturn}
         >
-          <span class="icon-[ph--x] size-3.5 shrink-0" aria-hidden="true" />
+          <span class="icon-[ph--x] shrink-0" aria-hidden="true" />
         </button>
       </div>
     </Show>

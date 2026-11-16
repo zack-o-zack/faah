@@ -34,14 +34,14 @@ export function ReviewPanel(): JSX.Element {
       size="sm"
       label={
         <>
-          <span class="icon-[ph--chat-centered-text] size-3.5 shrink-0" aria-hidden="true" />
+          <span class="icon-[ph--chat-centered-text] shrink-0" aria-hidden="true" />
           Review
           <Show when={pr().drafts.length}>
             <span class="badge tabular-nums" data-variant="secondary">
               {pr().drafts.length}
             </span>
           </Show>
-          <span class="icon-[ph--caret-down] size-3.5 shrink-0 text-muted-foreground" />
+          <span class="icon-[ph--caret-down] shrink-0 text-muted-foreground" />
         </>
       }
       accessibleLabel="Send a review"

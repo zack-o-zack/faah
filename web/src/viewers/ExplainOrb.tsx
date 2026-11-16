@@ -73,18 +73,15 @@ export function ExplainOrb(): JSX.Element {
             >
               <Show when={view()?.busy}>
                 <span data-orb="spin" class="inline-flex shrink-0">
-                  <Spiral state="thinking" size={12} />
+                  <Spiral state="thinking" size={18} />
                 </span>
               </Show>
               <Show when={state.model?.phase === 'done'}>
-                <span
-                  data-orb="done"
-                  class="icon-[ph--check] mt-[3px] size-3.5 shrink-0 text-primary"
-                />
+                <span data-orb="done" class="icon-[ph--check] mt-[3px] shrink-0 text-primary" />
               </Show>
               <Show when={state.model?.phase === 'failed'}>
                 <span data-orb="fail" class="mt-[3px] inline-flex shrink-0">
-                  <Spiral state="error" size={14} label="Failed" />
+                  <Spiral state="error" size={18} label="Failed" />
                 </span>
               </Show>
               <span class="flex min-w-0 max-w-md flex-col gap-0.5">
@@ -112,8 +109,8 @@ export function ExplainOrb(): JSX.Element {
                 <span
                   class={
                     state.compact
-                      ? 'icon-[ph--caret-up-down] size-3.5'
-                      : 'icon-[ph--arrows-in-line-vertical] size-3.5'
+                      ? 'icon-[ph--caret-up-down]'
+                      : 'icon-[ph--arrows-in-line-vertical]'
                   }
                 />
               </button>
@@ -127,7 +124,7 @@ export function ExplainOrb(): JSX.Element {
               aria-label="Close explanation"
               onClick={actions.dismissOrb}
             >
-              <span class="icon-[ph--x] size-3.5" />
+              <span class="icon-[ph--x]" />
             </button>
           </Dynamic>
           <Show

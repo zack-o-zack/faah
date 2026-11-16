@@ -8,10 +8,7 @@ import { fmtBytes, fmtCpu } from './logic.ts';
 export function MetricsSummary(props: MetricsProps): JSX.Element {
   return (
     <>
-      <span
-        class="icon-[ph--pulse] size-3.5 shrink-0 shell-ico hidden desktop:block"
-        aria-hidden="true"
-      />
+      <span class="icon-[ph--pulse] shrink-0 shell-ico hidden desktop:block" aria-hidden="true" />
       <span class="metric">
         <span class="metric-label">CPU</span> <span id="st-cpu">{fmtCpu(props.metrics)}</span>
       </span>

@@ -48,7 +48,7 @@ function EmptyState(props: EmptyStateProps): JSX.Element {
     <div class="empty flex h-full flex-1 flex-col items-center justify-center gap-2 p-3 text-center text-muted-foreground">
       <Show
         when={props.spinner}
-        fallback={<span class={`${props.icon} size-4 shrink-0`} aria-hidden="true" />}
+        fallback={<span class={`${props.icon} shrink-0`} aria-hidden="true" />}
       >
         <div class="size-6 animate-spin rounded-full border-2 border-border border-t-primary" />
       </Show>

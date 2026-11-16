@@ -49,11 +49,7 @@ export function GitSyncMenu(): JSX.Element {
         disabled={!!editor.git.state.pending}
         onClick={() => void editor.actions.syncGit()}
       >
-        <span
-          data-ui="icon"
-          class="icon-[ph--arrows-clockwise] size-3.5 shrink-0"
-          aria-hidden="true"
-        />
+        <span data-ui="icon" class="icon-[ph--arrows-clockwise] shrink-0" aria-hidden="true" />
         <span
           id="git-sync-counts"
           class="font-mono tabular-nums text-muted-foreground empty:hidden"
@@ -68,7 +64,7 @@ export function GitSyncMenu(): JSX.Element {
         size="icon-sm"
         panelId="git-sync-menu"
         accessibleLabel="Sync actions"
-        label={<span class="icon-[ph--caret-down] size-3.5 shrink-0" aria-hidden="true" />}
+        label={<span class="icon-[ph--caret-down] shrink-0" aria-hidden="true" />}
       >
         <For each={items}>
           {(item) => (

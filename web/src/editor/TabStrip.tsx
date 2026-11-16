@@ -80,10 +80,7 @@ export function TabStrip(props: { children?: JSX.Element }): JSX.Element {
               }}
             >
               <Show when={tab.isImage}>
-                <span
-                  class="icon-[ph--image] size-3 shrink-0 tab-icon text-primary"
-                  aria-hidden="true"
-                />
+                <span class="icon-[ph--image] shrink-0 tab-icon text-primary" aria-hidden="true" />
               </Show>
               <button
                 class="tn min-h-6 min-w-6 truncate text-left"
@@ -110,7 +107,7 @@ export function TabStrip(props: { children?: JSX.Element }): JSX.Element {
                 aria-label="Close tab"
                 onClick={() => editor.actions.closeTabs([index()])}
               >
-                <span class="icon-[ph--x] size-3.5" />
+                <span class="icon-[ph--x]" />
               </button>
             </div>
           )}

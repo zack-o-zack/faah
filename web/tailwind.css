@@ -121,6 +121,7 @@
     --shadow-pop: var(--shadow, 0 6px 16px -4px color-mix(in oklab, var(--foreground) 18%, transparent));
     --shadow-dialog: var(--shadow, 0 24px 48px -12px color-mix(in oklab, var(--foreground) 25%, transparent));
 
+    --icon-size: 16px;
     --lh: 21px;
     --mono: "JetBrains Mono", ui-monospace, monospace;
     --ui: "Figtree", system-ui, sans-serif;
@@ -331,10 +332,10 @@
   ::selection { background: var(--sel); }
 
   /* Tree indent guides: one line per ancestor folder, through the centre of its
-     12px caret. Rows indent 12px per level from 8px (TreeRow), so the lines
-     repeat every 12px and cover depth × 12px. Hover and selection fills sit under them. */
+     16px caret. Rows indent 12px per level from 8px (TreeRow), so the lines
+     repeat every 12px, 8px into each step, and cover depth × 12px. Hover and selection fills sit under them. */
   [role='treeitem'].tr {
-    background-image: repeating-linear-gradient(to right, transparent 0 6px, var(--border) 6px 7px, transparent 7px 12px);
+    background-image: repeating-linear-gradient(to right, transparent 0 7.5px, var(--border) 7.5px 8.5px, transparent 8.5px 12px);
     background-repeat: no-repeat;
     background-position: 8px 0;
     background-size: calc(var(--depth, 0) * 12px) 100%;
@@ -844,4 +845,12 @@
    rendered inside a modal, in the utility layer that owns their elevation. */
 @utility shadow-pop {
   &:where(.dialog *, .alert-dialog *, .command-dialog *) { --tw-shadow: 0 0 transparent; }
+}
+
+/* Icons: one size app-wide, never shrunk by a flex row. Unlayered so it wins
+   over the Iconify utility's 1em box and any leftover size utility. */
+[class*='icon-[ph--'] {
+  width: var(--icon-size);
+  height: var(--icon-size);
+  flex-shrink: 0;
 }

@@ -26,7 +26,7 @@ export function Recent(): JSX.Element {
         <div class="empty py-12">
           <header>
             <figure class="flex size-10 items-center justify-center rounded-md bg-muted">
-              <span class="icon-[ph--folder-open] size-5" aria-hidden="true" />
+              <span class="icon-[ph--folder-open]" aria-hidden="true" />
             </figure>
             <h2>Nothing opened yet</h2>
             <p>Paste a pull request URL or a folder path above, or find the folder in Browse.</p>

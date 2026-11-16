@@ -68,7 +68,7 @@ export function NoteGhost(props: {
           }}
         >
           <span
-            class="icon-[ph--sparkle] size-3 shrink-0"
+            class="icon-[ph--sparkle] shrink-0"
             role="img"
             title="AI explanation"
             aria-label="AI explanation"

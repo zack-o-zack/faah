@@ -35,9 +35,7 @@ export function DirectoryList(props: DirectoryListProps): JSX.Element {
             onClick={() => actions.browse(entry.path)}
           >
             <span
-              class={
-                entry.git ? 'icon-[ph--git-branch] size-4 text-gi' : 'icon-[ph--folder] size-4'
-              }
+              class={entry.git ? 'icon-[ph--git-branch] text-gi' : 'icon-[ph--folder]'}
               aria-hidden="true"
             />
             {entry.name}

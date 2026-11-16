@@ -17,7 +17,7 @@ export function ThreadsPanel(): JSX.Element {
     >
       <header class="inspector-head desktop:min-h-[var(--titlebar-h,2.5rem)] desktop:[-webkit-app-region:drag] desktop:[&_button]:[-webkit-app-region:no-drag] desktop:[&_a]:[-webkit-app-region:no-drag] desktop:[&_[role=group]]:[-webkit-app-region:no-drag] desktop:[&_[role=tab]]:[-webkit-app-region:no-drag] flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2 threads-head">
         <div class="threads-head-title flex items-center gap-2 font-medium [&_svg]:shrink-0 [&_svg]:text-primary">
-          <span class="icon-[ph--chat-centered] size-3.5 shrink-0" aria-hidden="true" />
+          <span class="icon-[ph--chat-centered] shrink-0" aria-hidden="true" />
           <span class="threads-head-label text-xs font-medium">Threads</span>
           <span
             class="badge"
@@ -43,7 +43,7 @@ export function ThreadsPanel(): JSX.Element {
             data-size="icon-xs"
             data-control="icon-action"
           >
-            <span class="icon-[ph--x] size-3.5 shrink-0" aria-hidden="true" />
+            <span class="icon-[ph--x] shrink-0" aria-hidden="true" />
           </button>
         </div>
       </header>
@@ -82,7 +82,7 @@ export function ThreadsToggle(): JSX.Element {
       hidden={editor.store.state.workspace.meta?.threadsEnabled === false}
       onClick={editor.actions.toggleThreads}
     >
-      <span class="icon-[ph--chat-centered] size-3 shrink-0" aria-hidden="true" />
+      <span class="icon-[ph--chat-centered] shrink-0" aria-hidden="true" />
       <span>Threads</span>
       <span
         class="badge"

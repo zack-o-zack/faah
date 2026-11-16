@@ -31,11 +31,7 @@ export function PathSuggestions(props: PathSuggestionsProps): JSX.Element {
               props.onAccept(index());
             }}
           >
-            <span
-              class={
-                entry.git ? 'icon-[ph--git-branch] size-4 text-gi' : 'icon-[ph--folder] size-4'
-              }
-            />
+            <span class={entry.git ? 'icon-[ph--git-branch] text-gi' : 'icon-[ph--folder]'} />
             <span>{entry.name}</span>
             <span class="truncate text-xs text-muted-foreground">
               {tildify(entry.path, state.home, state.sep)}

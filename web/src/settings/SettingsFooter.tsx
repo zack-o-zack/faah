@@ -55,10 +55,7 @@ export const SettingsFooter: Component = () => {
           onClick={() => void settings.actions.saveSettings()}
           data-control="settings-btn-save"
         >
-          <span
-            class="icon-[ph--floppy-disk] size-3.5 shrink-0 settings-btn-save-icon"
-            aria-hidden="true"
-          />
+          <span class="icon-[ph--floppy-disk] shrink-0 settings-btn-save-icon" aria-hidden="true" />
           <span id="settings-btn-save-label">
             {
               { error: 'Retry Save', saved: 'Save', saving: 'Saving…', unsaved: 'Save' }[

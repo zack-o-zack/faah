@@ -80,9 +80,9 @@ export function ReviewTabs(): JSX.Element {
       >
         <Show
           when={explaining()}
-          fallback={<span class="icon-[ph--sparkle] size-3.5 shrink-0" aria-hidden="true" />}
+          fallback={<span class="icon-[ph--sparkle] shrink-0" aria-hidden="true" />}
         >
-          <Spiral state="thinking" size={14} />
+          <Spiral state="thinking" size={18} />
         </Show>
         Explain PR
       </button>
@@ -100,7 +100,7 @@ export function ReviewTabs(): JSX.Element {
           onClick={editor.actions.refreshReview}
         >
           <span
-            class="icon-[ph--arrow-clockwise] size-3.5 shrink-0"
+            class="icon-[ph--arrow-clockwise] shrink-0"
             classList={{
               'animate-spin':
                 review.state.tab === 'overview'
@@ -134,7 +134,7 @@ function ReviewTab(props: ReviewTabProps): JSX.Element {
       onClick={() => editor.actions.setReviewTab(props.id)}
     >
       <span data-tab-label class="flex items-center gap-1.5">
-        <span class={`${props.icon} size-3.5 shrink-0`} aria-hidden="true" />
+        <span class={`${props.icon} shrink-0`} aria-hidden="true" />
         {props.name}
       </span>
       {props.info}
@@ -194,7 +194,7 @@ function WalkthroughToolbar(): JSX.Element {
               onClick={() => editor.actions.setGroupFilter(chip.id)}
             >
               <Show when={chip.icon}>
-                <span class={`${chip.icon} size-3 shrink-0`} aria-hidden="true" />
+                <span class={`${chip.icon} shrink-0`} aria-hidden="true" />
               </Show>
               {chip.label}
               <span class="tabular-nums text-muted-foreground">{counts()[chip.id]}</span>

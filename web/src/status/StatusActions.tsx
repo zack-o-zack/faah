@@ -66,8 +66,8 @@ export function StatusActions(): JSX.Element {
                 <span
                   class={
                     action.icon === 'zap'
-                      ? 'icon-[ph--lightning] size-3.5 shrink-0 shell-ico hidden desktop:block'
-                      : 'icon-[ph--magnifying-glass] size-3.5 shrink-0 shell-ico hidden desktop:block'
+                      ? 'icon-[ph--lightning] shrink-0 shell-ico hidden desktop:block'
+                      : 'icon-[ph--magnifying-glass] shrink-0 shell-ico hidden desktop:block'
                   }
                   aria-hidden="true"
                 />

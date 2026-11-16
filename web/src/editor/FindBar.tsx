@@ -75,7 +75,7 @@ export function FindBar(): JSX.Element {
           data-variant="ghost"
           data-size="icon-xs"
         >
-          <span class="icon-[ph--arrow-up] size-3.5 shrink-0" aria-hidden="true" />
+          <span class="icon-[ph--arrow-up] shrink-0" aria-hidden="true" />
         </button>
         <button
           id="find-next"
@@ -85,7 +85,7 @@ export function FindBar(): JSX.Element {
           data-variant="ghost"
           data-size="icon-xs"
         >
-          <span class="icon-[ph--arrow-down] size-3.5 shrink-0" aria-hidden="true" />
+          <span class="icon-[ph--arrow-down] shrink-0" aria-hidden="true" />
         </button>
         <button
           id="find-close"
@@ -95,7 +95,7 @@ export function FindBar(): JSX.Element {
           data-variant="ghost"
           data-size="icon-xs"
         >
-          <span class="icon-[ph--x] size-3.5 shrink-0" aria-hidden="true" />
+          <span class="icon-[ph--x] shrink-0" aria-hidden="true" />
         </button>
       </div>
     </div>

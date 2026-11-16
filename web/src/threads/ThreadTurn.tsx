@@ -68,7 +68,7 @@ export function ThreadTurn(props: ThreadTurnProps): JSX.Element {
               if (thread) void editor.actions.showExplanation(thread, props.turn.id);
             }}
           >
-            <span class="icon-[ph--sparkle] size-3" aria-hidden="true" />
+            <span class="icon-[ph--sparkle]" aria-hidden="true" />
             Show on code
           </button>
         </Show>
