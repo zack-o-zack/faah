@@ -48,7 +48,7 @@ export function Holding(props: HoldingProps): JSX.Element {
         class="btn desktop-menu-btn hidden! win-linux:inline-flex!"
         aria-label="Application menu"
       >
-        <span class="icon-[lucide--menu] size-4" />
+        <span class="icon-[ph--list] size-4" />
       </button>
       <main
         class={`mx-auto flex min-h-dvh w-full max-w-[560px] flex-col
@@ -62,8 +62,8 @@ export function Holding(props: HoldingProps): JSX.Element {
             <span
               class={
                 data().PR
-                  ? 'icon-[lucide--git-pull-request] size-5 text-gi'
-                  : 'icon-[lucide--folder] size-5 text-muted-foreground'
+                  ? 'icon-[ph--git-pull-request] size-5 text-gi'
+                  : 'icon-[ph--folder] size-5 text-muted-foreground'
               }
             />
           </figure>
@@ -83,7 +83,7 @@ export function Holding(props: HoldingProps): JSX.Element {
               role="alert"
             >
               <span
-                class="icon-[lucide--circle-alert] row-span-2 size-4 translate-y-0.5"
+                class="icon-[ph--warning-circle] row-span-2 size-4 translate-y-0.5"
                 aria-hidden="true"
               />
               <h2 class="col-start-2">Could not open it</h2>
@@ -95,7 +95,7 @@ export function Holding(props: HoldingProps): JSX.Element {
         >
           <p class="flex items-start gap-2 text-sm text-muted-foreground" role="status">
             <span
-              class={`icon-[lucide--loader-circle] size-4 shrink-0 animate-spin
+              class={`icon-[ph--circle-notch] size-4 shrink-0 animate-spin
         motion-reduce:animate-none`}
               aria-hidden="true"
             />
@@ -116,7 +116,7 @@ export function Holding(props: HoldingProps): JSX.Element {
             </a>
           </Show>
           <a class="btn first:-ms-2.5" data-variant="ghost" data-size="sm" href={data().Base}>
-            <span class="icon-[lucide--arrow-left] size-4" aria-hidden="true" />
+            <span class="icon-[ph--arrow-left] size-4" aria-hidden="true" />
             Back to workbench
           </a>
         </footer>

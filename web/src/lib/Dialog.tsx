@@ -72,7 +72,7 @@ export function Dialog(props: DialogProps): JSX.Element {
                   title="Close (Esc)"
                   onClick={() => props.onClose()}
                 >
-                  <span class="icon-[lucide--x] size-3.5" aria-hidden="true" />
+                  <span class="icon-[ph--x] size-3.5" aria-hidden="true" />
                 </button>
               </Show>
             </header>

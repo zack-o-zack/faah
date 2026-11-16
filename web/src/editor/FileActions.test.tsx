@@ -69,7 +69,7 @@ test('whole-file explain sits beside edit with matching Basecoat controls', asyn
   expect(button.dataset.variant).toBe(edit.dataset.variant);
   expect(button.dataset.size).toBe(edit.dataset.size);
   expect(button.title).toBe('Explain this file');
-  expect(button.querySelector('.text-special.icon-\\[lucide--sparkle\\]')).toBeTruthy();
+  expect(button.querySelector('.text-special.icon-\\[ph--sparkle\\]')).toBeTruthy();
   fixture.view.unmount();
 });
 

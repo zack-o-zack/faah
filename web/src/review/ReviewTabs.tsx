@@ -42,21 +42,21 @@ export function ReviewTabs(): JSX.Element {
           <ReviewTab
             id="overview"
             name="Overview"
-            icon="icon-[lucide--layout-dashboard]"
+            icon="icon-[ph--squares-four]"
             title="PR description, checks and approvals"
             info={<ChecksStatus />}
           />
           <ReviewTab
             id="walkthrough"
             name="Changed files"
-            icon="icon-[lucide--zap]"
+            icon="icon-[ph--lightning]"
             title="Changed files grouped by kind"
             info={<FilesStatus />}
           />
           <ReviewTab
             id="stages"
             name="Review pipeline"
-            icon="icon-[lucide--sparkle] text-special"
+            icon="icon-[ph--sparkle] text-special"
             title="Your coding harness answers each review question in turn"
             info={<PipelineStatus />}
           />
@@ -80,7 +80,7 @@ export function ReviewTabs(): JSX.Element {
       >
         <Show
           when={explaining()}
-          fallback={<span class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true" />}
+          fallback={<span class="icon-[ph--sparkle] size-3.5 shrink-0" aria-hidden="true" />}
         >
           <Spiral state="thinking" size={14} />
         </Show>
@@ -100,7 +100,7 @@ export function ReviewTabs(): JSX.Element {
           onClick={editor.actions.refreshReview}
         >
           <span
-            class="icon-[lucide--rotate-cw] size-3.5 shrink-0"
+            class="icon-[ph--arrow-clockwise] size-3.5 shrink-0"
             classList={{
               'animate-spin':
                 review.state.tab === 'overview'

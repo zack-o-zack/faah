@@ -170,7 +170,7 @@ export function TreeRow(props: TreeRowProps): JSX.Element {
               aria-label="Actions"
               onClick={menu.open}
             >
-              <span class="icon-[lucide--ellipsis] size-3 shrink-0" aria-hidden="true" />
+              <span class="icon-[ph--dots-three] size-3 shrink-0" aria-hidden="true" />
             </button>
           </span>
         </div>

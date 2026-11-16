@@ -13,7 +13,7 @@ export function StatusSettings(): JSX.Element {
       data-size="icon-xs"
       onClick={() => editor.actions.openSettings('ui')}
     >
-      <span class="icon-[lucide--settings] size-3.5 shrink-0" aria-hidden="true" />
+      <span class="icon-[ph--gear-six] size-3.5 shrink-0" aria-hidden="true" />
     </button>
   );
 }

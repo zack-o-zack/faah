@@ -36,7 +36,7 @@ export function ResultGroup(props: ResultGroupProps): JSX.Element {
       >
         <span
           data-ui="ar"
-          class="icon-[lucide--chevron-down] size-3 shrink-0 text-muted-foreground"
+          class="icon-[ph--caret-down] size-3 shrink-0 text-muted-foreground"
           aria-hidden="true"
         />
         <Show when={props.file.ext}>

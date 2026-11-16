@@ -51,7 +51,7 @@ const TopBar: Component = () => {
         data-variant="ghost"
         data-size="xs"
       >
-        <span class="icon-[lucide--menu] size-3 shrink-0" aria-hidden="true" />
+        <span class="icon-[ph--list] size-3 shrink-0" aria-hidden="true" />
       </button>
       <ReviewToggle />
       <div class="main-top-bar-spacer flex-1" />
@@ -71,7 +71,7 @@ const TopBar: Component = () => {
               title="Back to the fibo workbench"
               aria-label="Back to the fibo workbench"
             >
-              <span class="icon-[lucide--layout-grid] size-3.5" aria-hidden="true" />
+              <span class="icon-[ph--grid-four] size-3.5" aria-hidden="true" />
             </a>
           )}
         </Show>
@@ -96,7 +96,10 @@ const TopBar: Component = () => {
           data-size="icon-xs"
           onClick={() => editor.actions.togglePanel('right')}
         >
-          <span class="icon-[lucide--panel-right] size-3.5 shrink-0" aria-hidden="true" />
+          <span
+            class="icon-[ph--sidebar-simple] -scale-x-100 size-3.5 shrink-0"
+            aria-hidden="true"
+          />
         </button>
       </div>
     </header>

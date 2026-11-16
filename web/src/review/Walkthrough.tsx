@@ -22,7 +22,7 @@ export function Walkthrough(): JSX.Element {
     >
       <Switch>
         <Match when={review.walkthrough.error}>
-          <EmptyState icon="icon-[lucide--circle-alert]" title="Failed to load walkthrough">
+          <EmptyState icon="icon-[ph--warning-circle]" title="Failed to load walkthrough">
             <span class="text-destructive">{review.walkthrough.error.message}</span>
           </EmptyState>
         </Match>
@@ -31,7 +31,7 @@ export function Walkthrough(): JSX.Element {
         </Match>
         <Match when={!files().length && !review.walkthroughData()?.hiddenWhitespaceFiles}>
           <WalkthroughFiles data={review.walkthroughData()} />
-          <EmptyState icon="icon-[lucide--check]" title="No changes in this pull request">
+          <EmptyState icon="icon-[ph--check]" title="No changes in this pull request">
             No differences found between the PR base and head.
           </EmptyState>
         </Match>

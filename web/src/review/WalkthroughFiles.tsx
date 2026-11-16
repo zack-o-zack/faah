@@ -34,7 +34,7 @@ export function WalkthroughFiles(props: WalkthroughFilesProps): JSX.Element {
           ·{' '}
           <span class="font-mono">
             {shortRef(props.data?.baseRef || 'PR base')}{' '}
-            <span class="icon-[lucide--arrow-right] size-3 align-[-2px]" aria-hidden="true" />{' '}
+            <span class="icon-[ph--arrow-right] size-3 align-[-2px]" aria-hidden="true" />{' '}
             {shortRef(props.data?.headRef || 'PR head')}
           </span>
         </span>
@@ -102,7 +102,7 @@ function FileCard(props: { file: WalkthroughFile }): JSX.Element {
             }
           >
             <span class="badge" data-variant="secondary">
-              <span class="icon-[lucide--move-right] size-3 shrink-0" aria-hidden="true" />
+              <span class="icon-[ph--arrow-line-right] size-3 shrink-0" aria-hidden="true" />
               Moved
             </span>
           </Show>

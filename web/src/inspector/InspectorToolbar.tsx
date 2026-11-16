@@ -40,7 +40,7 @@ export function InspectorToolbar(): JSX.Element {
           data-size="icon-xs"
           data-control="icon-action"
         >
-          <span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true" />
+          <span class="icon-[ph--x] size-3.5 shrink-0" aria-hidden="true" />
         </button>
       </div>
     </header>

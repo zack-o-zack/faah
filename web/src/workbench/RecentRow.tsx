@@ -30,7 +30,9 @@ export function RecentRow(props: RecentRowProps): JSX.Element {
           onClick={() => actions.itemAction('pin', item())}
         >
           <span
-            class={item().pinned ? 'icon-[lucide--pin-off] size-4' : 'icon-[lucide--pin] size-4'}
+            class={
+              item().pinned ? 'icon-[ph--push-pin-slash] size-4' : 'icon-[ph--push-pin] size-4'
+            }
           />
         </button>
         <button
@@ -39,7 +41,7 @@ export function RecentRow(props: RecentRowProps): JSX.Element {
           aria-label="Remove from the list"
           onClick={() => actions.itemAction('remove', item())}
         >
-          <span class="icon-[lucide--x] size-4" />
+          <span class="icon-[ph--x] size-4" />
         </button>
         <Show when={item().state === 'running'}>
           <button
@@ -48,7 +50,7 @@ export function RecentRow(props: RecentRowProps): JSX.Element {
             aria-label="Stop this workspace"
             onClick={() => actions.itemAction('stop', item())}
           >
-            <span class="icon-[lucide--square] size-4 text-destructive" />
+            <span class="icon-[ph--square] size-4 text-destructive" />
           </button>
         </Show>
       </div>

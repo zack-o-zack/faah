@@ -9,7 +9,7 @@ export function MetricsSummary(props: MetricsProps): JSX.Element {
   return (
     <>
       <span
-        class="icon-[lucide--activity] size-3.5 shrink-0 shell-ico hidden desktop:block"
+        class="icon-[ph--pulse] size-3.5 shrink-0 shell-ico hidden desktop:block"
         aria-hidden="true"
       />
       <span class="metric">

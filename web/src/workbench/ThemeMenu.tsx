@@ -11,7 +11,7 @@ export function ThemeMenu(): JSX.Element {
       triggerId="btn-theme"
       accessibleLabel="Select theme"
       size="icon-xs"
-      label={<span class="icon-[lucide--palette] size-3.5 shrink-0" aria-hidden="true" />}
+      label={<span class="icon-[ph--palette] size-3.5 shrink-0" aria-hidden="true" />}
       onOpen={() => setBefore(theme.preference())}
       onClose={(reason) => {
         if (reason !== 'select' && before() !== null) theme.setTheme(before() || '', false);

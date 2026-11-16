@@ -45,7 +45,7 @@ export function StageView(): JSX.Element {
                 disabled={review.running() || review.state.pending === 'run'}
                 onClick={() => void editor.actions.runReview(review.state.active)}
               >
-                <span class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true" />
+                <span class="icon-[ph--sparkle] size-3.5 shrink-0" aria-hidden="true" />
                 Run this stage
               </button>
             </div>
@@ -128,7 +128,7 @@ function StageHeader(): JSX.Element {
           data-size="icon-sm"
           onClick={() => editor.actions.openStageEditor(review.state.active)}
         >
-          <span class="icon-[lucide--square-pen] size-3.5 shrink-0" aria-hidden="true" />
+          <span class="icon-[ph--note-pencil] size-3.5 shrink-0" aria-hidden="true" />
         </button>
         <button
           id="btn-rerun-stage"
@@ -140,7 +140,7 @@ function StageHeader(): JSX.Element {
           disabled={review.running() || review.state.pending === 'run'}
           onClick={() => void editor.actions.runReview(review.state.active)}
         >
-          <span class="icon-[lucide--rotate-cw] size-3.5 shrink-0" aria-hidden="true" />
+          <span class="icon-[ph--arrow-clockwise] size-3.5 shrink-0" aria-hidden="true" />
         </button>
       </div>
     </header>

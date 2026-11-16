@@ -123,7 +123,7 @@ export function WalkthroughFile(props: WalkthroughFileProps): JSX.Element {
         class="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-2 border-b bg-sidebar px-3 py-2 text-xs"
       >
         <div class="flex min-w-0 items-center gap-2">
-          <span class="icon-[lucide--file] size-3.5 shrink-0 text-muted-foreground" />
+          <span class="icon-[ph--file] size-3.5 shrink-0 text-muted-foreground" />
           <span class="min-w-0 truncate font-mono font-semibold">
             {props.file.path}
             <span class="block truncate text-muted-foreground" title={props.file.oldPath}>

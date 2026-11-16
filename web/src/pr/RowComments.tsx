@@ -35,7 +35,7 @@ export function CommentMarker(props: CommentMarkerProps): JSX.Element {
           );
         }}
       >
-        <span class="icon-[lucide--message-square] size-3 shrink-0" aria-hidden="true" />
+        <span class="icon-[ph--chat-centered] size-3 shrink-0" aria-hidden="true" />
       </button>
     </Show>
   );

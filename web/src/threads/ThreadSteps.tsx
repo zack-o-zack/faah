@@ -49,10 +49,7 @@ export function ThreadSteps(props: { turn: ThreadTurn; thread?: Thread | null })
                             });
                         }}
                       >
-                        <span
-                          class="icon-[lucide--sparkle] size-3 text-special"
-                          aria-hidden="true"
-                        />
+                        <span class="icon-[ph--sparkle] size-3 text-special" aria-hidden="true" />
                       </button>
                     </Show>
                   </li>
@@ -72,7 +69,7 @@ function StepHead(props: { turn: ThreadTurn }): JSX.Element {
       fallback={
         <>
           <span
-            class="icon-[lucide--chevron-right] mt-px size-3 shrink-0 transition-transform group-open:rotate-90"
+            class="icon-[ph--caret-right] mt-px size-3 shrink-0 transition-transform group-open:rotate-90"
             aria-hidden="true"
           />
           {props.turn.tools?.length} {props.turn.tools?.length === 1 ? 'step' : 'steps'}

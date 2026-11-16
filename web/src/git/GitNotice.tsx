@@ -46,7 +46,7 @@ export function GitNotice(): JSX.Element {
               disabled={!!editor.git.state.pending}
               onClick={editor.actions.clearGitNotice}
             >
-              <span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true" />
+              <span class="icon-[ph--x] size-3.5 shrink-0" aria-hidden="true" />
             </button>
           </div>
           <p class="whitespace-pre-wrap">{notice().text}</p>
@@ -64,7 +64,7 @@ export function GitNotice(): JSX.Element {
                   onClick={() => void choose(choice)}
                 >
                   <Show when={['rebase', 'merge', 'finish'].includes(choice)}>
-                    <span class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true" />
+                    <span class="icon-[ph--sparkle] size-3.5 shrink-0" aria-hidden="true" />
                   </Show>
                   {labels[choice]}
                 </button>

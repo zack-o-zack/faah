@@ -319,6 +319,23 @@ Colours live in theme files. Components use semantic utilities or `var(...)`.
 Derived colours may use `color-mix` with tokens and `transparent`; do not add
 colour literals outside theme files.
 
+## Icons
+
+Icons are Phosphor, regular weight, from `@iconify-json/ph` via the Tailwind
+Iconify plugin: `icon-[ph--name]`. 16px in toolbars, in `ink` or `ink-muted`.
+Use `-fill` only for a filled state mark. No emoji as icons.
+
+Existing `size-*` utilities size the masks at `1em`; the 256-unit viewBox does
+not change the CSS size. Use `circle-notch animate-spin` for plain spinners.
+Agent busy states keep the shared Spiral. Markdown alert and external-link
+masks also use Phosphor regular. The web build replaces Basecoat's embedded
+caret/check artwork with the same set, preserving its theme colour and opacity.
+
+The set has no draft or closed pull-request variant. Use `pencil-line` for a
+draft and `prohibit` for a closed request, keeping both distinct from open
+`git-pull-request` and merged `git-merge`. `sidebar-simple` depicts a left
+sidebar, so mirror it with `-scale-x-100` for the right-inspector action.
+
 ## Shape, depth and keyboard focus
 
 Brand shape and motion live in the base `:root` of `web/tailwind.css`, shared by

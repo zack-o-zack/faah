@@ -45,7 +45,7 @@ export function StageCard(props: StageCardProps): JSX.Element {
       </ContextMenu>
       <div class="absolute top-1.5 right-1.5 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 has-[[aria-expanded=true]]:opacity-100">
         <DropdownMenu
-          label={<span class="icon-[lucide--ellipsis] size-3.5 shrink-0" aria-hidden="true" />}
+          label={<span class="icon-[ph--dots-three] size-3.5 shrink-0" aria-hidden="true" />}
           accessibleLabel={`Actions for ${title()}`}
           size="icon-xs"
           control="review-stage-menu-btn"
@@ -64,14 +64,14 @@ function StageMenuItems(props: { index: number }): JSX.Element {
   return (
     <>
       <MenuItem
-        icon="icon-[lucide--sparkle] text-special"
+        icon="icon-[ph--sparkle] text-special"
         disabled={review.running()}
         onSelect={() => void editor.actions.runReview(props.index)}
       >
         Run this stage
       </MenuItem>
       <MenuItem
-        icon="icon-[lucide--square-pen]"
+        icon="icon-[ph--note-pencil]"
         onSelect={() => {
           editor.actions.selectReviewStage(props.index);
           editor.actions.openStageEditor(props.index);
@@ -80,14 +80,14 @@ function StageMenuItems(props: { index: number }): JSX.Element {
         Edit
       </MenuItem>
       <MenuItem
-        icon="icon-[lucide--arrow-up]"
+        icon="icon-[ph--arrow-up]"
         disabled={review.running() || props.index === 0}
         onSelect={() => void editor.actions.mutateStage(props.index, 'up')}
       >
         Move up
       </MenuItem>
       <MenuItem
-        icon="icon-[lucide--arrow-down]"
+        icon="icon-[ph--arrow-down]"
         disabled={review.running() || props.index === count() - 1}
         onSelect={() => void editor.actions.mutateStage(props.index, 'down')}
       >
@@ -95,7 +95,7 @@ function StageMenuItems(props: { index: number }): JSX.Element {
       </MenuItem>
       <hr role="separator" class="my-1 border-border" />
       <MenuItem
-        icon="icon-[lucide--trash-2]"
+        icon="icon-[ph--trash]"
         class="text-destructive"
         disabled={review.running() || count() <= 1}
         onSelect={() => void editor.actions.mutateStage(props.index, 'remove')}

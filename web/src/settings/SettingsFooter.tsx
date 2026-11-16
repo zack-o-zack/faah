@@ -4,10 +4,10 @@ import { useSettings } from './context.ts';
 import type { SaveStatus } from './store.ts';
 
 const STATUS_ICONS: Record<SaveStatus['status'], string> = {
-  saved: 'icon-[lucide--check]',
-  unsaved: 'icon-[lucide--circle-dot]',
-  saving: 'icon-[lucide--loader-circle] animate-spin',
-  error: 'icon-[lucide--circle-alert]',
+  saved: 'icon-[ph--check]',
+  unsaved: 'icon-[ph--record]',
+  saving: 'icon-[ph--circle-notch] animate-spin',
+  error: 'icon-[ph--warning-circle]',
 };
 const STATUS_COLORS: Record<SaveStatus['status'], string> = {
   saved: 'text-gi',
@@ -56,7 +56,7 @@ export const SettingsFooter: Component = () => {
           data-control="settings-btn-save"
         >
           <span
-            class="icon-[lucide--save] size-3.5 shrink-0 settings-btn-save-icon"
+            class="icon-[ph--floppy-disk] size-3.5 shrink-0 settings-btn-save-icon"
             aria-hidden="true"
           />
           <span id="settings-btn-save-label">

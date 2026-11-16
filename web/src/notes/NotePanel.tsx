@@ -98,7 +98,7 @@ export function NotePanel(props: {
           disabled={busy()}
           onClick={() => void dismiss()}
         >
-          <span class="icon-[lucide--x] size-3" />
+          <span class="icon-[ph--x] size-3" />
         </button>
       </footer>
     </section>

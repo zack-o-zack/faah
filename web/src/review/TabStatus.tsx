@@ -41,7 +41,7 @@ export function TabStatus(props: TabStatusProps): JSX.Element {
       return {
         text: '',
         title: `${label}: couldn't load`,
-        icon: 'icon-[lucide--circle-x] text-destructive',
+        icon: 'icon-[ph--x-circle] text-destructive',
       };
     if (props.noun === 'files')
       return { text: String(props.count), title: `${label}: ${props.count}`, icon: '' };
@@ -62,10 +62,10 @@ export function TabStatus(props: TabStatusProps): JSX.Element {
     let icon = '';
     if (counts.failed) {
       text = String(counts.failed);
-      icon = 'icon-[lucide--circle-x] text-destructive';
+      icon = 'icon-[ph--x-circle] text-destructive';
     } else if (counts.running || counts.queued || (counts.pending && remaining < total)) {
       text = `${total - remaining}/${total}`;
-      icon = 'icon-[lucide--loader-circle] text-warn motion-safe:animate-spin';
+      icon = 'icon-[ph--circle-notch] text-warn motion-safe:animate-spin';
     }
     const title =
       label +

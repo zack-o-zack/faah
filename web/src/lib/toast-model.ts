@@ -6,9 +6,9 @@ export interface ToastConfig {
   duration?: number;
 }
 const icons: Record<string, string> = {
-  success: 'icon-[lucide--circle-check]',
-  error: 'icon-[lucide--circle-alert]',
-  info: 'icon-[lucide--info]',
+  success: 'icon-[ph--check-circle]',
+  error: 'icon-[ph--warning-circle]',
+  info: 'icon-[ph--info]',
 };
 export function toastConfig(kind: string, text: string, duration?: number): ToastConfig {
   let config: ToastConfig;

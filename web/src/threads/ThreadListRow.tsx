@@ -64,7 +64,7 @@ export function ThreadListRow(props: ThreadListRowProps): JSX.Element {
             props.onDelete();
           }}
         >
-          <span class="icon-[lucide--trash-2] size-3 shrink-0" aria-hidden="true" />
+          <span class="icon-[ph--trash] size-3 shrink-0" aria-hidden="true" />
         </button>
       </div>
       <div data-ui="thr-item-meta" class="flex justify-between gap-2 text-xs text-muted-foreground">

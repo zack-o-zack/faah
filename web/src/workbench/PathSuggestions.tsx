@@ -33,9 +33,7 @@ export function PathSuggestions(props: PathSuggestionsProps): JSX.Element {
           >
             <span
               class={
-                entry.git
-                  ? 'icon-[lucide--folder-git-2] size-4 text-gi'
-                  : 'icon-[lucide--folder] size-4'
+                entry.git ? 'icon-[ph--git-branch] size-4 text-gi' : 'icon-[ph--folder] size-4'
               }
             />
             <span>{entry.name}</span>

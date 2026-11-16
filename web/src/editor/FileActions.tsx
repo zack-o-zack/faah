@@ -118,7 +118,7 @@ export function FileActions(): JSX.Element {
               });
           }}
         >
-          <span class="icon-[lucide--sparkle] size-3.5 text-special" aria-hidden="true" />
+          <span class="icon-[ph--sparkle] size-3.5 text-special" aria-hidden="true" />
         </button>
       </Show>
     </div>

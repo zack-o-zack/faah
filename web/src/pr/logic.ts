@@ -23,22 +23,22 @@ interface ComposerInput {
 export const PR_STATES = {
   open: {
     label: 'Open',
-    icon: 'icon-[lucide--git-pull-request]',
+    icon: 'icon-[ph--git-pull-request]',
     color: 'text-[#1a7f37] dark:text-[#3fb950]',
   },
   draft: {
     label: 'Draft',
-    icon: 'icon-[lucide--git-pull-request-draft]',
+    icon: 'icon-[ph--pencil-line]',
     color: 'text-muted-foreground',
   },
   merged: {
     label: 'Merged',
-    icon: 'icon-[lucide--git-merge]',
+    icon: 'icon-[ph--git-merge]',
     color: 'text-[#8250df] dark:text-[#a371f7]',
   },
   closed: {
     label: 'Closed',
-    icon: 'icon-[lucide--git-pull-request-closed]',
+    icon: 'icon-[ph--prohibit]',
     color: 'text-[#cf222e] dark:text-[#f85149]',
   },
 };
@@ -278,11 +278,11 @@ export function mergePill(
 }
 
 export const PILL_ICONS: Record<string, string> & { muted: string } = {
-  err: 'icon-[lucide--triangle-alert]',
-  warn: 'icon-[lucide--circle-alert]',
-  busy: 'icon-[lucide--loader-circle] animate-spin',
-  ok: 'icon-[lucide--circle-check]',
-  muted: 'icon-[lucide--circle-dashed]',
+  err: 'icon-[ph--warning]',
+  warn: 'icon-[ph--warning-circle]',
+  busy: 'icon-[ph--circle-notch] animate-spin',
+  ok: 'icon-[ph--check-circle]',
+  muted: 'icon-[ph--circle-dashed]',
 };
 
 export interface MergeMethod {

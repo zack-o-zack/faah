@@ -32,7 +32,7 @@ function PRReviewToggle(): JSX.Element {
           data-size="xs"
           onClick={() => editor.actions.setReviewMode('review')}
         >
-          <span class="icon-[lucide--git-pull-request] size-3.5 shrink-0" aria-hidden="true" />
+          <span class="icon-[ph--git-pull-request] size-3.5 shrink-0" aria-hidden="true" />
           <span>
             PR <span class="tabular-nums">#{pr()?.number}</span>
           </span>
@@ -54,7 +54,7 @@ function PRReviewToggle(): JSX.Element {
         data-size="xs"
         onClick={() => editor.actions.setReviewMode('code')}
       >
-        <span class="icon-[lucide--arrow-left] size-3.5 shrink-0" aria-hidden="true" />
+        <span class="icon-[ph--arrow-left] size-3.5 shrink-0" aria-hidden="true" />
         <span>Back to editor</span>
       </button>
     </Show>

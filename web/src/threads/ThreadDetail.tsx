@@ -33,7 +33,7 @@ export function ThreadDetail(): JSX.Element {
           aria-label="All threads"
           onClick={editor.actions.backToThreads}
         >
-          <span class="icon-[lucide--arrow-left] size-3.5 shrink-0" aria-hidden="true" />
+          <span class="icon-[ph--arrow-left] size-3.5 shrink-0" aria-hidden="true" />
         </button>
         <span id="thr-title" class="min-w-0 flex-1 truncate text-sm font-medium">
           {editor.threads.current()?.title || 'New thread'}
@@ -48,7 +48,7 @@ export function ThreadDetail(): JSX.Element {
             aria-label="Delete current thread"
             onClick={() => void editor.actions.deleteThread()}
           >
-            <span class="icon-[lucide--trash-2] size-3.5 shrink-0" aria-hidden="true" />
+            <span class="icon-[ph--trash] size-3.5 shrink-0" aria-hidden="true" />
           </button>
         </Show>
       </div>
@@ -83,7 +83,7 @@ export function ThreadDetail(): JSX.Element {
                   editor.actions.openFile(thread()?.path || '', { line: thread()?.l1 })
                 }
               >
-                <span class="icon-[lucide--file-code] size-3 shrink-0" aria-hidden="true" />
+                <span class="icon-[ph--file-code] size-3 shrink-0" aria-hidden="true" />
                 <span data-ui="thr-anchor-text" class="truncate">
                   {targetRef(thread() || {})}
                 </span>
@@ -173,8 +173,8 @@ export function ThreadDetail(): JSX.Element {
               <span
                 class={
                   editor.threads.running()
-                    ? 'icon-[lucide--square] size-4'
-                    : 'icon-[lucide--arrow-up] size-4'
+                    ? 'icon-[ph--square] size-4'
+                    : 'icon-[ph--arrow-up] size-4'
                 }
                 aria-hidden="true"
               />

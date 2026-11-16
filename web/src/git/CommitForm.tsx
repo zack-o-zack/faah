@@ -40,10 +40,7 @@ export function CommitForm(): JSX.Element {
                 editor.actions.openSettings('ui', 'Git & Diff', 'git.commitMessageInstruction')
               }
             >
-              <span
-                class="icon-[lucide--sliders-horizontal] size-3.5 shrink-0"
-                aria-hidden="true"
-              />
+              <span class="icon-[ph--sliders-horizontal] size-3.5 shrink-0" aria-hidden="true" />
             </button>
             <button
               id="git-generate-msg"
@@ -58,7 +55,7 @@ export function CommitForm(): JSX.Element {
             >
               <span
                 data-ui="icon"
-                class="icon-[lucide--sparkle] size-3.5 shrink-0"
+                class="icon-[ph--sparkle] size-3.5 shrink-0"
                 aria-hidden="true"
               />
             </button>

@@ -35,7 +35,7 @@ export function BrowseToolbar(props: BrowseToolbarProps): JSX.Element {
         </For>
       </nav>
       <button class="btn" aria-label="New folder" onClick={() => props.onMkdir()}>
-        <span class="icon-[lucide--folder-plus] size-4" />
+        <span class="icon-[ph--folder-plus] size-4" />
       </button>
       <button
         class="btn"
@@ -43,7 +43,7 @@ export function BrowseToolbar(props: BrowseToolbarProps): JSX.Element {
         aria-pressed={state.hidden}
         onClick={actions.toggleHidden}
       >
-        <span class="icon-[lucide--eye] size-4" />
+        <span class="icon-[ph--eye] size-4" />
       </button>
       <button class="btn" data-variant="secondary" onClick={() => props.onOpen()}>
         {state.clone ? 'Use' : 'Open'} {props.selected?.name || 'this folder'}

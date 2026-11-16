@@ -21,13 +21,13 @@ for (const noun of ['checks', 'stages'] as const) {
     {
       statuses: ['failed', 'running'],
       text: '1',
-      icon: 'circle-x',
+      icon: 'x-circle',
       breakdown: '1 failed, 1 running',
     },
     {
       statuses: ['passed', 'running', 'queued'],
       text: '1/3',
-      icon: 'loader-circle',
+      icon: 'circle-notch',
       breakdown: '1 running, 1 queued, 1 passed',
     },
     {
@@ -50,8 +50,8 @@ for (const noun of ['checks', 'stages'] as const) {
       expect(count.classList.contains('tabular-nums')).toBe(true);
       if (icon) {
         expect(count.children).toHaveLength(1);
-        expect(count.firstElementChild?.className).toContain(`icon-[lucide--${icon}]`);
-        if (icon === 'loader-circle')
+        expect(count.firstElementChild?.className).toContain(`icon-[ph--${icon}]`);
+        if (icon === 'circle-notch')
           expect(count.firstElementChild?.className).toContain('motion-safe:animate-spin');
       } else expect(count.children).toHaveLength(0);
     },
@@ -98,7 +98,7 @@ test('a load error is only an accessible destructive icon', () => {
   const value = screen.getByLabelText("Checks: couldn't load");
   expect(value.textContent).toBe('');
   expect(value.children).toHaveLength(1);
-  expect(value.firstElementChild?.className).toContain('icon-[lucide--circle-x] text-destructive');
+  expect(value.firstElementChild?.className).toContain('icon-[ph--x-circle] text-destructive');
 });
 
 test('Changed files hides its count while loading', () => {

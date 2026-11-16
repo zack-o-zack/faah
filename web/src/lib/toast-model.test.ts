@@ -4,9 +4,9 @@ import { toastConfig } from './toast-model.ts';
 test('toast kinds pick an icon and show the text as the title', () => {
   const config = toastConfig('success', 'Saved');
   expect(config.category).toBe('success');
-  expect(config.icon).toContain('icon-[lucide--circle-check]');
+  expect(config.icon).toContain('icon-[ph--check-circle]');
   expect(config.title).toBe('Saved');
-  expect(toastConfig('error', 'Failed').icon).toContain('icon-[lucide--circle-alert]');
+  expect(toastConfig('error', 'Failed').icon).toContain('icon-[ph--warning-circle]');
 });
 
 test('any other first argument becomes a heading over the text', () => {

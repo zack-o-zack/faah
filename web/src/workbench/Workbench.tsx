@@ -35,7 +35,7 @@ export function Workbench(): JSX.Element {
         class="btn desktop-menu-btn hidden! win-linux:inline-flex!"
         aria-label="Application menu"
       >
-        <span class="icon-[lucide--menu] size-4" />
+        <span class="icon-[ph--list] size-4" />
       </button>
       <div class="flex min-h-0 flex-1 flex-col">
         <main class="mx-auto flex min-h-0 w-full max-w-[720px] flex-1 flex-col px-4 pt-14">

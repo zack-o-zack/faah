@@ -79,7 +79,7 @@ export function ExplainOrb(): JSX.Element {
               <Show when={state.model?.phase === 'done'}>
                 <span
                   data-orb="done"
-                  class="icon-[lucide--check] mt-[3px] size-3.5 shrink-0 text-primary"
+                  class="icon-[ph--check] mt-[3px] size-3.5 shrink-0 text-primary"
                 />
               </Show>
               <Show when={state.model?.phase === 'failed'}>
@@ -112,8 +112,8 @@ export function ExplainOrb(): JSX.Element {
                 <span
                   class={
                     state.compact
-                      ? 'icon-[lucide--chevrons-up-down] size-3.5'
-                      : 'icon-[lucide--chevrons-down-up] size-3.5'
+                      ? 'icon-[ph--caret-up-down] size-3.5'
+                      : 'icon-[ph--arrows-in-line-vertical] size-3.5'
                   }
                 />
               </button>
@@ -127,7 +127,7 @@ export function ExplainOrb(): JSX.Element {
               aria-label="Close explanation"
               onClick={actions.dismissOrb}
             >
-              <span class="icon-[lucide--x] size-3.5" />
+              <span class="icon-[ph--x] size-3.5" />
             </button>
           </Dynamic>
           <Show

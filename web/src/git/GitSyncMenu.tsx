@@ -18,21 +18,21 @@ export function GitSyncMenu(): JSX.Element {
       id: 'git-sync-item',
       name: 'git sync',
       description: 'Pull new commits, then push yours',
-      icon: 'icon-[lucide--refresh-cw]',
+      icon: 'icon-[ph--arrows-clockwise]',
       run: () => editor.actions.syncGit(),
     },
     {
       id: 'git-pull',
       name: 'git pull',
       description: 'Bring in new commits from the remote',
-      icon: 'icon-[lucide--arrow-down]',
+      icon: 'icon-[ph--arrow-down]',
       run: () => editor.actions.pullGit(),
     },
     {
       id: 'git-push',
       name: 'git push',
       description: 'Send your commits to the remote',
-      icon: 'icon-[lucide--arrow-up]',
+      icon: 'icon-[ph--arrow-up]',
       run: () => editor.actions.pushGit(),
     },
   ];
@@ -51,7 +51,7 @@ export function GitSyncMenu(): JSX.Element {
       >
         <span
           data-ui="icon"
-          class="icon-[lucide--refresh-cw] size-3.5 shrink-0"
+          class="icon-[ph--arrows-clockwise] size-3.5 shrink-0"
           aria-hidden="true"
         />
         <span
@@ -68,7 +68,7 @@ export function GitSyncMenu(): JSX.Element {
         size="icon-sm"
         panelId="git-sync-menu"
         accessibleLabel="Sync actions"
-        label={<span class="icon-[lucide--chevron-down] size-3.5 shrink-0" aria-hidden="true" />}
+        label={<span class="icon-[ph--caret-down] size-3.5 shrink-0" aria-hidden="true" />}
       >
         <For each={items}>
           {(item) => (

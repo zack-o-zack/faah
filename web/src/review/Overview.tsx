@@ -19,17 +19,17 @@ import {
 } from './overview-logic.ts';
 
 const CHECK_ICONS: Record<PRCheckState, string> = {
-  passed: 'icon-[lucide--circle-check] text-gi',
-  failed: 'icon-[lucide--circle-x] text-destructive',
-  running: 'icon-[lucide--loader-circle] text-warn motion-safe:animate-spin',
-  skipped: 'icon-[lucide--circle-minus] text-muted-foreground',
-  neutral: 'icon-[lucide--circle] text-muted-foreground',
+  passed: 'icon-[ph--check-circle] text-gi',
+  failed: 'icon-[ph--x-circle] text-destructive',
+  running: 'icon-[ph--circle-notch] text-warn motion-safe:animate-spin',
+  skipped: 'icon-[ph--minus-circle] text-muted-foreground',
+  neutral: 'icon-[ph--circle] text-muted-foreground',
 };
 const REVIEW_ICONS: Record<PRReviewState, string> = {
-  approved: 'icon-[lucide--check]',
-  changes_requested: 'icon-[lucide--circle-alert]',
-  commented: 'icon-[lucide--message-circle]',
-  pending: 'icon-[lucide--clock-3]',
+  approved: 'icon-[ph--check]',
+  changes_requested: 'icon-[ph--warning-circle]',
+  commented: 'icon-[ph--chat-circle]',
+  pending: 'icon-[ph--clock]',
 };
 const CHECK_TONES: Record<PRCheckState, string> = {
   passed: 'text-gi',
@@ -137,7 +137,7 @@ function CheckRow(props: { check: PRCheck; grouped?: boolean }): JSX.Element {
       <Show when={safeMarkdownURL(props.check.url)}>
         <aside class="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">
           <span
-            class="icon-[lucide--external-link] size-3 text-muted-foreground"
+            class="icon-[ph--arrow-square-out] size-3 text-muted-foreground"
             aria-hidden="true"
           />
         </aside>

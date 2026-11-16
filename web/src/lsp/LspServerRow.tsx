@@ -17,7 +17,7 @@ export function LspServerRow(props: LspServerRowProps): JSX.Element {
         data-ui="lsp-dot"
         class={
           view().busy
-            ? 'icon-[lucide--loader-circle] size-3 animate-spin text-muted-foreground'
+            ? 'icon-[ph--circle-notch] size-3 animate-spin text-muted-foreground'
             : `mx-0.5 size-2 rounded-full ${view().dot}`
         }
         aria-label={view().busy ? 'Working' : undefined}
@@ -54,7 +54,7 @@ export function LspServerRow(props: LspServerRowProps): JSX.Element {
             onClick={() => props.onAction(view().action, { server: props.server.name })}
           >
             <span
-              class={`${view().action === 'start' ? 'icon-[lucide--play]' : 'icon-[lucide--square]'} size-3`}
+              class={`${view().action === 'start' ? 'icon-[ph--play]' : 'icon-[ph--square]'} size-3`}
               aria-hidden="true"
             />
           </button>

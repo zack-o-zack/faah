@@ -63,7 +63,7 @@ export function AgentSession(props: AgentSessionProps): JSX.Element {
           data-control="agent-close"
           onClick={() => editor.actions.closeAgentEdit(props.session.id)}
         >
-          <span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true" />
+          <span class="icon-[ph--x] size-3.5 shrink-0" aria-hidden="true" />
         </button>
       </div>
       <Show

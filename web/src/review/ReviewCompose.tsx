@@ -42,7 +42,7 @@ export function ReviewCompose(): JSX.Element {
             data-size="sm"
             onClick={() => void editor.actions.sendReviewFollowup()}
           >
-            <span class="icon-[lucide--arrow-up] size-4" aria-hidden="true" />
+            <span class="icon-[ph--arrow-up] size-4" aria-hidden="true" />
             <ButtonKbd combo="Enter" />
           </button>
         </footer>

@@ -34,7 +34,7 @@ export function TreeToolbar(): JSX.Element {
             onClick={() => void editor.actions.setTreeMode('files')}
             data-control="view-choice"
           >
-            <span class="icon-[lucide--folder] size-3 shrink-0" aria-hidden="true" />
+            <span class="icon-[ph--folder] size-3 shrink-0" aria-hidden="true" />
             <span>Files</span>
           </button>
           <button
@@ -46,7 +46,7 @@ export function TreeToolbar(): JSX.Element {
             onClick={() => void editor.actions.setTreeMode('git')}
             data-control="view-choice"
           >
-            <span class="icon-[lucide--git-branch] size-3 shrink-0" aria-hidden="true" />
+            <span class="icon-[ph--git-branch] size-3 shrink-0" aria-hidden="true" />
             <span>Diff</span>
           </button>
         </TabRail>
@@ -60,7 +60,7 @@ export function TreeToolbar(): JSX.Element {
           data-size="icon-xs"
           data-control="icon-action"
         >
-          <span class="icon-[lucide--file-plus] size-3.5" />
+          <span class="icon-[ph--file-plus] size-3.5" />
         </button>
         <button
           id="btn-new-folder"
@@ -72,7 +72,7 @@ export function TreeToolbar(): JSX.Element {
           data-size="icon-xs"
           data-control="icon-action"
         >
-          <span class="icon-[lucide--folder-plus] size-3.5" />
+          <span class="icon-[ph--folder-plus] size-3.5" />
         </button>
         <button
           id="btn-collapse-tree"
@@ -83,7 +83,7 @@ export function TreeToolbar(): JSX.Element {
           data-size="icon-xs"
           data-control="icon-action"
         >
-          <span class="icon-[lucide--chevrons-up] size-3.5" />
+          <span class="icon-[ph--caret-double-up] size-3.5" />
         </button>
         <button
           id="btn-expand-tree"
@@ -96,7 +96,7 @@ export function TreeToolbar(): JSX.Element {
           data-size="icon-xs"
           data-control="icon-action"
         >
-          <span class="icon-[lucide--chevrons-down] size-3.5" />
+          <span class="icon-[ph--caret-double-down] size-3.5" />
         </button>
         <button
           id="btn-reindex"
@@ -108,7 +108,7 @@ export function TreeToolbar(): JSX.Element {
           data-size="icon-xs"
           data-control="icon-action"
         >
-          <span class="icon-[lucide--rotate-cw] size-3.5" />
+          <span class="icon-[ph--arrow-clockwise] size-3.5" />
         </button>
       </span>
     </header>
