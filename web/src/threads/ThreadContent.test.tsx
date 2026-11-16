@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@solidjs/testing-library';
+import { fireEvent, render, screen, waitFor } from '@solidjs/testing-library';
+import { createSignal } from 'solid-js';
 import { expect, test, vi } from 'vitest';
 import { ThreadListRow } from './ThreadListRow.tsx';
 import { ThreadArtifacts } from './ThreadArtifacts.tsx';
@@ -15,7 +16,7 @@ test('deleting a populated thread does not open it and keyboard activation opens
       onDelete={remove}
     />
   ));
-  expect(screen.getByText('Workspace')).toBeTruthy();
+  expect(document.querySelector('[data-ui="thr-item-ref"]')?.textContent).toBe('Explain startup');
   expect(screen.getByTitle('Last reply failed')).toBeTruthy();
   const button = screen.getByRole('button', { name: 'Delete thread' });
   expect(button.dataset.variant).toBe('ghost');
@@ -27,7 +28,7 @@ test('deleting a populated thread does not open it and keyboard activation opens
   expect(open).toHaveBeenCalledOnce();
 });
 
-test('explanation notes and walkthrough steps are flowing links to their source ranges', () => {
+test('finished notes show code peeks and walkthrough steps open their source ranges', () => {
   const open = vi.fn();
   const turn = decodeTurn({
     id: 1,
@@ -40,11 +41,34 @@ test('explanation notes and walkthrough steps are flowing links to their source 
     ],
   });
   render(() => <ThreadArtifacts turn={turn} onOpen={open} />);
-  expect(screen.queryByRole('button')).toBeNull();
-  fireEvent.click(screen.getByRole('link', { name: /main.go:3-8 Starts the workspace/ }));
+  expect(screen.getByText('Starts the workspace')).toBeTruthy();
+  expect(document.querySelector('[data-ui=thr-peek]')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: '3' }));
   fireEvent.click(screen.getByRole('link', { name: 'Serve' }));
   expect(open.mock.calls).toEqual([
-    [{ path: 'main.go', line: 3, end: 8 }],
+    [{ path: 'main.go', line: 3 }],
     [{ path: 'app.go', line: 12, end: 12 }],
   ]);
+});
+
+test('code peeks keep their folded state when a thread snapshot redraws its notes', async () => {
+  vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+    Response.json({ start: 0, total: 3, lines: ['one', 'two', 'three'] }),
+  );
+  const snapshot = (reply: string) =>
+    decodeTurn({
+      id: 1,
+      reply,
+      notes: [{ path: 'a.go', l1: 1, l2: 2, summary: 'A note', text: 'one\ntwo' }],
+    });
+  const [turn, setTurn] = createSignal(snapshot('first'));
+  render(() => <ThreadArtifacts turn={turn()} onOpen={() => {}} />);
+  const peek = document.querySelector('details');
+  expect(peek).toBeInstanceOf(HTMLDetailsElement);
+  if (!(peek instanceof HTMLDetailsElement)) throw new Error('Missing peek');
+  peek.open = false;
+  fireEvent(peek, new Event('toggle'));
+  setTurn(snapshot('updated'));
+  await waitFor(() => expect(document.querySelector('details')?.open).toBe(false));
+  expect(screen.getByText('A note')).toBeTruthy();
 });

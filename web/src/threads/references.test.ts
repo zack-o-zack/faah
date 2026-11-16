@@ -49,6 +49,10 @@ describe('explainEvidenceLine', () => {
 
   test('missing evidence', () => {
     expect(explainEvidenceLine(undefined)).toBe('');
+    expect(explainEvidenceLine({})).toBe('');
+    expect(
+      explainEvidenceLine({ source: '', definition: false, refs: 0, callers: 0, identifiers: 0 }),
+    ).toBe('');
   });
 });
 

@@ -1,21 +1,29 @@
 import type { AppState } from '../app/store.ts';
 import type { DocTab, ImageState } from '../editor/types.ts';
 import type { SettingsStore } from '../settings/store.ts';
-import type { OrbModel, OrbThread } from './orb-model.ts';
+import type { OrbModel, OrbThread, WalkPosition } from './orb-model.ts';
 interface ViewerStore {
   state: AppState;
   settings: SettingsStore;
   actions: {
     patchDocument: (path: string, patch: Partial<DocTab>) => void;
     setExplanation: (value: OrbModel | null) => void;
-    setExplanationShown: (shown: boolean) => void;
+    setWalk: (value: WalkPosition | null) => void;
     setViewed: (path: string, viewed: boolean) => void;
   };
 }
 import { canDiff, previewKind, viewMode } from './view.ts';
 import { diffLayout } from '../settings/logic.ts';
 import { zoomScale } from './image-math.ts';
-import { orbStart, orbFromThread, orbFromStep, orbFromSummary } from './orb-model.ts';
+import {
+  orbStart,
+  orbFromThread,
+  orbFromStep,
+  orbFromSummary,
+  walkStart,
+  walkMove,
+  walkStop,
+} from './orb-model.ts';
 
 export function createViewerActions(store: ViewerStore): ReturnType<typeof buildViewerActions> {
   return buildViewerActions(store);
@@ -117,6 +125,18 @@ function buildViewerActions(store: ViewerStore) {
     toggleViewed(path: string): void {
       store.actions.setViewed(path, !store.state.viewers.viewed[path]);
     },
+    walkStart(index = 0, surface: WalkPosition['surface'] = 'source') {
+      store.actions.setWalk(walkStart(model(), index, surface));
+    },
+    walkMove(delta: -1 | 1) {
+      store.actions.setWalk(walkMove(model(), store.state.explanation.walk, delta));
+    },
+    walkStop() {
+      store.actions.setWalk(walkStop());
+    },
+    orbOpen(thread: OrbThread, turn: number): void {
+      setOrb(orbFromThread({ ...orbStart(), turn }, thread));
+    },
     orbBegin() {
       setOrb(orbStart());
     },
@@ -143,10 +163,6 @@ function buildViewerActions(store: ViewerStore) {
     },
     dismissOrb() {
       setOrb(null);
-    },
-    showOrbThread(shown: boolean): void {
-      store.actions.setExplanationShown(shown);
-      if (shown && model()?.phase !== 'running') setOrb(null);
     },
   };
 }

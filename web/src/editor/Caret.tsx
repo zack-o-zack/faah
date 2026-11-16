@@ -42,6 +42,7 @@ export function Caret(props: CaretProps): JSX.Element {
     const x = gutter + (wrapped ? column % capacity : column) * geometry.charWidth;
     const y =
       (editor.offsets()[document.cur - 1] || 0) +
+      editor.annotationHeight(document.cur) +
       (wrapped ? Math.floor(column / capacity) : 0) * geometry.lineHeight;
     return { x, y };
   });

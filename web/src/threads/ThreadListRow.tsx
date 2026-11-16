@@ -10,6 +10,10 @@ interface ThreadListRowProps {
   onDelete: () => void;
 }
 export function ThreadListRow(props: ThreadListRowProps): JSX.Element {
+  const reference = () => {
+    if (props.thread.path) return targetRef(props.thread);
+    return props.thread.kind === 'explain' ? props.thread.title : 'Workspace';
+  };
   return (
     <div
       data-ui="thr-item"
@@ -68,7 +72,7 @@ export function ThreadListRow(props: ThreadListRowProps): JSX.Element {
       </div>
       <div data-ui="thr-item-meta" class="flex justify-between gap-2 text-xs text-muted-foreground">
         <span data-ui="thr-item-ref" class="truncate font-mono">
-          {props.thread.path ? targetRef(props.thread) : 'Workspace'}
+          {reference()}
         </span>
         <span class="shrink-0">
           {props.thread.turns || 0} {props.thread.turns === 1 ? 'turn' : 'turns'} ·{' '}

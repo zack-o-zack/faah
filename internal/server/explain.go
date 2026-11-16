@@ -114,18 +114,33 @@ func (s *Server) handleExplain(w http.ResponseWriter, r *http.Request) {
 		httpx.Fail(w, 400, "bad request")
 		return
 	}
-	target, lines, key, code, err := s.explainTarget(&req)
+	started := time.Now()
+	ctx, cancel := context.WithTimeout(r.Context(), explain.Budget)
+	defer cancel()
+	var target explain.Target
+	var lines []string
+	var key string
+	var code int
+	var err error
+	var ev explain.Evidence
+	if req.PR {
+		target, ev, err = s.explainPRTarget(ctx)
+		code = http.StatusConflict
+		req = explain.Request{PR: true, Force: req.Force}
+	} else {
+		target, lines, key, code, err = s.explainTarget(&req)
+	}
 	if err != nil {
 		httpx.Fail(w, code, err.Error())
 		return
 	}
 
-	started := time.Now()
-	ctx, cancel := context.WithTimeout(r.Context(), explain.Budget)
-	defer cancel()
-	ev, prepared := s.preparedExplain(ctx, key)
-	if !prepared {
-		ev = s.gatherExplainEvidence(ctx, target, lines)
+	prepared := false
+	if !req.PR {
+		ev, prepared = s.preparedExplain(ctx, key)
+		if !prepared {
+			ev = s.gatherExplainEvidence(ctx, target, lines)
+		}
 	}
 	if r.Context().Err() != nil {
 		return // the reader has moved on

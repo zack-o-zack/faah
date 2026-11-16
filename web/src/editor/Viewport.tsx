@@ -116,6 +116,11 @@ export function Viewport(): JSX.Element {
     };
   }
   function movePointer(event: MouseEvent) {
+    if (event.target instanceof Element && event.target.closest('[data-note]')) {
+      clearTimeout(hoverTimer);
+      editor.actions.hideHover();
+      return;
+    }
     if (!dom) return;
     clearTimeout(hoverTimer);
     const { clientX: x, clientY: y } = event;
@@ -200,7 +205,7 @@ export function Viewport(): JSX.Element {
         if (
           event.button !== 0 ||
           !(event.target instanceof Element) ||
-          event.target.closest('button') ||
+          event.target.closest('button, [data-note]') ||
           !dom
         )
           return;
@@ -250,8 +255,11 @@ export function Viewport(): JSX.Element {
         <div
           id="rows"
           ref={rows}
-          class="absolute top-0 left-0 w-full will-change-transform"
-          style={{ transform: `translateY(${offsets()[range().first] || 0}px)` }}
+          class="absolute top-0 left-0 will-change-transform"
+          style={{
+            transform: `translateY(${offsets()[range().first] || 0}px)`,
+            width: '100%',
+          }}
         >
           <Index each={slots()}>
             {(index) => (

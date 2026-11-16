@@ -13,8 +13,8 @@ import (
 // search, and file access.
 type Workspace interface {
 	Definition(ctx context.Context, abs, rel string, line, col int) ([]codeintel.NavHit, error)
-	References(ctx context.Context, abs, rel string, line, col int) ([]codeintel.NavHit, error)
 	Hover(ctx context.Context, abs, rel string, line, col int) (*codeintel.HoverInfo, error)
+	References(ctx context.Context, abs, rel string, line, col int) ([]codeintel.NavHit, error)
 	Symbols(ctx context.Context, abs, rel string) ([]symbols.Symbol, error)
 	PrepareCalls(ctx context.Context, abs, rel string, line, u16col int) ([]codeintel.CallNode, error)
 	Calls(ctx context.Context, rel, item string, outgoing bool) ([]codeintel.CallNode, error)
@@ -56,6 +56,11 @@ type explainGather struct {
 }
 
 func Gather(ctx context.Context, ws Workspace, t Target, lines []string) Evidence {
+	if t.File {
+		return Evidence{Kind: KindFile, Source: "", Summary: Summary{},
+			Key: Key(KindFile, t.Rel, strings.Join(lines, "\n")), Hash: "|",
+			Packet: BuildPacket([]Section{{"Target", targetSection(t)}})}
+	}
 	g := &explainGather{
 		ws: ws, target: t,
 		files: map[string][]string{t.Rel: lines},
@@ -65,10 +70,10 @@ func Gather(ctx context.Context, ws Workspace, t Target, lines []string) Evidenc
 	enc, hasEnc := g.enclosing()
 
 	var sections []Section
-	sections = append(sections, Section{"Target", targetSection(t, lines)})
+	sections = append(sections, Section{"Target", targetSection(t)})
 	// A selection that is the whole function has no surrounding code to add.
 	if hasEnc && !(t.Name == "" && t.L1 <= enc.L1 && t.L2 >= enc.L2) {
-		sections = append(sections, Section{fmt.Sprintf("Enclosing code: %s, %s:%s", enc.Name, t.Rel, codeintel.LineRef(enc.L1, enc.L2)), numberedBlock(t.Rel, enc.Text, enc.L1, explainBodyMax)})
+		sections = append(sections, Section{"Enclosing symbol", enc.Name + " (" + Reference(t.Rel, enc.L1, enc.L2) + ")"})
 	}
 
 	var ev Evidence
@@ -82,14 +87,12 @@ func Gather(ctx context.Context, ws Workspace, t Target, lines []string) Evidenc
 	return ev
 }
 
-func targetSection(t Target, lines []string) string {
-	where := fmt.Sprintf("%s:%s", t.Rel, codeintel.LineRef(t.L1, t.L2))
-	code := t.Text
+func targetSection(t Target) string {
+	where := Reference(t.Rel, t.L1, t.L2)
 	if t.Name != "" {
-		where = fmt.Sprintf("Symbol `%s` at %s", t.Name, where)
-		code = joinLines(lines, t.L1, t.L1) // the bare name says nothing the heading does not
+		return fmt.Sprintf("Symbol %s at %s", t.Name, where)
 	}
-	return where + "\n" + numberedBlock(t.Rel, code, t.L1, explainTargetMax)
+	return where
 }
 
 func (g *explainGather) symbols(rel string) []symbols.Symbol {
@@ -245,19 +248,15 @@ scan:
 			col := UTF16Len(line[:loc[0]])
 			hits, _ := g.ws.Definition(ctx, t.Abs, t.Rel, n, col)
 			if len(hits) == 0 || (hits[0].Path == t.Rel && hits[0].Line >= t.L1 && hits[0].Line <= t.L2) {
-				continue // declared by the selection itself, which is already quoted
+				continue // declared by the selection itself, which the target reference already covers
 			}
-			info, _ := g.ws.Hover(ctx, t.Abs, t.Rel, n, col)
-			if info == nil || info.Empty {
-				continue
-			}
-			sig := strings.Join(strings.Fields(stripHoverHTML(info.Signature)), " ")
 			where := fmt.Sprintf("%s:%d", hits[0].Path, hits[0].Line)
 			if hits[0].Ext {
 				where = "outside the workspace"
 			}
-			entries = append(entries, fmt.Sprintf("- %s (%s): %s", name, where, sig))
-			parts = append(parts, name+" "+sig)
+			entry := fmt.Sprintf("- %s (%s)", name, where)
+			entries = append(entries, entry)
+			parts = append(parts, entry)
 		}
 	}
 	ev.Summary.Identifiers = len(entries)

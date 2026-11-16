@@ -1,5 +1,6 @@
 import type { JSX } from 'solid-js';
 import { Match, Show, Switch } from 'solid-js';
+import { EditorCorner } from '../viewers/EditorCorner.tsx';
 import { Overview } from './Overview.tsx';
 import { useEditor } from '../editor/context.tsx';
 import { ReviewTabs } from './ReviewTabs.tsx';
@@ -16,7 +17,7 @@ export function ReviewView(): JSX.Element {
       >
         <ReviewTabs />
         {/* Tab contents scroll within this space instead of contributing their full intrinsic height. */}
-        <div class="flex min-h-24 flex-1 flex-col overflow-hidden [contain:size]">
+        <div class="relative flex min-h-24 flex-1 flex-col overflow-hidden [contain:size]">
           <Switch>
             <Match when={review.state.tab === 'overview'}>
               <Overview />
@@ -36,6 +37,7 @@ export function ReviewView(): JSX.Element {
               </div>
             </Match>
           </Switch>
+          <EditorCorner />
         </div>
       </div>
     </Show>

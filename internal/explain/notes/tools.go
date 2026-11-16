@@ -31,7 +31,7 @@ var annotateSchema = json.RawMessage(`{"type":"object","required":["notes"],"pro
 	`"l2":{"type":"integer","description":"Last line of a block, inclusive"},` +
 	`"symbol":{"type":"string","description":"The symbol's name, for kind symbol"},` +
 	`"summary":{"type":"string","description":"One line, at most 120 characters, shown on the code"},` +
-	`"detail":{"type":"string","description":"Optional Markdown shown on hover"}}}}}}`)
+	`"detail":{"type":"string","description":"Optional Markdown shown when the reader expands the note"}}}}}}`)
 
 var walkthroughSchema = json.RawMessage(`{"type":"object","required":["title","steps"],"properties":{"title":{"type":"string"},"steps":{"type":"array","minItems":2,"maxItems":20,"items":{"type":"object","required":["path","l1","l2","title","body"],"properties":{` +
 	`"path":{"type":"string"},"l1":{"type":"integer"},"l2":{"type":"integer"},"title":{"type":"string"},"body":{"type":"string"}}}}}}`)

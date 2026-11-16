@@ -12,6 +12,22 @@ export function FileActions(): JSX.Element {
   const document = editor.active;
   const kind = () => previewKind(document());
   const preview = () => ['markdown', 'table'].includes(viewMode(document()));
+  const explainable = () => {
+    const file = document();
+    return (
+      file &&
+      file.total > 0 &&
+      viewMode(file) === 'source' &&
+      !file.isEditing &&
+      !file.deleted &&
+      !file.diffRef
+    );
+  };
+  const explaining = () =>
+    editor.threads.state.pending === 'explain' ||
+    editor.threads.state.list.some(
+      (thread) => thread.kind === 'explain' && thread.path === document()?.path && thread.running,
+    );
   function source() {
     const line = document()?.diffMode
       ? editor.services.diff?.currentLine()
@@ -81,6 +97,27 @@ export function FileActions(): JSX.Element {
         </Show>
       </Show>
       <EditControls />
+      <Show when={explainable()}>
+        <button
+          id="btn-explain-file"
+          class="btn"
+          data-variant="ghost"
+          data-size="icon-xs"
+          disabled={explaining()}
+          title={explaining() ? 'An explanation for this file is in progress' : 'Explain this file'}
+          aria-label="Explain this file"
+          onClick={() => {
+            const file = document();
+            if (file)
+              void actions.explainSelection({
+                path: file.path,
+                file: true,
+              });
+          }}
+        >
+          <span class="icon-[lucide--sparkle] size-3.5 text-special" aria-hidden="true" />
+        </button>
+      </Show>
     </div>
   );
 }

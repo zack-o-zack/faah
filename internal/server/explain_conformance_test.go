@@ -63,7 +63,7 @@ func TestExplainHarnessConformance(t *testing.T) {
 				}
 			})
 
-			code, res := agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 9, "l2": 9, "c1": 9, "c2": 12, "text": "add"})
+			code, res := agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 9, "l2": 9, "c1": 9, "c2": 12, "symbol": "add"})
 			if code != 200 {
 				t.Fatalf("explain = %d %v", code, res)
 			}

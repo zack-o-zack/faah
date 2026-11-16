@@ -54,6 +54,9 @@ export interface EditorUI {
   vim: VimState;
 }
 export interface Services {
+  explanationCard?: Accessor<HTMLElement | undefined>;
+  registerExplanationCard?: (element: HTMLElement | undefined) => void;
+  walkthrough?: { focus: () => void };
   imageKey?: (event: KeyboardEvent) => boolean;
   diagramFullscreens?: Set<() => boolean>;
   selection?: { copied: (action: string) => void };

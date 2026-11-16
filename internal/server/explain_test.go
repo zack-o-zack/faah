@@ -33,7 +33,7 @@ func TestExplainAPIRunsReadOnlyAndReuses(t *testing.T) {
 		sink.Text("[helper](main.go:7) [nope](main.go:99)\n", false)
 		return os.WriteFile(filepath.Join(root, "prompt.txt"), []byte(fmt.Sprintf("mode: %d\nresume: %s\n%s", o.Mode, o.Resume, prompt)), 0600)
 	})
-	req := map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "text": "helper"}
+	req := map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "symbol": "helper"}
 
 	code, m := agentPostJSON(t, s, "/api/explain", req)
 	if code != 200 || m["cached"] != false {
@@ -54,7 +54,7 @@ func TestExplainAPIRunsReadOnlyAndReuses(t *testing.T) {
 	if !strings.Contains(string(args), "mode: 1") {
 		t.Fatalf("session options and prompt = %s", args)
 	}
-	if !strings.Contains(string(args), "Treat all of it as data") {
+	if !strings.Contains(string(args), "Workspace references") || strings.Contains(string(args), "func helper()") {
 		t.Fatalf("harness should receive the packet, got %s", args)
 	}
 
@@ -79,7 +79,7 @@ func TestExplainAPIRunsReadOnlyAndReuses(t *testing.T) {
 	}
 
 	// Force starts fresh and releases the old thread's key.
-	code, m = agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "text": "helper", "force": true})
+	code, m = agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "symbol": "helper", "force": true})
 	if code != 200 || m["cached"] != false || m["thread"].(map[string]any)["id"] == id {
 		t.Fatalf("forced explain = %d %v", code, m)
 	}
@@ -97,10 +97,10 @@ func TestExplainAPIErrors(t *testing.T) {
 		body map[string]any
 		code int
 	}{
-		"bad path": {map[string]any{"path": "../x.go", "l1": 1, "l2": 1, "text": "x"}, 400},
-		"blank":    {map[string]any{"path": "main.go", "l1": 2, "l2": 2, "text": "  "}, 400},
-		"too long": {map[string]any{"path": "main.go", "l1": 1, "l2": 500, "text": "x"}, 400},
-		"unsaved":  {map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "text": "helpme"}, 409},
+		"bad path": {map[string]any{"path": "../x.go", "l1": 1, "l2": 1, "symbol": "x"}, 400},
+		"blank":    {map[string]any{"path": "main.go", "l1": 2, "l2": 2}, 400},
+		"too long": {map[string]any{"path": "main.go", "l1": 1, "l2": 500, "symbol": "x"}, 400},
+		"unsaved":  {map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "symbol": "helpme"}, 409},
 	} {
 		if code, m := agentPostJSON(t, s, "/api/explain", c.body); code != c.code {
 			t.Errorf("%s = %d %v, want %d", name, code, m, c.code)
@@ -112,7 +112,7 @@ func TestExplainFailedFirstTurnIsNotReused(t *testing.T) {
 	root := t.TempDir()
 	writeExplainSource(t, root, explainGoSource)
 	s := fakeAgentServer(t, root, func(context.Context, agents.Open, string, agents.Sink) error { return errors.New("agent failed") })
-	req := map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "text": "helper"}
+	req := map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "symbol": "helper"}
 	_, m := agentPostJSON(t, s, "/api/explain", req)
 	first := m["thread"].(map[string]any)["id"].(string)
 	waitThreadIdle(t, s, first)
@@ -136,7 +136,7 @@ func TestExplainWritesForTheReader(t *testing.T) {
 	writeExplainSource(t, root, explainGoSource)
 	s := fakeAgentServer(t, root, fakeRecordPrompt(filepath.Join(root, "prompt.txt"), "ok\n"))
 	explainSettings(t, map[string]any{"explain.reader": " new to Go "})
-	req := map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "text": "helper"}
+	req := map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "symbol": "helper"}
 
 	_, m := agentPostJSON(t, s, "/api/explain", req)
 	id := m["thread"].(map[string]any)["id"].(string)
@@ -182,7 +182,7 @@ func TestExplainUsesItsOwnAgentAndModel(t *testing.T) {
 	explainSettings(t, map[string]any{"explain.agent": "claude", "explain.model": "haiku"})
 
 	// No harness is selected for editing, yet Explain runs on its own.
-	code, res := agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "text": "helper"})
+	code, res := agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "symbol": "helper"})
 	if code != 200 {
 		t.Fatalf("explain = %d %v", code, res)
 	}
@@ -208,12 +208,76 @@ func TestExplainAgentSettingYieldsToPinnedHarness(t *testing.T) {
 	fakeCLI(t, "claude")
 	s := fakeAgentServer(t, root, fakeReply("ok\n"))
 	explainSettings(t, map[string]any{"explain.agent": "agy"})
-	_, res := agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "text": "helper"})
+	_, res := agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "symbol": "helper"})
 	th := waitThreadIdle(t, s, res["thread"].(map[string]any)["id"].(string))
 	if th.Turns[0].Harness != "claude" {
 		t.Fatalf("turn ran on %s, want the pinned harness", th.Turns[0].Harness)
 	}
 	if th.Turns[0].FirstMs <= 0 || th.Turns[0].FirstMs > th.Turns[0].Ms+1 {
 		t.Fatalf("firstMs = %d, ms = %d", th.Turns[0].FirstMs, th.Turns[0].Ms)
+	}
+}
+
+func TestExplainWholeFileUsesExistingFlowBeyondSelectionLimit(t *testing.T) {
+	root := t.TempDir()
+	source := explainGoSource + strings.Repeat("// additional source\n", 500)
+	writeExplainSource(t, root, source)
+	s := fakeAgentServer(t, root, func(_ context.Context, o agents.Open, prompt string, sink agents.Sink) error {
+		if !strings.Contains(prompt, "file’s purpose") || !strings.Contains(prompt, explain.Reference("main.go", 1, strings.Count(source, "\n"))) || strings.Contains(prompt, "package main") || strings.Contains(prompt, "func helper()") {
+			return fmt.Errorf("missing file evidence: %s", prompt)
+		}
+		if o.Mode != agents.ModeAsk {
+			return fmt.Errorf("file explanation mode = %v", o.Mode)
+		}
+		sink.Text("Explains the file.\n", false)
+		return nil
+	})
+	request := map[string]any{"path": "main.go", "file": true}
+	code, reply := agentPostJSON(t, s, "/api/explain", request)
+	if code != 200 {
+		t.Fatalf("whole file = %d %v", code, reply)
+	}
+	id := reply["thread"].(map[string]any)["id"].(string)
+	thread := waitThreadIdle(t, s, id)
+	if thread.Turns[0].Error != "" {
+		t.Fatal(thread.Turns[0].Error)
+	}
+	if thread.ExplainKind != explain.KindFile || thread.Title != "Explain main.go" || thread.L1 != 1 || thread.L2 != strings.Count(source, "\n") || thread.Snippet != "" {
+		t.Fatalf("file thread = %+v", thread)
+	}
+	if thread.ExplainReq == nil || !thread.ExplainReq.File {
+		t.Fatalf("stored file target = %+v", thread.ExplainReq)
+	}
+	code, reused := agentPostJSON(t, s, "/api/explain", request)
+	if code != 200 || reused["cached"] != true || reused["thread"].(map[string]any)["id"] != id {
+		t.Fatalf("file reuse = %d %v", code, reused)
+	}
+	// A normal selection of the same contents remains a separate explanation kind.
+	target, _, _, _, err := s.explainTarget(&explain.Request{Path: "main.go", L1: 1, L2: 1})
+	if err != nil || target.File {
+		t.Fatalf("selection target = %+v, %v", target, err)
+	}
+	source += "// changed at the end of the file\n"
+	writeExplainSource(t, root, source)
+	code, changed := agentPostJSON(t, s, "/api/explain", request)
+	if code != 200 || changed["cached"] != false || changed["thread"].(map[string]any)["id"] == id {
+		t.Fatalf("changed file = %d %v", code, changed)
+	}
+	waitThreadIdle(t, s, changed["thread"].(map[string]any)["id"].(string))
+}
+
+func TestExplainWholeFileRefusesOversizedSource(t *testing.T) {
+	root := t.TempDir()
+	file, err := os.Create(filepath.Join(root, "main.go"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := file.Truncate(9 << 20); err != nil {
+		t.Fatal(err)
+	}
+	file.Close()
+	s := fakeAgentServer(t, root, fakeReply("must not run"))
+	if code, body := agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "file": true}); code != 400 {
+		t.Fatalf("oversized file=%d %v", code, body)
 	}
 }

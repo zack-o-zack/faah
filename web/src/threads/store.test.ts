@@ -6,6 +6,7 @@ import { createRoot } from 'solid-js';
 import { expect, test, vi } from 'vitest';
 import { createAppStore } from '../app/store.ts';
 import { createThreadStore } from './store.ts';
+import { decodeThread } from './decode.ts';
 import { threadFileOptions } from './logic.ts';
 function fixture(request: Request = vi.fn(), post: Request = vi.fn()) {
   const events = new Map<string, StreamHandler>();
@@ -80,4 +81,35 @@ test('turn diffs stay frozen at the before and after snapshots until reverted', 
   expect(
     threadFileOptions({ id: 1, beforeSha: 'a', afterSha: 'b', reverted: true }),
   ).toBeUndefined();
+});
+
+test('Refresh replays stored selection and file references without old text', async () => {
+  const post = vi.fn().mockResolvedValue({
+    thread: { id: 'refreshed', kind: 'explain', path: 'a.go', turns: [{ id: 1 }] },
+  });
+  const { threads, dispose } = fixture(vi.fn(), post);
+  const selection = decodeThread({
+    id: 'saved',
+    turns: [],
+    explainReq: { path: 'a.go', l1: 2, l2: 4, symbol: 'Run', text: 'PRIVATE_OLD_BODY' },
+  });
+  await threads.actions.explainSelection(required(selection.explainReq), true);
+  expect(post).toHaveBeenLastCalledWith(
+    'api/explain',
+    { path: 'a.go', l1: 2, l2: 4, symbol: 'Run', force: true },
+    expect.anything(),
+  );
+  const file = decodeThread({
+    id: 'saved-file',
+    turns: [],
+    explainReq: { path: 'a.go', file: true, l1: 1, l2: 1000, text: 'PRIVATE_OLD_BODY' },
+  });
+  await threads.actions.explainSelection(required(file.explainReq), true);
+  expect(post).toHaveBeenLastCalledWith(
+    'api/explain',
+    { path: 'a.go', file: true, force: true },
+    expect.anything(),
+  );
+  expect(JSON.stringify(post.mock.calls)).not.toContain('PRIVATE_OLD_BODY');
+  dispose();
 });

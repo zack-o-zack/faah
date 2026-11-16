@@ -30,6 +30,7 @@ function buildSourceDOM(
   function toPos(node: Node | null, offset: number): Position | null {
     if (!node) return null;
     const element = node instanceof Element ? node : node.parentElement;
+    if (element?.closest('[data-note]')) return null;
     const row = element?.closest<HTMLElement>('[data-l], [data-old-l], [data-at]');
     const code = row?.querySelector('.c, .diff-code');
     if (!row || !code) return null;

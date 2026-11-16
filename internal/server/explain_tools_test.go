@@ -15,7 +15,9 @@ import (
 	"time"
 
 	"faah/internal/agents"
+	"faah/internal/explain"
 	"faah/internal/explain/notes"
+	"faah/internal/threads"
 )
 
 // mcpCall posts one tools/call to the server's MCP endpoint with a token and
@@ -79,17 +81,23 @@ func TestExplainToolCallsLandOnTheTurn(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		_, err = call(`{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"annotate","arguments":{"notes":[{"kind":"symbol","path":"main.go","l1":7,"symbol":"helper","summary":"Does nothing yet."}]}}}`, sid)
+		_, err = call(`{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"annotate","arguments":{"notes":[{"kind":"symbol","path":"main.go","l1":7,"symbol":"helper","summary":"Does nothing yet.","detail":"See main.go:4 and missing.go:99."}]}}}`, sid)
 		return err
 	})
 	ts := httptest.NewServer(s)
 	defer ts.Close()
 	s.SetToolsAddr(strings.TrimPrefix(ts.URL, "http://"))
-	_, m := agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "text": "helper"})
+	_, m := agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "symbol": "helper"})
 	th := waitThreadIdle(t, s, m["thread"].(map[string]any)["id"].(string))
 	tr := th.Turns[0]
 	if n := tr.Notes; len(n) != 1 || n[0].Symbol != "helper" || n[0].L1 != 7 || n[0].Text != "func helper() {}" {
 		t.Fatalf("notes = %+v\nreply: %s\nerror: %s", n, tr.Reply, tr.Error)
+	}
+	if _, ok := tr.Refs["main.go:4"]; !ok {
+		t.Fatalf("detail citation unchecked: %+v", tr.Refs)
+	}
+	if v := fileNotes(t, s, "main.go"); len(v) != 1 || len(v[0].Links) != 1 || v[0].Links["main.go:4"].Line != 4 {
+		t.Fatalf("served citations = %+v", v)
 	}
 	// The session credential remains valid between turns; tools refuse idle calls.
 	tok := regexp.MustCompile(`tok=([A-Za-z0-9_-]+)`).FindStringSubmatch(tr.Reply)
@@ -122,7 +130,7 @@ func TestExplainNotesFollowTheCode(t *testing.T) {
 	root := t.TempDir()
 	writeExplainSource(t, root, explainGoSource)
 	s := fakeAgentServer(t, root, fakeReply("ok\n"))
-	_, m := agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "text": "helper"})
+	_, m := agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "symbol": "helper"})
 	id := m["thread"].(map[string]any)["id"].(string)
 	waitThreadIdle(t, s, id)
 	saveNotes(s, toolScope{tid: id, turn: 1}, []notes.Note{
@@ -159,7 +167,7 @@ func TestExplainSymbolNoteNoticesNewUses(t *testing.T) {
 	root := t.TempDir()
 	writeExplainSource(t, root, explainGoSource)
 	s := fakeAgentServer(t, root, fakeReply("ok\n"))
-	_, m := agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "text": "helper"})
+	_, m := agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "symbol": "helper"})
 	id := m["thread"].(map[string]any)["id"].(string)
 	waitThreadIdle(t, s, id)
 	saveNotes(s, toolScope{tid: id, turn: 1}, []notes.Note{{Kind: "symbol", Path: "main.go", L1: 7, L2: 7, Symbol: "helper", Summary: "Empty.", Text: "func helper() {}"}})
@@ -207,7 +215,7 @@ func TestExplainToolsRefuseAnEndedTurn(t *testing.T) {
 	root := t.TempDir()
 	writeExplainSource(t, root, explainGoSource)
 	s := fakeAgentServer(t, root, fakeReply("ok\n"))
-	_, m := agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "text": "helper"})
+	_, m := agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "symbol": "helper"})
 	id := m["thread"].(map[string]any)["id"].(string)
 	waitThreadIdle(t, s, id)
 	sc := toolScope{tid: id, turn: 1}
@@ -215,5 +223,107 @@ func TestExplainToolsRefuseAnEndedTurn(t *testing.T) {
 	s.threads.AddWalkthrough(sc, notes.Walkthrough{Title: "late"})
 	if tr := s.threads.Get(id).Turns[0]; len(tr.Notes) != 0 || len(tr.Walkthroughs) != 0 {
 		t.Fatalf("an ended turn took %+v %+v", tr.Notes, tr.Walkthroughs)
+	}
+}
+
+func TestExplainNotesDismiss(t *testing.T) {
+	root := t.TempDir()
+	writeExplainSource(t, root, explainGoSource)
+	s := fakeAgentServer(t, root, fakeReply("ok\n"))
+	_, m := agentPostJSON(t, s, "/api/explain", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "symbol": "helper"})
+	id := m["thread"].(map[string]any)["id"].(string)
+	waitThreadIdle(t, s, id)
+	saveNotes(s, toolScope{tid: id, turn: 1}, []notes.Note{
+		{Kind: "line", Path: "main.go", L1: 4, L2: 4, Summary: "Calls helper.", Text: "\thelper()"},
+		{Kind: "line", Path: "main.go", L1: 4, L2: 4, Summary: "Calls helper, newer.", Text: "\thelper()"},
+		{Kind: "block", Path: "main.go", L1: 7, L2: 7, Summary: "Empty.", Text: "func helper() {}"},
+	})
+	if code, _ := agentPostJSON(t, s, "/api/explain/notes/dismiss", map[string]any{"thread": id, "turn": 1, "index": 1}); code != 200 {
+		t.Fatalf("dismiss = %d", code)
+	}
+	// The dismissed note does not bring back the older one on the same line.
+	if v := fileNotes(t, s, "main.go"); len(v) != 1 || v[0].Kind != "block" {
+		t.Fatalf("after dismiss = %+v", v)
+	}
+	if code, _ := agentPostJSON(t, s, "/api/explain/notes/dismiss", map[string]any{"thread": id, "turn": 1, "index": 9}); code != http.StatusNotFound {
+		t.Fatalf("unknown note = %d", code)
+	}
+}
+
+func TestDetailLinks(t *testing.T) {
+	refs := map[string]explain.Ref{"agent.go:868": {Line: 868}, "req.Edits": {Line: 964}, "main.go:1": {Line: 1}}
+	got := notes.DetailLinks("Built at agent.go:868 from `req.Edits`.", refs)
+	if len(got) != 2 || got["agent.go:868"].Line != 868 || got["req.Edits"].Line != 964 {
+		t.Fatalf("links = %v", got)
+	}
+	if notes.DetailLinks("", refs) != nil {
+		t.Fatal("an empty detail has no links")
+	}
+}
+
+func TestExplainNotesSelectBubbleBeforeDeduplication(t *testing.T) {
+	root := t.TempDir()
+	writeExplainSource(t, root, "// moved\n"+explainGoSource)
+	s := fakeAgentServer(t, root, fakeReply("unused"))
+	tm := s.threads
+	tm.Close()
+	note := notes.Note{Kind: "line", Path: "main.go", L1: 4, L2: 4, Summary: "First", Text: "\thelper()"}
+	later := note
+	later.Summary = "Later"
+	data, err := json.Marshal(map[string]any{"root": tm.root, "threads": []*threads.Thread{
+		{ID: "first", Kind: "explain", Turns: []*threads.Turn{
+			{ID: 1, Started: 1, Notes: []notes.Note{note}},
+			{ID: 2, Started: 2, Notes: []notes.Note{later}},
+		}},
+		{ID: "second", Kind: "explain", Turns: []*threads.Turn{
+			{ID: 1, Started: 3, Notes: []notes.Note{later}},
+		}},
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Dir(tm.file), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(tm.file, data, 0600); err != nil {
+		t.Fatal(err)
+	}
+	s.threads = newThreadManagerAt(s.agent, tm.root, tm.file)
+	for _, tc := range []struct {
+		query, summary, thread string
+		turn                   int
+	}{
+		{"&thread=first&turn=1", "First", "first", 1},
+		{"&thread=first&turn=2", "Later", "first", 2},
+		{"&thread=second&turn=1", "Later", "second", 1},
+	} {
+		code, raw := agentGet(t, s, "/api/explain/notes?path=main.go"+tc.query)
+		var result struct{ Notes []notes.View }
+		if err := json.Unmarshal([]byte(raw), &result); err != nil {
+			t.Fatal(err)
+		}
+		if code != 200 || len(result.Notes) != 1 {
+			t.Fatalf("%s: %d %s", tc.query, code, raw)
+		}
+		n := result.Notes[0]
+		if n.Thread != tc.thread || n.Turn != tc.turn || n.Summary != tc.summary || n.L1 != 5 {
+			t.Fatalf("%s: %+v", tc.query, n)
+		}
+	}
+	if code, _ := agentPostJSON(t, s, "/api/explain/notes/dismiss", map[string]any{"thread": "first", "turn": 1, "index": 0}); code != 200 {
+		t.Fatalf("dismiss = %d", code)
+	}
+	code, raw := agentGet(t, s, "/api/explain/notes?path=main.go&thread=first&turn=1")
+	var result struct{ Notes []notes.View }
+	if err := json.Unmarshal([]byte(raw), &result); err != nil {
+		t.Fatal(err)
+	}
+	if code != 200 || len(result.Notes) != 0 {
+		t.Fatalf("dismissed bubble: %d %s", code, raw)
+	}
+	for _, query := range []string{"&thread=first&turn=bad", "&thread=first&turn=0", "&turn=1"} {
+		if code, _ := agentGet(t, s, "/api/explain/notes?path=main.go"+query); code != 400 {
+			t.Fatalf("%s = %d", query, code)
+		}
 	}
 }

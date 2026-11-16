@@ -24,7 +24,7 @@ func TestExplainPrepareIsReusedByExplain(t *testing.T) {
 	root := t.TempDir()
 	writeExplainSource(t, root, explainGoSource)
 	s := fakeAgentServer(t, root, fakeReply("ok\n"))
-	req := map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "text": "helper"}
+	req := map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "symbol": "helper"}
 
 	for i := 0; i < 2; i++ { // the same selection twice prepares once
 		if code, m := agentPostJSON(t, s, "/api/explain/prepare", req); code != 200 || m["prepared"] != true {
@@ -43,7 +43,7 @@ func TestExplainPrepareIsReusedByExplain(t *testing.T) {
 
 	// A changed file is never answered from what was prepared before.
 	writeExplainSource(t, root, "// moved\n"+explainGoSource)
-	moved := map[string]any{"path": "main.go", "l1": 5, "l2": 5, "c1": 1, "c2": 7, "text": "helper"}
+	moved := map[string]any{"path": "main.go", "l1": 5, "l2": 5, "c1": 1, "c2": 7, "symbol": "helper"}
 	code, res = agentPostJSON(t, s, "/api/explain", moved)
 	if code != 200 {
 		t.Fatalf("explain after edit = %d %v", code, res)
@@ -57,8 +57,8 @@ func TestExplainPrepareNewSelectionReplacesOld(t *testing.T) {
 	root := t.TempDir()
 	writeExplainSource(t, root, explainGoSource)
 	s := fakeAgentServer(t, root, fakeReply("ok\n"))
-	first := map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "text": "helper"}
-	second := map[string]any{"path": "main.go", "l1": 3, "l2": 3, "c1": 5, "c2": 9, "text": "main"}
+	first := map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "symbol": "helper"}
+	second := map[string]any{"path": "main.go", "l1": 3, "l2": 3, "c1": 5, "c2": 9, "symbol": "main"}
 	agentPostJSON(t, s, "/api/explain/prepare", first)
 	agentPostJSON(t, s, "/api/explain/prepare", second)
 	waitPrepared(t, s)
@@ -74,11 +74,11 @@ func TestExplainPrepareOffAndBadInput(t *testing.T) {
 	root := t.TempDir()
 	writeExplainSource(t, root, explainGoSource)
 	s := fakeAgentServer(t, root, fakeReply("ok\n"))
-	if code, _ := agentPostJSON(t, s, "/api/explain/prepare", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "text": "nope"}); code != 200 {
+	if code, _ := agentPostJSON(t, s, "/api/explain/prepare", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "symbol": "nope"}); code != 200 {
 		t.Fatalf("mismatched prepare = %d", code)
 	}
 	explainSettings(t, map[string]any{"explain.prefetch": false})
-	if code, _ := agentPostJSON(t, s, "/api/explain/prepare", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "text": "helper"}); code != 200 {
+	if code, _ := agentPostJSON(t, s, "/api/explain/prepare", map[string]any{"path": "main.go", "l1": 4, "l2": 4, "c1": 1, "c2": 7, "symbol": "helper"}); code != 200 {
 		t.Fatalf("prepare with prefetch off = %d", code)
 	}
 	if s.explainPre.gathers.Load() != 0 {

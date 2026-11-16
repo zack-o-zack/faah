@@ -8,7 +8,13 @@ import { createEffect, For, on, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { movedOnly, rowLine } from './logic.ts';
 import { splitRows, unifiedRows, type PaintedRow } from '../viewers/diff-rows.ts';
+import { NoteGhost } from '../notes/GhostNotes.tsx';
+import { WalkTitleLine } from '../notes/WalkthroughTitle.tsx';
+import { WALK_DIM_OPACITY } from '../viewers/walkthrough-review.ts';
+import { pluralize } from '../pr/logic.ts';
 import { LineStats } from './LineStats.tsx';
+import { mergeRanges, missingLines } from './context.ts';
+import { reviewContainsRange } from '../viewers/walkthrough-review.ts';
 const ROW_TYPE: Record<string, string> = { add: 'diff-type-add', del: 'diff-type-del' };
 const SIGN: Record<string, string> = { add: '+', del: '-' };
 export function WalkthroughFile(props: WalkthroughFileProps): JSX.Element {
@@ -20,13 +26,67 @@ export function WalkthroughFile(props: WalkthroughFileProps): JSX.Element {
   const targetLine = () => (target().path === props.file.path ? target().line : -1);
   const split = () => editor.store.settings.preferences().splitDiff;
   const highlightChangedWords = () => editor.settings.preferences().highlightChangedWords;
+  const focus = () =>
+    editor.walkthrough.surface() === 'review' ? editor.walkthrough.focus() : null;
+  const focused = () => focus()?.path === props.file.path;
+  const notes = () => editor.turnNotes.byPath().get(props.file.path);
+  const outside = () =>
+    editor.turnNotes
+      .notes()
+      .filter(
+        (note) =>
+          note.path === props.file.path && !reviewContainsRange(props.file, note.l1, note.l2),
+      );
+  const inStep = (row: PaintedRow | null) =>
+    !!row?.newLine &&
+    row.type !== 'del' &&
+    row.newLine >= (focus()?.l1 || 0) &&
+    row.newLine <= (focus()?.l2 || 0);
+  // Match the diff's existing number/sign columns for annotations, including split rows.
+  const annotation = (content: JSX.Element) => (
+    <div class="review-diff-row" data-review-annotation>
+      <span class="diff-col-num shrink-0" />
+      <Show when={!split()}>
+        <span class="diff-col-num shrink-0" />
+      </Show>
+      <span class="diff-col-sign shrink-0" />
+      <div class="diff-code min-w-0 flex-1">{content}</div>
+    </div>
+  );
+  const title = (row: PaintedRow | null) => (
+    <Show when={focused() && row?.type !== 'del' && row?.newLine === focus()?.l1}>
+      <div data-walk-title role="note" class="py-1 select-none">
+        {annotation(
+          <WalkTitleLine
+            n={focus()?.n || 0}
+            of={focus()?.of || 0}
+            title={focus()?.title || ''}
+            indent={0}
+          />,
+        )}
+      </div>
+    </Show>
+  );
+  const rowNotes = (row: PaintedRow | null) => (
+    <Show when={row?.newLine && row.type !== 'del'}>
+      <For each={notes()?.get(row?.newLine || 0)}>
+        {(note) => annotation(<NoteGhost note={note} notes={editor.turnNotes} review />)}
+      </For>
+    </Show>
+  );
   const renderRow = (row: PaintedRow | null, side?: 'left' | 'right') => (
     <div
       ref={(element) => {
         if (row && (side !== 'left' || row.type === 'del')) rows.set(rowLine(row), element);
       }}
       class={`review-diff-row ${row ? ROW_TYPE[row.type] || 'diff-type-ctx' : ''}`}
-      classList={{ 'diff-row-flash': !!row && targetLine() === rowLine(row) }}
+      data-new-line={row?.newLine}
+      style={{ opacity: focused() && !inStep(row) ? WALK_DIM_OPACITY : 1 }}
+      classList={{
+        'diff-row-flash': !!row && targetLine() === rowLine(row),
+        'bg-special/5!':
+          !!row?.newLine && editor.turnNotes.highlighted(props.file.path, row.newLine),
+      }}
     >
       <Show when={side !== 'right'}>
         <span class="diff-col-num">{row?.oldLine || ''}</span>
@@ -50,13 +110,13 @@ export function WalkthroughFile(props: WalkthroughFileProps): JSX.Element {
         if (row) row.scrollIntoView({ block: 'center', behavior: 'smooth' });
         else header?.scrollIntoView({ block: 'start', behavior: 'smooth' });
       },
-      { defer: true },
     ),
   );
   return (
     <div
       class="relative mb-3 overflow-clip rounded-md border"
-      classList={{ 'opacity-60': !!review.state.viewed[props.file.path] }}
+      classList={{ 'opacity-60': !focus() && !!review.state.viewed[props.file.path] }}
+      style={{ opacity: focus() && !focused() ? WALK_DIM_OPACITY : 1 }}
     >
       <div
         ref={header}
@@ -74,6 +134,28 @@ export function WalkthroughFile(props: WalkthroughFileProps): JSX.Element {
             <LineStats additions={props.file.additions} deletions={props.file.deletions} />
           </span>
         </div>
+        <Show when={outside().length}>
+          <button
+            class="btn text-muted-foreground"
+            data-variant="ghost"
+            data-size="xs"
+            onClick={async () => {
+              const note = outside()[0];
+              if (!note) return;
+              const ranges = mergeRanges(
+                outside().flatMap((note) => missingLines(props.file, note.l1, note.l2)),
+              );
+              if (!(await review.actions.expandReviewContext(props.file.path, ranges)))
+                await editor.actions.openReviewReference({
+                  path: note.path,
+                  line: note.l1,
+                  end: note.l2,
+                });
+            }}
+          >
+            Show {pluralize(outside().length, 'note')}
+          </button>
+        </Show>
         <label class="inline-flex cursor-pointer items-center gap-2 text-muted-foreground select-none">
           <input
             type="checkbox"
@@ -106,16 +188,36 @@ export function WalkthroughFile(props: WalkthroughFileProps): JSX.Element {
                 when={split()}
                 fallback={
                   <For each={unifiedRows(hunk.rows, highlightChangedWords())}>
-                    {(row) => renderRow(row)}
+                    {(row) => (
+                      <>
+                        {title(row)}
+                        {renderRow(row)}
+                        {rowNotes(row)}
+                      </>
+                    )}
                   </For>
                 }
               >
                 <For each={splitRows(hunk.rows, highlightChangedWords())}>
                   {(pair) => (
-                    <div class="diff-row-pair">
-                      <div class="diff-side diff-side-left">{renderRow(pair.left, 'left')}</div>
-                      <div class="diff-side">{renderRow(pair.right, 'right')}</div>
-                    </div>
+                    <>
+                      <Show when={focused() && pair.right?.newLine === focus()?.l1}>
+                        <div class="diff-row-pair">
+                          <div class="diff-side diff-side-left" />
+                          <div class="diff-side">{title(pair.right)}</div>
+                        </div>
+                      </Show>
+                      <div class="diff-row-pair">
+                        <div class="diff-side diff-side-left">{renderRow(pair.left, 'left')}</div>
+                        <div class="diff-side">{renderRow(pair.right, 'right')}</div>
+                      </div>
+                      <Show when={!!pair.right?.newLine && notes()?.has(pair.right.newLine)}>
+                        <div class="diff-row-pair">
+                          <div class="diff-side diff-side-left" />
+                          <div class="diff-side">{rowNotes(pair.right)}</div>
+                        </div>
+                      </Show>
+                    </>
                   )}
                 </For>
               </Show>

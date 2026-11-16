@@ -7,11 +7,16 @@ import {
   orbFromSummary,
   orbView,
   orbSnippet,
+  orbUpdate,
+  walkStart,
+  walkMove,
+  walkStop,
+  walkStep,
 } from './orb-model.ts';
 
-const thread = (turn: NonNullable<OrbThread['turns']>[number]) => ({
+const thread = (turn: Omit<NonNullable<OrbThread['turns']>[number], 'id'>) => ({
   id: 't1',
-  turns: [{ ...turn }],
+  turns: [{ id: 1, ...turn }],
 });
 
 test('orb shows the latest step and notes while an explanation runs', () => {
@@ -28,9 +33,18 @@ test('orb shows the latest step and notes while an explanation runs', () => {
 test('orb reports the outcome from the final snapshot', () => {
   const done = orbFromThread(
     orbStart(),
-    thread({ running: false, tools: ['Read a.go'], notes: [{}], walkthroughs: [{ steps: [] }] }),
+    thread({
+      running: false,
+      tools: ['Read a.go'],
+      notes: [{}],
+      walkthroughs: [{ title: 'Flow', steps: [] }],
+    }),
   );
-  expect(orbView(done)).toMatchObject({ text: 'Explained · 1 note · walkthrough', busy: false });
+  expect(orbView(done)).toMatchObject({
+    text: 'Explained · 1 note',
+    label: 'Explained · 1 note · 1 walkthrough. Open the explanation',
+    busy: false,
+  });
   const failed = orbFromThread(orbStart(), thread({ running: false, error: 'agent exited' }));
   expect(orbView(failed).text).toBe('Explanation failed');
   expect(orbView(failed).label).toBe('Explanation failed: agent exited. Open the explanation');
@@ -79,4 +93,59 @@ test('a finished orb shows the last paragraph of the answer as plain text', () =
   });
   const running = orbFromThread(orbStart(), thread({ running: true, reply: 'Partial' }));
   expect(orbView(running).snippet).toBe('');
+});
+
+test('a reopened bubble stays on its selected turn as later turns arrive', () => {
+  const snapshot = {
+    id: 't',
+    turns: [
+      { id: 1, reply: 'First', notes: [{}] },
+      { id: 2, reply: 'Second', notes: [{}, {}] },
+    ],
+  };
+  const selected = orbFromThread({ ...orbStart(), turn: 1 }, snapshot);
+  expect(selected).toMatchObject({ id: 't', turn: 1, reply: 'First', notes: 1 });
+  expect(orbFromThread(selected, snapshot)).toEqual(selected);
+  expect(orbFromThread(selected, { id: 't', turns: [{ id: 2 }] })).toBe(selected);
+});
+
+test('walkthrough helpers clamp movement and bubble replacement resets the position', () => {
+  const model = {
+    ...orbStart(),
+    id: 'first',
+    turn: 1,
+    walkthroughs: [
+      {
+        title: 'Flow',
+        steps: [
+          { path: 'a.go', l1: 1, l2: 2, title: 'First', body: '', text: '' },
+          { path: 'b.go', l1: 2, l2: 3, title: 'Second', body: '', text: '' },
+        ],
+      },
+    ],
+  };
+  expect(walkStart(null)).toBeNull();
+  expect(walkStart(model, 1)).toBeNull();
+  const start = walkStart(model);
+  expect(start).toEqual({ index: 0, step: 0, surface: 'source' });
+  expect(walkMove(model, start, -1)).toEqual(start);
+  const end = walkMove(model, start, 1);
+  expect(end).toEqual({ index: 0, step: 1, surface: 'source' });
+  expect(walkMove(model, end, 1)).toEqual(end);
+  expect(walkMove(model, null, 1)).toEqual(start);
+  expect(walkStep({ model, walk: end, compact: false })).toMatchObject({
+    path: 'b.go',
+    n: 2,
+    of: 2,
+  });
+  expect(orbUpdate({ model, walk: end, compact: false }, { ...model })).toMatchObject({
+    walk: end,
+  });
+  expect(orbUpdate({ model, walk: end, compact: false }, { ...model, turn: 2 }).walk).toBeNull();
+  expect(
+    orbUpdate({ model, walk: end, compact: false }, { ...model, id: 'other' }).walk,
+  ).toBeNull();
+  expect(orbUpdate({ model, walk: end, compact: false }, null).walk).toBeNull();
+  expect(walkStop()).toBeNull();
+  expect(orbView(model).label).toContain('walkthrough');
 });

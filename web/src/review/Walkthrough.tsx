@@ -12,7 +12,7 @@ import { WalkthroughFiles } from './WalkthroughFiles.tsx';
 import { WalkthroughDiff } from './WalkthroughDiff.tsx';
 export function Walkthrough(): JSX.Element {
   const review = useEditor().review;
-  const files = () => review.walkthroughData()?.files || [];
+  const files = review.reviewFiles;
   return (
     <div
       id="review-walkthrough-view"

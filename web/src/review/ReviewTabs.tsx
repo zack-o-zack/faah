@@ -5,6 +5,7 @@ interface ReviewTabProps {
   icon: string;
   info: JSX.Element;
 }
+import { isThreadRunning } from '../threads/logic.ts';
 import { handleTabKeys } from '../lib/tab-keys.ts';
 import type { JSX } from 'solid-js';
 import { createMemo, For, Show } from 'solid-js';
@@ -15,6 +16,18 @@ import { TabStatus, tabStatus } from './TabStatus.tsx';
 export function ReviewTabs(): JSX.Element {
   const editor = useEditor();
   const review = editor.review;
+  const explaining = () =>
+    editor.threads.state.pending === 'explain' ||
+    editor.threads.state.list.some(
+      (thread) => thread.kind === 'explain' && !thread.path && thread.running,
+    ) ||
+    Object.values(editor.threads.state.records).some(
+      (thread) =>
+        thread.explainReq &&
+        'pr' in thread.explainReq &&
+        thread.explainReq.pr &&
+        isThreadRunning(thread),
+    );
   return (
     <div id="review-sub-bar" class="flex shrink-0 flex-wrap items-center gap-2 p-3 select-none">
       <div class="tabs min-w-0 overflow-x-auto">
@@ -52,6 +65,24 @@ export function ReviewTabs(): JSX.Element {
       <Show when={review.state.tab === 'walkthrough'}>
         <WalkthroughToolbar />
       </Show>
+      <button
+        class="btn"
+        data-variant="special"
+        data-size="xs"
+        aria-label="Explain PR"
+        title="Explain this PR"
+        disabled={explaining()}
+        onClick={async () => {
+          await editor.actions.explainSelection({ pr: true });
+          editor.actions.setReviewTab('walkthrough');
+        }}
+      >
+        <span
+          class={`${explaining() ? 'icon-[lucide--loader-circle] animate-spin motion-reduce:animate-none' : 'icon-[lucide--sparkle]'} size-3.5 shrink-0`}
+          aria-hidden="true"
+        />
+        Explain PR
+      </button>
       <Show when={review.state.tab !== 'stages'}>
         <button
           id="btn-refresh-review"

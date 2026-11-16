@@ -183,3 +183,132 @@ test('local workflows never request review data, even with committed or uncommit
   expect(app.actions.setWorkspaceTopic).not.toHaveBeenCalled();
   dispose();
 });
+
+test('context requests deduplicate, use head rows, and preserve raw counts', async () => {
+  let finish: ((value: unknown) => void) | undefined;
+  const pending = new Promise<unknown>((resolve) => {
+    finish = resolve;
+  });
+  const request = vi.fn<NonNullable<ReviewOptions['request']>>(async (path) =>
+    path === 'api/review/context'
+      ? pending
+      : {
+          ...reply(),
+          headRef: 'head',
+          totalFiles: 1,
+          totalAdditions: 1,
+          files: [
+            {
+              path: 'a.go',
+              group: 'core',
+              additions: 1,
+              hunks: [
+                {
+                  oldStart: 1,
+                  newStart: 1,
+                  rows: [{ type: 'ctx', oldLine: 1, newLine: 1, text: 'one' }],
+                },
+              ],
+            },
+          ],
+        },
+  );
+  const { review, dispose } = fixture({ request });
+  try {
+    review.actions.setReviewMode('review');
+    review.actions.setReviewTab('walkthrough');
+    await vi.waitFor(() => expect(review.reviewFiles()).toHaveLength(1));
+    const first = review.actions.expandReviewContext('a.go', [{ from: 2, to: 4 }]);
+    const second = review.actions.expandReviewContext('a.go', [{ from: 2, to: 4 }]);
+    expect(request.mock.calls.filter(([path]) => path === 'api/review/context')).toHaveLength(1);
+    finish?.({
+      path: 'a.go',
+      total: 3,
+      rows: [
+        { line: 2, text: 'head two', html: '<i class=k>head</i> two' },
+        { line: 3, text: 'three', html: 'three' },
+      ],
+    });
+    expect(await first).toBe(true);
+    expect(await second).toBe(true);
+    const expanded = review.reviewFiles()[0];
+    expect(expanded?.hunks?.[0]?.rows).toHaveLength(3);
+    expect(expanded?.hunks?.[0]?.rows[1]).toMatchObject({
+      type: 'ctx',
+      oldLine: 2,
+      newLine: 2,
+      text: 'head two',
+      html: '<i class=k>head</i> two',
+    });
+    expect(review.walkthroughData()?.files[0]?.hunks?.[0]?.rows).toHaveLength(1);
+    expect(review.walkthroughData()?.totalAdditions).toBe(1);
+    expect(review.reviewFiles()[0]).toBe(expanded);
+    await review.actions.expandReviewContext('a.go', [{ from: 2, to: 10 }]);
+    expect(request.mock.calls.filter(([path]) => path === 'api/review/context')).toHaveLength(1);
+  } finally {
+    dispose();
+  }
+});
+
+test.each(['refresh', 'head'] as const)(
+  'context drops on %s and stale responses cannot restore it',
+  async (change) => {
+    let finish: ((value: unknown) => void) | undefined;
+    let head = 'first';
+    const request = vi.fn<NonNullable<ReviewOptions['request']>>(async (path) => {
+      if (path === 'api/review/context')
+        return new Promise<unknown>((resolve) => {
+          finish = resolve;
+        });
+      return { ...reply(), headRef: head, files: [{ path: 'a.go', group: 'core', hunks: [] }] };
+    });
+    const { review, app, dispose } = fixture({ request });
+    try {
+      review.actions.setReviewMode('review');
+      review.actions.setReviewTab('walkthrough');
+      await vi.waitFor(() => expect(review.reviewFiles()).toHaveLength(1));
+      const first = review.actions.expandReviewContext('a.go', [{ from: 1, to: 1 }]);
+      finish?.({ path: 'a.go', total: 2, rows: [{ line: 1, text: 'one', html: 'one' }] });
+      await first;
+      expect(Object.keys(review.state.context)).toEqual(['a.go']);
+      const stale = review.actions.expandReviewContext('a.go', [{ from: 2, to: 2 }]);
+      const signal = request.mock.calls
+        .filter(([path]) => path === 'api/review/context')
+        .at(-1)?.[2]?.signal;
+      head = 'next';
+      if (change === 'refresh') review.actions.refreshReview();
+      else app.actions.setWorkspace({ git: true, pr: { ...prMeta(), headSHA: head } });
+      expect(Object.keys(review.state.context)).toEqual([]);
+      expect(signal?.aborted).toBe(true);
+      finish?.({ path: 'a.go', total: 2, rows: [{ line: 2, text: 'stale', html: 'stale' }] });
+      expect(await stale).toBe(false);
+      await vi.waitFor(() => expect(review.walkthroughData()?.headRef).toBe('next'));
+      expect(Object.keys(review.state.context)).toEqual([]);
+      expect(review.reviewFiles()[0]?.hunks).toEqual([]);
+    } finally {
+      dispose();
+    }
+  },
+);
+
+test('context cleanup aborts requests and cannot publish rows', async () => {
+  let finish: ((value: unknown) => void) | undefined;
+  const request = vi.fn<NonNullable<ReviewOptions['request']>>(async (path) => {
+    if (path === 'api/review/context')
+      return new Promise<unknown>((resolve) => {
+        finish = resolve;
+      });
+    return { ...reply(), files: [{ path: 'a.go', group: 'core', hunks: [] }] };
+  });
+  const { review, dispose } = fixture({ request });
+  review.actions.setReviewMode('review');
+  review.actions.setReviewTab('walkthrough');
+  await vi.waitFor(() => expect(review.reviewFiles()).toHaveLength(1));
+  const pending = review.actions.expandReviewContext('a.go', [{ from: 1, to: 1 }]);
+  const signal = request.mock.calls.find(([path]) => path === 'api/review/context')?.[2]?.signal;
+  dispose();
+  expect(signal?.aborted).toBe(true);
+  finish?.({ path: 'a.go', total: 1, rows: [{ line: 1, text: 'one', html: 'one' }] });
+  expect(await pending).toBe(false);
+  expect(Object.keys(review.state.context)).toEqual([]);
+});

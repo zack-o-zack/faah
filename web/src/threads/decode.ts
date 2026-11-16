@@ -14,13 +14,27 @@ export interface Citation {
   kind?: string;
 }
 export interface ExplainTarget {
+  pr?: false;
   path: string;
+  file?: false;
+  symbol?: string;
   l1: number;
   l2: number;
   c1?: number;
   c2?: number;
-  text: string;
+  text?: string;
 }
+export interface FileExplainTarget {
+  pr?: false;
+  path: string;
+  file: true;
+}
+export interface PRExplainTarget {
+  pr: true;
+  path?: never;
+  file?: never;
+}
+export type ExplainInput = ExplainTarget | FileExplainTarget | PRExplainTarget;
 export interface Note {
   kind: string;
   path: string;
@@ -77,7 +91,7 @@ export interface Thread {
   explainReader?: string;
   evidenceHash?: string;
   evidence?: Evidence;
-  explainReq?: ExplainTarget;
+  explainReq?: ExplainInput;
 }
 export interface ThreadSummary {
   id: string;
@@ -103,7 +117,7 @@ export function decodeEvidence(value: unknown): Evidence {
     identifiers: number(v.identifiers),
   };
 }
-function decodeCitations(value: unknown): Record<string, Citation> {
+export function decodeCitations(value: unknown): Record<string, Citation> {
   return Object.fromEntries(
     Object.entries(record(value)).map(([key, item]) => {
       const r = record(item);
@@ -135,20 +149,7 @@ export function decodeTurn(value: unknown): ThreadTurn {
     ms: number(v.ms),
     firstMs: number(v.firstMs),
     refs: v.refs ? decodeCitations(v.refs) : undefined,
-    notes: list(v.notes).map((item) => {
-      const n = record(item);
-      return {
-        path: text(n.path),
-        l1: number(n.l1),
-        l2: number(n.l2),
-        symbol: text(n.symbol),
-        summary: text(n.summary),
-        detail: text(n.detail),
-        refs: text(n.refs),
-        text: text(n.text),
-        kind: text(n.kind),
-      };
-    }),
+    notes: list(v.notes).map(decodeNote),
     walkthroughs: list(v.walkthroughs).map((item) => {
       const w = record(item);
       return {
@@ -235,14 +236,31 @@ export function decodeExplain(value: unknown): {
   };
 }
 
-function decodeExplainTarget(value: unknown): ExplainTarget {
+function decodeExplainTarget(value: unknown): ExplainInput {
   const v = record(value);
+  if (v.pr === true) return { pr: true };
+  if (v.file === true) return { path: text(v.path), file: true };
   return {
     path: text(v.path),
     l1: number(v.l1),
     l2: number(v.l2),
     c1: v.c1 == null ? undefined : number(v.c1),
     c2: v.c2 == null ? undefined : number(v.c2),
-    text: text(v.text),
+    symbol: v.symbol == null ? undefined : text(v.symbol),
+  };
+}
+
+export function decodeNote(value: unknown): Note {
+  const n = record(value);
+  return {
+    path: text(n.path),
+    l1: number(n.l1),
+    l2: number(n.l2),
+    symbol: text(n.symbol),
+    summary: text(n.summary),
+    detail: text(n.detail),
+    refs: text(n.refs),
+    text: text(n.text),
+    kind: text(n.kind),
   };
 }

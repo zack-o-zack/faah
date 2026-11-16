@@ -7,6 +7,14 @@ import type { PROverview } from '../pr/types.ts';
 import { decodeOverview } from '../pr/decode.ts';
 import { decodeThread } from '../threads/decode.ts';
 import { isAbort, errorMessage } from '../lib/decode.ts';
+import { record, list, number, text } from '../lib/decode.ts';
+import {
+  missingLines,
+  mergeRanges,
+  withContext,
+  type ContextLine,
+  type ContextRange,
+} from './context.ts';
 export interface ReviewOptions {
   request?: Request;
   post?: Request;
@@ -27,6 +35,7 @@ interface ReviewState {
   target: { path: string; line: number; sequence: number };
   activeFile: string;
   viewed: Record<string, boolean>;
+  context: Record<string, Record<number, ContextLine>>;
   returnTo: { path: string; line: number; title: string } | null;
 }
 interface ReviewHost {
@@ -80,6 +89,7 @@ function initialState(): ReviewState {
     target: { path: '', line: 0, sequence: 0 },
     activeFile: '',
     viewed: {},
+    context: {},
     returnTo: null,
   };
 }
@@ -102,25 +112,138 @@ function buildReviewStore(editor: ReviewHost, options: ReviewOptions = {}) {
   let disposed = false;
   let statusController: AbortController | undefined;
   let nextId = 0;
+  let contextHead = '';
+  const [contextEpoch, setContextEpoch] = createSignal(0);
+  const contextRequests = new Map<
+    string,
+    { controller: AbortController; promise: Promise<boolean> }
+  >();
+  const contextTotals = new Map<string, number>();
+  const contextMaps = new Map<string, ReadonlyMap<number, ContextLine>>();
+  function clearContext() {
+    for (const pending of contextRequests.values()) pending.controller.abort();
+    contextRequests.clear();
+    contextTotals.clear();
+    contextMaps.clear();
+    batch(() => {
+      set('context', reconcile({}));
+      setContextEpoch((epoch) => epoch + 1);
+    });
+  }
 
   const stages = createMemo(() => reviewStages(state.config, state.run));
   const active = () => stages()[state.active] || null;
   const running = () => isRunning(state.run);
-  const [walkthrough] = createResource(
+  const needsWalkthrough = createMemo(
     () =>
       state.mode === 'review' &&
-      state.tab === 'walkthrough' &&
-      !!app.state.workspace.meta?.pr && {
+      (state.tab === 'walkthrough' || app.state.explanation.walk?.surface === 'review') &&
+      !!app.state.workspace.meta?.pr,
+  );
+  const [walkthrough] = createResource(
+    () =>
+      needsWalkthrough() && {
         revision: revision(),
+        head: app.state.workspace.meta?.pr?.headSHA,
         ignoreWhitespace: app.settings.value('diffEditor.ignoreWhitespace') === true,
       },
-    async ({ ignoreWhitespace }) =>
-      decodeWalkthrough(
+    async ({ ignoreWhitespace }) => {
+      const data = decodeWalkthrough(
         await walkthroughRequest(
           'api/review/walkthrough' + (ignoreWhitespace ? '?ignoreWhitespace=1' : ''),
         ),
-      ),
+      );
+      if (contextHead !== data.headRef) {
+        contextHead = data.headRef;
+        clearContext();
+      }
+      return data;
+    },
   );
+  createEffect(on(() => app.state.workspace.meta?.pr?.headSHA, clearContext));
+  const reviewFiles = createMemo(() => {
+    contextEpoch();
+    return (walkthrough.error ? [] : walkthrough.latest?.files || []).map((file) => {
+      const entries = Object.entries(state.context[file.path] || {}).map(
+        ([line, value]) => [Number(line), { text: value.text, html: value.html }] as const,
+      );
+      let extra = contextMaps.get(file.path);
+      if (
+        !extra ||
+        extra.size !== entries.length ||
+        entries.some(
+          ([line, value]) =>
+            extra?.get(line)?.text !== value.text || extra?.get(line)?.html !== value.html,
+        )
+      ) {
+        extra = new Map(entries);
+        contextMaps.set(file.path, extra);
+      }
+      return withContext(file, extra);
+    });
+  });
+
+  async function expandReviewContext(path: string, ranges: ContextRange[]): Promise<boolean> {
+    if (disposed) return false;
+    const file = reviewFiles().find((file) => file.path === path && file.status !== 'D');
+    if (!file) return false;
+    const epoch = contextEpoch();
+    const total = contextTotals.get(path) ?? Infinity;
+    const unloaded = mergeRanges(
+      ranges.flatMap((range) =>
+        missingLines(file, Math.max(1, range.from), Math.min(total, range.to), 0),
+      ),
+    );
+    const requests: Promise<boolean>[] = [];
+    for (const range of unloaded) {
+      for (let from = range.from; from <= range.to; from += 2000) {
+        const to = Math.min(range.to, from + 1999);
+        const key = JSON.stringify([epoch, path, from, to]);
+        const pending = contextRequests.get(key);
+        if (pending) {
+          requests.push(pending.promise);
+          continue;
+        }
+        const controller = new AbortController();
+        const promise = (async () => {
+          try {
+            const reply = record(
+              await request(
+                'api/review/context',
+                { path, from, to },
+                { signal: controller.signal },
+              ),
+            );
+            if (disposed || controller.signal.aborted || contextEpoch() !== epoch) return false;
+            if (text(reply.path) !== path) throw new Error('Unexpected context path');
+            const rows = Object.fromEntries(
+              list(reply.rows).map((value) => {
+                const row = record(value);
+                return [number(row.line), { text: text(row.text), html: text(row.html) }];
+              }),
+            );
+            contextTotals.set(path, number(reply.total));
+            set('context', path, { ...state.context[path], ...rows });
+            return true;
+          } catch (error) {
+            if (
+              !disposed &&
+              !controller.signal.aborted &&
+              contextEpoch() === epoch &&
+              !isAbort(error)
+            )
+              toast('error', `Cannot expand context: ${errorMessage(error)}`);
+            return false;
+          } finally {
+            if (contextRequests.get(key)?.controller === controller) contextRequests.delete(key);
+          }
+        })();
+        contextRequests.set(key, { controller, promise });
+        requests.push(promise);
+      }
+    }
+    return (await Promise.all(requests)).every(Boolean) && !disposed && contextEpoch() === epoch;
+  }
   const [overview, { refetch: refetchOverview }] = createResource(
     () =>
       state.mode === 'review' &&
@@ -361,6 +484,7 @@ function buildReviewStore(editor: ReviewHost, options: ReviewOptions = {}) {
 
   onCleanup(() => {
     disposed = true;
+    for (const pending of contextRequests.values()) pending.controller.abort();
     statusController?.abort();
     for (const controller of controllers) controller.abort();
     if (state.mode === 'review') app.actions.setWorkspaceTopic('review', false);
@@ -372,6 +496,8 @@ function buildReviewStore(editor: ReviewHost, options: ReviewOptions = {}) {
     active,
     running,
     walkthrough,
+    reviewFiles,
+    contextEpoch,
     overview,
     overviewData: () => (overview.error ? null : overview.latest),
     groupFilter: () =>
@@ -391,6 +517,7 @@ function buildReviewStore(editor: ReviewHost, options: ReviewOptions = {}) {
       mutateStage,
       sendReviewFollowup,
       openReviewReference,
+      expandReviewContext,
       setReviewLayout(layout: string): void {
         const next = layout === 'horizontal' ? 'horizontal' : 'vertical';
         set('layout', next);
@@ -421,6 +548,7 @@ function buildReviewStore(editor: ReviewHost, options: ReviewOptions = {}) {
       },
       setReviewFollowup: (value: string) => set('followup', value),
       refreshReview: () => {
+        clearContext();
         setRevision((value) => value + 1);
         void refetchOverview('refresh');
       },

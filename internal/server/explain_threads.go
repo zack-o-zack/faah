@@ -18,6 +18,9 @@ type explainResult struct {
 }
 
 func explainTitle(t explain.Target) string {
+	if t.File {
+		return "Explain " + t.Rel
+	}
 	if t.Name != "" {
 		return "Explain " + t.Name
 	}
@@ -33,7 +36,7 @@ func (tm *threadManager) explain(target explain.Target, req explain.Request, ev 
 	title := explainTitle(target)
 	candidate := &threads.Thread{
 		Kind: "explain", Title: title,
-		Path: target.Rel, L1: target.L1, L2: target.L2, Snippet: target.Text,
+		Path: target.Rel, L1: target.L1, L2: target.L2,
 		ExplainKey: ev.Key, ExplainKind: ev.Kind, ExplainReader: reader, EvidenceHash: ev.Hash,
 		Evidence: &summary, ExplainReq: &stored,
 	}

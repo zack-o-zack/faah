@@ -17,7 +17,7 @@ import { FindBar } from '../editor/FindBar.tsx';
 import { HoverCard } from '../editor/HoverCard.tsx';
 import { Minimap } from '../editor/Minimap.tsx';
 import { Viewers } from '../viewers/Viewers.tsx';
-import { ExplainOrb } from '../viewers/ExplainOrb.tsx';
+import { EditorCorner } from '../viewers/EditorCorner.tsx';
 import { Welcome } from './Welcome.tsx';
 import type { WorkspaceMeta } from './types.ts';
 
@@ -128,13 +128,9 @@ export const AppShell: Component = () => {
             hidden={!!editor.active()}
             version={editor.store.state.workspace.meta?.version || ''}
           />
-          {/* Top-right corner of the editor: the explanation orb */}
-          <div
-            data-ui="editor-corner"
-            class="pointer-events-none absolute top-2 right-2 z-20 flex max-w-[calc(100%_-_16px)] flex-col items-end gap-2 *:pointer-events-auto"
-          >
-            <ExplainOrb />
-          </div>
+          <Show when={editor.review.state.mode !== 'review'}>
+            <EditorCorner />
+          </Show>
         </div>
         <ReviewView />
         <PRPanels />

@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	maxFileBytes = 64 << 20 // refuse to open anything larger
+	MaxFileBytes = 64 << 20 // refuse to open anything larger
 
 	// Chroma's lexers run at well under 1 MB/s, so tokenising a whole file on
 	// open is off the table. We lex one window at a time instead: hlChunk lines
@@ -303,6 +303,25 @@ func (d *Doc) Exact() (done, coming bool) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 	return d.full, len(d.src) <= bgLimit
+}
+
+// HighlightRange returns highlighted HTML synchronously, including for in-memory
+// documents. Unlike Lines it refuses oversized windows rather than silently
+// falling back to unhighlighted text. The range is zero-based and half-open.
+func (d *Doc) HighlightRange(start, end int) ([]string, error) {
+	start, end = max(0, start), min(d.Total, end)
+	if start >= end {
+		return []string{}, nil
+	}
+	from, to := max(0, start-hlContext), min(d.Total, end+hlContext)
+	if d.lineOff[to]-d.lineOff[from] > hlWindowBytes {
+		from, to = start, end
+	}
+	if d.lineOff[to]-d.lineOff[from] > hlWindowBytes {
+		return nil, fmt.Errorf("context too large to highlight")
+	}
+	lines := d.tokenise(d.src[d.lineOff[from]:d.lineOff[to]], to-from)
+	return lines[start-from : end-from], nil
 }
 
 // chunk returns one hlChunk-sized block of highlighted lines, and whether it
@@ -621,7 +640,7 @@ func Open(abs, rel string) (*Doc, error) {
 	if st.IsDir() {
 		return nil, fmt.Errorf("is a directory")
 	}
-	if st.Size() > maxFileBytes {
+	if st.Size() > MaxFileBytes {
 		return nil, fmt.Errorf("file too large (%d bytes)", st.Size())
 	}
 	key := fmt.Sprintf("%s|%d|%d", abs, st.ModTime().UnixNano(), st.Size())

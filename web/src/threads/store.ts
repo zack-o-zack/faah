@@ -1,7 +1,7 @@
 import type { AppStore } from '../app/store.ts';
 import type { Request } from '../lib/api.ts';
 import type { CoreActions } from '../editor/contracts.ts';
-import type { Thread, ThreadSummary, ThreadTurn, ExplainTarget } from './decode.ts';
+import type { Thread, ThreadSummary, ThreadTurn, ExplainTarget, ExplainInput } from './decode.ts';
 import {
   decodeThread,
   decodeSummary,
@@ -12,6 +12,7 @@ import {
 } from './decode.ts';
 import { record, text, isAbort, errorMessage } from '../lib/decode.ts';
 export interface ThreadOptions {
+  onNotesChanged?: () => void;
   request?: Request;
   post?: Request;
 }
@@ -109,8 +110,10 @@ function buildThreadStore(editor: ThreadHost, options: ThreadOptions = {}) {
       else set('list', state.list.length, summary);
     });
     editor.actions.orbThread(thread);
+    options.onNotesChanged?.();
   }
   function acceptSummary(summary: ThreadSummary): void {
+    if (summary.kind === 'explain') options.onNotesChanged?.();
     const old = state.list.find((thread) => thread.id === summary.id);
     if (old?.running && !summary.running && summary.touched)
       void editor.actions.reloadWorkspace().catch((error) => set('error', errorMessage(error)));
@@ -141,6 +144,7 @@ function buildThreadStore(editor: ThreadHost, options: ThreadOptions = {}) {
     set({ current: '', draft: null, message: '', pending: '', error: '' });
   }
   function removeThread(id: string): void {
+    options.onNotesChanged?.();
     requests.get(id)?.controller.abort();
     set('list', (list) => list.filter((thread) => thread.id !== id));
     set(
@@ -288,7 +292,7 @@ function buildThreadStore(editor: ThreadHost, options: ThreadOptions = {}) {
       if (!disposed) set('pending', '');
     }
   }
-  async function explainSelection(info: ExplainTarget, force = false): Promise<void> {
+  async function explainSelection(info: ExplainInput, force = false): Promise<void> {
     if (editor.active()?.dirty && editor.active()?.path === info.path) {
       set('error', 'Save the file before explaining');
       return;
@@ -303,7 +307,7 @@ function buildThreadStore(editor: ThreadHost, options: ThreadOptions = {}) {
       const reply = decodeExplain(
         await post(
           'api/explain',
-          { ...explainRequest(info), force },
+          { ...explainRequest(info), ...(force ? { force: true } : {}) },
           { signal: explainController.signal },
         ),
       );
@@ -325,7 +329,7 @@ function buildThreadStore(editor: ThreadHost, options: ThreadOptions = {}) {
     }
   }
   async function prepareExplanation(info: ExplainTarget): Promise<void> {
-    if (editor.active()?.dirty || info.l2 - info.l1 >= 400 || info.text.length > 20000) return;
+    if (editor.active()?.dirty || info.l2 - info.l1 >= 400) return;
     const body = explainRequest(info),
       key = JSON.stringify(body);
     if (key === prepareKey) return;
