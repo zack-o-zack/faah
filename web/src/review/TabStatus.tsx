@@ -80,7 +80,7 @@ export function TabStatus(props: TabStatusProps): JSX.Element {
       {(value) => (
         <span
           data-tab-info
-          class="inline-flex items-center gap-1 text-xs tabular-nums text-muted-foreground group-aria-selected/tab:text-foreground"
+          class="inline-flex items-center gap-1 text-xs tabular-nums text-muted-foreground group-aria-selected/tab:text-inherit"
           title={value().title}
           aria-label={value().title}
         >

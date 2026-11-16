@@ -56,7 +56,7 @@ export function ReviewTabs(): JSX.Element {
           <ReviewTab
             id="stages"
             name="Review pipeline"
-            icon="icon-[ph--sparkle] text-special"
+            icon="icon-[ph--sparkle]"
             title="Your coding harness answers each review question in turn"
             info={<PipelineStatus />}
           />
