@@ -283,7 +283,7 @@
     transition-timing-function: var(--ease-out);
   }
   .btn[data-variant='special']:hover,
-  .btn[data-variant='special'][aria-expanded='true'] { background-color: color-mix(in oklab, var(--periwinkle) 82%, var(--ink, var(--foreground))); }
+  .btn[data-variant='special'][aria-expanded='true'] { background-color: color-mix(in oklab, var(--periwinkle) 92%, var(--ink, var(--foreground))); }
   /* Badge surfaces must read independently of the surrounding panel. */
   .badge { border-color: var(--input); }
   .badge[data-variant='secondary'] {
