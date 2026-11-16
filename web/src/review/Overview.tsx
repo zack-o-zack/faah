@@ -216,7 +216,7 @@ function Checks(props: { checks: PRCheck[]; truncated: boolean; total: number })
   return (
     <section aria-label="Checks" class="min-w-0">
       <header class="mb-3 space-y-2">
-        <h2 class="flex items-center gap-2 text-sm font-semibold">
+        <h2 class="flex items-center gap-2 font-display text-sm font-semibold">
           Checks
           <span class="badge" data-variant="secondary">
             {props.checks.length}
@@ -291,7 +291,7 @@ function Reviewers(props: { reviewers: PRReviewer[] }): JSX.Element {
   return (
     <section aria-label="Reviewers" class="min-w-0">
       <header class="mb-3 space-y-1">
-        <h2 class="text-sm font-semibold">Reviewers</h2>
+        <h2 class="font-display text-sm font-semibold">Reviewers</h2>
         <Show when={props.reviewers.length}>
           <p class="text-xs text-muted-foreground">{reviewSummary(props.reviewers)}</p>
         </Show>

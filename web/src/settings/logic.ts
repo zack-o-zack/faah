@@ -300,8 +300,8 @@ export function typographyVariables(prefs: Preferences): Record<string, string> 
     '--fs': `${prefs.fontSize}px`,
     '--lh': `${prefs.lineHeight}px`,
     '--tab-size': String(prefs.tabSize),
+    '--editor-font-family': prefs.fontFamily || 'var(--mono)',
   };
-  if (prefs.fontFamily) variables['--mono'] = prefs.fontFamily;
   return variables;
 }
 

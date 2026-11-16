@@ -24,7 +24,7 @@ The entry has these sections, in order:
    `[data-shell]`; `win-linux:` matches the desktop platform attributes.
 4. **Theme mapping:** `@theme inline` exposes faah colours, fonts and type sizes
    as utilities, such as `text-primary-text`, `bg-gi-bg` and `text-11`.
-5. **Fonts and base layer:** system font defaults, browser and desktop type
+5. **Fonts and base layer:** bundled font faces, browser and desktop type
    scales, titlebar geometry, page defaults, scrollbars and `[hidden]` enforcement.
 6. **Components layer:** code-selection state, syntax spans, Markdown prose,
    Mermaid output, CSV tables, edit-mode measurement, diff rows, diagnostics,
@@ -377,7 +377,9 @@ variant; unrelated motion is unchanged.
 The browser regression fixture at `web/tests/fibo-shape.html` uses the actual
 compiled app CSS and served themes. Build the frontend, serve a dev asset root,
 and open `/static/tests/fibo-shape.html`. Its result is also available as
-`window.fiboShapeResults`; it throws on a failed computed-style assertion.
+`window.fiboShapeResults`; it throws on a failed computed-style assertion. It also
+checks the Fraunces family, 600 weight and tracking on card, dialog and empty-state
+headings against Basecoat, plus the explicit sans utility and monospace keys.
 
 ## Desktop shell and type scale
 
@@ -389,10 +391,70 @@ Titlebar height and native window-control insets use `--titlebar-h`,
 `--titlebar-left` and `--titlebar-right`. The workbench has a draggable empty strip;
 interactive controls and overlays opt out of dragging.
 
-`:root` uses `system-ui, sans-serif` for `--ui` and `ui-monospace, monospace`
-for `--mono`. The app ships no font files; `editor.fontFamily` can override the
-monospace stack with an installed font. `:root[data-shell]` keeps these font
-defaults and maps the `--t-*` scale to 11, 12, 13, 14, 16 and 20 px.
+### Bundled fonts
+
+`--ui` is `"Figtree", system-ui, sans-serif`; `--mono` is `"JetBrains Mono",
+ui-monospace, monospace`; `--font-display` is `"Fraunces", Georgia, serif`.
+Tailwind exposes these as `font-sans`, `font-mono` and `font-display`.
+
+The exact dev dependencies `@fontsource-variable/figtree`,
+`@fontsource-variable/fraunces` and `@fontsource-variable/jetbrains-mono` are
+pinned to 5.3.0. `scripts/build-web.js` copies their Latin variable WOFF2 files to
+`web/dist/fonts/`: normal and italic Figtree and JetBrains Mono, and normal
+weight-only Fraunces. Fraunces keeps the package's default optical-size,
+softness and wonk instances. No custom axes are set. Other scripts fall back to
+the system families. The build also copies the packages' OFL licenses to
+`web/dist/font-licenses/`. Both directories are gitignored build output and
+ship through Go's embed of `web/dist`.
+
+The handwritten `@font-face` rules in `web/tailwind.css` use the packages' weight
+ranges and Latin `unicode-range`, with `font-display: swap`. They reference
+`fonts/<file>.woff2` relative to `/static/app.css`, so the static handler serves
+`/static/fonts/<file>.woff2`. The launcher and holding page use the same asset
+handler. Each page's `<base>` preserves its configured URL prefix. The app
+preloads normal Figtree and JetBrains Mono; the launcher and holding page preload
+normal Figtree. All fonts load from the app under `font-src 'self'`, including
+offline desktop use. No package CSS or remote font stylesheet is imported.
+
+Inside the fibo components layer, the rule
+`:is(.card > header, .dialog > * > header, .empty > header) > :is(h2, h3)`
+selects Fraunces at weight 600 with `-0.01em` tracking. The same declaration
+also matches Basecoat's card-title aliases to beat its medium-weight selector.
+It follows Basecoat,
+so it overrides its heading defaults while explicit utilities can still win.
+Nested settings titles, review section headings, the holding title and large
+review empty-state headings opt in with `font-display`. Welcome and launcher
+title containers also opt in; their existing SVG logos retain their lettering.
+Panel labels, tabs, tree rows, toolbars, code and Markdown prose retain their
+text or code family.
+
+`editor.fontFamily` defaults to the empty string, selecting bundled JetBrains
+Mono. A nonempty setting overrides source rows and edit-mode text/gutters through
+`--editor-font-family`, and is passed directly to `EditorMeasure`. It does not
+replace `--mono` for diffs, code peeks, Markdown, paths, commands or keys.
+Clearing the setting restores `var(--mono)`. `EditorMeasure` measures after
+`document.fonts.ready` and every `loadingdone` event, and removes the listener
+on cleanup so delayed font swaps cannot leave stale column widths.
+
+### Type roles
+
+Roles map onto the existing compact size scale and Basecoat defaults. There is
+no second token scale: this phase preserves all sizes, line heights and the
+desktop mappings. The design reference values below describe the roles; they
+do not resize existing controls.
+
+| Role | Design reference (size / line height, weight, tracking) | Existing app mapping |
+| --- | --- | --- |
+| `display` | 56 / 60 px, 600, -0.02em | Fraunces for Welcome and large empty-state titles; existing sizes, at most one such title per view |
+| `title` | 28 / 34 px, 600, -0.01em | Fraunces for page, card and dialog titles; Basecoat title size or existing utility |
+| `heading` | 20 / 26 px, 600, normal | Fraunces for review section headings; existing `text-sm` / `text-base` sizes |
+| `body` | 15 / 24 px, 400, normal | Figtree for descriptions and chat; existing `text-sm`, `text-13`, `text-14`, `text-15` and prose leading |
+| `label` | 13 / 18 px, 600, normal | Figtree for Basecoat controls, chips, tabs and labels; existing control sizes and weights |
+| `caption` | 12 / 16 px, 500, normal | Figtree for timestamps and counts in muted ink; existing `text-xs` / `text-12` |
+| `code` | 13 / 20 px, 400, normal | JetBrains Mono through `font-mono` / `var(--mono)`; editor `--fs` / `--lh` and existing compact code sizes |
+
+`:root[data-shell]` keeps these font families and maps the `--t-*` scale to
+11, 12, 13, 14, 16 and 20 px.
 
 | Tokens | Browser sizes | Desktop sizes |
 | --- | --- | --- |

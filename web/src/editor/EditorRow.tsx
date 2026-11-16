@@ -79,7 +79,7 @@ export function EditorRow(props: EditorRowProps): JSX.Element {
       <WalkthroughTitle line={line()} />
       <div
         ref={row}
-        class="row group/line relative flex h-[var(--lh)] [body.word-wrap_&]:h-auto [body.word-wrap_&]:min-h-[var(--lh)] font-mono text-[length:var(--fs)] leading-[var(--lh)] [font-feature-settings:normal]"
+        class="row group/line relative flex h-[var(--lh)] [body.word-wrap_&]:h-auto [body.word-wrap_&]:min-h-[var(--lh)] [font-family:var(--editor-font-family,var(--mono))] text-[length:var(--fs)] leading-[var(--lh)] [font-feature-settings:normal]"
         onClick={(event) => {
           if (event.target instanceof Element && !event.target.closest('button'))
             editor.actions.focusAgentAt(editor.active()?.path || '', line());

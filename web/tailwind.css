@@ -7,6 +7,51 @@
 @source "./src";
 @source "../internal/workbench/workbench.go";
 
+@font-face {
+  font-family: "Figtree";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 300 900;
+  src: url("fonts/figtree-latin-wght-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+
+@font-face {
+  font-family: "Figtree";
+  font-style: italic;
+  font-display: swap;
+  font-weight: 300 900;
+  src: url("fonts/figtree-latin-wght-italic.woff2") format("woff2");
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("fonts/fraunces-latin-wght-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 800;
+  src: url("fonts/jetbrains-mono-latin-wght-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: italic;
+  font-display: swap;
+  font-weight: 100 800;
+  src: url("fonts/jetbrains-mono-latin-wght-italic.woff2") format("woff2");
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+
 @custom-variant dark (&:where(.dark, .dark *));
 @custom-variant desktop (&:where([data-shell], [data-shell] *));
 @custom-variant win-linux (&:where([data-platform="win"], [data-platform="linux"], [data-platform="win"] *, [data-platform="linux"] *));
@@ -24,6 +69,7 @@
   --shadow-dialog: var(--shadow-dialog);
   --font-sans: var(--ui);
   --font-mono: var(--mono);
+  --font-display: var(--font-display);
   --color-faint: var(--faint);
   --color-primary-text: var(--primary-text);
   --color-sel: var(--sel);
@@ -75,8 +121,9 @@
     --shadow-dialog: var(--shadow, 0 24px 48px -12px color-mix(in oklab, var(--foreground) 25%, transparent));
 
     --lh: 21px;
-    --mono: ui-monospace, monospace;
-    --ui: system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+    --ui: "Figtree", system-ui, sans-serif;
+    --font-display: "Fraunces", Georgia, serif;
     --fs: 13.5px;
 
     --t-8-5: 8.5px; --t-9: 9px; --t-9-5: 9.5px; --t-10: 10px; --t-10-5: 10.5px; --t-11: 11px; --t-11-5: 11.5px; --t-12: 12px; --t-12-5: 12.5px; --t-13: 13px; --t-13-5: 13.5px; --t-14: 14px; --t-14-5: 14.5px; --t-15: 15px; --t-16: 16px; --t-18: 18px;
@@ -112,8 +159,17 @@
 }
 
 @layer components {
-  /* fibo layer: shape, depth and focus. Keep this in components, after Vega,
+  /* fibo layer: type, shape, depth and focus. Keep this in components, after Vega,
      so explicit Tailwind utilities still win. No new specificity outside this layer. */
+
+  /* Match Vega's card-title aliases so its medium weight cannot win. */
+  :is(.card > header, .dialog > * > header, .empty > header) > :is(h2, h3),
+  .card > header > :is(h2, h3, [data-title], .card-title) {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .kbd { font-family: var(--mono); }
 
   /* Match Vega's size selectors, including its compact and icon buttons. */
   .btn, .btn[data-size], .badge { border-radius: var(--radius-pill); }
@@ -489,7 +545,7 @@
   .editview-gutter {
     flex: none; width: 45px;
     background: var(--background); border-right: 1px solid var(--border);
-    color: var(--faint); font: var(--fs)/var(--lh) var(--mono);
+    color: var(--faint); font: var(--fs)/var(--lh) var(--editor-font-family, var(--mono));
     text-align: right; padding: 0 8px 40vh 0;
     user-select: none; overflow: hidden; box-sizing: border-box;
     white-space: pre;
@@ -501,7 +557,7 @@
     padding: 0 8px 40vh 8px; margin: 0;
     border: none; outline: none; resize: none;
     background: transparent; color: var(--foreground);
-    font: var(--fs)/var(--lh) var(--mono);
+    font: var(--fs)/var(--lh) var(--editor-font-family, var(--mono));
     tab-size: var(--tab-size, 4);
     -moz-tab-size: var(--tab-size, 4);
     white-space: pre; overflow: auto;

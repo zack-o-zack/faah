@@ -14,7 +14,9 @@ export const SettingsToolbar: Component = () => {
   return (
     <header class="flex-row! items-center gap-4 shrink-0">
       <div class="flex min-w-0 flex-1 flex-col gap-0.5">
-        <h2 id="settings-title">Settings</h2>
+        <h2 id="settings-title" class="font-display font-semibold tracking-[-0.01em]">
+          Settings
+        </h2>
         <button
           type="button"
           id="settings-path"

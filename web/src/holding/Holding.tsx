@@ -68,7 +68,7 @@ export function Holding(props: HoldingProps): JSX.Element {
             />
           </figure>
           <div class="flex min-w-0 flex-col">
-            <h1 class="truncate font-medium">{data().Title}</h1>
+            <h1 class="truncate font-display font-semibold tracking-[-0.01em]">{data().Title}</h1>
             <Show when={data().Sub}>
               <p class="truncate font-mono text-xs text-muted-foreground">{data().Sub}</p>
             </Show>

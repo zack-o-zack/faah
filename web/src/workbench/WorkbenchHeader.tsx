@@ -5,7 +5,7 @@ export function WorkbenchHeader(): JSX.Element {
   const { state } = useWorkbench();
   return (
     <header class="mb-5 flex shrink-0 items-center gap-2">
-      <h1 class="flex">
+      <h1 class="flex font-display font-semibold">
         <img
           class="hidden h-5 w-auto dark:block"
           src="static/logo-dark.svg"

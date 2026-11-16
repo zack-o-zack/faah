@@ -34,7 +34,7 @@ export const Welcome: Component<WelcomeProps> = (props) => (
     hidden={props.hidden}
   >
     <div class="empty text-muted-foreground">
-      <div class="mb-6 flex items-end justify-center gap-2">
+      <div class="mb-6 flex items-end justify-center gap-2 font-display">
         <img
           class="hidden dark:block"
           src="static/logo-dark.svg"

@@ -24,6 +24,22 @@ execFileSync(
   ],
   { stdio: 'inherit' },
 );
+// Tailwind leaves url() assets in place; ship only the Latin faces we declare.
+fs.rmSync('web/dist/fonts', { recursive: true, force: true });
+fs.mkdirSync('web/dist/fonts', { recursive: true });
+fs.mkdirSync('web/dist/font-licenses', { recursive: true });
+for (const [family, styles] of [
+  ['figtree', ['normal', 'italic']],
+  ['fraunces', ['normal']],
+  ['jetbrains-mono', ['normal', 'italic']],
+]) {
+  const source = `node_modules/@fontsource-variable/${family}`;
+  for (const style of styles) {
+    const file = `${family}-latin-wght-${style}.woff2`;
+    fs.copyFileSync(`${source}/files/${file}`, `web/dist/fonts/${file}`);
+  }
+  fs.copyFileSync(`${source}/LICENSE`, `web/dist/font-licenses/${family}.txt`);
+}
 for (const name of fs.readdirSync('web/vendor')) {
   if (!name.endsWith('.min.js')) continue;
   const path = `web/vendor/${name}`;

@@ -108,7 +108,7 @@ var Schema = []SchemaItem{
 		Description: "Controls the font family used in the code viewer.",
 		Category:    "Text Editor",
 		Type:        "string",
-		Default:     "ui-monospace, monospace",
+		Default:     "",
 	},
 	{
 		Key:         "editor.lineHeight",

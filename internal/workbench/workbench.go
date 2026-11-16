@@ -1341,6 +1341,7 @@ var holdingTmpl = template.Must(template.New("holding").Funcs(template.FuncMap{
 <script defer src="static/holding.js"></script>
 <title>{{if .Starting}}Opening…{{else}}faah{{end}}</title>
 <link rel="icon" type="image/svg+xml" href="static/favicon.svg">
+<link rel="preload" href="static/fonts/figtree-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="static/app.css">
 <link rel="stylesheet" href="static/themes.css">
 <script>` + httpx.ThemeBootstrap + `</script>

@@ -93,7 +93,7 @@ function StageHeader(): JSX.Element {
             {STAGE_STATUS[status()].label}
           </span>
         </span>
-        <h2 id="review-stage-title" class="min-w-0 truncate text-base font-semibold">
+        <h2 id="review-stage-title" class="min-w-0 truncate font-display text-base font-semibold">
           {def()?.title || `Stage ${review.state.active + 1}`}
         </h2>
         <Show

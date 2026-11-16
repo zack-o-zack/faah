@@ -52,7 +52,7 @@ function EmptyState(props: EmptyStateProps): JSX.Element {
       >
         <div class="size-6 animate-spin rounded-full border-2 border-border border-t-primary" />
       </Show>
-      <h3>{props.title}</h3>
+      <h3 class="font-display font-semibold tracking-[-0.02em]">{props.title}</h3>
       <Show when={props.children}>
         <p>{props.children}</p>
       </Show>

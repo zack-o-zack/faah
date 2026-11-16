@@ -33,7 +33,13 @@ export const EditorMeasure: Component<EditorMeasureProps> = (props) => {
     measure();
   });
   // Web fonts swap in after first paint and change the width.
-  onMount(() => void document.fonts?.ready.then(measure));
+  onMount(() => {
+    const fonts = document.fonts;
+    if (!fonts) return;
+    fonts.addEventListener('loadingdone', measure);
+    void fonts.ready.then(measure);
+    onCleanup(() => fonts.removeEventListener('loadingdone', measure));
+  });
   return (
     <span
       ref={sample}

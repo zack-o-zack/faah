@@ -49,6 +49,43 @@ for (const theme of ['fibo-light', 'fibo-dark']) {
   document.documentElement.dataset.theme = theme;
   document.documentElement.classList.toggle('dark', theme.endsWith('dark'));
   const test = (name, actual, expected) => check(`${theme}: ${name}`, actual, expected);
+  for (const heading of ['h2', 'h3']) {
+    for (const [name, markup] of [
+      [
+        'card',
+        `<article class="card"><header><${heading}>Card heading</${heading}></header></article>`,
+      ],
+      [
+        'dialog',
+        `<dialog class="dialog" open><section><header><${heading}>Dialog heading</${heading}></header></section></dialog>`,
+      ],
+      ['empty', `<div class="empty"><header><${heading}>Empty heading</${heading}></header></div>`],
+    ]) {
+      const root = mount(markup);
+      const title = root.querySelector(heading);
+      test(
+        `${name} ${heading} display family`,
+        style(title).fontFamily,
+        token('font-family', '--font-display'),
+      );
+      test(`${name} ${heading} display weight`, style(title).fontWeight, '600');
+      test(
+        `${name} ${heading} display tracking`,
+        style(title).letterSpacing,
+        `${parseFloat(style(title).fontSize) * -0.01}px`,
+      );
+    }
+  }
+  const headingUtility = mount(
+    '<article class="card"><header><h2 class="font-sans">Explicit sans heading</h2></header></article>',
+  );
+  test(
+    'heading font utility wins',
+    style(headingUtility.querySelector('h2')).fontFamily,
+    token('font-family', '--ui'),
+  );
+  const key = mount('<kbd class="kbd">Esc</kbd>');
+  test('keyboard key uses code family', style(key).fontFamily, token('font-family', '--mono'));
   for (const [name, radius] of Object.entries({
     sm: 6,
     md: 10,

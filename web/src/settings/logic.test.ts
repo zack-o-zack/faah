@@ -148,8 +148,14 @@ test('preferences derive from values with the server defaults before load', () =
     '--fs': '13.5px',
     '--lh': '21px',
     '--tab-size': '8',
-    '--mono': 'Iosevka',
+    '--editor-font-family': 'Iosevka',
   });
+});
+
+test('clearing the editor font restores the bundled code face without changing other code', () => {
+  const variables = typographyVariables(preferences({ 'editor.fontFamily': '' }));
+  expect(variables['--editor-font-family']).toBe('var(--mono)');
+  expect(variables).not.toHaveProperty('--mono');
 });
 
 test('raw settings must be JSON', () => {
