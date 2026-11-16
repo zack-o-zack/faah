@@ -201,15 +201,13 @@ function buildDocumentBuffer(
       annotationHeights = Object.fromEntries(
         Object.entries(options.extraRows || {}).map(([line, count]) => [
           line,
-          count * (options.extraRowHeight || options.lineHeight || 20) +
-            (options.extraHeights?.[+line] || 0),
+          count * (options.extraRowHeight || options.lineHeight || 20),
         ]),
       );
       const measurementKey = JSON.stringify({
         ...options,
         extraRows: undefined,
         extraRowHeight: undefined,
-        extraHeights: undefined,
       });
       if (measureKey !== measurementKey) {
         heights.clear();

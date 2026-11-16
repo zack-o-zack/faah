@@ -174,7 +174,6 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
       buffer()?.layout({
         wrap: store.settings.preferences().wrap,
         extraRows: extraRows(),
-        extraHeights: notes.extraHeights(),
         extraRowHeight: notes.rowHeight(),
         width: codeWidth(
           geometry.width,

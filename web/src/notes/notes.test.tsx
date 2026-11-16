@@ -13,7 +13,6 @@ import { decodeNotes, type NoteView } from './store.ts';
 import { required } from '../lib/test-values.ts';
 import { createSourceDOM } from '../editor/source-dom.ts';
 import { findMatches } from '../editor/find.ts';
-import { refreshTarget } from './targets.ts';
 import { selectedText } from '../editor/cursor.ts';
 const notes = decodeNotes({
   notes: [
@@ -109,7 +108,7 @@ function setup(list: NoteView[] = notes, bubble = true, total = 4) {
   };
 }
 
-test('all note kinds keep full source width, span the gutter and only highlight on hover', async () => {
+test('all note kinds keep full source width, span the gutter and highlight on hover', async () => {
   const fixture = setup();
   const editor = fixture.editor;
   await editor.actions.openFile('a.go');
@@ -125,7 +124,7 @@ test('all note kinds keep full source width, span the gutter and only highlight 
   const before = [...editor.offsets()];
   await fireEvent.mouseEnter(required(trigger.closest('[data-note]')));
   trigger.focus();
-  expect(document.querySelector('[data-note-panel]')).toBeNull();
+  expect(document.querySelector('[data-note-panel]')).toBeTruthy();
   expect([...editor.offsets()]).toEqual(before);
   for (const line of [3, 4])
     expect(
@@ -142,26 +141,31 @@ test('all note kinds keep full source width, span the gutter and only highlight 
   vi.unstubAllGlobals();
 });
 
-test('click and Enter toggle one inline detail, leaving stays open, Escape restores offsets and caret', async () => {
+test('the detail is a tooltip: hover, focus, click and Enter open one, leaving or Escape closes it, and the source never moves', async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
   const fixture = setup();
   const editor = fixture.editor;
   await editor.actions.openFile('a.go');
   const trigger = await screen.findByRole('button', { name: 'Explains the block' });
+  const note = required(trigger.closest('[data-note]'));
   editor.actions.patch({ cur: 3, col: 0 });
   const before = [...editor.offsets()];
   const caret = required(document.getElementById('caret'));
   const original = caret.style.transform;
-  await fireEvent.click(trigger);
+  await fireEvent.mouseEnter(note);
+  expect(document.querySelector('[data-note-panel]')).toBeNull();
+  await vi.advanceTimersByTimeAsync(250);
   const panel = screen.getByRole('region', { name: 'Explanation detail' });
   expect(document.getElementById('rows')?.contains(panel)).toBe(true);
-  expect(document.querySelector('[data-popover]')).toBeNull();
-  expect(editor.offsets()[3]).toBe((before[3] || 0) + 120);
-  expect(caret.style.transform).not.toBe(original);
-  await fireEvent.mouseLeave(required(trigger.closest('[data-note]')));
-  expect(document.querySelector('[data-note-panel]')).toBeTruthy();
+  expect(panel.querySelector('button')).toBeNull();
+  expect([...editor.offsets()]).toEqual(before);
+  expect(caret.style.transform).toBe(original);
+  await fireEvent.mouseLeave(note);
+  expect(document.querySelector('[data-note-panel]')).toBeNull();
+  await fireEvent.click(trigger);
+  expect(trigger.getAttribute('aria-expanded')).toBe('true');
   await fireEvent.click(trigger);
   expect(document.querySelector('[data-note-panel]')).toBeNull();
-  expect([...editor.offsets()]).toEqual(before);
   await fireEvent.keyDown(trigger, { key: 'Enter' });
   expect(trigger.getAttribute('aria-expanded')).toBe('true');
   const other = screen.getByRole('button', { name: 'Explains the call' });
@@ -171,7 +175,7 @@ test('click and Enter toggle one inline detail, leaving stays open, Escape resto
   await fireEvent.keyDown(other, { key: 'Escape' });
   expect(document.querySelector('[data-note-panel]')).toBeNull();
   expect([...editor.offsets()]).toEqual(before);
-  expect(caret.style.transform).toBe(original);
+  vi.useRealTimers();
   fixture.view.unmount();
   vi.unstubAllGlobals();
 });
@@ -209,31 +213,15 @@ test('inline detail is excluded from source caret, selection, copying, find and 
   vi.unstubAllGlobals();
 });
 
-test('inline footer keeps checked links, Open thread, Refresh and permanent dismissal', async () => {
+test('the tooltip keeps checked links and has no buttons of its own', async () => {
   const fixture = setup();
-  const editor = fixture.editor;
-  await editor.actions.openFile('a.go');
-  const refresh = vi.spyOn(editor.actions, 'explainSelection').mockResolvedValue();
-  const open = vi.spyOn(editor.actions, 'openThread').mockResolvedValue();
+  await fixture.editor.actions.openFile('a.go');
   await fireEvent.click(await screen.findByRole('button', { name: 'Explains the call' }));
   expect(screen.getByText('outdated')).toBeTruthy();
   expect(screen.getByRole('button', { name: 'a.go:1' })).toBeTruthy();
   expect(screen.queryByRole('button', { name: 'bad.go:99' })).toBeNull();
-  await fireEvent.click(screen.getByRole('button', { name: 'Open thread' }));
-  expect(open).toHaveBeenCalledWith('t');
-  expect(editor.store.state.explanation.model?.id).toBe('t');
-  await fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
-  expect(refresh).toHaveBeenCalledWith({ path: 'a.go', l1: 2, l2: 2 }, true);
-  await fireEvent.click(screen.getByRole('button', { name: 'Dismiss note' }));
-  await waitFor(() =>
-    expect(fixture.post).toHaveBeenCalledWith('api/explain/notes/dismiss', {
-      thread: 't',
-      turn: 1,
-      index: 0,
-    }),
-  );
-  expect(editor.notes.notes().some((note) => note.index === 0)).toBe(false);
-  expect(document.querySelector('[data-note-panel]')).toBeNull();
+  for (const name of ['Open thread', 'Refresh', 'Dismiss note'])
+    expect(screen.queryByRole('button', { name })).toBeNull();
   fixture.view.unmount();
   vi.unstubAllGlobals();
 });
@@ -305,15 +293,6 @@ test('thread turn buttons open the first note file and replace the current bubbl
   vi.unstubAllGlobals();
 });
 
-test('symbol refresh targets current UTF-16 columns', () => {
-  expect(
-    refreshTarget(
-      { ...required(notes[0]), kind: 'symbol', symbol: 'run' },
-      () => '  runner(); run()',
-    ),
-  ).toEqual({ path: 'a.go', l1: 2, l2: 2, c1: 12, c2: 15, symbol: 'run' });
-});
-
 test('large annotated ranges stay virtualized and closing an offscreen bubble releases dimming', async () => {
   const fixture = setup([{ ...required(notes[1]), l2: 2500 }], true, 5000);
   const editor = fixture.editor;
@@ -330,24 +309,7 @@ test('large annotated ranges stay virtualized and closing an offscreen bubble re
   editor.actions.dismissOrb();
   expect(document.querySelector('[data-note-bar]')).toBeNull();
   expect(editor.notes.dimmed(1)).toBe(false);
-  expect(editor.notes.extraHeights()).toEqual({});
   expect(editor.offsets().at(-1)).toBe(5000 * editor.geometry.lineHeight);
-  fixture.view.unmount();
-  vi.unstubAllGlobals();
-});
-
-test('revealing a source line scrolls past its expanded annotation', async () => {
-  const fixture = setup();
-  const editor = fixture.editor;
-  await editor.actions.openFile('a.go');
-  await fireEvent.click(await screen.findByRole('button', { name: 'Explains the block' }));
-  editor.notes.measureDetail(required(editor.notes.expanded()), 1000);
-  editor.setGeometry({ height: 200 });
-  const scroll = vi.spyOn(required(editor.services.source), 'scrollTo');
-  editor.actions.revealLine(3);
-  expect(scroll).toHaveBeenCalledWith(
-    (editor.offsets()[2] || 0) + editor.notes.heightBefore(3) - 100,
-  );
   fixture.view.unmount();
   vi.unstubAllGlobals();
 });

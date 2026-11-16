@@ -148,17 +148,14 @@ test('unchanged refresh still accepts new language-service metadata', async () =
   model.dispose();
 });
 
-test('expanding annotations preserves wrapped source measurements and never counts panel height twice', () => {
+test('annotation rows keep wrapped source measurements', () => {
   const model = createDocumentBuffer('notes.js');
   model.apply(chunk(0, ['long wrapped line', 'short'], 2));
   const options = { wrap: true, width: 80, charWidth: 8, extraRows: { 0: 1 }, extraRowHeight: 32 };
   model.layout(options);
   model.measureHeights([[0, 60]]);
   expect([...model.layout(options)]).toEqual([0, 92, 112]);
-  const expanded = { ...options, extraHeights: { 0: 120 } };
-  expect([...model.layout(expanded)]).toEqual([0, 212, 232]);
   model.measureHeights([[0, 60]]);
-  expect([...model.layout(expanded)]).toEqual([0, 212, 232]);
   expect([...model.layout(options)]).toEqual([0, 92, 112]);
   model.dispose();
 });

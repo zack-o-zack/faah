@@ -20,15 +20,30 @@ export function NoteGhost(props: {
     const current = props.notes.hovered();
     if (current && noteKey(current) === noteKey(props.note)) props.notes.setHovered(null);
   }
-  function toggle() {
-    if (open()) props.notes.collapse();
+  // The detail is a tooltip: it opens after a short hover or on focus, and
+  // closes when the pointer or focus leaves the note.
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  function show(delay = 0) {
+    clearTimeout(timer);
+    if (delay) timer = setTimeout(() => props.notes.showDetail(props.note), delay);
     else props.notes.showDetail(props.note);
   }
-  onCleanup(clearHover);
+  function hide() {
+    clearTimeout(timer);
+    if (open()) props.notes.collapse();
+  }
+  function toggle() {
+    if (open()) hide();
+    else show();
+  }
+  onCleanup(() => {
+    clearTimeout(timer);
+    clearHover();
+  });
   return (
     <div
       data-note
-      class="select-none min-w-0 pr-4"
+      class="relative select-none min-w-0 pr-4"
       style={{
         'max-width': props.width ? `${props.width}px` : undefined,
         'padding-left': `${props.indent || 0}px`,
@@ -36,8 +51,18 @@ export function NoteGhost(props: {
       onMouseEnter={() => {
         editor.actions.hideHover();
         props.notes.setHovered(props.note);
+        show(250);
       }}
-      onMouseLeave={clearHover}
+      onMouseLeave={() => {
+        clearHover();
+        hide();
+      }}
+      onFocusOut={(event) => {
+        if (!(
+          event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)
+        ))
+          hide();
+      }}
       onMouseDown={(event) => {
         if (!(event.target instanceof Element) || !event.target.closest('button'))
           event.preventDefault();
@@ -60,6 +85,7 @@ export function NoteGhost(props: {
           aria-expanded={open()}
           aria-controls={id}
           onClick={toggle}
+          onFocus={() => show()}
           onKeyDown={(event) => {
             if (event.key === 'Enter') {
               event.preventDefault();
@@ -82,7 +108,7 @@ export function NoteGhost(props: {
         </button>
       </div>
       <Show when={open()}>
-        <NotePanel id={id} note={props.note} notes={props.notes} review={props.review} />
+        <NotePanel id={id} note={props.note} review={props.review} />
       </Show>
     </div>
   );
