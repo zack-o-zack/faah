@@ -99,11 +99,11 @@ func explainPrepareKey(abs string, req explain.Request) string {
 		}
 		return *c
 	}
-	fmt.Fprintf(h, "%s|%d|%d|%d|%d|", req.Path, req.L1, col(req.C1), req.L2, col(req.C2))
+	fmt.Fprintf(h, "%s|%t|%d|%d|%d|%d|", req.Path, req.File, req.L1, col(req.C1), req.L2, col(req.C2))
 	if st, err := os.Stat(abs); err == nil {
 		fmt.Fprintf(h, "%d|%d|", st.ModTime().UnixNano(), st.Size())
 	}
-	h.Write([]byte(req.Text))
+	h.Write([]byte(req.Symbol))
 	return hex.EncodeToString(h.Sum(nil))
 }
 

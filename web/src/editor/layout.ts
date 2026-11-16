@@ -1,4 +1,6 @@
 export interface LayoutOptions {
+  extraRowHeight?: number;
+  extraHeights?: Record<number, number>;
   extraRows?: Record<number, number>;
   wrap?: boolean;
   width?: number;
@@ -49,6 +51,8 @@ export function lineOffsets(
     estimate = 0,
     heights,
     extraRows,
+    extraHeights,
+    extraRowHeight = lineHeight,
   }: LayoutOptions = {},
 ): Float64Array {
   const offsets = new Float64Array(columns.length + 1);
@@ -60,7 +64,8 @@ export function lineOffsets(
     offsets[index + 1] =
       (offsets[index] || 0) +
       ((wrap && heights?.get(index)) || rows * lineHeight) +
-      (extraRows?.[index] || 0) * lineHeight;
+      (extraRows?.[index] || 0) * extraRowHeight +
+      (extraHeights?.[index] || 0);
   }
   return offsets;
 }

@@ -218,7 +218,7 @@ test('image controls update state and release pointer and wheel listeners', asyn
   mounted.unmount();
   expect(editor.services.imageKey).toBeUndefined();
 });
-test('explain orb renders progress, completion, sidebar suppression and dismissal', async () => {
+test('explain orb renders progress and completion without closing when its thread opens', async () => {
   const app = store();
   const open = vi.fn();
   const base = editorStore(app);
@@ -247,6 +247,8 @@ test('explain orb renders progress, completion, sidebar suppression and dismissa
   expect(screen.getByText('A clear answer.')).toBeTruthy();
   await fireEvent.click(required(document.querySelector('#explain-orb-open')));
   expect(open).toHaveBeenCalledWith('thread');
+  expect(document.querySelector('#explain-orb')).toBeTruthy();
+  await fireEvent.click(screen.getByRole('button', { name: 'Close explanation' }));
   expect(document.querySelector('#explain-orb')).toBeNull();
 });
 test('long diff mounts only visible slots and releases recycled line numbers', async () => {
@@ -437,7 +439,7 @@ test('an open editor diff follows shared layout changes', async () => {
   expect(window.document.querySelector('.diff-unified')).toBeTruthy();
 });
 
-test('finished orb holds for hover and focus, fades after five seconds, and preserves failures', async () => {
+test('running, finished and failed bubbles persist until explicit close or focused Escape', async () => {
   vi.useFakeTimers();
   try {
     const app = store();
@@ -447,26 +449,23 @@ test('finished orb holds for hover and focus, fades after five seconds, and pres
         <ExplainOrb />
       </EditorProvider>
     ));
-    app.actions.orbBegin();
-    app.actions.orbAttach(decodeThread({ id: 't', turns: [{ running: false }] }));
-    const orb = required(document.getElementById('explain-orb'));
-    await fireEvent.mouseEnter(orb);
-    vi.advanceTimersByTime(6000);
-    expect(orb.style.opacity).toBe('1');
-    await fireEvent.mouseLeave(orb);
-    const button = required(document.getElementById('explain-orb-open'));
-    await fireEvent.focusIn(button);
-    vi.advanceTimersByTime(6000);
-    expect(document.getElementById('explain-orb')).toBeTruthy();
-    await fireEvent.focusOut(button);
-    vi.advanceTimersByTime(5000);
-    expect(orb.style.opacity).toBe('0');
-    vi.advanceTimersByTime(200);
-    expect(document.getElementById('explain-orb')).toBeNull();
-    app.actions.orbBegin();
-    app.actions.orbFailed('failed');
-    vi.advanceTimersByTime(10000);
-    expect(document.getElementById('explain-orb')?.dataset.phase).toBe('failed');
+    for (const phase of ['running', 'done', 'failed'] as const) {
+      app.actions.orbBegin();
+      if (phase === 'done') app.actions.orbAttach(decodeThread({ id: 't', turns: [{ id: 1 }] }));
+      if (phase === 'failed') app.actions.orbFailed('failed');
+      vi.advanceTimersByTime(10000);
+      const orb = required(document.getElementById('explain-orb'));
+      expect(orb.dataset.phase).toBe(phase);
+      expect(orb.classList.contains('card')).toBe(false);
+      expect(orb.firstElementChild?.classList.contains('rounded-full')).toBe(true);
+      expect(orb.querySelector('section')).toBeNull();
+      await fireEvent.keyDown(window, { key: 'Escape' });
+      expect(document.getElementById('explain-orb')).toBeTruthy();
+      const button = required(document.getElementById('explain-orb-open'));
+      button.focus();
+      await fireEvent.keyDown(button, { key: 'Escape' });
+      expect(document.getElementById('explain-orb')).toBeNull();
+    }
   } finally {
     vi.useRealTimers();
   }

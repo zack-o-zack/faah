@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"slices"
 	"sort"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -123,7 +124,7 @@ func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
 // fileNotes is every saved note on rel, found again in lines, the file as it
 // is now. A note whose code is gone stays where it was, marked "text". Where
 // notes cover the same code, the newest wins.
-func (tm *threadManager) fileNotes(rel string, lines []string) []notes.View {
+func (tm *threadManager) fileNotes(rel string, lines []string, scope toolScope) []notes.View {
 	type saved struct {
 		v         notes.View
 		when      int64
@@ -131,10 +132,13 @@ func (tm *threadManager) fileNotes(rel string, lines []string) []notes.View {
 	}
 	var all []saved
 	for _, t := range tm.Snapshot() {
-		if t.Kind != "explain" {
+		if t.Kind != "explain" || (scope.tid != "" && t.ID != scope.tid) {
 			continue
 		}
 		for _, tr := range t.Turns {
+			if scope.turn != 0 && tr.ID != scope.turn {
+				continue
+			}
 			for i, n := range tr.Notes {
 				if n.Path == rel {
 					all = append(all, saved{notes.View{Thread: t.ID, Turn: tr.ID, Index: i, Note: n, Links: notes.DetailLinks(n.Detail, tr.Refs)}, tr.Started, slices.Contains(tr.Dismissed, i)})
@@ -255,7 +259,7 @@ func (s *Server) symbolHash(rel string, line int, name string) string {
 	}
 	c1 := explain.UTF16Len(lines[line-1][:at])
 	c2 := c1 + explain.UTF16Len(name)
-	req := explain.Request{Path: rel, L1: line, L2: line, C1: &c1, C2: &c2, Text: name}
+	req := explain.Request{Path: rel, L1: line, L2: line, C1: &c1, C2: &c2, Symbol: name}
 	target, err := explain.Classify(lines, req)
 	if err != nil {
 		return ""
@@ -279,6 +283,41 @@ func (s *Server) handleExplainNotes(w http.ResponseWriter, r *http.Request) {
 	if !s.threadsOrFail(w) {
 		return
 	}
+	if r.URL.Query().Get("path") == "" && r.URL.Query().Get("thread") != "" && r.URL.Query().Get("turn") != "" {
+		turn, err := strconv.Atoi(r.URL.Query().Get("turn"))
+		if err != nil || turn < 1 {
+			httpx.Fail(w, http.StatusBadRequest, "bad explanation turn")
+			return
+		}
+		scope := toolScope{tid: r.URL.Query().Get("thread"), turn: turn}
+		th := s.threads.Get(scope.tid)
+		out := []notes.View{}
+		if th != nil && th.Kind == "explain" {
+			paths := map[string]bool{}
+			for _, tr := range th.Turns {
+				if tr.ID == turn {
+					for _, note := range tr.Notes {
+						paths[note.Path] = true
+					}
+				}
+			}
+			names := make([]string, 0, len(paths))
+			for path := range paths {
+				names = append(names, path)
+			}
+			sort.Strings(names)
+			for _, path := range names {
+				abs, inside := explain.Resolve(s.ix.Root(), path)
+				var lines []string
+				if inside {
+					lines, _ = explain.ReadLines(abs)
+				}
+				out = append(out, s.threads.fileNotes(path, lines, scope)...)
+			}
+		}
+		httpx.WriteJSON(w, map[string]any{"notes": out})
+		return
+	}
 	_, rel, ok := s.safePath(r.URL.Query().Get("path"))
 	abs, inside := explain.Resolve(s.ix.Root(), rel)
 	if !ok || !inside || rel == "" {
@@ -290,7 +329,15 @@ func (s *Server) handleExplainNotes(w http.ResponseWriter, r *http.Request) {
 		httpx.Fail(w, http.StatusNotFound, err.Error())
 		return
 	}
-	httpx.WriteJSON(w, map[string]any{"notes": s.threads.fileNotes(rel, lines)})
+	scope := toolScope{tid: r.URL.Query().Get("thread")}
+	if raw := r.URL.Query().Get("turn"); raw != "" {
+		scope.turn, err = strconv.Atoi(raw)
+		if err != nil || scope.turn < 1 || scope.tid == "" {
+			httpx.Fail(w, http.StatusBadRequest, "bad explanation turn")
+			return
+		}
+	}
+	httpx.WriteJSON(w, map[string]any{"notes": s.threads.fileNotes(rel, lines, scope)})
 }
 
 func (s *Server) handleExplainNotesDismiss(w http.ResponseWriter, r *http.Request) {

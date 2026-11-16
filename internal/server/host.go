@@ -126,7 +126,7 @@ func (s *Server) prThreadContext(scope string) string {
 			break
 		}
 		fmt.Fprintf(&b, " The PR is exactly %s: read it with that and `git log --stat %s..%s`; do not review from `git show HEAD` or `git diff HEAD~1`.", prRange, mb, headSHA)
-		if f := p.WriteScopeFile("pr.diff", git.DiffFull(root, diffFileMax, mb, headSHA)); f != "" {
+		if f := s.prDiffFile(); f != "" {
 			fmt.Fprintf(&b, " The full diff is also saved at %s.", f)
 		}
 		if files := s.ix.PRFiles(); len(files) > 0 {
@@ -145,6 +145,18 @@ func (s *Server) prThreadContext(scope string) string {
 		fmt.Fprintf(&b, " Anything after %s (`git diff %s`, or commits above it) is the reviewer's own work on top of the PR, not part of it.", short(headSHA), headSHA)
 	}
 	return b.String()
+}
+
+// prDiffFile saves the PR comparison for reference-only prompts.
+func (s *Server) prDiffFile() string {
+	if s.pr == nil {
+		return ""
+	}
+	snap := s.pr.Snapshot()
+	if snap.DiffBase == "" || snap.Meta.HeadSHA == "" {
+		return ""
+	}
+	return s.pr.WriteScopeFile("pr.diff", git.DiffFull(s.ix.Root(), diffFileMax, snap.DiffBase, snap.Meta.HeadSHA))
 }
 
 // SetPR marks this process as a PR review session: diffs are computed

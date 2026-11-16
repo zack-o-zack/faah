@@ -17,19 +17,17 @@ import (
 // inside the prompt. The harness runs read-only and only writes the words.
 
 const (
-	explainPromptVersion = 2
+	explainPromptVersion = 4
 	explainMaxLines      = 400
 	explainMaxFileBytes  = 8 << 20
 	PacketMax            = 16 << 10
-	explainTargetMax     = 10 << 10
-	explainBodyMax       = 6 << 10
-	explainDocMax        = 2 << 10
 	explainMaxIdents     = 15
 	explainMaxIdentTries = 40
 	explainMaxCalls      = 12
 	explainMaxRefs       = 40
 	explainMaxRefsFile   = 8
 	explainFallbackLines = 80
+	explainDocMax        = 2 << 10
 	explainSnapLines     = 20
 	Budget               = 8 * time.Second
 )
@@ -40,6 +38,8 @@ const (
 	KindLocal    = "local"
 	KindExternal = "external"
 	KindBlock    = "block"
+	KindFile     = "file"
+	KindPR       = "pr"
 )
 
 var (
@@ -69,25 +69,30 @@ var explainKeywords = func() map[string]bool {
 	return m
 }()
 
-// Request is what the client sends. A diff selection has no columns.
+// Request carries a workspace reference and an optional symbol name.
+// Source text is never sent by the client or included in the prompt.
 type Request struct {
-	Path  string `json:"path"`
-	L1    int    `json:"l1"`
-	C1    *int   `json:"c1,omitempty"`
-	L2    int    `json:"l2"`
-	C2    *int   `json:"c2,omitempty"`
-	Text  string `json:"text"`
-	Force bool   `json:"force,omitempty"`
+	PR     bool   `json:"pr,omitempty"`
+	Path   string `json:"path"`
+	File   bool   `json:"file,omitempty"`
+	L1     int    `json:"l1"`
+	C1     *int   `json:"c1,omitempty"`
+	L2     int    `json:"l2"`
+	C2     *int   `json:"c2,omitempty"`
+	Symbol string `json:"symbol,omitempty"`
+	Force  bool   `json:"force,omitempty"`
 }
 
 // Target is a selection checked against the file on disk. Name and Col
 // are set for a symbol; Col is -1 for a block.
 type Target struct {
+	PR       bool
+	File     bool
 	Abs, Rel string
 	L1, L2   int
 	Col      int
 	Name     string
-	Text     string
+	Text     string // local cache identity only, never prompt content
 }
 
 // Summary is the line of evidence shown under an explanation.

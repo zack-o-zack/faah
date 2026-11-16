@@ -16,7 +16,7 @@ test('deleting a populated thread does not open it and keyboard activation opens
       onDelete={remove}
     />
   ));
-  expect(screen.getByText('Workspace')).toBeTruthy();
+  expect(document.querySelector('[data-ui="thr-item-ref"]')?.textContent).toBe('Explain startup');
   expect(screen.getByTitle('Last reply failed')).toBeTruthy();
   const button = screen.getByRole('button', { name: 'Delete thread' });
   expect(button.dataset.variant).toBe('ghost');

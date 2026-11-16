@@ -13,7 +13,7 @@ export function refreshTarget(note: NoteView, lineText: (index: number) => strin
           l2: note.l1,
           c1: at,
           c2: at + note.symbol.length,
-          text: note.symbol,
+          symbol: note.symbol,
         };
       at = line.indexOf(note.symbol, at + 1);
     }
@@ -22,8 +22,6 @@ export function refreshTarget(note: NoteView, lineText: (index: number) => strin
     path: note.path,
     l1: note.l1,
     l2: note.l2,
-    text: Array.from({ length: note.l2 - note.l1 + 1 }, (_, index) =>
-      lineText(note.l1 - 1 + index),
-    ).join('\n'),
+    ...(note.symbol ? { symbol: note.symbol } : {}),
   };
 }

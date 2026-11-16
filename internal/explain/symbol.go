@@ -36,21 +36,18 @@ func (g *explainGather) symbol(ctx context.Context, enc explainSpan, hasEnc bool
 	ev := Evidence{Source: g.server, Summary: Summary{Source: g.server, Definition: true}}
 	var sections []Section
 
-	signature := ""
-	if info, _ := g.ws.Hover(ctx, t.Abs, t.Rel, t.L1, t.Col); info != nil && !info.Empty {
-		signature = stripHoverHTML(info.Signature)
-		body := signature
-		if info.Doc != "" {
-			body = strings.TrimSpace(body + "\n\n" + info.Doc)
-		}
-		if body != "" {
-			sections = append(sections, Section{"Signature and documentation", capText(body, explainDocMax)})
-		}
-	}
-
 	switch {
 	case def.Ext:
 		ev.Kind = KindExternal
+		// External symbols have no readable workspace location, so hover facts are the exception.
+		signature := ""
+		if info, _ := g.ws.Hover(ctx, t.Abs, t.Rel, t.L1, t.Col); info != nil && !info.Empty {
+			signature = stripHoverHTML(info.Signature)
+			body := capExternalText(strings.TrimSpace(signature + "\n\n" + info.Doc))
+			if body != "" {
+				sections = append(sections, Section{"Signature and documentation", body})
+			}
+		}
 		ev.Key = Key(ev.Kind, ev.Source, t.Rel, signature, enc.Text)
 	case hasEnc && def.Path == t.Rel && def.Line >= enc.L1 && def.Line <= enc.L2 && !nameMatches(enc.Name, t.Name):
 		ev.Kind = KindLocal
@@ -59,7 +56,7 @@ func (g *explainGather) symbol(ctx context.Context, enc explainSpan, hasEnc bool
 		ev.Kind = KindSymbol
 		body, end := g.definitionBody(def)
 		ev.Key = Key(ev.Kind, ev.Source, def.Path, t.Name, body)
-		sections = append(sections, Section{fmt.Sprintf("Definition: %s:%s", def.Path, codeintel.LineRef(def.Line, end)), numberedBlock(def.Path, body, def.Line, explainBodyMax)})
+		sections = append(sections, Section{"Definition", "`" + t.Name + "` at " + Reference(def.Path, def.Line, end)})
 	}
 
 	callers := ""
@@ -80,7 +77,7 @@ func (g *explainGather) symbol(ctx context.Context, enc explainSpan, hasEnc bool
 		var section string
 		section, ev.Summary.Refs, ev.Summary.RefFiles, refsHash = refSection(kept)
 		if section != "" {
-			sections = append(sections, Section{"References", section})
+			sections = append(sections, Section{"References to " + t.Name, section})
 		}
 	}
 	ev.Hash = callers + "|" + refsHash
@@ -163,7 +160,7 @@ func refSection(hits []codeintel.NavHit) (string, int, int, string) {
 			if i >= explainMaxRefsFile || shown >= explainMaxRefs {
 				break
 			}
-			fmt.Fprintf(&b, "%s:%d: %s\n", h.Path, h.Line, strings.TrimSpace(h.Pre+h.Mid+h.Post))
+			fmt.Fprintf(&b, "%s:%d\n", h.Path, h.Line)
 			shown++
 		}
 	}
@@ -180,7 +177,7 @@ func (g *explainGather) textSymbol(ctx context.Context, enc explainSpan) (Eviden
 	var hits []codeintel.NavHit
 	for _, f := range g.ws.Search(ctx, t.Name) {
 		for _, m := range f.Matches {
-			hits = append(hits, codeintel.NavHit{Path: f.Path, Line: m.Line, Pre: m.Pre, Mid: m.Mid, Post: m.Post, Def: m.Def})
+			hits = append(hits, codeintel.NavHit{Path: f.Path, Line: m.Line, Def: m.Def})
 		}
 	}
 	section, refs, files, hash := refSection(hits)
@@ -192,7 +189,7 @@ func (g *explainGather) textSymbol(ctx context.Context, enc explainSpan) (Eviden
 		if h.Def {
 			var end int
 			body, end = g.definitionBody(h)
-			sections = append(sections, Section{fmt.Sprintf("Likely definition, by text match: %s:%s", h.Path, codeintel.LineRef(h.Line, end)), numberedBlock(h.Path, body, h.Line, explainBodyMax)})
+			sections = append(sections, Section{"Likely definition, by text match", "`" + t.Name + "` at " + Reference(h.Path, h.Line, end)})
 			break
 		}
 	}

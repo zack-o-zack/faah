@@ -1,3 +1,4 @@
+import type { Thread } from '../threads/decode.ts';
 import type { AppStore } from '../app/store.ts';
 import type { EditorUI, CoreActions, EditorHost, Services, Geometry } from './contracts.ts';
 import type { DocTab, OpenOptions } from './types.ts';
@@ -18,6 +19,7 @@ interface EditorOptions {
   forge?: FeatureOptions;
   language?: FeatureOptions;
 }
+import { createWalkthrough } from '../viewers/walkthrough.ts';
 import { isPreview, previewKind } from '../viewers/view.ts';
 import { createAgentStore } from '../agents/store.ts';
 import { createThreadStore } from '../threads/store.ts';
@@ -42,7 +44,7 @@ import { createStore } from 'solid-js/store';
 import { batch, createMemo, createSignal, onCleanup } from 'solid-js';
 import { apiPostJson } from '../lib/api.ts';
 import { toast } from '../lib/toast.tsx';
-import { createNotesStore } from '../notes/store.ts';
+import { createNotesStore, createTurnNotes } from '../notes/store.ts';
 import { codeWidth, LH } from './layout.ts';
 import { movePosition } from './cursor.ts';
 import { initialVimState } from './vim.ts';
@@ -78,14 +80,14 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
   const [ui, setUI] = createStore(initialState());
   const [revision, bump] = createSignal(0);
   const [geometry, setGeometry] = createStore<Geometry>({
-    left: 0,
     width: 800,
     height: 600,
     top: 0,
     charWidth: 7.8,
     lineHeight: LH,
   });
-  const services: Services = {};
+  const [explanationCard, setExplanationCard] = createSignal<HTMLElement>();
+  const services: Services = { explanationCard, registerExplanationCard: setExplanationCard };
   const handlers: EditorHost['handlers'] = {};
   let openSequence = 0;
   const active = store.activeDocument;
@@ -99,28 +101,83 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
     if (document) store.actions.patchDocument(document.path, update);
   };
   const refresh = () => bump((value) => value + 1);
+  const [reviewAccess, setReviewAccess] = createSignal<ReturnType<typeof createReviewStore>>();
+  const walkthrough = createWalkthrough(
+    store,
+    geometry,
+    { openFile, centerLine },
+    {
+      ready: () =>
+        !reviewAccess()?.walkthrough.loading &&
+        (!!reviewAccess()?.walkthroughData() || !!reviewAccess()?.walkthrough.error),
+      revision: () => reviewAccess()?.contextEpoch() || 0,
+      files: () => reviewAccess()?.reviewFiles() || [],
+      expand: async (path, ranges) =>
+        (await reviewAccess()?.actions.expandReviewContext(path, ranges)) ?? false,
+      reveal: (path, line) => reviewAccess()?.actions.revealWalkthrough(path, line),
+      showTab: () => {
+        reviewAccess()?.actions.setReviewMode('review');
+        reviewAccess()?.actions.setGroupFilter('all');
+        reviewAccess()?.actions.setReviewTab('walkthrough');
+      },
+      openReference: async (target) => {
+        await reviewAccess()?.actions.openReviewReference(target);
+      },
+    },
+  );
   const notes = createNotesStore(
     () => {
       const doc = active();
-      return doc && !doc.isEditing && !doc.diffMode
+      return reviewAccess()?.state.mode !== 'review' &&
+        doc &&
+        !doc.isEditing &&
+        !doc.diffMode &&
+        !store.state.explanation.walk
         ? {
             path: doc.path,
             version: `${buffer()?.generation}:${doc.viewerRevision}:${store.state.explanation.model?.phase}:${store.state.explanation.model?.notes}`,
           }
         : false;
     },
-    () => geometry.width,
+    () => geometry.lineHeight,
+    () => store.state.explanation.model,
     options.threads,
   );
+  const turnNotes = createTurnNotes(
+    () => store.state.explanation.model,
+    () => geometry.lineHeight,
+    {
+      ...options.threads,
+      active: () => reviewAccess()?.state.mode === 'review',
+    },
+  );
+  const extraRows = createMemo(() => {
+    const rows = notes.extraRows();
+    const step = walkthrough.focus();
+    return step ? { ...rows, [step.l1 - 1]: (rows[step.l1 - 1] || 0) + 1 } : rows;
+  });
+  function annotationHeight(line: number) {
+    return notes.heightBefore(line) + (walkthrough.focus()?.l1 === line ? notes.rowHeight() : 0);
+  }
+  function walkContains(line: number) {
+    const step = walkthrough.focus();
+    return !!step && line >= step.l1 && line <= step.l2;
+  }
+  function dimmed(line: number) {
+    const step = walkthrough.focus();
+    return step ? line < step.l1 || line > step.l2 : notes.dimmed(line);
+  }
   function offsets() {
     revision();
     buffer()?.revision();
     return (
       buffer()?.layout({
         wrap: store.settings.preferences().wrap,
-        extraRows: notes.extraRows(),
+        extraRows: extraRows(),
+        extraHeights: notes.extraHeights(),
+        extraRowHeight: notes.rowHeight(),
         width: codeWidth(
-          geometry.width - notes.margin(),
+          geometry.width,
           active()?.total,
           geometry.charWidth,
           store.settings.preferences().lineNumbers,
@@ -198,7 +255,8 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
       store.actions.requestPreviewLine(active(), line);
       return services.preview?.line(line);
     }
-    const y = offsets()[Math.max(0, Math.min((active()?.total || 1) - 1, line - 1))] || 0;
+    const index = Math.max(0, Math.min((active()?.total || 1) - 1, line - 1));
+    const y = (offsets()[index] || 0) + annotationHeight(index + 1);
     services.source?.scrollTo(Math.max(0, y - geometry.height / 2 + geometry.lineHeight * 2));
   }
   function move(delta: number, shift = false, axis = 'line') {
@@ -221,7 +279,7 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
     editor.actions.syncSelection();
   }
   function revealLine(line: number) {
-    const y = offsets()[line - 1] || 0;
+    const y = (offsets()[line - 1] || 0) + annotationHeight(line);
     if (y < geometry.top || y + geometry.lineHeight * 2 > geometry.top + geometry.height)
       services.source?.scrollTo(Math.max(0, y - geometry.height / 2));
   }
@@ -241,6 +299,13 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
     ...store.settings.actions,
     ...store.actions,
     ...shortcutRegistry.actions,
+    walkStart(index = 0) {
+      store.actions.walkStart(
+        index,
+        store.state.explanation.walk?.surface ||
+          (review.state.mode === 'review' ? 'review' : 'source'),
+      );
+    },
     openLink: openFile,
     refresh,
     patch,
@@ -259,6 +324,22 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
       if (index >= 0 && active()?.path !== from.path && from.diffRef === ref) closeTabs([index]);
     },
     closeTabs,
+    async showExplanation(thread: Thread, turn: number, options: { walkthrough?: boolean } = {}) {
+      store.actions.orbOpen(thread, turn);
+      store.actions.walkStop();
+      if (options.walkthrough) {
+        baseActions.walkStart();
+        queueMicrotask(() => services.walkthrough?.focus());
+      } else {
+        const note = thread.turns.find((item) => item.id === turn)?.notes?.[0];
+        const review = reviewAccess();
+        if (review?.state.mode === 'review') {
+          review.actions.setReviewTab('walkthrough');
+          review.actions.setGroupFilter('all');
+          if (note) review.actions.revealWalkthrough(note.path, note.l1);
+        } else if (note) await openFile(note.path, { line: note.l1, view: 'source' });
+      }
+    },
     activateView,
     centerLine,
     revealLine,
@@ -364,10 +445,14 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
   const agentEditor = Object.assign(editor, { agents });
   const threads = createThreadStore(agentEditor, {
     ...options.threads,
-    onNotesChanged: notes.scheduleReload,
+    onNotesChanged: () => {
+      notes.scheduleReload();
+      turnNotes.scheduleReload();
+    },
   });
   const threadEditor = Object.assign(agentEditor, { threads });
   const review = createReviewStore(threadEditor, options.review);
+  setReviewAccess(review);
   const reviewEditor = Object.assign(threadEditor, { review });
   const pr = createPRStore(reviewEditor, options.pr);
   const prEditor = Object.assign(reviewEditor, { pr });
@@ -423,6 +508,11 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
     },
   });
   const result = {
+    turnNotes,
+    walkthrough,
+    annotationHeight,
+    walkContains,
+    dimmed,
     notes,
     ...prEditor,
     merge,

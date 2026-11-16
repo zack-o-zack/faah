@@ -63,4 +63,11 @@ Any selection drives the footer selection bar (`#footer-sel`) and the right-clic
 
 ## Explanation rows
 
-`web/src/notes/store.ts` groups ghosts by source line. `lineOffsets` includes their fixed heights through `extraRows`, while measured heights describe only the code row. Ghosts are siblings of source rows, marked `data-note`; source DOM positions, selection text, find and copying continue to use only `.c` text and the document buffer. Margin cards render only for blocks intersecting the visible range, use the same offsets, and reserve code width under word wrap. Card heights are measured with ResizeObserver; overlapping cards move down with a connector to their bracket.
+`web/src/notes/store.ts` groups all note kinds by their first source line. `lineOffsets` includes their fixed summary heights through `extraRows` and the expanded panel's measured height through `extraHeights`. Only mounted panels are measured, using ResizeObserver; source-row measurements exclude annotation height. The existing viewport slots render both summaries and the one expanded panel. There is no note margin or code-width reservation.
+
+Summaries and panels are siblings of source rows, marked `data-note`; source DOM positions reject them. Selection text, find and copying continue to use only `.c` text and the document buffer. Gutter bars cover source rows in each note's range. A panel expands in place and pushes the code and caret down, with no note portal or hover popover. Closing the explanation bubble removes all three annotation surfaces. Visibility filters by the bubble’s thread and turn.
+
+
+## Walkthrough focus
+
+The explanation slice owns the selected walkthrough/step. `viewers/walkthrough.ts` derives its source range from that position and the loaded file. The editor uses an O(1) range check for dimming and highlighting, and adds one title slot to the existing ghost-row heights. The title is marked `data-note`, uses the shared indentation helper, and never enters source selection, copying or find. Source scrolling and caret placement include its height. Note annotations hide while the walkthrough runs. Changing tabs removes focus there and restores it when returning to the step file; missing files have no focus range.

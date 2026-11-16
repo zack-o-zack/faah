@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"faah/internal/codeintel"
 	"faah/internal/symbols"
@@ -25,31 +26,27 @@ func TestClassifyExplain(t *testing.T) {
 		text   string
 		err    error
 	}{
-		{name: "identifier", req: Request{L1: 3, C1: intp(5), L2: 3, C2: intp(13), Text: "NewIndex"}, symbol: "NewIndex", col: 5, text: "NewIndex"},
-		{name: "padded identifier", req: Request{L1: 3, C1: intp(4), L2: 3, C2: intp(13), Text: " NewIndex"}, symbol: "NewIndex", col: 5, text: "NewIndex"},
-		{name: "any lone word reads as a symbol", req: Request{L1: 4, C1: intp(1), L2: 4, C2: intp(7), Text: "return"}, symbol: "return", col: 1, text: "return"},
-		{name: "two tokens", req: Request{L1: 3, C1: intp(0), L2: 3, C2: intp(13), Text: "func NewIndex"}, col: -1, text: "func NewIndex"},
-		{name: "multi line selection", req: Request{L1: 3, C1: intp(0), L2: 5, C2: intp(1), Text: strings.Join(lines[2:5], "\n")}, col: -1, text: strings.Join(lines[2:5], "\n")},
-		{name: "diff identifier found once", req: Request{L1: 3, L2: 3, Text: "NewIndex"}, symbol: "NewIndex", col: 5, text: "NewIndex"},
-		{name: "diff identifier repeated is a block", req: Request{L1: 6, L2: 6, Text: "x"}, col: -1, text: lines[5]},
-		{name: "diff with deleted line between", req: Request{L1: 3, L2: 5, Text: lines[2] + "\nold line\n" + lines[3] + "\n}"}, col: -1, text: strings.Join(lines[2:5], "\n")},
-		{name: "text differs from disk", req: Request{L1: 3, C1: intp(5), L2: 3, C2: intp(13), Text: "OldIndex"}, err: ErrMismatch},
-		{name: "diff text differs from disk", req: Request{L1: 3, L2: 3, Text: "OldIndex"}, err: ErrMismatch},
-		{name: "line past the end", req: Request{L1: 40, L2: 40, Text: "x"}, err: ErrMismatch},
-		{name: "blank", req: Request{L1: 2, L2: 2, Text: "  \n"}, err: ErrBlank},
-		{name: "too long", req: Request{L1: 1, L2: 401, Text: "x"}, err: ErrTooLong},
+		{"identifier", Request{L1: 3, C1: intp(5), L2: 3, C2: intp(13), Symbol: "NewIndex"}, "NewIndex", 5, "NewIndex", nil},
+		{"padded identifier", Request{L1: 3, C1: intp(4), L2: 3, C2: intp(13)}, "NewIndex", 5, "NewIndex", nil},
+		{"two tokens", Request{L1: 3, C1: intp(0), L2: 3, C2: intp(13)}, "", -1, "func NewIndex", nil},
+		{"block", Request{L1: 3, L2: 5}, "", -1, strings.Join(lines[2:5], "\n"), nil},
+		{"symbol reference", Request{L1: 3, L2: 3, Symbol: "NewIndex"}, "NewIndex", 5, "NewIndex", nil},
+		{"ambiguous symbol is block", Request{L1: 6, L2: 6, Symbol: "x"}, "", -1, lines[5], nil},
+		{"symbol moved", Request{L1: 3, L2: 3, Symbol: "OldIndex"}, "", 0, "", ErrMismatch},
+		{"columns moved", Request{L1: 3, C1: intp(5), L2: 3, C2: intp(13), Symbol: "OldIndex"}, "", 0, "", ErrMismatch},
+		{"invalid columns", Request{L1: 3, C1: intp(90), L2: 3, C2: intp(99)}, "", 0, "", ErrMismatch},
+		{"line past end", Request{L1: 40, L2: 40}, "", 0, "", ErrMismatch},
+		{"blank line", Request{L1: 2, L2: 2}, "", 0, "", ErrBlank},
+		{"too long", Request{L1: 1, L2: 401}, "", 0, "", ErrTooLong},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			got, err := Classify(lines, c.req)
 			if !errors.Is(err, c.err) {
-				t.Fatalf("err = %v, want %v", err, c.err)
+				t.Fatalf("error = %v, want %v", err, c.err)
 			}
-			if c.err != nil {
-				return
-			}
-			if got.Name != c.symbol || got.Col != c.col || got.Text != c.text {
-				t.Fatalf("target = %+v, want name %q col %d text %q", got, c.symbol, c.col, c.text)
+			if c.err == nil && (got.Name != c.symbol || got.Col != c.col || got.Text != c.text) {
+				t.Fatalf("target = %+v", got)
 			}
 		})
 	}
@@ -57,14 +54,15 @@ func TestClassifyExplain(t *testing.T) {
 
 func TestClassifyExplainCountsUTF16Columns(t *testing.T) {
 	lines := []string{`s := "😀"; NewIndex()`}
-	col := len([]rune(`s := "`)) + 2 + len([]rune(`"; `)) // the emoji is two UTF-16 units
-	got, err := Classify(lines, Request{L1: 1, C1: intp(col), L2: 1, C2: intp(col + 8), Text: "NewIndex"})
-	if err != nil || got.Name != "NewIndex" || got.Col != col {
-		t.Fatalf("target = %+v, err = %v", got, err)
-	}
-	got, err = Classify(lines, Request{L1: 1, L2: 1, Text: "NewIndex"})
-	if err != nil || got.Col != col {
-		t.Fatalf("diff target = %+v, err = %v, want col %d", got, err, col)
+	col := len([]rune(`s := "`)) + 2 + len([]rune(`"; `))
+	for _, req := range []Request{
+		{L1: 1, C1: intp(col), L2: 1, C2: intp(col + 8), Symbol: "NewIndex"},
+		{L1: 1, L2: 1, Symbol: "NewIndex"},
+	} {
+		got, err := Classify(lines, req)
+		if err != nil || got.Name != "NewIndex" || got.Col != col {
+			t.Fatalf("target = %+v, err = %v", got, err)
+		}
 	}
 }
 
@@ -210,7 +208,7 @@ func TestGatherExplainWorkspaceSymbol(t *testing.T) {
 	if ev.Kind != KindSymbol || ev.Source != "gopls" {
 		t.Fatalf("evidence = %+v", ev)
 	}
-	for _, want := range []string{"func NewIndex(n int) <int>", "NewIndex builds one.", "return n", "Caller (main.go:3)", "helper (lib.go:12)", "lib.go:7"} {
+	for _, want := range []string{"main.go:5-5", "Caller (main.go:3-6)", "`NewIndex` at main.go:9-11", "Caller (main.go:3)", "helper (lib.go:12)", "lib.go:7"} {
 		if !strings.Contains(ev.Packet, want) {
 			t.Errorf("packet lacks %q:\n%s", want, ev.Packet)
 		}
@@ -231,18 +229,18 @@ func TestGatherExplainWorkspaceSymbol(t *testing.T) {
 	if !strings.Contains(ev.Packet, "data") {
 		t.Errorf("packet should say workspace content is data:\n%s", ev.Packet)
 	}
-	for _, want := range []string{"5| \tNewIndex(v)\n", "3| func Caller() {\n", "9| func NewIndex(n int) int {\n", "10| \treturn n\n"} {
-		if !strings.Contains(ev.Packet, want) {
-			t.Errorf("packet lacks numbered line %q:\n%s", want, ev.Packet)
+	for _, content := range []string{"func NewIndex", "return n", "NewIndex builds one.", "NewIndex(v)"} {
+		if strings.Contains(ev.Packet, content) {
+			t.Fatalf("inlined content %q: %s", content, ev.Packet)
 		}
 	}
 }
 
-func TestExplainPacketNumbersBlockFromItsFirstLine(t *testing.T) {
+func TestExplainPacketReferencesBlockFromItsFirstLine(t *testing.T) {
 	root, abs, lines := explainFixtureRoot(t)
 	target := Target{Abs: abs, Rel: "main.go", L1: 4, L2: 5, Col: -1, Text: "\tv := 1\n\tNewIndex(v)"}
 	ev := Gather(context.Background(), explainFixtureDeps(t, root, explainFixtureIntel()), target, lines)
-	if !strings.Contains(ev.Packet, "4| \tv := 1\n5| \tNewIndex(v)\n") {
+	if !strings.Contains(ev.Packet, "main.go:4-5") || strings.Contains(ev.Packet, "NewIndex(v)") {
 		t.Fatalf("packet:\n%s", ev.Packet)
 	}
 }
@@ -272,7 +270,7 @@ func TestGatherExplainAsksAgainOnceDefinitionFileIsOpen(t *testing.T) {
 	deps := explainFixtureDeps(t, root, intel.fakeIntel)
 	deps.intel = intel
 	ev := Gather(context.Background(), deps, symbolTarget(abs, 5, 1, "NewIndex"), lines)
-	if !strings.Contains(ev.Packet, "Definition: main.go:9-11") {
+	if !strings.Contains(ev.Packet, "`NewIndex` at main.go:9-11") {
 		t.Fatalf("definition should come from the current file:\n%s", ev.Packet)
 	}
 }
@@ -310,8 +308,8 @@ func TestGatherExplainFallsBackToText(t *testing.T) {
 	if !strings.Contains(ev.Packet, "text search") {
 		t.Errorf("packet should label its text-match evidence:\n%s", ev.Packet)
 	}
-	if !strings.Contains(ev.Packet, "Likely definition") || !strings.Contains(ev.Packet, "return n") {
-		t.Errorf("packet should quote the definition text search found:\n%s", ev.Packet)
+	if !strings.Contains(ev.Packet, "Likely definition") || !strings.Contains(ev.Packet, "main.go:9-") {
+		t.Errorf("packet should reference the definition text search found:\n%s", ev.Packet)
 	}
 }
 
@@ -323,7 +321,7 @@ func TestGatherExplainBlockResolvesIdentifiers(t *testing.T) {
 	if ev.Kind != KindBlock || ev.Summary.Identifiers != 1 {
 		t.Fatalf("block evidence = %+v", ev)
 	}
-	if !strings.Contains(ev.Packet, "NewIndex (main.go:9)") || !strings.Contains(ev.Packet, "func Caller") {
+	if !strings.Contains(ev.Packet, "NewIndex (main.go:9)") || !strings.Contains(ev.Packet, "Caller (main.go:3-6)") {
 		t.Fatalf("packet:\n%s", ev.Packet)
 	}
 }
@@ -457,5 +455,87 @@ func TestValidateRefsRejectsUnreadableSource(t *testing.T) {
 	got := ValidateRefs(root, "`directory.go` and `directory.go:1`")
 	if len(got) != 0 {
 		t.Fatalf("unreadable source should not link: %+v", got)
+	}
+}
+
+func TestExplainPromptContainsOnlyReferencesForEveryKind(t *testing.T) {
+	for _, kind := range []string{KindFile, KindBlock, KindSymbol, KindLocal, KindExternal, "text-symbol"} {
+		t.Run(kind, func(t *testing.T) {
+			root, abs, lines := explainFixtureRoot(t)
+			lines[1] = "// NEVER_INLINE_FILE_BODY_MARKER"
+			if err := os.WriteFile(abs, []byte(strings.Join(lines, "\n")), 0600); err != nil {
+				t.Fatal(err)
+			}
+			intel := explainFixtureIntel()
+			intel.refs = append(intel.refs, codeintel.NavHit{Path: "lib.go", Line: 19, Pre: "SECRET_REF_SNIPPET", Mid: "NewIndex", Post: "(privatePayload)"})
+			deps := explainFixtureDeps(t, root, intel)
+			target := symbolTarget(abs, 5, 1, "NewIndex")
+			switch kind {
+			case KindFile:
+				target = Target{File: true, Abs: abs, Rel: "main.go", L1: 1, L2: 11}
+			case KindBlock:
+				target = Target{Abs: abs, Rel: "main.go", L1: 4, L2: 5, Col: -1, Text: "\tv := 1\n\tNewIndex(v)"}
+			case KindLocal:
+				target = symbolTarget(abs, 4, 1, "v")
+			case KindExternal:
+				intel.defs[posKey(5, 1)] = []codeintel.NavHit{{Path: "/go/lib.go", Line: 9, Ext: true}}
+			case "text-symbol":
+				deps.ready = func(context.Context, string, string) string { return "" }
+				deps.search = func(context.Context, string) []codeintel.FileMatches {
+					return []codeintel.FileMatches{{Path: "main.go", Matches: []codeintel.Match{{Line: 9, Def: true, Pre: "SECRET_SEARCH_SNIPPET", Mid: "NewIndex", Post: "(privatePayload)"}}}}
+				}
+			}
+			ev := Gather(context.Background(), deps, target, lines)
+			prompt := Instructions(ev.Kind, "") + ev.Packet
+			if kind != KindBlock && kind != KindFile && !strings.Contains(prompt, target.Name) {
+				t.Fatal("missing symbol name")
+			}
+			if kind == KindExternal {
+				if !strings.Contains(prompt, "func NewIndex(n int) <int>") || !strings.Contains(prompt, "NewIndex builds one.") {
+					t.Fatalf("external signature missing: %s", prompt)
+				}
+			} else if strings.Contains(prompt, "NewIndex builds one.") {
+				t.Fatal("workspace hover text leaked")
+			}
+			if kind == KindFile || kind == KindBlock {
+				t.Logf("REAL_PACKET_%s\n%s", kind, ev.Packet)
+			}
+
+			if !strings.Contains(prompt, Reference(target.Rel, target.L1, target.L2)) {
+				t.Fatalf("missing target: %s", prompt)
+			}
+			for _, content := range []string{"package main", "func Caller() {", "NewIndex(v)", "return n", "NEVER_INLINE_FILE_BODY_MARKER", "SECRET_REF_SNIPPET", "SECRET_SEARCH_SNIPPET", "privatePayload", "```"} {
+				if strings.Contains(prompt, content) {
+					t.Fatalf("%s includes source %q: %s", kind, content, prompt)
+				}
+			}
+		})
+	}
+}
+
+func TestClassifyWholeFileDerivesRealRange(t *testing.T) {
+	for _, lines := range [][]string{{"package main", "func main() {}"}, {"package main", "func main() {}", ""}} {
+		target, err := Classify(lines, Request{File: true, L1: -20, L2: 9000, C1: intp(-5), C2: intp(900), Symbol: "ignored"})
+		if err != nil || !target.File || target.L1 != 1 || target.L2 != 2 || target.Name != "" || target.Col != -1 || target.Text != "" {
+			t.Fatalf("target=%+v, error=%v", target, err)
+		}
+		target.Rel = "main.go"
+		ev := Gather(context.Background(), nil, target, lines)
+		if ev.Source != "" || ev.Summary != (Summary{}) || !strings.Contains(ev.Packet, "main.go:1-2") {
+			t.Fatalf("evidence=%+v", ev)
+		}
+	}
+	for _, lines := range [][]string{nil, {""}, {" ", "\t", ""}} {
+		if _, err := Classify(lines, Request{File: true}); !errors.Is(err, ErrBlank) {
+			t.Fatalf("blank=%v", err)
+		}
+	}
+}
+
+func TestExternalSignatureCapPreservesUTF8(t *testing.T) {
+	text := strings.Repeat("詳", 2000)
+	got := capExternalText(text)
+	if len(got) > explainDocMax || !utf8.ValidString(got) || !strings.HasPrefix(text, got) {
+		t.Fatalf("invalid external cap: %d", len(got))
 	}
 }

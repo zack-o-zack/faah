@@ -52,7 +52,27 @@ export function ThreadTurn(props: ThreadTurnProps): JSX.Element {
             </span>
           </Show>
         </div>
-        <ThreadSteps turn={props.turn} />
+        <Show
+          when={
+            props.thread?.kind === 'explain' &&
+            (props.turn.notes?.length || props.turn.walkthroughs?.length)
+          }
+        >
+          <button
+            class="btn self-start"
+            data-variant="ghost"
+            data-size="xs"
+            data-control="show-explanation"
+            onClick={() => {
+              const thread = props.thread;
+              if (thread) void editor.actions.showExplanation(thread, props.turn.id);
+            }}
+          >
+            <span class="icon-[lucide--sparkle] size-3" aria-hidden="true" />
+            Show on code
+          </button>
+        </Show>
+        <ThreadSteps turn={props.turn} thread={props.thread} />
         <Markdown
           text={props.turn.reply || ''}
           refs={

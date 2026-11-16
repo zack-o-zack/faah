@@ -1,4 +1,3 @@
-import { MarginNotes } from '../notes/MarginNotes.tsx';
 import type { Position } from './cursor.ts';
 import type { JSX } from 'solid-js';
 import {
@@ -59,7 +58,6 @@ export function Viewport(): JSX.Element {
     if (!viewport || !viewport.clientWidth || !viewport.clientHeight) return;
     editor.setGeometry({
       top: viewport.scrollTop,
-      left: viewport.scrollLeft,
       height: viewport.clientHeight,
       width: viewport.clientWidth,
     });
@@ -118,7 +116,12 @@ export function Viewport(): JSX.Element {
     };
   }
   function movePointer(event: MouseEvent) {
-    if (!dom || (event.target instanceof Element && event.target.closest('[data-note]'))) return;
+    if (event.target instanceof Element && event.target.closest('[data-note]')) {
+      clearTimeout(hoverTimer);
+      editor.actions.hideHover();
+      return;
+    }
+    if (!dom) return;
     clearTimeout(hoverTimer);
     const { clientX: x, clientY: y } = event;
     if (event.metaKey || event.ctrlKey) {
@@ -255,7 +258,7 @@ export function Viewport(): JSX.Element {
           class="absolute top-0 left-0 will-change-transform"
           style={{
             transform: `translateY(${offsets()[range().first] || 0}px)`,
-            width: `calc(100% - ${editor.notes.margin()}px)`,
+            width: '100%',
           }}
         >
           <Index each={slots()}>
@@ -264,7 +267,6 @@ export function Viewport(): JSX.Element {
             )}
           </Index>
         </div>
-        <MarginNotes first={range().first} last={range().last} />
         <Caret measurePosition={measureCaret} />
         <Show when={loaded.error}>
           <button class="btn absolute top-2 left-2" onClick={refetch}>

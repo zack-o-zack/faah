@@ -28,22 +28,29 @@ func (s *Server) handlePROverview(w http.ResponseWriter, r *http.Request) {
 	if !s.prOrFail(w) {
 		return
 	}
+	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
+	defer cancel()
+	overview, err := s.loadPROverview(ctx, r.URL.Query().Get("refresh") == "1")
+	if err != nil {
+		httpx.Fail(w, http.StatusBadGateway, err.Error())
+		return
+	}
+	httpx.WriteJSON(w, overview)
+}
+
+func (s *Server) loadPROverview(ctx context.Context, refresh bool) (forge.PROverview, error) {
 	p := s.pr
 	head := p.Snapshot().Meta.HeadSHA
 	cache := &s.overviewCache
 	cache.mu.Lock()
 	defer cache.mu.Unlock()
-	if r.URL.Query().Get("refresh") != "1" && cache.pr == p && cache.head == head && time.Now().Before(cache.expires) {
-		httpx.WriteJSON(w, cache.data)
-		return
+	if !refresh && cache.pr == p && cache.head == head && time.Now().Before(cache.expires) {
+		return cache.data, nil
 	}
 	provider, target, token := p.Credentials()
-	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
-	defer cancel()
 	overview, err := provider.FetchOverview(ctx, target, token, head)
 	if err != nil {
-		httpx.Fail(w, http.StatusBadGateway, err.Error())
-		return
+		return forge.PROverview{}, err
 	}
 	overview.Description.BodyHTML = renderPRBody(overview.Description.Body)
 	ttl := 2 * time.Minute
@@ -57,5 +64,5 @@ func (s *Server) handlePROverview(w http.ResponseWriter, r *http.Request) {
 	cache.head = head
 	cache.data = overview
 	cache.expires = time.Now().Add(ttl)
-	httpx.WriteJSON(w, overview)
+	return overview, nil
 }

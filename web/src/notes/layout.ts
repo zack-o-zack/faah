@@ -1,3 +1,5 @@
+export const GHOST_PADDING_TOP = 8;
+export const GHOST_PADDING_BOTTOM = 4;
 import { lineText } from '../editor/layout.ts';
 export function indentCols(html: string): number {
   let columns = 0;
@@ -5,17 +7,13 @@ export function indentCols(html: string): number {
     columns += char === '\t' ? 4 - (columns % 4) : 1;
   return columns;
 }
-export function marginWidth(width: number, blocks: boolean): number {
-  if (!blocks) return 0;
-  return width < 900 ? 24 : 260;
-}
-export function stackTops(items: { top: number; height: number }[], gap = 8): number[] {
-  let bottom = -Infinity;
-  return items.map((item) => {
-    const top = Math.max(item.top, bottom + gap);
-    bottom = top + item.height;
-    return top;
-  });
+export function ghostIndent(
+  total: number,
+  numbers: boolean,
+  charWidth: number,
+  html: string,
+): number {
+  return (numbers ? String(total || 1).length * charWidth + 30 : 0) + indentCols(html) * charWidth;
 }
 export function peekGroups<T extends { l1: number; l2: number }>(
   notes: T[],

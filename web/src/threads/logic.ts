@@ -1,9 +1,28 @@
-import type { Thread, ThreadTurn, ThreadSummary, ExplainTarget } from './decode.ts';
+import type {
+  Thread,
+  ThreadTurn,
+  ThreadSummary,
+  ExplainTarget,
+  ExplainInput,
+  FileExplainTarget,
+  PRExplainTarget,
+} from './decode.ts';
 import type { OpenOptions } from '../editor/types.ts';
 export const isThreadRunning = (thread: Thread | null): boolean => !!thread?.turns?.at(-1)?.running;
-export function explainRequest(info: ExplainTarget): ExplainTarget {
-  const { path, l1, l2, c1, c2, text } = info;
-  return { path, l1, l2, c1, c2, text };
+export function explainRequest(info: ExplainTarget): Omit<ExplainTarget, 'text'>;
+export function explainRequest(
+  info: ExplainInput,
+): Omit<ExplainTarget, 'text'> | FileExplainTarget | PRExplainTarget;
+export function explainRequest(
+  info: ExplainInput,
+): Omit<ExplainTarget, 'text'> | FileExplainTarget | PRExplainTarget {
+  if (info.pr) return { pr: true };
+  if (info.file) return { path: info.path, file: true };
+  const { path, l1, l2, c1, c2 } = info;
+  const selected = info.text?.trim() || '';
+  const symbol =
+    info.symbol || (/^[\p{L}_$][\p{L}\p{N}_$]*$/u.test(selected) ? selected : undefined);
+  return { path, l1, l2, c1, c2, ...(symbol ? { symbol } : {}) };
 }
 export function threadSummary(thread: Thread): ThreadSummary {
   const last = thread.turns?.at(-1);
@@ -44,3 +63,9 @@ export function turnDuration(ms = 0): string {
   if (ms < 60000) return (ms / 1000).toFixed(1) + 's';
   return Math.floor(ms / 60000) + 'm ' + Math.round((ms % 60000) / 1000) + 's';
 }
+
+// These labels mirror agents.StepLabel; the Go label test guards their exact wording.
+export const EXPLAIN_STEP_LABELS = {
+  notes: 'Show notes',
+  walkthrough: 'Show a walkthrough',
+} as const;

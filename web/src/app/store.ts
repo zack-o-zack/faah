@@ -13,7 +13,8 @@ import { batch, createMemo } from 'solid-js';
 import { createStore, reconcile } from 'solid-js/store';
 
 import type { DocTab } from '../editor/documents.ts';
-import type { OrbModel } from '../viewers/orb-model.ts';
+import { orbUpdate } from '../viewers/orb-model.ts';
+import type { OrbModel, ExplanationState, WalkPosition } from '../viewers/orb-model.ts';
 import type { WorkspaceMeta } from './types.ts';
 import type { SettingsOptions } from '../settings/store.ts';
 export interface AppState {
@@ -57,7 +58,7 @@ export interface AppState {
   };
   git: { unpushedCount: number; snapshot: GitSnapshot | null; revision: number };
   viewers: { viewed: Record<string, boolean> };
-  explanation: { model: OrbModel | null; shown: boolean };
+  explanation: ExplanationState;
 }
 // Navigation actions update only touched fields, preserving unrelated store subscriptions.
 export type NavigationPatch = Partial<AppState['navigation']>;
@@ -68,6 +69,13 @@ export interface AppOptions {
   fetcher?: (path: string, params: unknown, options?: RequestInit) => Promise<unknown>;
   request?: (path: string, params?: unknown, options?: RequestInit) => Promise<unknown>;
   post?: (path: string, params?: unknown, options?: RequestInit) => Promise<unknown>;
+}
+function storedWalkCompact(): boolean {
+  try {
+    return localStorage.getItem('faah.walkCompact') === 'true';
+  } catch {
+    return false;
+  }
 }
 function initialState(): AppState {
   return {
@@ -97,7 +105,7 @@ function initialState(): AppState {
     lsp: { servers: [], state: 'off', server: '' },
     git: { unpushedCount: 0, snapshot: null, revision: 0 },
     viewers: { viewed: {} },
-    explanation: { model: null, shown: false },
+    explanation: { model: null, walk: null, compact: storedWalkCompact() },
   };
 }
 
@@ -123,8 +131,16 @@ function buildAppStore(options: AppOptions) {
       ...documents,
       setViewed: (path: string, value: boolean): void => set('viewers', 'viewed', path, value),
       setExplanation: (model: OrbModel | null): void =>
-        set('explanation', 'model', reconcile(model)),
-      setExplanationShown: (shown: boolean): void => set('explanation', 'shown', shown),
+        set('explanation', reconcile(orbUpdate(state.explanation, model))),
+      setWalkCompact: (compact: boolean): void => {
+        set('explanation', 'compact', compact);
+        try {
+          localStorage.setItem('faah.walkCompact', String(compact));
+        } catch {
+          // Restricted browser profiles may disable storage.
+        }
+      },
+      setWalk: (walk: WalkPosition | null): void => set('explanation', 'walk', walk),
       setNavigation: (patch: NavigationPatch): void => set('navigation', patch),
       setGeometry: (patch: { charWidth?: number; lineHeight?: number }): void =>
         set('editor', patch),

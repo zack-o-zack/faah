@@ -1,11 +1,12 @@
 import { createMemo, createResource, createSignal, onCleanup } from 'solid-js';
 import type { Accessor } from 'solid-js';
+import type { OrbModel } from '../viewers/orb-model.ts';
 import type { Request } from '../lib/api.ts';
 import type { Note, Citation } from '../threads/decode.ts';
 import { decodeNote, decodeCitations } from '../threads/decode.ts';
 import { record, list, text, number } from '../lib/decode.ts';
+import { GHOST_PADDING_TOP, GHOST_PADDING_BOTTOM } from './layout.ts';
 import { api, apiPostJson } from '../lib/api.ts';
-import { marginWidth } from './layout.ts';
 export interface NoteView extends Note {
   thread: string;
   turn: number;
@@ -29,18 +30,28 @@ export function decodeNotes(value: unknown): NoteView[] {
 }
 export function createNotesStore(
   source: Accessor<{ path: string; version: string } | false>,
-  width: Accessor<number>,
-  options: { request?: Request; post?: Request } = {},
+  lineHeight: Accessor<number>,
+  bubble: Accessor<OrbModel | null>,
+  options: { request?: Request; post?: Request; all?: boolean } = {},
 ) {
-  const [shown, setShown] = createSignal(localStorage.getItem('faah.notes') !== 'off');
   const [hovered, setHovered] = createSignal<NoteView | null>(null);
+  const [expanded, setExpanded] = createSignal('');
+  const [measurement, setMeasurement] = createSignal({ key: '', height: 0 });
   const [error, setError] = createSignal('');
   const [notes, { refetch, mutate }] = createResource(
-    () => shown() && source(),
+    () => {
+      const model = bubble();
+      const target = source();
+      return model?.id && target ? { ...target, thread: model.id, turn: model.turn } : false;
+    },
     async (target) => {
       try {
         const result = decodeNotes(
-          await (options.request || api)('api/explain/notes', { path: target.path }),
+          await (options.request || api)('api/explain/notes', {
+            ...(options.all ? {} : { path: target.path }),
+            thread: target.thread,
+            turn: target.turn,
+          }),
         );
         setError('');
         return result;
@@ -51,25 +62,38 @@ export function createNotesStore(
     },
   );
   const visible = createMemo(() =>
-    shown() && source()
-      ? (notes.latest || []).filter((n) => n.path === (source() || { path: '' }).path)
+    bubble()?.id && source()
+      ? (notes.latest || []).filter(
+          (n) =>
+            (options.all || n.path === (source() || { path: '' }).path) &&
+            n.thread === bubble()?.id &&
+            n.turn === bubble()?.turn,
+        )
       : [],
   );
-  const split = createMemo(() => {
-    const ghosts = new Map<number, NoteView[]>();
-    const blocks: NoteView[] = [];
-    for (const n of visible()) {
-      if (n.kind === 'block') blocks.push(n);
-      else ghosts.set(n.l1, [...(ghosts.get(n.l1) || []), n]);
-    }
-    return { ghosts, blocks };
+  const ghosts = createMemo(() => {
+    const rows = new Map<number, NoteView[]>();
+    for (const note of visible()) rows.set(note.l1, [...(rows.get(note.l1) || []), note]);
+    return rows;
   });
   const extraRows = createMemo(() =>
-    Object.fromEntries([...split().ghosts].map(([line, notes]) => [line - 1, notes.length])),
+    Object.fromEntries([...ghosts()].map(([line, notes]) => [line - 1, notes.length])),
   );
+  const expandedNote = createMemo(
+    () => visible().find((note) => noteKey(note) === expanded()) || null,
+  );
+  const activeHover = createMemo(() => {
+    const note = hovered();
+    return note ? visible().find((item) => noteKey(item) === noteKey(note)) || null : null;
+  });
+  const extraHeights = createMemo(() => {
+    const note = expandedNote();
+    const measured = measurement();
+    return note && measured.key === noteKey(note) ? { [note.l1 - 1]: measured.height } : {};
+  });
   // References are checked in the background by the server. Revisit only while notes are shown.
   const timer = setInterval(() => {
-    if (shown() && source() && visible().some((n) => n.kind === 'symbol')) void refetch();
+    if (bubble()?.id && source() && visible().some((n) => n.kind === 'symbol')) void refetch();
   }, 10000);
   onCleanup(() => clearInterval(timer));
   let reloadTimer: ReturnType<typeof setTimeout> | undefined;
@@ -78,23 +102,44 @@ export function createNotesStore(
     scheduleReload() {
       clearTimeout(reloadTimer);
       reloadTimer = setTimeout(() => {
-        if (shown() && source()) void refetch();
+        if (bubble()?.id && source()) void refetch();
       }, 250);
     },
-    shown,
-    hovered,
+    hovered: activeHover,
     setHovered,
     notes: visible,
-    split,
-    extraRows,
-    error,
-    margin: () => marginWidth(width(), split().blocks.length > 0),
-    toggle() {
-      const next = !shown();
-      setShown(next);
-      setHovered(null);
-      localStorage.setItem('faah.notes', next ? 'on' : 'off');
+    ghosts,
+    rowHeight: () => lineHeight() + GHOST_PADDING_TOP + GHOST_PADDING_BOTTOM,
+    heightBefore(line: number) {
+      return (
+        (extraRows()[line - 1] || 0) * (lineHeight() + GHOST_PADDING_TOP + GHOST_PADDING_BOTTOM) +
+        (extraHeights()[line - 1] || 0)
+      );
     },
+    expanded: expandedNote,
+    showDetail(note: NoteView) {
+      setExpanded(noteKey(note));
+    },
+    collapse() {
+      setExpanded('');
+    },
+    covers(line: number) {
+      return visible().some((note) => line >= note.l1 && line <= note.l2);
+    },
+    highlighted(line: number) {
+      const note = activeHover();
+      return !!note && line >= note.l1 && line <= note.l2;
+    },
+    extraRows,
+    extraHeights,
+    measureDetail(note: NoteView, height: number) {
+      if (
+        height > 0 &&
+        (measurement().key !== noteKey(note) || Math.abs(measurement().height - height) >= 0.5)
+      )
+        setMeasurement({ key: noteKey(note), height });
+    },
+    error,
     refetch,
     async dismiss(note: NoteView) {
       await (options.post || apiPostJson)('api/explain/notes/dismiss', {
@@ -102,11 +147,12 @@ export function createNotesStore(
         turn: note.turn,
         index: note.index,
       });
+      if (expanded() === noteKey(note)) setExpanded('');
       mutate((notes) => notes?.filter((n) => noteKey(n) !== noteKey(note)));
       setHovered(null);
     },
     dimmed(line: number) {
-      const note = hovered();
+      const note = activeHover();
       return !!note && (line < note.l1 || line > note.l2);
     },
     hoverLine(line: number) {
@@ -114,3 +160,39 @@ export function createNotesStore(
     },
   };
 }
+
+/** A separate notes instance shares fetching and interaction behavior across review files. */
+export function createTurnNotes(
+  bubble: Accessor<OrbModel | null>,
+  lineHeight: Accessor<number>,
+  options: { active: Accessor<boolean>; request?: Request; post?: Request },
+) {
+  const notes = createNotesStore(
+    () =>
+      options.active() ? { path: '', version: `${bubble()?.phase}:${bubble()?.notes}` } : false,
+    lineHeight,
+    bubble,
+    { ...options, all: true },
+  );
+  const byPath = createMemo(() => {
+    const paths = new Map<string, Map<number, NoteView[]>>();
+    for (const note of notes.notes()) {
+      const rows = paths.get(note.path) || new Map<number, NoteView[]>();
+      rows.set(note.l1, [...(rows.get(note.l1) || []), note]);
+      paths.set(note.path, rows);
+    }
+    return paths;
+  });
+  return {
+    ...notes,
+    byPath,
+    highlighted(path: string, line: number) {
+      return notes.hovered()?.path === path && notes.highlighted(line);
+    },
+  };
+}
+
+export type NotesAPI = Pick<
+  ReturnType<typeof createNotesStore>,
+  'expanded' | 'showDetail' | 'collapse' | 'hovered' | 'setHovered' | 'dismiss' | 'measureDetail'
+>;

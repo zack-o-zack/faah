@@ -12,7 +12,7 @@ export async function locatePeekNotes(
   await Promise.all(
     [...new Set(notes.map((n) => n.path))].map(async (path) => {
       try {
-        for (const note of decodeNotes(await api('api/explain/notes', { path })))
+        for (const note of decodeNotes(await api('api/explain/notes', { path, thread, turn })))
           if (note.thread === thread && note.turn === turn) current.set(note.index, note);
       } catch {
         /* Saved ranges remain available for deleted files. */

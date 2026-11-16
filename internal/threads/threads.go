@@ -527,7 +527,7 @@ func (tm *Manager) runTurn(ctx context.Context, cancel context.CancelFunc, r *th
 		tm.credentials.Touch(r.tid)
 	}
 	prCtx, scopeChanged := "", false
-	if tm.agent.hooks.PRContext != nil {
+	if tm.agent.hooks.PRContext != nil && (t.ExplainReq == nil || !t.ExplainReq.PR) {
 		tm.mu.Lock()
 		scope := t.Scope
 		scopeChanged = scope != t.ScopeSent

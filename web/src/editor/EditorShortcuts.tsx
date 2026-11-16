@@ -20,7 +20,17 @@ export function EditorShortcuts(): JSX.Element {
     !editor.active()?.isEditing &&
     !editor.active()?.isImage &&
     !editor.active()?.diffMode &&
-    !isPreview(editor.active());
+    !isPreview(editor.active()) &&
+    !document.activeElement?.closest('[data-note], #explain-orb');
+  createShortcut('Escape', () => editor.notes.collapse(), {
+    target: window,
+    capture: true,
+    stopPropagation: true,
+    inputs: true,
+    when: (event) =>
+      !!editor.notes.expanded() &&
+      !(event.target instanceof Element && event.target.closest('#explain-orb')),
+  });
   const vim = (event: KeyboardEvent) => {
     if (!inDialog(event) && source() && editor.actions.handleVimKeyDown(event)) {
       event.preventDefault();
