@@ -7,7 +7,7 @@ import (
 )
 
 //go:embed web/index.html web/workbench.html web/dist web/themes web/vendor
-//go:embed web/logo-dark.svg web/logo-light.svg web/favicon.svg
+//go:embed web/favicon.svg
 var embedded embed.FS
 
 // devRoot is a source checkout whose web/ replaces the embedded assets, so

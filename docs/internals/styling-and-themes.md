@@ -424,7 +424,7 @@ It follows Basecoat,
 so it overrides its heading defaults while explicit utilities can still win.
 Nested settings titles, review section headings, the holding title and large
 review empty-state headings opt in with `font-display`. Welcome and launcher
-title containers also opt in; their existing SVG logos retain their lettering.
+title containers use the typed brand lockup described below.
 Panel labels, tabs, tree rows, toolbars, code and Markdown prose retain their
 text or code family.
 
@@ -470,6 +470,60 @@ controls, rather than choosing a bespoke size. Code still uses `--mono`, `--fs`
 and `--lh`, with `--tab-size` controlled by editor settings. The type-scale test
 scans source files and requires every used `--t-*` token to have both browser
 and desktop definitions and a Tailwind mapping.
+
+## Brand assets
+
+`web/src/brand/Spiral.tsx` renders the exact path and viewBox from
+`web/mark.svg`, imported from the supplied `fibo-mark.svg`. The line uses
+`currentColor` with `text-[var(--spiral)]`, so built-in and user themes supply
+its colour through `--spiral`. It has one path, a 7.5-unit stroke and round
+caps and joins. Width defaults to 22px. A `label` gives it `role="img"` and
+an accessible name; without a label it is decorative. The only supported
+`state` is `static`, also exposed as `data-state`; there is no animation yet.
+
+`web/src/brand/Brand.tsx` pairs that mark with lowercase text in Fraunces at
+weight 600. The wrapper supplies the single accessible name, "fibo"; its SVG
+and typed text are hidden from assistive technology to avoid repetition.
+The chrome lockup uses an 18px-wide mark, a `text-15` name (15px in the browser,
+16px in the desktop shell), 20px line height and an 8px gap, matching the
+compact Spiral preview. Welcome uses a 56px mark, a 56px name with 60px line
+height, -0.03em tracking and a 16px gap. This uses the Spiral preview's large
+mark size and scales the Cover preview's 120px display name down to the
+56px display role. Both use centred alignment. Welcome retains its adjacent
+version; the tree toolbar retains its version button and desktop drag region.
+The launcher and holding page retain their surrounding header spacing.
+
+`web/favicon.svg` is the supplied `fibo-app-icon.svg`, unchanged: a 100-unit
+pistachio tile with 24-unit corners and an ink spiral. It is also the source
+of all three desktop icons. `web/mark.svg` is the bare spiral used by the
+README image; the README prose and runtime identifiers are unchanged here.
+
+The desktop PNG is 1024×1024, 8-bit RGBA. The previous tile reached all four
+canvas edges, with transparency only at its rounded corners, so the new tile
+also uses the full canvas without an additional Dock inset. The ICNS retains
+the standard 16, 32, 128, 256 and 512px slots at 1× and 2×. The ICO contains
+16, 24, 32, 48, 64, 128 and 256px images at 32 bits per pixel, including the
+previous 128px slot as well as the six required sizes.
+
+Regenerate from the repository root with local `rsvg-convert`, ImageMagick
+and `iconutil`. Only the generated icons are stored, not a generator script:
+
+```sh
+rsvg-convert -w 1024 -h 1024 web/favicon.svg -o desktop/icons/icon.png
+frames=$(mktemp -d /tmp/fibo-frames.XXXXXX)
+for size in 16 24 32 48 64 128 256; do
+  magick desktop/icons/icon.png -resize "${size}x${size}" "PNG32:$frames/$size.png"
+done
+magick "$frames/16.png" "$frames/24.png" "$frames/32.png" "$frames/48.png" "$frames/64.png" "$frames/128.png" "$frames/256.png" desktop/icons/icon.ico
+iconset=$(mktemp -d /tmp/fibo-icon.XXXXXX)/icon.iconset
+mkdir -p "$iconset"
+for size in 16 32 128 256 512; do
+  magick desktop/icons/icon.png -resize "${size}x${size}" "PNG32:$iconset/icon_${size}x${size}.png"
+  double=$((size * 2))
+  magick desktop/icons/icon.png -resize "${double}x${double}" "PNG32:$iconset/icon_${size}x${size}@2x.png"
+done
+iconutil -c icns "$iconset" -o desktop/icons/icon.icns
+```
 
 ## Runtime content
 

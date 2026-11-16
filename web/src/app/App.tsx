@@ -75,7 +75,7 @@ const AppRoot: Component = () => {
   });
   createEffect(() => {
     const name = editor.store.state.workspace.meta?.name;
-    document.title = name ? name + ' - faah' : 'faah';
+    document.title = name ? name + ' - fibo' : 'fibo';
   });
   onMount(() => {
     onCleanup(bootWorkspace(editor));

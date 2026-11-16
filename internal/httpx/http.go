@@ -407,11 +407,11 @@ func LocalPost(w http.ResponseWriter, r *http.Request) bool {
 	}
 	host = strings.Trim(host, "[]")
 	if host != "localhost" && net.ParseIP(host) == nil {
-		Fail(w, http.StatusForbidden, "open faah by IP address or localhost to set up language servers")
+		Fail(w, http.StatusForbidden, "open fibo by IP address or localhost to set up language servers")
 		return false
 	}
 	if o, err := url.Parse(r.Header.Get("Origin")); err != nil || o.Host != r.Host {
-		Fail(w, http.StatusForbidden, "request did not come from faah")
+		Fail(w, http.StatusForbidden, "request did not come from fibo")
 		return false
 	}
 	return true

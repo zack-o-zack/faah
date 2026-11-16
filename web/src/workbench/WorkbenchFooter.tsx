@@ -31,7 +31,7 @@ export function WorkbenchFooter(props: WorkbenchFooterProps): JSX.Element {
         href="https://github.com/zack-o-zack/faah"
         target="_blank"
         rel="noopener"
-        aria-label="faah on GitHub"
+        aria-label="fibo on GitHub"
       >
         <span class="icon-[lucide--github] size-3.5 shrink-0" aria-hidden="true" />
       </a>

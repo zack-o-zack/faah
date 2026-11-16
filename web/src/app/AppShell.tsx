@@ -66,8 +66,8 @@ const TopBar: Component = () => {
               data-variant="ghost"
               data-size="icon-xs"
               href={href()}
-              title="Back to the faah workbench"
-              aria-label="Back to the faah workbench"
+              title="Back to the fibo workbench"
+              aria-label="Back to the fibo workbench"
             >
               <span class="icon-[lucide--layout-grid] size-3.5" aria-hidden="true" />
             </a>

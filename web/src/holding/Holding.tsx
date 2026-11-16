@@ -12,6 +12,7 @@ import { createSignal, onCleanup, onMount, Show } from 'solid-js';
 import { api } from '../lib/api.ts';
 import { createPolling } from '../lib/events.ts';
 import { holdingUpdate } from './logic.ts';
+import { Brand } from '../brand/Brand.tsx';
 export function Holding(props: HoldingProps): JSX.Element {
   const data = () => props.data;
   const [polledProgress, setProgress] = createSignal<string>();
@@ -54,8 +55,7 @@ export function Holding(props: HoldingProps): JSX.Element {
         justify-center gap-6 px-4 pb-[12vh]`}
       >
         <header class="flex">
-          <img class="hidden h-5 dark:block" src="static/logo-dark.svg" alt="faah" />
-          <img class="h-5 dark:hidden" src="static/logo-light.svg" alt="faah" />
+          <Brand />
         </header>
         <section class="flex items-center gap-3">
           <figure class="flex size-10 shrink-0 items-center justify-center rounded-md bg-muted">

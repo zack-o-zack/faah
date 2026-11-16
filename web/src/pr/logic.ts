@@ -366,7 +366,7 @@ export function splitMessage(text: string): { title: string; message: string } {
 }
 
 export const FORGE_SOURCES: Record<string, string> = {
-  settings: 'a token saved in faah Settings',
+  settings: 'a token saved in fibo settings',
   env: 'an environment variable',
   gh: 'the GitHub CLI (gh)',
   glab: 'the GitLab CLI (glab)',

@@ -31,7 +31,7 @@ function openExternal(url) {
 
 function createWindow(url = workbenchURL(origin)) {
   const window = new BrowserWindow({
-    title: 'faah', width: 1440, height: 960, minWidth: 800, minHeight: 560,
+    title: 'fibo', width: 1440, height: 960, minWidth: 800, minHeight: 560,
     backgroundColor: '#111113', show: false, autoHideMenuBar: true,
     ...chromeOptions(process.platform),
     webPreferences: {
@@ -69,7 +69,7 @@ function createWindow(url = workbenchURL(origin)) {
   });
   void window.loadURL(url).catch(error => {
     if (!window.isDestroyed() && error.code !== 'ERR_ABORTED') {
-      dialog.showErrorBox('Could not open faah', error.message);
+      dialog.showErrorBox('Could not open fibo', error.message);
       window.close();
     }
   });
@@ -127,7 +127,7 @@ function installMenu() {
     ] },
     { role: 'windowMenu' },
     { role: 'help', submenu: [
-      { label: 'faah Documentation', click: () => openExternal('https://github.com/zack-o-zack/faah#readme') },
+      { label: 'fibo documentation', click: () => openExternal('https://github.com/zack-o-zack/faah#readme') },
     ] },
   ]));
 }
@@ -192,7 +192,7 @@ if (!app.requestSingleInstanceLock()) {
     origin = await backend.ready;
     backend.exit.then(result => {
       if (backend.stopping) return;
-      dialog.showErrorBox('faah stopped unexpectedly', result.error?.message || 'Quit and reopen faah to restart the backend.');
+      dialog.showErrorBox('fibo stopped unexpectedly', result.error?.message || 'Quit and reopen fibo to restart the backend.');
       app.quit();
     });
     installMenu();
@@ -200,7 +200,7 @@ if (!app.requestSingleInstanceLock()) {
     createWindow(workbenchURL(origin, pendingTarget));
     if (devRoot) require('./dev-reload.cjs').watchAssets(devRoot, () => BrowserWindow.getAllWindows());
   }).catch(async error => {
-    dialog.showErrorBox('Could not start faah', error.message);
+    dialog.showErrorBox('Could not start fibo', error.message);
     await backend?.stop();
     app.quit();
   });

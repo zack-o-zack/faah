@@ -20,13 +20,13 @@ export function LspSetup(): JSX.Element {
             <Switch>
               <Match when={!setup().enabled}>
                 <div data-ui="hint" class="empty text-muted-foreground">
-                  Language servers are turned off: faah was started with <b>-no-lsp</b>. Restart it
+                  Language servers are turned off: fibo was started with <b>-no-lsp</b>. Restart it
                   without that flag for call trails, hover and precise references.
                 </div>
               </Match>
               <Match when={!setup().servers.length}>
                 <div data-ui="hint" class="empty text-muted-foreground">
-                  faah knows no language server for <b>{extension()}</b> files, so call trails are
+                  fibo knows no language server for <b>{extension()}</b> files, so call trails are
                   not available here.
                 </div>
               </Match>
@@ -98,7 +98,7 @@ export function SetupOptions(props: SetupOptionsProps): JSX.Element {
       </For>
       <Show when={!offers().length}>
         <p>
-          faah has no installer for this one. Install{' '}
+          fibo has no installer for this one. Install{' '}
           <For each={props.setup.servers}>
             {(server, index) => (
               <>

@@ -49,7 +49,7 @@ export function ForgeConnectDialog(): JSX.Element {
                   </>
                 }
               >
-                faah is using {FORGE_SOURCES[forge()?.source || ''] || 'a token'} for{' '}
+                fibo is using {FORGE_SOURCES[forge()?.source || ''] || 'a token'} for{' '}
                 {forge()?.host}. Paste a new one to replace it.
               </Show>
             </p>
@@ -132,8 +132,8 @@ export function ForgeConnectDialog(): JSX.Element {
             </div>
             <span id="forge-connect-check" data-ui="pr-merge-note" class="text-muted-foreground">
               {editor.pr.available()
-                ? 'faah checks the token by reading this pull request with it before saving it.'
-                : 'Saved to your faah settings. It is checked the next time you open a pull request.'}
+                ? 'fibo checks the token by reading this pull request with it before saving it.'
+                : 'Saved to your fibo settings. It is checked the next time you open a pull request.'}
             </span>
             <span id="forge-connect-alt" data-ui="pr-merge-note" class="text-muted-foreground">
               Or set <code>{setup().env}</code>
@@ -141,8 +141,8 @@ export function ForgeConnectDialog(): JSX.Element {
                 {' '}
                 or run <code>{setup().cli}</code>
               </Show>{' '}
-              in your shell, then restart faah.
-              <Show when={setup().hostKey}> faah sends the token only to {forge()?.host}.</Show>
+              in your shell, then restart fibo.
+              <Show when={setup().hostKey}> fibo sends the token only to {forge()?.host}.</Show>
             </span>
           </section>
           <ReviewDialogFooter

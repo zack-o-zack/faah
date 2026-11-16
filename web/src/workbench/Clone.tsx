@@ -11,8 +11,8 @@ export function Clone(): JSX.Element {
       <header>
         <h2>No local clone of {state.clone?.repo} found</h2>
         <p class="text-sm text-muted-foreground">
-          Pull requests open as git worktrees of one clone. Point faah at your clone, pick it in
-          Browse, or let faah make one.
+          Pull requests open as git worktrees of one clone. Point fibo at your clone, pick it in
+          Browse, or let fibo make one.
         </p>
       </header>
       <form
@@ -33,7 +33,7 @@ export function Clone(): JSX.Element {
       </form>
       <footer class="flex flex-wrap gap-2">
         <button class="btn" onClick={() => actions.open(state.clone?.target || '', 'managed')}>
-          Let faah clone it
+          Let fibo clone it
         </button>
         <span class="text-xs text-muted-foreground">
           into {state.clone?.managed}, once; later pull requests reuse it

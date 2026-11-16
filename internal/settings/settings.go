@@ -437,7 +437,7 @@ var Schema = []SchemaItem{
 	{
 		Key:         "server.basePath",
 		Title:       "Base Path",
-		Description: "Base URL path prefix for the faah server and web interface (e.g. /rev-123/).",
+		Description: "Base URL path prefix for the fibo server and web interface (e.g. /rev-123/).",
 		Category:    "Server",
 		Type:        "string",
 		Default:     "/",
@@ -445,7 +445,7 @@ var Schema = []SchemaItem{
 	{
 		Key:         "explain.agent",
 		Title:       "Explain Agent",
-		Description: "The coding harness that writes explanations (claude, codex, agy, opencode or cursor-agent). Leave empty to use the harness selected for editing. Ignored when faah is started with -agent.",
+		Description: "The coding harness that writes explanations (claude, codex, agy, opencode or cursor-agent). Leave empty to use the harness selected for editing. Ignored when fibo is started with -agent.",
 		Category:    "Explain",
 		Type:        "string",
 		Default:     "",

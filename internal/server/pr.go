@@ -557,7 +557,7 @@ func (s *Server) handleForgeConnect(w http.ResponseWriter, r *http.Request) {
 	token, extra := strings.TrimSpace(body.Token), strings.TrimSpace(body.Extra)
 	provider, target, ok := s.forgeTarget()
 	if !ok {
-		httpx.Fail(w, http.StatusBadRequest, "this workspace's remote isn't on a forge faah knows")
+		httpx.Fail(w, http.StatusBadRequest, "this workspace's remote isn't on a forge fibo knows")
 		return
 	}
 	info, setup := provider.Info(), provider.TokenSetup(target.Host)

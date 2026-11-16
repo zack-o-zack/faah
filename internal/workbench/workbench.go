@@ -330,7 +330,7 @@ func (c *child) failure() string {
 			return s
 		}
 	}
-	return "faah exited unexpectedly"
+	return "fibo exited unexpectedly"
 }
 
 type Launcher struct {
@@ -438,7 +438,7 @@ func (wb *Launcher) start(it item, forget bool) *child {
 		ctx: ctx, cancel: cancel, lastActive: time.Now()}
 	wb.children[it.ID] = c
 	if wb.closing {
-		c.state, c.err = "failed", "faah is shutting down"
+		c.state, c.err = "failed", "fibo is shutting down"
 		cancel()
 		close(c.done)
 		return c
@@ -564,7 +564,7 @@ func (wb *Launcher) run(c *child, it item, forget bool) {
 	case err := <-exited:
 		msg := c.failure()
 		if err == nil && msg == "" {
-			msg = "faah exited before it was ready"
+			msg = "fibo exited before it was ready"
 		}
 		failed(msg)
 		return
@@ -705,7 +705,7 @@ func trustedGet(w http.ResponseWriter, r *http.Request) bool {
 	}
 	host = strings.Trim(host, "[]")
 	if host != "localhost" && net.ParseIP(host) == nil {
-		httpx.Fail(w, http.StatusForbidden, "open faah by IP address or localhost")
+		httpx.Fail(w, http.StatusForbidden, "open fibo by IP address or localhost")
 		return false
 	}
 	return true
@@ -1125,7 +1125,7 @@ func (wb *Launcher) resolveTarget(target string) (item, error) {
 	}
 	if _, pt, ok := forge.DetectPRURL(target); ok {
 		if git.Disabled() {
-			return item{}, errors.New("git is required for PR review; restart faah without -no-git")
+			return item{}, errors.New("git is required for PR review; restart fibo without -no-git")
 		}
 		return prItem(pt), nil
 	}
@@ -1339,7 +1339,7 @@ var holdingTmpl = template.Must(template.New("holding").Funcs(template.FuncMap{
 {{if .Starting}}<noscript><meta http-equiv="refresh" content="1; url={{.Self}}"></noscript>
 {{end}}
 <script defer src="static/holding.js"></script>
-<title>{{if .Starting}}Opening…{{else}}faah{{end}}</title>
+<title>{{if .Starting}}Opening…{{else}}fibo{{end}}</title>
 <link rel="icon" type="image/svg+xml" href="static/favicon.svg">
 <link rel="preload" href="static/fonts/figtree-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="static/app.css">

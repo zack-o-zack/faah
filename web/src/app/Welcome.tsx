@@ -1,5 +1,6 @@
 import { For, Show, type Component } from 'solid-js';
 import { keyCaps } from '../lib/keyboard.ts';
+import { Brand } from '../brand/Brand.tsx';
 
 interface Hint {
   combo?: string;
@@ -35,20 +36,7 @@ export const Welcome: Component<WelcomeProps> = (props) => (
   >
     <div class="empty text-muted-foreground">
       <div class="mb-6 flex items-end justify-center gap-2 font-display">
-        <img
-          class="hidden dark:block"
-          src="static/logo-dark.svg"
-          alt="faah"
-          width="160"
-          height="60"
-        />
-        <img
-          class="block dark:hidden"
-          src="static/logo-light.svg"
-          alt="faah"
-          width="160"
-          height="60"
-        />
+        <Brand size="welcome" />
         <span id="empty-ver" class="font-mono text-xs text-primary-text">
           <Show when={props.version}>v{props.version}</Show>
         </span>
