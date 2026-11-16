@@ -492,13 +492,19 @@ test('AI disclosure and reset stay disabled during a rewrite', async () => {
   await screen.findByRole('dialog', { name: 'Merge pull request #7' });
   const toggle = screen.getByRole<HTMLButtonElement>('button', { name: 'Rewrite with AI' });
   fireEvent.click(toggle);
-  fireEvent.click(screen.getByRole('button', { name: 'Rewrite' }));
+  const rewrite = screen.getByRole('button', { name: 'Rewrite' });
+  expect(rewrite.querySelector('[class*=sparkle]')).toBeTruthy();
+  fireEvent.click(rewrite);
+  expect(rewrite.querySelector('[data-state=thinking]')).toBeTruthy();
+  expect(rewrite.querySelector('[class*=sparkle]')).toBeNull();
   expect(toggle.disabled).toBe(true);
   expect(
     screen.getByRole<HTMLButtonElement>('button', { name: 'Reset to default message' }).disabled,
   ).toBe(true);
   finish?.();
   await waitFor(() => expect(toggle.disabled).toBe(false));
+  expect(rewrite.querySelector('.fibo-spiral')).toBeNull();
+  expect(rewrite.querySelector('[class*=sparkle]')).toBeTruthy();
   expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Commit title' }).value).toBe(
     'AI title',
   );

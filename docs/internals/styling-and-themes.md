@@ -473,13 +473,44 @@ and desktop definitions and a Tailwind mapping.
 
 ## Brand assets
 
-`web/src/brand/Spiral.tsx` renders the exact path and viewBox from
+`web/src/brand/Mark.tsx` renders the exact path and viewBox from
 `web/mark.svg`, imported from the supplied `fibo-mark.svg`. The line uses
 `currentColor` with `text-[var(--spiral)]`, so built-in and user themes supply
 its colour through `--spiral`. It has one path, a 7.5-unit stroke and round
 caps and joins. Width defaults to 22px. A `label` gives it `role="img"` and
 an accessible name; without a label it is decorative. The only supported
-`state` is `static`, also exposed as `data-state`; there is no animation yet.
+`state` is `static`, also exposed as `data-state`; this brand asset does not animate.
+
+`web/src/brand/Spiral.tsx` is the live agent status mark, separate from the
+logo. Its generated line uses the same geometry for every state, with viewBox
+`-40 -44 104 78`, width 22px by default, and stroke width 11 at sizes up to
+32px or 7.5 above. A label supplies `role="img"`; otherwise it is decorative.
+
+| State | Use | Motion |
+| --- | --- | --- |
+| `static` | Rest shape available to status consumers | None |
+| `thinking` | Running thread rows and steps, explain pill, review stages, Explain PR and merge-message rewriting | Line wriggles, with a 2200ms shimmy |
+| `hold` | Agent waiting for reader approval or an answer | Loose curl, 1700ms tip wag |
+| `error` | Existing failed-thread and failed-explain marks | Springs open, rattles and curls back once over 2800ms |
+
+There is currently no agent approval/question surface, so `hold` is available
+and tested without a product placement. Finished replies gain no new marks.
+The lockup continues to use `Mark`, preserving the exact logo path.
+
+One shared requestAnimationFrame loop drives visible live spirals. Sampled
+geometry and the rest path are cached. IntersectionObserver pauses offscreen
+marks; disconnected marks and unmounted components leave the loop. Error
+motion stops after one cycle and rests in `--danger`. Only the line moves;
+the SVG never rotates, scales or slides. Under reduced motion all four states
+show the static line, while labels and error colour remain. Changes to the
+system preference take effect immediately.
+
+Only agent work uses the spiral. Settings saves, LSP work, CI checks,
+workspace startup, refreshes and changed-file fetching keep plain spinners.
+The review Walkthrough screen loads a diff, rather than generating an agent
+answer. Special buttons use their text colour for the spiral so it remains
+legible on periwinkle. Legacy themes fall back from `--danger` to
+`--destructive`.
 
 `web/src/brand/Brand.tsx` pairs that mark with lowercase text in Fraunces at
 weight 600. The wrapper supplies the single accessible name, "fibo"; its SVG

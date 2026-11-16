@@ -28,6 +28,26 @@ test('deleting a populated thread does not open it and keyboard activation opens
   expect(open).toHaveBeenCalledOnce();
 });
 
+test('thread status hooks map running and failed agent work to spirals, with no finished mark', () => {
+  const [thread, setThread] = createSignal({
+    id: 'busy',
+    title: 'Reading code',
+    running: true,
+    failed: false,
+  });
+  render(() => (
+    <ThreadListRow thread={thread()} selected={false} onOpen={() => {}} onDelete={() => {}} />
+  ));
+  expect(screen.getByTitle('Working').querySelector('[data-state="thinking"]')).toBeTruthy();
+  expect(document.querySelector('[data-ui="thr-spin"]')).toBeTruthy();
+  setThread({ id: 'busy', title: 'Reading code', running: false, failed: true });
+  expect(screen.getByRole('img', { name: 'Failed' }).getAttribute('data-state')).toBe('error');
+  expect(document.querySelector('[data-ui="thr-spin"]')).toBeNull();
+  expect(document.querySelector('[data-ui="thr-fail"]')).toBeTruthy();
+  setThread({ id: 'busy', title: 'Reading code', running: false, failed: false });
+  expect(document.querySelector('.fibo-spiral')).toBeNull();
+});
+
 test('finished notes show code peeks and walkthrough steps open their source ranges', () => {
   const open = vi.fn();
   const turn = decodeTurn({

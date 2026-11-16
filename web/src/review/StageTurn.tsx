@@ -1,3 +1,4 @@
+import { Spiral } from '../brand/Spiral.tsx';
 import type { ThreadTurn } from '../threads/decode.ts';
 
 interface StageTurnProps {
@@ -60,10 +61,7 @@ export function StageTurn(props: StageTurnProps): JSX.Element {
             when={props.turn.reply}
             fallback={
               <span class="inline-flex items-center gap-2 text-sm text-muted-foreground">
-                <span
-                  class="icon-[lucide--loader-circle] size-3.5 animate-spin"
-                  aria-hidden="true"
-                />
+                <Spiral state="thinking" size={14} />
                 Reading the changes…
               </span>
             }

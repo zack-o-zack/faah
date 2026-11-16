@@ -313,7 +313,10 @@ test('running PR explanations disable the review action and empty-path rows show
   const f = mount();
   f.editor.actions.setReviewMode('review');
   f.editor.actions.acceptThread(decodeThread({ ...thread, turns: [{ id: 1, running: true }] }));
-  expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Explain PR' }).disabled).toBe(true);
+  const explain = screen.getByRole<HTMLButtonElement>('button', { name: 'Explain PR' });
+  expect(explain.disabled).toBe(true);
+  expect(explain.querySelector('[data-state=thinking]')).toBeTruthy();
+  expect(explain.querySelector('[class*=sparkle]')).toBeNull();
   const row = render(() => (
     <ThreadListRow
       thread={{ id: 'pr', title: 'Explain PR #7', path: '', kind: 'explain' }}

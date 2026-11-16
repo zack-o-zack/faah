@@ -1,3 +1,4 @@
+import { Spiral } from '../brand/Spiral.tsx';
 import type { JSX } from 'solid-js';
 import type { ThreadSummary } from './decode.ts';
 import { Show } from 'solid-js';
@@ -33,18 +34,14 @@ export function ThreadListRow(props: ThreadListRowProps): JSX.Element {
     >
       <div data-ui="thr-item-title" class="flex min-w-0 items-center gap-2 text-sm font-medium">
         <Show when={props.thread.running}>
-          <span
-            data-ui="thr-spin"
-            class="icon-[lucide--loader-circle] size-3.5 shrink-0 animate-spin text-muted-foreground"
-            title="Working"
-          />
+          <span data-ui="thr-spin" class="inline-flex shrink-0" title="Working">
+            <Spiral state="thinking" size={14} />
+          </span>
         </Show>
         <Show when={!props.thread.running && props.thread.failed}>
-          <span
-            data-ui="thr-fail"
-            class="icon-[lucide--circle-alert] size-3.5 shrink-0 text-destructive"
-            title="Last reply failed"
-          />
+          <span data-ui="thr-fail" class="inline-flex shrink-0" title="Last reply failed">
+            <Spiral state="error" size={14} label="Failed" />
+          </span>
         </Show>
         <span data-ui="thr-item-title-text" class="min-w-0 flex-1 truncate">
           {props.thread.title}

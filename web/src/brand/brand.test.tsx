@@ -3,10 +3,10 @@ import { render, screen } from '@solidjs/testing-library';
 import { expect, test } from 'vitest';
 import { required } from '../lib/test-values.ts';
 import { Brand } from './Brand.tsx';
-import { Spiral } from './Spiral.tsx';
+import { Mark } from './Mark.tsx';
 
-test('the decorative spiral preserves the source geometry and static state', () => {
-  const { container } = render(() => <Spiral />);
+test('the decorative mark preserves the source geometry and static state', () => {
+  const { container } = render(() => <Mark />);
   const svg = required(container.querySelector('svg'));
   const source = new DOMParser().parseFromString(
     fs.readFileSync('web/mark.svg', 'utf8'),
@@ -30,8 +30,8 @@ test('the decorative spiral preserves the source geometry and static state', () 
   expect(screen.queryByRole('img')).toBeNull();
 });
 
-test('a labeled spiral is an image with the requested width', () => {
-  render(() => <Spiral label="fibo" size={18} state="static" />);
+test('a labeled mark is an image with the requested width', () => {
+  render(() => <Mark label="fibo" size={18} state="static" />);
   const svg = screen.getByRole('img', { name: 'fibo' });
   expect(svg.hasAttribute('aria-hidden')).toBe(false);
   expect(svg.getAttribute('width')).toBe('18');

@@ -1,5 +1,5 @@
 import type { JSX } from 'solid-js';
-import { Spiral } from './Spiral.tsx';
+import { Mark } from './Mark.tsx';
 
 interface BrandProps {
   size?: 'chrome' | 'welcome';
@@ -16,7 +16,7 @@ export function Brand(props: BrandProps): JSX.Element {
       role="img"
       aria-label="fibo"
     >
-      <Spiral size={props.size === 'welcome' ? 56 : 18} />
+      <Mark size={props.size === 'welcome' ? 56 : 18} />
       <span
         aria-hidden="true"
         class={

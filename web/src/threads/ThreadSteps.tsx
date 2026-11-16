@@ -1,3 +1,4 @@
+import { Spiral } from '../brand/Spiral.tsx';
 import type { JSX } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { EXPLAIN_STEP_LABELS } from './logic.ts';
@@ -78,10 +79,9 @@ function StepHead(props: { turn: ThreadTurn }): JSX.Element {
         </>
       }
     >
-      <span
-        class="icon-[lucide--loader-circle] mt-px size-3 shrink-0 animate-spin"
-        aria-hidden="true"
-      />
+      <span class="mt-px inline-flex shrink-0">
+        <Spiral state="thinking" size={12} />
+      </span>
       <span class="line-clamp-2 min-w-0 wrap-anywhere">
         {props.turn.tools?.at(-1) || 'Starting'}
       </span>

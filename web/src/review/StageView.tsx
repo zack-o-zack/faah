@@ -1,3 +1,4 @@
+import { Spiral } from '../brand/Spiral.tsx';
 import type { JSX } from 'solid-js';
 import { Match, Show, Switch } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
@@ -52,7 +53,7 @@ export function StageView(): JSX.Element {
         </Match>
         <Match when={!thread() && review.state.loadingThread === stage()?.threadId}>
           <p class="flex flex-1 items-center justify-center gap-2 text-sm text-muted-foreground">
-            <span class="icon-[lucide--loader-circle] size-3.5 animate-spin" aria-hidden="true" />
+            <Spiral state="thinking" size={14} />
             Loading the answer…
           </p>
         </Match>

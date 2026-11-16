@@ -1,3 +1,4 @@
+import { Spiral } from '../brand/Spiral.tsx';
 interface ReviewTabProps {
   id: string;
   title: string;
@@ -77,10 +78,12 @@ export function ReviewTabs(): JSX.Element {
           editor.actions.setReviewTab('walkthrough');
         }}
       >
-        <span
-          class={`${explaining() ? 'icon-[lucide--loader-circle] animate-spin motion-reduce:animate-none' : 'icon-[lucide--sparkle]'} size-3.5 shrink-0`}
-          aria-hidden="true"
-        />
+        <Show
+          when={explaining()}
+          fallback={<span class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true" />}
+        >
+          <Spiral state="thinking" size={14} />
+        </Show>
         Explain PR
       </button>
       <Show when={review.state.tab !== 'stages'}>

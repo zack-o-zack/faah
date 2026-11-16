@@ -582,7 +582,10 @@ test('compact preference loads at startup and tolerates unavailable storage', ()
 test('failure status icons cannot shrink beside their text', () => {
   const fixture = setup();
   fixture.editor.actions.orbBegin();
+  expect(document.querySelector('[data-orb=spin] [data-state=thinking]')).toBeTruthy();
   fixture.editor.actions.orbFailed('Could not explain');
+  expect(screen.getByRole('img', { name: 'Failed' }).getAttribute('data-state')).toBe('error');
+  expect(document.querySelector('[data-orb=spin]')).toBeNull();
   expect(document.querySelector('[data-orb="fail"]')?.classList.contains('shrink-0')).toBe(true);
   expect(document.querySelector('#explain-orb-compact')).toBeNull();
   fixture.view.unmount();
