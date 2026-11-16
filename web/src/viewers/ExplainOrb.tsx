@@ -54,12 +54,12 @@ export function ExplainOrb(): JSX.Element {
             class={
               hasWalkthrough()
                 ? 'group flex min-w-0 w-full items-start'
-                : 'group flex w-full items-center overflow-hidden rounded-pill border bg-popover text-popover-foreground shadow-pop data-[phase=done]:items-start data-[phase=done]:bg-popover/70 data-[phase=done]:backdrop-blur-sm'
+                : 'group flex w-full items-center gap-1 overflow-hidden rounded-pill border bg-popover p-1 text-popover-foreground shadow-pop data-[phase=done]:items-start data-[phase=failed]:items-start data-[phase=done]:rounded-[var(--radius-xl)] data-[phase=failed]:rounded-[var(--radius-xl)] data-[phase=done]:bg-popover/70 data-[phase=done]:backdrop-blur-sm'
             }
           >
             <button
               id="explain-orb-open"
-              class="btn relative min-w-0 shrink group-data-[phase=done]:h-auto group-data-[phase=done]:items-start group-data-[phase=done]:py-2 group-data-[phase=done]:text-left"
+              class="btn relative min-w-0 shrink group-data-[phase=done]:h-auto group-data-[phase=done]:items-start group-data-[phase=done]:gap-2.5 group-data-[phase=done]:rounded-[var(--radius-lg)] group-data-[phase=done]:px-3 group-data-[phase=done]:py-2 group-data-[phase=done]:text-left group-data-[phase=failed]:h-auto group-data-[phase=failed]:items-start group-data-[phase=failed]:rounded-[var(--radius-lg)] group-data-[phase=failed]:text-left"
               // Cancel the small ghost button padding to align text with the card body.
               classList={{ '-ms-2.5': hasWalkthrough() }}
               data-variant="ghost"
@@ -77,10 +77,12 @@ export function ExplainOrb(): JSX.Element {
                 </span>
               </Show>
               <Show when={state.model?.phase === 'done'}>
-                <span data-orb="done" class="icon-[ph--check] mt-[3px] shrink-0 text-primary" />
+                <span data-orb="done" class="mt-px inline-flex shrink-0">
+                  <Spiral state="static" size={18} />
+                </span>
               </Show>
               <Show when={state.model?.phase === 'failed'}>
-                <span data-orb="fail" class="mt-[3px] inline-flex shrink-0">
+                <span data-orb="fail" class="mt-px inline-flex shrink-0">
                   <Spiral state="error" size={18} label="Failed" />
                 </span>
               </Show>
@@ -89,7 +91,10 @@ export function ExplainOrb(): JSX.Element {
                   {state.compact && hasWalkthrough() ? view()?.text : view()?.shown}
                 </span>
                 <Show when={view()?.snippet && !(hasWalkthrough() && state.compact)}>
-                  <span data-orb="snippet" class="line-clamp-2 whitespace-normal font-normal">
+                  <span
+                    data-orb="snippet"
+                    class="line-clamp-2 whitespace-normal font-normal text-muted-foreground"
+                  >
                     {view()?.snippet}
                   </span>
                 </Show>
@@ -117,7 +122,7 @@ export function ExplainOrb(): JSX.Element {
             </Show>
             <button
               id="explain-orb-close"
-              class="btn shrink-0"
+              class="btn shrink-0 group-data-[phase=done]:self-start group-data-[phase=failed]:self-start"
               classList={{ 'ml-auto': !hasWalkthrough() }}
               data-variant="ghost"
               data-size="icon-sm"
