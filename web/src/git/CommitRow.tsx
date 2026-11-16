@@ -60,7 +60,7 @@ export function CommitRow(props: CommitRowProps): JSX.Element {
               fallback={
                 <>
                   <span
-                    class="icon-[ph--caret-right] size-2 shrink-0 git-commit-caret text-muted-foreground [.git-commit.expanded_&]:rotate-90"
+                    class="icon-[ph--caret-right] size-3 shrink-0 git-commit-caret text-muted-foreground [.git-commit.expanded_&]:rotate-90"
                     aria-hidden="true"
                   />
                   <span
@@ -70,7 +70,10 @@ export function CommitRow(props: CommitRowProps): JSX.Element {
                 </>
               }
             >
-              <span class="up-ar size-2 shrink-0 border-r border-t border-muted-foreground rotate-45 [.up-commit.open_&]:rotate-[135deg]" />
+              <span
+                class="up-ar icon-[ph--caret-right] size-3 shrink-0 text-muted-foreground [.up-commit.open_&]:rotate-90"
+                aria-hidden="true"
+              />
             </Show>
             <span
               class={

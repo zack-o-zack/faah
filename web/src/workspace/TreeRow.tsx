@@ -115,7 +115,8 @@ export function TreeRow(props: TreeRowProps): JSX.Element {
           >
             <span
               data-ui="ar"
-              class="shrink-0 text-muted-foreground size-2 border-r border-t border-muted-foreground rotate-45 group-[.open]:rotate-[135deg]"
+              class="icon-[ph--caret-right] size-3 shrink-0 text-muted-foreground group-[.open]:rotate-90"
+              aria-hidden="true"
             />
           </Show>
           <button
