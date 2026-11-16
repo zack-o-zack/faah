@@ -101,7 +101,10 @@ export function TreeRow(props: TreeRowProps): JSX.Element {
           data-dir={props.row.dir ? props.row.path : undefined}
           data-file={!props.row.dir ? props.row.path : undefined}
           title={(props.row.dir ? 'Folder: ' : 'Open ') + props.row.path}
-          style={{ 'padding-left': `${8 + props.row.depth * 12 + (props.row.dir ? 0 : 12)}px` }}
+          style={{
+            'padding-left': `${8 + props.row.depth * 12 + (props.row.dir ? 0 : 12)}px`,
+            '--depth': String(props.row.depth),
+          }}
           onClick={open}
         >
           <Show

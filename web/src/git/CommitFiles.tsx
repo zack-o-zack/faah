@@ -13,9 +13,9 @@ export function CommitFiles(props: CommitFilesProps): JSX.Element {
   const [shown, setShown] = createSignal(100);
   const [files] = createResource(() => props.sha, editor.actions.loadCommitFiles);
   return (
-    <div class={props.unpushed ? 'up-files' : 'git-commit-files ml-3 flex flex-col border-l pl-1'}>
+    <div class={props.unpushed ? 'up-files' : 'git-commit-files flex flex-col'}>
       <Show when={!props.unpushed}>
-        <div class="git-commit-meta truncate px-3 py-1 text-xs text-muted-foreground">
+        <div class="git-commit-meta truncate px-2 py-1 text-xs text-muted-foreground">
           {props.author} · {props.date}
         </div>
       </Show>

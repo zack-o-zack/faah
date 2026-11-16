@@ -330,6 +330,16 @@
 
   ::selection { background: var(--sel); }
 
+  /* Tree indent guides: one line per ancestor folder, through the centre of its
+     12px caret. Rows indent 12px per level from 8px (TreeRow), so the lines
+     repeat every 12px and cover depth × 12px. Hover and selection fills sit under them. */
+  [role='treeitem'].tr {
+    background-image: repeating-linear-gradient(to right, transparent 0 6px, var(--border) 6px 7px, transparent 7px 12px);
+    background-repeat: no-repeat;
+    background-position: 8px 0;
+    background-size: calc(var(--depth, 0) * 12px) 100%;
+  }
+
   /* An empty state that is only a sentence flows as text, so inline keys and code stay in the line. */
   .empty:not(:has(> :is(header, section, footer, figure))) { @apply block; }
 
