@@ -14,22 +14,22 @@ export function ThemeMenu(): JSX.Element {
       label={<span class="icon-[lucide--palette] size-3.5 shrink-0" aria-hidden="true" />}
       onOpen={() => setBefore(theme.preference())}
       onClose={(reason) => {
-        if (reason !== 'select' && before()) theme.setTheme(before() || '', false);
+        if (reason !== 'select' && before() !== null) theme.setTheme(before() || '', false);
         setBefore(null);
       }}
     >
-      <For each={[{ id: 'system', name: 'System' }, ...theme.themes()]}>
+      <For each={[{ id: '', name: 'System' }, ...theme.themes()]}>
         {(item) => (
           <button
             class="btn w-full"
             role="menuitemradio"
-            aria-checked={theme.current() === item.id}
+            aria-checked={item.id ? theme.current() === item.id : theme.preference() === ''}
             onFocus={() => {
-              if (!before()) setBefore(theme.preference());
+              if (before() === null) setBefore(theme.preference());
               theme.setTheme(item.id, false);
             }}
             onMouseEnter={() => {
-              if (!before()) setBefore(theme.preference());
+              if (before() === null) setBefore(theme.preference());
               theme.setTheme(item.id, false);
             }}
             onClick={() => {
@@ -37,7 +37,7 @@ export function ThemeMenu(): JSX.Element {
               setBefore(null);
             }}
             onKeyDown={(e) => {
-              if (e.key === 'Escape' && before()) {
+              if (e.key === 'Escape' && before() !== null) {
                 theme.setTheme(before() || '', false);
                 setBefore(null);
               }

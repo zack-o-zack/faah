@@ -36,7 +36,7 @@ func CleanBasePath(p string) string {
 	return p
 }
 
-const ContentSecurityPolicy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https: http:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'none';"
+const ContentSecurityPolicy = "default-src 'self'; script-src 'self' 'sha256-Xnro7kjr0LUYiSt1861sPMG9pyzWBhC4ycOW2Zh37AM='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https: http:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'none';"
 
 type gzipBypasser interface {
 	BypassGzip()
@@ -181,52 +181,6 @@ func Fail(w http.ResponseWriter, code int, msg string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	json.NewEncoder(w).Encode(map[string]string{"error": msg})
-}
-
-var (
-	themesCSSOnce sync.Once
-	themesCSSBody string
-	themesCSSErr  error
-)
-
-// joinThemesCSS joins web/themes/*.css into one stylesheet in file name order, so
-// adding a theme means adding a file: there is no list to keep in sync.
-func joinThemesCSS(assets fs.FS) (string, error) {
-	names, err := fs.Glob(assets, "web/themes/*.css")
-	if err != nil {
-		return "", err
-	}
-	var css strings.Builder
-	for _, name := range names {
-		b, err := fs.ReadFile(assets, name)
-		if err != nil {
-			return "", err
-		}
-		css.WriteString("/* " + strings.TrimPrefix(name, "web/") + " */\n")
-		css.Write(b)
-		css.WriteString("\n")
-	}
-	return css.String(), nil
-}
-
-func Themes(assets fs.FS, devRoot string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var body string
-		var err error
-		if devRoot != "" {
-			body, err = joinThemesCSS(assets)
-		} else {
-			themesCSSOnce.Do(func() { themesCSSBody, themesCSSErr = joinThemesCSS(assets) })
-			body, err = themesCSSBody, themesCSSErr
-		}
-		if err != nil {
-			Fail(w, 500, err.Error())
-			return
-		}
-		w.Header().Set("Content-Type", "text/css; charset=utf-8")
-		io.WriteString(w, body)
-	}
-
 }
 
 func staticContentType(p string) string {

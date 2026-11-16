@@ -1,0 +1,94 @@
+/* fibo dark. Theme contract: docs/internals/styling-and-themes.md. */
+:root[data-theme="fibo-dark"] {
+  --theme-name: "fibo dark";
+  color-scheme: dark;
+
+  /* fibo colours: pastels are fills; ink tones carry text. */
+  --surface: #141815;
+  --surface-raised: #1c221e;
+  --surface-sunken: #0e110f;
+  --ink: #edf3ec;
+  --ink-muted: #a7b3aa;
+  --line: #37413a;
+  --line-strong: #768379;
+  --spiral: #a8dc8c;
+  --accent-ink: #a8dc8c;
+  --pistachio: #a9d68a;
+  --periwinkle: #a9b0f0;
+  --aqua: #8ed3cf;
+  --lemon: #e3d572;
+  --bubblegum: #eda3c3;
+  --on-pastel: #1d2620;
+  --danger: #ff8796;
+  --danger-soft: #5a2530;
+  --focus: #b6bcfa;
+  --hover: #262e28;
+
+  /* Basecoat aliases follow the fibo colours. */
+  --background: var(--surface);
+  --foreground: var(--ink);
+  --card: var(--surface-raised);
+  --card-foreground: var(--ink);
+  --popover: var(--surface-raised);
+  --popover-foreground: var(--ink);
+  --primary: var(--pistachio);
+  --primary-foreground: var(--on-pastel);
+  --secondary: var(--surface-sunken);
+  --secondary-foreground: var(--ink);
+  --muted: var(--surface-sunken);
+  --muted-foreground: var(--ink-muted);
+  --accent: var(--hover);
+  --accent-foreground: var(--ink);
+  --border: var(--line);
+  --input: var(--line-strong);
+  --ring: var(--focus);
+  --sidebar: var(--surface-sunken);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--pistachio);
+  --sidebar-primary-foreground: var(--on-pastel);
+  --sidebar-accent: var(--hover);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--line);
+  --sidebar-ring: var(--focus);
+
+  /* Selection, search, status, image surfaces and elevation. */
+  --image-dark: #141815;
+  --image-light: #f6f8f4;
+  --faint: var(--ink-muted);
+  --primary-text: var(--accent-ink);
+  --special: var(--periwinkle);
+  --cur: var(--hover);
+  /* Deeper bubblegum keeps selection visible without washing out syntax. */
+  --sel: rgba(160, 40, 100, 0.53);
+  --mark: rgba(227, 213, 114, 0.20);
+  --mark-active: var(--lemon);
+  --on-mark-active: var(--on-pastel);
+  --warn: var(--lemon);
+  --gi: #8ed3cf;
+  --gi-bg: rgba(142, 211, 207, 0.08);
+  --gd: var(--danger);
+  --gd-bg: rgba(90, 37, 48, 0.35);
+  --destructive: var(--danger);
+  --err: var(--danger);
+  --shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.55);
+
+  /* Syntax: indigo keywords; teal strings/built-ins; rose numbers/constants;
+     green functions/tags; amber types/classes; muted comments/punctuation. */
+  --k: #b6bcfa;
+  --kt: #e3d572;
+  --nf: var(--accent-ink);
+  --nc: #e3d572;
+  --nb: #8ed3cf;
+  --nv: var(--ink);
+  --no: #eda3c3;
+  --na: #8ed3cf;
+  --nt: var(--accent-ink);
+  --nd: #b6bcfa;
+  --np: var(--ink-muted);
+  --s: #8ed3cf;
+  --m: #eda3c3;
+  --o: var(--ink-muted);
+  --p: var(--ink-muted);
+  --c: var(--ink-muted);
+  --cp: #b6bcfa;
+}

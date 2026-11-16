@@ -1,70 +1,44 @@
-# Themes & Visual Customization
+# Themes and styling
 
-faah comes pre-packaged with 14 polished color themes spanning popular dark, low-contrast, and light aesthetics. Backed by a strict CSS custom property token architecture, themes provide consistent contrast and visual harmony across code, diff views, Markdown previews, and modals.
+The app ships with **fibo light** (`fibo-light`) and **fibo dark** (`fibo-dark`).
+System is the default: dark OS appearance selects fibo dark, otherwise fibo light.
+The palette uses quiet surfaces, pastel fills and readable ink for text, syntax,
+search, selections and diffs.
 
----
+## Choose a theme
 
-## Overview & Core Purpose
+- Open Settings with `Cmd/Ctrl+,`, then choose **Workbench > Color Theme**.
+- Or open the command palette and choose **Select Theme…**. Arrow keys preview;
+  Enter saves the choice and Escape restores the previous preference.
+- The workbench launcher has a theme menu with a **System** option.
 
-Visual comfort and ergonomic contrast are essential for developers spending long hours auditing code and reviewing diffs. Lighting conditions change throughout the day, and different engineers prefer different palettes—from deep midnight contrast to muted pastel tones or crisp daylight schemes.
+The choice is saved as `workbench.colorTheme` in `~/.faah/settings.json`, or
+`$XDG_CONFIG_HOME/faah/settings.json` when configured. An empty string means
+System. A configured ID wins over the browser's saved ID. Unknown or removed
+IDs follow the OS; they are never migrated or aliased. While System is selected,
+OS appearance changes update the app without reloading.
 
-faah provides instant theme switching with zero browser reloading. Themes are implemented using pure CSS custom variables (`var(--bg)`, `var(--fg)`, `var(--accent)`), ensuring that changing a theme updates every element—editor rows, file trees, diff panels, markdown headers, and status badges—cohesively and instantaneously.
+## Override colours or add a theme
 
----
+Create `~/.faah/themes/` and put CSS files there. This data folder stays under
+your home directory even if settings use `XDG_CONFIG_HOME`. Reload after editing.
+For example, `overrides.css` changes two tokens in fibo dark:
 
-## Built-In Themes
+```css
+:root[data-theme="fibo-dark"] {
+  --spiral: #b8e6a0;
+  --surface-raised: #202820;
+}
+```
 
-faah ships with 14 curated themes ready for immediate use:
+Built-in CSS loads first, then user CSS in filename order. Later definitions
+win. Each file is limited to 256 KiB, with a total of 1 MiB of user CSS per
+request; unreadable, oversized and non-regular files are skipped and logged.
+A missing theme folder is fine. No rebuild is needed.
 
-| Theme Name | Identifier | Aesthetic & Style |
-| :--- | :--- | :--- |
-| **Catppuccin Mocha** | `catppuccin-mocha` | Soothing, low-contrast dark pastel palette (Default) |
-| **Catppuccin Latte** | `catppuccin-latte` | Warm, low-contrast light pastel palette |
-| **GitHub Dark** | `github-dark` | Classic GitHub Dark theme |
-| **Tokyo Night** | `tokyo-night` | Celebrated deep blue and neon palette |
-| **Dracula** | `dracula` | Vibrant purple and pink dark theme |
-| **Gruvbox Dark** | `gruvbox-dark` | Retro groove warm dark palette |
-| **Gruvbox Light** | `gruvbox-light` | Retro groove warm parchment light palette |
-| **Nord** | `nord` | Arctic, north-bluish clean palette |
-| **Solarized Dark** | `solarized-dark` | Low-contrast teal and yellow solarized palette |
-| **Solarized Light** | `solarized-light` | Warm paper solarized light palette |
-| **Monokai** | `monokai` | Iconic high-contrast vibrant dark palette |
-| **One Dark** | `one-dark` | Atom / VS Code classic dark palette |
-| **Rose Pine** | `rose-pine` | Atmospheric dark rose and muted tones |
-| **Light Default** | `light` | Crisp, high-contrast daylight theme |
-
----
-
-## Key Capabilities
-
-- **Instant Live Switching**: Changing your theme in Settings or the Command Palette applies immediately across all tabs and panels without reloading the page.
-- **Universal Token Coverage**: Themes govern all UI subsystems uniformly:
-  - Source code syntax tokens (keywords, strings, types, functions, comments).
-  - Git diff backgrounds and line gutters (added, deleted, modified).
-  - Markdown article elements, blockquotes, and alert badges.
-  - Search highlighting, minimap ticks, and selection overlays.
-- **High-Contrast Readability**: Every theme is tuned to maintain high text-to-background contrast ratios, preventing eye fatigue during extended inspection sessions.
-- **Dynamic Server Aggregation**: Themes are served as a single lightweight stylesheet (`/static/themes.css`) with zero runtime overhead.
-
----
-
-## Developer Workflows & Switching Themes
-
-### Quick Theme Switching via Command Palette
-1. Press **`Cmd/Ctrl+Shift+P`** to open the Command Palette.
-2. Type `Preferences: Color Theme` (or `theme`) and press `Enter`.
-3. Use the arrow keys to preview themes dynamically in real time.
-4. Press `Enter` to confirm your selection.
-
-### Configuring via Settings UI
-1. Press **`Cmd/Ctrl+,`** to open Settings.
-2. Navigate to **Workbench: Color Theme** (`workbench.colorTheme`).
-3. Select your preferred theme from the dropdown or click one of the interactive theme pill buttons.
-
-Your choice is saved in `~/.faah/settings.json` and remembered across all future sessions.
-
----
-
-## Technical Architecture Deep Dive
-
-For the complete CSS custom property token dictionary, naming conventions, and instructions on creating custom themes, see [Theme Architecture & CSS Tokens Internals](../internals/styling-and-themes.md).
+To add a new theme, copy the complete example in the
+[theme contract](../internals/styling-and-themes.md#theme-contract), choose a
+unique `data-theme` ID and `--theme-name`, and declare `color-scheme`. The picker
+discovers it from CSS automatically. The same contract lists required tokens,
+fallbacks and contrast checks. This phase changes colours only; fonts, shapes
+and logo assets retain their existing implementation.

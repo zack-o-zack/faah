@@ -1,4 +1,5 @@
 import { For, Match, Show, Switch, type Component } from 'solid-js';
+import { listThemes } from '../lib/theme.ts';
 import { useSettings } from './context.ts';
 import { segmentValue, type SettingControl as Control, type SettingItem } from './logic.ts';
 
@@ -78,7 +79,16 @@ export const SettingControl: Component<ControlProps & { invalid: boolean }> = (p
             value={String(current() ?? '')}
             onChange={(event) => void settings.actions.setSetting(key(), event.currentTarget.value)}
           >
-            <For each={control().options}>
+            <For
+              each={
+                key() === 'workbench.colorTheme'
+                  ? [
+                      { value: '', label: 'System' },
+                      ...listThemes().map((theme) => ({ value: theme.id, label: theme.name })),
+                    ]
+                  : control().options
+              }
+            >
               {(option) => <option value={option.value}>{option.label}</option>}
             </For>
           </select>

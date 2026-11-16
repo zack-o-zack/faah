@@ -39,7 +39,7 @@ faah stores all configuration in a single per-user global file (`~/.faah/setting
 | `editor.scrollBeyondLastLine` | Text Editor | `true` | `true`, `false` | Enable scrolling beyond document end |
 | `editor.bracketPairColorization` | Text Editor | `true` | `true`, `false` | Rainbow bracket pairs & matching |
 | `editor.vimMode` | Text Editor | `false` | `true`, `false` | Modal Vim navigation keybindings |
-| `workbench.colorTheme` | Workbench | `"catppuccin-mocha"` | 14 built-in theme IDs | Active color theme |
+| `workbench.colorTheme` | Workbench | `""` (System) | `fibo-light`, `fibo-dark`, or a discovered user theme ID | Empty or unavailable IDs follow OS appearance; configured IDs win over browser preferences |
 | `markdown.preview.open` | Workbench | `true` | `true`, `false` | Open Markdown files in rendered preview |
 | `table.preview.open` | Workbench | `true` | `true`, `false` | Open CSV and TSV files as a table |
 | `diffEditor.renderSideBySide` | Diff Editor | `true` | `true`, `false` | Split vs. unified diff view default |
@@ -84,7 +84,7 @@ For automated machine setup, dotfile repositories, or scripting, you can directl
   "editor.fontSize": 14,
   "editor.fontFamily": "ui-monospace, monospace",
   "editor.lineHeight": 22,
-  "workbench.colorTheme": "tokyo-night",
+  "workbench.colorTheme": "fibo-dark",
   "diffEditor.renderSideBySide": true,
   "agent.harness": "claude",
   "agent.timeoutSeconds": 180
@@ -94,3 +94,14 @@ For automated machine setup, dotfile repositories, or scripting, you can directl
 The file is stored at:
 - `~/.faah/settings.json`
 - Or `$XDG_CONFIG_HOME/faah/settings.json` (if `XDG_CONFIG_HOME` is set).
+
+
+## Theme files
+
+User themes and token overrides live in `~/.faah/themes/`, independently of the
+settings location. Built-ins load first, then user CSS in filename order. Reload
+to apply file edits. Each regular CSS file is limited to 256 KiB and the combined
+user CSS content to 1 MiB; unreadable or oversized files are skipped with a log
+line. The settings theme options come from discovery, including user themes.
+An unavailable saved ID follows the OS with no migration or alias. See
+[themes and styling](themes-and-styling.md) for examples and the full contract.

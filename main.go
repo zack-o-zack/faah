@@ -234,7 +234,7 @@ func main() {
 		workbenchURL = workbench.BaseOf(configuredBasePath)
 	}
 	pxSrv := server.New(server.Options{
-		Assets: assets, Version: version, DevRoot: devRoot, BasePath: configuredBasePath,
+		Assets: assets, Version: version, DevRoot: devRoot, DataDir: settings.DataDir(), BasePath: configuredBasePath,
 		WorkbenchURL: workbenchURL, Workspace: ix, LSP: lsp, Telemetry: tel,
 	})
 	if !*wbChild {
@@ -433,7 +433,7 @@ func runWorkbench(host string, port int, basePathFlag string, open, doAutoUpdate
 	if err != nil {
 		fatal(err)
 	}
-	wb := workbench.New(workbench.Options{BasePath: basePath, CWD: cwd, Executable: exe, ChildArgs: childArgs, Version: version, DevRoot: devRoot, Assets: assets, ResolveTarget: resolveTarget})
+	wb := workbench.New(workbench.Options{BasePath: basePath, CWD: cwd, Executable: exe, ChildArgs: childArgs, Version: version, DevRoot: devRoot, DataDir: settings.DataDir(), Assets: assets, ResolveTarget: resolveTarget})
 	srv := &http.Server{Handler: wb}
 
 	u := viewerURL(addr, "", 0, basePath)

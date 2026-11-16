@@ -21,7 +21,7 @@
   --color-mark-active: var(--mark-active);
   --color-cur: var(--cur);
   --color-gi: var(--gi);
-  --color-special: var(--nf);
+  --color-special: var(--special);
   --color-gd: var(--gd);
   --color-gi-bg: var(--gi-bg);
   --color-gd-bg: var(--gd-bg);
@@ -46,6 +46,7 @@
     --on-badge: var(--background);
     --on-mark-active: var(--background);
     --warn: var(--mark-active);
+    --special: var(--nf);
   }
 
   :root[data-shell] {
@@ -74,10 +75,7 @@
 }
 
 @layer components {
-  /* Special: actions that stand apart from ordinary ones (today, the ones the
-     coding harness carries out). Tinted with the theme's function colour, the
-     way destructive is tinted red: themes rarely make functions red, so it
-     stays apart from errors. */
+  /* Agent actions use the theme's dedicated special ink. */
   .btn[data-variant='special'] {
     @apply border border-special/30 bg-special/10 text-special hover:bg-special/20 focus-visible:border-special/50 focus-visible:ring-special/25 aria-expanded:bg-special/20 disabled:opacity-50;
   }
@@ -105,7 +103,7 @@
   /* Code selection, gutters, caret and wrapping. */
   #caret {
     @apply absolute top-0 left-0; z-index: 1; width: 2px; height: var(--lh);
-    background: var(--primary); pointer-events: none; will-change: transform;
+    background: var(--focus); pointer-events: none; will-change: transform;
   }
   #caret.blink { animation: caret-blink 1.06s steps(1) infinite; }
   @keyframes caret-blink { 50% { opacity: 0; } }

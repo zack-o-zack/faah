@@ -121,6 +121,24 @@ async function start(fixture: ReturnType<typeof setup>) {
   await waitFor(() => expect(fixture.editor.walkthrough.focus()?.l1).toBe(2));
 }
 
+test.each([1, 2])('walkthrough counts pluralize %i steps and files', async (count) => {
+  const fixture = setup();
+  const walkthrough = {
+    ...flow,
+    steps: [required(flow.steps[0]), required(flow.steps[2])].slice(0, count),
+  };
+  const counted = decodeThread({
+    id: 'counts',
+    kind: 'explain',
+    turns: [{ id: 1, walkthroughs: [walkthrough] }],
+  });
+  await fixture.editor.actions.showExplanation(counted, 1);
+  expect(screen.getByText(count === 1 ? '1 step · 1 file' : '2 steps · 2 files')).toBeTruthy();
+  fixture.editor.actions.setWalkCompact(true);
+  expect(screen.getByText(count === 1 ? '1 step' : '2 steps')).toBeTruthy();
+  fixture.view.unmount();
+});
+
 test('recorded tool steps expose turn actions without toggling their details', async () => {
   const fixture = setup();
   const tools = render(() => (

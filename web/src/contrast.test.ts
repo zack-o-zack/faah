@@ -3,29 +3,67 @@ import { expect, test } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-function luminance(hex: string): number {
-  let value = hex.slice(1);
-  if (value.length === 3) value = [...value].map((digit) => digit + digit).join('');
-  return [0, 2, 4]
-    .map((index) => parseInt(value.slice(index, index + 2), 16) / 255)
-    .map((channel) => (channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4))
-    .reduce((sum, channel, index) => sum + channel * ([0.2126, 0.7152, 0.0722][index] || 0), 0);
+type Color = readonly [number, number, number, number];
+function parseColor(value: string): Color {
+  if (value.startsWith('#')) {
+    let hex = value.slice(1);
+    if (hex.length === 3) hex = [...hex].map((digit) => digit + digit).join('');
+    if (!/^[\da-f]{6}$/i.test(hex)) throw new Error('Invalid hex: ' + value);
+    return [
+      parseInt(hex.slice(0, 2), 16),
+      parseInt(hex.slice(2, 4), 16),
+      parseInt(hex.slice(4, 6), 16),
+      1,
+    ];
+  }
+  const match = value.match(/^rgba?\(([^)]+)\)$/);
+  if (!match) throw new Error('Unsupported colour: ' + value);
+  const channels = required(match[1]).split(',').map(Number);
+  return [required(channels[0]), required(channels[1]), required(channels[2]), channels[3] ?? 1];
 }
-function contrast(a: string, b: string): number {
-  const [low, high] = [luminance(a), luminance(b)].sort((x, y) => x - y);
-  return ((high || 0) + 0.05) / ((low || 0) + 0.05);
+function composite(front: Color, back: Color): Color {
+  const channel = (index: 0 | 1 | 2) => front[index] * front[3] + back[index] * (1 - front[3]);
+  return [channel(0), channel(1), channel(2), 1];
 }
-const themeTokens = (file: string): Record<string, string> =>
-  Object.fromEntries(
-    [
-      ...readFileSync(resolve('web/themes', file), 'utf8').matchAll(/--([\w-]+):\s*(#[\da-f]+);/gi),
-    ].map((match) => [match[1] || '', match[2] || '']),
+function luminance(color: Color): number {
+  return color
+    .slice(0, 3)
+    .map((value) => value / 255)
+    .map((value) => (value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4))
+    .reduce((sum, value, index) => sum + value * required([0.2126, 0.7152, 0.0722][index]), 0);
+}
+function contrast(a: Color, b: Color): number {
+  const x = luminance(a),
+    y = luminance(b);
+  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+}
+function themeTokens(file: string): (name: string) => Color {
+  const tokens = new Map(
+    [...readFileSync(resolve('web/themes', file), 'utf8').matchAll(/--([\w-]+):\s*([^;]+);/g)].map(
+      (match) => [required(match[1]), required(match[2]).trim()],
+    ),
   );
-
-const TEXT = ['foreground', 'muted-foreground', 'faint', 'primary-text', 'warn', 'destructive'];
-const SYNTAX = [
+  const resolveToken = (name: string, seen: readonly string[] = []): Color => {
+    if (seen.includes(name)) throw new Error('Circular theme token: ' + name);
+    const value = required(tokens.get(name));
+    const alias = value.match(/^var\(--([\w-]+)\)$/);
+    return alias ? resolveToken(required(alias[1]), [...seen, name]) : parseColor(value);
+  };
+  return resolveToken;
+}
+const TEXT = [
+  'foreground',
+  'muted-foreground',
+  'faint',
+  'primary-text',
+  'warn',
+  'destructive',
+  'special',
+  'err',
   'gi',
   'gd',
+];
+const SYNTAX = [
   'k',
   'kt',
   'nf',
@@ -43,36 +81,48 @@ const SYNTAX = [
   'p',
   'c',
   'cp',
+  'err',
 ];
+const SURFACES = ['surface', 'surface-raised', 'surface-sunken', 'cur'];
+const PASTELS = ['pistachio', 'periwinkle', 'aqua', 'lemon', 'bubblegum'];
 
-for (const theme of ['catppuccin-mocha', 'light', 'dracula', 'solarized-light', 'github-dark']) {
-  test(`${theme} keeps UI text, syntax and control edges legible on audited surfaces`, () => {
-    const tokens = themeTokens(`${theme}.css`);
-    for (const surface of ['background', 'sidebar', 'popover', 'accent']) {
-      for (const text of [...TEXT, ...SYNTAX])
-        expect(
-          contrast(required(tokens[text]), required(tokens[surface])),
-          `${theme}: ${text} on ${surface}`,
-        ).toBeGreaterThanOrEqual(4.5);
+test('the bundled theme set is exactly fibo light and dark', () => {
+  expect(
+    readdirSync(resolve('web/themes'))
+      .filter((file) => file.endsWith('.css'))
+      .sort(),
+  ).toEqual(['fibo-dark.css', 'fibo-light.css']);
+});
+for (const theme of ['fibo-light', 'fibo-dark']) {
+  test(`${theme} keeps text, syntax, diff ink and focus legible`, () => {
+    const token = themeTokens(theme + '.css');
+    const assertContrast = (name: string, background: Color, label: string, minimum = 4.5) => {
       expect(
-        contrast(required(tokens.input), required(tokens[surface])),
-        `${theme}: input on ${surface}`,
-      ).toBeGreaterThanOrEqual(3);
+        contrast(token(name), background),
+        `${theme}: ${name} on ${label}`,
+      ).toBeGreaterThanOrEqual(minimum);
+    };
+    for (const surface of SURFACES) {
+      for (const text of [...TEXT, ...SYNTAX]) assertContrast(text, token(surface), surface);
+      assertContrast('focus', token(surface), surface, 3);
+      if (surface !== 'cur') assertContrast('input', token(surface), surface, 3);
     }
-    expect(
-      contrast(required(tokens.primary), required(tokens['primary-foreground'])),
-    ).toBeGreaterThanOrEqual(4.5);
+    // Selection can sit on the current row as well as the editor surface.
+    for (const surface of ['surface', 'cur']) {
+      const background = composite(token('sel'), token(surface));
+      for (const text of ['ink', 'foreground', ...SYNTAX]) {
+        assertContrast(text, background, `sel over ${surface}`);
+      }
+    }
+    // Alpha fills are composited, never treated as opaque RGB.
+    for (const fill of ['gi-bg', 'gd-bg']) {
+      const background = composite(token(fill), token('surface'));
+      for (const text of ['foreground', ...SYNTAX]) assertContrast(text, background, fill);
+      if (fill === 'gi-bg') assertContrast('gi', background, fill);
+      if (fill === 'gd-bg') assertContrast('gd', background, fill);
+    }
+    for (const pastel of PASTELS) assertContrast('on-pastel', token(pastel), pastel);
+    assertContrast('on-mark-active', token('mark-active'), 'mark-active');
+    assertContrast('primary-foreground', token('primary'), 'primary');
   });
 }
-
-// Filled primary actions must be readable in every bundled theme, including
-// the theme selected by an unseeded workbench detector session.
-test('every bundled theme supplies accessible filled primary actions', () => {
-  for (const file of readdirSync(resolve('web/themes')).filter((name) => name.endsWith('.css'))) {
-    const tokens = themeTokens(file);
-    expect(
-      contrast(required(tokens.primary), required(tokens['primary-foreground'])),
-      file,
-    ).toBeGreaterThanOrEqual(4.5);
-  }
-});

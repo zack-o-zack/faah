@@ -7,7 +7,7 @@ const { sourceKind, reloadKind, watchAssets } = require('./dev-reload.cjs');
 
 test('stylesheets swap in place and page assets reload', () => {
   assert.equal(reloadKind(path.join('dist', 'app.css')), 'styles');
-  assert.equal(reloadKind(path.join('themes', 'nord.css')), 'styles');
+  assert.equal(reloadKind(path.join('themes', 'fibo-dark.css')), 'styles');
   assert.equal(reloadKind(path.join('dist', 'app.js')), 'page');
   assert.equal(reloadKind('workbench.html'), 'page');
   assert.equal(reloadKind(path.join('custom', 'theme.css')), 'styles');

@@ -12,6 +12,7 @@ fs.writeFileSync(path.join(workspace, 'hello.go'), 'package hello\n');
 const userData = path.join(temp, 'user-data');
 fs.mkdirSync(userData);
 app.setPath('userData', userData);
+process.env.HOME = temp;
 process.env.XDG_STATE_HOME = path.join(temp, 'state');
 process.env.XDG_CONFIG_HOME = path.join(temp, 'config');
 process.env.FAAH_TELEMETRY = '0';
@@ -80,7 +81,7 @@ void (async () => {
     preload: path.join(__dirname, 'preload.cjs'),
   } });
   try {
-    for (const theme of ['faah', 'missing-theme', 'catppuccin-latte', 'nord']) {
+    for (const theme of ['', 'fibo-light', 'fibo-dark']) {
       const response = await fetch(origin + '/api/settings', {
         method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json' },
         body: JSON.stringify({ 'workbench.colorTheme': theme }),
@@ -108,7 +109,7 @@ void (async () => {
         return { theme: document.documentElement.dataset.theme,
           font: getComputedStyle(document.body).fontFamily, text };
       })()`);
-      assert.equal(colors.theme, ['faah', 'missing-theme'].includes(theme) ? 'catppuccin-mocha' : theme);
+      assert.equal(colors.theme, theme || (await holding.webContents.executeJavaScript("matchMedia('(prefers-color-scheme: dark)').matches") ? 'fibo-dark' : 'fibo-light'));
       assert.equal(colors.font, 'system-ui, sans-serif');
       assert.ok(colors.text.length >= 3);
       for (const text of colors.text) {

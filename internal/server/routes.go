@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"faah/internal/httpx"
+	"faah/internal/settings"
 )
 
 func (s *Server) routePath(subpath string) string {
@@ -26,7 +27,7 @@ func (s *Server) registerRoutes() {
 	sub, _ := fs.Sub(s.assets, "web")
 	staticPrefix := s.routePath("/static/")
 	s.mux.Handle(staticPrefix, httpx.Static(sub, staticPrefix))
-	s.mux.HandleFunc(s.routePath("/static/themes.css"), httpx.Themes(s.assets, s.devRoot))
+	s.mux.HandleFunc(s.routePath("/static/themes.css"), s.themes.ServeHTTP)
 
 	if s.basePath != "/" && s.basePath != "" {
 		s.mux.HandleFunc(s.basePath, s.handleIndex)
@@ -149,7 +150,11 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 		httpx.Fail(w, 500, err.Error())
 		return
 	}
-	html := string(b)
+	theme := ""
+	if configured := settings.Read().WorkbenchColorTheme; configured != nil {
+		theme = *configured
+	}
+	html := s.themes.HTML(string(b), theme)
 	baseTag := fmt.Sprintf(`<base href="%s">`, expected)
 	if strings.Contains(html, "<base ") {
 		html = baseHrefRe.ReplaceAllString(html, baseTag)

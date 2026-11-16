@@ -159,6 +159,11 @@ const NUMBER_PRESETS: Record<string, number[]> = {
 
 /** Which control edits a setting: on/off choices are switches, short choices are segments. */
 export function settingControl(item: SettingItem): SettingControl {
+  if (item.key === 'workbench.colorTheme')
+    return {
+      kind: 'select',
+      options: item.options.map((option) => ({ value: option, label: option || 'System' })),
+    };
   if (item.type === 'boolean') return { kind: 'switch', on: true, off: false };
   if (item.key === 'agent.harness' || item.key === 'explain.agent') {
     const none = item.key === 'explain.agent' ? 'Use editing agent' : 'No agent';

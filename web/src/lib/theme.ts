@@ -21,8 +21,8 @@ function isGroup(rule: CSSRule): rule is CSSGroupingRule {
 }
 import { createEffect, createSignal, onCleanup } from 'solid-js';
 import { apiPostJson } from './api.ts';
-import { DEFAULT_THEME, chooseThemePreference } from './theme-preference.ts';
-export { DEFAULT_THEME, chooseThemePreference };
+import { chooseThemePreference } from './theme-preference.ts';
+export { chooseThemePreference };
 const KEY = 'faah.theme';
 // Discover themes from CSS so adding one needs no JavaScript change.
 const THEME_SELECTOR = /^(?::root|html)?\[data-theme=["']?([\w-]+)["']?\]$/;
@@ -78,34 +78,34 @@ function listThemes(): Theme[] {
 
 export { listThemes, getStoredTheme };
 /**
- * The theme follows the configured setting (options.configured) unless this browser picked
- * another; a preview (setTheme with persist false) shows over both until it is cleared.
+ * The configured setting wins over the browser preference; empty follows the OS.
+ * A preview (setTheme with persist false) shows over both until it is cleared.
  * options.save persists a pick as the setting; without it the pick goes to /api/settings.
  */
 export function createThemeStore(options: ThemeOptions = {}): ThemeStore {
-  const [stored, setStored] = createSignal(getStoredTheme());
-  const initial = document.documentElement.dataset.theme;
+  const initial = document.documentElement.dataset.themePreference;
+  const [stored, setStored] = createSignal(initial || getStoredTheme());
   const [preview, setPreview] = createSignal<string | null>(null);
-  const chosen = () =>
-    chooseThemePreference(stored(), options.configured ? options.configured() : initial);
-  const preference = () => preview() ?? chosen();
   const media = window.matchMedia('(prefers-color-scheme: dark)');
   const [dark, setDark] = createSignal(media.matches);
   const changed = (event: MediaQueryListEvent) => setDark(event.matches);
   media.addEventListener('change', changed);
   onCleanup(() => media.removeEventListener('change', changed));
-  function resolve(id: string): Theme | undefined {
-    const all = listThemes();
-    if (id === 'system') id = dark() ? 'dark' : 'light';
-    return (
-      all.find((t) => t.id === id) ||
-      all.find((t) => t.scheme === id) ||
-      all.find((t) => t.id === DEFAULT_THEME)
+  const chosen = () => {
+    const id = options.configured?.() || stored() || '';
+    return listThemes().some((theme) => theme.id === id) ? id : '';
+  };
+  const preference = () => preview() ?? chosen();
+  const current = () =>
+    chooseThemePreference(
+      preference(),
+      null,
+      dark(),
+      listThemes().map((theme) => theme.id),
     );
-  }
-  const current = () => resolve(preference())?.id || preference();
+  const resolve = () => listThemes().find((theme) => theme.id === current());
   createEffect(() => {
-    const theme = resolve(preference());
+    const theme = resolve();
     if (!theme) return;
     document.documentElement.dataset.theme = theme.id;
     document.documentElement.classList.toggle('dark', theme.scheme === 'dark');
@@ -115,8 +115,7 @@ export function createThemeStore(options: ThemeOptions = {}): ThemeStore {
     current,
     themes: listThemes,
     setTheme(id: string, persist = true) {
-      if (!['system', 'light', 'dark'].includes(id) && !listThemes().some((t) => t.id === id))
-        return false;
+      if (id !== '' && !listThemes().some((t) => t.id === id)) return false;
       if (!persist) {
         setPreview(id === chosen() ? null : id);
         return true;

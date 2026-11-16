@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"faah/internal/forge"
+	"faah/internal/settings"
 )
 
 // Tab represents an open editor tab pointing to a file path. Ref, when
@@ -38,8 +39,8 @@ func dir() string {
 	if xdg := os.Getenv("XDG_STATE_HOME"); xdg != "" {
 		return filepath.Join(xdg, "faah", "sessions")
 	}
-	if home, err := os.UserHomeDir(); err == nil && home != "" {
-		return filepath.Join(home, ".faah", "sessions")
+	if dir := settings.DataDir(); dir != "" {
+		return filepath.Join(dir, "sessions")
 	}
 	return filepath.Join(os.TempDir(), "faah-sessions")
 }

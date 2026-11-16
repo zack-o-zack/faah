@@ -11,7 +11,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"testing/fstest"
 
+	"faah/internal/httpx/httpxtest"
 	"faah/internal/workspace"
 )
 
@@ -26,8 +28,8 @@ func TestThemesStylesheetJoinsEveryThemeFile(t *testing.T) {
 		t.Fatalf("content type %q", ct)
 	}
 	files, _ := filepath.Glob(filepath.Join("web", "themes", "*.css"))
-	if len(files) == 0 {
-		t.Fatal("no themes in web/themes")
+	if len(files) != 2 {
+		t.Fatalf("expected two built-in themes, got %d", len(files))
 	}
 	// Required theme tokens read by the Tailwind entry. Keep in sync with docs/internals/styling-and-themes.md.
 	required := []string{
@@ -36,7 +38,7 @@ func TestThemesStylesheetJoinsEveryThemeFile(t *testing.T) {
 		"--sidebar", "--sidebar-foreground", "--sidebar-accent", "--sidebar-accent-foreground",
 		"--border", "--input", "--sidebar-border", "--primary", "--ring", "--sidebar-primary", "--sidebar-ring",
 		"--primary-foreground", "--sidebar-primary-foreground", "--primary-text", "--faint",
-		"--destructive", "--sel", "--mark", "--mark-active", "--cur", "--shadow",
+		"--surface", "--surface-raised", "--surface-sunken", "--ink", "--ink-muted", "--line", "--line-strong", "--spiral", "--accent-ink", "--pistachio", "--periwinkle", "--aqua", "--lemon", "--bubblegum", "--on-pastel", "--danger", "--danger-soft", "--focus", "--hover", "--special", "--warn", "--destructive", "--sel", "--mark", "--mark-active", "--cur", "--shadow",
 		"--k", "--nf", "--s", "--m", "--c", "--err",
 	}
 	body := rec.Body.String()
@@ -50,7 +52,7 @@ func TestThemesStylesheetJoinsEveryThemeFile(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		for _, old := range []string{"--bg", "--bg2", "--bg3", "--bg4", "--fg", "--dim", "--line", "--accent-fg", "--on-accent"} {
+		for _, old := range []string{"--bg", "--bg2", "--bg3", "--bg4", "--fg", "--dim", "--accent-fg", "--on-accent"} {
 			if strings.Contains(string(src), old+":") {
 				t.Errorf("%s: obsolete token %s", f, old)
 			}
@@ -64,7 +66,20 @@ func TestThemesStylesheetJoinsEveryThemeFile(t *testing.T) {
 }
 
 func TestStaticAssetServing(t *testing.T) {
-	s, _ := newTestServer(t)
+	// A local transport fixture keeps this static-serving test offline.
+	var compressed bytes.Buffer
+	writer := gzip.NewWriter(&compressed)
+	if _, err := writer.Write([]byte(`"use strict";const mermaid = {};`)); err != nil {
+		t.Fatal(err)
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatal(err)
+	}
+	s := New(Options{Workspace: workspace.NewIndex(t.TempDir()), Assets: fstest.MapFS{
+		"web/dist/app.css":                    {Data: []byte("body{}")},
+		"web/vendor/mermaid-12.0.0.min.js.gz": {Data: compressed.Bytes()},
+	}})
+	t.Cleanup(s.EndStreams)
 
 	// 1. Serving uncompressed assets (e.g. app.css)
 	rec := httptest.NewRecorder()
@@ -204,5 +219,36 @@ func TestServerBasePathRouting(t *testing.T) {
 	s.ServeHTTP(recRootMeta, reqRootMeta)
 	if recRootMeta.Code != http.StatusNotFound {
 		t.Errorf("GET /api/meta code = %d, want 404", recRootMeta.Code)
+	}
+}
+
+func TestUserThemesReachStylesheetAndSettingsSchema(t *testing.T) {
+	isolateSettings(t)
+	s, _ := newTestServer(t)
+	dataDir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dataDir, "themes"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	file := filepath.Join(dataDir, "themes", "custom.css")
+	if err := os.WriteFile(file, []byte(`:root[data-theme="custom-night"] { color-scheme: dark; }`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	s = New(Options{Workspace: s.ix, Assets: s.assets, DataDir: dataDir})
+	t.Cleanup(s.EndStreams)
+	w := httptest.NewRecorder()
+	s.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/static/themes.css", nil))
+	if !strings.Contains(w.Body.String(), `data-theme="custom-night"`) {
+		t.Fatal("user CSS missing")
+	}
+	for _, item := range s.settingsSchema() {
+		if item.Key == "workbench.colorTheme" && strings.Join(item.Options, ",") != ",custom-night,fibo-dark,fibo-light" {
+			t.Fatalf("theme options %v", item.Options)
+		}
+	}
+	if w := httpxtest.PostJSON(t, s, "/api/settings", `{"workbench.colorTheme":"custom-night"}`); w.Code != http.StatusOK {
+		t.Fatalf("user theme refused: %s", w.Body.String())
+	}
+	if w := httpxtest.PostJSON(t, s, "/api/settings", `{"workbench.colorTheme":"missing-theme"}`); w.Code != http.StatusBadRequest {
+		t.Fatal("unknown theme accepted")
 	}
 }

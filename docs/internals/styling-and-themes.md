@@ -59,82 +59,247 @@ inputs for actions. The holding page uses the same card and button components;
 its JavaScript applies the configured theme without persisting a preference and
 polls only while a workspace is starting.
 
-## Themes
+## Theme contract
 
-Each `web/themes/<id>.css` file declares tokens on `:root[data-theme="<id>"]`.
-The server joins these files into `static/themes.css`. The theme picker discovers
-them from the loaded CSS rules, reading `--theme-name` and `color-scheme`; there
-is no second registry to maintain. Theme files hold tokens, not component rules.
+The built-in themes are `fibo-light` and `fibo-dark`. With no saved or configured
+ID, `prefers-color-scheme: dark` selects fibo dark; otherwise fibo light. The
+empty `workbench.colorTheme` setting means System. A configured nonempty ID wins
+over the browser's saved ID. An unavailable ID follows the OS, with no migration
+or alias. OS changes apply live while System is selected.
 
-`createThemeStore` in `web/src/lib/theme.js` sets `data-theme` and synchronizes
-the `.dark` class with the theme's declared `color-scheme`. Call
-`setTheme(id, false)` for a temporary preview; the default call also saves the
-preference. Mermaid and other rendered previews read the store's current theme,
-so they update when it changes.
+Every theme uses a unique ID made of letters, digits, underscores or hyphens in
+`:root[data-theme="<id>"]`, `html[data-theme="<id>"]` or `[data-theme="<id>"]`.
+Set `--theme-name: "Display name"` and `color-scheme: light` or `dark`.
+The picker reads the loaded CSS, including blocks inside grouping rules and
+comma-separated selectors. Later blocks override tokens without erasing earlier
+name or scheme metadata. Theme files contain tokens, not component rules.
 
-To add a theme, copy a theme file, choose a unique ID and display name, set
-`color-scheme`, and supply all the colour tokens. Rebuild the embedded app, or
-reload with `FAAH_DEV_ROOT` pointing at the checkout. No JavaScript changes are
-needed. Check code, Markdown, selected text, diffs, menus and focus states in
-the new theme.
+`createThemeStore` in `web/src/lib/theme.ts` sets `data-theme` and derives the
+`.dark` class from the declared scheme. `setTheme(id, false)` previews a valid
+ID without saving. `setTheme('')` saves System; unknown IDs are rejected. Server
+settings endpoints validate picks against the same discovered IDs, and the
+settings schema derives its options from the served CSS. Before the client
+mounts, a small CSP-hashed inline script applies the configured theme or OS
+default on editor, launcher and holding pages.
 
-### Basecoat tokens
+### User themes and overrides
+
+Put user CSS in `~/.faah/themes/`. This data directory is independent of
+`XDG_CONFIG_HOME` and `XDG_STATE_HOME`; those still control settings and state.
+The server receives the data directory explicitly, so tests can supply a
+temporary directory. No rebuild or JavaScript changes are needed for user CSS.
+
+Load order is `static/app.css`, then `static/themes.css`. The latter contains
+built-in files in filename order, then user `*.css` files in filename order.
+Each file has a filename comment. Embedded built-ins are cached per server;
+`FAAH_DEV_ROOT` re-reads built-ins from disk. User files are read on every
+request, so reload the page after editing them. User CSS has a 256 KiB per-file
+cap and a 1 MiB total content cap. Files exceeding either cap, unreadable files,
+and non-regular entries are skipped with a log line. A missing folder is fine.
+
+For example, `~/.faah/themes/overrides.css` changes two fibo dark tokens:
+
+```css
+:root[data-theme="fibo-dark"] {
+  --spiral: #b8e6a0;
+  --surface-raised: #202820;
+}
+```
+
+Aliases use `var(--token)`, so changing a fibo token updates its Basecoat users.
+Changing `--spiral` is available for the mark's later implementation; existing
+logo files are unchanged in this colour-only phase.
+
+### fibo colours
+
+Define these first in both themes. Pastels are fills, paired with `on-pastel`.
+Status also needs a sign, icon or text, such as `+`, `Passed` or `Error`.
 
 | Tokens | Purpose |
 | --- | --- |
-| `--background`, `--foreground` | Main editor surface and text |
-| `--card`, `--card-foreground` | Cards |
-| `--popover`, `--popover-foreground` | Floating surfaces |
-| `--secondary`, `--secondary-foreground` | Secondary controls |
-| `--muted`, `--muted-foreground` | Subdued surfaces and text |
-| `--accent`, `--accent-foreground` | Hover and selected surfaces |
-| `--primary`, `--primary-foreground` | Primary controls and their text |
-| `--destructive` | Errors and destructive actions |
-| `--border`, `--input`, `--ring` | Borders, input edges and focus rings |
-| `--sidebar`, `--sidebar-foreground`, `--sidebar-border` | Sidebar surfaces |
-| `--sidebar-accent`, `--sidebar-accent-foreground` | Sidebar hover state |
-| `--sidebar-primary`, `--sidebar-primary-foreground`, `--sidebar-ring` | Sidebar primary and focus states |
+| `--surface`, `--surface-raised`, `--surface-sunken` | Page/editor, floating/cards, sidebars/code blocks |
+| `--ink`, `--ink-muted` | Primary and secondary text |
+| `--line`, `--line-strong` | Decorative hairlines and control edges |
+| `--spiral`, `--accent-ink` | Mark and action/link ink |
+| `--pistachio` | Brand and primary-action fill |
+| `--periwinkle` | Agent/model fill |
+| `--aqua` | Addition/pass fill |
+| `--lemon` | Matches and waiting-for-you fill |
+| `--bubblegum` | File, selection and information fill |
+| `--on-pastel` | Dark text on all five pastels, in either theme |
+| `--danger`, `--danger-soft` | Error ink and error fill |
+| `--focus`, `--hover` | Focus rings and row/menu hover |
 
-Basecoat supplies its radius scale. Do not add separate control-radius, height
-or spacing token families to imitate a previous design.
+### Basecoat aliases
 
-### faah tokens
+Define these after the fibo colours, using references rather than repeated hex.
+
+| Basecoat tokens | fibo token |
+| --- | --- |
+| `--background` / `--foreground` | `--surface` / `--ink` |
+| `--card`, `--popover` | `--surface-raised` |
+| `--card-foreground`, `--popover-foreground` | `--ink` |
+| `--primary`, `--sidebar-primary` | `--pistachio` |
+| `--primary-foreground`, `--sidebar-primary-foreground` | `--on-pastel` |
+| `--secondary`, `--muted`, `--sidebar` | `--surface-sunken` |
+| `--secondary-foreground`, `--sidebar-foreground` | `--ink` |
+| `--muted-foreground` | `--ink-muted` |
+| `--accent`, `--sidebar-accent` | `--hover` |
+| `--accent-foreground`, `--sidebar-accent-foreground` | `--ink` |
+| `--destructive` | `--danger` |
+| `--border`, `--sidebar-border` | `--line` |
+| `--input` | `--line-strong` |
+| `--ring`, `--sidebar-ring` | `--focus` |
+
+Basecoat continues to supply shapes and control sizes.
+
+### App tokens
 
 | Tokens | Purpose |
 | --- | --- |
-| `--faint`, `--primary-text` | Tertiary text and accent-coloured text |
-| `--sel`, `--cur` | Code selection and current-line background |
-| `--mark`, `--mark-active`, `--on-mark-active` | Find matches and active-match text |
-| `--on-badge` | Text over syntax-coloured badges; defaults to the main background |
-| `--shadow` | Elevation for generated diagram controls and image previews |
-| `--warn` | Warning state; defaults to the theme's active-match colour |
-| `--gi`, `--gd`, `--gi-bg`, `--gd-bg` | Added/deleted text, markers and row backgrounds |
-| `--image-dark`, `--image-light` | Image-viewer contrast surfaces |
+| `--image-dark`, `--image-light` | Dark/light contrast surfaces in the image viewer |
+| `--faint`, `--primary-text` | Secondary text and action/link ink |
+| `--special` | Agent ink, independent of syntax function ink |
+| `--sel`, `--cur` | Bubblegum selection overlay and current-line fill |
+| `--mark`, `--mark-active`, `--on-mark-active` | Translucent/solid lemon search fill and active-match text |
+| `--warn` | Readable warning ink from the lemon family |
+| `--gi`, `--gd` | Readable addition/removal ink |
+| `--gi-bg`, `--gd-bg` | Translucent addition/removal row fills |
+| `--destructive`, `--err` | Error ink for controls and syntax |
+| `--shadow` | Floating-surface shadow, using the theme's shadow-pop value |
 
-Colours live in theme files. Elsewhere, use semantic utilities or `var(...)`.
-Derived colours may use `color-mix` with tokens and `transparent`; never add a
-literal hex, RGB or OKLCH value, including as a fallback.
+Root fallbacks are `--special: var(--nf)`, `--warn: var(--mark-active)`,
+`--on-mark-active: var(--background)` and `--on-badge: var(--background)`.
+The fibo themes explicitly replace the first three. `--on-badge` is optional;
+it is text over syntax-coloured badges. Other contract tokens have no app-level
+fallback and must be defined by a complete theme.
 
 ### Syntax tokens
 
-`internal/render` emits short Chroma classes. The components layer scopes their
-colours to code cells, Markdown fences, diff cells and hover signatures.
+The renderer emits short syntax classes. Define each token; the stylesheet
+scopes them to code, Markdown fences, diffs and hover signatures.
 
-| Token / class | Meaning |
+| Tokens | Purpose and fibo role |
 | --- | --- |
-| `--k` / `.k`, `--kt` / `.kt` | Keywords and types |
-| `--nf` / `.nf`, `--nc` / `.nc`, `--nb` / `.nb` | Functions, classes and built-ins |
-| `--nv` / `.nv`, `--no` / `.no` | Variables and constants |
-| `--na` / `.na`, `--nt` / `.nt`, `--nd` / `.nd`, `--np` / `.np` | Attributes, tags, decorators and namespaces |
-| `--s` / `.s`, `--m` / `.m` | Strings and numbers |
-| `--o` / `.o`, `--p` / `.p` | Operators and punctuation |
-| `--c` / `.c`, `--cp` / `.cp` | Comments and preprocessor directives |
-| `--err` / `.err` | Syntax errors; separate from UI destructive state |
-| `--gi` / `.gi`, `--gd` / `.gd` | Added and deleted text |
+| `--k`, `--kt` | Keywords (indigo), types (amber) |
+| `--nf`, `--nc`, `--nb` | Functions (green), classes (amber), built-ins (teal) |
+| `--nv`, `--no` | Variables (ink), constants (rose) |
+| `--na`, `--nt`, `--nd`, `--np` | Attributes (teal), tags (green), decorators (indigo), namespaces (muted ink) |
+| `--s`, `--m` | Strings (teal), numbers (rose) |
+| `--o`, `--p` | Operators and punctuation (muted ink) |
+| `--c`, `--cp` | Comments (muted ink), preprocessor directives (indigo) |
+| `--err`, `--gi`, `--gd` | Error, addition and removal ink |
 
-Supply these tokens in every theme. Code-cell geometry lives in renderer
-utilities, so the short `.c` syntax class does not accidentally inherit the
-layout of an outer code cell.
+`web/src/contrast.test.ts` resolves token references recursively, composites
+alpha fills over `surface`, and checks text at 4.5:1 on all surfaces and `cur`.
+Syntax also passes on composited selection and diff fills; diff ink passes on
+its own fill; `on-pastel` passes on every pastel. Focus and control edges need
+3:1 on surfaces. Keep these checks when changing a theme.
+
+### A complete new user theme
+
+Save this as `~/.faah/themes/my-theme.css` and reload. It adds `my-theme` to the
+picker, using the complete dark token contract as a starting point. Change
+colours and keep aliases as references; check contrast after editing.
+
+```css
+:root[data-theme="my-theme"] {
+  --theme-name: "My theme";
+  color-scheme: dark;
+
+  /* fibo colours: pastels are fills; ink tones carry text. */
+  --surface: #141815;
+  --surface-raised: #1c221e;
+  --surface-sunken: #0e110f;
+  --ink: #edf3ec;
+  --ink-muted: #a7b3aa;
+  --line: #37413a;
+  --line-strong: #768379;
+  --spiral: #a8dc8c;
+  --accent-ink: #a8dc8c;
+  --pistachio: #a9d68a;
+  --periwinkle: #a9b0f0;
+  --aqua: #8ed3cf;
+  --lemon: #e3d572;
+  --bubblegum: #eda3c3;
+  --on-pastel: #1d2620;
+  --danger: #ff8796;
+  --danger-soft: #5a2530;
+  --focus: #b6bcfa;
+  --hover: #262e28;
+
+  /* Basecoat aliases follow the fibo colours. */
+  --background: var(--surface);
+  --foreground: var(--ink);
+  --card: var(--surface-raised);
+  --card-foreground: var(--ink);
+  --popover: var(--surface-raised);
+  --popover-foreground: var(--ink);
+  --primary: var(--pistachio);
+  --primary-foreground: var(--on-pastel);
+  --secondary: var(--surface-sunken);
+  --secondary-foreground: var(--ink);
+  --muted: var(--surface-sunken);
+  --muted-foreground: var(--ink-muted);
+  --accent: var(--hover);
+  --accent-foreground: var(--ink);
+  --border: var(--line);
+  --input: var(--line-strong);
+  --ring: var(--focus);
+  --sidebar: var(--surface-sunken);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--pistachio);
+  --sidebar-primary-foreground: var(--on-pastel);
+  --sidebar-accent: var(--hover);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--line);
+  --sidebar-ring: var(--focus);
+
+  /* Selection, search, status, image surfaces and elevation. */
+  --image-dark: #141815;
+  --image-light: #f6f8f4;
+  --faint: var(--ink-muted);
+  --primary-text: var(--accent-ink);
+  --special: var(--periwinkle);
+  --cur: var(--hover);
+  --sel: rgba(237, 163, 195, 0.10);
+  --mark: rgba(227, 213, 114, 0.20);
+  --mark-active: var(--lemon);
+  --on-mark-active: var(--on-pastel);
+  --warn: var(--lemon);
+  --gi: #8ed3cf;
+  --gi-bg: rgba(142, 211, 207, 0.08);
+  --gd: var(--danger);
+  --gd-bg: rgba(90, 37, 48, 0.35);
+  --destructive: var(--danger);
+  --err: var(--danger);
+  --shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.55);
+
+  /* Syntax: indigo keywords; teal strings/built-ins; rose numbers/constants;
+     green functions/tags; amber types/classes; muted comments/punctuation. */
+  --k: #b6bcfa;
+  --kt: #e3d572;
+  --nf: var(--accent-ink);
+  --nc: #e3d572;
+  --nb: #8ed3cf;
+  --nv: var(--ink);
+  --no: #eda3c3;
+  --na: #8ed3cf;
+  --nt: var(--accent-ink);
+  --nd: #b6bcfa;
+  --np: var(--ink-muted);
+  --s: #8ed3cf;
+  --m: #eda3c3;
+  --o: var(--ink-muted);
+  --p: var(--ink-muted);
+  --c: var(--ink-muted);
+  --cp: #b6bcfa;
+}
+```
+
+Colours live in theme files. Components use semantic utilities or `var(...)`.
+Derived colours may use `color-mix` with tokens and `transparent`; do not add
+colour literals outside theme files.
 
 ## Desktop shell and type scale
 

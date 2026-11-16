@@ -58,11 +58,19 @@ func Path() string {
 	if xdg := os.Getenv("XDG_CONFIG_HOME"); xdg != "" {
 		return filepath.Join(xdg, "faah", "settings.json")
 	}
+	if dir := DataDir(); dir != "" {
+		return filepath.Join(dir, "settings.json")
+	}
+	return ""
+}
+
+// DataDir holds user themes and the default per-user state, independently of XDG config.
+func DataDir() string {
 	home, err := os.UserHomeDir()
 	if err != nil || home == "" {
 		return ""
 	}
-	return filepath.Join(home, ".faah", "settings.json")
+	return filepath.Join(home, ".faah")
 }
 
 // SchemaItem describes a configurable setting for dynamic rendering in the settings modal.
@@ -168,17 +176,10 @@ var Schema = []SchemaItem{
 	{
 		Key:         "workbench.colorTheme",
 		Title:       "Color Theme",
-		Description: "Specifies the color theme used in the workbench.",
+		Description: "Color theme. Empty follows the operating system; unavailable IDs also follow the system. User themes are discovered from the data directory.",
 		Category:    "Workbench",
 		Type:        "select",
-		Default:     "catppuccin-mocha",
-		Options: []string{
-			"catppuccin-mocha", "catppuccin-latte",
-			"github-dark", "dark", "light",
-			"dracula", "gruvbox-dark", "gruvbox-light",
-			"monokai", "nord", "one-dark", "rose-pine",
-			"solarized-dark", "solarized-light",
-		},
+		Default:     "",
 	},
 	{
 		Key:         "diffEditor.renderSideBySide",

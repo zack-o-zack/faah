@@ -28,7 +28,7 @@ func TestDevRootServesThemesFromDiskOnEveryRequest(t *testing.T) {
 			t.Fatal(err)
 		}
 		rec := httptest.NewRecorder()
-		Themes(assets, devRoot)(rec, httptest.NewRequest(http.MethodGet, "/static/themes.css", nil))
+		Themes(assets, devRoot, t.TempDir()).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/static/themes.css", nil))
 		if !strings.Contains(rec.Body.String(), want) {
 			t.Fatalf("themes.css = %q, want it to contain %q", rec.Body.String(), want)
 		}

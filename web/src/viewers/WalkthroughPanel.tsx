@@ -3,6 +3,7 @@ import { createSignal, For, onCleanup, onMount, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { ButtonKbd } from '../lib/ButtonKbd.tsx';
 import { Markdown } from '../lib/Markdown.tsx';
+import { pluralize } from '../pr/logic.ts';
 
 export function WalkthroughPanel(): JSX.Element {
   const editor = useEditor();
@@ -102,7 +103,7 @@ export function WalkthroughPanel(): JSX.Element {
           </Show>
           <Show when={state.compact && !step()}>
             <span class="shrink-0 text-xs tabular-nums text-muted-foreground">
-              {walkthrough()?.steps.length || 0} steps
+              {pluralize(walkthrough()?.steps.length || 0, 'step')}
             </span>
           </Show>
           <Show when={step()}>
@@ -154,8 +155,7 @@ export function WalkthroughPanel(): JSX.Element {
           fallback={
             <Show when={!state.compact}>
               <p class="text-xs text-muted-foreground">
-                {walkthrough()?.steps.length || 0} steps · {files()}{' '}
-                {files() === 1 ? 'file' : 'files'}
+                {pluralize(walkthrough()?.steps.length || 0, 'step')} · {pluralize(files(), 'file')}
               </p>
             </Show>
           }

@@ -25,11 +25,11 @@ import (
 
 // Options supplies the workspace services and UI configuration.
 type Options struct {
-	Assets                                   fs.FS
-	Version, DevRoot, BasePath, WorkbenchURL string
-	Workspace                                *workspace.Index
-	LSP                                      *lsppkg.Manager
-	Telemetry                                *telemetry.Service
+	Assets                                            fs.FS
+	Version, DevRoot, DataDir, BasePath, WorkbenchURL string
+	Workspace                                         *workspace.Index
+	LSP                                               *lsppkg.Manager
+	Telemetry                                         *telemetry.Service
 }
 
 // Server is the main faah HTTP server handling the web UI, static assets,
@@ -38,7 +38,7 @@ type Server struct {
 	overviewCache prOverviewCache
 	version       string
 	assets        fs.FS
-	devRoot       string
+	themes        *httpx.ThemeStyles
 	ix            *workspace.Index
 	lsp           *lsppkg.Manager
 	tel           *telemetry.Service // nil in tests; Track is nil-safe
@@ -105,7 +105,7 @@ func New(opts Options) *Server {
 		version:      opts.Version,
 		tel:          opts.Telemetry,
 		workbenchURL: opts.WorkbenchURL,
-		devRoot:      opts.DevRoot,
+		themes:       httpx.Themes(opts.Assets, opts.DevRoot, opts.DataDir),
 		ix:           ix, lsp: lsp, diffBase: "HEAD", basePath: bp, mux: http.NewServeMux(), streamsDone: make(chan struct{})}
 	s.session = session.New(s.basePath, ix.Root())
 	s.gitWatcher = workspace.NewWatcher(ix)
