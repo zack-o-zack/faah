@@ -18,8 +18,7 @@ export function FindBar(): JSX.Element {
   return (
     <div
       id="findbar"
-      class={`card shadow-pop absolute top-2 right-2 z-30 flex w-96 max-w-full flex-row flex-wrap
-        items-center gap-2`}
+      class="input-group absolute top-2 right-2 z-30 w-96 max-w-full gap-2"
       hidden={!editor.ui.findOpen}
     >
       <input
@@ -30,7 +29,7 @@ export function FindBar(): JSX.Element {
         spellcheck={false}
         placeholder="Find"
         autocomplete="off"
-        class="input min-w-24 flex-1"
+        class="min-w-24"
         value={editor.ui.query}
         onInput={(event) => editor.actions.query(event.currentTarget.value)}
         onKeyDown={(event) => {

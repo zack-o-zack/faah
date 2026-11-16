@@ -28,11 +28,10 @@ export const SettingsToolbar: Component = () => {
         </button>
       </div>
       <Show when={dialog().mode === 'ui'}>
-        <div id="settings-search-bar" data-ui="settings-search-bar" class="relative w-72">
-          <span
-            class="icon-[lucide--search] size-3.5 shrink-0 pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
-            aria-hidden="true"
-          />
+        <div id="settings-search-bar" data-ui="settings-search-bar" class="input-group w-72">
+          <span data-align="inline-start">
+            <span class="icon-[lucide--search] size-3.5" aria-hidden="true" />
+          </span>
           <input
             ref={search}
             type="search"
@@ -41,7 +40,6 @@ export const SettingsToolbar: Component = () => {
             placeholder="Search settings"
             autocomplete="off"
             spellcheck={false}
-            class="input w-full pl-8 pr-8"
             value={dialog().query}
             onInput={(event) => settings.actions.setSettingsQuery(event.currentTarget.value)}
           />
@@ -50,7 +48,8 @@ export const SettingsToolbar: Component = () => {
             type="button"
             title="Clear search"
             aria-label="Clear search"
-            class="btn absolute right-1 top-1/2 -translate-y-1/2"
+            class="btn"
+            data-align="inline-end"
             data-control="icon-action"
             data-variant="ghost"
             data-size="icon-xs"

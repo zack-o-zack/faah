@@ -347,18 +347,37 @@ single-child and wrapped menu triggers. Vega marks its last-end radius important
 the group scopes its `--radius-md` input to the pill or vertical-end token rather
 than adding important declarations. Icon-only buttons keep Basecoat's square
 size and become circles. Cards, inputs and buttons remain flat. Selected tabs
-use `shadow-raise`; focused prompt boxes use it only during keyboard focus.
+use `shadow-raise`; text-field groups use it during mouse or keyboard focus.
 Popovers, dropdowns, toasts and floating custom cards use `shadow-pop`.
 Dialogs and the command palette use `shadow-dialog`, with nested floating
 components flattened. Shadows set `--tw-shadow` to preserve Tailwind's composed
 border rings. The old `--shadow` has no direct consumers and is supported only as
 an optional legacy fallback for user themes.
 
-Every keyboard-focusable control gets a solid 2px `--focus` outline with a 2px
-offset, falling back to Basecoat's `--ring` in older themes. This includes custom
-editor tabs, tree rows, note summaries and explain controls. Focus shadows are
-cleared so they do not stack with the outline. Checked checkbox/radio edges use
-`--spiral`, falling back to `--primary-text`.
+Standalone Basecoat fields (`.input`, `.textarea` and `.field > input/select/textarea`),
+buttons, badges, tabs, items and menus get a solid 2px `--focus` keyboard outline
+with a 2px offset, falling back to `--ring` in older themes. Their focus rings
+are cleared so they do not stack with the outline. Custom buttons, links,
+summaries, `[tabindex]` controls and bare checkboxes/radios use a separate
+low-specificity `:where(...)` rule, which local styles can override. Checked
+checkbox/radio edges use `--spiral`, falling back to `--primary-text`.
+
+Bare text inputs, selects and textareas are deliberately absent from that rule.
+Use a Basecoat field for a standalone control. Within `.input-group`, use bare
+direct children: Basecoat makes them transparent, borderless and outline-free.
+The group owns the `--card` fill (`--surface-raised` in fibo), radius, `--focus`
+border and `shadow-raise` on `:focus-within`, with no ring. Mouse and keyboard
+focus look the same, including inside dialogs. Buttons inside a group keep
+their own keyboard outline because they are separate actions.
+
+FindBar and settings search use `.input-group`. Search-panel inputs remain
+separate `.input` fields. The command palette marks its search-header border;
+the model picker marks its existing header divider. Neither draws an inner
+input outline.
+The code reader's `#viewport` keeps a keyboard outline, inset 2px so the editor
+edges cannot clip it. The edit-mode textarea stays outline-free, with its text
+caret indicating focus. Markdown task checkboxes are disabled content, so they
+are not keyboard stops. This revision has no inline tree rename field.
 
 The `special` button variant uses periwinkle fill and `on-pastel` text. Hover
 and expanded states mix that fill at 82% with ink; disabled controls keep
@@ -380,6 +399,10 @@ and open `/static/tests/fibo-shape.html`. Its result is also available as
 `window.fiboShapeResults`; it throws on a failed computed-style assertion. It also
 checks the Fraunces family, 600 weight and tracking on card, dialog and empty-state
 headings against Basecoat, plus the explicit sans utility and monospace keys.
+It checks grouped inputs, textareas and selects in both themes, including inside
+dialogs: transparent inner controls, one focus border and raised shadow, a flat
+unfocused group, and separate button outlines. Standalone fields, bare
+checkboxes/radios and the code reader/editor focus treatments are covered too.
 
 ## Desktop shell and type scale
 

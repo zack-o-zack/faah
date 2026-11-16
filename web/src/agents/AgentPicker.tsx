@@ -149,14 +149,14 @@ function PickerPanel(props: { height: number; close: () => void }): JSX.Element 
         </For>
       </nav>
       <section class="flex min-h-0 min-w-0 flex-col">
-        <header class="mx-3 flex shrink-0 items-center gap-2 border-b py-3 focus-within:border-primary">
+        <header class="mx-3 flex shrink-0 items-center gap-2 border-b py-3 focus-within:border-ring">
           <span
             class="icon-[lucide--search] size-4 shrink-0 text-muted-foreground"
             aria-hidden="true"
           />
           <input
             ref={input}
-            class="min-w-0 w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground"
+            class="min-w-0 w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
             placeholder="Search models…"
             autocomplete="off"
             spellcheck={false}

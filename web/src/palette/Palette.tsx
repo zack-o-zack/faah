@@ -68,14 +68,14 @@ function PaletteDialog(): JSX.Element {
       onClose={() => editor.actions.closePalette()}
     >
       <div id="palette" class="command w-[min(40rem,calc(100vw-2rem))]! max-w-none!">
-        <header>
+        <header class="focus-within:border-ring">
           <span id="pal-mode" class="badge" data-variant="secondary">
             {MODES[palette.query().mode].label}
           </span>
           <input
             ref={input}
             id="pal"
-            class="min-w-0"
+            class="min-w-0 outline-none"
             aria-label="Search commands and files"
             autocomplete="off"
             spellcheck={false}

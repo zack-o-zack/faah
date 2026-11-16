@@ -209,6 +209,12 @@ for (const theme of ['fibo-light', 'fibo-dark']) {
     '<button class="btn">Focus</button>',
     '<div class="tabs"><nav role="tablist"><button role="tab" aria-selected="true">Focus</button></nav></div>',
     '<input class="input" type="checkbox">',
+    '<input type="checkbox" aria-label="Viewed">',
+    '<input type="radio" aria-label="Choice">',
+    '<input class="input" type="text">',
+    '<textarea class="textarea"></textarea>',
+    '<label class="field"><input type="text"></label>',
+    '<label class="field"><textarea></textarea></label>',
     '<div class="field"><input type="radio"></div>',
     '<div class="tr" tabindex="0">Tree row</div>',
     '<button class="tn">Editor tab</button>',
@@ -216,21 +222,85 @@ for (const theme of ['fibo-light', 'fibo-dark']) {
     '<button id="explain-orb-open" class="btn">Explain</button>',
   ]) {
     const root = mount(markup);
-    const control = root.matches('button,input,[tabindex]')
+    const control = root.matches('button,input,textarea,[tabindex]')
       ? root
-      : root.querySelector('button,input');
+      : root.querySelector('button,input,textarea');
     control.focus();
     test(`${control.outerHTML} focus visible`, control.matches(':focus-visible'), true);
     test('focus outline width', style(control).outlineWidth, '2px');
     test('focus outline style', style(control).outlineStyle, 'solid');
     test('focus outline offset', style(control).outlineOffset, '2px');
     test('focus outline colour', style(control).outlineColor, token('color', '--focus'));
+    if (control.matches('input,textarea'))
+      shadow(control, '--flat-shadow', `${theme}: standalone field stays flat`);
     test(
       'focus ring cleared',
       style(control).getPropertyValue('--tw-ring-shadow').trim(),
       '0 0 transparent',
     );
   }
+  for (const tag of ['input', 'textarea', 'select']) {
+    for (const modal of [false, true]) {
+      const markup = `<div class="input-group" ${tag === 'textarea' ? 'data-orientation="vertical"' : ''}><${tag} aria-label="Grouped field">${tag === 'select' ? '<option>Choice</option></select>' : tag === 'textarea' ? '</textarea>' : ''}<button class="btn">Open</button></div>`;
+      const root = mount(
+        modal ? `<dialog class="dialog" open><section>${markup}</section></dialog>` : markup,
+      );
+      const group = modal ? root.querySelector('.input-group') : root;
+      const control = group.querySelector(tag);
+      control.focus();
+      test(`grouped ${tag} focused`, document.activeElement === control, true);
+      test(`grouped ${tag} inner outline`, style(control).outlineStyle, 'none');
+      test(`grouped ${tag} inner fill`, style(control).backgroundColor, 'rgba(0, 0, 0, 0)');
+      test(`grouped ${tag} inner border`, style(control).borderTopWidth, '0px');
+      shadow(control, '--flat-shadow', `${theme}: grouped ${tag} inner control stays flat`);
+      test(
+        `grouped ${tag} raised fill`,
+        style(group).backgroundColor,
+        token('background-color', '--card'),
+      );
+      test(`grouped ${tag} focus border`, style(group).borderTopColor, token('color', '--focus'));
+      test(`grouped ${tag} no group outline`, style(group).outlineStyle, 'none');
+      test(
+        `grouped ${tag} no ring`,
+        style(group).getPropertyValue('--tw-ring-shadow').trim(),
+        '0 0 transparent',
+      );
+      shadow(group, '--shadow-raise', `${theme}: ${modal ? 'modal ' : ''}grouped ${tag} focus`);
+      const button = group.querySelector('button');
+      button.focus();
+      test('group action keyboard focus', button.matches(':focus-visible'), true);
+      test('group action outline', style(button).outlineWidth, '2px');
+      test('group action outline style', style(button).outlineStyle, 'solid');
+      test('group action outline colour', style(button).outlineColor, token('color', '--focus'));
+      shadow(group, '--shadow-raise', `${theme}: group action keeps container focus`);
+      button.blur();
+      shadow(group, '--flat-shadow', `${theme}: group without focus is flat`);
+    }
+  }
+  const bare = mount('<input type="text" aria-label="Container-owned field">');
+  bare.focus();
+  test(
+    'bare text has no authored outline',
+    style(bare).outlineWidth === '2px' && style(bare).outlineStyle === 'solid',
+    false,
+  );
+  const editor = mount('<textarea id="editview-textarea" aria-label="File contents"></textarea>');
+  editor.focus();
+  test('editor textarea remains chromeless', style(editor).outlineStyle, 'none');
+  const viewport = mount(
+    '<div id="viewport" class="focus-visible:-outline-offset-2" tabindex="0">Code</div>',
+  );
+  viewport.focus();
+  test('editor viewport keyboard outline', style(viewport).outlineWidth, '2px');
+  test('editor viewport inset outline', style(viewport).outlineOffset, '-2px');
+  const localStyle = document.createElement('style');
+  localStyle.textContent =
+    '@layer components { .focus-fixture-local:focus-visible { outline: none; } }';
+  document.head.append(localStyle);
+  const local = mount('<button class="focus-fixture-local">Locally styled control</button>');
+  local.focus();
+  test('local component overrides generic focus rule', style(local).outlineStyle, 'none');
+  localStyle.remove();
   const tabs = mount(
     '<div class="tabs"><nav role="tablist"><button role="tab" aria-selected="true">Selected</button></nav></div>',
   );

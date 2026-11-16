@@ -207,27 +207,39 @@
   .button-group > .btn[aria-pressed='false']:hover { color: var(--foreground); }
 
   /* Flat controls; Tailwind's composed shadow keeps structural rings intact. */
-  .btn, .btn[data-variant], .card, .field > :is(input, select, textarea), .input,
-  .input-group { --tw-shadow: 0 0 transparent; }
+  .btn, .btn[data-variant], .card, .input-group { --tw-shadow: 0 0 transparent; }
+  /* Vega nests every input alias under its most specific header exclusion. */
+  :is(.input, .textarea, .field > :is(input, select, textarea),
+      .field > input[type='text']:not(:is(.command > header input, .dialog > * > header input))) { --tw-shadow: 0 0 transparent; }
   .tabs > [role='tablist']:not([data-variant='line']) > [role='tab'][aria-selected='true'] { --tw-shadow: var(--shadow-raise); }
   .tab.active { @apply shadow-raise; }
   [data-popover], .dropdown-menu > [data-popover], .combobox [data-popover],
   .select:not(select) [data-popover], .toast-content { --tw-shadow: var(--shadow-pop); }
   .dialog > *, .alert-dialog > *, .command-dialog > .command { --tw-shadow: var(--shadow-dialog); }
-  /* A modal surface has one elevation, including nested selected tabs. */
-  :is(.dialog, .alert-dialog, .command-dialog) :is([data-popover], .toast-content, .card, .input-group, .tab.active, .tabs > [role='tablist'] > [role='tab'][aria-selected='true']) { --tw-shadow: 0 0 transparent; }
+  /* Flatten nested modal surfaces and selected tabs. Focused field groups
+     keep their own focus elevation. */
+  :is(.dialog, .alert-dialog, .command-dialog) :is([data-popover], .toast-content, .card, .tab.active, .tabs > [role='tablist'] > [role='tab'][aria-selected='true']) { --tw-shadow: 0 0 transparent; }
 
-  /* The prompt is a raised surface only while it contains keyboard focus. */
-  .input-group { border-radius: var(--radius-xl); }
-  .input-group:focus-within { --tw-ring-shadow: 0 0 transparent; }
-  .input-group:has(:focus-visible) { --tw-shadow: var(--shadow-raise); }
+  /* The group owns the fill and focus mark for its chromeless text controls.
+     Basecoat already makes direct input/textarea/select children transparent,
+     borderless and outline-free. Buttons remain separate keyboard stops. */
+  .input-group { border-radius: var(--radius-xl); background-color: var(--card); }
+  .input-group:focus-within {
+    border-color: var(--focus, var(--ring));
+    --tw-ring-shadow: 0 0 transparent;
+    --tw-shadow: var(--shadow-raise);
+  }
 
-  /* Cover Basecoat and custom controls with the same keyboard outline. The
-     structural tab/field selectors match Vega's focus rule specificity. */
-  :is(.btn, .badge, .input, .field > :is(input, select, textarea),
+  /* Structural tab/field selectors match Vega's focus rule specificity.
+     .textarea is Basecoat's standalone multiline field alias. Bare text
+     controls get their focus mark from their field or containing group. */
+  :is(.btn, .badge, .input, .textarea, .field > :is(input, select, textarea),
+      .field > input[type='text']:not(:is(.command > header input, .dialog > * > header input)),
       .tabs > [role='tablist'] > [role='tab'], a.item, .item[role='button'],
-      .item[role='option'], [role='menuitem'], [role='menuitemcheckbox'],
-      [role='menuitemradio'], button, a[href], input, select, textarea, summary, [tabindex]):focus-visible,
+      .item[role='option'], [role='menuitem']):focus-visible,
+  :where(button, a[href], summary, [tabindex], [role='menuitem'],
+      [role='menuitemcheckbox'], [role='menuitemradio'],
+      input:is([type='checkbox'], [type='radio'])):focus-visible,
   :is(.field > input, .input):is([type='checkbox'], [type='radio']):not([disabled]):focus-visible {
     outline: 2px solid var(--focus, var(--ring));
     outline-offset: 2px;
