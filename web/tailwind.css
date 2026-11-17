@@ -212,7 +212,7 @@
   }
   .kbd[data-single] { width: var(--kbd-size); --kbd-padding: 0px; }
   .kbd[data-variant='button'] { --kbd-size: 20px; }
-  .path-suggestions .kbd {
+  .compact-keycaps .kbd {
     --kbd-size: 18px;
     --kbd-padding: 4px;
     border-radius: 5px;

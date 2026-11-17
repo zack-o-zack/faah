@@ -4,14 +4,15 @@ import { useWorkbench } from './context.tsx';
 import { BrowseToolbar } from './BrowseToolbar.tsx';
 import { NewFolderForm } from './NewFolderForm.tsx';
 import { DirectoryList } from './DirectoryList.tsx';
+import { DirectoryPreview } from './DirectoryPreview.tsx';
 import { Kbd } from '../lib/shortcuts.tsx';
 
 export function Browse(): JSX.Element {
-  const { state, actions } = useWorkbench();
+  const { state, actions, openEntry } = useWorkbench();
   const [mkdir, setMkdir] = createSignal(false);
   let focusList: (() => void) | undefined;
   const selected = () => state.directory.entries[state.selected];
-  const useFolder = () => actions.useFolder(selected()?.path || state.directory.path);
+  const useFolder = () => actions.useFolder(openEntry()?.path || state.directory.path);
   const keydown = (e: KeyboardEvent) => {
     if (e.target instanceof Element && e.target.tagName === 'INPUT') return;
     const entries = state.directory.entries;
@@ -42,25 +43,41 @@ export function Browse(): JSX.Element {
     }
   };
   return (
-    <div class="flex min-h-0 flex-1 flex-col gap-2">
-      <BrowseToolbar selected={selected()} onMkdir={() => setMkdir(true)} onOpen={useFolder} />
+    <div class="compact-keycaps flex min-h-0 flex-1 flex-col overflow-hidden rounded-[14px] border">
+      <BrowseToolbar selected={openEntry()} onMkdir={() => setMkdir(true)} onOpen={useFolder} />
       <Show when={mkdir()}>
-        <NewFolderForm
-          onDone={() => {
-            setMkdir(false);
-            focusList?.();
-          }}
-        />
+        <div class="border-b p-2">
+          <NewFolderForm
+            onDone={() => {
+              setMkdir(false);
+              focusList?.();
+            }}
+          />
+        </div>
       </Show>
-      <DirectoryList
-        onReady={(focus) => {
-          focusList = focus;
-        }}
-        onKeyDown={keydown}
-      />
-      <p class="text-xs text-muted-foreground">
-        Enter goes into a folder, Backspace goes up, <Kbd combo="Mod+Enter" /> opens it.
-      </p>
+      <div class="grid min-h-0 flex-1 grid-cols-2 max-sm:grid-cols-1">
+        <DirectoryList
+          onReady={(focus) => {
+            focusList = focus;
+          }}
+          onKeyDown={keydown}
+        />
+        <DirectoryPreview onNavigate={() => focusList?.()} />
+      </div>
+      <footer class="flex flex-wrap items-center gap-3.5 border-t bg-(--surface-sunken) px-3.5 py-[7px] text-xs text-muted-foreground">
+        <span class="inline-flex items-center gap-1.5">
+          <Kbd combo="Up+Down" /> Move
+        </span>
+        <span class="inline-flex items-center gap-1.5">
+          <Kbd combo="Right" /> Inside
+        </span>
+        <span class="inline-flex items-center gap-1.5">
+          <Kbd combo="Left" /> Up
+        </span>
+        <span class="inline-flex items-center gap-1.5">
+          <Kbd combo="Mod+Enter" /> Open
+        </span>
+      </footer>
     </div>
   );
 }
