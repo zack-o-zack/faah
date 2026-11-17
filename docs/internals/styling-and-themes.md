@@ -156,8 +156,9 @@ Basecoat supplies control sizes; the fibo layer below owns their shapes.
 | Tokens | Purpose |
 | --- | --- |
 | `--image-dark`, `--image-light` | Dark/light contrast surfaces in the image viewer |
-| `--faint`, `--primary-text` | Secondary text and action/link ink |
-| `--special` | Agent ink, independent of syntax function ink |
+| `--faint`, `--primary-text` | Secondary text and action ink |
+| `--link` | Blue link text; prose links keep an underline at 40% of it, full on hover |
+| `--special` | Subtle purple agent ink: inline notes, walkthrough bars and agent icons |
 | `--sel`, `--cur` | Blue selection overlay and current-line fill |
 | `--mark`, `--mark-active`, `--on-mark-active` | Translucent/solid yellow search fill and active-match text |
 | `--warn` | Readable warning ink from the amber family |
@@ -239,8 +240,8 @@ Existing `size-*` utilities size the masks at `1em`; the 256-unit viewBox does
 not change the CSS size. Use `circle-notch animate-spin` for plain spinners.
 Only busy states in the threads panel keep the shared Spiral. Other AI busy
 states use `icon-[ph--spinner] motion-safe:animate-spin`, retaining the idle
-starburst's colour and global icon size. Markdown alert and external-link
-masks also use Phosphor regular. The web build replaces Basecoat's embedded
+starburst's colour and global icon size. Markdown alert masks also use
+Phosphor regular. Links that open outside the app carry no extra icon. The web build replaces Basecoat's embedded
 caret/check artwork with the same set, preserving its theme colour and opacity.
 
 The set has no draft or closed pull-request variant. Use `pencil-line` for a
@@ -595,3 +596,22 @@ shorter, not to hide a second component system.
   both a dark and a light theme, including desktop shell layout, when changing
   styling.
 
+
+
+## Floating layer transparency
+
+`workbench.transparency` derives `data-transparency` on the document root through
+`PreferenceStyles`, just like typography variables. Main panels remain solid.
+`--glass-alpha` and `--glass-blur` default to 92% / 16px (subtle), with 100% / 0px
+for off and 82% / 28px for strong. The blur averages what sits behind a layer, so
+the contrast test checks text over a plain background and over a dense text block
+(half foreground, half background); 82% is the lowest alpha where muted text keeps
+4.5:1 in both bundled themes. User themes should verify their own contrast.
+
+Glass applies to Basecoat `[data-popover]` lists, `.command-dialog > .command`,
+standalone `.command > header`, `.dialog > *`, `.alert-dialog > *`, `.toast-content`,
+`#hovercard`, `#commitcard` and `[data-note-panel]`. Each mixes its existing fill
+with transparent in OKLab, uses the shared blur with 1.4 saturation and retains
+its shadow with a line border. Nested cards, fields and headers are transparent
+and do not add a second blur. Modal backdrops retain their existing treatment.
+`prefers-reduced-transparency: reduce` forces 100% / 0px at every setting.

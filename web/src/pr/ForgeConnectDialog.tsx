@@ -64,7 +64,7 @@ export function ForgeConnectDialog(): JSX.Element {
                   href={setup().url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="text-primary-text"
+                  class="text-link underline decoration-link/40 underline-offset-2 hover:decoration-link"
                 >
                   {forge()?.info.label}'s token page on {forge()?.host}
                 </a>
@@ -157,7 +157,7 @@ export function ForgeConnectDialog(): JSX.Element {
               id="forge-connect-settings"
               href="#"
               data-ui="pr-merge-link"
-              class="text-primary-text"
+              class="text-link underline decoration-link/40 underline-offset-2 hover:decoration-link"
               onClick={(event) => {
                 event.preventDefault();
                 editor.actions.closeForgeConnect();

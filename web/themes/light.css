@@ -56,7 +56,8 @@
   --image-light: #faf9f6;
   --faint: var(--ink-muted);
   --primary-text: var(--ink);
-  --special: var(--ink);
+  --link: #0a62c9;
+  --special: #4b4fc9;
   --cur: var(--hover);
   --sel: rgba(47, 111, 214, 0.22);
   --mark: rgba(229, 196, 55, 0.22);

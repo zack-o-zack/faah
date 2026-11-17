@@ -235,6 +235,7 @@ export interface Preferences {
   gitGutter: boolean;
   minimap: boolean;
   colorTheme: string;
+  transparency: 'off' | 'subtle' | 'strong';
   splitDiff: boolean;
   highlightChangedWords: boolean;
   markdownPreview: boolean;
@@ -253,6 +254,7 @@ const numeric = (value: SettingValue | undefined, fallback: number): number => {
 export function preferences(values: SettingsValues): Preferences {
   const cursor = values['editor.cursorStyle'];
   const blinking = values['editor.cursorBlinking'];
+  const transparency = values['workbench.transparency'];
   return {
     fontSize: numeric(values['editor.fontSize'], 13.5),
     fontFamily: String(values['editor.fontFamily'] ?? ''),
@@ -268,6 +270,7 @@ export function preferences(values: SettingsValues): Preferences {
     gitGutter: truthy(values['git.gutterIndicators'], true),
     minimap: truthy(values['editor.minimap.enabled'], true),
     colorTheme: String(values['workbench.colorTheme'] ?? ''),
+    transparency: transparency === 'off' || transparency === 'strong' ? transparency : 'subtle',
     splitDiff: truthy(values['diffEditor.renderSideBySide'], true),
     highlightChangedWords: truthy(values['diffEditor.highlightChangedWords'], true),
     markdownPreview: truthy(values['markdown.preview.open'], true),

@@ -56,7 +56,8 @@
   --image-light: #faf9f6;
   --faint: var(--ink-muted);
   --primary-text: var(--ink);
-  --special: var(--ink);
+  --link: #4493f8;
+  --special: #a9b0f0;
   --cur: var(--hover);
   /* Blue selection preserves syntax contrast. */
   --sel: rgba(122, 167, 240, 0.30);

@@ -419,18 +419,24 @@ for (const theme of ['light', 'dark']) {
   }
   for (const component of ['btn', 'badge']) {
     const link = mount(`<a href="#" class="${component}" data-variant="link">Open</a>`);
-    test(`${component} link ink`, style(link).color, token('color', '--primary-text'));
+    test(`${component} link ink`, style(link).color, token('color', '--link'));
   }
   const tonedLink = mount(
     '<a href="#" class="badge" data-variant="link" data-tone="file">File link</a>',
   );
-  test('toned badge link ink', style(tonedLink).color, token('color', '--primary-text'));
+  test('toned badge link ink', style(tonedLink).color, token('color', '--link'));
   test('toned badge link background', style(tonedLink).backgroundColor, 'rgba(0, 0, 0, 0)');
   test(
     'toned badge link contrast',
     contrast(style(tonedLink).color, token('background-color', '--background')) >= 4.5,
     true,
   );
+  const prose = mount(
+    '<div class="md"><p><a href="https://example.test" target="_blank">#18</a></p></div>',
+  ).querySelector('a');
+  test('markdown link ink', style(prose).color, token('color', '--link'));
+  test('markdown link keeps an underline', style(prose).textDecorationLine, 'underline');
+  test('markdown link has no external icon', getComputedStyle(prose, '::after').content, 'none');
   for (const type of ['checkbox', 'radio']) {
     const input = mount(`<input class="input" type="${type}" checked>`);
     test(`checked ${type} edge`, style(input).borderColor, token('border-color', '--ink'));
@@ -517,7 +523,7 @@ for (const theme of ['light', 'dark']) {
       test(
         `grouped ${tag} raised fill`,
         style(group).backgroundColor,
-        token('background-color', '--card'),
+        modal ? 'rgba(0, 0, 0, 0)' : token('background-color', '--card'),
       );
       test(`grouped ${tag} focus border`, style(group).borderTopColor, token('color', '--focus'));
       test(`grouped ${tag} no group outline`, style(group).outlineStyle, 'none');
@@ -627,6 +633,48 @@ for (const theme of ['light', 'dark']) {
       `${theme}: floating surface ${root.className}`,
     );
   }
+  for (const [level, blur, alpha] of [
+    ['off', 0, 1],
+    ['subtle', 16, 0.92],
+    ['strong', 28, 0.82],
+  ]) {
+    document.documentElement.dataset.transparency = level;
+    for (const markup of [
+      '<div class="dropdown-menu"><div data-popover>Menu</div></div>',
+      '<dialog class="command-dialog" open><div class="command"><header><input placeholder="Command" /></header><div role="menu">Commands</div></div></dialog>',
+      '<dialog class="dialog" open><section><header>Dialog</header><div class="card">Card</div></section></dialog>',
+      '<div class="toast-content">Toast</div>',
+      '<div class="card" id="hovercard">Hover</div>',
+      '<div class="card" id="commitcard">Commit</div>',
+      '<section data-note-panel>Note</section>',
+    ]) {
+      const root = mount(markup);
+      const sheet = root.querySelector('[data-popover], .command, section') || root;
+      const reduced = matchMedia('(prefers-reduced-transparency: reduce)').matches;
+      test(
+        `${level} ${sheet.id || sheet.className} blur`,
+        style(sheet).backdropFilter,
+        `blur(${reduced ? 0 : blur}px) saturate(1.4)`,
+      );
+      const background = style(sheet).backgroundColor;
+      const actualAlpha = background.match(/\/\s*([\d.]+)\)/)?.[1];
+      test(
+        `${level} ${sheet.id || sheet.className} alpha`,
+        Number(actualAlpha ?? 1),
+        reduced ? 1 : alpha,
+      );
+      const header = sheet.querySelector('header');
+      if (header) {
+        test(`${level} nested header has no blur`, style(header).backdropFilter, 'none');
+        test(
+          `${level} nested header is transparent`,
+          style(header).backgroundColor,
+          'rgba(0, 0, 0, 0)',
+        );
+      }
+    }
+  }
+  delete document.documentElement.dataset.transparency;
   const utility = mount('<button class="btn rounded-md" data-size="xs">Explicit utility</button>');
   test('utility layer overrides compact button radius', style(utility).borderRadius, '10px');
 }

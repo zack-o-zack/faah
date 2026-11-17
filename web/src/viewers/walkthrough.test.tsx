@@ -373,6 +373,10 @@ test('focus mode highlights the step file, virtualizes its title, and keeps sour
   expect(editor.walkContains(1)).toBe(false);
   await editor.actions.openFile('a.go', { view: 'source' });
   expect(editor.walkthrough.focus()?.l1).toBe(2);
+  expect(editor.walkMuted(1)).toBe(true);
+  expect(editor.walkMuted(2)).toBe(false);
+  expect(document.querySelector('[data-l="1"]')?.classList.contains('opacity-35')).toBe(true);
+  expect(document.querySelector('[data-l="2"]')?.classList.contains('opacity-35')).toBe(false);
   editor.actions.walkStop();
   await screen.findByText('The earlier note', { selector: '[data-note-inline] .truncate' });
   expect(document.querySelector('[data-walk-title]')).toBeNull();
@@ -381,6 +385,7 @@ test('focus mode highlights the step file, virtualizes its title, and keeps sour
   editor.actions.dismissOrb();
   expect(editor.walkthrough.focus()).toBeNull();
   expect(editor.walkContains(1)).toBe(false);
+  expect(editor.walkMuted(1)).toBe(false);
   fixture.view.unmount();
 });
 

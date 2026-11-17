@@ -275,7 +275,7 @@ function CommitFields(props: CommitFieldsProps): JSX.Element {
           Your{' '}
           <button
             type="button"
-            class="text-primary-text underline"
+            class="text-link underline decoration-link/40 underline-offset-2 hover:decoration-link"
             onClick={() => {
               editor.actions.closeMergeDialog();
               editor.actions.openSettings('ui', 'Git & Diff', 'git.commitMessageInstruction');

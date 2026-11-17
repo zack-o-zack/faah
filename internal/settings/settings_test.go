@@ -286,3 +286,29 @@ func TestDataDirIsIndependentOfConfig(t *testing.T) {
 		t.Fatalf("settings path %q", got)
 	}
 }
+
+func TestTransparencySchema(t *testing.T) {
+	isolateSettings(t)
+	if got := ReadMergedMap()["workbench.transparency"]; got != "subtle" {
+		t.Fatalf("default transparency = %v", got)
+	}
+	for _, item := range Schema {
+		if item.Key != "workbench.transparency" {
+			continue
+		}
+		if item.Title != "Transparency" || item.Category != "Workbench" || item.Type != "select" || item.Default != "subtle" || strings.Join(item.Options, ",") != "off,subtle,strong" {
+			t.Fatalf("unexpected schema: %+v", item)
+		}
+		for _, value := range item.Options {
+			if err := UpdateMap(map[string]any{item.Key: value}); err != nil {
+				t.Fatal(err)
+			}
+			got := Read()
+			if got.WorkbenchTransparency == nil || *got.WorkbenchTransparency != value {
+				t.Fatalf("saved transparency = %v, want %s", got.WorkbenchTransparency, value)
+			}
+		}
+		return
+	}
+	t.Fatal("transparency schema missing")
+}

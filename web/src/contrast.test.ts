@@ -56,6 +56,7 @@ const TEXT = [
   'muted-foreground',
   'faint',
   'primary-text',
+  'link',
   'warn',
   'destructive',
   'special',
@@ -92,7 +93,7 @@ test('themes define only the supported neutral color contract', () => {
     'card card-foreground popover popover-foreground primary primary-foreground secondary secondary-foreground',
     'muted muted-foreground accent accent-foreground border input ring sidebar',
     'sidebar-foreground sidebar-primary sidebar-primary-foreground sidebar-accent sidebar-accent-foreground sidebar-border sidebar-ring image-dark',
-    'image-light faint primary-text special cur sel mark mark-active',
+    'image-light faint primary-text link special cur sel mark mark-active',
     'on-mark-active warn gi gi-bg gi-word gd gd-bg gd-word',
     'destructive destructive-foreground err shadow-raise shadow-pop shadow-dialog k kt',
     'nf nc nb nv no na nt nd',
@@ -167,5 +168,39 @@ for (const theme of ['light', 'dark']) {
     }
     assertContrast('on-mark-active', token('mark-active'), 'mark-active');
     assertContrast('primary-foreground', token('primary'), 'primary');
+  });
+}
+
+// Read the shipping values so a CSS change cannot silently bypass contrast coverage.
+const glassCSS = readFileSync(resolve('web/tailwind.css'), 'utf8');
+const glassAlpha = (pattern: RegExp) => Number(required(glassCSS.match(pattern)?.[1])) / 100;
+const subtleAlpha = glassAlpha(/:root \{[^}]*--glass-alpha:\s*([\d.]+)%/);
+const strongAlpha = glassAlpha(
+  /:root\[data-transparency='strong'\][^{]*\{[^}]*--glass-alpha:\s*([\d.]+)%/,
+);
+// The blur averages what is behind a layer. The worst realistic backdrop is a dense
+// block of text: half foreground, half background. A plain background is checked too.
+const backdrops = (token: (name: string) => Color): Color[] => {
+  const [b, f] = [token('background'), token('foreground')];
+  const half = (i: 0 | 1 | 2) => (b[i] + f[i]) / 2;
+  return [b, [half(0), half(1), half(2), 1]];
+};
+test('strong glass is more see-through than subtle', () => {
+  expect(strongAlpha).toBeLessThan(subtleAlpha);
+});
+for (const theme of ['light', 'dark']) {
+  test(`${theme} glass keeps normal and muted ink legible at every level`, () => {
+    const token = themeTokens(theme + '.css');
+    const fill = token('popover');
+    for (const alpha of [subtleAlpha, strongAlpha]) {
+      for (const backdrop of backdrops(token)) {
+        const background = composite([fill[0], fill[1], fill[2], alpha], backdrop);
+        for (const text of ['foreground', 'ink', 'muted-foreground']) {
+          expect(contrast(token(text), background), `${text} at ${alpha}`).toBeGreaterThanOrEqual(
+            4.5,
+          );
+        }
+      }
+    }
   });
 }

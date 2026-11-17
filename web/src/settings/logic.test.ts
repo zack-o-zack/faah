@@ -171,3 +171,16 @@ test('changed-word highlighting defaults on and derives from the saved setting',
       value,
     );
 });
+
+test('transparency derives all levels and defaults unknown values to subtle', () => {
+  for (const value of ['off', 'subtle', 'strong'])
+    expect(preferences({ 'workbench.transparency': value }).transparency).toBe(value);
+  for (const value of ['unknown', '', true, 42])
+    expect(preferences({ 'workbench.transparency': value }).transparency).toBe('subtle');
+  expect(preferences({}).transparency).toBe('subtle');
+  expect(
+    settingControl(
+      item({ key: 'workbench.transparency', type: 'select', options: ['off', 'subtle', 'strong'] }),
+    ),
+  ).toEqual({ kind: 'segments', options: ['off', 'subtle', 'strong'] });
+});

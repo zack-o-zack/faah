@@ -28,6 +28,8 @@ System. A configured ID wins over the browser's saved ID. Unknown or removed
 IDs follow the OS; they are never migrated or aliased. While System is selected,
 OS appearance changes update the app without reloading.
 
+Floating menus, popovers, the palette, dialogs and hover cards use frosted layers. In **Workbench > Transparency**, choose **off**, **subtle** (default) or **strong**; the OS reduce-transparency preference always forces solid layers.
+
 ## Override colours or add a theme
 
 Create `~/.faah/themes/` and put CSS files there. This data folder stays under

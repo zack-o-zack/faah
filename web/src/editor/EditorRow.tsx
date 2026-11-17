@@ -89,6 +89,7 @@ export function EditorRow(props: EditorRowProps): JSX.Element {
         classList={{
           cur: current(),
           'bg-special/5!': editor.walkContains(line()),
+          'opacity-35': editor.walkMuted(line()),
           'agent-sel': agent(),
           'agent-anchor': editor.agents
             .targets()

@@ -163,6 +163,10 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
     const step = walkthrough.focus();
     return !!step && line >= step.l1 && line <= step.l2;
   }
+  /** While a walkthrough step is focused, lines outside it are muted. */
+  function walkMuted(line: number) {
+    return !!walkthrough.focus() && !walkContains(line);
+  }
   function offsets() {
     revision();
     buffer()?.revision();
@@ -517,6 +521,7 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
     walkthrough,
     annotationHeight,
     walkContains,
+    walkMuted,
     notes,
     ...prEditor,
     merge,

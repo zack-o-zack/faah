@@ -205,7 +205,7 @@ function Link(props: LinkProps): JSX.Element {
       }
     >
       <button
-        class="cursor-pointer text-primary-text underline"
+        class="cursor-pointer text-link underline decoration-link/40 underline-offset-2 hover:decoration-link"
         onClick={() => {
           const value = target();
           if (value) props.onOpen?.(value);

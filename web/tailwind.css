@@ -72,6 +72,7 @@
   --font-display: var(--font-display);
   --color-faint: var(--faint);
   --color-primary-text: var(--primary-text);
+  --color-link: var(--link);
   --color-sel: var(--sel);
   --color-mark: var(--mark);
   --color-mark-active: var(--mark-active);
@@ -93,6 +94,10 @@
 
 @layer base {
   :root {
+    /* Subtle is the default level; strong is more see-through. */
+    --glass-alpha: 92%;
+    --glass-blur: 16px;
+
     /* Brand shape and motion are shared by every theme. */
     --radius: 0.625rem;
     --radius-sm: 6px;
@@ -110,6 +115,7 @@
 
     /* Existing user themes can keep their original colour and shadow contract. */
     --spiral: var(--primary-text);
+    --link: var(--primary-text);
     --on-spiral: var(--background);
     --state-open: var(--gi);
     --state-merged: var(--k);
@@ -158,6 +164,19 @@
   body { @apply overflow-hidden bg-background text-foreground font-sans text-sm antialiased; }
   [hidden] { display: none !important; }
   * { scrollbar-width: thin; scrollbar-color: var(--accent) transparent; }
+}
+
+/* Root preferences remain derived from settings; the OS can force solid layers. */
+@layer base {
+  :root[data-transparency='off'] { --glass-alpha: 100%; --glass-blur: 0px; }
+  :root[data-transparency='strong'] {
+    /* Lowest alpha that keeps muted text at 4.5:1 over a blurred half-text backdrop. */
+    --glass-alpha: 82%;
+    --glass-blur: 28px;
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    :root, :root[data-transparency] { --glass-alpha: 100%; --glass-blur: 0px; }
+  }
 }
 
 @layer components {
@@ -346,7 +365,7 @@
   .badge[data-tone='closed'] { --state: var(--state-closed); }
   .badge[data-tone='draft'] { --state: var(--state-draft); }
   .btn[data-variant='link'], .badge[data-variant='link'], a.badge[data-variant='link']:hover,
-  :is(.empty > header > p, .item p, .field > p) > a:hover { color: var(--primary-text); }
+  :is(.empty > header > p, .item p, .field > p) > a:hover { color: var(--link); }
   .badge[data-variant='link'], a.badge[data-variant='link']:hover { background-color: transparent; border-color: transparent; }
   /* A gap and outlined neutral segments distinguish status without colour alone. */
   .progress[data-checks] { height: 0.5rem; gap: 2px; background-color: var(--background); }
@@ -356,6 +375,36 @@
   .progress[data-checks] > span[data-state='running'] { background-color: var(--warn); }
   .progress[data-checks] > span:is([data-state='neutral'], [data-state='skipped']) {
     background-color: var(--background); outline: 1px solid var(--input); outline-offset: -1px;
+  }
+  /* Only floating sheets blur the scene. Match the Basecoat fill selectors. */
+  [data-popover], .dropdown-menu > [data-popover], .combobox [data-popover],
+  .select:not(select) [data-popover], .toast-content, .toaster .toast .toast-content,
+  .dialog > *, .alert-dialog > *, .command-dialog > .command, .command > header,
+  #hovercard, #commitcard, [data-note-panel] {
+    background-color: color-mix(in oklab, var(--popover) var(--glass-alpha), transparent);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+    backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+    border: 1px solid var(--line, var(--border));
+  }
+  #hovercard, #commitcard {
+    background-color: color-mix(in oklab, var(--card) var(--glass-alpha), transparent);
+  }
+  /* A command header outside a dialog uses its existing card fill. */
+  .command > header {
+    background-color: color-mix(in oklab, var(--card) var(--glass-alpha), transparent);
+  }
+  /* Children read as one sheet; interactive states retain their own fills.
+     Field selectors mirror Basecoat's header exclusions for specificity. */
+  :is(.dialog > *, .alert-dialog > *, .command-dialog > .command,
+      [data-popover], #hovercard, #commitcard, [data-note-panel], .toast-content)
+    :is(.card, .input-group, .input:not([type='checkbox'], [type='radio']), .textarea,
+        .field > :is(input:not([type='checkbox'], [type='radio']), select, textarea),
+        .field > input[type='text']:not(:is(.command > header input, .dialog > * > header input)),
+        .command > header, [data-popover], .toast-content),
+  :is(.dialog, .alert-dialog) > * > :is(header, footer) {
+    background-color: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
   /* End fibo layer. */
 
@@ -407,7 +456,7 @@
   body.word-wrap .g { align-self: flex-start; height: var(--lh); }
 
   .g.gut-add { box-shadow: inset 2px 0 0 var(--gi); }
-  .g.gut-mod { box-shadow: inset 2px 0 0 var(--primary-text); }
+  .g.gut-mod { box-shadow: inset 2px 0 0 var(--warn); }
   .row.gut-del .g::after {
     content: ""; position: absolute; left: 0; bottom: -3px; z-index: 3;
     border-left: 4px solid var(--gd);
@@ -523,7 +572,8 @@
   .md h4 { font-size: 1.05em; }
   .md h5 { font-size: .95em; }
   .md h6 { font-size: .9em; color: var(--muted-foreground); }
-  .md a { color: var(--primary-text); text-decoration: underline; text-underline-offset: 2px; }
+  .md a { color: var(--link); text-decoration: underline; text-decoration-color: color-mix(in oklab, var(--link) 40%, transparent); text-underline-offset: 2px; }
+  .md a:hover { text-decoration-color: var(--link); }
 
   .md strong, .md b { font-weight: 600; }
   .md hr { height: 1px; margin: 28px 0; border: 0; background: var(--border); }
@@ -754,12 +804,6 @@
   .thr-body .thr-alert-warning { --alert: var(--warn); --alert-icon: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 256 256%22%3E%3Cpath fill=%22black%22 d=%22M236.8 188.09L149.35 36.22a24.76 24.76 0 0 0-42.7 0L19.2 188.09a23.51 23.51 0 0 0 0 23.72A24.35 24.35 0 0 0 40.55 224h174.9a24.35 24.35 0 0 0 21.33-12.19a23.51 23.51 0 0 0 .02-23.72m-13.87 15.71a8.5 8.5 0 0 1-7.48 4.2H40.55a8.5 8.5 0 0 1-7.48-4.2a7.59 7.59 0 0 1 0-7.72l87.45-151.87a8.75 8.75 0 0 1 15 0l87.45 151.87a7.59 7.59 0 0 1-.04 7.72M120 144v-40a8 8 0 0 1 16 0v40a8 8 0 0 1-16 0m20 36a12 12 0 1 1-12-12a12 12 0 0 1 12 12%22/%3E%3C/svg%3E"); }
   .thr-body .thr-alert-caution { --alert: var(--destructive); --alert-icon: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 256 256%22%3E%3Cpath fill=%22black%22 d=%22M120 136V80a8 8 0 0 1 16 0v56a8 8 0 0 1-16 0m112-44.45v72.9a15.86 15.86 0 0 1-4.69 11.31l-51.55 51.55a15.86 15.86 0 0 1-11.31 4.69h-72.9a15.86 15.86 0 0 1-11.31-4.69l-51.55-51.55A15.86 15.86 0 0 1 24 164.45v-72.9a15.86 15.86 0 0 1 4.69-11.31l51.55-51.55A15.86 15.86 0 0 1 91.55 24h72.9a15.86 15.86 0 0 1 11.31 4.69l51.55 51.55A15.86 15.86 0 0 1 232 91.55m-16 0L164.45 40h-72.9L40 91.55v72.9L91.55 216h72.9L216 164.45ZM128 160a12 12 0 1 0 12 12a12 12 0 0 0-12-12%22/%3E%3C/svg%3E"); }
 
-  /* Text links that leave the app say so. */
-  a[target="_blank"]:not(.btn, #pr-link, [data-ui~=cc-who], :has(img))::after {
-    content: ""; display: inline-block; width: .8em; height: .8em; margin-left: .2em; vertical-align: -.05em;
-    background: currentColor; opacity: .7;
-    mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 256 256%22%3E%3Cpath fill=%22black%22 d=%22M224 104a8 8 0 0 1-16 0V59.32l-66.33 66.34a8 8 0 0 1-11.32-11.32L196.68 48H152a8 8 0 0 1 0-16h64a8 8 0 0 1 8 8Zm-40 24a8 8 0 0 0-8 8v72H48V80h72a8 8 0 0 0 0-16H48a16 16 0 0 0-16 16v128a16 16 0 0 0 16 16h128a16 16 0 0 0 16-16v-72a8 8 0 0 0-8-8%22/%3E%3C/svg%3E") center / contain no-repeat;
-  }
   /* PR comments come as forge HTML: blocks need their own rhythm. */
   .pr-md > * + *, .pr-md :is(blockquote, details, li) > * + * { margin-top: 8px; }
   .pr-md summary { display: list-item; list-style: disclosure-closed inside; cursor: pointer; }
@@ -780,8 +824,8 @@
   }
 
   .thr-body hr { height: 1px; margin: 8px 0; border: 0; background: var(--border); }
-  .thr-body a { color: var(--primary-text); text-decoration: underline; text-underline-offset: 2px; }
-  .thr-body a:hover { opacity: 0.85; }
+  .thr-body a { color: var(--link); text-decoration: underline; text-decoration-color: color-mix(in oklab, var(--link) 40%, transparent); text-underline-offset: 2px; }
+  .thr-body a:hover { text-decoration-color: var(--link); }
   .thr-body del { text-decoration: line-through; color: var(--muted-foreground); }
   .thr-body strong { font-weight: 600; }
   .thr-body table { display: block; width: max-content; max-width: 100%; overflow-x: auto; border-collapse: collapse; font-size: var(--t-11-5); }
@@ -869,7 +913,7 @@
 
 /* Global highlight rules make every explorer node compute highlight inheritance. */
 #rows ::highlight(editor-find) { background: var(--mark); color: inherit; }
-#rows ::highlight(editor-link) { text-decoration: underline; color: var(--primary-text); }
+#rows ::highlight(editor-link) { text-decoration: underline; color: var(--link); }
 #rows ::highlight(editor-active) { background: var(--mark-active); color: var(--on-mark-active); }
 
 @layer components {

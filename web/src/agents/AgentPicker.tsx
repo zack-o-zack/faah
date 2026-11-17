@@ -65,7 +65,7 @@ export function AgentPicker(props: AgentPickerProps): JSX.Element {
             <i class="icon-[ph--caret-up-down] shrink-0 text-muted-foreground" aria-hidden="true" />
           </>
         }
-        panelClass="fixed m-0 overflow-hidden border bg-popover p-0 text-popover-foreground z-[70]"
+        panelClass="fixed m-0 overflow-hidden border p-0 text-popover-foreground z-[70]"
         placement={place}
         accessibleLabel="Coding harness and model"
         disabled={props.disabled || !agents.state.harnesses.some((agent) => agent.installed)}

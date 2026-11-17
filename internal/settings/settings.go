@@ -29,6 +29,7 @@ type Settings struct {
 	EditorVimMode               *bool    `json:"editor.vimMode,omitempty"`
 	EditorRenderWhitespace      *string  `json:"editor.renderWhitespace,omitempty"`
 	EditorMinimapEnabled        *bool    `json:"editor.minimap.enabled,omitempty"`
+	WorkbenchTransparency       *string  `json:"workbench.transparency,omitempty"`
 	WorkbenchColorTheme         *string  `json:"workbench.colorTheme,omitempty"`
 	DiffEditorRenderSideBySide  *bool    `json:"diffEditor.renderSideBySide,omitempty"`
 	MarkdownPreviewOpen         *bool    `json:"markdown.preview.open,omitempty"`
@@ -180,6 +181,15 @@ var Schema = []SchemaItem{
 		Category:    "Workbench",
 		Type:        "select",
 		Default:     "",
+	},
+	{
+		Key:         "workbench.transparency",
+		Title:       "Transparency",
+		Description: "Frosted glass on menus, popovers, the palette and dialogs. Off keeps them solid.",
+		Category:    "Workbench",
+		Type:        "select",
+		Default:     "subtle",
+		Options:     []string{"off", "subtle", "strong"},
 	},
 	{
 		Key:         "diffEditor.renderSideBySide",
