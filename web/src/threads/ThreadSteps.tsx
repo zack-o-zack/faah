@@ -1,8 +1,27 @@
 import { Spiral } from '../brand/Spiral.tsx';
 import type { JSX } from 'solid-js';
 import type { ThreadTurn } from './decode.ts';
-import { For, Show } from 'solid-js';
-export function ThreadSteps(props: { turn: ThreadTurn }): JSX.Element {
+import { For, Index, Show, createMemo, createSignal } from 'solid-js';
+import {
+  foldToolSteps,
+  parseToolStep,
+  type StepPaths,
+  type ToolRun,
+  type ToolStep,
+} from './steps.ts';
+
+const rowClass =
+  'flex min-w-0 items-center gap-2 rounded-sm px-1.5 py-[3px] whitespace-nowrap hover:bg-[var(--hover,var(--accent))]';
+
+export function ThreadSteps(props: {
+  turn: ThreadTurn;
+  workspace?: StepPaths | null;
+}): JSX.Element {
+  const runs = createMemo(() =>
+    foldToolSteps(
+      (props.turn.tools || []).map((label) => parseToolStep(label, props.workspace || {})),
+    ),
+  );
   return (
     <Show when={props.turn.running || props.turn.tools?.length}>
       <Show
@@ -20,16 +39,100 @@ export function ThreadSteps(props: { turn: ThreadTurn }): JSX.Element {
           <summary class="flex cursor-pointer list-none items-start gap-1.5 hover:text-foreground [&::-webkit-details-marker]:hidden">
             <StepHead turn={props.turn} />
           </summary>
-          <ol data-ui="thr-step-list" class="mt-1.5 ml-1.5 flex flex-col gap-1 border-l pl-3">
-            <For each={props.turn.tools}>
-              {(step) => <li class="whitespace-pre-wrap wrap-anywhere">{step}</li>}
-            </For>
+          <ol data-ui="thr-step-list" class="mt-1.5 min-w-0">
+            <Index each={runs()}>{(run) => <StepRun run={run()} />}</Index>
           </ol>
         </details>
       </Show>
     </Show>
   );
 }
+
+function StepRun(props: { run: ToolRun }): JSX.Element {
+  const [expanded, setExpanded] = createSignal(false);
+  return (
+    <Show
+      when={props.run.kind === 'group'}
+      fallback={
+        <li class={rowClass} title={props.run.step.label}>
+          <StepContents step={props.run.step} />
+          <Show when={props.run.kind === 'repeat'}>
+            <span class="ml-auto shrink-0 rounded-pill bg-muted px-1.5 text-11 text-muted-foreground">
+              ×{props.run.steps.length}
+            </span>
+          </Show>
+        </li>
+      }
+    >
+      <li>
+        <button
+          type="button"
+          class={`btn h-auto! w-full justify-start! border-0 text-left text-xs font-normal ${rowClass}`}
+          data-variant="ghost"
+          aria-expanded={expanded()}
+          title={props.run.title}
+          onClick={() => setExpanded((value) => !value)}
+        >
+          <StepContents step={props.run.step} target={props.run.target} folder={props.run.folder} />
+          <span
+            class="icon-[ph--caret-right] shrink-0 text-muted-foreground"
+            classList={{ 'rotate-90': expanded() }}
+            aria-hidden="true"
+          />
+        </button>
+        <Show when={expanded()}>
+          <ol class="ml-6 min-w-0">
+            <For each={props.run.steps}>
+              {(step) => (
+                <li class={rowClass} title={step.label}>
+                  <StepContents step={step} />
+                </li>
+              )}
+            </For>
+          </ol>
+        </Show>
+      </li>
+    </Show>
+  );
+}
+
+function StepContents(props: { step: ToolStep; target?: string; folder?: string }): JSX.Element {
+  return (
+    <>
+      <span
+        class={`${props.step.icon} shrink-0`}
+        classList={{
+          'text-special': props.step.special,
+          'text-muted-foreground': !props.step.special,
+        }}
+        aria-hidden="true"
+      />
+      <Show
+        when={!props.step.special}
+        fallback={<span class="min-w-0 truncate text-foreground">{props.step.label}</span>}
+      >
+        <span class="w-[38px] shrink-0 truncate text-muted-foreground">{props.step.tool}</span>
+        <span
+          class="truncate font-mono text-foreground"
+          classList={{
+            'max-w-[60%] shrink-0': props.step.path || props.target !== undefined,
+            'min-w-0 flex-1': !props.step.path && props.target === undefined,
+          }}
+        >
+          {props.target ?? props.step.basename}
+        </span>
+        <Show when={props.folder ?? props.step.folder}>
+          {(folder) => (
+            <span class="min-w-0 flex-1 truncate text-left font-mono text-muted-foreground [direction:rtl]">
+              <bdi>{folder()}</bdi>
+            </span>
+          )}
+        </Show>
+      </Show>
+    </>
+  );
+}
+
 function StepHead(props: { turn: ThreadTurn }): JSX.Element {
   return (
     <Show

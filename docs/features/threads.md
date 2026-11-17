@@ -21,7 +21,7 @@ The anchor is where the conversation started, not a limit. The harness can read 
 
 Type in the compose box and press `Enter` to send (`Shift+Enter` for a new line). The reply streams in as the harness writes it:
 
-- **Steps**: a collapsible list of what the harness did, such as `Read calc.go` or `Edit server.go`. It is open while the turn runs.
+- **Steps**: expand the step count to see what the harness did, with file names beside shortened folders and commands on one line. Consecutive calls to the same tool fold into a row you can expand; repeated calls on the same target show a count.
 - **Reply**: the harness's written answer, with code blocks, inline code, bold and bullet lists rendered.
 - **Changed files & Turn Review**: before and after each turn in a Git repository, faah captures an isolated worktree snapshot commit (`beforeSha` / `afterSha`) in `.git/objects` without touching `HEAD` or `.git/index`. Clicking any changed file chip opens the exact diff introduced by that turn, with a review strip to step through all files touched in that turn (`[f` / `]f`) and **Revert turn** to restore every file touched by that turn back to its pre-turn state. Open tabs reload in place when a turn that changed files finishes.
 

@@ -127,6 +127,7 @@ export function decodeMeta(value: unknown): WorkspaceMeta {
   return {
     ...row,
     root: text(row.root),
+    home: text(row.home),
     name: text(row.name),
     version: text(row.version),
     workbench: text(row.workbench),

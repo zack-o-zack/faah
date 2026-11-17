@@ -52,7 +52,7 @@ export function ThreadTurn(props: ThreadTurnProps): JSX.Element {
             </span>
           </Show>
         </div>
-        <ThreadSteps turn={props.turn} />
+        <ThreadSteps turn={props.turn} workspace={editor.store.state.workspace.meta} />
         <Markdown
           text={props.turn.reply || ''}
           refs={
