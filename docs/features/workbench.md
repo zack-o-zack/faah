@@ -65,7 +65,7 @@ If a pull request cannot be opened (a typo in the URL, no access), the page expl
 
 ## Status bar and themes
 
-The bottom bar shows the number of running workspaces, the process metrics button (a pulse icon), a link to the source repository and the theme button. Click the metrics button for memory and CPU of the workbench and every running workspace added together, with a breakdown by process. The theme button switches between System, Light and Dark on each click; the choice is saved to settings, so the workspaces use it too.
+The bottom bar shows the process metrics button (a pulse icon), a link to the source repository and the theme button. Click the metrics button for memory and CPU of the workbench and every running workspace added together, with a breakdown by process. The theme button switches between System, Light and Dark on each click; the choice is saved to settings, so the workspaces use it too.
 
 ## Resources
 
