@@ -1,5 +1,5 @@
 import { For, Show, type Component } from 'solid-js';
-import { keyCaps } from '../lib/keyboard.ts';
+import { Kbd } from '../lib/shortcuts.tsx';
 import { Brand } from '../brand/Brand.tsx';
 
 interface Hint {
@@ -45,13 +45,7 @@ export const Welcome: Component<WelcomeProps> = (props) => (
         <For each={HINTS}>
           {(hint) => (
             <>
-              <dt>
-                {hint.combo ? (
-                  <For each={keyCaps(hint.combo)}>{(key) => <kbd class="kbd">{key}</kbd>}</For>
-                ) : (
-                  hint.label
-                )}
-              </dt>
+              <dt>{hint.combo ? <Kbd combo={hint.combo} /> : hint.label}</dt>
               <dd>{hint.text}</dd>
             </>
           )}

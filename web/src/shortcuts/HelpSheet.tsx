@@ -1,7 +1,7 @@
 import { For, Show, type Component } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { Dialog } from '../lib/Dialog.tsx';
-import { keyCaps } from '../lib/keyboard.ts';
+import { Kbd } from '../lib/shortcuts.tsx';
 import type { ShortcutRegistry } from './registry.ts';
 interface HelpEditor {
   shortcuts: ShortcutRegistry;
@@ -113,7 +113,7 @@ export const HelpSheet: Component = () => {
                               /
                             </span>
                           </Show>
-                          <For each={keyCaps(combo)}>{(key) => <kbd class="kbd">{key}</kbd>}</For>
+                          <Kbd combo={combo} />
                         </>
                       )}
                     </For>

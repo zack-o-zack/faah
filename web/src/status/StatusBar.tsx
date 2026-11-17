@@ -53,7 +53,7 @@ export function StatusBar(): JSX.Element {
       ref={status}
       classList={{ selecting: !!editor.ui.selection }}
       id="status"
-      class="flex shrink-0 items-center gap-2 overflow-hidden whitespace-nowrap border-t bg-sidebar px-2 py-1 font-mono text-xs text-muted-foreground select-none [&>*]:shrink-0 [&.selecting]:border-primary-text [&.fit-1_kbd]:hidden [&.fit-2_#st-size]:hidden [&.fit-3_.metric-label]:hidden [&.fit-4_[data-action=wrap]]:hidden [&.fit-4_[data-action=help]]:hidden [&.fit-4_.sel-chip]:hidden [&.fit-4_#sel-stats]:hidden! [&.fit-5_#st-lang]:hidden [&.fit-6_#st-pos]:hidden"
+      class="flex shrink-0 items-center gap-2 overflow-hidden whitespace-nowrap border-t bg-sidebar px-2 py-1 font-mono text-xs text-muted-foreground select-none [&>*]:shrink-0 [&.selecting]:border-primary-text [&.fit-1_[data-control=shortcut]]:hidden [&.fit-2_#st-size]:hidden [&.fit-3_.metric-label]:hidden [&.fit-4_[data-action=wrap]]:hidden [&.fit-4_[data-action=help]]:hidden [&.fit-4_.sel-chip]:hidden [&.fit-4_#sel-stats]:hidden! [&.fit-5_#st-lang]:hidden [&.fit-6_#st-pos]:hidden"
     >
       <StatusActions />
       <SelectionBar />

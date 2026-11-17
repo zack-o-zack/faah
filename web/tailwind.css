@@ -177,7 +177,28 @@
     font-weight: 600;
     letter-spacing: -0.01em;
   }
-  .kbd { font-family: var(--mono); }
+  /* One key per cap. Keep Basecoat's UI font for readable system modifier glyphs. */
+  .kbd {
+    --kbd-size: 22px;
+    --kbd-padding: 6px;
+    height: var(--kbd-size);
+    min-width: var(--kbd-size);
+    padding-inline: var(--kbd-padding);
+    border-radius: var(--radius-sm);
+    /* A step darker than row hover, so caps stay visible on a hovered menu item. */
+    background-color: color-mix(in oklab, var(--foreground) 12%, var(--hover, var(--muted)));
+    color: color-mix(in oklab, var(--foreground) 70%, var(--muted-foreground));
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .kbd[data-single] { width: var(--kbd-size); --kbd-padding: 0px; }
+  .kbd[data-variant='button'] { --kbd-size: 20px; }
+  /* Vega's shortcut slot owns menu spacing, never the last cap. Match its specificity. */
+  .dropdown-menu [data-control='shortcut'] .kbd:last-child {
+    padding-inline: var(--kbd-padding);
+    margin: 0;
+    letter-spacing: normal;
+  }
 
   /* Match Vega's size selectors, including its compact and icon buttons. */
   .btn, .btn[data-size], .badge { border-radius: var(--radius-pill); }

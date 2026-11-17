@@ -440,7 +440,7 @@ compiled app CSS and served themes. Build the frontend, serve a dev asset root,
 and open `/static/tests/fibo-shape.html`. Its result is also available as
 `window.fiboShapeResults`; it throws on a failed computed-style assertion. It also
 checks the Fraunces family, 600 weight and tracking on card, dialog and empty-state
-headings against Basecoat, plus the explicit sans utility and monospace keys.
+headings against Basecoat, plus the explicit sans utility and UI-font key caps.
 It checks grouped inputs, textareas and selects in both themes, including inside
 dialogs: transparent inner controls, one focus border and raised shadow, a flat
 unfocused group, and separate button outlines. Standalone fields, bare
@@ -455,6 +455,26 @@ leave these attributes unset. Use `desktop:` for shared shell layout and
 Titlebar height and native window-control insets use `--titlebar-h`,
 `--titlebar-left` and `--titlebar-right`. The workbench has a draggable empty strip;
 interactive controls and overlays opt out of dragging.
+
+### Keyboard shortcuts
+
+Use the shared `Kbd` from `web/src/lib/shortcuts.tsx` for shortcut hints, one key
+per Basecoat `.kbd` cap in an `inline-flex gap-1` row. `ButtonKbd` delegates to
+that component with its button variant, keeping shortcut caps hidden from the
+action's accessible name. Normal caps are 22px tall, single glyphs are square,
+and button caps are 20px. Shared styling lives in the fibo components layer:
+`radius-sm`, 12px medium text, neutral `--hover` fill and `--muted-foreground`
+text. Button caps inherit the action colour with a 15% tint.
+
+Keep Basecoat's UI font (`--ui`) on `.kbd`, never set its font to `--mono`.
+Figtree's Latin range falls back to the system UI font for modifier glyphs
+`⌘`, `⌃`, `⌥`, `⇧` and `↩`. Each exposed glyph cap has its readable key name
+as an accessible label and title. Plain-text `keyLabel` and `withKeys` remain
+for titles, tooltips and strings.
+
+Inside a menu item, pass `menu` to `Kbd`. Its `[data-shortcut]` wrapper takes
+Basecoat's automatic right alignment and leading spacing; the caps themselves
+keep normal padding and zero margin, including the last cap.
 
 ### Bundled fonts
 
@@ -496,7 +516,7 @@ text or code family.
 `editor.fontFamily` defaults to the empty string, selecting bundled JetBrains
 Mono. A nonempty setting overrides source rows and edit-mode text/gutters through
 `--editor-font-family`, and is passed directly to `EditorMeasure`. It does not
-replace `--mono` for diffs, code peeks, Markdown, paths, commands or keys.
+replace `--mono` for diffs, code peeks, Markdown, paths or commands.
 Clearing the setting restores `var(--mono)`. `EditorMeasure` measures after
 `document.fonts.ready` and every `loadingdone` event, and removes the listener
 on cleanup so delayed font swaps cannot leave stale column widths.

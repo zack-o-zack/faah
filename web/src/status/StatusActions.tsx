@@ -77,10 +77,7 @@ export function StatusActions(): JSX.Element {
                   ? 'Table'
                   : action.label}
               </span>
-              <Kbd
-                combo={action.keys}
-                class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1"
-              />
+              <Kbd combo={action.keys} class="desktop:hidden" />
             </button>
           </Show>
         )}

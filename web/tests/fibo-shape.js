@@ -100,7 +100,32 @@ for (const theme of ['fibo-light', 'fibo-dark']) {
     token('font-family', '--ui'),
   );
   const key = mount('<kbd class="kbd">Esc</kbd>');
-  test('keyboard key uses code family', style(key).fontFamily, token('font-family', '--mono'));
+  test('keyboard key uses UI family', style(key).fontFamily, token('font-family', '--ui'));
+  test('keyboard cap height', style(key).height, '22px');
+  test('keyboard cap minimum width', style(key).minWidth, '22px');
+  test('keyboard cap text size', style(key).fontSize, '12px');
+  test('keyboard cap weight', style(key).fontWeight, '500');
+  test('keyboard cap radius', style(key).borderRadius, '6px');
+  test(
+    'keyboard cap text contrast',
+    contrast(style(key).color, style(key).backgroundColor) >= 4.5,
+    true,
+  );
+  const shortcut = mount(
+    '<div class="dropdown-menu"><button role="menuitem"><span>Search</span><span data-control="shortcut" data-shortcut class="inline-flex gap-1"><kbd class="kbd" data-single>⌘</kbd><kbd class="kbd" data-single>F</kbd></span></button></div>',
+  );
+  const slot = shortcut.querySelector('[data-shortcut]');
+  test('menu shortcut slot spacing', style(slot).paddingInlineStart, '32px');
+  for (const cap of shortcut.querySelectorAll('kbd')) {
+    test(`menu ${cap.textContent} cap width`, style(cap).width, '22px');
+    test(`menu ${cap.textContent} cap padding`, style(cap).paddingInlineStart, '0px');
+    test(`menu ${cap.textContent} cap margin`, style(cap).margin, '0px');
+  }
+  const buttonKey = mount(
+    '<div class="dropdown-menu"><button class="btn"><span data-control="shortcut" class="inline-flex gap-1"><kbd class="kbd bg-current/15 text-current" data-variant="button" data-single>↩</kbd></span></button></div>',
+  );
+  test('button cap height', style(buttonKey.querySelector('kbd')).height, '20px');
+  test('button single-glyph cap width', style(buttonKey.querySelector('kbd')).width, '20px');
   for (const [name, radius] of Object.entries({
     sm: 6,
     md: 10,
@@ -220,7 +245,7 @@ for (const theme of ['fibo-light', 'fibo-dark']) {
   // Disable transitions so this checks the final expanded colour.
   special.style.transition = 'none';
   const mix = document.createElement('span');
-  mix.style.backgroundColor = 'color-mix(in oklab, var(--periwinkle) 82%, var(--ink))';
+  mix.style.backgroundColor = 'color-mix(in oklab, var(--periwinkle) 92%, var(--ink))';
   fixtures.append(mix);
   test('special expanded fill', style(special).backgroundColor, style(mix).backgroundColor);
   special.disabled = true;

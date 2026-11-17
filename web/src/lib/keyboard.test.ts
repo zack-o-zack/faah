@@ -7,6 +7,10 @@ test('formats platform-specific shortcuts without DOM', () => {
   expect(keyLabel('Mod+P', false)).toBe('Ctrl+P');
   expect(keyLabel('Ctrl+A|', true)).toBe('');
   expect(keyCaps('Mod+P', true)).toEqual(['⌘', 'P']);
+  expect(keyCaps('Mod+Shift+F', true)).toEqual(['⌘', '⇧', 'F']);
+  expect(keyCaps('Mod+Shift+F', false)).toEqual(['Ctrl', 'Shift', 'F']);
+  expect(keyCaps('Mod+Enter', true)).toEqual(['⌘', '↩']);
+  expect(withKeys('Search ({Mod+Shift+F})', true)).toBe('Search (⌘⇧F)');
   expect(withKeys('Open ({Mod+P})', false)).toBe('Open (Ctrl+P)');
 });
 test('matches exact modifiers', () => {
