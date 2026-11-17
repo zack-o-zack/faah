@@ -81,7 +81,9 @@ export function WalkthroughFile(props: WalkthroughFileProps): JSX.Element {
       class={`review-diff-row ${row ? ROW_TYPE[row.type] || 'diff-type-ctx' : ''}`}
       data-new-line={row?.newLine}
       classList={{
-        'bg-cur': focused() && inStep(row),
+        // Like the source editor: a walkthrough step or a hovered note fades the rest.
+        'opacity-35': focused() && !inStep(row),
+        'opacity-30': !!row && editor.turnNotes.dimmed(props.file.path, row.newLine || 0),
         'diff-row-flash': !!row && targetLine() === rowLine(row),
         'bg-special/5!':
           !!row?.newLine && editor.turnNotes.highlighted(props.file.path, row.newLine),
@@ -112,7 +114,10 @@ export function WalkthroughFile(props: WalkthroughFileProps): JSX.Element {
     ),
   );
   return (
-    <div class="relative mb-3 overflow-clip rounded-md border">
+    <div
+      class="relative mb-3 overflow-clip rounded-md border"
+      classList={{ 'opacity-35': !!focus() && !focused() }}
+    >
       <div
         ref={header}
         class="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-2 border-b bg-sidebar px-3 py-2 text-xs"

@@ -237,6 +237,13 @@ test.each([false, true])(
     );
     await fireEvent.click(screen.getByRole('button', { name: 'Why the value changes' }));
     expect(screen.queryByRole('region', { name: 'Explanation detail' })).toBeNull();
+    const ghost = required(
+      screen.getByRole('button', { name: 'Why the value changes' }).closest('[data-note]'),
+    );
+    await fireEvent.mouseEnter(ghost);
+    expect(document.querySelectorAll('.review-diff-row.opacity-30').length).toBeGreaterThan(0);
+    await fireEvent.mouseLeave(ghost);
+    expect(document.querySelectorAll('.review-diff-row.opacity-30')).toHaveLength(0);
     const reveal = vi.spyOn(f.editor.review.actions, 'revealWalkthrough');
     await fireEvent.click(screen.getByRole('button', { name: 'Start' }));
     await waitFor(() => expect(f.editor.walkthrough.surface()).toBe('review'));
@@ -244,15 +251,11 @@ test.each([false, true])(
     expect(f.editor.active()).toBeNull();
     expect(f.editor.walkthrough.outdated()).toBe(false);
     expect(document.querySelectorAll('[data-walk-title]')).toHaveLength(1);
-    const focused = required(document.querySelector('[data-new-line="2"]')) as HTMLElement;
-    expect(focused.style.opacity).toBe('');
-    expect(focused.classList.contains('bg-cur')).toBe(true);
-    expect(
-      (required(document.querySelector('[data-new-line="1"]')) as HTMLElement).style.opacity,
-    ).toBe('');
-    expect((required(document.querySelector('.diff-type-del')) as HTMLElement).style.opacity).toBe(
-      '',
-    );
+    const muted = (selector: string) =>
+      required(document.querySelector(selector)).classList.contains('opacity-35');
+    expect(muted('[data-new-line="2"]')).toBe(false);
+    expect(muted('[data-new-line="1"]')).toBe(true);
+    expect(muted('.diff-type-del')).toBe(true);
     const open = vi.spyOn(f.editor.review.actions, 'openReviewReference');
     await fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     await waitFor(() => expect(reveal).toHaveBeenCalledWith('a.go', 8));

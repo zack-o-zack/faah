@@ -165,6 +165,9 @@ export function createTurnNotes(
     highlighted(path: string, line: number) {
       return notes.hovered()?.path === path && notes.highlighted(line);
     },
+    dimmed(path: string, line: number) {
+      return notes.hovered()?.path === path && notes.dimmed(line);
+    },
   };
 }
 
