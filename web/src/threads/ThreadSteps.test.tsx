@@ -71,17 +71,39 @@ test('running head stays a thinking spiral and tracks streamed labels without re
   render(() => <ThreadSteps turn={turn()} />);
   expect(screen.getByText('Starting')).toBeTruthy();
   expect(document.querySelector('[data-state="thinking"]')).toBeTruthy();
-  setTurn({ id: 1, running: true, tools: ['Read src/a.ts', 'Read src/b.ts'] });
+  const reads = (count: number) =>
+    Array.from({ length: count }, (_, index) => `Read src/file${index}.ts`);
+  setTurn({ id: 1, running: true, tools: reads(9) });
   details().open = true;
-  expect(required(details().querySelector('summary')).textContent).toBe('Read src/b.ts');
+  expect(required(details().querySelector('summary')).textContent).toBe('Read src/file8.ts');
   fireEvent.click(screen.getByRole('button'));
-  setTurn({ id: 1, running: true, tools: ['Read src/a.ts', 'Read src/b.ts', 'Read src/c.ts'] });
-  expect(screen.getByRole('button', { expanded: true }).textContent).toContain('3 files');
-  expect(screen.getByTitle('Read src/c.ts')).toBeTruthy();
+  setTurn({ id: 1, running: true, tools: reads(10) });
+  expect(screen.getByRole('button', { expanded: true }).textContent).toContain('10 files');
+  expect(screen.getByTitle('Read src/file9.ts')).toBeTruthy();
   setTurn({ id: 1, tools: ['Show notes'] });
   expect(required(details().querySelector('summary')).textContent).toBe('1 step');
   expect(screen.getByTitle('Show notes').querySelector('.text-special')).toBeTruthy();
   expect(document.querySelector('[data-state="thinking"]')).toBeNull();
+});
+
+test('rows inside a group show only their target, not the icon and verb again', () => {
+  render(() => <ThreadSteps turn={{ id: 1, tools: mockupSteps }} />);
+  details().open = true;
+  const first = required(screen.getAllByRole('button', { expanded: false })[0]);
+  fireEvent.click(first);
+  const nested = required(first.parentElement?.querySelector('ol'));
+  for (const row of within(nested).getAllByRole('listitem')) {
+    expect(row.querySelector('[class*="icon-[ph--"]')).toBeNull();
+    expect(row.textContent).not.toContain('Read');
+  }
+});
+
+test('a short turn of commands shows each command on its own row', () => {
+  const tools = ['Bash wc -l internal/git/*.go', 'Bash grep -n "^#" docs/a.md', 'Bash git status'];
+  render(() => <ThreadSteps turn={{ id: 1, tools }} />);
+  details().open = true;
+  expect(screen.queryByRole('button', { expanded: false })).toBeNull();
+  for (const label of tools) expect(screen.getByTitle(label)).toBeTruthy();
 });
 
 test('a turn without steps or running work has no steps UI', () => {

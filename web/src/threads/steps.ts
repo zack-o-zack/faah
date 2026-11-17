@@ -70,32 +70,51 @@ export function parseToolStep(label: string, paths: StepPaths = {}): ToolStep {
   };
 }
 
-/** Fold only adjacent calls, preserving the turn's execution order. */
-export function foldToolSteps(steps: readonly ToolStep[]): ToolRun[] {
-  const groups: ToolStep[][] = [];
-  for (const step of steps) {
-    const last = groups.at(-1);
-    if (last?.[0]?.tool === step.tool) last.push(step);
-    else groups.push([step]);
+/** Short turns read best as plain rows; folding starts at this many steps. */
+export const FOLD_MIN_STEPS = 9;
+
+function run(items: ToolStep[], kind: ToolRun['kind']): ToolRun[] {
+  const step = items[0];
+  if (!step) return [];
+  return [
+    {
+      step,
+      steps: items,
+      kind,
+      target: kind === 'group' ? `${items.length} files` : step.basename,
+      folder: kind === 'group' ? items.map((item) => item.basename).join(', ') : step.folder,
+      title: items.map((item) => item.label).join('\n'),
+    },
+  ];
+}
+
+/** Adjacent calls with one target become a repeat; a single call stays a row. */
+function repeats(items: ToolStep[]): ToolRun[] {
+  const runs: ToolStep[][] = [];
+  for (const item of items) {
+    const last = runs.at(-1);
+    if (last?.[0]?.target === item.target) last.push(item);
+    else runs.push([item]);
   }
-  return groups.flatMap((items) => {
-    const step = items[0];
-    if (!step) return [];
-    const repeated = items.every((item) => item.target === step.target);
-    let kind: ToolRun['kind'] = 'single';
-    if (items.length > 1) kind = repeated ? 'repeat' : 'group';
-    return [
-      {
-        step,
-        steps: items,
-        kind,
-        target:
-          kind === 'group'
-            ? `${items.length} ${items.every((item) => item.path) ? 'files' : 'items'}`
-            : step.basename,
-        folder: kind === 'group' ? items.map((item) => item.basename).join(', ') : step.folder,
-        title: items.map((item) => item.label).join('\n'),
-      },
-    ];
+  return runs.flatMap((same) => run(same, same.length > 1 ? 'repeat' : 'single'));
+}
+
+/**
+ * Fold only adjacent calls, preserving the turn's execution order. Only file
+ * calls group into "N files"; commands and searches stay one per row, since
+ * each one says something different.
+ */
+export function foldToolSteps(steps: readonly ToolStep[]): ToolRun[] {
+  if (steps.length < FOLD_MIN_STEPS) return steps.flatMap((step) => run([step], 'single'));
+  const tools: ToolStep[][] = [];
+  for (const step of steps) {
+    const last = tools.at(-1);
+    if (last?.[0]?.tool === step.tool) last.push(step);
+    else tools.push([step]);
+  }
+  return tools.flatMap((items) => {
+    const files = items.every((item) => item.path);
+    const mixed = items.some((item) => item.target !== items[0]?.target);
+    return files && mixed ? run(items, 'group') : repeats(items);
   });
 }

@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { foldToolSteps, parseToolStep } from './steps.ts';
+import { FOLD_MIN_STEPS, foldToolSteps, parseToolStep } from './steps.ts';
 import { mockupSteps } from './test-steps.ts';
 
 const paths = { root: '/home/me/repo', home: '/home/me' };
@@ -124,22 +124,43 @@ test('the approved 24-step sequence folds to the A3 rows', () => {
   expect(rows.flatMap((row) => row.steps.map((step) => step.label))).toEqual(mockupSteps);
 });
 
-test('folds only consecutive tools and compares complete targets rather than basenames', () => {
+// Distinct searches never fold, so they pad a sequence past the folding threshold.
+const pad = Array.from({ length: FOLD_MIN_STEPS }, (_, index) => `Grep pattern${index}`);
+
+test('short turns stay plain rows, one per step', () => {
+  const rows = fold(['Read src/a.ts', 'Read src/b.ts', 'Bash npm test', 'Bash npm test']);
+  expect(rows.map((row) => [row.kind, row.target])).toEqual([
+    ['single', 'a.ts'],
+    ['single', 'b.ts'],
+    ['single', 'npm test'],
+    ['single', 'npm test'],
+  ]);
+});
+
+test('folds only consecutive file calls and compares complete targets rather than basenames', () => {
   expect(fold([])).toEqual([]);
-  const rows = fold(['Read one/a.go', 'Read two/a.go', 'Grep foo', 'Read one/a.go']);
+  const rows = fold([...pad, 'Read one/a.go', 'Read two/a.go', 'Grep foo', 'Read one/a.go']).slice(
+    FOLD_MIN_STEPS,
+  );
   expect(rows.map((row) => row.kind)).toEqual(['group', 'single', 'single']);
-  expect(rows[0]?.folder).toBe('a.go, a.go');
-  expect(fold(['Bash npm test', 'Bash npm test'])[0]).toMatchObject({
-    kind: 'repeat',
-    target: 'npm test',
-  });
-  expect(fold(['Bash npm test', 'Bash npm run check'])[0]).toMatchObject({
-    kind: 'group',
-    target: '2 items',
-    folder: 'npm test, npm run check',
-  });
-  expect(fold(['Show notes', 'Show a walkthrough']).map((row) => row.kind)).toEqual([
-    'single',
-    'single',
+  expect(rows[0]).toMatchObject({ target: '2 files', folder: 'a.go, a.go' });
+});
+
+test('commands never group: repeats count, different commands keep their own rows', () => {
+  const rows = fold([
+    ...pad,
+    'Bash npm test',
+    'Bash npm test',
+    'Bash npm run check',
+    'Bash wc -l internal/git/*.go',
+  ]).slice(FOLD_MIN_STEPS);
+  expect(rows.map((row) => [row.kind, row.target, row.steps.length])).toEqual([
+    ['repeat', 'npm test', 2],
+    ['single', 'npm run check', 1],
+    ['single', 'wc -l internal/git/*.go', 1],
+  ]);
+  expect(fold([...pad, 'Show notes', 'Show a walkthrough']).slice(FOLD_MIN_STEPS)).toMatchObject([
+    { kind: 'single' },
+    { kind: 'single' },
   ]);
 });

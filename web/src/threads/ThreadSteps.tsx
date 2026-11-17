@@ -73,7 +73,12 @@ function StepRun(props: { run: ToolRun }): JSX.Element {
           title={props.run.title}
           onClick={() => setExpanded((value) => !value)}
         >
-          <StepContents step={props.run.step} target={props.run.target} folder={props.run.folder} />
+          <StepContents
+            step={props.run.step}
+            target={props.run.target}
+            folder={props.run.folder}
+            list
+          />
           <span
             class="icon-[ph--caret-right] shrink-0 text-muted-foreground"
             classList={{ 'rotate-90': expanded() }}
@@ -81,11 +86,11 @@ function StepRun(props: { run: ToolRun }): JSX.Element {
           />
         </button>
         <Show when={expanded()}>
-          <ol class="ml-6 min-w-0">
+          <ol class="ml-[70px] min-w-0">
             <For each={props.run.steps}>
               {(step) => (
                 <li class={rowClass} title={step.label}>
-                  <StepContents step={step} />
+                  <StepContents step={step} nested />
                 </li>
               )}
             </For>
@@ -96,22 +101,36 @@ function StepRun(props: { run: ToolRun }): JSX.Element {
   );
 }
 
-function StepContents(props: { step: ToolStep; target?: string; folder?: string }): JSX.Element {
+/**
+ * `nested` rows sit under their group's icon and verb, so they show only the
+ * target. A `list` folder is comma-joined names, read from the start.
+ */
+function StepContents(props: {
+  step: ToolStep;
+  target?: string;
+  folder?: string;
+  list?: boolean;
+  nested?: boolean;
+}): JSX.Element {
   return (
     <>
-      <span
-        class={`${props.step.icon} shrink-0`}
-        classList={{
-          'text-special': props.step.special,
-          'text-muted-foreground': !props.step.special,
-        }}
-        aria-hidden="true"
-      />
+      <Show when={!props.nested}>
+        <span
+          class={`${props.step.icon} shrink-0`}
+          classList={{
+            'text-special': props.step.special,
+            'text-muted-foreground': !props.step.special,
+          }}
+          aria-hidden="true"
+        />
+      </Show>
       <Show
         when={!props.step.special}
         fallback={<span class="min-w-0 truncate text-foreground">{props.step.label}</span>}
       >
-        <span class="w-[38px] shrink-0 truncate text-muted-foreground">{props.step.tool}</span>
+        <Show when={!props.nested}>
+          <span class="w-[38px] shrink-0 truncate text-muted-foreground">{props.step.tool}</span>
+        </Show>
         <span
           class="truncate font-mono text-foreground"
           classList={{
@@ -123,9 +142,18 @@ function StepContents(props: { step: ToolStep; target?: string; folder?: string 
         </span>
         <Show when={props.folder ?? props.step.folder}>
           {(folder) => (
-            <span class="min-w-0 flex-1 truncate text-left font-mono text-muted-foreground [direction:rtl]">
-              <bdi>{folder()}</bdi>
-            </span>
+            <Show
+              when={!props.list}
+              fallback={
+                <span class="min-w-0 flex-1 truncate font-mono text-muted-foreground">
+                  {folder()}
+                </span>
+              }
+            >
+              <span class="min-w-0 flex-1 truncate text-left font-mono text-muted-foreground [direction:rtl]">
+                <bdi>{folder()}</bdi>
+              </span>
+            </Show>
           )}
         </Show>
       </Show>
