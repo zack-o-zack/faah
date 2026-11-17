@@ -8,7 +8,6 @@ import { StatusBar } from '../status/StatusBar.tsx';
 import { ThreadsPanel, ThreadsToggle } from '../threads/ThreadsPanel.tsx';
 import { ReviewToggle } from '../review/ReviewToggle.tsx';
 import { ReviewView } from '../review/ReviewView.tsx';
-import { PRPanels } from '../pr/PRPanels.tsx';
 import { TabStrip } from '../editor/TabStrip.tsx';
 import { canDiff, previewKind, viewMode } from '../viewers/view.ts';
 import { FileActions } from '../editor/FileActions.tsx';
@@ -146,7 +145,6 @@ export const AppShell: Component = () => {
           </Show>
         </div>
         <ReviewView />
-        <PRPanels />
         <StatusBar />
       </main>
       <PanelHandle panel="right" label="Inspector width" />

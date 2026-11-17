@@ -4,7 +4,7 @@ This document describes the design and implementation of faah's pull request rev
 - the `forge.Provider` abstraction layer and its implementations for GitHub, GitLab, Gitea / Forgejo, and Bitbucket Cloud ([`internal/forge`](../../internal/forge));
 - connecting a forge token from the UI ([`internal/forge`](../../internal/forge), [`internal/server/pr.go`](../../internal/server/pr.go));
 - the checkout lifecycle, push/pull ([`internal/pr/session.go`](../../internal/pr/session.go)), merging and progress reporting ([`internal/server/pr.go`](../../internal/server/pr.go)), and merge-base diffing ([`internal/git`](../../internal/git/));
-- the frontend, in [`web/src/pr/`](../../web/src/pr/): the review bar, comments and drafts (`store.js`, `PRBar`, `CommentsPanel`, `RowComments`, `PRComposer`), merging (`merge-store.js`, `MergePill`, `MergeControls`, `MergeDialog`), and the Connect dialog (`forge-store.js`, `ForgeConnectDialog`).
+- the frontend, in [`web/src/pr/`](../../web/src/pr/): the PR header, comments and drafts (`store.js`, `PRBar`, `Activity`, `RowComments`, `PRComposer`), merging (`merge-store.js`, `MergePill`, `MergeControls`, `MergeDialog`), and the Connect dialog (`forge-store.js`, `ForgeConnectDialog`).
 
 For the user-facing behaviour, see [Pull Request Review](../features/github-pr-review.md) and [Getting Started](../features/pr-review-getting-started.md).
 
@@ -236,7 +236,7 @@ The worktree `pr.Checkout` produces sits on a **detached** `HEAD` at `refs/faah/
 3. `git merge-base --is-ancestor <newRef> HEAD` — if the fetched ref is already an ancestor of the current checkout, it's a no-op ("already up to date"), not an error.
 4. `git merge-base --is-ancestor HEAD <newRef>` — if the current checkout is a clean ancestor of the fetched ref, `git reset --hard <newRef>` fast-forwards it (safe: step 1 already guaranteed a clean working tree).
 5. Otherwise — a local commit the PR head doesn't have, or a force-pushed head that isn't a fast-forward at all — `errPRDiverged` refuses the pull. Exactly like the plain-workspace path, this never invokes `git merge`, so there is never a real conflict to clean up.
-6. On a successful fast-forward, `p.meta.HeadSHA` and `p.diffBase`/`p.diffBaseWarning` are recomputed via the same `computeDiffBase` helper `pr.Checkout` uses, and `handleGitPull` propagates the new `diffBase` to `s.diffBase`/`ix.SetDiffBase()` so `/api/diff`, `/api/gutter`, and the tree's status-against-base all pick it up immediately. The frontend (`gitpanel.js`) follows a successful pull with a full `reindexWorkspace()` plus `pr.js`'s `refreshPRMeta()` — a fresh `/api/pr/meta` fetch, a `renderBar()`, and a re-fetch of existing comments — so the PR bar, diff warning, and comment threads all reflect the new head, not the one captured at session start.
+6. On a successful fast-forward, `p.meta.HeadSHA` and `p.diffBase`/`p.diffBaseWarning` are recomputed via the same `computeDiffBase` helper `pr.Checkout` uses, and `handleGitPull` propagates the new `diffBase` to `s.diffBase`/`ix.SetDiffBase()` so `/api/diff`, `/api/gutter`, and the tree's status-against-base all pick it up immediately. The frontend (`gitpanel.js`) follows a successful pull with a full `reindexWorkspace()` plus `pr.js`'s `refreshPRMeta()` — a fresh `/api/pr/meta` fetch, a `renderBar()`, and a re-fetch of existing comments — so the PR header, diff warning, and comment threads all reflect the new head, not the one captured at session start.
 
 ### `pr.Session.Push`: Straight to the PR's Own Branch
 
@@ -270,9 +270,11 @@ The git panel's agent rebase/merge flow ([git-integration internals](git-integra
 - **Line actions and comment markers**:
   - Hovering a line number in the source or diff view shows a thread button (`data-control="line-btn"`). Clicking it calls `openLineActions`, the selection menu aimed at one line. Rows that are part of the PR's diff carry their diff side, which enables **Add Review Comment**; other rows get only the local actions.
   - `RowComments.tsx` renders a marker on diff rows with threads and the inline composers (`PRComposer`) under their rows.
-- **PR bar (`PRBar.tsx`)**:
-  - Shows a state pill before the linked title, then the PR number in plain text. The second row shows head-to-base branch chips, the merge status for active PRs, any diff-base warning, and a **Connect &lt;forge&gt;** button when the token is missing.
-  - Houses **Batch Apply** and the review panel (`ReviewPanel.tsx`, Comment / Approve / Request changes). The verdict buttons are gated by `reviewGate()` from `pr/logic.ts`.
+- **PR header (`PRBar.tsx`)**:
+  - Sits above the review tabs and shows a state pill before the linked title, then the PR number in plain text. The second row shows head-to-base branch chips, the merge status for active PRs, any diff-base warning, and a **Connect &lt;forge&gt;** button when the token is missing.
+  - Keeps the review and merge actions at its right, so both work from every review tab: **Batch Apply**, the review panel (`ReviewPanel.tsx`, Comment / Approve / Request changes) and the merge controls, split by a divider. The verdict buttons are gated by `reviewGate()` from `pr/logic.ts`.
+- **Activity (`Activity.tsx`)**:
+  - Closes the Overview main column: issue comments and review threads in one list, oldest first, each with a chat or eye icon, then the comment composer. `pr/logic.ts`'s `activityItems` merges and orders them, timing a thread by its first comment.
 - **Merge UI**:
   - `MergePill` shows the merge state; `MergeControls` is the split merge button with its method menu (the last method is remembered in `localStorage` under `faah.prMergeMethod`); `MergeDialog` is the merge dialog. They talk only to `/api/pr/merge-*` and have no forge-specific logic.
   - The merge store reads the Git store's sync state (`pending`, `inProgress`, `rewritten`) directly, which drives the pill, the main button and `reviewGate()`, and calls named actions to fetch the base and offer a rebase or merge, to confirm a force push, or to pull.
@@ -280,4 +282,4 @@ The git panel's agent rebase/merge flow ([git-integration internals](git-integra
   - Command Palette **Git: Open Pull Request…** posts to `/api/pr/launch`, or, in a workbench child (the workspace metadata has `workbench`), to the workbench's `/api/wb/open` (see [workbench.md](workbench.md)).
   - Spawns `faah -y <url>` in a new detached process on an ephemeral port.
 - **Resync after Git changes (`refreshPRMeta` in `pr/store.ts`)**:
-  - Called after a successful Pull, after merging, after connecting a token, and when the history is rewritten. Re-fetches `/api/pr/meta`, then existing and draft comments and the merge status, so a PR that moved forward under the reviewer never leaves the bar, diff warning or comment threads showing the state from session start.
+  - Called after a successful Pull, after merging, after connecting a token, and when the history is rewritten. Re-fetches `/api/pr/meta`, then existing and draft comments and the merge status, so a PR that moved forward under the reviewer never leaves the header, diff warning or comment threads showing the state from session start.

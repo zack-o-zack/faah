@@ -106,6 +106,7 @@ export interface CoreActions {
   refreshMergeStatus: () => Promise<void>;
   runAgentJob: (endpoint: string, params: unknown, options?: AgentJobOptions) => Promise<AgentJob>;
   setReviewMode: (mode: string) => void;
+  setReviewTab: (tab: string) => void;
   openSettings: (mode?: SettingsMode, category?: string, key?: string) => void;
   refreshPRMeta: () => Promise<void>;
   resolvePRBase: () => Promise<unknown>;

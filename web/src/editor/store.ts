@@ -385,6 +385,7 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
     refreshMergeStatus: () => merge.actions.refreshMergeStatus(),
     runAgentJob: (...args) => agents.actions.runAgentJob(...args),
     setReviewMode: (...args) => review.actions.setReviewMode(...args),
+    setReviewTab: (...args) => review.actions.setReviewTab(...args),
     refreshPRMeta: () => pr.actions.refreshPRMeta(),
     resolvePRBase: () => git.actions.resolvePRBase(),
     confirmForcePush: () => git.actions.confirmForcePush(),

@@ -13,7 +13,7 @@ import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { rowTarget, threadKey } from './logic.ts';
 import { PRComposer } from './PRComposer.tsx';
-/** A diff line's comment marker; it opens the line's thread in the comments panel. */
+/** A diff line's comment marker; it opens the line's thread in Overview. */
 export function CommentMarker(props: CommentMarkerProps): JSX.Element {
   const editor = useEditor();
   const target = () => rowTarget(props.row);

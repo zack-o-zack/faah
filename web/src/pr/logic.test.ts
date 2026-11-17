@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest';
 import {
+  activityItems,
   chosenMethod,
   commentPreview,
   commentThreads,
@@ -115,4 +116,24 @@ test('merge method and harness message helpers', () => {
   expect(connectedMessage('GitHub', { saved: true, validated: true, writeAccess: false })).toMatch(
     /Read access only/,
   );
+});
+
+test('activity merges issue comments and review threads oldest first', () => {
+  const issue = (id: number, createdAt?: string) => ({ id, author: 'ann', createdAt });
+  const thread = (line: number, createdAt?: string) => ({
+    key: 'a.go|RIGHT:' + line,
+    path: 'a.go',
+    side: 'RIGHT',
+    line,
+    existing: createdAt ? [{ id: 100 + line, path: 'a.go', line, createdAt }] : [],
+    drafts: [],
+  });
+  const items = activityItems(
+    [issue(1, '2026-01-02T00:00:00Z'), issue(2)],
+    [thread(3, '2026-01-01T00:00:00Z'), thread(4)],
+  );
+  // Untimed entries keep their input order ahead of the timed ones.
+  expect(
+    items.map((item) => (item.kind === 'issue' ? item.comment.id : -item.thread.line)),
+  ).toEqual([2, -4, -3, 1]);
 });

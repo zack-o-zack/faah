@@ -692,12 +692,12 @@ fill. Two stacked blurs smeared the page behind Settings at strong.
 `prefers-reduced-transparency: reduce` forces 100% / 0px at every setting.
 
 
-The review header (`#review-sub-bar`), PR footer (`#pr-footer`) and editor status
-footer (`#main > #status`) use the same transparency and OS override. The header
-mixes `--background`; the two footers mix `--sidebar`. Existing border widths,
-spacing and shadows stay intact. The PR bar and comments panel have transparent
-fills so the footer reads as one glass sheet. These bars retain their existing
-layout positions; scrolling content does not extend underneath them.
+The review header (`#review-sub-bar`) and editor status footer (`#main > #status`)
+use the same transparency and OS override. The header mixes `--background`; the
+status footer mixes `--sidebar`. Existing border widths, spacing and shadows stay
+intact, and the PR header above the tabs keeps a solid fill so the tab row's own
+rule is the only divider. These bars retain their existing layout positions;
+scrolling content does not extend underneath them.
 
 The Git section (`#git-panel`), including its branch row, commit composer and
 recent commits, also mixes `--sidebar` with the same glass variables. Its inner

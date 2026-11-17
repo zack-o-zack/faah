@@ -132,8 +132,26 @@ export function commentThreads(
     .sort((a, b) => a.path.localeCompare(b.path) || a.line - b.line);
 }
 
-export const sortedByTime = <T extends { createdAt?: string }>(comments: T[]): T[] =>
-  comments.slice().sort(byTime);
+export type ActivityItem =
+  { kind: 'issue'; comment: PRComment } | { kind: 'thread'; thread: CommentThread };
+
+const activityTime = (item: ActivityItem): string =>
+  item.kind === 'issue' ? item.comment.createdAt || '' : item.thread.existing[0]?.createdAt || '';
+
+/**
+ * Issue comments and review threads as one list, oldest first. A thread is timed
+ * by its first comment; entries without a time keep their input order ahead of
+ * timed ones, as `byTime` does for comments.
+ */
+export function activityItems(
+  issueComments: PRComment[],
+  threads: CommentThread[],
+): ActivityItem[] {
+  return [
+    ...issueComments.map((comment): ActivityItem => ({ kind: 'issue', comment })),
+    ...threads.map((thread): ActivityItem => ({ kind: 'thread', thread })),
+  ].sort((a, b) => activityTime(a).localeCompare(activityTime(b)));
+}
 
 /** Comment counts per diff line key, for gutter markers. */
 export function markerCounts(

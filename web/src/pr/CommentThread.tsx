@@ -23,14 +23,14 @@ export function CommentThread(props: CommentThreadProps): JSX.Element {
   const total = () => props.thread.existing.length + props.thread.drafts.length;
   const revealed = () => pr.state.reveal.key === key();
   let item: HTMLDetailsElement | undefined;
-  // Native scroll for a gutter marker's request to show this thread.
+  // Native scroll for a gutter marker's request to show this thread. It runs on mount too,
+  // because the thread may first appear with the request that opened its tab.
   createEffect(
     on(
       () => pr.state.reveal.sequence,
       () => {
         if (revealed()) item?.scrollIntoView({ block: 'center', behavior: 'smooth' });
       },
-      { defer: true },
     ),
   );
   return (

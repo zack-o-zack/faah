@@ -436,18 +436,16 @@
     backdrop-filter: none;
   }
   /* Review chrome and the Git panel share glass without changing geometry. */
-  #review-sub-bar, #pr-footer, #main > #status, #git-panel {
+  #review-sub-bar, #main > #status, #git-panel {
     -webkit-backdrop-filter: blur(var(--glass-blur));
     backdrop-filter: blur(var(--glass-blur));
   }
   #review-sub-bar {
     background-color: color-mix(in oklab, var(--background) var(--glass-alpha), transparent);
   }
-  #pr-footer, #main > #status, #git-panel {
+  #main > #status, #git-panel {
     background-color: color-mix(in oklab, var(--sidebar) var(--glass-alpha), transparent);
   }
-  /* The PR bar and comment panel belong to the footer's single glass sheet. */
-  #pr-footer > :is(#pr-bar, #pr-comments-panel) { background-color: transparent; }
   /* End fibo layer. */
 
   /* A shared 4px split bar with a transparent 8px grab area. Positioning utilities

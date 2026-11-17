@@ -7,6 +7,7 @@ import { ErrorNotice } from '../lib/ErrorNotice.tsx';
 import { errorMessage } from '../lib/decode.ts';
 import { safeMarkdownURL } from '../lib/markdown-model.ts';
 import { OverviewDescription } from './OverviewDescription.tsx';
+import { Activity } from '../pr/Activity.tsx';
 import {
   CHECK_LABELS,
   CHECK_ORDER,
@@ -393,6 +394,9 @@ export function Overview(): JSX.Element {
                 }
               >
                 <Description data={data()} url={editor.store.state.workspace.meta?.pr?.url || ''} />
+                <Show when={editor.pr.available()}>
+                  <Activity />
+                </Show>
               </OverviewLayout>
             )}
           </Show>

@@ -23,18 +23,15 @@ export function PRBar(): JSX.Element {
     onCleanup(() => window.removeEventListener('focus', focus));
   });
   return (
-    <div
-      id="pr-bar"
-      class="[body:not(.in-review-mode)_&]:hidden! flex flex-none flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2"
-    >
-      <div class="flex min-w-0 flex-1 basis-80 flex-col gap-1.5">
+    <div id="pr-header" class="flex flex-none items-center gap-2.5 px-3.5 pt-3 pb-2">
+      <div class="flex min-w-0 flex-1 flex-col gap-1.25">
         <div class="flex min-w-0 items-center gap-2">
           <span
             id="pr-state-badge"
-            class="badge shrink-0 gap-1 rounded-pill py-0.5 pl-1.75 pr-2.25 text-xs font-semibold"
+            class="badge shrink-0 gap-1 rounded-pill px-2 py-0.5 text-11-5 font-semibold"
             data-tone={state().tone}
           >
-            <span class={`${state().icon} shrink-0`} aria-hidden="true" />
+            <span class={`${state().icon} shrink-0 text-13`} aria-hidden="true" />
             <span>{state().label}</span>
           </span>
           <a
@@ -61,17 +58,17 @@ export function PRBar(): JSX.Element {
             />
           </a>
         </div>
-        <div class="flex min-w-0 flex-wrap items-center gap-2 text-xs text-muted-foreground">
+        <div class="flex min-w-0 flex-wrap items-center gap-1.5 text-11-5 text-muted-foreground">
           <span id="pr-refs" class="inline-flex min-w-0 shrink-[4] items-center gap-1.5">
             <code
-              class="min-w-0 truncate rounded-sm border border-border bg-card px-1.5 font-mono text-foreground"
+              class="min-w-0 truncate rounded-[5px] border border-border bg-card px-[5px] font-mono text-foreground"
               title={pr().head}
             >
               {pr().head}
             </code>
             <span class="icon-[ph--arrow-right] shrink-0" aria-hidden="true" />
             <code
-              class="min-w-0 truncate rounded-sm border border-border bg-card px-1.5 font-mono text-foreground"
+              class="min-w-0 truncate rounded-[5px] border border-border bg-card px-[5px] font-mono text-foreground"
               title={pr().base}
             >
               {pr().base}
@@ -107,14 +104,14 @@ export function PRBar(): JSX.Element {
           </Show>
         </div>
       </div>
-      <div id="pr-review-row" class="ml-auto flex shrink-0 items-center gap-2">
+      <div id="pr-review-row" class="ml-auto flex shrink-0 items-center gap-2.5">
         <MergeFix />
         <BatchApply />
         <Show when={reviewShown()}>
           <ReviewPanel />
         </Show>
         <Show when={reviewShown() && editor.merge.canMerge()}>
-          <span class="h-5 w-px shrink-0 bg-border" aria-hidden="true" />
+          <span class="h-4.5 w-px shrink-0 bg-border" aria-hidden="true" />
         </Show>
         <Show when={editor.merge.canMerge()}>
           <MergeControls />
