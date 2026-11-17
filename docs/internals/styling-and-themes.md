@@ -614,9 +614,13 @@ the contrast test checks text over a plain background and over a dense text bloc
 Glass applies to Basecoat `[data-popover]` lists, `.command-dialog > .command`,
 standalone `.command > header`, `.dialog > *`, `.alert-dialog > *`, `.toast-content`,
 `#hovercard`, `#commitcard` and `[data-note-panel]`. Each mixes its existing fill
-with transparent in OKLab, uses the shared blur with 1.4 saturation and retains
-its shadow with a line border. Nested cards, fields and headers are transparent
-and do not add a second blur. Modal backdrops retain their existing treatment.
+with transparent in OKLab, uses the shared blur and retains its shadow with a
+line border. There is no saturation boost, because it turns bright code into
+coloured blotches. Nested cards, fields and headers are transparent and do not
+add a second blur. Modal sheets (`.dialog`, `.alert-dialog`, `.command-dialog`)
+do not blur themselves: their `::backdrop` carries the level's blur (16px subtle,
+28px strong, Basecoat's 4px when off), and the sheet keeps only its translucent
+fill. Two stacked blurs smeared the page behind Settings at strong.
 `prefers-reduced-transparency: reduce` forces 100% / 0px at every setting.
 
 

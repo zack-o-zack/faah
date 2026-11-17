@@ -8,6 +8,15 @@ export function fieldKind(value: string): 'empty' | 'dir' | 'pr' | 'link' {
 }
 export const tildify = (path: string, home: string, sep = '/'): string =>
   home && (path === home || path.startsWith(home + sep)) ? '~' + path.slice(home.length) : path;
+export function parentFolder(path: string, home: string, sep = '/'): string {
+  let folder = path;
+  const rootLength = sep === '\\' && folder[1] === ':' ? 3 : sep.length;
+  while (folder.length > rootLength && folder.endsWith(sep)) folder = folder.slice(0, -sep.length);
+  const at = folder.lastIndexOf(sep);
+  if (at < 0) return '';
+  const parent = at < rootLength ? folder.slice(0, rootLength) : folder.slice(0, at);
+  return tildify(parent, home, sep);
+}
 export function ago(ms: number, now = Date.now()): string {
   const seconds = Math.max(0, (now - ms) / 1000);
   if (seconds < 60) return 'just now';

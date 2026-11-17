@@ -1,5 +1,22 @@
 import { test, expect } from 'vitest';
-import { ago, tildify, fieldKind, breadcrumbs, recentGroups } from './logic.ts';
+import { ago, tildify, parentFolder, fieldKind, breadcrumbs, recentGroups } from './logic.ts';
+test.each([
+  ['/home/me/Projects/config/', '/home/me', '/', '~/Projects'],
+  ['/home/me/Projects/config', '/home/me', '/', '~/Projects'],
+  ['/home/me/config/', '/home/me', '/', '~'],
+  ['/home/men/config/', '/home/me', '/', '/home/men'],
+  ['/config/', '/home/me', '/', '/'],
+  ['/', '/home/me', '/', '/'],
+  ['C:\\Users\\me\\Projects\\config\\', 'C:\\Users\\me', '\\', '~\\Projects'],
+  ['C:\\Users\\me\\config\\', 'C:\\Users\\me', '\\', '~'],
+  ['C:\\config\\', 'C:\\Users\\me', '\\', 'C:\\'],
+  ['C:\\', 'C:\\Users\\me', '\\', 'C:\\'],
+])(
+  'parentFolder(%s) shows the parent without repeating the folder',
+  (path, home, sep, expected) => {
+    expect(parentFolder(path, home, sep)).toBe(expected);
+  },
+);
 test('recognises folders and supported PR links', () => {
   expect(fieldKind(' ')).toBe('empty');
   expect(fieldKind('~/code')).toBe('dir');

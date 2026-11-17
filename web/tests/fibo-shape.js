@@ -655,11 +655,18 @@ for (const theme of ['light', 'dark']) {
       const root = mount(markup);
       const sheet = root.querySelector('[data-popover], .command, section, #status') || root;
       const reduced = matchMedia('(prefers-reduced-transparency: reduce)').matches;
+      const modal = root.matches('dialog');
       test(
         `${level} ${sheet.id || sheet.className} blur`,
         style(sheet).backdropFilter,
-        `blur(${reduced ? 0 : blur}px) saturate(1.4)`,
+        modal ? 'none' : `blur(${reduced ? 0 : blur}px)`,
       );
+      if (modal)
+        test(
+          `${level} ${root.className} backdrop carries the blur`,
+          getComputedStyle(root, '::backdrop').backdropFilter,
+          reduced ? 'none' : level === 'off' ? 'blur(4px)' : `blur(${blur}px)`,
+        );
       const background = style(sheet).backgroundColor;
       const actualAlpha = background.match(/\/\s*([\d.]+)\)/)?.[1];
       test(

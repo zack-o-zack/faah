@@ -212,6 +212,12 @@
   }
   .kbd[data-single] { width: var(--kbd-size); --kbd-padding: 0px; }
   .kbd[data-variant='button'] { --kbd-size: 20px; }
+  .path-suggestions .kbd {
+    --kbd-size: 18px;
+    --kbd-padding: 4px;
+    border-radius: 5px;
+    font-size: 11px;
+  }
   /* Vega's shortcut slot owns menu spacing, never the last cap. Match its specificity. */
   .dropdown-menu [data-control='shortcut'] .kbd:last-child {
     padding-inline: var(--kbd-padding);
@@ -382,8 +388,8 @@
   .dialog > *, .alert-dialog > *, .command-dialog > .command, .command > header,
   #hovercard, #commitcard, [data-note-panel] {
     background-color: color-mix(in oklab, var(--popover) var(--glass-alpha), transparent);
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
-    backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    backdrop-filter: blur(var(--glass-blur));
     border: 1px solid var(--line, var(--border));
   }
   #hovercard, #commitcard {
@@ -392,6 +398,29 @@
   /* A command header outside a dialog uses its existing card fill. */
   .command > header {
     background-color: color-mix(in oklab, var(--card) var(--glass-alpha), transparent);
+  }
+  /* Modal sheets sit over a backdrop that already blurs the page. A second blur on the
+     sheet smears bright code into blotches, so the backdrop carries the level's blur and
+     the sheet only keeps its translucent fill. */
+  .dialog > *, .alert-dialog > *, .command-dialog > .command {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  :root[data-transparency='subtle'] :is(.dialog, .alert-dialog, .command-dialog)::backdrop,
+  :root:not([data-transparency]) :is(.dialog, .alert-dialog, .command-dialog)::backdrop {
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+  }
+  :root[data-transparency='strong'] :is(.dialog, .alert-dialog, .command-dialog)::backdrop {
+    -webkit-backdrop-filter: blur(28px);
+    backdrop-filter: blur(28px);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    :root[data-transparency] :is(.dialog, .alert-dialog, .command-dialog)::backdrop,
+    :root:not([data-transparency]) :is(.dialog, .alert-dialog, .command-dialog)::backdrop {
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
   }
   /* Children read as one sheet; interactive states retain their own fills.
      Field selectors mirror Basecoat's header exclusions for specificity. */
@@ -408,8 +437,8 @@
   }
   /* Review chrome and the Git panel share glass without changing geometry. */
   #review-sub-bar, #pr-footer, #main > #status, #git-panel {
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
-    backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    backdrop-filter: blur(var(--glass-blur));
   }
   #review-sub-bar {
     background-color: color-mix(in oklab, var(--background) var(--glass-alpha), transparent);
