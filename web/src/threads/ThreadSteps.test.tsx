@@ -70,7 +70,7 @@ test('running head stays a thinking spiral and tracks streamed labels without re
   const [turn, setTurn] = createSignal<ThreadTurn>({ id: 1, running: true });
   render(() => <ThreadSteps turn={turn()} />);
   expect(screen.getByText('Starting')).toBeTruthy();
-  expect(document.querySelector('[data-state="thinking"]')).toBeTruthy();
+  expect(document.querySelector('.fibo-spiral[data-state="thinking"]')).toBeTruthy();
   const reads = (count: number) =>
     Array.from({ length: count }, (_, index) => `Read src/file${index}.ts`);
   setTurn({ id: 1, running: true, tools: reads(9) });

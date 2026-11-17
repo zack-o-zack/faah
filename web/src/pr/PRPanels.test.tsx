@@ -589,10 +589,12 @@ test('AI disclosure and reset stay disabled during a rewrite', async () => {
   });
   fireEvent.click(toggle);
   const rewrite = screen.getByRole('button', { name: 'Rewrite' });
-  expect(rewrite.querySelector('[class*=ph--spinner]')).toBeTruthy();
+  const icon = required(rewrite.querySelector('.icon-\\[ph--spinner\\]'));
+  expect(icon.classList.contains('motion-safe:animate-spin')).toBe(false);
   fireEvent.click(rewrite);
-  expect(rewrite.querySelector('[data-state=thinking]')).toBeTruthy();
-  expect(rewrite.querySelector('[class*=ph--spinner]')).toBeNull();
+  expect(rewrite.querySelector('.icon-\\[ph--spinner\\]')).toBe(icon);
+  expect(icon.classList.contains('motion-safe:animate-spin')).toBe(true);
+  expect(rewrite.querySelector('.fibo-spiral')).toBeNull();
   expect(toggle.disabled).toBe(true);
   expect(
     screen.getByRole<HTMLButtonElement>('button', { name: 'Reset to default message' }).disabled,
@@ -600,7 +602,8 @@ test('AI disclosure and reset stay disabled during a rewrite', async () => {
   finish?.();
   await waitFor(() => expect(toggle.disabled).toBe(false));
   expect(rewrite.querySelector('.fibo-spiral')).toBeNull();
-  expect(rewrite.querySelector('[class*=ph--spinner]')).toBeTruthy();
+  expect(rewrite.querySelector('.icon-\\[ph--spinner\\]')).toBe(icon);
+  expect(icon.classList.contains('motion-safe:animate-spin')).toBe(false);
   expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Commit title' }).value).toBe(
     'AI title',
   );

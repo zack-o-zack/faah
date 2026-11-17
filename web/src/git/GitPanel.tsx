@@ -10,6 +10,8 @@ export function GitPanel(): JSX.Element {
   const editor = useEditor();
   const git = editor.git;
   const meta = () => editor.store.state.workspace.meta;
+  // An empty message makes Commit ask the agent to write one first.
+  const writesMessage = () => !git.state.message.trim();
   return (
     <Show when={meta()?.git}>
       <section
@@ -91,12 +93,17 @@ export function GitPanel(): JSX.Element {
                   id="git-commit"
                   type="button"
                   class="btn min-w-0 flex-1"
-                  data-variant="primary"
+                  data-variant={writesMessage() ? 'special' : 'primary'}
                   data-size="sm"
+                  title={writesMessage() ? 'Write a message and commit' : 'Commit'}
                   disabled={!!git.state.pending}
                   onClick={() => void editor.actions.commit()}
                 >
-                  <span data-ui="icon" class="icon-[ph--spinner] shrink-0" aria-hidden="true" />
+                  <span
+                    data-ui="icon"
+                    class={`${writesMessage() ? 'icon-[ph--spinner]' : 'icon-[ph--check]'} shrink-0`}
+                    aria-hidden="true"
+                  />
                   <span data-ui="label">{git.state.pending || 'Commit'}</span>
                 </button>
               </Show>

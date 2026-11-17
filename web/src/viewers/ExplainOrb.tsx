@@ -1,4 +1,3 @@
-import { Spiral } from '../brand/Spiral.tsx';
 import type { JSX } from 'solid-js';
 import { createMemo, onCleanup, Show } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
@@ -73,17 +72,21 @@ export function ExplainOrb(): JSX.Element {
             >
               <Show when={view()?.busy}>
                 <span data-orb="spin" class="inline-flex shrink-0">
-                  <Spiral state="thinking" size={18} />
+                  <span class="icon-[ph--spinner] motion-safe:animate-spin" aria-hidden="true" />
                 </span>
               </Show>
               <Show when={state.model?.phase === 'done'}>
                 <span data-orb="done" class="mt-px inline-flex shrink-0">
-                  <Spiral state="static" size={18} />
+                  <span class="icon-[ph--spinner]" aria-hidden="true" />
                 </span>
               </Show>
               <Show when={state.model?.phase === 'failed'}>
                 <span data-orb="fail" class="mt-px inline-flex shrink-0">
-                  <Spiral state="error" size={18} label="Failed" />
+                  <span
+                    class="icon-[ph--warning-circle] text-destructive"
+                    role="img"
+                    aria-label="Failed"
+                  />
                 </span>
               </Show>
               <span class="flex min-w-0 max-w-md flex-col gap-0.5">

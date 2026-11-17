@@ -113,7 +113,7 @@ logo files are unchanged in this colour-only phase.
 ### fibo colours
 
 Define these first in both themes. Surfaces and controls are neutral.
-The brand green (`--spiral`) is reserved for the logo, thinking spiral and the two agent send buttons.
+The brand green (`--spiral`) is reserved for the logo, the threads panel's thinking spiral and the two agent send buttons.
 Pull request states have their own tokens (`--state-open`, `--state-merged`, `--state-closed`,
 `--state-draft`, `--on-state`); user themes that omit them fall back to `--gi`, `--k`,
 `--destructive` and `--muted-foreground`.
@@ -233,7 +233,9 @@ Don't draw carets with borders. Live spirals are 18px wide.
 
 Existing `size-*` utilities size the masks at `1em`; the 256-unit viewBox does
 not change the CSS size. Use `circle-notch animate-spin` for plain spinners.
-Agent busy states keep the shared Spiral. Markdown alert and external-link
+Only busy states in the threads panel keep the shared Spiral. Other AI busy
+states use `icon-[ph--spinner] motion-safe:animate-spin`, retaining the idle
+starburst's colour and global icon size. Markdown alert and external-link
 masks also use Phosphor regular. The web build replaces Basecoat's embedded
 caret/check artwork with the same set, preserving its theme colour and opacity.
 
@@ -480,17 +482,17 @@ caps and joins. Width defaults to 22px. A `label` gives it `role="img"` and
 an accessible name; without a label it is decorative. The only supported
 `state` is `static`, also exposed as `data-state`; this brand asset does not animate.
 
-`web/src/brand/Spiral.tsx` is the live agent status mark, separate from the
-logo. Its generated line uses the same geometry for every state, with viewBox
+`web/src/brand/Spiral.tsx` is the live agent status mark used only in the
+threads panel, separate from the logo. Its generated line uses the same geometry for every state, with viewBox
 `-40 -44 104 78`, width 22px by default, and stroke width 11 at sizes up to
 32px or 7.5 above. A label supplies `role="img"`; otherwise it is decorative.
 
 | State | Use | Motion |
 | --- | --- | --- |
 | `static` | Rest shape available to status consumers | None |
-| `thinking` | Running thread rows and steps, explain pill, review stages, Explain PR and merge-message rewriting | Line wriggles, with a 2200ms shimmy |
+| `thinking` | Running thread rows, steps and artifact cards in the threads panel | Line wriggles, with a 2200ms shimmy |
 | `hold` | Agent waiting for reader approval or an answer | Loose curl, 1700ms tip wag |
-| `error` | Existing failed-thread and failed-explain marks | Springs open, rattles and curls back once over 2800ms |
+| `error` | Failed-thread marks in the threads panel | Springs open, rattles and curls back once over 2800ms |
 
 There is currently no agent approval/question surface, so `hold` is available
 and tested without a product placement. Finished replies gain no new marks.
@@ -504,12 +506,15 @@ the SVG never rotates, scales or slides. Under reduced motion all four states
 show the static line, while labels and error colour remain. Changes to the
 system preference take effect immediately.
 
-Only agent work uses the spiral. Settings saves, LSP work, CI checks,
-workspace startup, refreshes and changed-file fetching keep plain spinners.
-The review Walkthrough screen loads a diff, rather than generating an agent
-answer. Special buttons use their text colour for the spiral so it remains
-legible on the neutral fill. Legacy themes fall back from `--danger` to
-`--destructive`.
+Only the threads panel uses the animated spiral. Other AI busy states use
+the rotating `ph--spinner` starburst with `motion-safe:animate-spin`, retaining
+the idle icon's colour and size. This includes review stages, Explain PR,
+merge-message rewriting and the explanation pill. The review Walkthrough
+loading state also uses the rotating starburst. The completed explanation
+pill keeps a static starburst; failure uses `ph--warning-circle` in
+`text-destructive` with the accessible name "Failed". Settings saves, LSP work,
+CI checks, workspace startup and refreshes keep their generic loaders.
+Legacy themes fall back from `--danger` to `--destructive`.
 
 `web/src/brand/Brand.tsx` pairs that mark with lowercase text in Fraunces at
 weight 600. The wrapper supplies the single accessible name, "fibo"; its SVG

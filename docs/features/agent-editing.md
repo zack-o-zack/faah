@@ -56,7 +56,7 @@ The bar appears as soon as the first box opens, so the batch is always in view. 
 
 ## Beyond Code: Commit Messages
 
-The same harness and model you pick here are also used by the sidebar git panel's **✨ Commit** (empty message) button, which asks the harness to write a commit message for your staged changes instead of editing code — see [Git Awareness: Stage, Commit, Push, Pull](git-integration.md).
+The same harness and model you pick here are also used by the sidebar git panel's **Commit** button when the message is empty. The button then shows the agent style and starburst icon (with a message it is a plain primary button with a check). It asks the harness to write a commit message for your staged changes instead of editing code — see [Git Awareness: Stage, Commit, Push, Pull](git-integration.md).
 
 ---
 

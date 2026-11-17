@@ -1,4 +1,3 @@
-import { Spiral } from '../brand/Spiral.tsx';
 interface ReviewTabProps {
   id: string;
   title: string;
@@ -78,12 +77,11 @@ export function ReviewTabs(): JSX.Element {
           editor.actions.setReviewTab('walkthrough');
         }}
       >
-        <Show
-          when={explaining()}
-          fallback={<span class="icon-[ph--spinner] shrink-0" aria-hidden="true" />}
-        >
-          <Spiral state="thinking" size={18} />
-        </Show>
+        <span
+          class="icon-[ph--spinner] shrink-0"
+          classList={{ 'motion-safe:animate-spin': explaining() }}
+          aria-hidden="true"
+        />
         Explain PR
       </button>
       <Show when={review.state.tab !== 'stages'}>

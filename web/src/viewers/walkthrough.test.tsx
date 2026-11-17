@@ -488,6 +488,9 @@ test('compact view keeps toggle focus, hides expanded content, and completes the
   });
   await fixture.editor.actions.showExplanation(rich, 1);
   expect(document.querySelector('[data-orb="done"]')?.classList.contains('shrink-0')).toBe(true);
+  const icon = required(document.querySelector('[data-orb="done"] .icon-\\[ph--spinner\\]'));
+  expect(icon.classList.contains('motion-safe:animate-spin')).toBe(false);
+  expect(document.querySelector('#explain-orb .fibo-spiral')).toBeNull();
   expect(document.querySelector('[data-orb="text"]')?.textContent).not.toContain('walkthrough');
   expect(document.getElementById('explain-orb-open')?.getAttribute('aria-label')).toContain(
     '1 walkthrough',
@@ -558,13 +561,19 @@ test('compact preference loads at startup and tolerates unavailable storage', ()
   restricted.view.unmount();
 });
 
-test('failure status icons cannot shrink beside their text', () => {
+test('busy and failed explanation icons retain their hooks and cannot shrink beside their text', () => {
   const fixture = setup();
   fixture.editor.actions.orbBegin();
-  expect(document.querySelector('[data-orb=spin] [data-state=thinking]')).toBeTruthy();
+  const busy = required(document.querySelector('[data-orb="spin"] .icon-\\[ph--spinner\\]'));
+  expect(busy.classList.contains('motion-safe:animate-spin')).toBe(true);
+  expect(document.querySelector('[data-orb="spin"]')?.classList.contains('shrink-0')).toBe(true);
+  expect(document.querySelector('#explain-orb .fibo-spiral')).toBeNull();
   fixture.editor.actions.orbFailed('Could not explain');
-  expect(screen.getByRole('img', { name: 'Failed' }).getAttribute('data-state')).toBe('error');
+  const failed = screen.getByRole('img', { name: 'Failed' });
+  expect(failed.classList.contains('icon-[ph--warning-circle]')).toBe(true);
+  expect(failed.classList.contains('text-destructive')).toBe(true);
   expect(document.querySelector('[data-orb=spin]')).toBeNull();
+  expect(document.querySelector('#explain-orb .fibo-spiral')).toBeNull();
   expect(document.querySelector('[data-orb="fail"]')?.classList.contains('shrink-0')).toBe(true);
   expect(document.querySelector('#explain-orb-compact')).toBeNull();
   fixture.view.unmount();

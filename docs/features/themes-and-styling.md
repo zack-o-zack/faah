@@ -5,7 +5,8 @@ System is the default: dark OS appearance selects Dark, otherwise Light.
 The palette uses neutral surfaces and readable ink for text, syntax,
 search, selections and diffs.
 
-The brand green is reserved for the logo, thinking spiral and agent send buttons.
+The brand green is reserved for the logo, the threads panel's thinking spiral and agent send buttons.
+Other AI busy states use a rotating starburst in the idle icon's colour and size.
 Primary actions use ink. Pull request states use the familiar filled pills:
 green Open, purple Merged, red Closed and grey Draft, all with white text.
 Other badges use neutral fills with readable text.

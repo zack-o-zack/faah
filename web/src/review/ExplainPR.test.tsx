@@ -313,11 +313,17 @@ test.each([false, true])(
 test('running PR explanations disable the review action and empty-path rows show the title', async () => {
   const f = mount();
   f.editor.actions.setReviewMode('review');
-  f.editor.actions.acceptThread(decodeThread({ ...thread, turns: [{ id: 1, running: true }] }));
   const explain = screen.getByRole<HTMLButtonElement>('button', { name: 'Explain PR' });
+  const icon = required(explain.querySelector('.icon-\\[ph--spinner\\]'));
+  expect(icon.classList.contains('motion-safe:animate-spin')).toBe(false);
+  f.editor.actions.acceptThread(decodeThread({ ...thread, turns: [{ id: 1, running: true }] }));
   expect(explain.disabled).toBe(true);
-  expect(explain.querySelector('[data-state=thinking]')).toBeTruthy();
-  expect(explain.querySelector('[class*=ph--spinner]')).toBeNull();
+  expect(explain.querySelector('.icon-\\[ph--spinner\\]')).toBe(icon);
+  expect(icon.classList.contains('motion-safe:animate-spin')).toBe(true);
+  expect(explain.querySelector('.fibo-spiral')).toBeNull();
+  f.editor.actions.acceptThread(thread);
+  expect(explain.disabled).toBe(false);
+  expect(icon.classList.contains('motion-safe:animate-spin')).toBe(false);
   const row = render(() => (
     <ThreadListRow
       thread={{ id: 'pr', title: 'Explain PR #7', path: '', kind: 'explain' }}

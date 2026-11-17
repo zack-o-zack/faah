@@ -1,4 +1,3 @@
-import { Spiral } from '../brand/Spiral.tsx';
 import type { MergeMessage } from './types.ts';
 
 interface CommitFieldsProps {
@@ -262,12 +261,11 @@ function CommitFields(props: CommitFieldsProps): JSX.Element {
             disabled={rewriting().pending}
             onClick={() => void editor.actions.rewriteMergeMessage()}
           >
-            <Show
-              when={rewriting().pending}
-              fallback={<span class="icon-[ph--spinner] shrink-0" aria-hidden="true" />}
-            >
-              <Spiral state="thinking" size={18} />
-            </Show>
+            <span
+              class="icon-[ph--spinner] shrink-0"
+              classList={{ 'motion-safe:animate-spin': rewriting().pending }}
+              aria-hidden="true"
+            />
             {rewriting().pending ? `Rewriting... (${rewriting().seconds}s)` : 'Rewrite'}
           </button>
         </div>

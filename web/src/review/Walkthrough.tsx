@@ -50,7 +50,7 @@ function EmptyState(props: EmptyStateProps): JSX.Element {
         when={props.spinner}
         fallback={<span class={`${props.icon} shrink-0`} aria-hidden="true" />}
       >
-        <div class="size-6 animate-spin rounded-full border-2 border-border border-t-primary-text" />
+        <span class="icon-[ph--spinner] motion-safe:animate-spin" aria-hidden="true" />
       </Show>
       <h3 class="font-display font-semibold tracking-[-0.02em]">{props.title}</h3>
       <Show when={props.children}>

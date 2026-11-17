@@ -6,6 +6,7 @@ import { EditorProvider } from '../editor/context.tsx';
 import { createEditorStore } from '../editor/store.ts';
 import type { EditorStore } from '../editor/store.ts';
 import { required } from '../lib/test-values.ts';
+import { decodeThread, type Thread } from '../threads/decode.ts';
 import { ReviewView } from './ReviewView.tsx';
 
 function mount(reply: unknown, walkthrough: unknown = { files: [], totalFiles: 0 }) {
@@ -55,6 +56,64 @@ test('a pending stage offers a run button and hides an empty question', async ()
   expect(screen.getByRole('form', { name: 'Edit stage' })).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
   expect(screen.queryByRole('form')).toBe(null);
+});
+
+test('stage loading and thinking use rotating starbursts instead of spirals', async () => {
+  const def = { id: 'a', title: 'Check changes' };
+  const editor = mount({
+    config: { stages: [def] },
+    run: {
+      id: 'run',
+      status: 'running',
+      activeStage: 0,
+      stages: [{ def, status: 'running', threadId: 'stage' }],
+    },
+  });
+  let finish: ((thread: Thread) => void) | undefined;
+  const pending = new Promise<Thread>((resolve) => {
+    finish = resolve;
+  });
+  vi.spyOn(editor.threads.actions, 'loadThread').mockReturnValue(pending);
+  editor.actions.setReviewMode('review');
+  editor.actions.setReviewTab('stages');
+  const loading = await screen.findByText('Loading the answer…');
+  expect(
+    required(loading.querySelector('.icon-\\[ph--spinner\\]')).classList.contains(
+      'motion-safe:animate-spin',
+    ),
+  ).toBe(true);
+  expect(document.querySelector('#review-stage-main .fibo-spiral')).toBeNull();
+  const thread = decodeThread({ id: 'stage', turns: [{ id: 1, running: true }] });
+  editor.actions.acceptThread(thread);
+  finish?.(thread);
+  const thinking = await screen.findByText('Reading the changes…');
+  expect(
+    required(thinking.querySelector('.icon-\\[ph--spinner\\]')).classList.contains(
+      'motion-safe:animate-spin',
+    ),
+  ).toBe(true);
+  expect(document.querySelector('#review-stage-main .fibo-spiral')).toBeNull();
+  editor.actions.acceptThread(decodeThread({ id: 'stage', turns: [{ id: 1, reply: 'Done.' }] }));
+  expect(screen.queryByText('Reading the changes…')).toBeNull();
+});
+
+test('walkthrough loading uses a rotating starburst at the global icon size', async () => {
+  let finish: ((value: unknown) => void) | undefined;
+  const pending = new Promise<unknown>((resolve) => {
+    finish = resolve;
+  });
+  const editor = mount({}, pending);
+  editor.actions.setReviewMode('review');
+  editor.actions.setReviewTab('walkthrough');
+  await screen.findByText('Loading changed files…');
+  const view = required(document.getElementById('review-walkthrough-view'));
+  const icon = required(view.querySelector('.icon-\\[ph--spinner\\]'));
+  expect(icon.classList.contains('motion-safe:animate-spin')).toBe(true);
+  expect(icon.className).not.toMatch(/\bsize-/);
+  expect(view.querySelector('.fibo-spiral')).toBeNull();
+  finish?.({ files: [], totalFiles: 0 });
+  await screen.findByText('No changes in this pull request');
+  expect(view.querySelector('.motion-safe\\:animate-spin')).toBeNull();
 });
 
 test('a configured stage shows its title and question before its first run', async () => {

@@ -109,4 +109,5 @@ An unavailable saved ID follows the OS with no migration or alias. See
 Color Theme uses the same System / Light / Dark icon switcher as the footer.
 Arrow keys change the choice. An extra select appears only for installed user
 themes; selecting one leaves the three built-in segments unchecked. Green is
-reserved for the logo, thinking spiral, agent send buttons and Open PR status.
+reserved for the logo, the threads panel's thinking spiral, agent send buttons and Open PR status.
+Other AI busy states use a rotating starburst in the idle icon's colour and size.
