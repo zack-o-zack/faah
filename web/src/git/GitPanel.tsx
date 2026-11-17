@@ -29,7 +29,7 @@ export function GitPanel(): JSX.Element {
         />
         <div class="git-panel-head flex shrink-0 items-center gap-2 border-b px-3 py-2 text-xs font-medium">
           <span
-            class="icon-[ph--git-branch] shrink-0 git-panel-icon text-primary"
+            class="icon-[ph--git-branch] shrink-0 git-panel-icon text-primary-text"
             title="Git Panel"
             aria-hidden="true"
           />
@@ -80,7 +80,7 @@ export function GitPanel(): JSX.Element {
                 fallback={
                   <div
                     id="git-clean-state"
-                    class="git-clean-state flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg border border-dashed px-3 py-1.5 text-xs text-muted-foreground [&_svg]:shrink-0 [&_svg]:text-primary"
+                    class="git-clean-state flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg border border-dashed px-3 py-1.5 text-xs text-muted-foreground [&_svg]:shrink-0 [&_svg]:text-primary-text"
                   >
                     <span class="icon-[ph--check] shrink-0" aria-hidden="true" />
                     <span>Working tree clean</span>
@@ -96,7 +96,7 @@ export function GitPanel(): JSX.Element {
                   disabled={!!git.state.pending}
                   onClick={() => void editor.actions.commit()}
                 >
-                  <span data-ui="icon" class="icon-[ph--sparkle] shrink-0" aria-hidden="true" />
+                  <span data-ui="icon" class="icon-[ph--spinner] shrink-0" aria-hidden="true" />
                   <span data-ui="label">{git.state.pending || 'Commit'}</span>
                 </button>
               </Show>

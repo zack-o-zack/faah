@@ -40,7 +40,7 @@ export function StageTurn(props: StageTurnProps): JSX.Element {
       <Show when={props.turn.reply || props.turn.running}>
         <div class="flex min-w-0 flex-col gap-2">
           <span class="flex items-center gap-1.5 text-xs font-medium text-special">
-            <span class="icon-[ph--sparkle] shrink-0" aria-hidden="true" />
+            <span class="icon-[ph--spinner] shrink-0" aria-hidden="true" />
             {props.turn.model || 'Coding harness'}
           </span>
           <Show when={props.turn.tools?.length}>

@@ -122,7 +122,7 @@ function MergeFix(): JSX.Element {
         onClick={editor.actions.runMergeFix}
       >
         <span
-          class={`${pill()?.act === 'resolve' ? 'icon-[ph--sparkle]' : 'icon-[ph--arrow-up]'} shrink-0`}
+          class={`${pill()?.act === 'resolve' ? 'icon-[ph--spinner]' : 'icon-[ph--arrow-up]'} shrink-0`}
           aria-hidden="true"
         />
         {pill()?.fix}
@@ -146,7 +146,7 @@ function BatchApply(): JSX.Element {
         onClick={() => void editor.actions.applyDrafts()}
         data-control="bar-action pr-btn-batch-apply"
       >
-        <span class="icon-[ph--sparkle] shrink-0" aria-hidden="true" />
+        <span class="icon-[ph--spinner] shrink-0" aria-hidden="true" />
         <span>{batch().pending ? `Applying… ${batch().seconds}s` : 'Apply drafts'}</span>
       </button>
     </Show>

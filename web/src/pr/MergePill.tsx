@@ -14,7 +14,7 @@ export function MergePill(): JSX.Element {
         class={`inline-flex shrink-0 items-center gap-1 ${TONES[pill()?.tone || ''] || ''}`}
         title={pill()?.title}
       >
-        <span class={`${PILL_ICONS[pill()?.tone || ''] || PILL_ICONS.muted} size-3.5 shrink-0`} />
+        <span class={`${PILL_ICONS[pill()?.tone || ''] || PILL_ICONS.muted} shrink-0`} />
         <span>{pill()?.text}</span>
       </span>
     </Show>

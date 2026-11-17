@@ -45,7 +45,7 @@ export function StageView(): JSX.Element {
                 disabled={review.running() || review.state.pending === 'run'}
                 onClick={() => void editor.actions.runReview(review.state.active)}
               >
-                <span class="icon-[ph--sparkle] shrink-0" aria-hidden="true" />
+                <span class="icon-[ph--spinner] shrink-0" aria-hidden="true" />
                 Run this stage
               </button>
             </div>

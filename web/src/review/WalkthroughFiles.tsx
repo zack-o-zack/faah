@@ -76,7 +76,7 @@ function FileCard(props: { file: WalkthroughFile }): JSX.Element {
       class="shrink-0 rounded-md"
       classList={{
         'bg-accent': review.state.activeFile === props.file.path,
-        'opacity-50': !!review.state.viewed[props.file.path],
+        'text-muted-foreground': !!review.state.viewed[props.file.path],
       }}
     >
       <button

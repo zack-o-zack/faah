@@ -16,7 +16,7 @@ export function ThreadsPanel(): JSX.Element {
       class="flex w-96 shrink-0 flex-col overflow-hidden border-l bg-sidebar [body.threads-hidden_&]:hidden"
     >
       <header class="inspector-head desktop:min-h-[var(--titlebar-h,2.5rem)] desktop:[-webkit-app-region:drag] desktop:[&_button]:[-webkit-app-region:no-drag] desktop:[&_a]:[-webkit-app-region:no-drag] desktop:[&_[role=group]]:[-webkit-app-region:no-drag] desktop:[&_[role=tab]]:[-webkit-app-region:no-drag] flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2 threads-head">
-        <div class="threads-head-title flex items-center gap-2 font-medium [&_svg]:shrink-0 [&_svg]:text-primary">
+        <div class="threads-head-title flex items-center gap-2 font-medium [&_svg]:shrink-0 [&_svg]:text-primary-text">
           <span class="icon-[ph--chat-centered] shrink-0" aria-hidden="true" />
           <span class="threads-head-label text-xs font-medium">Threads</span>
           <span

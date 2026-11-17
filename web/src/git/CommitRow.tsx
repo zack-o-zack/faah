@@ -64,7 +64,7 @@ export function CommitRow(props: CommitRowProps): JSX.Element {
                     aria-hidden="true"
                   />
                   <span
-                    class="icon-[ph--git-commit] shrink-0 git-commit-icon text-primary"
+                    class="icon-[ph--git-commit] shrink-0 git-commit-icon text-primary-text"
                     aria-hidden="true"
                   />
                 </>

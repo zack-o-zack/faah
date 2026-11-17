@@ -15,7 +15,7 @@ export function PanelHandle(props: PanelHandleProps): JSX.Element {
   const width = () => editor.store.state.layout[widthKey()];
   return (
     <div
-      class={`${props.panel === 'left' ? '-ml-0.5' : '-mr-0.5'} w-1 shrink-0 cursor-col-resize z-10 hover:bg-primary [&.drag]:bg-primary`}
+      class={`${props.panel === 'left' ? '-ml-0.5' : '-mr-0.5'} w-1 shrink-0 cursor-col-resize z-10 hover:bg-primary-text [&.drag]:bg-primary-text`}
       hidden={!editor.store.state.layout[props.panel]}
     >
       <SplitHandle

@@ -76,7 +76,7 @@ export function TreeRow(props: TreeRowProps): JSX.Element {
     >
       {(menu) => (
         <div
-          class="tr flex min-h-6 cursor-pointer select-none items-center gap-1.5 pr-2 text-xs whitespace-nowrap hover:bg-sidebar-accent [&.sel]:bg-sidebar-accent [&.ignored]:opacity-50 [&.git-M]:text-primary-text [&.git-R]:text-primary-text [&.git-A]:text-gi [&.git-untracked]:text-gi [&.git-D]:text-gd [&.git-D_.nm]:line-through [&.your-change]:font-semibold [.scope-pr_&.your-change]:font-normal [&.file-viewed_.nm]:opacity-50 group"
+          class="tr flex min-h-6 cursor-pointer select-none items-center gap-1.5 pr-2 text-xs whitespace-nowrap hover:bg-sidebar-accent [&.sel]:bg-sidebar-accent [&.ignored]:text-muted-foreground [&.git-M]:text-primary-text [&.git-R]:text-primary-text [&.git-A]:text-gi [&.git-untracked]:text-gi [&.git-D]:text-gd [&.git-D_.nm]:line-through [&.your-change]:font-semibold [.scope-pr_&.your-change]:font-normal [&.file-viewed_.nm]:text-muted-foreground group"
           classList={{
             dir: !!props.row.dir,
             file: !props.row.dir,
@@ -123,7 +123,7 @@ export function TreeRow(props: TreeRowProps): JSX.Element {
             />
           </Show>
           <button
-            class="nm min-h-6 min-w-6 text-left truncate group-[.dir.dirty]:after:ml-1 group-[.dir.dirty]:after:inline-block group-[.dir.dirty]:after:size-1 group-[.dir.dirty]:after:rounded-full group-[.dir.dirty]:after:bg-primary"
+            class="nm min-h-6 min-w-6 text-left truncate group-[.dir.dirty]:after:ml-1 group-[.dir.dirty]:after:inline-block group-[.dir.dirty]:after:size-1 group-[.dir.dirty]:after:rounded-full group-[.dir.dirty]:after:bg-primary-text"
             tabindex="-1"
           >
             {props.row.name}
@@ -133,7 +133,7 @@ export function TreeRow(props: TreeRowProps): JSX.Element {
               <span class="gs w-3 text-center font-mono">{decoration().code}</span>
             </Show>
             <Show when={!props.row.dir && decoration().yours}>
-              <span class="text-primary" title="Your change">
+              <span class="text-primary-text" title="Your change">
                 YOU
               </span>
             </Show>

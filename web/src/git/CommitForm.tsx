@@ -53,7 +53,7 @@ export function CommitForm(): JSX.Element {
               disabled={!!editor.git.state.pending}
               onClick={() => void editor.actions.generateCommitMessage()}
             >
-              <span data-ui="icon" class="icon-[ph--sparkle] shrink-0" aria-hidden="true" />
+              <span data-ui="icon" class="icon-[ph--spinner] shrink-0" aria-hidden="true" />
             </button>
           </footer>
         </div>

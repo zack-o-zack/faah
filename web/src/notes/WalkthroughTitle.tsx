@@ -45,7 +45,7 @@ export function WalkTitleLine(props: {
       class="flex min-w-0 items-center gap-1.5 font-mono text-xs text-special"
       style={{ 'padding-left': `${props.indent}px` }}
     >
-      <span class="icon-[ph--sparkle] shrink-0" aria-hidden="true" />
+      <span class="icon-[ph--spinner] shrink-0" aria-hidden="true" />
       <span class="shrink-0">
         {props.n}/{props.of}
       </span>

@@ -358,7 +358,7 @@ test('section arrows start and move once, while controls and modified arrows are
   fixture.view.unmount();
 });
 
-test('focus mode dims only the step file, virtualizes its title, and keeps source operations outside annotations', async () => {
+test('focus mode highlights the step file, virtualizes its title, and keeps source operations outside annotations', async () => {
   const fixture = setup();
   const editor = fixture.editor;
   await editor.actions.showExplanation(thread, 1);
@@ -370,8 +370,8 @@ test('focus mode dims only the step file, virtualizes its title, and keeps sourc
   expect(title.textContent).toContain('1/3');
   expect(rows.querySelector('[data-note-inline]')).toBeNull();
   expect(rows.querySelector('[data-note-panel]')).toBeNull();
-  expect(document.querySelector<HTMLElement>('[data-l="1"]')?.style.opacity).toBe('0.3');
-  expect(document.querySelector<HTMLElement>('[data-l="2"]')?.style.opacity).toBe('1');
+  expect(document.querySelector<HTMLElement>('[data-l="1"]')?.style.opacity).toBe('');
+  expect(document.querySelector<HTMLElement>('[data-l="2"]')?.style.opacity).toBe('');
   expect(document.querySelector('[data-l="2"] [data-note-bar]')).toBeTruthy();
   const dom = createSourceDOM(rows, () => ({ path: 'a.go' }));
   expect(dom.toPos(title, 0)).toBeNull();
@@ -391,7 +391,7 @@ test('focus mode dims only the step file, virtualizes its title, and keeps sourc
   expect(editor.store.state.explanation.walk?.step).toBe(0);
   await editor.actions.openFile('b.go', { view: 'source' });
   expect(editor.walkthrough.focus()).toBeNull();
-  expect(editor.dimmed(1)).toBe(false);
+  expect(editor.walkContains(1)).toBe(false);
   await editor.actions.openFile('a.go', { view: 'source' });
   expect(editor.walkthrough.focus()?.l1).toBe(2);
   editor.actions.walkStop();
@@ -401,7 +401,7 @@ test('focus mode dims only the step file, virtualizes its title, and keeps sourc
   await waitFor(() => expect(editor.walkthrough.focus()?.l1).toBe(2));
   editor.actions.dismissOrb();
   expect(editor.walkthrough.focus()).toBeNull();
-  expect(editor.dimmed(1)).toBe(false);
+  expect(editor.walkContains(1)).toBe(false);
   fixture.view.unmount();
 });
 
@@ -447,7 +447,7 @@ test('changed, past-end and missing step ranges remain visible in the widget wit
   await fixture.editor.actions.showExplanation(missing, 1, { walkthrough: true });
   await screen.findByText('file not found');
   expect(fixture.editor.walkthrough.focus()).toBeNull();
-  expect(fixture.editor.dimmed(1)).toBe(false);
+  expect(fixture.editor.walkContains(1)).toBe(false);
   expect(
     within(screen.getByRole('region', { name: 'Walkthrough' })).getByText('Collect input'),
   ).toBeTruthy();

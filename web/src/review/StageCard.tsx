@@ -64,7 +64,7 @@ function StageMenuItems(props: { index: number }): JSX.Element {
   return (
     <>
       <MenuItem
-        icon="icon-[ph--sparkle] text-special"
+        icon="icon-[ph--spinner] text-special"
         disabled={review.running()}
         onSelect={() => void editor.actions.runReview(props.index)}
       >

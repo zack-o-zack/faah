@@ -64,7 +64,7 @@ export function GitNotice(): JSX.Element {
                   onClick={() => void choose(choice)}
                 >
                   <Show when={['rebase', 'merge', 'finish'].includes(choice)}>
-                    <span class="icon-[ph--sparkle] shrink-0" aria-hidden="true" />
+                    <span class="icon-[ph--spinner] shrink-0" aria-hidden="true" />
                   </Show>
                   {labels[choice]}
                 </button>

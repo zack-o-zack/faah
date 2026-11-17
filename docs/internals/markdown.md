@@ -176,7 +176,7 @@ These cases come from the browser checks run against the implementation:
 - Lightbox. Clicking a standalone image opens `Lightbox.tsx`, a native modal dialog with **Open in tab** (promotes the image into an image tab) and **Copy path**; Escape or a backdrop click closes it.
 - Broken image recovery. A capture-phase error listener on `#md` detects failed image loads and replaces the element with a styled `.md-img-broken` card displaying the missing path. See [Image Viewer Architecture](image-viewer.md) for full details.
 
-Styles live in the Markdown section of `@layer components` in [`web/tailwind.css`](../../web/tailwind.css). They read only theme tokens, so all themes work without changes. Alerts set a local `--alert` property from existing tokens: Note `--primary`, Tip `--gi`, Important `--nc`, Warning `--mark-active`, Caution `--destructive`. [`styling-and-themes.md`](styling-and-themes.md) lists every token the preview uses.
+Styles live in the Markdown section of `@layer components` in [`web/tailwind.css`](../../web/tailwind.css). They read only theme tokens, so all themes work without changes. Alerts set a local `--alert` property from existing tokens: Note `--primary-text`, Tip `--gi`, Important `--nc`, Warning `--warn`, Caution `--destructive`. [`styling-and-themes.md`](styling-and-themes.md) lists every token the preview uses.
 
 ### Mermaid Diagrams
 

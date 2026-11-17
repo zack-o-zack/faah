@@ -49,7 +49,7 @@ export function ThreadSteps(props: { turn: ThreadTurn; thread?: Thread | null })
                             });
                         }}
                       >
-                        <span class="icon-[ph--sparkle] text-special" aria-hidden="true" />
+                        <span class="icon-[ph--spinner] text-special" aria-hidden="true" />
                       </button>
                     </Show>
                   </li>

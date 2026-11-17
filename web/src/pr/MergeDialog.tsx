@@ -195,6 +195,8 @@ function CommitFields(props: CommitFieldsProps): JSX.Element {
           <button
             type="button"
             id="pr-merge-ai-toggle"
+            title="Rewrite the commit message"
+            aria-label="Rewrite the commit message"
             class="btn"
             data-variant="special"
             data-size="xs"
@@ -203,8 +205,8 @@ function CommitFields(props: CommitFieldsProps): JSX.Element {
             disabled={rewriting().pending}
             onClick={() => editor.actions.setMergeAIOpen(!dialog().aiOpen)}
           >
-            <span class="icon-[ph--sparkle]" aria-hidden="true" />
-            Rewrite with AI
+            <span class="icon-[ph--spinner]" aria-hidden="true" />
+            Rewrite
           </button>
           <button
             type="button"
@@ -262,7 +264,7 @@ function CommitFields(props: CommitFieldsProps): JSX.Element {
           >
             <Show
               when={rewriting().pending}
-              fallback={<span class="icon-[ph--sparkle] shrink-0" aria-hidden="true" />}
+              fallback={<span class="icon-[ph--spinner] shrink-0" aria-hidden="true" />}
             >
               <Spiral state="thinking" size={18} />
             </Show>

@@ -31,7 +31,7 @@ export function DirectoryList(props: DirectoryListProps): JSX.Element {
             aria-selected={index() === state.selected}
             class={`flex cursor-pointer items-center gap-2 rounded-sm p-2
         hover:bg-accent aria-selected:bg-accent`}
-            classList={{ 'opacity-50': entry.name.startsWith('.') }}
+            classList={{ 'text-muted-foreground': entry.name.startsWith('.') }}
             onClick={() => actions.browse(entry.path)}
           >
             <span

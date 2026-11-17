@@ -80,7 +80,10 @@ export function TabStrip(props: { children?: JSX.Element }): JSX.Element {
               }}
             >
               <Show when={tab.isImage}>
-                <span class="icon-[ph--image] shrink-0 tab-icon text-primary" aria-hidden="true" />
+                <span
+                  class="icon-[ph--image] shrink-0 tab-icon text-primary-text"
+                  aria-hidden="true"
+                />
               </Show>
               <button
                 class="tn min-h-6 min-w-6 truncate text-left"
@@ -91,7 +94,7 @@ export function TabStrip(props: { children?: JSX.Element }): JSX.Element {
               </button>
               <Show when={tab.dirty}>
                 <span
-                  class="tab-dirty-dot size-2 shrink-0 rounded-full bg-primary"
+                  class="tab-dirty-dot size-2 shrink-0 rounded-full bg-primary-text"
                   title="Unsaved changes"
                 />
               </Show>

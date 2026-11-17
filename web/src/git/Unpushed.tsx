@@ -32,7 +32,7 @@ export function Unpushed(): JSX.Element {
         />
         <div class="unpushed-head flex shrink-0 items-center gap-2 border-b px-3 py-2 text-xs font-medium">
           <span
-            class="icon-[ph--arrow-up] shrink-0 unpushed-icon text-primary"
+            class="icon-[ph--arrow-up] shrink-0 unpushed-icon text-primary-text"
             aria-hidden="true"
           />
           <span class="unpushed-title shrink-0 text-xs font-medium text-muted-foreground">

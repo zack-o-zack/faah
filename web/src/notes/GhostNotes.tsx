@@ -78,7 +78,7 @@ export function NoteGhost(props: {
       >
         <button
           type="button"
-          class="btn h-full! max-w-full justify-start! gap-1.5 px-0! font-mono! text-xs! font-normal! text-special/75 hover:text-special"
+          class="btn h-full! max-w-full justify-start! gap-1.5 px-0! font-mono! text-xs! font-normal! text-special"
           data-variant="ghost"
           data-control="note-summary"
           aria-label={props.note.summary}
@@ -94,7 +94,7 @@ export function NoteGhost(props: {
           }}
         >
           <span
-            class="icon-[ph--sparkle] shrink-0"
+            class="icon-[ph--spinner] shrink-0"
             role="img"
             title="AI explanation"
             aria-label="AI explanation"

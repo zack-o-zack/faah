@@ -132,7 +132,7 @@ test('all note kinds keep full source width, span the gutter and highlight on ho
         .querySelector(`[data-l="${line}"] [data-note-bar]`)
         ?.classList.contains('bg-special!'),
     ).toBe(true);
-  expect(document.querySelector<HTMLElement>('[data-l="2"]')?.style.opacity).toBe('0.3');
+  expect(document.querySelector<HTMLElement>('[data-l="2"]')?.style.opacity).toBe('');
   await fireEvent.mouseLeave(required(trigger.closest('[data-note]')));
   await fireEvent.mouseEnter(required(document.querySelector('[data-l="3"]')));
   expect(editor.notes.hovered()?.index).toBe(1);
@@ -246,7 +246,7 @@ test('only the open bubble thread and turn render notes; closing hides every ann
       '[data-note-inline],[data-note-bar],[data-note-panel],[data-popover]',
     ),
   ).toHaveLength(0);
-  expect(document.querySelector<HTMLElement>('[data-l="1"]')?.style.opacity).toBe('1');
+  expect(document.querySelector<HTMLElement>('[data-l="1"]')?.style.opacity).toBe('');
   editor.actions.orbOpen(decodeThread({ id: 't', turns: [{ id: 1 }, { id: 2 }] }), 2);
   await screen.findByRole('button', { name: 'Later turn' });
   expect(document.querySelectorAll('[data-note-inline]')).toHaveLength(1);
@@ -305,10 +305,10 @@ test('large annotated ranges stay virtualized and closing an offscreen bubble re
   expect(editor.offsets().at(-1)).toBe(expandedHeight);
   expect(document.querySelector('[data-note-bar]')).toBeTruthy();
   editor.notes.hoverLine(2000);
-  expect(editor.notes.dimmed(1)).toBe(true);
+  expect(editor.notes.highlighted(2000)).toBe(true);
   editor.actions.dismissOrb();
   expect(document.querySelector('[data-note-bar]')).toBeNull();
-  expect(editor.notes.dimmed(1)).toBe(false);
+  expect(editor.notes.highlighted(2000)).toBe(false);
   expect(editor.offsets().at(-1)).toBe(5000 * editor.geometry.lineHeight);
   fixture.view.unmount();
   vi.unstubAllGlobals();

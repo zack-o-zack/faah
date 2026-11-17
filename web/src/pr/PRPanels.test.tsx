@@ -424,7 +424,9 @@ test('merge AI disclosure toggles for commit methods, focuses instructions, and 
   for (const method of ['squash', 'merge']) {
     editor.actions.chooseMergeMethod(method);
     expect(document.getElementById('pr-merge-ai-row')).toBeNull();
-    const toggle = screen.getByRole<HTMLButtonElement>('button', { name: 'Rewrite with AI' });
+    const toggle = screen.getByRole<HTMLButtonElement>('button', {
+      name: 'Rewrite the commit message',
+    });
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     fireEvent.click(toggle);
     await waitFor(() =>
@@ -437,7 +439,7 @@ test('merge AI disclosure toggles for commit methods, focuses instructions, and 
     expect(document.getElementById('pr-merge-ai-row')).toBeNull();
   }
   editor.actions.chooseMergeMethod('rebase');
-  expect(screen.queryByRole('button', { name: 'Rewrite with AI' })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Rewrite the commit message' })).toBeNull();
 });
 
 test('merge and comment shortcuts are chips inside their buttons with no separate hint', async () => {
@@ -490,13 +492,15 @@ test('AI disclosure and reset stay disabled during a rewrite', async () => {
   await screen.findByText('Ready to merge');
   fireEvent.click(required(document.getElementById('pr-merge')));
   await screen.findByRole('dialog', { name: 'Merge pull request #7' });
-  const toggle = screen.getByRole<HTMLButtonElement>('button', { name: 'Rewrite with AI' });
+  const toggle = screen.getByRole<HTMLButtonElement>('button', {
+    name: 'Rewrite the commit message',
+  });
   fireEvent.click(toggle);
   const rewrite = screen.getByRole('button', { name: 'Rewrite' });
-  expect(rewrite.querySelector('[class*=sparkle]')).toBeTruthy();
+  expect(rewrite.querySelector('[class*=ph--spinner]')).toBeTruthy();
   fireEvent.click(rewrite);
   expect(rewrite.querySelector('[data-state=thinking]')).toBeTruthy();
-  expect(rewrite.querySelector('[class*=sparkle]')).toBeNull();
+  expect(rewrite.querySelector('[class*=ph--spinner]')).toBeNull();
   expect(toggle.disabled).toBe(true);
   expect(
     screen.getByRole<HTMLButtonElement>('button', { name: 'Reset to default message' }).disabled,
@@ -504,7 +508,7 @@ test('AI disclosure and reset stay disabled during a rewrite', async () => {
   finish?.();
   await waitFor(() => expect(toggle.disabled).toBe(false));
   expect(rewrite.querySelector('.fibo-spiral')).toBeNull();
-  expect(rewrite.querySelector('[class*=sparkle]')).toBeTruthy();
+  expect(rewrite.querySelector('[class*=ph--spinner]')).toBeTruthy();
   expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Commit title' }).value).toBe(
     'AI title',
   );

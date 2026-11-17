@@ -324,6 +324,7 @@ colour literals outside theme files.
 Icons are Phosphor, regular weight, from `@iconify-json/ph` via the Tailwind
 Iconify plugin: `icon-[ph--name]`, in `ink` or `ink-muted`.
 Use `-fill` only for a filled state mark. No emoji as icons.
+Agent actions use the static eight-ray `ph--spinner` burst.
 
 Every icon is one size, `--icon-size` (16px), set by one unlayered rule in
 `web/tailwind.css` that also stops icons from shrinking in flex rows. Don't add

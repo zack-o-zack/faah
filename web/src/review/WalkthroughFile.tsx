@@ -10,7 +10,6 @@ import { movedOnly, rowLine } from './logic.ts';
 import { splitRows, unifiedRows, type PaintedRow } from '../viewers/diff-rows.ts';
 import { NoteGhost } from '../notes/GhostNotes.tsx';
 import { WalkTitleLine } from '../notes/WalkthroughTitle.tsx';
-import { WALK_DIM_OPACITY } from '../viewers/walkthrough-review.ts';
 import { pluralize } from '../pr/logic.ts';
 import { LineStats } from './LineStats.tsx';
 import { mergeRanges, missingLines } from './context.ts';
@@ -81,8 +80,8 @@ export function WalkthroughFile(props: WalkthroughFileProps): JSX.Element {
       }}
       class={`review-diff-row ${row ? ROW_TYPE[row.type] || 'diff-type-ctx' : ''}`}
       data-new-line={row?.newLine}
-      style={{ opacity: focused() && !inStep(row) ? WALK_DIM_OPACITY : 1 }}
       classList={{
+        'bg-cur': focused() && inStep(row),
         'diff-row-flash': !!row && targetLine() === rowLine(row),
         'bg-special/5!':
           !!row?.newLine && editor.turnNotes.highlighted(props.file.path, row.newLine),
@@ -113,11 +112,7 @@ export function WalkthroughFile(props: WalkthroughFileProps): JSX.Element {
     ),
   );
   return (
-    <div
-      class="relative mb-3 overflow-clip rounded-md border"
-      classList={{ 'opacity-60': !focus() && !!review.state.viewed[props.file.path] }}
-      style={{ opacity: focus() && !focused() ? WALK_DIM_OPACITY : 1 }}
-    >
+    <div class="relative mb-3 overflow-clip rounded-md border">
       <div
         ref={header}
         class="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-2 border-b bg-sidebar px-3 py-2 text-xs"

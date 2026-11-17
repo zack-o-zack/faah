@@ -126,10 +126,6 @@ export function createNotesStore(
     extraRows,
     error,
     refetch,
-    dimmed(line: number) {
-      const note = activeHover();
-      return !!note && (line < note.l1 || line > note.l2);
-    },
     hoverLine(line: number) {
       setHovered(visible().find((n) => line >= n.l1 && line <= n.l2) || null);
     },

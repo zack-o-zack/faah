@@ -56,7 +56,7 @@ export function ReviewTabs(): JSX.Element {
           <ReviewTab
             id="stages"
             name="Review pipeline"
-            icon="icon-[ph--sparkle]"
+            icon="icon-[ph--spinner]"
             title="Your coding harness answers each review question in turn"
             info={<PipelineStatus />}
           />
@@ -80,7 +80,7 @@ export function ReviewTabs(): JSX.Element {
       >
         <Show
           when={explaining()}
-          fallback={<span class="icon-[ph--sparkle] shrink-0" aria-hidden="true" />}
+          fallback={<span class="icon-[ph--spinner] shrink-0" aria-hidden="true" />}
         >
           <Spiral state="thinking" size={18} />
         </Show>

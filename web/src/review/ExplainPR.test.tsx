@@ -245,12 +245,13 @@ test.each([false, true])(
     expect(f.editor.walkthrough.outdated()).toBe(false);
     expect(document.querySelectorAll('[data-walk-title]')).toHaveLength(1);
     const focused = required(document.querySelector('[data-new-line="2"]')) as HTMLElement;
-    expect(focused.style.opacity).toBe('1');
+    expect(focused.style.opacity).toBe('');
+    expect(focused.classList.contains('bg-cur')).toBe(true);
     expect(
       (required(document.querySelector('[data-new-line="1"]')) as HTMLElement).style.opacity,
-    ).toBe('0.3');
+    ).toBe('');
     expect((required(document.querySelector('.diff-type-del')) as HTMLElement).style.opacity).toBe(
-      '0.3',
+      '',
     );
     const open = vi.spyOn(f.editor.review.actions, 'openReviewReference');
     await fireEvent.click(screen.getByRole('button', { name: 'Next' }));
@@ -316,7 +317,7 @@ test('running PR explanations disable the review action and empty-path rows show
   const explain = screen.getByRole<HTMLButtonElement>('button', { name: 'Explain PR' });
   expect(explain.disabled).toBe(true);
   expect(explain.querySelector('[data-state=thinking]')).toBeTruthy();
-  expect(explain.querySelector('[class*=sparkle]')).toBeNull();
+  expect(explain.querySelector('[class*=ph--spinner]')).toBeNull();
   const row = render(() => (
     <ThreadListRow
       thread={{ id: 'pr', title: 'Explain PR #7', path: '', kind: 'explain' }}

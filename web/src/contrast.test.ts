@@ -105,7 +105,7 @@ for (const theme of ['fibo-light', 'fibo-dark']) {
     for (const surface of SURFACES) {
       for (const text of [...TEXT, ...SYNTAX]) assertContrast(text, token(surface), surface);
       assertContrast('focus', token(surface), surface, 3);
-      if (surface !== 'cur') assertContrast('input', token(surface), surface, 3);
+      assertContrast('input', token(surface), surface, 3);
     }
     // Selection can sit on the current row as well as the editor surface.
     for (const surface of ['surface', 'cur']) {
@@ -118,6 +118,10 @@ for (const theme of ['fibo-light', 'fibo-dark']) {
     for (const fill of ['gi-bg', 'gd-bg']) {
       const background = composite(token(fill), token('surface'));
       for (const text of ['foreground', ...SYNTAX]) assertContrast(text, background, fill);
+      const wordBackground = composite(token(fill), background);
+      for (const text of ['foreground', ...SYNTAX]) {
+        assertContrast(text, wordBackground, `${fill} word highlight over diff row`);
+      }
       if (fill === 'gi-bg') assertContrast('gi', background, fill);
       if (fill === 'gd-bg') assertContrast('gd', background, fill);
     }

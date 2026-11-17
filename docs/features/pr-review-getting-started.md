@@ -118,7 +118,7 @@ While the rebase runs, or sits unpushed, **Approve** and **Merge** wait. Otherwi
 When the pill says **Ready to merge**, use the split button next to Approve:
 
 1. Pick the method from the caret: **Create a merge commit**, **Squash and merge**, or **Rebase and merge**. Only the methods your repository allows are listed, and faah remembers your choice.
-2. In the dialog, edit the commit title and message. **Rewrite with AI** drafts them from the PR's commits and diff, following your Commit Message Instructions (Settings → Git & Diff) and anything you type next to the button.
+2. In the dialog, edit the commit title and message. **Rewrite** drafts them from the PR's commits and diff, following your Commit Message Instructions (Settings → Git & Diff) and anything you type next to the button.
 3. **Confirm**. faah merges exactly the commit you reviewed. If the PR changed since, the merge is refused and faah asks you to pull first.
 
 ---
@@ -137,7 +137,7 @@ When the pill says **Ready to merge**, use the split button next to Approve:
 | *The PR has new commits since this checkout* | Someone pushed after you loaded the PR. | **Pull**, review the new commits, then merge. |
 | *someone else pushed … since this checkout* on force-push | The lease protected their commits; your rebase exists only in this checkout. | Reopen the PR (`faah <url>`) to pick up their commits, then **Resolve conflicts** again. |
 | *diff base unresolved* badge, empty diff | faah couldn't fetch the base branch. | Check that the token can read the repository, then **Pull** to retry. |
-| **✨ Resolve** / **Rewrite with AI** missing | No coding harness is installed. | Install one (see [Editing with Coding Agents](agent-editing.md)). |
+| **Resolve** / **Rewrite** missing | No coding harness is installed. | Install one (see [Editing with Coding Agents](agent-editing.md)). |
 
 ---
 

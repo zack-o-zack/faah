@@ -163,10 +163,6 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
     const step = walkthrough.focus();
     return !!step && line >= step.l1 && line <= step.l2;
   }
-  function dimmed(line: number) {
-    const step = walkthrough.focus();
-    return step ? line < step.l1 || line > step.l2 : notes.dimmed(line);
-  }
   function offsets() {
     revision();
     buffer()?.revision();
@@ -511,7 +507,6 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
     walkthrough,
     annotationHeight,
     walkContains,
-    dimmed,
     notes,
     ...prEditor,
     merge,
