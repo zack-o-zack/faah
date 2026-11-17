@@ -2,9 +2,12 @@ import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { Popover } from '../lib/Popover.tsx';
-import type { MetricsProps } from './MetricsSummary.tsx';
-import { MetricsSummary } from './MetricsSummary.tsx';
+import type { Metrics as WorkspaceMetrics } from '../workspace/decode.ts';
 import { fmtBytes, fmtCpu } from './logic.ts';
+interface MetricsProps {
+  metrics?:
+    (WorkspaceMetrics & { parts?: { name: string; rssBytes: number; cpuUsage: number }[] }) | null;
+}
 export function Metrics(): JSX.Element {
   const editor = useEditor();
   return <MetricsPopover metrics={editor.store.state.workspace.metrics} />;
@@ -14,11 +17,12 @@ export function MetricsPopover(props: MetricsProps): JSX.Element {
   return (
     <Popover
       triggerId="st-metrics"
-      triggerClass="btn font-mono desktop:[&>:not(.shell-ico)]:hidden"
+      triggerTitle="Process metrics"
+      size="icon-xs"
       control="status-metrics"
       panelId="metrics-menu"
       gap={6}
-      label={<MetricsSummary metrics={metrics()} />}
+      label={<span class="icon-[ph--pulse] shrink-0" aria-hidden="true" />}
       accessibleLabel="Process metrics"
     >
       <div data-ui="metrics-stats" class="grid grid-cols-2 gap-6 px-3 pt-2.5 pb-2">
