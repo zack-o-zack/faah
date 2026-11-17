@@ -6,15 +6,15 @@ export function TreeToolbar(): JSX.Element {
   const editor = useEditor();
   const tree = editor.tree;
   return (
-    <header class="panel-head desktop:min-h-[var(--titlebar-h,2.5rem)] desktop:[-webkit-app-region:drag] desktop:[&_button]:[-webkit-app-region:no-drag] desktop:[&_a]:[-webkit-app-region:no-drag] desktop:[&_[role=group]]:[-webkit-app-region:no-drag] desktop:[&_[role=tab]]:[-webkit-app-region:no-drag] desktop:pl-[calc(0.75rem+var(--titlebar-left,0px))] desktop:flex-wrap desktop:pt-0 [&_.panel-actions]:desktop:w-[calc(100%+var(--titlebar-left,0px))] [&_.panel-actions]:desktop:-ml-[var(--titlebar-left,0px)] flex shrink-0 items-center gap-1 border-b px-3 py-2 text-xs font-medium">
+    <header class="panel-head desktop:min-h-[var(--titlebar-h,2.5rem)] desktop:[-webkit-app-region:drag] desktop:[&_button]:[-webkit-app-region:no-drag] desktop:[&_a]:[-webkit-app-region:no-drag] desktop:[&_[role=group]]:[-webkit-app-region:no-drag] desktop:[&_[role=tab]]:[-webkit-app-region:no-drag] desktop:pl-[calc(0.75rem+var(--titlebar-left,0px))] desktop:pt-0 [&_.panel-actions]:desktop:w-[calc(100%+var(--titlebar-left,0px))] [&_.panel-actions]:desktop:-ml-[var(--titlebar-left,0px)] flex flex-wrap shrink-0 items-center gap-1 border-b px-3 py-2 text-xs font-medium">
       <span
-        class="side-logo flex min-w-0 flex-1 items-center gap-2 overflow-hidden desktop:h-[var(--titlebar-h,38px)]"
+        class="side-logo flex shrink-0 items-center gap-2 desktop:h-[var(--titlebar-h,38px)]"
         title="fibo"
       >
         <Brand />
         <button
           id="st-ver"
-          class="status-ver min-w-0 truncate cursor-pointer rounded-sm px-1 font-mono text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+          class="status-ver shrink-0 whitespace-nowrap cursor-pointer rounded-sm px-1 font-mono text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
           title="Keyboard shortcuts"
           onClick={() => editor.actions.showHelp()}
         >
@@ -23,7 +23,7 @@ export function TreeToolbar(): JSX.Element {
             : ''}
         </button>
       </span>
-      <span class="panel-actions ml-auto flex shrink-0 items-center gap-1">
+      <span class="panel-actions ml-auto flex min-w-0 flex-wrap items-center gap-1">
         <TabRail label="Explorer view mode" size="xs">
           <button
             id="btn-files"
