@@ -47,7 +47,7 @@ export function PRBar(): JSX.Element {
           >
             <span
               id="pr-title"
-              class="min-w-0 truncate text-lg/5 font-medium underline-offset-4 group-hover:underline group-focus-visible:underline"
+              class="-my-1 min-w-0 truncate py-1 font-display text-lg/5 font-semibold tracking-[-0.01em] underline-offset-4 group-hover:underline group-focus-visible:underline"
               title={pr()?.title}
             >
               {pr()?.title}
