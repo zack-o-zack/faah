@@ -1,5 +1,6 @@
 import type { JSX } from 'solid-js';
 import { createMemo, Show } from 'solid-js';
+import { CountPill } from './CountPill.tsx';
 
 export type TabStatusState =
   'failed' | 'running' | 'queued' | 'pending' | 'passed' | 'skipped' | 'neutral';
@@ -80,14 +81,16 @@ export function TabStatus(props: TabStatusProps): JSX.Element {
       {(value) => (
         <span
           data-tab-info
-          class="inline-flex items-center gap-1 text-xs tabular-nums text-muted-foreground group-aria-selected/tab:text-inherit"
+          class="inline-flex items-center gap-1"
           title={value().title}
           aria-label={value().title}
         >
           <Show when={value().icon}>
             <span class={`${value().icon} shrink-0`} aria-hidden="true" />
           </Show>
-          {value().text}
+          <Show when={value().text}>
+            <CountPill value={value().text} />
+          </Show>
         </span>
       )}
     </Show>

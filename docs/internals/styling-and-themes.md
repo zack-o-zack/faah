@@ -272,8 +272,13 @@ selectors where necessary. Utilities retain their later cascade layer, so an
 explicit `rounded-md` still overrides a button's pill shape. Avoid those
 exceptions in product markup; use the component's shape by default.
 
-View switches use the tabs rail. One-choice filters and options use ButtonGroup
-with one variant for every segment, never swap variants per segment. The Ink
+View switches use the tabs rail. The launcher and the review bar use its line
+variant: the row carries a `--line` bottom rule, inactive tabs are muted, and the
+active tab is foreground with a 2px underline on the rule. Counts are 11px pills
+on `--hover` with muted text. One-choice filters and options use ButtonGroup
+with one variant for every segment, never swap variants per segment. The review
+file-group chips are separate ghost buttons with muted text and icons; the active
+chip takes the `--hover` fill and foreground text. The Ink
 selection uses `foreground` fill and `background` text for selected rail tabs
 and pressed group segments, including checked review verdict radios. Rails have one `input` border; every group segment
 keeps that same border colour in either state.
@@ -282,8 +287,9 @@ Button groups have square seams and rounded outer ends, including vertical,
 single-child and wrapped menu triggers. Vega marks its last-end radius important;
 the group scopes its `--radius-md` input to the pill or vertical-end token rather
 than adding important declarations. Icon-only buttons keep Basecoat's square
-size and become circles. Cards, inputs and buttons remain flat. Selected tabs
-use `shadow-raise`; text-field groups use it during mouse or keyboard focus.
+size and become circles. Cards, inputs and buttons remain flat. Selected rail tabs
+use `shadow-raise`; line tabs have no fill or shadow. Text-field groups use it
+during mouse or keyboard focus.
 Popovers, dropdowns, toasts and floating custom cards use `shadow-pop`.
 Dialogs and the command palette use `shadow-dialog`, with nested floating
 components flattened. Selected rail tabs retain `shadow-raise` inside dialogs.

@@ -325,7 +325,8 @@ test('finished checks including five passed and one skipped show a plain total',
   const pill = await screen.findByLabelText('Checks: 5 passed, 1 skipped');
   expect(pill.classList.contains('badge')).toBe(false);
   expect(pill.getAttribute('data-variant')).toBeNull();
-  expect(pill.children).toHaveLength(0);
+  expect(pill.children).toHaveLength(1);
+  expect(pill.lastElementChild?.classList.contains('bg-(--hover)')).toBe(true);
   expect(pill.textContent).toBe('6');
 });
 
@@ -335,7 +336,7 @@ test('Basecoat review tabs expose linked panels and roving arrow-key focus', asy
   await screen.findByRole('heading', { name: 'Why this change' });
   const tabs = screen.getByRole('tablist', { name: 'Review' });
   expect(tabs.parentElement?.classList.contains('tabs')).toBe(true);
-  expect(tabs.getAttribute('data-variant')).toBeNull();
+  expect(tabs.getAttribute('data-variant')).toBe('line');
   expect(screen.getByRole('tab', { name: /^Overview/ }).getAttribute('aria-selected')).toBe('true');
   const overview = screen.getByRole('tab', { name: /^Overview/ });
   expect(overview.getAttribute('tabindex')).toBe('0');

@@ -287,3 +287,72 @@ test.each([0, 2])(
     expect(screen.queryByText(count + ' whitespace-only files hidden') !== null).toBe(count > 0);
   },
 );
+
+test('review tabs use the line variant, meaningful icons and count pills', async () => {
+  const editor = mount(
+    { config: { stages: [] } },
+    { totalFiles: 2, files: [{ path: 'src/b.go', group: 'core', hunks: [] }] },
+  );
+  editor.actions.setReviewMode('review');
+  editor.actions.setReviewTab('walkthrough');
+  await waitFor(() => expect(editor.review.walkthroughData()).toBeTruthy());
+  const tablist = required(document.querySelector('#review-sub-bar [role="tablist"]'));
+  expect(tablist.getAttribute('data-variant')).toBe('line');
+  const icon = (id: string) =>
+    required(document.getElementById(`btn-review-tab-${id}`)).querySelector('[aria-hidden="true"]');
+  expect(icon('overview')?.className).toContain('icon-[ph--squares-four]');
+  expect(icon('walkthrough')?.className).toContain('icon-[ph--git-diff]');
+  expect(icon('stages')?.className).toContain('icon-[ph--list-checks]');
+  const info = required(document.querySelector('#btn-review-tab-walkthrough [data-tab-info]'));
+  const pill = required(info.lastElementChild);
+  expect(pill.textContent).toBe('2');
+  expect(pill.classList.contains('bg-(--hover)')).toBe(true);
+  expect(pill.classList.contains('rounded-full')).toBe(true);
+});
+
+test('the file-group filters live in the changed files view beside the diff options', async () => {
+  const editor = mount(
+    { config: { stages: [] } },
+    {
+      totalFiles: 2,
+      files: [
+        { path: 'src/a.go', group: 'tests', hunks: [] },
+        { path: 'src/b.go', group: 'core', hunks: [] },
+      ],
+    },
+  );
+  editor.actions.setReviewMode('review');
+  editor.actions.setReviewTab('walkthrough');
+  const filters = await screen.findByRole('group', { name: 'Filter file groups' });
+  const view = required(document.getElementById('review-walkthrough-view'));
+  expect(required(document.getElementById('review-sub-bar')).contains(filters)).toBe(false);
+  expect(view.contains(filters)).toBe(true);
+  expect(view.contains(required(document.getElementById('btn-walkthrough-options')))).toBe(true);
+  const all = screen.getByRole('button', { name: /All/ });
+  const tests = screen.getByRole('button', { name: /Tests/ });
+  expect(all.getAttribute('aria-pressed')).toBe('true');
+  expect(tests.getAttribute('aria-pressed')).toBe('false');
+  expect(all.hasAttribute('data-variant')).toBe(false);
+  expect(tests.hasAttribute('data-variant')).toBe(false);
+  expect(tests.className).toContain('aria-pressed:bg-(--hover)');
+  fireEvent.click(tests);
+  expect(tests.getAttribute('aria-pressed')).toBe('true');
+  expect(all.getAttribute('aria-pressed')).toBe('false');
+  expect(screen.queryByTitle('src/b.go')).toBe(null);
+});
+
+test('the filter row stays hidden while the walkthrough loads', async () => {
+  let finish: ((value: unknown) => void) | undefined;
+  const pending = new Promise<unknown>((resolve) => {
+    finish = resolve;
+  });
+  const editor = mount({ config: { stages: [] } }, pending);
+  editor.actions.setReviewMode('review');
+  editor.actions.setReviewTab('walkthrough');
+  await screen.findByText('Loading changed files…');
+  expect(screen.queryByRole('group', { name: 'Filter file groups' })).toBe(null);
+  expect(document.getElementById('btn-walkthrough-options')).toBe(null);
+  finish?.({ files: [], totalFiles: 0 });
+  await screen.findByText('No changes in this pull request');
+  expect(screen.getByRole('group', { name: 'Filter file groups' })).toBeTruthy();
+});
