@@ -19,27 +19,26 @@ interface ComposerInput {
   delL1?: number;
   delL2?: number;
 }
-// The forge's own state colours, so a glance reads the same as on the forge.
 export const PR_STATES = {
   open: {
     label: 'Open',
     icon: 'icon-[ph--git-pull-request]',
-    color: 'text-[#1a7f37] dark:text-[#3fb950]',
+    tone: 'open',
   },
   draft: {
     label: 'Draft',
     icon: 'icon-[ph--pencil-line]',
-    color: 'text-muted-foreground',
+    tone: 'draft',
   },
   merged: {
     label: 'Merged',
     icon: 'icon-[ph--git-merge]',
-    color: 'text-[#8250df] dark:text-[#a371f7]',
+    tone: 'merged',
   },
   closed: {
     label: 'Closed',
     icon: 'icon-[ph--prohibit]',
-    color: 'text-[#cf222e] dark:text-[#f85149]',
+    tone: 'closed',
   },
 };
 

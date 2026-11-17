@@ -68,7 +68,7 @@ From inside a running faah browser session, the Command Palette (`Cmd/Ctrl+K` �
 
 Public repositories open, diff and navigate without any token. Posting comments, submitting reviews, pushing, and merging need one.
 
-When faah has no token, the PR bar shows **No &lt;forge&gt; token — click to connect**. Clicking it, or trying anything that needs a token (posting a comment, replying, submitting a review), opens the **Connect** dialog:
+When faah has no token, the PR bar shows **Connect &lt;forge&gt;**. Clicking it, or trying anything that needs a token (posting a comment, replying, submitting a review), opens the **Connect** dialog:
 1. A link to the token page on the PR's own host, for example `gitlab.example.com/-/user_settings/personal_access_tokens`.
 2. What to choose on that page: the scopes or permissions faah needs.
 3. A field to paste the token into (for a Bitbucket API token, also the account email).
@@ -143,7 +143,7 @@ The PR review bar at the bottom of the screen (right above the comments panel) h
 - The verdict follows the branch. While a rebase is running or stopped halfway in the checkout, every verdict button is disabled. Once the checkout is rebased but not yet force-pushed, **Approve** stays disabled: the forge still holds the old commits, and approving now would approve those. When the forge reports conflicts, **Approve** still works but shows a dashed border and a tooltip saying the PR can't merge until the conflicts are resolved.
 
 ### 6. Merge Status, Resolving Conflicts, and Merging
-Under the PR title, next to the branch names, faah shows a **merge status** with the forge's answer to "can this merge?": *Ready to merge*, *Checks failing*, *Conflicts with main*, *Behind main*, *Merge blocked*, or *Checking…* (faah asks again a few times while the forge computes it). Draft, merged and closed show in the state badge beside the title instead. The checkout's own state takes priority over the forge's: *Rebasing...*, *Rebase unfinished*, or *Rebased, not pushed*. When there is a next step, a button beside **Review** takes it: *Resolve conflicts*, *Update branch* or *Finish* has your coding harness do it, *Force-push* updates the PR.
+Under the PR title, next to the branch names, faah shows a **merge status** with the forge's answer to "can this merge?": *Ready to merge*, *Checks failing*, *Conflicts with main*, *Behind main*, *Merge blocked*, or *Checking…* (faah asks again a few times while the forge computes it). A filled state pill comes before the title, followed by the PR number in plain text. Branch chips read from head to base. Merged and closed PRs hide the merge status. The checkout's own state takes priority over the forge's: *Rebasing...*, *Rebase unfinished*, or *Rebased, not pushed*. When there is a next step, a button beside **Review** takes it: *Resolve conflicts*, *Update branch* or *Finish* has your coding harness do it, *Force-push* updates the PR.
 
 **Resolving conflicts / updating the branch.** When the PR conflicts with its base, or is behind it, click **✦ Resolve conflicts** beside Review. This opens the git panel's [agent rebase flow](git-integration.md#catching-up-with-a-moving-remote), aimed at the PR's base:
 1. faah fetches the base branch itself, with your forge token, so the harness never needs credentials and never fetches.

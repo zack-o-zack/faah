@@ -47,10 +47,12 @@ const replies = {
 function mount(
   post: Request = vi.fn(async () => ({})),
   mergeReply: object = replies['api/pr/merge-status'],
+  meta = prMeta(),
 ) {
   let editor: ReturnType<typeof createPREditor> | undefined;
   render(() => {
     editor = createPREditor({
+      meta,
       request: routes({ ...replies, 'api/pr/merge-status': mergeReply }),
       post,
     });
@@ -79,6 +81,96 @@ function mount(
   required(editor).actions.initializePR();
   return required(editor);
 }
+
+test.each([
+  { meta: prMeta(), label: 'Open', tone: 'open' },
+  { meta: prMeta({ draft: true }), label: 'Draft', tone: 'draft' },
+  { meta: prMeta({ merged: true, state: 'closed' }), label: 'Merged', tone: 'merged' },
+  { meta: prMeta({ state: 'closed' }), label: 'Closed', tone: 'closed' },
+])('the $label state pill leads the title with its fibo tone', ({ meta, label, tone }) => {
+  mount(undefined, undefined, meta);
+  const badge = required(document.getElementById('pr-state-badge'));
+  expect(badge.classList.contains('badge')).toBe(true);
+  expect(badge.classList.contains('rounded-pill')).toBe(true);
+  expect(badge.getAttribute('data-tone')).toBe(tone);
+  expect(badge.textContent).toBe(label);
+  expect(badge.nextElementSibling?.id).toBe('pr-link');
+  expect(required(badge.querySelector('[aria-hidden="true"]')).className).toContain('icon-[ph--');
+});
+
+test('the linked title is followed by a plain PR number and the external-link icon', () => {
+  mount();
+  const title = required(document.getElementById('pr-title'));
+  const number = required(document.getElementById('pr-number'));
+  const link = required(document.getElementById('pr-link'));
+  expect(title.nextElementSibling).toBe(number);
+  expect(number.textContent).toBe('#7');
+  expect(number.classList.contains('tabular-nums')).toBe(true);
+  expect(number.closest('.badge')).toBeNull();
+  expect(number.nextElementSibling?.className).toContain('icon-[ph--arrow-square-out]');
+  expect(link.getAttribute('href')).toBe(prMeta().url);
+  expect(link.getAttribute('target')).toBe('_blank');
+  expect(link.getAttribute('rel')).toBe('noopener noreferrer');
+});
+
+test('branch chips read head to base and retain the full refs for truncated names', () => {
+  const head = 'feature/' + 'long-head-'.repeat(12);
+  const base = 'release/' + 'long-base-'.repeat(12);
+  mount(undefined, undefined, prMeta({ head, base }));
+  const refs = required(document.getElementById('pr-refs'));
+  const chips = [...refs.querySelectorAll('code')];
+  expect(chips.map((chip) => chip.textContent)).toEqual([head, base]);
+  expect(chips.map((chip) => chip.title)).toEqual([head, base]);
+  expect(chips.every((chip) => chip.classList.contains('truncate'))).toBe(true);
+  expect(chips[0]?.nextElementSibling?.className).toContain('icon-[ph--arrow-right]');
+});
+
+test.each([
+  { label: 'merged', meta: prMeta({ merged: true, state: 'closed' }) },
+  { label: 'closed', meta: prMeta({ state: 'closed' }) },
+])(
+  'the merge status stays hidden for a $label PR even if the server says clean',
+  async ({ meta }) => {
+    const editor = mount(undefined, undefined, meta);
+    await waitFor(() => expect(editor.merge.pill()?.text).toBe('Ready to merge'));
+    expect(document.getElementById('pr-merge-state')).toBeNull();
+    expect(screen.queryByText('Ready to merge')).toBeNull();
+  },
+);
+
+test('a warning follows the branch chips and keeps its fix in the right-side controls', async () => {
+  mount(
+    undefined,
+    {
+      ...replies['api/pr/merge-status'],
+      status: { state: 'behind', methods: ['merge', 'squash'] },
+    },
+    prMeta({ diffBaseWarning: 'The diff base has changed' }),
+  );
+  await screen.findByText('Behind main');
+  const status = required(document.getElementById('pr-merge-state'));
+  expect(status.classList.contains('text-warn')).toBe(true);
+  expect(status.previousElementSibling?.id).toBe('pr-refs');
+  expect(status.nextElementSibling?.id).toBe('pr-diff-warning');
+  expect(
+    required(document.getElementById('pr-review-row')).contains(
+      screen.getByRole('button', { name: 'Update branch' }),
+    ),
+  ).toBe(true);
+});
+
+test('a read-only PR offers Connect GitHub with the token hint and the existing action', () => {
+  const editor = mount(undefined, undefined, prMeta({ readOnly: true }));
+  const button = screen.getByRole('button', { name: 'Connect GitHub' });
+  expect(button.getAttribute('data-variant')).toBe('outline');
+  expect(button.getAttribute('data-size')).toBe('xs');
+  expect(button.title).toBe(
+    'Set GITHUB_TOKEN, set GH_TOKEN, or run `gh auth login`. Click to connect.',
+  );
+  expect(button.querySelector('[class*="ph--key"]')).not.toBeNull();
+  fireEvent.click(button);
+  expect(editor.actions.openSettings).toHaveBeenCalledWith('ui', 'GitHub', 'github.token');
+});
 
 test('the bar shows the PR, its merge state and the review verdicts', async () => {
   const post = vi.fn(async () => ({}));

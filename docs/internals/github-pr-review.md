@@ -271,7 +271,7 @@ The git panel's agent rebase/merge flow ([git-integration internals](git-integra
   - Hovering a line number in the source or diff view shows a thread button (`data-control="line-btn"`). Clicking it calls `openLineActions`, the selection menu aimed at one line. Rows that are part of the PR's diff carry their diff side, which enables **Add Review Comment**; other rows get only the local actions.
   - `RowComments.tsx` renders a marker on diff rows with threads and the inline composers (`PRComposer`) under their rows.
 - **PR bar (`PRBar.tsx`)**:
-  - Shows the PR number, title, author, branch refs, state badge and draft count.
+  - Shows a state pill before the linked title, then the PR number in plain text. The second row shows head-to-base branch chips, the merge status for active PRs, any diff-base warning, and a **Connect &lt;forge&gt;** button when the token is missing.
   - Houses **Batch Apply** and the review panel (`ReviewPanel.tsx`, Comment / Approve / Request changes). The verdict buttons are gated by `reviewGate()` from `pr/logic.ts`.
 - **Merge UI**:
   - `MergePill` shows the merge state; `MergeControls` is the split merge button with its method menu (the last method is remembered in `localStorage` under `faah.prMergeMethod`); `MergeDialog` is the merge dialog. They talk only to `/api/pr/merge-*` and have no forge-specific logic.

@@ -309,6 +309,13 @@
   .badge[data-tone='added'] { --badge-tone: var(--aqua); }
   .badge[data-tone='waiting'] { --badge-tone: var(--lemon); }
   .badge[data-tone='file'] { --badge-tone: var(--bubblegum); }
+  .badge[data-tone='open'] { --badge-tone: var(--pistachio); }
+  .badge[data-tone='merged'] { --badge-tone: var(--periwinkle); }
+  .badge[data-tone='closed'] { --badge-tone: var(--danger-soft, var(--gd-bg)); color: var(--foreground); }
+  .badge[data-tone='draft'] {
+    --badge-tone: var(--card); color: var(--muted-foreground);
+    box-shadow: inset 0 0 0 1px var(--line-strong, var(--input));
+  }
   .btn[data-variant='link'], .badge[data-variant='link'], a.badge[data-variant='link']:hover,
   :is(.empty > header > p, .item p, .field > p) > a:hover { color: var(--primary-text); }
   .badge[data-variant='link'], a.badge[data-variant='link']:hover { background-color: transparent; border-color: transparent; }

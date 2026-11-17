@@ -34,7 +34,7 @@ You can also open a PR from a running faah (`Cmd/Ctrl+K` → **Git: Open Pull Re
 
 You can read any public PR without a token. To comment, review, push, or merge, faah needs one.
 
-**The quick way:** click **No &lt;forge&gt; token — click to connect** in the PR bar. The Connect dialog links to the token page on your forge, lists what to pick there, and checks the token when you paste it. The token is saved and takes effect immediately, so there is nothing to restart.
+**The quick way:** click **Connect &lt;forge&gt;** in the PR bar. The Connect dialog links to the token page on your forge, lists what to pick there, and checks the token when you paste it. The token is saved and takes effect immediately, so there is nothing to restart.
 
 The same steps, per forge:
 

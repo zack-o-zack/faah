@@ -9,6 +9,7 @@ import {
   mergePill,
   mergeWarnings,
   prState,
+  PR_STATES,
   reviewGate,
   rowTarget,
   splitMessage,
@@ -21,6 +22,19 @@ test('prState reads merged, closed, draft and open', () => {
   expect(prState({ state: 'closed' })).toBe('closed');
   expect(prState({ state: 'open', draft: true })).toBe('draft');
   expect(prState({ state: 'open' })).toBe('open');
+});
+
+test('PR states use semantic tones without literal colours', () => {
+  expect(Object.values(PR_STATES).map((state) => state.tone)).toEqual([
+    'open',
+    'draft',
+    'merged',
+    'closed',
+  ]);
+  expect(JSON.stringify(PR_STATES)).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+  for (const state of Object.values(PR_STATES)) {
+    expect(Object.keys(state).sort()).toEqual(['icon', 'label', 'tone']);
+  }
 });
 
 test('comment threads group posted replies and drafts by location, root first', () => {
