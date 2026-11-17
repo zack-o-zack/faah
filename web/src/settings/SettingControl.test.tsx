@@ -125,10 +125,10 @@ async function mountCodeTheme(scheme: 'light' | 'dark') {
   return { post, select, item };
 }
 
-test('the light code theme select lists fibo and the light schemes only', async () => {
+test('the light code theme select lists fibo light and the light schemes only', async () => {
   const { post, select, item } = await mountCodeTheme('light');
   expect(Array.from(select.options).map((option) => [option.value, option.text])).toEqual([
-    ['', 'fibo'],
+    ['', 'fibo light'],
     ['solarized-light', 'Solarized Light'],
   ]);
   expect(select.value).toBe('');
@@ -142,10 +142,10 @@ test('the light code theme select lists fibo and the light schemes only', async 
   );
 });
 
-test('the dark code theme select lists fibo and the dark schemes only', async () => {
+test('the dark code theme select lists fibo dark and the dark schemes only', async () => {
   const { post, select, item } = await mountCodeTheme('dark');
   expect(Array.from(select.options).map((option) => [option.value, option.text])).toEqual([
-    ['', 'fibo'],
+    ['', 'fibo dark'],
     ['dracula', 'Dracula'],
     ['nord', 'Nord'],
   ]);

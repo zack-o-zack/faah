@@ -38,13 +38,13 @@ toolbar, tab, sidebar or button around those surfaces keeps the app theme.
 
 There is one choice per app scheme. Open Settings with `Cmd/Ctrl+,`, then use
 **Workbench > Code Theme (Light)** and **Workbench > Code Theme (Dark)**. Each
-select lists **fibo** plus the installed themes that declare that scheme. The
+select lists **fibo light** or **fibo dark** plus the installed themes that declare that scheme. The
 active app scheme decides which of the two applies, so switching Light and Dark
 swaps the code theme with it; in System mode the OS appearance decides, live.
 
-**fibo** is the default and has no file: it means "use the app theme's own code
+**fibo light** and **fibo dark** are the defaults and have no file: it means "use the app theme's own code
 colours". The choice is saved as `workbench.codeTheme.light` and
-`workbench.codeTheme.dark`. An empty or unavailable ID falls back to fibo, and
+`workbench.codeTheme.dark`. An empty or unavailable ID falls back to them, and
 the server rejects unknown IDs.
 
 Built-in code themes:

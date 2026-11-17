@@ -123,6 +123,11 @@ export function createNotesStore(
       const note = activeHover();
       return !!note && line >= note.l1 && line <= note.l2;
     },
+    /** Lines outside the hovered note fade so its range stands out. */
+    dimmed(line: number) {
+      const note = activeHover();
+      return !!note && (line < note.l1 || line > note.l2);
+    },
     extraRows,
     error,
     refetch,

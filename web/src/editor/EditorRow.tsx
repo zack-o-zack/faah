@@ -90,6 +90,7 @@ export function EditorRow(props: EditorRowProps): JSX.Element {
           cur: current(),
           'bg-special/5!': editor.walkContains(line()),
           'opacity-35': editor.walkMuted(line()),
+          'opacity-30': editor.notes.dimmed(line()),
           'agent-sel': agent(),
           'agent-anchor': editor.agents
             .targets()

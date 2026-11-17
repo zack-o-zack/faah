@@ -40,8 +40,8 @@ faah stores all configuration in a single per-user global file (`~/.faah/setting
 | `editor.bracketPairColorization` | Text Editor | `true` | `true`, `false` | Rainbow bracket pairs & matching |
 | `editor.vimMode` | Text Editor | `false` | `true`, `false` | Modal Vim navigation keybindings |
 | `workbench.colorTheme` | Workbench | `""` (System) | `light`, `dark`, or a discovered user theme ID | Empty or unavailable IDs follow OS appearance; configured IDs win over browser preferences |
-| `workbench.codeTheme.light` | Workbench | `""` (fibo) | `""` or a discovered light code theme ID | Code theme used while the app is light; empty keeps the app theme's own code colours |
-| `workbench.codeTheme.dark` | Workbench | `""` (fibo) | `""` or a discovered dark code theme ID | Code theme used while the app is dark; empty keeps the app theme's own code colours |
+| `workbench.codeTheme.light` | Workbench | `""` (fibo light) | `""` or a discovered light code theme ID | Code theme used while the app is light; empty keeps the app theme's own code colours |
+| `workbench.codeTheme.dark` | Workbench | `""` (fibo dark) | `""` or a discovered dark code theme ID | Code theme used while the app is dark; empty keeps the app theme's own code colours |
 | `workbench.transparency` | Workbench | `subtle` | `off`, `subtle`, `strong` | Frosted glass on floating layers; OS reduce-transparency forces solid fills |
 | `markdown.preview.open` | Workbench | `true` | `true`, `false` | Open Markdown files in rendered preview |
 | `table.preview.open` | Workbench | `true` | `true`, `false` | Open CSV and TSV files as a table |
@@ -110,7 +110,7 @@ An unavailable saved ID follows the OS with no migration or alias. See
 [themes and styling](themes-and-styling.md) for examples and the full contract.
 
 Code Theme (Light) and Code Theme (Dark) are two selects under the Color Theme
-control. Each lists fibo plus the installed code themes of that scheme; the
+control. Each lists fibo light or fibo dark plus the installed code themes of that scheme; the
 active app scheme decides which one applies, so a change previews immediately
 when its scheme is active. User code themes are discovered from the same folder
 and must select `:root[data-code-theme="<id>"] .code-surface`. See

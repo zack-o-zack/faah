@@ -13,7 +13,7 @@ interface ControlProps {
 const CodeThemeSelect: Component<{ item: SettingItem; scheme: 'light' | 'dark' }> = (props) => {
   const settings = useSettings();
   const options = () => [
-    { id: '', name: 'fibo' },
+    { id: '', name: 'fibo ' + props.scheme },
     ...listCodeThemes()
       .filter((theme) => theme.scheme === props.scheme)
       .map((theme) => ({ id: theme.id, name: theme.name })),
