@@ -1,16 +1,25 @@
 # Themes and styling
 
-The app ships with **fibo light** (`fibo-light`) and **fibo dark** (`fibo-dark`).
-System is the default: dark OS appearance selects fibo dark, otherwise fibo light.
-The palette uses quiet surfaces, pastel fills and readable ink for text, syntax,
+The app ships with **Light** (`light`) and **Dark** (`dark`).
+System is the default: dark OS appearance selects Dark, otherwise Light.
+The palette uses neutral surfaces and readable ink for text, syntax,
 search, selections and diffs.
+
+The brand green is reserved for the logo, thinking spiral and agent send buttons.
+Primary actions use ink. Pull request states use the familiar filled pills:
+green Open, purple Merged, red Closed and grey Draft, all with white text.
+Other badges use neutral fills with readable text.
+Git status and checks use the same familiar colours: added lines, added files and passed
+checks are green, modified files are amber, and deleted lines and files are red.
 
 ## Choose a theme
 
 - Open Settings with `Cmd/Ctrl+,`, then choose **Workbench > Color Theme**.
 - Or open the command palette and choose **Select Theme…**. Arrow keys preview;
   Enter saves the choice and Escape restores the previous preference.
-- The workbench launcher has a theme menu with a **System** option.
+- The workbench footer and Color Theme setting share **System**, **Light** and
+  **Dark** icon buttons. Arrow keys move between choices. Extra user themes
+  appear in a separate settings select only when installed.
 
 The choice is saved as `workbench.colorTheme` in `~/.faah/settings.json`, or
 `$XDG_CONFIG_HOME/faah/settings.json` when configured. An empty string means
@@ -22,12 +31,12 @@ OS appearance changes update the app without reloading.
 
 Create `~/.faah/themes/` and put CSS files there. This data folder stays under
 your home directory even if settings use `XDG_CONFIG_HOME`. Reload after editing.
-For example, `overrides.css` changes two tokens in fibo dark:
+For example, `overrides.css` changes two tokens in Dark:
 
 ```css
-:root[data-theme="fibo-dark"] {
-  --spiral: #b8e6a0;
-  --surface-raised: #202820;
+:root[data-theme="dark"] {
+  --surface-raised: var(--surface);
+  --hover: var(--surface-sunken);
 }
 ```
 

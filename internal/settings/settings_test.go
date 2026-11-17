@@ -114,7 +114,7 @@ func TestSettingsPreserveNonAgentValues(t *testing.T) {
 	// Step 1: Update editor settings
 	err := UpdateMap(map[string]any{
 		"editor.fontSize":      16.0,
-		"workbench.colorTheme": "fibo-dark",
+		"workbench.colorTheme": "dark",
 		"custom.property":      "hello",
 	})
 	if err != nil {
@@ -137,8 +137,8 @@ func TestSettingsPreserveNonAgentValues(t *testing.T) {
 	if m["editor.fontSize"] != 16.0 {
 		t.Errorf("editor.fontSize was overwritten: got %v, want 16", m["editor.fontSize"])
 	}
-	if m["workbench.colorTheme"] != "fibo-dark" {
-		t.Errorf("workbench.colorTheme was overwritten: got %v, want fibo-dark", m["workbench.colorTheme"])
+	if m["workbench.colorTheme"] != "dark" {
+		t.Errorf("workbench.colorTheme was overwritten: got %v, want dark", m["workbench.colorTheme"])
 	}
 	if m["custom.property"] != "hello" {
 		t.Errorf("custom.property was lost: got %v, want hello", m["custom.property"])

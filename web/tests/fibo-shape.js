@@ -1,6 +1,6 @@
 // Run against built app.css and the actual served themes in a real browser.
 // No dependencies, remote requests, settings writes or agent execution.
-document.documentElement.style.setProperty('--flat-shadow', '0 0 #0000');
+document.documentElement.style.setProperty('--flat-shadow', '0 0 transparent');
 const fixtures = document.getElementById('fixtures');
 const results = [];
 window.fiboShapeResults = results;
@@ -36,16 +36,18 @@ function shadow(element, expected, name) {
     check(`${name} painted shadow`, style(element).boxShadow.includes(resolved), true);
   probe.remove();
 }
+const colorCanvas = document.createElement('canvas');
+colorCanvas.width = colorCanvas.height = 1;
+const colorContext = colorCanvas.getContext('2d', { willReadFrequently: true });
 function contrast(foreground, background) {
   const luminance = (color) => {
-    const channels = color
-      .match(/[\d.]+/g)
-      .slice(0, 3)
-      .map(Number)
-      .map((channel) => {
-        const value = channel / 255;
-        return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
-      });
+    colorContext.clearRect(0, 0, 1, 1);
+    colorContext.fillStyle = color;
+    colorContext.fillRect(0, 0, 1, 1);
+    const channels = [...colorContext.getImageData(0, 0, 1, 1).data].slice(0, 3).map((channel) => {
+      const value = channel / 255;
+      return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+    });
     return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
   };
   const values = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
@@ -60,7 +62,7 @@ function corners(element) {
     s.borderBottomLeftRadius,
   ].join(' ');
 }
-for (const theme of ['fibo-light', 'fibo-dark']) {
+for (const theme of ['light', 'dark']) {
   document.documentElement.dataset.theme = theme;
   document.documentElement.classList.toggle('dark', theme.endsWith('dark'));
   const test = (name, actual, expected) => check(`${theme}: ${name}`, actual, expected);
@@ -239,34 +241,62 @@ for (const theme of ['fibo-light', 'fibo-dark']) {
       true,
     );
   const special = mount('<button class="btn" data-variant="special">Explain</button>');
-  test('special fill', style(special).backgroundColor, token('background-color', '--periwinkle'));
-  test('special ink', style(special).color, token('color', '--on-pastel'));
+  test('special fill', style(special).backgroundColor, token('background-color', '--hover'));
+  test('special ink', style(special).color, token('color', '--ink'));
+  test('special enabled opacity', style(special).opacity, '1');
+  test(
+    'special text contrast',
+    contrast(style(special).color, style(special).backgroundColor) >= 4.5,
+    true,
+  );
   special.setAttribute('aria-expanded', 'true');
   // Disable transitions so this checks the final expanded colour.
   special.style.transition = 'none';
   const mix = document.createElement('span');
-  mix.style.backgroundColor = 'color-mix(in oklab, var(--periwinkle) 92%, var(--ink))';
+  mix.style.backgroundColor = 'color-mix(in oklab, var(--hover) 92%, var(--ink))';
   fixtures.append(mix);
   test('special expanded fill', style(special).backgroundColor, style(mix).backgroundColor);
   special.disabled = true;
   test('special disabled opacity', style(special).opacity, '0.5');
   test('special disabled pointer events', style(special).pointerEvents, 'none');
-  for (const [tone, fill] of Object.entries({
-    brand: 'pistachio',
-    agent: 'periwinkle',
-    added: 'aqua',
-    waiting: 'lemon',
-    file: 'bubblegum',
-  })) {
+  const send = mount('<button class="btn" data-variant="send">Send</button>');
+  test('send fill', style(send).backgroundColor, token('background-color', '--spiral'));
+  test('send ink', style(send).color, token('color', '--on-spiral'));
+  test('send contrast', contrast(style(send).color, style(send).backgroundColor) >= 4.5, true);
+  test('send enabled opacity', style(send).opacity, '1');
+  send.disabled = true;
+  test('send disabled opacity', style(send).opacity, '0.5');
+  test('send disabled pointer events', style(send).pointerEvents, 'none');
+  for (const tone of [
+    'brand',
+    'agent',
+    'added',
+    'waiting',
+    'file',
+    'open',
+    'merged',
+    'closed',
+    'draft',
+  ]) {
     const badge = mount(`<span class="badge" data-tone="${tone}">${tone}</span>`);
     test(`badge ${tone} radius`, style(badge).borderRadius, '999px');
+    const status = {
+      open: '--state-open',
+      merged: '--state-merged',
+      closed: '--state-closed',
+      draft: '--state-draft',
+    }[tone];
+    const fillProbe = document.createElement('span');
+    fillProbe.style.backgroundColor = `var(${status || '--surface-sunken'})`;
+    fixtures.append(fillProbe);
+    test(`badge ${tone} fill`, style(badge).backgroundColor, style(fillProbe).backgroundColor);
+    test(`badge ${tone} ink`, style(badge).color, token('color', status ? '--on-state' : '--ink'));
     test(
-      `badge ${tone} fill`,
-      style(badge).backgroundColor,
-      token('background-color', `--${fill}`),
+      `badge ${tone} border`,
+      style(badge).borderTopColor,
+      token('border-color', status || '--line'),
     );
-    test(`badge ${tone} ink`, style(badge).color, token('color', '--on-pastel'));
-    test(`badge ${tone} border`, style(badge).borderTopColor, token('border-color', '--input'));
+    fillProbe.remove();
     test(
       `badge ${tone} text contrast`,
       contrast(style(badge).color, style(badge).backgroundColor) >= 4.5,
@@ -338,7 +368,7 @@ for (const theme of ['fibo-light', 'fibo-dark']) {
       contrast(style(badge).color, style(badge).backgroundColor) >= 4.5,
       true,
     );
-    test(`symbol ${kind} uses pastel text`, style(badge).color, token('color', '--on-pastel'));
+    test(`symbol ${kind} uses neutral ink`, style(badge).color, token('color', '--ink'));
   }
   const progress = mount(
     '<div class="progress" data-checks><span data-state="passed" style="flex-grow:6"></span><span data-state="skipped" style="flex-grow:1"></span></div>',
@@ -403,18 +433,18 @@ for (const theme of ['fibo-light', 'fibo-dark']) {
   );
   for (const type of ['checkbox', 'radio']) {
     const input = mount(`<input class="input" type="${type}" checked>`);
-    test(`checked ${type} edge`, style(input).borderColor, token('border-color', '--spiral'));
+    test(`checked ${type} edge`, style(input).borderColor, token('border-color', '--ink'));
     const field = mount(
       `<div class="field"><input type="${type}" checked aria-invalid="true"></div>`,
     );
     test(
       `field checked invalid ${type} edge`,
       style(field.firstElementChild).borderColor,
-      token('border-color', '--spiral'),
+      token('border-color', '--ink'),
     );
   }
   const switchControl = mount('<input class="input" type="checkbox" role="switch" checked>');
-  test('checked switch edge', style(switchControl).borderColor, token('border-color', '--spiral'));
+  test('checked switch edge', style(switchControl).borderColor, token('border-color', '--ink'));
   for (const markup of [
     '<button class="btn">Focus</button>',
     '<div class="tabs"><nav role="tablist"><button role="tab" aria-selected="true">Focus</button></nav></div>',
@@ -447,6 +477,27 @@ for (const theme of ['fibo-light', 'fibo-dark']) {
       'focus ring cleared',
       style(control).getPropertyValue('--tw-ring-shadow').trim(),
       '0 0 transparent',
+    );
+  }
+  // Browsers do not expose ::-webkit-search-cancel-button styles, so find the
+  // compiled rule and check which search fields its selector reaches.
+  const cancelRule = [...document.styleSheets]
+    .flatMap((sheet) => [...sheet.cssRules])
+    .flatMap((rule) => (rule.cssRules ? [rule, ...rule.cssRules] : [rule]))
+    .find((rule) => rule.selectorText?.endsWith('::-webkit-search-cancel-button'));
+  test('native search clear rule display', cancelRule?.style.display, 'none');
+  for (const custom of [true, false]) {
+    const group = mount(
+      `<div class="input-group"><input type="search" aria-label="Search" value="query">${custom ? '<button class="btn" data-control="icon-action">Clear</button>' : ''}</div>`,
+    );
+    test(
+      `search ${custom ? 'with' : 'without'} custom clear hides native clear`,
+      group
+        .querySelector('input')
+        .matches(
+          cancelRule?.selectorText.replace('::-webkit-search-cancel-button', '') ?? ':not(*)',
+        ),
+      custom,
     );
   }
   for (const tag of ['input', 'textarea', 'select']) {
@@ -585,14 +636,15 @@ document.documentElement.classList.remove('dark');
 const legacy = mount('<button class="btn" data-variant="special">Explain</button>');
 const legacyStyle = document.createElement('style');
 legacyStyle.textContent =
-  ':root[data-theme="legacy-fixture"] { --special: #4545a0; --nf: #4545a0; --background: #fff; --foreground: #111; --primary: #ddd; --primary-text: #333; --gi: #176b50; --warn: #665500; --sel: #ddbbcc; --shadow: 0 2px 4px #0003; }';
+  ':root[data-theme="legacy-fixture"] { --special: rgb(69,69,160); --nf: rgb(69,69,160); --background: white; --foreground: rgb(17,17,17); --accent: rgb(238,238,238); --border: rgb(170,170,170); --primary: rgb(221,221,221); --primary-text: rgb(51,51,51); --gi: rgb(31,99,120); --warn: rgb(102,85,0); --sel: rgb(170,187,221); --shadow: 0 2px 4px rgb(0 0 0 / 0.2); }';
 document.head.append(legacyStyle);
 check(
   'legacy special fill resolves',
   style(legacy).backgroundColor,
-  token('background-color', '--periwinkle'),
+  token('background-color', '--accent'),
 );
-check('legacy on-pastel fallback', style(legacy).color, 'rgb(17, 17, 17)');
+check('legacy ink fallback', style(legacy).color, 'rgb(17, 17, 17)');
+check('legacy on-spiral fallback', token('color', '--on-spiral'), 'rgb(255, 255, 255)');
 check('legacy spiral fallback', token('color', '--spiral'), 'rgb(51, 51, 51)');
 check(
   'legacy shadow fallback',

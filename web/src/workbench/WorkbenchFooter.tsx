@@ -6,10 +6,12 @@ interface WorkbenchFooterProps {
 import type { JSX } from 'solid-js';
 import { useWorkbench } from './context.tsx';
 import { MetricsMenu } from './MetricsMenu.tsx';
-import { ThemeMenu } from './ThemeMenu.tsx';
+import { useTheme } from '../lib/theme-context.tsx';
+import { ThemeSwitch } from './ThemeSwitch.tsx';
 import { Show } from 'solid-js';
 export function WorkbenchFooter(props: WorkbenchFooterProps): JSX.Element {
   const { state } = useWorkbench();
+  const theme = useTheme();
   return (
     <footer
       id="status"
@@ -35,7 +37,7 @@ export function WorkbenchFooter(props: WorkbenchFooterProps): JSX.Element {
       >
         <span class="icon-[ph--github-logo] shrink-0" aria-hidden="true" />
       </a>
-      <ThemeMenu />
+      <ThemeSwitch value={theme.preference()} onChange={(id) => theme.setTheme(id)} />
     </footer>
   );
 }

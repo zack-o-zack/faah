@@ -57,7 +57,7 @@ func TestSettingsAPIEndpoints(t *testing.T) {
 
 	// 4. POST /api/settings with raw JSON
 	rawPayload := map[string]any{
-		"raw": "{\n  \"editor.fontSize\": 15,\n  \"workbench.colorTheme\": \"fibo-dark\"\n}\n",
+		"raw": "{\n  \"editor.fontSize\": 15,\n  \"workbench.colorTheme\": \"dark\"\n}\n",
 	}
 	rb, _ := json.Marshal(rawPayload)
 	rawReq := httptest.NewRequest(http.MethodPost, "/api/settings", bytes.NewReader(rb))
@@ -74,7 +74,7 @@ func TestSettingsAPIEndpoints(t *testing.T) {
 	if m2["editor.fontSize"] != float64(15) && m2["editor.fontSize"] != 15 {
 		t.Errorf("expected editor.fontSize 15 from raw, got %v", m2["editor.fontSize"])
 	}
-	if m2["workbench.colorTheme"] != "fibo-dark" {
-		t.Errorf("expected workbench.colorTheme fibo-dark from raw, got %v", m2["workbench.colorTheme"])
+	if m2["workbench.colorTheme"] != "dark" {
+		t.Errorf("expected workbench.colorTheme dark from raw, got %v", m2["workbench.colorTheme"])
 	}
 }

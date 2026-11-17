@@ -49,6 +49,9 @@ test('visible Send and Connect actions carry chips; only the newline hint remain
     expect(document.querySelector(`#${id} kbd`)).not.toBeNull();
     expect(required(document.getElementById(id)).getAttribute('aria-keyshortcuts')).toBeTruthy();
   }
+  for (const id of ['review-compose-send', 'thr-send']) {
+    expect(document.getElementById(id)?.getAttribute('data-variant')).toBe('send');
+  }
   expect(screen.queryByText(/Enter to send/)).toBeNull();
   expect(screen.queryByText(/to connect, Esc to cancel/)).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Check send shortcuts' }));
@@ -76,4 +79,22 @@ test('selection menu shortcuts use the shared shortcut slot with separate caps',
     expect(slot.querySelectorAll(':scope > kbd').length).toBe(2);
     expect(item.querySelector('kbd > kbd')).toBeNull();
   }
+});
+
+test('the running thread keeps its stop action as a normal primary button', () => {
+  const cancel = vi.fn();
+  render(() => {
+    const editor = createEditorStore(createAppStore());
+    vi.spyOn(editor.threads, 'running').mockReturnValue(true);
+    vi.spyOn(editor.actions, 'cancelThread').mockImplementation(cancel);
+    return (
+      <EditorProvider value={editor}>
+        <ThreadDetail />
+      </EditorProvider>
+    );
+  });
+  const stop = screen.getByRole('button', { name: 'Stop this reply' });
+  expect(stop.getAttribute('data-variant')).toBe('primary');
+  fireEvent.click(stop);
+  expect(cancel).toHaveBeenCalledOnce();
 });

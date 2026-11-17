@@ -1,4 +1,5 @@
 import { For, Match, Show, Switch, type Component } from 'solid-js';
+import { ThemeSwitch } from '../workbench/ThemeSwitch.tsx';
 import { listThemes } from '../lib/theme.ts';
 import { useSettings } from './context.ts';
 import { segmentValue, type SettingControl as Control, type SettingItem } from './logic.ts';
@@ -45,8 +46,35 @@ export const SettingControl: Component<ControlProps & { invalid: boolean }> = (p
   const id = () => 'setting-' + key();
   const current = () => settings.value(key());
   const edited = () => settings.state.edits[key()];
+  const userThemes = () => listThemes().filter((theme) => !['light', 'dark'].includes(theme.id));
   return (
     <Switch>
+      <Match when={key() === 'workbench.colorTheme'}>
+        <div class="flex flex-wrap items-center gap-2">
+          <ThemeSwitch
+            id={id()}
+            value={String(current() ?? '')}
+            onChange={(value) => void settings.actions.setSetting(key(), value)}
+          />
+          <Show when={userThemes().length}>
+            <select
+              class="select w-48"
+              aria-label="User theme"
+              value={userThemes().some((theme) => theme.id === current()) ? String(current()) : ''}
+              onChange={(event) =>
+                void settings.actions.setSetting(key(), event.currentTarget.value)
+              }
+            >
+              <option value="" disabled>
+                User themes
+              </option>
+              <For each={userThemes()}>
+                {(theme) => <option value={theme.id}>{theme.name}</option>}
+              </For>
+            </select>
+          </Show>
+        </div>
+      </Match>
       <Match when={props.control.kind === 'switch' && props.control}>
         {(control) => (
           <input
@@ -79,16 +107,7 @@ export const SettingControl: Component<ControlProps & { invalid: boolean }> = (p
             value={String(current() ?? '')}
             onChange={(event) => void settings.actions.setSetting(key(), event.currentTarget.value)}
           >
-            <For
-              each={
-                key() === 'workbench.colorTheme'
-                  ? [
-                      { value: '', label: 'System' },
-                      ...listThemes().map((theme) => ({ value: theme.id, label: theme.name })),
-                    ]
-                  : control().options
-              }
-            >
+            <For each={control().options}>
               {(option) => <option value={option.value}>{option.label}</option>}
             </For>
           </select>

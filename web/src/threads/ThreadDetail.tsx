@@ -156,7 +156,7 @@ export function ThreadDetail(): JSX.Element {
               id="thr-send"
               class="btn gap-1.5"
               data-control="agent-send"
-              data-variant="primary"
+              data-variant={editor.threads.running() ? 'primary' : 'send'}
               data-size="sm"
               title={editor.threads.running() ? 'Stop this reply' : 'Send (Enter)'}
               aria-keyshortcuts={editor.threads.running() ? undefined : 'Enter'}

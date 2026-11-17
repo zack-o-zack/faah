@@ -76,7 +76,7 @@ export function TreeRow(props: TreeRowProps): JSX.Element {
     >
       {(menu) => (
         <div
-          class="tr flex min-h-6 cursor-pointer select-none items-center gap-1.5 pr-2 text-xs whitespace-nowrap hover:bg-sidebar-accent [&.sel]:bg-sidebar-accent [&.ignored]:text-muted-foreground [&.git-M]:text-primary-text [&.git-R]:text-primary-text [&.git-A]:text-gi [&.git-untracked]:text-gi [&.git-D]:text-gd [&.git-D_.nm]:line-through [&.your-change]:font-semibold [.scope-pr_&.your-change]:font-normal [&.file-viewed_.nm]:text-muted-foreground group"
+          class="tr flex min-h-6 cursor-pointer select-none items-center gap-1.5 pr-2 text-xs whitespace-nowrap hover:bg-sidebar-accent [&.sel]:bg-sidebar-accent [&.ignored]:text-muted-foreground [&.git-M]:text-warn [&.git-R]:text-warn [&.git-A]:text-gi [&.git-untracked]:text-gi [&.git-D]:text-gd [&.git-D_.nm]:line-through [&.your-change]:font-semibold [.scope-pr_&.your-change]:font-normal [&.file-viewed_.nm]:text-muted-foreground group"
           classList={{
             dir: !!props.row.dir,
             file: !props.row.dir,
@@ -123,7 +123,7 @@ export function TreeRow(props: TreeRowProps): JSX.Element {
             />
           </Show>
           <button
-            class="nm min-h-6 min-w-6 text-left truncate group-[.dir.dirty]:after:ml-1 group-[.dir.dirty]:after:inline-block group-[.dir.dirty]:after:size-1 group-[.dir.dirty]:after:rounded-full group-[.dir.dirty]:after:bg-primary-text"
+            class="nm min-h-6 min-w-6 text-left truncate group-[.dir.dirty]:after:ml-1 group-[.dir.dirty]:after:inline-block group-[.dir.dirty]:after:size-1 group-[.dir.dirty]:after:rounded-full group-[.dir.dirty]:after:bg-warn"
             tabindex="-1"
           >
             {props.row.name}

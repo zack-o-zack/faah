@@ -38,7 +38,7 @@ func TestThemesStylesheetJoinsEveryThemeFile(t *testing.T) {
 		"--sidebar", "--sidebar-foreground", "--sidebar-accent", "--sidebar-accent-foreground",
 		"--border", "--input", "--sidebar-border", "--primary", "--ring", "--sidebar-primary", "--sidebar-ring",
 		"--primary-foreground", "--sidebar-primary-foreground", "--primary-text", "--faint",
-		"--surface", "--surface-raised", "--surface-sunken", "--ink", "--ink-muted", "--line", "--line-strong", "--spiral", "--accent-ink", "--pistachio", "--periwinkle", "--aqua", "--lemon", "--bubblegum", "--on-pastel", "--danger", "--danger-soft", "--focus", "--hover", "--special", "--warn", "--destructive", "--sel", "--mark", "--mark-active", "--cur", "--shadow-raise", "--shadow-pop", "--shadow-dialog",
+		"--surface", "--surface-raised", "--surface-sunken", "--ink", "--ink-muted", "--line", "--line-strong", "--spiral", "--on-spiral", "--danger", "--danger-soft", "--focus", "--hover", "--special", "--warn", "--destructive", "--sel", "--mark", "--mark-active", "--cur", "--shadow-raise", "--shadow-pop", "--shadow-dialog",
 		"--k", "--nf", "--s", "--m", "--c", "--err",
 	}
 	body := rec.Body.String()
@@ -241,7 +241,7 @@ func TestUserThemesReachStylesheetAndSettingsSchema(t *testing.T) {
 		t.Fatal("user CSS missing")
 	}
 	for _, item := range s.settingsSchema() {
-		if item.Key == "workbench.colorTheme" && strings.Join(item.Options, ",") != ",custom-night,fibo-dark,fibo-light" {
+		if item.Key == "workbench.colorTheme" && strings.Join(item.Options, ",") != ",custom-night,dark,light" {
 			t.Fatalf("theme options %v", item.Options)
 		}
 	}

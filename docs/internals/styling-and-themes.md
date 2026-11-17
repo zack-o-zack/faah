@@ -61,8 +61,8 @@ polls only while a workspace is starting.
 
 ## Theme contract
 
-The built-in themes are `fibo-light` and `fibo-dark`. With no saved or configured
-ID, `prefers-color-scheme: dark` selects fibo dark; otherwise fibo light. The
+The built-in themes are `light` and `dark`. With no saved or configured
+ID, `prefers-color-scheme: dark` selects Dark; otherwise Light. The
 empty `workbench.colorTheme` setting means System. A configured nonempty ID wins
 over the browser's saved ID. An unavailable ID follows the OS, with no migration
 or alias. OS changes apply live while System is selected.
@@ -97,12 +97,12 @@ request, so reload the page after editing them. User CSS has a 256 KiB per-file
 cap and a 1 MiB total content cap. Files exceeding either cap, unreadable files,
 and non-regular entries are skipped with a log line. A missing folder is fine.
 
-For example, `~/.faah/themes/overrides.css` changes two fibo dark tokens:
+For example, `~/.faah/themes/overrides.css` changes two Dark tokens:
 
 ```css
-:root[data-theme="fibo-dark"] {
-  --spiral: #b8e6a0;
-  --surface-raised: #202820;
+:root[data-theme="dark"] {
+  --surface-raised: var(--surface);
+  --hover: var(--surface-sunken);
 }
 ```
 
@@ -112,7 +112,11 @@ logo files are unchanged in this colour-only phase.
 
 ### fibo colours
 
-Define these first in both themes. Pastels are fills, paired with `on-pastel`.
+Define these first in both themes. Surfaces and controls are neutral.
+The brand green (`--spiral`) is reserved for the logo, thinking spiral and the two agent send buttons.
+Pull request states have their own tokens (`--state-open`, `--state-merged`, `--state-closed`,
+`--state-draft`, `--on-state`); user themes that omit them fall back to `--gi`, `--k`,
+`--destructive` and `--muted-foreground`.
 Status also needs a sign, icon or text, such as `+`, `Passed` or `Error`.
 
 | Tokens | Purpose |
@@ -120,13 +124,7 @@ Status also needs a sign, icon or text, such as `+`, `Passed` or `Error`.
 | `--surface`, `--surface-raised`, `--surface-sunken` | Page/editor, floating/cards, sidebars/code blocks |
 | `--ink`, `--ink-muted` | Primary and secondary text |
 | `--line`, `--line-strong` | Decorative hairlines and control edges |
-| `--spiral`, `--accent-ink` | Mark and action/link ink |
-| `--pistachio` | Brand and primary-action fill |
-| `--periwinkle` | Agent/model fill |
-| `--aqua` | Addition/pass fill |
-| `--lemon` | Matches and waiting-for-you fill |
-| `--bubblegum` | File, selection and information fill |
-| `--on-pastel` | Dark text on all five pastels, in either theme |
+| `--spiral`, `--on-spiral` | Green mark/send fill and its paired send text |
 | `--danger`, `--danger-soft` | Error ink and error fill |
 | `--focus`, `--hover` | Focus rings and row/menu hover |
 
@@ -139,8 +137,8 @@ Define these after the fibo colours, using references rather than repeated hex.
 | `--background` / `--foreground` | `--surface` / `--ink` |
 | `--card`, `--popover` | `--surface-raised` |
 | `--card-foreground`, `--popover-foreground` | `--ink` |
-| `--primary`, `--sidebar-primary` | `--pistachio` |
-| `--primary-foreground`, `--sidebar-primary-foreground` | `--on-pastel` |
+| `--primary`, `--sidebar-primary` | `--ink` |
+| `--primary-foreground`, `--sidebar-primary-foreground` | `--surface` |
 | `--secondary`, `--muted`, `--sidebar` | `--surface-sunken` |
 | `--secondary-foreground`, `--sidebar-foreground` | `--ink` |
 | `--muted-foreground` | `--ink-muted` |
@@ -160,9 +158,9 @@ Basecoat supplies control sizes; the fibo layer below owns their shapes.
 | `--image-dark`, `--image-light` | Dark/light contrast surfaces in the image viewer |
 | `--faint`, `--primary-text` | Secondary text and action/link ink |
 | `--special` | Agent ink, independent of syntax function ink |
-| `--sel`, `--cur` | Bubblegum selection overlay and current-line fill |
-| `--mark`, `--mark-active`, `--on-mark-active` | Translucent/solid lemon search fill and active-match text |
-| `--warn` | Readable warning ink from the lemon family |
+| `--sel`, `--cur` | Blue selection overlay and current-line fill |
+| `--mark`, `--mark-active`, `--on-mark-active` | Translucent/solid yellow search fill and active-match text |
+| `--warn` | Readable warning ink from the amber family |
 | `--gi`, `--gd` | Readable addition/removal ink |
 | `--gi-bg` | Opaque added-line fill in editor and review diffs |
 | `--gd-bg` | Opaque deleted-line fill in editor and review diffs |
@@ -178,18 +176,13 @@ it is text over syntax-coloured badges. The shape layer also supplies these fall
 
 | Optional token | Root fallback |
 | --- | --- |
-| `--pistachio` | `var(--primary)` |
-| `--periwinkle` | `color-mix(in oklab, var(--special) 30%, var(--background))` |
-| `--aqua` | `color-mix(in oklab, var(--gi) 30%, var(--background))` |
-| `--lemon` | `color-mix(in oklab, var(--warn) 30%, var(--background))` |
-| `--bubblegum` | `color-mix(in oklab, var(--sel) 30%, var(--background))` |
-| `--on-pastel` | `var(--foreground)` |
 | `--spiral` | `var(--primary-text)` |
+| `--on-spiral` | `var(--background)` |
 | `--shadow-raise`, `--shadow-pop`, `--shadow-dialog` | The legacy `--shadow`, if present; otherwise a foreground-tinted shadow for each elevation |
 
-The bundled themes provide explicit pastel and elevation values. A user theme
-can override any optional token. Check `on-pastel` contrast against its fills;
-the fallback preserves the theme's foreground rather than guaranteeing contrast
+The bundled themes provide explicit neutral and elevation values. A user theme
+can override any optional token. Check `on-spiral` contrast against `spiral`;
+the fallback preserves the theme's background rather than guaranteeing contrast
 for every possible custom palette. Other contract tokens must be defined by a
 complete theme.
 
@@ -201,10 +194,10 @@ scopes them to code, Markdown fences, diffs and hover signatures.
 | Tokens | Purpose and fibo role |
 | --- | --- |
 | `--k`, `--kt` | Keywords (indigo), types (amber) |
-| `--nf`, `--nc`, `--nb` | Functions (green), classes (amber), built-ins (teal) |
+| `--nf`, `--nc`, `--nb` | Functions (blue), classes (amber), built-ins (blue) |
 | `--nv`, `--no` | Variables (ink), constants (rose) |
-| `--na`, `--nt`, `--nd`, `--np` | Attributes (teal), tags (green), decorators (indigo), namespaces (muted ink) |
-| `--s`, `--m` | Strings (teal), numbers (rose) |
+| `--na`, `--nt`, `--nd`, `--np` | Attributes (blue), tags (blue), decorators (indigo), namespaces (muted ink) |
+| `--s`, `--m` | Strings (blue), numbers (rose) |
 | `--o`, `--p` | Operators and punctuation (muted ink) |
 | `--c`, `--cp` | Comments (muted ink), preprocessor directives (indigo) |
 | `--err`, `--gi`, `--gd` | Error, addition and removal ink |
@@ -212,111 +205,15 @@ scopes them to code, Markdown fences, diffs and hover signatures.
 `web/src/contrast.test.ts` resolves token references recursively, composites
 alpha fills over `surface`, and checks text at 4.5:1 on all surfaces and `cur`.
 Syntax also passes on composited selection and diff fills; diff ink passes on
-its own fill; `on-pastel` passes on every pastel. Focus and control edges need
+its own fill; `on-spiral` passes on `spiral` at 4.5:1. Focus and control edges need
 3:1 on surfaces. Keep these checks when changing a theme.
 
 ### A complete new user theme
 
-Save this as `~/.faah/themes/my-theme.css` and reload. It adds `my-theme` to the
-picker, using the complete dark token contract as a starting point. Change
-colours and keep aliases as references; check contrast after editing.
-
-```css
-:root[data-theme="my-theme"] {
-  --theme-name: "My theme";
-  color-scheme: dark;
-
-  /* fibo colours: pastels are fills; ink tones carry text. */
-  --surface: #141815;
-  --surface-raised: #1c221e;
-  --surface-sunken: #0e110f;
-  --ink: #edf3ec;
-  --ink-muted: #a7b3aa;
-  --line: #37413a;
-  --line-strong: #768379;
-  --spiral: #a8dc8c;
-  --accent-ink: #a8dc8c;
-  --pistachio: #a9d68a;
-  --periwinkle: #a9b0f0;
-  --aqua: #8ed3cf;
-  --lemon: #e3d572;
-  --bubblegum: #eda3c3;
-  --on-pastel: #1d2620;
-  --danger: #ff8796;
-  --danger-soft: #5a2530;
-  --focus: #b6bcfa;
-  --hover: #262e28;
-
-  /* Basecoat aliases follow the fibo colours. */
-  --background: var(--surface);
-  --foreground: var(--ink);
-  --card: var(--surface-raised);
-  --card-foreground: var(--ink);
-  --popover: var(--surface-raised);
-  --popover-foreground: var(--ink);
-  --primary: var(--pistachio);
-  --primary-foreground: var(--on-pastel);
-  --secondary: var(--surface-sunken);
-  --secondary-foreground: var(--ink);
-  --muted: var(--surface-sunken);
-  --muted-foreground: var(--ink-muted);
-  --accent: var(--hover);
-  --accent-foreground: var(--ink);
-  --border: var(--line);
-  --input: var(--line-strong);
-  --ring: var(--focus);
-  --sidebar: var(--surface-sunken);
-  --sidebar-foreground: var(--ink);
-  --sidebar-primary: var(--pistachio);
-  --sidebar-primary-foreground: var(--on-pastel);
-  --sidebar-accent: var(--hover);
-  --sidebar-accent-foreground: var(--ink);
-  --sidebar-border: var(--line);
-  --sidebar-ring: var(--focus);
-
-  /* Selection, search, status, image surfaces and elevation. */
-  --image-dark: #141815;
-  --image-light: #f6f8f4;
-  --faint: var(--ink-muted);
-  --primary-text: var(--accent-ink);
-  --special: var(--periwinkle);
-  --cur: var(--hover);
-  --sel: rgba(237, 163, 195, 0.10);
-  --mark: rgba(227, 213, 114, 0.20);
-  --mark-active: var(--lemon);
-  --on-mark-active: var(--on-pastel);
-  --warn: var(--lemon);
-  --gi: #8ed3cf;
-  --gi-bg: rgba(142, 211, 207, 0.08);
-  --gd: var(--danger);
-  --gd-bg: rgba(90, 37, 48, 0.35);
-  --destructive: var(--danger);
-  --err: var(--danger);
-  --shadow-raise: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-pop: 0 8px 20px -4px rgba(0, 0, 0, 0.55);
-  --shadow-dialog: 0 24px 56px -8px rgba(0, 0, 0, 0.7);
-
-  /* Syntax: indigo keywords; teal strings/built-ins; rose numbers/constants;
-     green functions/tags; amber types/classes; muted comments/punctuation. */
-  --k: #b6bcfa;
-  --kt: #e3d572;
-  --nf: var(--accent-ink);
-  --nc: #e3d572;
-  --nb: #8ed3cf;
-  --nv: var(--ink);
-  --no: #eda3c3;
-  --na: #8ed3cf;
-  --nt: var(--accent-ink);
-  --nd: #b6bcfa;
-  --np: var(--ink-muted);
-  --s: #8ed3cf;
-  --m: #eda3c3;
-  --o: var(--ink-muted);
-  --p: var(--ink-muted);
-  --c: var(--ink-muted);
-  --cp: #b6bcfa;
-}
-```
+Copy [dark.css](../../web/themes/dark.css) or [light.css](../../web/themes/light.css)
+to `~/.faah/themes/my-theme.css`. Change `data-theme` to `my-theme`, give it a
+unique `--theme-name`, and keep its `color-scheme`. Reload to discover the new
+ID. Keep aliases as references and check contrast after editing colours.
 
 Colours live in theme files. Components use semantic utilities or `var(...)`.
 Derived colours may use `color-mix` with tokens and `transparent`; do not add
@@ -393,7 +290,7 @@ with a 2px offset, falling back to `--ring` in older themes. Their focus rings
 are cleared so they do not stack with the outline. Custom buttons, links,
 summaries, `[tabindex]` controls and bare checkboxes/radios use a separate
 low-specificity `:where(...)` rule, which local styles can override. Checked
-checkbox/radio edges use `--spiral`, falling back to `--primary-text`.
+checkbox/radio edges and active switch tracks use `--ink`.
 
 Bare text inputs, selects and textareas are deliberately absent from that rule.
 Use a Basecoat field for a standalone control. Within `.input-group`, use bare
@@ -412,15 +309,26 @@ edges cannot clip it. The edit-mode textarea stays outline-free, with its text
 caret indicating focus. Markdown task checkboxes are disabled content, so they
 are not keyboard stops. This revision has no inline tree rename field.
 
-The `special` button variant uses periwinkle fill and `on-pastel` text. Hover
-and expanded states mix that fill at 82% with ink; disabled controls keep
-Basecoat's disabled treatment. Badge `data-tone` values are `brand` (pistachio),
-`agent` (periwinkle), `added` (aqua), `waiting` (lemon) and `file` (bubblegum).
-Use them only when the existing label has that meaning. Secondary count badges
-use Ink (foreground fill, background text). Outline and pastel badges use the
-input border so their edges remain visible on panel surfaces. Destructive badges
-use solid destructive fill and the theme's paired destructive foreground. Symbol
-kind badges use the shared pastel tones instead of source-code syntax colours.
+The `special` button variant uses the neutral `--hover` fill, `--ink` text and
+an inset `--line` border. Hover and expanded states mix 8% ink into the fill.
+The `send` variant uses `--spiral` and `--on-spiral`; hover mixes 8% ink.
+Both variants retain Basecoat's disabled treatment. The thread and review
+agent send buttons use green, as does Open PR status. A running thread's stop
+action stays primary.
+
+All badge `data-tone` and symbol `data-k` values use `--surface-sunken`, `--ink`
+and a `--line` border. Open, Closed and Merged PR statuses use green, red and
+indigo ink, tinted fills and matching borders. Draft badges retain muted text
+and an outlined card fill. Secondary count badges use foreground
+fill and background text. Destructive badges use destructive fill and its
+paired foreground. Links remain underlined, with a 2px underline offset in
+Markdown and thread prose.
+
+The footer and Color Theme setting share a compact System / Light / Dark icon
+radiogroup. Arrow keys wrap between options; Home/End select the first/last.
+Selection follows the preference, so System stays checked while the OS changes.
+Settings shows a separate user-theme select only when extra IDs are discovered;
+no built-in segment is checked while a user theme is active.
 
 Check proportions use Basecoat progress markup. Passed, failed and running
 segments have semantic solid fills; skipped and neutral segments have an input
@@ -600,7 +508,7 @@ Only agent work uses the spiral. Settings saves, LSP work, CI checks,
 workspace startup, refreshes and changed-file fetching keep plain spinners.
 The review Walkthrough screen loads a diff, rather than generating an agent
 answer. Special buttons use their text colour for the spiral so it remains
-legible on periwinkle. Legacy themes fall back from `--danger` to
+legible on the neutral fill. Legacy themes fall back from `--danger` to
 `--destructive`.
 
 `web/src/brand/Brand.tsx` pairs that mark with lowercase text in Fraunces at
@@ -616,7 +524,7 @@ version; the tree toolbar retains its version button and desktop drag region.
 The launcher and holding page retain their surrounding header spacing.
 
 `web/favicon.svg` is the supplied `fibo-app-icon.svg`, unchanged: a 100-unit
-pistachio tile with 24-unit corners and an ink spiral. It is also the source
+pale green tile with 24-unit corners and an ink spiral. It is also the source
 of all three desktop icons. `web/mark.svg` is the bare spiral used by the
 README image; the README prose and runtime identifiers are unchanged here.
 

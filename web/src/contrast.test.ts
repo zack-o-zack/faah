@@ -84,16 +84,40 @@ const SYNTAX = [
   'err',
 ];
 const SURFACES = ['surface', 'surface-raised', 'surface-sunken', 'cur'];
-const PASTELS = ['pistachio', 'periwinkle', 'aqua', 'lemon', 'bubblegum'];
+test('themes define only the supported neutral color contract', () => {
+  const contract = [
+    'theme-name surface surface-raised surface-sunken ink ink-muted line line-strong',
+    'on-spiral spiral state-open state-merged state-closed state-draft on-state',
+    'danger danger-soft focus hover background foreground',
+    'card card-foreground popover popover-foreground primary primary-foreground secondary secondary-foreground',
+    'muted muted-foreground accent accent-foreground border input ring sidebar',
+    'sidebar-foreground sidebar-primary sidebar-primary-foreground sidebar-accent sidebar-accent-foreground sidebar-border sidebar-ring image-dark',
+    'image-light faint primary-text special cur sel mark mark-active',
+    'on-mark-active warn gi gi-bg gi-word gd gd-bg gd-word',
+    'destructive destructive-foreground err shadow-raise shadow-pop shadow-dialog k kt',
+    'nf nc nb nv no na nt nd',
+    'np s m o p c cp',
+  ]
+    .flatMap((group) => group.split(' '))
+    .sort();
+  for (const file of readdirSync(resolve('web/themes')).filter((file) => file.endsWith('.css'))) {
+    const definitions = [
+      ...readFileSync(resolve('web/themes', file), 'utf8').matchAll(/--([\w-]+):/g),
+    ]
+      .map((match) => match[1])
+      .sort();
+    expect(definitions).toEqual(contract);
+  }
+});
 
-test('the bundled theme set is exactly fibo light and dark', () => {
+test('the bundled theme set is exactly Light and Dark', () => {
   expect(
     readdirSync(resolve('web/themes'))
       .filter((file) => file.endsWith('.css'))
       .sort(),
-  ).toEqual(['fibo-dark.css', 'fibo-light.css']);
+  ).toEqual(['dark.css', 'light.css']);
 });
-for (const theme of ['fibo-light', 'fibo-dark']) {
+for (const theme of ['light', 'dark']) {
   for (const fill of ['gi-bg', 'gd-bg', 'gi-word', 'gd-word']) {
     test(`${theme} keeps ink and every syntax token legible on ${fill}`, () => {
       const token = themeTokens(theme + '.css');
@@ -137,7 +161,10 @@ for (const theme of ['fibo-light', 'fibo-dark']) {
     for (const fill of ['gi-bg', 'gd-bg']) {
       assertContrast(fill === 'gi-bg' ? 'gi' : 'gd', token(fill), fill);
     }
-    for (const pastel of PASTELS) assertContrast('on-pastel', token(pastel), pastel);
+    assertContrast('on-spiral', token('spiral'), 'spiral');
+    for (const state of ['state-open', 'state-merged', 'state-closed', 'state-draft']) {
+      assertContrast('on-state', token(state), state);
+    }
     assertContrast('on-mark-active', token('mark-active'), 'mark-active');
     assertContrast('primary-foreground', token('primary'), 'primary');
   });

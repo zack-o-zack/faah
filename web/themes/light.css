@@ -1,0 +1,97 @@
+/* Light. Theme contract: docs/internals/styling-and-themes.md. */
+:root[data-theme="light"] {
+  --theme-name: "Light";
+  color-scheme: light;
+
+  /* Neutral surfaces and readable ink; green is reserved for agent send, brand marks and Open PR status. */
+  --surface: #faf9f6;
+  --surface-raised: #ffffff;
+  --surface-sunken: #f3f2ee;
+  --ink: #1f1e1c;
+  --ink-muted: #6b6a65;
+  --line: #e6e4de;
+  --line-strong: #8b8982;
+  --on-spiral: #ffffff;
+  --spiral: #3d7a37;
+  /* Pull request states use the familiar open/merged/closed/draft colours. */
+  --state-open: #1f883d;
+  --state-merged: #8250df;
+  --state-closed: #cf222e;
+  --state-draft: #6e7781;
+  --on-state: #ffffff;
+  --danger: #b02a3c;
+  --danger-soft: #f9d3d8;
+  --focus: #2f6fd6;
+  --hover: #efeee9;
+
+  /* Basecoat aliases follow the fibo colours. */
+  --background: var(--surface);
+  --foreground: var(--ink);
+  --card: var(--surface-raised);
+  --card-foreground: var(--ink);
+  --popover: var(--surface-raised);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--surface);
+  --secondary: var(--surface-sunken);
+  --secondary-foreground: var(--ink);
+  --muted: var(--surface-sunken);
+  --muted-foreground: var(--ink-muted);
+  --accent: var(--hover);
+  --accent-foreground: var(--ink);
+  --border: var(--line);
+  --input: var(--line-strong);
+  --ring: var(--focus);
+  --sidebar: var(--surface-sunken);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--ink);
+  --sidebar-primary-foreground: var(--surface);
+  --sidebar-accent: var(--hover);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--line);
+  --sidebar-ring: var(--focus);
+
+  /* Selection, search, status, image surfaces and elevation. */
+  --image-dark: #1c1c1b;
+  --image-light: #faf9f6;
+  --faint: var(--ink-muted);
+  --primary-text: var(--ink);
+  --special: var(--ink);
+  --cur: var(--hover);
+  --sel: rgba(47, 111, 214, 0.22);
+  --mark: rgba(229, 196, 55, 0.22);
+  --mark-active: #f5df83;
+  --on-mark-active: #1f1e1c;
+  --warn: #875c00;
+  --gi: #187733;
+  --gi-bg: #d1f8d9;
+  --gi-word: #a3e9b3;
+  --gd: #c4202b;
+  --gd-bg: #ffe5e2;
+  --gd-word: #ffcecb;
+  --destructive: var(--danger);
+  --destructive-foreground: var(--surface-raised);
+  --err: #9a2535;
+  --shadow-raise: 0 1px 2px rgba(29, 38, 32, 0.06), 0 2px 6px rgba(29, 38, 32, 0.05);
+  --shadow-pop: 0 6px 16px -4px rgba(29, 38, 32, 0.14), 0 2px 4px rgba(29, 38, 32, 0.06);
+  --shadow-dialog: 0 24px 48px -12px rgba(29, 38, 32, 0.22), 0 4px 12px rgba(29, 38, 32, 0.08);
+
+  /* Syntax: indigo keywords, blue functions/tags, amber types, rose constants. */
+  --k: #403e88;
+  --kt: #594711;
+  --nf: #245588;
+  --nc: #594711;
+  --nb: #22596d;
+  --nv: var(--ink);
+  --no: #793251;
+  --na: #22596d;
+  --nt: #245588;
+  --nd: #403e88;
+  --np: #4c4b47;
+  --s: #22596d;
+  --m: #793251;
+  --o: #4c4b47;
+  --p: #4c4b47;
+  --c: #4c4b47;
+  --cp: #403e88;
+}

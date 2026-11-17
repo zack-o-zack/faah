@@ -494,10 +494,10 @@ func TestWorkbenchSettingsOnlyTakesTheme(t *testing.T) {
 	if w := httpxtest.PostJSON(t, wb, "/api/settings", `{"github.token":"x"}`); w.Code != http.StatusBadRequest {
 		t.Fatalf("token accepted: %d", w.Code)
 	}
-	if w := httpxtest.PostJSON(t, wb, "/api/settings", `{"workbench.colorTheme":"fibo-dark"}`); w.Code != http.StatusOK {
+	if w := httpxtest.PostJSON(t, wb, "/api/settings", `{"workbench.colorTheme":"dark"}`); w.Code != http.StatusOK {
 		t.Fatalf("theme refused: %d %s", w.Code, w.Body.String())
 	}
-	if got := wb.theme(); got != "fibo-dark" {
+	if got := wb.theme(); got != "dark" {
 		t.Fatalf("theme %q", got)
 	}
 }
@@ -516,7 +516,7 @@ func TestWorkbenchPagesResolveMissingThemes(t *testing.T) {
 	wb.themes = httpx.Themes(wb.assets, "", dataDir)
 	for _, tc := range []struct{ theme, want string }{
 		{"removed-theme", ""}, {"missing-theme", ""}, {"", ""},
-		{"fibo-dark", "fibo-dark"}, {"fibo-light", "fibo-light"}, {"custom-night", "custom-night"},
+		{"dark", "dark"}, {"light", "light"}, {"custom-night", "custom-night"},
 	} {
 		t.Run(tc.theme, func(t *testing.T) {
 			if err := settings.UpdateMap(map[string]any{"workbench.colorTheme": tc.theme}); err != nil {

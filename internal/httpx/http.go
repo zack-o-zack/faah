@@ -36,7 +36,7 @@ func CleanBasePath(p string) string {
 	return p
 }
 
-const ContentSecurityPolicy = "default-src 'self'; script-src 'self' 'sha256-Xnro7kjr0LUYiSt1861sPMG9pyzWBhC4ycOW2Zh37AM='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https: http:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'none';"
+const ContentSecurityPolicy = "default-src 'self'; script-src 'self' 'sha256-+MX5HP4gJGe3Gg62Ql1gLhiNjw+TTtGF+Yd67MmqkSs='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https: http:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'none';"
 
 type gzipBypasser interface {
 	BypassGzip()

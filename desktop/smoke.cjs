@@ -81,7 +81,7 @@ void (async () => {
     preload: path.join(__dirname, 'preload.cjs'),
   } });
   try {
-    for (const theme of ['', 'fibo-light', 'fibo-dark']) {
+    for (const theme of ['', 'light', 'dark']) {
       const response = await fetch(origin + '/api/settings', {
         method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json' },
         body: JSON.stringify({ 'workbench.colorTheme': theme }),
@@ -109,7 +109,7 @@ void (async () => {
         return { theme: document.documentElement.dataset.theme,
           font: getComputedStyle(document.body).fontFamily, text };
       })()`);
-      assert.equal(colors.theme, theme || (await holding.webContents.executeJavaScript("matchMedia('(prefers-color-scheme: dark)').matches") ? 'fibo-dark' : 'fibo-light'));
+      assert.equal(colors.theme, theme || (await holding.webContents.executeJavaScript("matchMedia('(prefers-color-scheme: dark)').matches") ? 'dark' : 'light'));
       assert.equal(colors.font, 'system-ui, sans-serif');
       assert.ok(colors.text.length >= 3);
       for (const text of colors.text) {

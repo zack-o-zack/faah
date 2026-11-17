@@ -109,13 +109,13 @@
     --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
     /* Existing user themes can keep their original colour and shadow contract. */
-    --pistachio: var(--primary);
-    --periwinkle: color-mix(in oklab, var(--special) 30%, var(--background));
-    --aqua: color-mix(in oklab, var(--gi) 30%, var(--background));
-    --lemon: color-mix(in oklab, var(--warn) 30%, var(--background));
-    --bubblegum: color-mix(in oklab, var(--sel) 30%, var(--background));
-    --on-pastel: var(--foreground);
     --spiral: var(--primary-text);
+    --on-spiral: var(--background);
+    --state-open: var(--gi);
+    --state-merged: var(--k);
+    --state-closed: var(--destructive);
+    --state-draft: var(--muted-foreground);
+    --on-state: var(--background);
     --danger: var(--destructive);
     --shadow-raise: var(--shadow, 0 1px 2px color-mix(in oklab, var(--foreground) 10%, transparent));
     --shadow-pop: var(--shadow, 0 6px 16px -4px color-mix(in oklab, var(--foreground) 18%, transparent));
@@ -274,6 +274,11 @@
     --tw-ring-shadow: 0 0 transparent;
     --tw-shadow: var(--shadow-raise);
   }
+  /* A group with its own clear button hides the browser's built-in one. */
+  .input-group:has(> [data-control='icon-action']) > input[type='search']::-webkit-search-cancel-button {
+    appearance: none;
+    display: none;
+  }
 
   /* Structural tab/field selectors match Vega's focus rule specificity.
      .textarea is Basecoat's standalone multiline field alias. Bare text
@@ -292,20 +297,31 @@
     --tw-inset-ring-shadow: 0 0 transparent;
   }
 
-  /* Pastels are fills. Action/link text keeps the theme's readable ink. */
+  /* Neutral controls keep colour reserved for agent send and brand marks. */
   :is(.field > input, .input):is([type='checkbox'], [type='radio']):not([role='switch']):checked,
   :is(.field > input, .input):is([type='checkbox'], [type='radio']):not([role='switch']):checked[aria-invalid='true'],
   .field > input[type='checkbox'][role='switch']:checked,
-  .input[type='checkbox'][role='switch']:checked { border-color: var(--spiral); }
+  .input[type='checkbox'][role='switch']:checked { border-color: var(--ink, var(--foreground)); }
   .btn[data-variant='special'] {
-    background-color: var(--periwinkle);
-    color: var(--on-pastel);
+    background-color: var(--hover, var(--accent));
+    color: var(--ink, var(--foreground));
+    box-shadow: inset 0 0 0 1px var(--line, var(--border));
     border-color: transparent;
     transition-duration: var(--duration-fast);
     transition-timing-function: var(--ease-out);
   }
   .btn[data-variant='special']:hover,
-  .btn[data-variant='special'][aria-expanded='true'] { background-color: color-mix(in oklab, var(--periwinkle) 92%, var(--ink, var(--foreground))); }
+  .btn[data-variant='special'][aria-expanded='true'] { background-color: color-mix(in oklab, var(--hover, var(--accent)) 92%, var(--ink, var(--foreground))); }
+  .field > input[type='checkbox'][role='switch']:checked,
+  .input[type='checkbox'][role='switch']:checked { background-color: var(--ink, var(--foreground)); }
+  .btn[data-variant='send'] {
+    background-color: var(--spiral);
+    color: var(--on-spiral);
+  }
+  .btn[data-variant='send']:hover { background-color: color-mix(in oklab, var(--spiral) 92%, var(--ink, var(--foreground))); }
+  .theme-switch { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--line, var(--border)); border-radius: var(--radius-pill); background: var(--surface, var(--background)); }
+  .theme-switch > .btn { width: 28px; height: 28px; padding: 0; color: var(--ink-muted, var(--muted-foreground)); }
+  .theme-switch > .btn[aria-checked='true'] { background: var(--hover, var(--accent)); color: var(--ink, var(--foreground)); box-shadow: inset 0 0 0 1px var(--line, var(--border)); }
   /* Badge surfaces must read independently of the surrounding panel. */
   .btn[data-variant='outline'], .badge { border-color: var(--input); }
   :is(.input, .textarea, .field > :is(input, select, textarea),
@@ -319,24 +335,16 @@
   }
   .badge:is([data-variant='ghost'], [data-variant='link']) { border-color: transparent; }
   .badge[data-tone], .badge[data-k], a.badge[data-tone]:hover {
-    background-color: var(--badge-tone); color: var(--on-pastel); border-color: var(--input);
+    background-color: var(--surface-sunken, var(--muted)); color: var(--ink, var(--foreground)); border-color: var(--line, var(--border));
   }
-  .badge[data-k] { --badge-tone: var(--bubblegum); }
-  .badge[data-k]:is([data-k='func'], [data-k='method'], [data-k='fn'], [data-k='def'], [data-k='defp']) { --badge-tone: var(--pistachio); }
-  .badge[data-k]:is([data-k='class'], [data-k='struct'], [data-k='interface'], [data-k='type'], [data-k='enum'], [data-k='trait'], [data-k='record'], [data-k='protocol']) { --badge-tone: var(--lemon); }
-  .badge[data-k]:is([data-k='module'], [data-k='mod'], [data-k='namespace'], [data-k='defmodule'], [data-k='impl'], [data-k='extension']) { --badge-tone: var(--periwinkle); }
-  .badge[data-tone='brand'] { --badge-tone: var(--pistachio); }
-  .badge[data-tone='agent'] { --badge-tone: var(--periwinkle); }
-  .badge[data-tone='added'] { --badge-tone: var(--aqua); }
-  .badge[data-tone='waiting'] { --badge-tone: var(--lemon); }
-  .badge[data-tone='file'] { --badge-tone: var(--bubblegum); }
-  .badge[data-tone='open'] { --badge-tone: var(--pistachio); }
-  .badge[data-tone='merged'] { --badge-tone: var(--periwinkle); }
-  .badge[data-tone='closed'] { --badge-tone: var(--danger-soft, var(--gd-bg)); color: var(--foreground); }
-  .badge[data-tone='draft'] {
-    --badge-tone: var(--card); color: var(--muted-foreground);
-    box-shadow: inset 0 0 0 1px var(--line-strong, var(--input));
+  .badge:is([data-tone='open'], [data-tone='merged'], [data-tone='closed'], [data-tone='draft']),
+  a.badge:is([data-tone='open'], [data-tone='merged'], [data-tone='closed'], [data-tone='draft']):hover {
+    background-color: var(--state); color: var(--on-state); border-color: var(--state);
   }
+  .badge[data-tone='open'] { --state: var(--state-open); }
+  .badge[data-tone='merged'] { --state: var(--state-merged); }
+  .badge[data-tone='closed'] { --state: var(--state-closed); }
+  .badge[data-tone='draft'] { --state: var(--state-draft); }
   .btn[data-variant='link'], .badge[data-variant='link'], a.badge[data-variant='link']:hover,
   :is(.empty > header > p, .item p, .field > p) > a:hover { color: var(--primary-text); }
   .badge[data-variant='link'], a.badge[data-variant='link']:hover { background-color: transparent; border-color: transparent; }
@@ -515,8 +523,8 @@
   .md h4 { font-size: 1.05em; }
   .md h5 { font-size: .95em; }
   .md h6 { font-size: .9em; color: var(--muted-foreground); }
-  .md a { color: var(--primary-text); text-decoration: none; }
-  .md a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .md a { color: var(--primary-text); text-decoration: underline; text-underline-offset: 2px; }
+
   .md strong, .md b { font-weight: 600; }
   .md hr { height: 1px; margin: 28px 0; border: 0; background: var(--border); }
   .md ul, .md ol { padding-left: 2em; }

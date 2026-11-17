@@ -3,9 +3,9 @@ export function chooseThemePreference(
   savedTheme: string | null | undefined,
   configuredTheme: string | null | undefined,
   systemDark: boolean,
-  available: readonly string[] = ['fibo-light', 'fibo-dark'],
+  available: readonly string[] = ['light', 'dark'],
 ): string {
   const id = configuredTheme || savedTheme;
   if (id && available.includes(id)) return id;
-  return systemDark ? 'fibo-dark' : 'fibo-light';
+  return systemDark ? 'dark' : 'light';
 }

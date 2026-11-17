@@ -31,7 +31,7 @@ export function PRBar(): JSX.Element {
         <div class="flex min-w-0 items-center gap-2">
           <span
             id="pr-state-badge"
-            class="badge shrink-0 gap-1 rounded-pill border-0 py-0.5 pl-1.75 pr-2.25 text-xs font-semibold"
+            class="badge shrink-0 gap-1 rounded-pill py-0.5 pl-1.75 pr-2.25 text-xs font-semibold"
             data-tone={state().tone}
           >
             <span class={`${state().icon} shrink-0`} aria-hidden="true" />
@@ -47,12 +47,12 @@ export function PRBar(): JSX.Element {
           >
             <span
               id="pr-title"
-              class="min-w-0 truncate text-sm font-medium underline-offset-4 group-hover:underline group-focus-visible:underline"
+              class="min-w-0 truncate text-lg/5 font-medium underline-offset-4 group-hover:underline group-focus-visible:underline"
               title={pr()?.title}
             >
               {pr()?.title}
             </span>
-            <span id="pr-number" class="shrink-0 text-sm tabular-nums text-muted-foreground">
+            <span id="pr-number" class="shrink-0 text-lg/5 tabular-nums text-muted-foreground">
               #{pr().number}
             </span>
             <span

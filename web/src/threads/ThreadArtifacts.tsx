@@ -128,7 +128,7 @@ function ArtifactSteps(
                     class="grid h-5 w-5 shrink-0 place-items-center rounded-pill text-11 font-semibold"
                     classList={{
                       'bg-muted text-muted-foreground': !current(),
-                      'bg-[var(--pistachio)] text-[var(--on-pastel)]': current(),
+                      'bg-foreground text-background': current(),
                     }}
                     aria-hidden="true"
                   >

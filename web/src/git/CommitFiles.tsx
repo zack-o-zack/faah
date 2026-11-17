@@ -58,7 +58,7 @@ export function CommitFiles(props: CommitFilesProps): JSX.Element {
               </Show>
             </span>
             <span
-              class="gs w-3 shrink-0 text-center font-mono [&.git-M]:text-primary-text [&.git-R]:text-primary-text [&.git-A]:text-gi [&.git-untracked]:text-gi [&.git-D]:text-gd"
+              class="gs w-3 shrink-0 text-center font-mono [&.git-M]:text-warn [&.git-R]:text-warn [&.git-A]:text-gi [&.git-untracked]:text-gi [&.git-D]:text-gd"
               classList={{
                 'git-M': file.status === 'M',
                 'git-A': file.status === 'A',

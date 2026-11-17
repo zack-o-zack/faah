@@ -18,7 +18,7 @@ const (
 	maxThemeFile  = 256 << 10
 	maxUserThemes = 1 << 20
 	// ThemeBootstrap is allowed by its hash in ContentSecurityPolicy.
-	ThemeBootstrap = `(()=>{const r=document.documentElement;r.dataset.theme||=(matchMedia('(prefers-color-scheme: dark)').matches?'fibo-dark':'fibo-light');r.classList.toggle('dark',getComputedStyle(r).colorScheme==='dark')})()`
+	ThemeBootstrap = `(()=>{const r=document.documentElement;r.dataset.theme||=(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');r.classList.toggle('dark',getComputedStyle(r).colorScheme==='dark')})()`
 )
 
 // ThemeStyles caches only embedded CSS. User files are re-read for every request.

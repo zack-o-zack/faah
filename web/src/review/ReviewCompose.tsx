@@ -38,7 +38,7 @@ export function ReviewCompose(): JSX.Element {
             aria-keyshortcuts="Enter"
             aria-label="Send"
             class="btn gap-1.5"
-            data-variant="primary"
+            data-variant="send"
             data-size="sm"
             onClick={() => void editor.actions.sendReviewFollowup()}
           >
