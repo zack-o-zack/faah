@@ -139,37 +139,18 @@ test.each([1, 2])('walkthrough counts pluralize %i steps and files', async (coun
   fixture.view.unmount();
 });
 
-test('recorded tool steps expose turn actions without toggling their details', async () => {
-  const fixture = setup();
-  const tools = render(() => (
-    <EditorProvider value={fixture.editor}>
-      <ThreadSteps thread={thread} turn={required(thread.turns[0])} />
-    </EditorProvider>
-  ));
+test('recorded tool steps describe the run without duplicate editor actions', () => {
+  render(() => <ThreadSteps turn={required(thread.turns[0])} />);
   const details = required(
     document.querySelector<HTMLDetailsElement>('details[data-ui="thr-steps"]'),
   );
   details.open = true;
-  const list = within(details);
-  expect(list.getAllByRole('button')).toHaveLength(2);
-  await fireEvent.click(list.getByRole('button', { name: 'Show on code' }));
-  expect(details.open).toBe(true);
-  expect(fixture.editor.store.state.explanation.model).toMatchObject({ id: 'walk', turn: 1 });
-  expect(fixture.editor.store.state.explanation.walk).toBeNull();
-  await fireEvent.click(list.getByRole('button', { name: 'Open walkthrough' }));
-  await waitFor(() => expect(fixture.editor.walkthrough.focus()?.title).toBe('Collect input'));
-  expect(fixture.editor.store.state.explanation.walk).toEqual({
-    index: 0,
-    step: 0,
-    surface: 'source',
-  });
-  expect(fixture.editor.active()).toMatchObject({ path: 'a.go', cur: 2 });
-  expect(details.open).toBe(true);
-  tools.unmount();
-  fixture.view.unmount();
+  expect(within(details).getByText('Show notes')).toBeTruthy();
+  expect(within(details).getByText('Show a walkthrough')).toBeTruthy();
+  expect(within(details).queryAllByRole('button')).toHaveLength(0);
 });
 
-test('refused calls have no action, and a walkthrough-only running turn opens and starts', async () => {
+test('refused calls have no action, and a walkthrough-only running turn starts from its card', async () => {
   const fixture = setup();
   const empty = decodeThread({
     id: 'empty',
@@ -178,7 +159,7 @@ test('refused calls have no action, and a walkthrough-only running turn opens an
   });
   const refused = render(() => (
     <EditorProvider value={fixture.editor}>
-      <ThreadSteps thread={empty} turn={required(empty.turns[0])} />
+      <ThreadSteps turn={required(empty.turns[0])} />
     </EditorProvider>
   ));
   expect(refused.container.querySelector('button')).toBeNull();
@@ -193,15 +174,13 @@ test('refused calls have no action, and a walkthrough-only running turn opens an
       <ThreadTurn thread={walkOnly} turn={required(walkOnly.turns[0])} />
     </EditorProvider>
   ));
-  await fireEvent.click(turn.getByRole('button', { name: 'Show on code' }));
+  expect(turn.queryByRole('switch')).toBeNull();
+  await fireEvent.click(turn.getByRole('button', { name: /Collect input/ }));
   expect(fixture.editor.store.state.explanation.model).toMatchObject({
     id: 'only',
     turn: 2,
     phase: 'running',
   });
-  expect(fixture.editor.store.state.explanation.walk).toBeNull();
-  expect(screen.getByRole('button', { name: 'Start' })).toBeTruthy();
-  await fixture.editor.actions.showExplanation(walkOnly, 2, { walkthrough: true });
   await waitFor(() => expect(fixture.editor.walkthrough.focus()?.l1).toBe(2));
   expect(fixture.editor.active()?.path).toBe('a.go');
   turn.unmount();

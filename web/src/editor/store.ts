@@ -294,11 +294,12 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
     ...store.settings.actions,
     ...store.actions,
     ...shortcutRegistry.actions,
-    walkStart(index = 0) {
+    walkStart(index = 0, step = 0) {
       store.actions.walkStart(
         index,
         store.state.explanation.walk?.surface ||
           (review.state.mode === 'review' ? 'review' : 'source'),
+        step,
       );
     },
     openLink: openFile,
@@ -319,14 +320,23 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
       if (index >= 0 && active()?.path !== from.path && from.diffRef === ref) closeTabs([index]);
     },
     closeTabs,
-    async showExplanation(thread: Thread, turn: number, options: { walkthrough?: boolean } = {}) {
+    async showExplanation(
+      thread: Thread,
+      turn: number,
+      options: {
+        walkthrough?: boolean;
+        index?: number;
+        step?: number;
+        note?: { path: string; l1: number };
+      } = {},
+    ) {
       store.actions.orbOpen(thread, turn);
       store.actions.walkStop();
       if (options.walkthrough) {
-        baseActions.walkStart();
+        baseActions.walkStart(options.index, options.step);
         queueMicrotask(() => services.walkthrough?.focus());
       } else {
-        const note = thread.turns.find((item) => item.id === turn)?.notes?.[0];
+        const note = options.note || thread.turns.find((item) => item.id === turn)?.notes?.[0];
         const review = reviewAccess();
         if (review?.state.mode === 'review') {
           review.actions.setReviewTab('walkthrough');

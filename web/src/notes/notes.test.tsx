@@ -338,7 +338,7 @@ test('only the open bubble thread and turn render notes; closing hides every ann
   vi.unstubAllGlobals();
 });
 
-test('thread turn buttons open the first note file and replace the current bubble', async () => {
+test('thread turn switches open the first note file and replace the current bubble', async () => {
   const first = decodeThread({ id: 't', kind: 'explain', turns: [{ id: 1, notes }] });
   const second = decodeThread({
     id: 'other',
@@ -356,7 +356,7 @@ test('thread turn buttons open the first note file and replace the current bubbl
       <ThreadTurn thread={second} turn={required(second.turns[0])} />
     </EditorProvider>
   ));
-  const buttons = screen.getAllByRole('button', { name: 'Show on code' });
+  const buttons = screen.getAllByRole('switch', { name: 'Show in editor' });
   await fireEvent.click(required(buttons[0]));
   await screen.findByRole('button', { name: 'Explains the block' });
   expect(editor.active()?.path).toBe('a.go');

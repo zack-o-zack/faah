@@ -52,27 +52,7 @@ export function ThreadTurn(props: ThreadTurnProps): JSX.Element {
             </span>
           </Show>
         </div>
-        <Show
-          when={
-            props.thread?.kind === 'explain' &&
-            (props.turn.notes?.length || props.turn.walkthroughs?.length)
-          }
-        >
-          <button
-            class="btn self-start"
-            data-variant="ghost"
-            data-size="xs"
-            data-control="show-explanation"
-            onClick={() => {
-              const thread = props.thread;
-              if (thread) void editor.actions.showExplanation(thread, props.turn.id);
-            }}
-          >
-            <span class="icon-[ph--spinner]" aria-hidden="true" />
-            Show on code
-          </button>
-        </Show>
-        <ThreadSteps turn={props.turn} thread={props.thread} />
+        <ThreadSteps turn={props.turn} />
         <Markdown
           text={props.turn.reply || ''}
           refs={
@@ -80,7 +60,9 @@ export function ThreadTurn(props: ThreadTurnProps): JSX.Element {
           }
           onOpen={open}
         />
-        <ThreadArtifacts thread={props.thread?.id} turn={props.turn} onOpen={open} />
+        <Show when={props.thread?.kind === 'explain' && props.thread}>
+          {(thread) => <ThreadArtifacts thread={thread()} turn={props.turn} />}
+        </Show>
         <ErrorNotice title="The run failed" error={props.turn.error} />
         <Show when={props.thread?.kind === 'explain' && props.turn.id === 1 && !props.turn.running}>
           <footer

@@ -519,7 +519,7 @@ text or code family.
 `editor.fontFamily` defaults to the empty string, selecting bundled JetBrains
 Mono. A nonempty setting overrides source rows and edit-mode text/gutters through
 `--editor-font-family`, and is passed directly to `EditorMeasure`. It does not
-replace `--mono` for diffs, code peeks, Markdown, paths or commands.
+replace `--mono` for diffs, inline code notes, Markdown, paths or commands.
 Clearing the setting restores `var(--mono)`. `EditorMeasure` measures after
 `document.fonts.ready` and every `loadingdone` event, and removes the listener
 on cleanup so delayed font swaps cannot leave stale column widths.

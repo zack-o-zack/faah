@@ -1,11 +1,8 @@
 import { Spiral } from '../brand/Spiral.tsx';
 import type { JSX } from 'solid-js';
-import { useEditor } from '../editor/context.tsx';
-import { EXPLAIN_STEP_LABELS } from './logic.ts';
-import type { Thread, ThreadTurn } from './decode.ts';
+import type { ThreadTurn } from './decode.ts';
 import { For, Show } from 'solid-js';
-export function ThreadSteps(props: { turn: ThreadTurn; thread?: Thread | null }): JSX.Element {
-  const editor = useEditor();
+export function ThreadSteps(props: { turn: ThreadTurn }): JSX.Element {
   return (
     <Show when={props.turn.running || props.turn.tools?.length}>
       <Show
@@ -25,36 +22,7 @@ export function ThreadSteps(props: { turn: ThreadTurn; thread?: Thread | null })
           </summary>
           <ol data-ui="thr-step-list" class="mt-1.5 ml-1.5 flex flex-col gap-1 border-l pl-3">
             <For each={props.turn.tools}>
-              {(step) => {
-                const walkthrough = () =>
-                  step === EXPLAIN_STEP_LABELS.walkthrough && !!props.turn.walkthroughs?.length;
-                const notes = () =>
-                  step === EXPLAIN_STEP_LABELS.notes && !!props.turn.notes?.length;
-                return (
-                  <li class="flex items-start gap-1 whitespace-pre-wrap wrap-anywhere">
-                    <span class="min-w-0 flex-1">{step}</span>
-                    <Show when={props.thread && (notes() || walkthrough())}>
-                      <button
-                        class="btn shrink-0"
-                        data-variant="ghost"
-                        data-size="icon-xs"
-                        title={walkthrough() ? 'Open walkthrough' : 'Show on code'}
-                        aria-label={walkthrough() ? 'Open walkthrough' : 'Show on code'}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          const thread = props.thread;
-                          if (thread)
-                            void editor.actions.showExplanation(thread, props.turn.id, {
-                              walkthrough: walkthrough(),
-                            });
-                        }}
-                      >
-                        <span class="icon-[ph--spinner] text-special" aria-hidden="true" />
-                      </button>
-                    </Show>
-                  </li>
-                );
-              }}
+              {(step) => <li class="whitespace-pre-wrap wrap-anywhere">{step}</li>}
             </For>
           </ol>
         </details>
