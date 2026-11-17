@@ -65,33 +65,35 @@
   --on-mark-active: var(--on-pastel);
   --warn: var(--lemon);
   --gi: #8ed3cf;
-  --gi-bg: rgba(142, 211, 207, 0.08);
+  --gi-bg: #162a26;
+  --gi-word: #1d5950;
   --gd: var(--danger);
-  --gd-bg: rgba(90, 37, 48, 0.35);
+  --gd-bg: #261e1d;
+  --gd-word: #723940;
   --destructive: var(--danger);
   --destructive-foreground: var(--on-pastel);
-  --err: var(--danger);
+  --err: #ffabb5;
   --shadow-raise: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-pop: 0 8px 20px -4px rgba(0, 0, 0, 0.55);
   --shadow-dialog: 0 24px 56px -8px rgba(0, 0, 0, 0.7);
 
   /* Syntax: indigo keywords; teal strings/built-ins; rose numbers/constants;
      green functions/tags; amber types/classes; muted comments/punctuation. */
-  --k: #b6bcfa;
+  --k: #b8bdfa;
   --kt: #e3d572;
   --nf: var(--accent-ink);
   --nc: #e3d572;
   --nb: #8ed3cf;
   --nv: var(--ink);
-  --no: #eda3c3;
+  --no: #efb0cb;
   --na: #8ed3cf;
   --nt: var(--accent-ink);
-  --nd: #b6bcfa;
-  --np: var(--ink-muted);
+  --nd: #b8bdfa;
+  --np: #bac4bc;
   --s: #8ed3cf;
-  --m: #eda3c3;
-  --o: var(--ink-muted);
-  --p: var(--ink-muted);
-  --c: var(--ink-muted);
-  --cp: #b6bcfa;
+  --m: #efb0cb;
+  --o: #bac4bc;
+  --p: #bac4bc;
+  --c: #bac4bc;
+  --cp: #b8bdfa;
 }

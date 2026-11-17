@@ -164,7 +164,10 @@ Basecoat supplies control sizes; the fibo layer below owns their shapes.
 | `--mark`, `--mark-active`, `--on-mark-active` | Translucent/solid lemon search fill and active-match text |
 | `--warn` | Readable warning ink from the lemon family |
 | `--gi`, `--gd` | Readable addition/removal ink |
-| `--gi-bg`, `--gd-bg` | Translucent addition/removal row fills |
+| `--gi-bg` | Opaque added-line fill in editor and review diffs |
+| `--gd-bg` | Opaque deleted-line fill in editor and review diffs |
+| `--gi-word` | Opaque added-word highlight within an added line |
+| `--gd-word` | Opaque deleted-word highlight within a deleted line |
 | `--destructive`, `--err` | Error ink for controls and syntax |
 | `--shadow-raise`, `--shadow-pop`, `--shadow-dialog` | Selected/focused, floating and modal elevation |
 

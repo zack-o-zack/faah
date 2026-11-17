@@ -472,11 +472,11 @@
   .diff-row.diff-del .diff-mk, .diff-side.diff-del .diff-mk { color: var(--gd); }
   .diff-side.diff-blank { background: var(--sidebar); }
   .diff-char-add {
-    background: var(--gi-bg);
+    background: var(--gi-word);
     border-radius: 2px;
   }
   .diff-char-del {
-    background: var(--gd-bg);
+    background: var(--gd-word);
     border-radius: 2px;
   }
   .diff-char-bar-del, .diff-char-bar-add {

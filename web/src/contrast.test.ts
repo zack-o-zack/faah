@@ -94,6 +94,26 @@ test('the bundled theme set is exactly fibo light and dark', () => {
   ).toEqual(['fibo-dark.css', 'fibo-light.css']);
 });
 for (const theme of ['fibo-light', 'fibo-dark']) {
+  for (const fill of ['gi-bg', 'gd-bg', 'gi-word', 'gd-word']) {
+    test(`${theme} keeps ink and every syntax token legible on ${fill}`, () => {
+      const token = themeTokens(theme + '.css');
+      const background = token(fill);
+      expect(background[3], `${theme}: ${fill} is opaque`).toBe(1);
+      for (const text of ['ink', 'foreground', ...SYNTAX]) {
+        expect(
+          contrast(token(text), background),
+          `${theme}: ${text} on ${fill}`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+    });
+    test(`${theme} keeps ${fill} visible against the surface`, () => {
+      const token = themeTokens(theme + '.css');
+      // The approved dark deletion fill is 1.09788:1, approximately 1.10:1.
+      expect(contrast(token(fill), token('surface'))).toBeGreaterThanOrEqual(
+        fill.endsWith('-word') ? 1.3 : 1.09,
+      );
+    });
+  }
   test(`${theme} keeps text, syntax, diff ink and focus legible`, () => {
     const token = themeTokens(theme + '.css');
     const assertContrast = (name: string, background: Color, label: string, minimum = 4.5) => {
@@ -114,16 +134,8 @@ for (const theme of ['fibo-light', 'fibo-dark']) {
         assertContrast(text, background, `sel over ${surface}`);
       }
     }
-    // Alpha fills are composited, never treated as opaque RGB.
     for (const fill of ['gi-bg', 'gd-bg']) {
-      const background = composite(token(fill), token('surface'));
-      for (const text of ['foreground', ...SYNTAX]) assertContrast(text, background, fill);
-      const wordBackground = composite(token(fill), background);
-      for (const text of ['foreground', ...SYNTAX]) {
-        assertContrast(text, wordBackground, `${fill} word highlight over diff row`);
-      }
-      if (fill === 'gi-bg') assertContrast('gi', background, fill);
-      if (fill === 'gd-bg') assertContrast('gd', background, fill);
+      assertContrast(fill === 'gi-bg' ? 'gi' : 'gd', token(fill), fill);
     }
     for (const pastel of PASTELS) assertContrast('on-pastel', token(pastel), pastel);
     assertContrast('on-mark-active', token('mark-active'), 'mark-active');
