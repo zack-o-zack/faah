@@ -87,7 +87,7 @@ test('whole-file target enters the existing explain flow, opens its bubble and d
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     ),
   );
-  await screen.findByRole('button', { name: 'The file entry point' });
+  await screen.findByText('The file entry point', { selector: '[data-note-inline] .truncate' });
   expect(fixture.editor.store.state.explanation.model).toMatchObject({
     id: 'whole-file',
     turn: 1,

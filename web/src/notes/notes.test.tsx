@@ -62,9 +62,11 @@ function setup(list: NoteView[] = notes, bubble = true, total = 4) {
   Object.defineProperty(Range.prototype, 'getClientRects', { configurable: true, value: () => [] });
   const originalRect = Element.prototype.getBoundingClientRect;
   vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
-    return this.hasAttribute('data-note-panel')
-      ? new DOMRect(0, 0, 400, 120)
-      : originalRect.call(this);
+    if (this.hasAttribute('data-note-panel')) return new DOMRect(0, 0, 400, 120);
+    if (this.hasAttribute('data-side')) return new DOMRect(0, 0, 400, 124);
+    if (this.hasAttribute('data-note-inline')) return new DOMRect(0, 300, 800, 32);
+    if (this.id === 'viewport') return new DOMRect(0, 100, 800, 600);
+    return originalRect.call(this);
   });
   let editor: EditorStore | undefined;
   const post = vi.fn().mockResolvedValue({ ok: true });
@@ -176,6 +178,84 @@ test('the detail is a tooltip: hover, focus, click and Enter open one, leaving o
   expect(document.querySelector('[data-note-panel]')).toBeNull();
   expect([...editor.offsets()]).toEqual(before);
   vi.useRealTimers();
+  fixture.view.unmount();
+  vi.unstubAllGlobals();
+});
+
+test.each([undefined, '', ' \n\t '])(
+  'a summary-only note with detail %j stays plain text on hover, focus and click',
+  async (detail) => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const fixture = setup(decodeNotes({ notes: [{ ...required(notes[0]), detail }] }));
+    await fixture.editor.actions.openFile('a.go');
+    const summary = await screen.findByText('Explains the call');
+    const note = required(summary.closest('[data-note]'));
+    const control = required(summary.closest('[data-control="note-summary"]'));
+    const showDetail = vi.spyOn(fixture.editor.notes, 'showDetail');
+    expect(control.tagName).toBe('SPAN');
+    expect(control.hasAttribute('aria-expanded')).toBe(false);
+    expect(control.hasAttribute('aria-controls')).toBe(false);
+    expect(screen.queryByRole('button', { name: 'Explains the call' })).toBeNull();
+    await fireEvent.mouseEnter(note);
+    await vi.advanceTimersByTimeAsync(250);
+    expect(showDetail).not.toHaveBeenCalled();
+    expect(document.querySelector('[data-note-panel]')).toBeNull();
+    await fireEvent.focusIn(control);
+    expect(document.querySelector('[data-note-panel]')).toBeNull();
+    await fireEvent.click(control);
+    await fireEvent.keyDown(control, { key: 'Enter' });
+    expect(showDetail).not.toHaveBeenCalled();
+    expect(document.querySelector('[data-note-panel]')).toBeNull();
+    fixture.view.unmount();
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  },
+);
+
+test('the tooltip opens above its summary with the pointer gap inside the wrapper', async () => {
+  const fixture = setup();
+  await fixture.editor.actions.openFile('a.go');
+  const trigger = await screen.findByRole('button', { name: 'Explains the call' });
+  trigger.focus();
+  const panel = screen.getByRole('region', { name: 'Explanation detail' });
+  const wrapper = required(panel.parentElement);
+  expect(wrapper.dataset.side).toBe('top');
+  expect(wrapper.classList.contains('bottom-full')).toBe(true);
+  expect(wrapper.classList.contains('pb-1')).toBe(true);
+  expect(wrapper.style.maxWidth).toBe('min(40rem, 100%)');
+  const link = screen.getByRole('button', { name: 'a.go:1' });
+  link.focus();
+  expect(document.querySelector('[data-note-panel]')).toBe(panel);
+  required(document.getElementById('viewport')).focus();
+  expect(document.querySelector('[data-note-panel]')).toBeNull();
+  fixture.view.unmount();
+  vi.unstubAllGlobals();
+});
+
+test('the tooltip flips below when its height and gap exceed the room above in the scroll viewport', async () => {
+  const fixture = setup();
+  await fixture.editor.actions.openFile('a.go');
+  const trigger = await screen.findByRole('button', { name: 'Explains the call' });
+  const inline = required(trigger.closest('[data-note-inline]'));
+  // 122px above fits the 120px card, but not its 4px pointer gap.
+  const measure = vi.fn(() => new DOMRect(0, 222, 800, 32));
+  Object.defineProperty(inline, 'getBoundingClientRect', { value: measure });
+  await fireEvent.click(trigger);
+  const wrapper = required(
+    screen.getByRole('region', { name: 'Explanation detail' }).parentElement,
+  );
+  expect(wrapper.dataset.side).toBe('bottom');
+  expect(wrapper.classList.contains('top-full')).toBe(true);
+  expect(wrapper.classList.contains('pt-1')).toBe(true);
+  measure.mockReturnValue(new DOMRect(0, 300, 800, 32));
+  await fireEvent.scroll(required(document.getElementById('viewport')));
+  expect(measure).toHaveBeenCalledTimes(1);
+  expect(wrapper.dataset.side).toBe('bottom');
+  await fireEvent.click(trigger);
+  await fireEvent.click(trigger);
+  expect(
+    screen.getByRole('region', { name: 'Explanation detail' }).parentElement?.dataset.side,
+  ).toBe('top');
   fixture.view.unmount();
   vi.unstubAllGlobals();
 });

@@ -1,13 +1,30 @@
 import type { JSX } from 'solid-js';
+import { createSignal, onMount } from 'solid-js';
 import type { NoteView } from './store.ts';
 import { useEditor } from '../editor/context.tsx';
 import { Markdown } from '../lib/Markdown.tsx';
 
-/** Editor annotation detail: a tooltip card under its summary, over the file text. */
+/** Editor annotation detail: prefer above the summary, staying inside the scroll viewport. */
 export function NotePanel(props: { id: string; note: NoteView; review?: boolean }): JSX.Element {
   const editor = useEditor();
+  const [side, setSide] = createSignal<'top' | 'bottom'>('top');
+  let wrapper: HTMLDivElement | undefined;
+  onMount(() => {
+    if (!wrapper) return;
+    const summary = wrapper.parentElement?.querySelector('[data-note-inline]');
+    const viewport = wrapper.closest('#viewport, #review-diff-pane');
+    if (summary && viewport) {
+      const room = summary.getBoundingClientRect().top - viewport.getBoundingClientRect().top;
+      if (room < wrapper.getBoundingClientRect().height) setSide('bottom');
+    }
+  });
   return (
-    <div class="absolute top-full left-0 z-30 pt-1" style={{ 'max-width': 'min(40rem, 100%)' }}>
+    <div
+      ref={wrapper}
+      data-side={side()}
+      class={`absolute left-0 z-30 ${side() === 'top' ? 'bottom-full pb-1' : 'top-full pt-1'}`}
+      style={{ 'max-width': 'min(40rem, 100%)' }}
+    >
       <section
         id={props.id}
         data-note-panel

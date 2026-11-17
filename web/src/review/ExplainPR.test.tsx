@@ -525,8 +525,9 @@ test.each([1, 2])(
     });
     const open = vi.spyOn(f.editor.review.actions, 'openReviewReference');
     await fireEvent.click(button);
-    await screen.findByRole('button', { name: 'Outside note' });
-    if (count === 2) await screen.findByRole('button', { name: 'Another outside note' });
+    await screen.findByText('Outside note', { selector: '[data-note-inline] .truncate' });
+    if (count === 2)
+      await screen.findByText('Another outside note', { selector: '[data-note-inline] .truncate' });
     expect(screen.queryByRole('button', { name: /Show \d+ notes?/ })).toBeNull();
     expect(f.editor.review.state.mode).toBe('review');
     expect(open).not.toHaveBeenCalled();

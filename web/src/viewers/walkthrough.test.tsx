@@ -362,7 +362,7 @@ test('focus mode highlights the step file, virtualizes its title, and keeps sour
   const fixture = setup();
   const editor = fixture.editor;
   await editor.actions.showExplanation(thread, 1);
-  await screen.findByRole('button', { name: 'The earlier note' });
+  await screen.findByText('The earlier note', { selector: '[data-note-inline] .truncate' });
   await start(fixture);
   const rows = required(document.getElementById('rows'));
   const title = required(rows.querySelector<HTMLElement>('[data-walk-title]'));
@@ -395,7 +395,7 @@ test('focus mode highlights the step file, virtualizes its title, and keeps sour
   await editor.actions.openFile('a.go', { view: 'source' });
   expect(editor.walkthrough.focus()?.l1).toBe(2);
   editor.actions.walkStop();
-  await screen.findByRole('button', { name: 'The earlier note' });
+  await screen.findByText('The earlier note', { selector: '[data-note-inline] .truncate' });
   expect(document.querySelector('[data-walk-title]')).toBeNull();
   editor.actions.walkStart();
   await waitFor(() => expect(editor.walkthrough.focus()?.l1).toBe(2));
