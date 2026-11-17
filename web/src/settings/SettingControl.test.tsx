@@ -46,6 +46,7 @@ async function mount(custom = false) {
 
 test('built-ins use only the switcher and save their preference', async () => {
   const post = await mount();
+  expect(screen.getAllByRole('radio')).toHaveLength(3);
   expect(screen.queryByRole('combobox')).toBeNull();
   fireEvent.click(screen.getByRole('radio', { name: 'Dark' }));
   await waitFor(() =>

@@ -974,7 +974,7 @@
 
 /* Icons: one size app-wide, never shrunk by a flex row. Unlayered so it wins
    over the Iconify utility's 1em box and any leftover size utility. */
-[class*='icon-[ph--'] {
+[class*='icon-[ph--'], [class*='icon-[simple-icons--'] {
   width: var(--icon-size);
   height: var(--icon-size);
   flex-shrink: 0;

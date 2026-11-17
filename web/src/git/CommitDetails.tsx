@@ -14,6 +14,8 @@ import { createResource, createSignal, onCleanup, onMount, Show } from 'solid-js
 import { Portal } from 'solid-js/web';
 import { createResourceRequest } from '../lib/resource-request.ts';
 import { copyText } from '../lib/clipboard.ts';
+import { authorInitial, commitMessageBody } from './commit-message.ts';
+
 export function CommitDetails(props: CommitDetailsProps): JSX.Element {
   const request = createResourceRequest();
   const [open, setOpen] = createSignal(false);
@@ -62,7 +64,7 @@ export function CommitDetails(props: CommitDetailsProps): JSX.Element {
           <Portal>
             <div
               id="commitcard"
-              class="card fixed z-[60] max-w-[480px] max-h-[70vh] overflow-auto"
+              class="fixed z-[60] flex max-h-[70vh] w-[340px] flex-col gap-2 overflow-auto rounded-[var(--radius-md)] border p-3 text-foreground shadow-pop"
               style={position()}
               ref={(element) =>
                 queueMicrotask(() => {
@@ -79,18 +81,43 @@ export function CommitDetails(props: CommitDetailsProps): JSX.Element {
               onMouseEnter={() => clearTimeout(leaveTimer)}
               onMouseLeave={leave}
             >
-              <div data-ui="cc-head" class="flex items-center gap-2 p-3">
-                <span data-ui="cc-sha" class="font-mono text-primary-text" title={data().hash}>
-                  {data().short}
+              <div class="font-semibold text-13 leading-[1.35]">{data().subject}</div>
+              <Show when={commitMessageBody(data().message)}>
+                {(body) => (
+                  <div class="whitespace-pre-wrap text-12-5 leading-[1.45] text-muted-foreground">
+                    {body()}
+                  </div>
+                )}
+              </Show>
+              <div class="flex items-center gap-1.5 text-12">
+                <span
+                  class="grid size-[18px] shrink-0 place-items-center rounded-full bg-(--hover) text-[10.5px] font-semibold"
+                  aria-hidden="true"
+                >
+                  {authorInitial(data().author)}
                 </span>
-                <span class="flex-1 min-w-0" />
+                <Show
+                  when={data().authorUrl}
+                  fallback={
+                    <span class="font-semibold" title={data().email}>
+                      {data().author}
+                    </span>
+                  }
+                >
+                  <a class="font-semibold" href={data().authorUrl} target="_blank" rel="noopener">
+                    {data().author}
+                  </a>
+                </Show>
+                <span class="text-muted-foreground">·</span>
+                <span class="text-muted-foreground" title={data().dateIso}>
+                  {data().date}
+                </span>
+              </div>
+              <div class="flex items-center gap-2 border-t pt-2 font-mono text-12">
                 <button
                   type="button"
+                  class="inline-flex items-center gap-[5px] rounded-pill border px-2 py-0.5 text-12"
                   title="Copy the full SHA"
-                  class="btn"
-                  data-control="cc-copy"
-                  data-variant="outline"
-                  data-size="xs"
                   onClick={async () => {
                     if (await copyText(data().hash || props.sha, 'Copied ' + data().short)) {
                       setCopied(true);
@@ -99,63 +126,27 @@ export function CommitDetails(props: CommitDetailsProps): JSX.Element {
                     }
                   }}
                 >
-                  {copied() ? 'Copied' : 'Copy SHA'}
+                  <span
+                    class={copied() ? 'icon-[ph--check]' : 'icon-[ph--copy]'}
+                    aria-hidden="true"
+                  />
+                  {copied() ? 'Copied' : data().short}
                 </button>
-              </div>
-              <div
-                data-ui="cc-meta"
-                class="flex items-center flex-wrap gap-2 p-3 text-muted-foreground"
-              >
-                <Show
-                  when={data().authorUrl}
-                  fallback={
-                    <span data-ui="cc-who" class="font-semibold" title={data().email}>
-                      {data().author}
-                    </span>
-                  }
-                >
-                  <a
-                    data-ui="cc-who"
-                    class="font-semibold"
-                    href={data().authorUrl}
-                    target="_blank"
-                    rel="noopener"
-                  >
-                    {data().author}
-                  </a>
-                </Show>
-                <span data-ui="cc-dot" class="text-muted-foreground">
-                  ·
-                </span>
-                <span class="cc-date" title={data().dateIso}>
-                  {data().date}
-                </span>
-              </div>
-              <div
-                data-ui="cc-msg"
-                class="overflow-x-hidden overflow-y-auto whitespace-pre-wrap p-3 font-mono"
-              >
-                {data().message || data().subject}
-              </div>
-              <Show when={data().files || data().insertions || data().deletions}>
-                <div data-ui="cc-stat" class="flex items-center gap-2 p-3 font-mono">
+                <span class="flex-1" />
+                <Show when={data().files || data().insertions || data().deletions}>
                   <Show when={data().files}>
-                    <span data-ui="cc-files" class="text-muted-foreground">
+                    <span class="text-muted-foreground">
                       {data().files} {data().files === 1 ? 'file' : 'files'}
                     </span>
                   </Show>
                   <Show when={data().insertions}>
-                    <span data-ui="cc-add" class="text-gi">
-                      +{data().insertions}
-                    </span>
+                    <span class="text-gi">+{data().insertions}</span>
                   </Show>
                   <Show when={data().deletions}>
-                    <span data-ui="cc-del" class="text-gd">
-                      −{data().deletions}
-                    </span>
+                    <span class="text-gd">−{data().deletions}</span>
                   </Show>
-                </div>
-              </Show>
+                </Show>
+              </div>
             </div>
           </Portal>
         )}

@@ -7,24 +7,22 @@ Running `faah` with no arguments opens the **workbench**: one page for opening a
 ## Opening things
 
 - **Type a path or paste a PR URL** into the box at the top and press Enter. Paths may be absolute, relative to the directory faah was started in, or start with `~`. A path to a file opens its repository.
-- **Folder completion.** As you type a path, folders whose names start with what you typed (ignoring case) are listed below the box, with a `git` tag on repositories. Press **Tab** (or click) to complete into the highlighted folder and list what is inside it, **↑/↓** to choose, **Enter** to open, **Esc** to dismiss. Hidden folders are listed once you type the leading dot. The Browse panel follows along.
-- **Browse** the filesystem on the right. Folders that are git repositories carry a `git` tag. Click a folder to go into it, use **Open** on its row, or **Open this folder** for the one you are in. Tick **hidden** to list dot-folders.
-- **Open \<cwd\>** opens the directory faah was started in, which is what a bare `faah` did before the workbench.
-- **Recent** lists every directory and pull request opened before, most recent first, including ones opened directly with `faah <dir>` or `faah <pr-url>`. Click a row to reopen it; Cmd/Ctrl-click opens it in a new tab.
+- **Folder completion.** As you type a path, folders whose names start with what you typed (ignoring case) are listed below the box. Each row shows the folder name, a repository or folder icon, and the folder it sits in. Press **Tab** (or click) to complete into the highlighted folder and list what is inside it, **↑/↓** to choose, **Enter** to open, **Esc** to dismiss. Hidden folders are listed once you type the leading dot.
+- **Browse** shows two panes: the current folder on the left and, on the right, the folders inside the one you select. The path bar above lists every level; click one to jump back. Click a folder to select it, double-click it (or click its arrow, or press **→** or **Enter**) to go inside, and press **←** to go up. **Open** opens the selected folder, or the current one when nothing is selected. The eye button shows hidden folders and the folder button makes a new one.
+- **Recent** lists every directory and pull request opened before, in two sections, **Pull requests** and **Folders**, newest first, including ones opened directly with `faah <dir>` or `faah <pr-url>`. Click a row to reopen it; Cmd/Ctrl-click opens it in a new tab.
 
 Each workspace opens at its own address, `/w/<id>/`, on the workbench's port. The address is stable, so a bookmarked or reloaded review simply reopens. The ▦ button in the explorer header leads back to the workbench.
 
 ## Managing the list
 
-Hover a row for its actions:
+Hover a row (or move keyboard focus into it) for its actions:
 
 | Action | Effect |
 | :--- | :--- |
-| ☆ / ★ | Pin to the top of the list, or unpin. Pinned entries are never dropped. |
-| ■ | Stop the running workspace and free its memory. Opening it again restarts it. |
-| ✕ | Stop it and remove it from the list. |
+| Pin | Pin to the top of its section, or unpin. A pinned row keeps a filled pin. Pinned entries are never dropped. |
+| ✕ | Stop the workspace and remove it from the list. |
 
-A status dot shows workspaces that are **running**, **starting**, or **failed** (hover for the error). Up to 50 unpinned entries are kept.
+While a workspace starts, its row shows the progress; if it fails, the row shows the error. Up to 50 unpinned entries are kept. A workspace with no open tab for 30 minutes stops on its own (see Resources).
 
 ---
 
@@ -36,13 +34,16 @@ A status dot shows workspaces that are **running**, **starting**, or **failed** 
 | `Tab` | Path Input | Complete into the highlighted folder suggestion |
 | `↑` / `↓` | Path Suggestions | Navigate up / down through folder suggestions |
 | `Enter` | Path Input / Suggestion | Open the entered folder, PR URL, or highlighted suggestion |
-| `Esc` | Path Suggestions / Theme | Dismiss folder suggestions or restore previous theme |
-| `Cmd/Ctrl + Click` | Recent Workspaces | Open workspace in a new browser tab |
-| `☆` / `★` | Workspace Row | Pin workspace to the top of the list, or unpin |
-| `■` | Workspace Row | Stop running workspace child process and free RAM |
-| `✕` | Workspace Row | Stop workspace and remove from list |
+| `Esc` | Path Suggestions | Dismiss folder suggestions |
+| `Cmd/Ctrl + Click` | Recent | Open workspace in a new browser tab |
+| Pin | Recent row | Pin to the top of its section, or unpin |
+| `✕` | Recent row | Stop workspace and remove from list |
+| `↑` / `↓` | Browse | Select a folder; the right pane previews it |
+| `→` / `Enter` / double-click | Browse | Go into the selected folder |
+| `←` | Browse | Go up one folder |
+| `Cmd/Ctrl + Enter` | Browse | Open the selected folder, or the current one |
 | `▦` | Workspace Header | Return to the Review Workbench from any open workspace |
-| `Palette button` / `Arrow keys` | Status Bar | Preview and select workbench color theme |
+| Theme button | Status bar | Switch between System, Light and Dark |
 
 ## Pull requests
 
@@ -64,7 +65,7 @@ If a pull request cannot be opened (a typo in the URL, no access), the page expl
 
 ## Status bar and themes
 
-The bottom bar matches the app's: logo and version, the number of running workspaces, and the **CPU · RAM · LSP** chip. Here the chip shows the workbench and every running workspace added together; click it for a breakdown by process. The palette button opens the theme list. Arrow keys preview a theme, Enter or a click keeps it, and Esc restores the one you had. The choice is saved to settings, so the workspaces use it too.
+The bottom bar shows the number of running workspaces, the process metrics button (a pulse icon), a link to the source repository and the theme button. Click the metrics button for memory and CPU of the workbench and every running workspace added together, with a breakdown by process. The theme button switches between System, Light and Dark on each click; the choice is saved to settings, so the workspaces use it too.
 
 ## Resources
 

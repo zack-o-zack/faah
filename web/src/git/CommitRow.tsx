@@ -37,7 +37,6 @@ export function CommitRow(props: CommitRowProps): JSX.Element {
                 ? 'up-row flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1 text-xs hover:bg-accent'
                 : 'git-commit-row flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1 text-xs hover:bg-accent'
             }
-            title={props.commit.subject || ''}
             aria-expanded={expanded()}
             onMouseEnter={hover.onMouseEnter}
             onMouseLeave={hover.onMouseLeave}

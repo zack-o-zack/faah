@@ -7,7 +7,7 @@ import type { JSX } from 'solid-js';
 import { useWorkbench } from './context.tsx';
 import { MetricsMenu } from './MetricsMenu.tsx';
 import { useTheme } from '../lib/theme-context.tsx';
-import { ThemeSwitch } from './ThemeSwitch.tsx';
+import { ThemeToggle } from './ThemeToggle.tsx';
 import { Show } from 'solid-js';
 export function WorkbenchFooter(props: WorkbenchFooterProps): JSX.Element {
   const { state } = useWorkbench();
@@ -15,7 +15,7 @@ export function WorkbenchFooter(props: WorkbenchFooterProps): JSX.Element {
   return (
     <footer
       id="status"
-      class="flex shrink-0 items-center gap-2 overflow-hidden whitespace-nowrap border-t bg-sidebar px-2 py-1 font-mono text-xs text-muted-foreground select-none [&>*]:shrink-0 [&_.metric-label]:max-[560px]:hidden"
+      class="flex shrink-0 items-center gap-2 overflow-hidden whitespace-nowrap border-t bg-sidebar px-2 py-1 font-mono text-xs text-muted-foreground select-none [&>*]:shrink-0"
     >
       <span id="st-running" class="inline-flex items-center gap-1.5 empty:hidden">
         <Show when={state.items.some((item) => item.state === 'running')}>
@@ -27,7 +27,7 @@ export function WorkbenchFooter(props: WorkbenchFooterProps): JSX.Element {
       <MetricsMenu metrics={props.metrics} />
       <span class="h-3 w-px bg-border" />
       <a
-        class="btn"
+        class="btn text-muted-foreground"
         data-variant="ghost"
         data-size="icon-xs"
         href="https://github.com/zack-o-zack/faah"
@@ -35,9 +35,9 @@ export function WorkbenchFooter(props: WorkbenchFooterProps): JSX.Element {
         rel="noopener"
         aria-label="fibo on GitHub"
       >
-        <span class="icon-[ph--github-logo] shrink-0" aria-hidden="true" />
+        <span class="icon-[simple-icons--github] shrink-0" aria-hidden="true" />
       </a>
-      <ThemeSwitch value={theme.preference()} onChange={(id) => theme.setTheme(id)} />
+      <ThemeToggle value={theme.preference()} onChange={(id) => theme.setTheme(id)} />
     </footer>
   );
 }
