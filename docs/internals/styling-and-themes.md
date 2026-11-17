@@ -673,23 +673,21 @@ shorter, not to hide a second component system.
 
 `workbench.transparency` derives `data-transparency` on the document root through
 `PreferenceStyles`, just like typography variables. Main panels remain solid.
-`--glass-alpha` and `--glass-blur` default to 92% / 16px (subtle), with 100% / 0px
-for off and 82% / 28px for strong. The blur averages what sits behind a layer, so
-the contrast test checks text over a plain background and over a dense text block
-(half foreground, half background); 82% is the lowest alpha where muted text keeps
-4.5:1 in both bundled themes. User themes should verify their own contrast.
+`--glass-alpha` is 92% for subtle (the default), 100% for off and 82% for strong.
+Only strong also blurs what is behind a layer (`--glass-blur`, 8px); off and
+subtle do not blur. The contrast test checks
+text over a plain background and over a dense text block (half foreground, half
+background); 82% is the lowest alpha where muted text keeps 4.5:1 in both bundled
+themes. User themes should verify their own contrast.
 
 Glass applies to Basecoat `[data-popover]` lists, `.command-dialog > .command`,
 standalone `.command > header`, `.dialog > *`, `.alert-dialog > *`, `.toast-content`,
-`#hovercard`, `#commitcard` and `[data-note-panel]`. Each mixes its existing fill
-with transparent in OKLab, uses the shared blur and retains its shadow with a
-line border. There is no saturation boost, because it turns bright code into
-coloured blotches. Nested cards, fields and headers are transparent and do not
-add a second blur. Modal sheets (`.dialog`, `.alert-dialog`, `.command-dialog`)
-do not blur themselves: their `::backdrop` carries the level's blur (16px subtle,
-28px strong, Basecoat's 4px when off), and the sheet keeps only its translucent
-fill. Two stacked blurs smeared the page behind Settings at strong.
-`prefers-reduced-transparency: reduce` forces 100% / 0px at every setting.
+`#hovercard`, `#commitcard`, `[data-note-panel]` and the explain bubble (`[data-orb-sheet]`
+inside `#explain-orb`). Each mixes its existing fill
+with transparent in OKLab, applies `--glass-blur` and retains its shadow with a
+line border. Modal dialogs keep Basecoat's own backdrop (a light 4px blur and dim)
+at every level. Nested cards, fields and headers are transparent and do not blur.
+`prefers-reduced-transparency: reduce` forces 100% and no blur at every setting.
 
 
 The review header (`#review-sub-bar`) and editor status footer (`#main > #status`)
@@ -700,5 +698,5 @@ rule is the only divider. These bars retain their existing layout positions;
 scrolling content does not extend underneath them.
 
 The Git section (`#git-panel`), including its branch row, commit composer and
-recent commits, also mixes `--sidebar` with the same glass variables. Its inner
-composer stays transparent without an additional blur; the tree remains solid.
+recent commits, also mixes `--sidebar` with the same glass alpha. Its inner composer stays
+transparent; the tree remains solid.

@@ -24,10 +24,11 @@ export function ExplainOrb(): JSX.Element {
           id="explain-orb"
           class={
             hasWalkthrough()
-              ? 'card group max-w-full bg-popover text-popover-foreground shadow-pop data-[phase=done]:bg-popover/70 data-[phase=done]:backdrop-blur-sm'
+              ? 'card group max-w-full text-popover-foreground shadow-pop'
               : 'group flex max-w-full flex-col gap-1'
           }
           data-size={hasWalkthrough() ? 'sm' : undefined}
+          data-orb-sheet={hasWalkthrough() ? '' : undefined}
           style={{ width: hasWalkthrough() ? 'min(28rem, calc(100vw - 2rem))' : undefined }}
           onKeyDown={(event) => {
             if (event.key === 'Escape') {
@@ -50,10 +51,11 @@ export function ExplainOrb(): JSX.Element {
           <Dynamic
             component={hasWalkthrough() ? 'header' : 'div'}
             data-phase={state.model?.phase}
+            data-orb-sheet={hasWalkthrough() ? undefined : ''}
             class={
               hasWalkthrough()
                 ? 'group flex min-w-0 w-full items-start'
-                : 'group flex w-full items-center gap-1 overflow-hidden rounded-pill border bg-popover p-1 text-popover-foreground shadow-pop data-[phase=done]:items-start data-[phase=failed]:items-start data-[phase=done]:rounded-[var(--radius-xl)] data-[phase=failed]:rounded-[var(--radius-xl)] data-[phase=done]:bg-popover/70 data-[phase=done]:backdrop-blur-sm'
+                : 'group flex w-full items-center gap-1 overflow-hidden rounded-pill border p-1 text-popover-foreground shadow-pop data-[phase=done]:items-start data-[phase=failed]:items-start data-[phase=done]:rounded-[var(--radius-xl)] data-[phase=failed]:rounded-[var(--radius-xl)]'
             }
           >
             <button

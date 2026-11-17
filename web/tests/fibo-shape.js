@@ -633,10 +633,10 @@ for (const theme of ['light', 'dark']) {
       `${theme}: floating surface ${root.className}`,
     );
   }
-  for (const [level, blur, alpha] of [
-    ['off', 0, 1],
-    ['subtle', 16, 0.92],
-    ['strong', 28, 0.82],
+  for (const [level, alpha] of [
+    ['off', 1],
+    ['subtle', 0.92],
+    ['strong', 0.82],
   ]) {
     document.documentElement.dataset.transparency = level;
     for (const markup of [
@@ -647,24 +647,28 @@ for (const theme of ['light', 'dark']) {
       '<div class="card" id="hovercard">Hover</div>',
       '<div class="card" id="commitcard">Commit</div>',
       '<section data-note-panel>Note</section>',
+      '<div id="explain-orb" class="card" data-orb-sheet>Orb</div>',
+      '<div id="explain-orb"><div data-orb-sheet>Orb</div></div>',
       '<header id="review-sub-bar">Review header</header>',
       '<main id="main"><footer id="status" class="border-t">Status</footer></main>',
       '<section id="git-panel" class="border-t"><div class="git-panel-head border-b">Branch</div><div id="git-panel-body"><div class="input-group"><textarea placeholder="Message (optional)"></textarea></div><div id="git-recent-commits">Recent Commits</div></div></section>',
     ]) {
       const root = mount(markup);
-      const sheet = root.querySelector('[data-popover], .command, section, #status') || root;
+      const sheet =
+        root.querySelector('[data-popover], .command, section, #status, [data-orb-sheet]') || root;
       const reduced = matchMedia('(prefers-reduced-transparency: reduce)').matches;
-      const modal = root.matches('dialog');
+      // Only strong blurs the sheet itself; modals keep the default backdrop
+      // blur at every level.
       test(
         `${level} ${sheet.id || sheet.className} blur`,
         style(sheet).backdropFilter,
-        modal ? 'none' : `blur(${reduced ? 0 : blur}px)`,
+        level === 'strong' && !reduced ? 'blur(8px)' : 'none',
       );
-      if (modal)
+      if (root.matches('dialog'))
         test(
-          `${level} ${root.className} backdrop carries the blur`,
+          `${level} ${root.className} keeps the default backdrop blur`,
           getComputedStyle(root, '::backdrop').backdropFilter,
-          reduced ? 'none' : level === 'off' ? 'blur(4px)' : `blur(${blur}px)`,
+          'blur(4px)',
         );
       const background = style(sheet).backgroundColor;
       const actualAlpha = background.match(/\/\s*([\d.]+)\)/)?.[1];

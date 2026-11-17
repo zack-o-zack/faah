@@ -178,8 +178,8 @@ const subtleAlpha = glassAlpha(/:root \{[^}]*--glass-alpha:\s*([\d.]+)%/);
 const strongAlpha = glassAlpha(
   /:root\[data-transparency='strong'\][^{]*\{[^}]*--glass-alpha:\s*([\d.]+)%/,
 );
-// The blur averages what is behind a layer. The worst realistic backdrop is a dense
-// block of text: half foreground, half background. A plain background is checked too.
+// Blur (strong only) or a busy page both average out, so the backdrop is approximated
+// by its average: a dense block of text reads as half foreground, half background. A plain background is checked too.
 const backdrops = (token: (name: string) => Color): Color[] => {
   const [b, f] = [token('background'), token('foreground')];
   const half = (i: 0 | 1 | 2) => (b[i] + f[i]) / 2;

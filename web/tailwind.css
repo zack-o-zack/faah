@@ -96,7 +96,7 @@
   :root {
     /* Subtle is the default level; strong is more see-through. */
     --glass-alpha: 92%;
-    --glass-blur: 16px;
+    --glass-blur: 0px;
 
     /* Brand shape and motion are shared by every theme. */
     --radius: 0.625rem;
@@ -168,11 +168,11 @@
 
 /* Root preferences remain derived from settings; the OS can force solid layers. */
 @layer base {
-  :root[data-transparency='off'] { --glass-alpha: 100%; --glass-blur: 0px; }
+  :root[data-transparency='off'] { --glass-alpha: 100%; }
   :root[data-transparency='strong'] {
-    /* Lowest alpha that keeps muted text at 4.5:1 over a blurred half-text backdrop. */
+    /* Lowest alpha that keeps muted text at 4.5:1 over a half-text backdrop; light blur. */
     --glass-alpha: 82%;
-    --glass-blur: 28px;
+    --glass-blur: 8px;
   }
   @media (prefers-reduced-transparency: reduce) {
     :root, :root[data-transparency] { --glass-alpha: 100%; --glass-blur: 0px; }
@@ -382,11 +382,12 @@
   .progress[data-checks] > span:is([data-state='neutral'], [data-state='skipped']) {
     background-color: var(--background); outline: 1px solid var(--input); outline-offset: -1px;
   }
-  /* Only floating sheets blur the scene. Match the Basecoat fill selectors. */
+  /* Floating sheets take the transparency level's fill. Match the Basecoat fill selectors. */
   [data-popover], .dropdown-menu > [data-popover], .combobox [data-popover],
   .select:not(select) [data-popover], .toast-content, .toaster .toast .toast-content,
   .dialog > *, .alert-dialog > *, .command-dialog > .command, .command > header,
-  #hovercard, #commitcard, [data-note-panel] {
+  #hovercard, #commitcard, [data-note-panel], #explain-orb[data-orb-sheet],
+  #explain-orb > [data-orb-sheet] {
     background-color: color-mix(in oklab, var(--popover) var(--glass-alpha), transparent);
     -webkit-backdrop-filter: blur(var(--glass-blur));
     backdrop-filter: blur(var(--glass-blur));
@@ -398,29 +399,6 @@
   /* A command header outside a dialog uses its existing card fill. */
   .command > header {
     background-color: color-mix(in oklab, var(--card) var(--glass-alpha), transparent);
-  }
-  /* Modal sheets sit over a backdrop that already blurs the page. A second blur on the
-     sheet smears bright code into blotches, so the backdrop carries the level's blur and
-     the sheet only keeps its translucent fill. */
-  .dialog > *, .alert-dialog > *, .command-dialog > .command {
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-  :root[data-transparency='subtle'] :is(.dialog, .alert-dialog, .command-dialog)::backdrop,
-  :root:not([data-transparency]) :is(.dialog, .alert-dialog, .command-dialog)::backdrop {
-    -webkit-backdrop-filter: blur(16px);
-    backdrop-filter: blur(16px);
-  }
-  :root[data-transparency='strong'] :is(.dialog, .alert-dialog, .command-dialog)::backdrop {
-    -webkit-backdrop-filter: blur(28px);
-    backdrop-filter: blur(28px);
-  }
-  @media (prefers-reduced-transparency: reduce) {
-    :root[data-transparency] :is(.dialog, .alert-dialog, .command-dialog)::backdrop,
-    :root:not([data-transparency]) :is(.dialog, .alert-dialog, .command-dialog)::backdrop {
-      -webkit-backdrop-filter: none;
-      backdrop-filter: none;
-    }
   }
   /* Children read as one sheet; interactive states retain their own fills.
      Field selectors mirror Basecoat's header exclusions for specificity. */
