@@ -6,7 +6,7 @@ import type { JSX } from 'solid-js';
 import { createMemo, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { ContextMenu } from '../lib/ContextMenu.tsx';
-import { fileKind } from './tree-logic.ts';
+import { fileIcon } from '../lib/file-icon.ts';
 export function TreeRow(props: TreeRowProps): JSX.Element {
   const editor = useEditor();
   const decoration = createMemo(() => editor.tree.decoration(props.row));
@@ -111,8 +111,8 @@ export function TreeRow(props: TreeRowProps): JSX.Element {
             when={props.row.dir}
             fallback={
               <span
-                class="ic size-2 shrink-0 rounded-sm bg-faint [--dot:var(--faint)] data-[t=code]:bg-[var(--nf)] data-[t=data]:bg-[var(--kt)] data-[t=web]:bg-[var(--nt)] data-[t=img]:bg-[var(--nc)]"
-                data-t={fileKind(props.row.name)}
+                class={`${fileIcon(props.row.name)} shrink-0 text-muted-foreground`}
+                aria-hidden="true"
               />
             }
           >

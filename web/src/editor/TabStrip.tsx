@@ -3,6 +3,7 @@ import { Portal } from 'solid-js/web';
 import { createEffect, createSignal, For, Index, onCleanup, Show } from 'solid-js';
 import { useEditor } from './context.tsx';
 import { createMenuEvents } from '../lib/menu-events.ts';
+import { fileIcon } from '../lib/file-icon.ts';
 
 export function TabStrip(props: { children?: JSX.Element }): JSX.Element {
   const editor = useEditor();
@@ -79,12 +80,10 @@ export function TabStrip(props: { children?: JSX.Element }): JSX.Element {
                 if (event.button === 1) editor.actions.closeTabs([index()]);
               }}
             >
-              <Show when={tab.isImage}>
-                <span
-                  class="icon-[ph--image] shrink-0 tab-icon text-primary-text"
-                  aria-hidden="true"
-                />
-              </Show>
+              <span
+                class={`${fileIcon(tab.name)} shrink-0 text-muted-foreground`}
+                aria-hidden="true"
+              />
               <button
                 class="tn min-h-6 min-w-6 truncate text-left"
                 aria-pressed={index() === editor.store.state.documents.active}

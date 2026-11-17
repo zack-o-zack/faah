@@ -226,6 +226,10 @@ Iconify plugin: `icon-[ph--name]`, in `ink` or `ink-muted`.
 Use `-fill` only for a filled state mark. No emoji as icons.
 Agent actions use the static eight-ray `ph--spinner` burst.
 
+File-type icons come from `fileIcon()` in `web/src/lib/file-icon.ts`. The
+explorer, tabs and palette file rows share monochrome Phosphor `file-*` icons,
+with `file-code` for other supported code formats and `file-text` as the default.
+
 Every icon is one size, `--icon-size` (16px), set by one unlayered rule in
 `web/tailwind.css` that also stops icons from shrinking in flex rows. Don't add
 `size-*` utilities to icons. A caret that opens a row turns with `rotate-90`.
