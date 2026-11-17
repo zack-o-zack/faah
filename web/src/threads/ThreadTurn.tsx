@@ -60,7 +60,7 @@ export function ThreadTurn(props: ThreadTurnProps): JSX.Element {
           }
           onOpen={open}
         />
-        <Show when={props.thread?.kind === 'explain' && props.thread}>
+        <Show when={props.thread}>
           {(thread) => <ThreadArtifacts thread={thread()} turn={props.turn} />}
         </Show>
         <ErrorNotice title="The run failed" error={props.turn.error} />

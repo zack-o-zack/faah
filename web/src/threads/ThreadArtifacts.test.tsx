@@ -107,7 +107,9 @@ test('notes alone use the notes title, and empty finished turns have no card', (
 });
 
 test('running turns show a thinking spiral and live note count without a switch', () => {
-  const { setThread } = setup(decodeThread({ id: 'running', turns: [{ id: 1, running: true }] }));
+  const { setThread } = setup(
+    decodeThread({ id: 'running', kind: 'explain', turns: [{ id: 1, running: true }] }),
+  );
   expect(screen.getByRole('status').textContent).toBe('0 notes so far');
   const spiral = required(document.querySelector<SVGElement>('[data-state="thinking"]'));
   expect(spiral.style.width).toBe('18px');
@@ -118,6 +120,19 @@ test('running turns show a thinking spiral and live note count without a switch'
   setThread(thread);
   expect(screen.getByRole('switch')).toBeTruthy();
   expect(screen.queryByRole('status')).toBeNull();
+});
+
+test('agent threads show the card only once a turn has notes or a walkthrough', async () => {
+  const agent = decodeThread({ ...thread, id: 'agent', kind: '' });
+  const { editor, setThread } = setup(
+    decodeThread({ id: 'agent', turns: [{ id: 1, running: true }] }),
+  );
+  expect(document.querySelector('[data-ui="thr-artifacts"]')).toBeNull();
+  setThread(agent);
+  expect(screen.getByText('Walkthrough · Git probe')).toBeTruthy();
+  const show = vi.spyOn(editor.actions, 'showExplanation');
+  await userEvent.setup().click(screen.getByRole('switch', { name: 'Show in editor' }));
+  expect(show).toHaveBeenCalledWith(agent, 1);
 });
 
 test('the switch derives both IDs from the editor and supports keyboard show and dismiss', async () => {

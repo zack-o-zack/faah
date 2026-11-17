@@ -132,7 +132,8 @@ func (tm *threadManager) fileNotes(rel string, lines []string, scope toolScope) 
 	}
 	var all []saved
 	for _, t := range tm.Snapshot() {
-		if t.Kind != "explain" || (scope.tid != "" && t.ID != scope.tid) {
+		// A thread-scoped read serves any thread's notes; an unscoped read only explanations'.
+		if (scope.tid == "" && t.Kind != "explain") || (scope.tid != "" && t.ID != scope.tid) {
 			continue
 		}
 		for _, tr := range t.Turns {
@@ -292,7 +293,7 @@ func (s *Server) handleExplainNotes(w http.ResponseWriter, r *http.Request) {
 		scope := toolScope{tid: r.URL.Query().Get("thread"), turn: turn}
 		th := s.threads.Get(scope.tid)
 		out := []notes.View{}
-		if th != nil && th.Kind == "explain" {
+		if th != nil {
 			paths := map[string]bool{}
 			for _, tr := range th.Turns {
 				if tr.ID == turn {
