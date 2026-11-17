@@ -3,6 +3,9 @@ import { createSignal } from 'solid-js';
 export type ShortcutSection =
   'General' | 'Navigation' | 'Search' | 'Editing' | 'Selection' | 'Tabs' | 'Diff and preview';
 
+/** Which tab of the keyboard shortcut sheet is showing. */
+export type HelpTab = 'standard' | 'vim';
+
 export const SECTIONS: readonly ShortcutSection[] = [
   'General',
   'Navigation',
@@ -35,6 +38,7 @@ export function createShortcutRegistry(): ReturnType<typeof buildShortcutRegistr
 function buildShortcutRegistry() {
   const [entries, setEntries] = createSignal<readonly ShortcutHelp[]>([]);
   const [helpOpen, setHelpOpen] = createSignal(false);
+  const [helpTab, setHelpTab] = createSignal<HelpTab>('standard');
   function describe(list: ShortcutHelp[]): () => void {
     setEntries((current) => [...current, ...list]);
     return () => setEntries((current) => current.filter((entry) => !list.includes(entry)));
@@ -50,8 +54,13 @@ function buildShortcutRegistry() {
     groups,
     describe,
     helpOpen,
+    helpTab,
+    setHelpTab,
     actions: {
-      showHelp: () => setHelpOpen(true),
+      showHelp: (tab: HelpTab = 'standard') => {
+        setHelpTab(tab);
+        setHelpOpen(true);
+      },
       hideHelp: () => setHelpOpen(false),
     },
   };

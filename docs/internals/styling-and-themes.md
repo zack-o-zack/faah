@@ -449,6 +449,12 @@ and button caps are 20px. Shared styling lives in the fibo components layer:
 `radius-sm`, 12px medium text, neutral `--hover` fill and `--muted-foreground`
 text. Button caps inherit the action colour with a 15% tint.
 
+Pass `chord` for text that should read as one cap. The keyboard shortcut sheet
+uses it for every row: a chord joins its modifiers and key (`⌘⇧P`, `⌃D`, or
+`Ctrl+Shift+P` outside macOS) and a Vim sequence keeps its literal text (`gg`,
+`gt`, `[N]gt`). Alternative keys for one action are separate caps in the same
+row, never separated by a slash. The sheet adds `compact-keycaps` for 18px caps.
+
 Keep Basecoat's UI font (`--ui`) on `.kbd`, never set its font to `--mono`.
 Figtree's Latin range falls back to the system UI font for modifier glyphs
 `⌘`, `⌃`, `⌥`, `⇧` and `↩`. Each exposed glyph cap has its readable key name

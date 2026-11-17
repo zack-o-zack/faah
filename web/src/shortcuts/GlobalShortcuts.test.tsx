@@ -24,7 +24,6 @@ function mount({ git = true, right = false, threads = false } = {}) {
     stepDiffHunk: vi.fn(),
     stepChangedFile: vi.fn(async () => {}),
     showHelp: shortcuts.actions.showHelp,
-    showVimHelp: vi.fn(),
   };
   const imageKey = vi.fn(() => true);
   const services = { imageKey, diagramFullscreens: new Set<() => boolean>() };
@@ -109,15 +108,16 @@ test('Escape closes the threads panel before the inspector', () => {
   expect(actions.hideRightInspector).not.toHaveBeenCalled();
 });
 
-test('? shows the help sheet listing the bound shortcuts', () => {
-  const { actions } = mount();
+test('? shows the help sheet on Standard and the Vim tab shows Vim keys', () => {
+  mount();
   key('?');
-  expect(screen.getByText('Keyboard Shortcuts')).toBeTruthy();
+  expect(screen.getByText('Keyboard shortcuts')).toBeTruthy();
   expect(screen.getByText('v1.2.3')).toBeTruthy();
   expect(screen.getByText('Previous / next diff hunk')).toBeTruthy();
-  fireEvent.click(screen.getByRole('button', { name: 'View Vim Keybindings' }));
-  expect(actions.showVimHelp).toHaveBeenCalled();
-  expect(screen.queryByText('Keyboard Shortcuts')).toBe(null);
+  expect(screen.getByRole('tab', { name: 'Standard' }).getAttribute('aria-selected')).toBe('true');
+  fireEvent.click(screen.getByRole('tab', { name: 'Vim' }));
+  expect(screen.getByText('Modes & Motions')).toBeTruthy();
+  expect(screen.queryByText('Previous / next diff hunk')).toBe(null);
 });
 
 test('Escape exits the component-owned fullscreen set before closing panels', () => {

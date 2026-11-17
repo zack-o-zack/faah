@@ -57,7 +57,10 @@ Active by default when Vim mode is enabled.
 Vim mode can be enabled in Settings:
 1. Press **`Cmd/Ctrl+,`** to open Settings.
 2. Locate **Editor: Vim Mode** (`editor.vimMode`).
-3. Click the `[true]` pill button to activate it immediately.
+3. Turn the switch on.
+
+Or press **`?`** to open **Keyboard shortcuts**, select the **Vim** tab and turn on
+**Vim navigation** there.
 
 Alternatively, set `"editor.vimMode": true` in `~/.faah/settings.json`.
 

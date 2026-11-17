@@ -3,6 +3,7 @@ interface KbdProps {
   combo: string;
   menu?: boolean;
   variant?: 'button';
+  chord?: boolean;
   class?: string;
 }
 export interface ShortcutOptions {
@@ -14,15 +15,11 @@ export interface ShortcutOptions {
   capture?: boolean;
 }
 import { Index, onCleanup } from 'solid-js';
-import { keyCaps, matchesShortcut } from './keyboard.ts';
-const KEY_NAMES: Record<string, string> = {
-  '⌘': 'Command',
-  '⌃': 'Control',
-  '⌥': 'Option',
-  '⇧': 'Shift',
-  '↩': 'Return',
-};
+import { keyCaps, keyChord, keyChordLabel, keyGlyphName, matchesShortcut } from './keyboard.ts';
 export function Kbd(props: KbdProps): JSX.Element {
+  const caps = (): string[] => (props.chord ? [keyChord(props.combo)] : keyCaps(props.combo));
+  const name = (key: string): string | undefined =>
+    props.chord ? keyChordLabel(props.combo) : keyGlyphName(key);
   return (
     <span
       class={`inline-flex items-center gap-1 ${props.class || ''}`}
@@ -30,14 +27,14 @@ export function Kbd(props: KbdProps): JSX.Element {
       data-shortcut={props.menu ? '' : undefined}
       aria-hidden={props.variant === 'button' ? 'true' : undefined}
     >
-      <Index each={keyCaps(props.combo)}>
+      <Index each={caps()}>
         {(key) => (
           <kbd
             class={props.variant === 'button' ? 'kbd bg-current/15 text-current' : 'kbd'}
             data-variant={props.variant}
             data-single={key().length === 1 ? '' : undefined}
-            aria-label={KEY_NAMES[key()]}
-            title={KEY_NAMES[key()]}
+            aria-label={name(key())}
+            title={name(key())}
           >
             {key()}
           </kbd>

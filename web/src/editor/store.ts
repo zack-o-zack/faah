@@ -68,7 +68,6 @@ function initialState(): EditorUI {
     menu: null,
     hover: null,
     hoverPosition: null,
-    vimHelp: false,
     vim: initialVimState(),
   };
 }
@@ -435,6 +434,7 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
     active,
     buffer,
     offsets,
+    shortcuts: shortcutRegistry,
   };
 
   const selectionActions = createSelectionActions(editor);

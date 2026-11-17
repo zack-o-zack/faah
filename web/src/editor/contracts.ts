@@ -17,6 +17,7 @@ import type { SelectionInfo } from './selection.ts';
 import type { Point } from './hover.ts';
 import type { HoverReply, Diagnostic, LspBrief } from './decode.ts';
 import type { VimState } from './vim.ts';
+import type { ShortcutRegistry } from '../shortcuts/registry.ts';
 export interface WordPosition {
   word: string;
   path: string;
@@ -50,7 +51,6 @@ export interface EditorUI {
   menu: { info: SelectionInfo; x: number; y: number } | null;
   hover: { at: WordPosition; data: HoverReply; diagnostics: Diagnostic[]; focus: boolean } | null;
   hoverPosition: Point | null;
-  vimHelp: boolean;
   vim: VimState;
 }
 export interface Services {
@@ -151,6 +151,7 @@ export interface CoreActions {
 export interface EditorHost {
   tree: { scope: () => string; autoReveal: () => boolean };
   git: { state: { pending: string; sync: { inProgress?: string; rewritten?: boolean } } };
+  shortcuts: ShortcutRegistry;
   active: Accessor<DocTab | null>;
   buffer: Accessor<DocumentBuffer | undefined>;
   store: AppStore;

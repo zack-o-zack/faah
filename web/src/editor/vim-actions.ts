@@ -94,8 +94,7 @@ function buildVimActions(editor: EditorHost) {
   }
   return {
     handleVimKeyDown,
-    showVimHelp: () => setUI('vimHelp', true),
-    hideVimHelp: () => setUI('vimHelp', false),
+    showVimHelp: () => editor.shortcuts.actions.showHelp('vim'),
     setVimEnabled(enabled: boolean) {
       if (!enabled) {
         clearTimeout(pendingTimer);

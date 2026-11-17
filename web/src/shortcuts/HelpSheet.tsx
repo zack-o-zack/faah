@@ -1,130 +1,129 @@
-import { For, Show, type Component } from 'solid-js';
+import type { Component, JSX } from 'solid-js';
+import { For, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
+import { VIM_SHORTCUT_SECTIONS } from '../editor/vim-help.ts';
+import { handleTabKeys } from '../lib/tab-keys.ts';
 import { Dialog } from '../lib/Dialog.tsx';
 import { Kbd } from '../lib/shortcuts.tsx';
-import type { ShortcutRegistry } from './registry.ts';
-interface HelpEditor {
-  shortcuts: ShortcutRegistry;
-  store: { state: { workspace: { meta: { version?: string } | null } } };
-  actions: { showVimHelp: () => void };
-}
-const ENTRIES: [string[], string][] = [
-  [['Mod+,'], 'Open settings'],
-  [['Mod+K'], 'Quick search / palette'],
-  [['Mod+P'], 'Go to file'],
-  [['Mod+Shift+P'], 'Command palette'],
-  [['Mod+Shift+O'], 'Go to symbol'],
-  [['Mod+Shift+F'], 'Search in files'],
-  [['Mod+Shift+R'], 'Refresh workspace'],
-  [['Mod+F'], 'Find in file'],
-  [['Mod+E'], 'Toggle edit mode'],
-  [['Mod+S'], 'Save file (in edit mode)'],
-  [['Mod+G'], 'Go to line'],
-  [['Mod+D'], 'Toggle diff view (git)'],
-  [['Alt+Z'], 'Toggle word wrap'],
-  [['[c', ']c'], 'Previous / next diff hunk'],
-  [['[f', ']f'], 'Previous / next changed file'],
-  [['Alt+M'], 'Toggle Markdown / table preview'],
-  [['Shift+F1'], 'Show symbol documentation'],
-  [['Enter', 'Shift+Enter'], 'Next / previous match'],
-  [['F12', 'Mod+Click'], 'Go to definition'],
-  [['Shift+F12'], 'Find all references'],
-  [['Alt+Shift+H'], 'Call trail (callers / callees)'],
-  [['Mod+J'], 'Toggle right sidebar / inspector'],
-  [['Alt+Left', 'Alt+Right'], 'Navigate back / forward'],
-  [['Mod+B'], 'Toggle sidebar'],
-  [['Alt+W'], 'Close tab'],
-  [['Alt+Shift+T'], 'Reopen closed tab'],
-  [['Ctrl+Tab'], 'Next tab'],
-  [['Alt+1…9'], 'Select tab'],
-  [['Double click'], 'Highlight all occurrences'],
-  [['Mod+A'], 'Select whole file'],
-  [['Mod+C'], 'Copy selection (source / formatted text)'],
-  [['Alt+C', 'Alt+A'], 'Copy selection ref / with context'],
-  [['Alt+U'], 'Find usages of selection'],
-  [['Alt+E'], 'Edit selection inline'],
-  [['Alt+T'], 'Start a thread on the selection'],
-  [['Alt+X'], 'Explain the selection'],
-  [['Right click'], 'Selection actions at the pointer'],
-  [['Mod+Home|Mod+Up', 'Mod+End|Mod+Down'], 'Top / bottom of file'],
-  [['Home|Mod+Left', 'End|Mod+Right'], 'Start / end of line'],
-  [['Left', 'Right'], 'Move caret along the line'],
-  [['Esc'], 'Dismiss'],
-];
+import { STANDARD_SHEET_SECTIONS } from './help-entries.ts';
+import type { HelpTab } from './registry.ts';
+
 export const HelpSheet: Component = () => {
-  const editor: HelpEditor = useEditor();
+  const editor = useEditor();
   const shortcuts = editor.shortcuts;
   const version = () => editor.store.state.workspace.meta?.version;
+  const vim = () => editor.settings.preferences().vim;
+  const sections = () =>
+    shortcuts.helpTab() === 'vim' ? VIM_SHORTCUT_SECTIONS : STANDARD_SHEET_SECTIONS;
   return (
     <Show when={shortcuts.helpOpen()}>
       <Dialog
         open
         bare
         id="helpsheet"
-        title="Keyboard Shortcuts"
+        title="Keyboard shortcuts"
         onClose={shortcuts.actions.hideHelp}
       >
-        <div class="sm:max-w-4xl overflow-auto">
-          <header class="flex-row! items-center gap-2">
-            <h2>Keyboard Shortcuts</h2>
+        <div class="compact-keycaps flex max-h-[85dvh] w-full max-w-[680px] flex-col gap-0 overflow-hidden p-0 text-13">
+          <header class="flex-row! items-center gap-2.5 px-4 pt-3.5 pb-2.5">
+            <h2 class="text-16">Keyboard shortcuts</h2>
             <Show when={version()}>
-              <span data-ui="help-version" class="p-3 font-mono text-primary-text">
+              <span data-ui="help-version" class="font-mono text-12 text-muted-foreground">
                 v{version()}
               </span>
             </Show>
-            <div
-              style={{
-                'margin-left': 'auto',
-                display: 'flex',
-                gap: '12px',
-                'align-items': 'center',
-              }}
+            <span class="flex-1" />
+            <button
+              type="button"
+              class="btn"
+              data-variant="ghost"
+              data-size="icon-xs"
+              aria-label="Close (Esc)"
+              title="Close (Esc)"
+              onClick={shortcuts.actions.hideHelp}
             >
-              <button
-                id="btn-switch-to-vim-help"
-                style={{ 'font-size': '12px', cursor: 'pointer' }}
-                title="View Vim Keybindings"
-                class="btn"
-                data-control="settings-btn-link"
-                data-variant="link"
-                data-size="xs"
-                onClick={() => {
-                  shortcuts.actions.hideHelp();
-                  editor.actions.showVimHelp();
-                }}
-              >
-                View Vim Keybindings
-              </button>
-            </div>
+              <span class="icon-[ph--x]" aria-hidden="true" />
+            </button>
           </header>
-          <dl
-            data-ui="help-grid"
-            class="grid grid-cols-[auto_1fr_auto_1fr] gap-3 items-center [&_dt]:flex [&_dt]:gap-1 [&_dt]:justify-end [&_dd]:text-muted-foreground"
+          <div class="flex items-center gap-2 border-b pr-4 pl-4">
+            <div class="tabs min-w-0 overflow-x-auto">
+              <nav
+                role="tablist"
+                aria-orientation="horizontal"
+                aria-label="Shortcut set"
+                data-variant="line"
+                class="h-9 items-stretch gap-4.5 rounded-none bg-transparent p-0 [&>[role=tab]]:flex-none"
+                onKeyDown={handleTabKeys}
+              >
+                <HelpTabButton id="standard" name="Standard" />
+                <HelpTabButton id="vim" name="Vim" />
+              </nav>
+            </div>
+            <span class="flex-1" />
+            <Show when={shortcuts.helpTab() === 'vim'}>
+              <label class="flex items-center gap-2 text-12-5 text-muted-foreground">
+                <input
+                  type="checkbox"
+                  role="switch"
+                  class="input"
+                  aria-label="Vim navigation"
+                  aria-checked={vim()}
+                  checked={vim()}
+                  onChange={(event) => editor.actions.setVimEnabled(event.currentTarget.checked)}
+                />
+                Vim navigation
+              </label>
+            </Show>
+          </div>
+          <div
+            id="help-sheet-panel"
+            role="tabpanel"
+            aria-labelledby={'btn-help-tab-' + shortcuts.helpTab()}
+            class="grid min-h-0 flex-1 grid-cols-2 gap-x-7 gap-y-1.5 overflow-y-auto px-4 pt-3.5 pb-4.5 max-sm:grid-cols-1"
           >
-            <For each={ENTRIES}>
-              {(entry) => (
-                <>
-                  <dt>
-                    <For each={entry[0]}>
-                      {(combo, index) => (
+            <For each={sections()}>
+              {(section) => (
+                <section>
+                  <h3 class="mt-1.5 mb-1.5 text-11-5 font-medium text-muted-foreground">
+                    {section.title}
+                  </h3>
+                  <dl class="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-1.5">
+                    <For each={section.items}>
+                      {(item) => (
                         <>
-                          <Show when={index() > 0}>
-                            <span data-ui="key-or" class="text-muted-foreground">
-                              /
-                            </span>
-                          </Show>
-                          <Kbd combo={combo} />
+                          <dt class="flex justify-end gap-1">
+                            <For each={item[0]}>{(combo) => <Kbd combo={combo} chord />}</For>
+                          </dt>
+                          <dd class="text-foreground">{item[1]}</dd>
                         </>
                       )}
                     </For>
-                  </dt>
-                  <dd>{entry[1]}</dd>
-                </>
+                  </dl>
+                </section>
               )}
             </For>
-          </dl>
+          </div>
         </div>
       </Dialog>
     </Show>
   );
 };
+
+function HelpTabButton(props: { id: HelpTab; name: string }): JSX.Element {
+  const shortcuts = useEditor().shortcuts;
+  const selected = () => shortcuts.helpTab() === props.id;
+  return (
+    <button
+      id={'btn-help-tab-' + props.id}
+      type="button"
+      role="tab"
+      tabindex={selected() ? 0 : -1}
+      aria-selected={selected()}
+      aria-controls="help-sheet-panel"
+      class="px-0 py-0 text-12-5! text-muted-foreground aria-selected:text-foreground after:-bottom-px"
+      onClick={() => shortcuts.setHelpTab(props.id)}
+    >
+      {props.name}
+    </button>
+  );
+}
