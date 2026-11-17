@@ -11,10 +11,11 @@ import { CommentBody } from './CommentBody.tsx';
 export function IssueComment(props: IssueCommentProps): JSX.Element {
   const editor = useEditor();
   const key = () => 'issue:' + props.comment.id;
+  // Bodies read by default; a reader can still fold a comment away.
   return (
     <details
       class="card group/accordion flex flex-col gap-0! px-3! py-2!"
-      open={!!editor.pr.state.expanded[key()]}
+      open={editor.pr.state.expanded[key()] !== false}
       onToggle={(event) => editor.actions.setThreadExpanded(key(), event.currentTarget.open)}
     >
       <summary class="flex min-w-0 cursor-pointer items-center gap-2">

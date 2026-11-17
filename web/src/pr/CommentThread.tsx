@@ -33,12 +33,13 @@ export function CommentThread(props: CommentThreadProps): JSX.Element {
       },
     ),
   );
+  // Threads read by default; a reader can still fold one away.
   return (
     <details
       ref={item}
       class="card group/accordion flex flex-col gap-2! p-3!"
       classList={{ 'diff-row-flash': revealed() }}
-      open={!!pr.state.expanded[key()]}
+      open={pr.state.expanded[key()] !== false}
       onToggle={(event) => editor.actions.setThreadExpanded(key(), event.currentTarget.open)}
     >
       <summary class="flex min-w-0 cursor-pointer items-center gap-2">

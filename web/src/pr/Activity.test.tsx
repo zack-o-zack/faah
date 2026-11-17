@@ -76,6 +76,11 @@ test('activity lists issue comments and review threads in time order with icons 
   );
   const rows = [...document.querySelectorAll<HTMLElement>('[data-ui="pr-activity-item"]')];
   expect(rows.map((row) => row.dataset.kind)).toEqual(['issue', 'thread', 'issue']);
+  expect(rows.map((row) => required(row.querySelector('details')).open)).toEqual([
+    true,
+    true,
+    true,
+  ]);
   expect(rows[0]?.textContent).toContain('First thought');
   expect(rows[1]?.textContent).toContain('a.go:3');
   expect(rows[2]?.textContent).toContain('Latest thought');
@@ -85,6 +90,23 @@ test('activity lists issue comments and review threads in time order with icons 
   const heading = required(document.querySelector('[aria-label="Activity"] h2'));
   expect(heading.textContent).toContain('Activity');
   expect(required(heading.querySelector('span')).textContent).toBe('3');
+});
+
+test('a reader can fold one entry away and the rest stay open', async () => {
+  const editor = mountActivity();
+  await waitFor(() =>
+    expect(document.querySelectorAll('[data-ui="pr-activity-item"]')).toHaveLength(3),
+  );
+  const thread = required(
+    document.querySelector<HTMLDetailsElement>('[data-kind="thread"] details'),
+  );
+  expect(thread.open).toBe(true);
+  fireEvent.click(required(thread.querySelector('summary')));
+  expect(thread.open).toBe(false);
+  await waitFor(() => expect(editor.pr.state.expanded['thread:a.go|RIGHT:3']).toBe(false));
+  expect(
+    required(document.querySelector<HTMLDetailsElement>('[data-kind="issue"] details')).open,
+  ).toBe(true);
 });
 
 test('activity shows the empty state and keeps the composer when nothing is said', async () => {
