@@ -308,9 +308,12 @@ focus look the same, including inside dialogs. Buttons inside a group keep
 their own keyboard outline because they are separate actions.
 
 FindBar and settings search use `.input-group`. Search-panel inputs remain
-separate `.input` fields. The command palette marks its search-header border;
-the model picker marks its existing header divider. Neither draws an inner
-input outline.
+separate `.input` fields. The command palette has a large search field with a
+muted mode icon and a header divider; the dialog keeps its focus treatment.
+The model picker marks its existing header divider. Neither draws an inner
+input outline. The empty file palette groups Open files and Jump to under muted
+headings. Results use the neutral `--hover` selection fill and a 9px radius;
+the footer shows shared keycaps for navigation and a mode-specific hint.
 The code reader's `#viewport` keeps a keyboard outline, inset 2px so the editor
 edges cannot clip it. The edit-mode textarea stays outline-free, with its text
 caret indicating focus. Markdown task checkboxes are disabled content, so they

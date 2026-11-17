@@ -73,6 +73,9 @@ test.each([
   ['.dockerignore', 'icon-[ph--file-ini]'],
   ['.editorconfig', 'icon-[ph--file-ini]'],
   ['.npmrc', 'icon-[ph--file-ini]'],
+  ['.prettierrc', 'icon-[ph--file-ini]'],
+  ['.bashrc', 'icon-[ph--file-ini]'],
+  ['.customrc', 'icon-[ph--file-ini]'],
   ['go.sum', 'icon-[ph--file-lock]'],
   ['package-lock.json', 'icon-[ph--file-lock]'],
   ['bun.lockb', 'icon-[ph--file-lock]'],
@@ -90,7 +93,8 @@ test.each([
   ['file.', 'icon-[ph--file-text]'],
   ['file.unknown', 'icon-[ph--file-text]'],
   ['file.constructor', 'icon-[ph--file-text]'],
-  ['.bashrc', 'icon-[ph--file-text]'],
+  ['customrc', 'icon-[ph--file-text]'],
+  ['.customrc.json', 'icon-[ph--file-code]'],
   ['', 'icon-[ph--file-text]'],
 ])('%s uses the final extension or the default', (name, icon) => {
   expect(fileIcon(name)).toBe(icon);

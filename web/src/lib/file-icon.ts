@@ -1,6 +1,7 @@
 export function fileIcon(name: string): string {
   const lower = name.toLowerCase();
   if (
+    (lower.startsWith('.') && lower.endsWith('rc')) ||
     ['.env', '.gitignore', '.dockerignore', '.editorconfig', '.npmrc'].some((prefix) =>
       lower.startsWith(prefix),
     )

@@ -17,10 +17,12 @@ interface PaletteState {
 }
 interface PaletteHost {
   active: Accessor<DocTab | null>;
+  store: { state: { documents: { tabs: DocTab[] } } };
   tree: { autoReveal: () => boolean };
   actions: {
     loadSymbols?: () => Promise<unknown>;
     openFile: (path: string, options?: OpenOptions) => Promise<unknown>;
+    switchTab: (index: number) => void;
     showFilesPanel: () => Promise<void>;
     revealFile: (path: string) => Promise<void>;
     patch: (patch: Partial<DocTab>) => void;
@@ -34,7 +36,7 @@ import { createStore } from 'solid-js/store';
 import { api } from '../lib/api.ts';
 import { listThemes } from '../lib/theme.ts';
 import { createCommandRegistry } from './commands.ts';
-import { paletteQuery, rankCommands } from './logic.ts';
+import { emptyFileItems, paletteQuery, paletteSections, rankCommands } from './logic.ts';
 
 function initialState(): PaletteState {
   return { open: false, base: 'file', query: '', selected: 0, restoreTheme: null };
@@ -58,12 +60,14 @@ function buildPaletteStore(editor: PaletteHost, options: PaletteOptions = {}) {
     mode: PaletteMode;
     query: string;
     commands: Command[];
+    openFiles?: PaletteItem[];
   }): Promise<PaletteItem[]> {
     controller?.abort();
     controller = new AbortController();
     const current = ++generation;
     const mode = key.mode,
       q = key.query;
+    if (key.openFiles) return key.openFiles;
     if (mode === 'command') return rankCommands(key.commands, q);
     if (mode === 'line') {
       const document = editor.active(),
@@ -85,7 +89,7 @@ function buildPaletteStore(editor: PaletteHost, options: PaletteOptions = {}) {
         .filter((symbol) => symbol.name.toLowerCase().includes(q.toLowerCase()))
         .slice(0, 400)
         .map((symbol) => ({
-          kind: 'line',
+          kind: 'symbol',
           line: symbol.line,
           label: symbol.name,
           sub: symbol.kind,
@@ -114,13 +118,25 @@ function buildPaletteStore(editor: PaletteHost, options: PaletteOptions = {}) {
     }));
   }
   const [items, resource] = createResource(
-    () => (state.open ? { ...query(), commands: commands.list() } : false),
+    () => {
+      if (!state.open) return false;
+      const current = query();
+      return {
+        ...current,
+        commands: commands.list(),
+        openFiles:
+          current.mode === 'file' && !current.query
+            ? emptyFileItems(editor.store.state.documents.tabs, editor.active()?.path)
+            : undefined,
+      };
+    },
     (key) => {
       latest = load(key);
       return latest;
     },
   );
   const data = () => (items.error ? [] : items() || []);
+  const sections = createMemo(() => paletteSections(data()));
   async function openPalette(mode: string, seed?: string): Promise<void> {
     const prefixes: Record<string, string> = { command: '>', symbol: '@', line: ':' };
     set({
@@ -148,14 +164,23 @@ function buildPaletteStore(editor: PaletteHost, options: PaletteOptions = {}) {
     if (!state.open || version !== generation) return;
     const item = data()[index];
     if (!item) return;
+    if (item.kind === 'jump') {
+      await openPalette(item.mode);
+      return;
+    }
     closePalette(true);
-    if (item.kind === 'file') {
+    if (item.kind === 'open-file') {
+      const tab = editor.store.state.documents.tabs.findIndex(
+        (document) => document.path === item.path,
+      );
+      if (tab >= 0) editor.actions.switchTab(tab);
+    } else if (item.kind === 'file') {
       await editor.actions.openFile(item.path);
       if (editor.tree.autoReveal()) {
         await editor.actions.showFilesPanel();
         await editor.actions.revealFile(item.path);
       }
-    } else if (item.kind === 'line') {
+    } else if (item.kind === 'line' || item.kind === 'symbol') {
       editor.actions.patch({ cur: item.line });
       editor.actions.centerLine(item.line);
       const doc = editor.active();
@@ -173,6 +198,7 @@ function buildPaletteStore(editor: PaletteHost, options: PaletteOptions = {}) {
     state,
     query,
     items: data,
+    sections,
     loading: () => items.loading,
     error: (): unknown => items.error,
     commands,
