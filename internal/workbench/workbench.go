@@ -396,7 +396,6 @@ func (wb *Launcher) routes() {
 	wb.mux.HandleFunc(wb.route("/api/metrics"), wb.handleMetrics)
 	wb.mux.HandleFunc(wb.route("/api/settings"), wb.handleSettings)
 	wb.mux.HandleFunc(wb.route("/api/wb/open"), wb.handleOpen)
-	wb.mux.HandleFunc(wb.route("/api/wb/stop"), wb.handleStop)
 	wb.mux.HandleFunc(wb.route("/api/wb/pin"), wb.handlePin)
 	wb.mux.HandleFunc(wb.route("/api/wb/remove"), wb.handleRemove)
 	wb.mux.HandleFunc(wb.route("/w/"), wb.handleWorkspace)
@@ -1141,21 +1140,6 @@ func (wb *Launcher) resolveTarget(target string) (item, error) {
 		return item{}, err
 	}
 	return dirItem(root), nil
-}
-
-func (wb *Launcher) handleStop(w http.ResponseWriter, r *http.Request) {
-	if !httpx.LocalPost(w, r) {
-		return
-	}
-	var body struct {
-		ID string `json:"id"`
-	}
-	if readJSONBody(r, &body) != nil || body.ID == "" {
-		httpx.Fail(w, http.StatusBadRequest, "id is required")
-		return
-	}
-	wb.stop(body.ID)
-	httpx.WriteJSON(w, map[string]any{"ok": true})
 }
 
 func (wb *Launcher) handlePin(w http.ResponseWriter, r *http.Request) {

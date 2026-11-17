@@ -322,16 +322,6 @@ func TestWorkbenchRunsChildThroughProxy(t *testing.T) {
 	if len(metrics.Parts) != 2 || metrics.RSSBytes != metrics.Parts[0].RSSBytes+metrics.Parts[1].RSSBytes || metrics.Parts[1].RSSBytes == 0 {
 		t.Fatalf("metrics: %+v", metrics)
 	}
-
-	if m := post("/base/api/wb/stop", `{"id":"`+id+`"}`); m["ok"] != true {
-		t.Fatalf("stop: %v", m)
-	}
-	wb.mu.Lock()
-	state := wb.children[id].state
-	wb.mu.Unlock()
-	if state != "stopped" {
-		t.Fatalf("after stop: %s", state)
-	}
 }
 
 // A target that fails on its first open leaves the list; the holding page

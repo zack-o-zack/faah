@@ -22,7 +22,7 @@ interface WorkbenchState {
 import { createStore, reconcile } from 'solid-js/store';
 import { api, apiPostJson } from '../lib/api.ts';
 import { batch, createMemo, getOwner, onCleanup } from 'solid-js';
-import { recentGroups } from './logic.ts';
+import { recentSections } from './logic.ts';
 
 function initialState(): WorkbenchState {
   return {
@@ -110,7 +110,7 @@ function buildWorkbenchStore(
     }, 80);
   }
   if (getOwner()) onCleanup(cancelPreview);
-  const groups = createMemo(() => recentGroups(state.items, state.showAll));
+  const groups = createMemo(() => recentSections(state.items, state.showAll));
   // Only an explicit selection changes the Open target.
   const openEntry = createMemo(() =>
     state.selectionSource === 'user' ? state.directory.entries[state.selected] : undefined,
@@ -201,7 +201,7 @@ function buildWorkbenchStore(
       set('clone', null);
       if (tab) set('tab', tab);
     },
-    async itemAction(action: string, item: RecentItem): Promise<void> {
+    async itemAction(action: 'pin' | 'remove', item: RecentItem): Promise<void> {
       try {
         await post(
           `api/wb/${action}`,

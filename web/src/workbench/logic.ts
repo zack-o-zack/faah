@@ -25,15 +25,17 @@ export function ago(ms: number, now = Date.now()): string {
   if (seconds < 86400 * 30) return Math.floor(seconds / 86400) + 'd ago';
   return new Date(ms).toLocaleDateString();
 }
-export function recentGroups<T extends { pinned?: boolean }>(
+export function recentSections<T extends { kind?: string; pinned?: boolean; lastOpened?: number }>(
   items: T[],
   showAll: boolean,
-): { pinned: T[]; recent: T[]; total: number } {
-  const pinned = items.filter((item) => item.pinned);
-  const rest = items.filter((item) => !item.pinned);
+): { prs: T[]; folders: T[]; total: number } {
+  const newest = [...items].sort((a, b) => (b.lastOpened || 0) - (a.lastOpened || 0));
+  const pinned = newest.filter((item) => item.pinned);
+  const rest = newest.filter((item) => !item.pinned);
+  const visible = [...pinned, ...(showAll ? rest : rest.slice(0, Math.max(0, 12 - pinned.length)))];
   return {
-    pinned,
-    recent: showAll ? rest : rest.slice(0, Math.max(0, 12 - pinned.length)),
+    prs: visible.filter((item) => item.kind === 'pr'),
+    folders: visible.filter((item) => item.kind !== 'pr'),
     total: items.length,
   };
 }
@@ -60,6 +62,6 @@ export function openLabel(kind: string): string {
 export function recentSubtitle(item: RecentItem, home: string, sep: string): string {
   if (item.state === 'failed') return item.error || '';
   if (item.state === 'starting') return item.progress || '';
-  if (item.kind === 'pr') return `${item.repo}#${item.number}`;
-  return tildify(item.path, home, sep);
+  if (item.kind === 'pr') return item.repo || '';
+  return parentFolder(item.path, home, sep);
 }
