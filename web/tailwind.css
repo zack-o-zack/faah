@@ -396,7 +396,7 @@
   /* Children read as one sheet; interactive states retain their own fills.
      Field selectors mirror Basecoat's header exclusions for specificity. */
   :is(.dialog > *, .alert-dialog > *, .command-dialog > .command,
-      [data-popover], #hovercard, #commitcard, [data-note-panel], .toast-content)
+      [data-popover], #hovercard, #commitcard, [data-note-panel], .toast-content, #git-panel)
     :is(.card, .input-group, .input:not([type='checkbox'], [type='radio']), .textarea,
         .field > :is(input:not([type='checkbox'], [type='radio']), select, textarea),
         .field > input[type='text']:not(:is(.command > header input, .dialog > * > header input)),
@@ -406,6 +406,19 @@
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
+  /* Review chrome and the Git panel share glass without changing geometry. */
+  #review-sub-bar, #pr-footer, #main > #status, #git-panel {
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+    backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  }
+  #review-sub-bar {
+    background-color: color-mix(in oklab, var(--background) var(--glass-alpha), transparent);
+  }
+  #pr-footer, #main > #status, #git-panel {
+    background-color: color-mix(in oklab, var(--sidebar) var(--glass-alpha), transparent);
+  }
+  /* The PR bar and comment panel belong to the footer's single glass sheet. */
+  #pr-footer > :is(#pr-bar, #pr-comments-panel) { background-color: transparent; }
   /* End fibo layer. */
 
   /* A shared 4px split bar with a transparent 8px grab area. Positioning utilities

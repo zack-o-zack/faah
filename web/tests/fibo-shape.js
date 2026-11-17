@@ -647,9 +647,13 @@ for (const theme of ['light', 'dark']) {
       '<div class="card" id="hovercard">Hover</div>',
       '<div class="card" id="commitcard">Commit</div>',
       '<section data-note-panel>Note</section>',
+      '<header id="review-sub-bar">Review header</header>',
+      '<section id="pr-footer" class="border-t"><div id="pr-bar">PR actions</div><div id="pr-comments-panel">Comments</div></section>',
+      '<main id="main"><footer id="status" class="border-t">Status</footer></main>',
+      '<section id="git-panel" class="border-t"><div class="git-panel-head border-b">Branch</div><div id="git-panel-body"><div class="input-group"><textarea placeholder="Message (optional)"></textarea></div><div id="git-recent-commits">Recent Commits</div></div></section>',
     ]) {
       const root = mount(markup);
-      const sheet = root.querySelector('[data-popover], .command, section') || root;
+      const sheet = root.querySelector('[data-popover], .command, section, #status') || root;
       const reduced = matchMedia('(prefers-reduced-transparency: reduce)').matches;
       test(
         `${level} ${sheet.id || sheet.className} blur`,
@@ -663,6 +667,22 @@ for (const theme of ['light', 'dark']) {
         Number(actualAlpha ?? 1),
         reduced ? 1 : alpha,
       );
+      if (sheet.id === 'review-sub-bar')
+        test(`${level} header preserves its border width`, style(sheet).borderTopWidth, '0px');
+      if (sheet.id === 'pr-footer' || sheet.id === 'status') {
+        test(`${level} footer preserves its divider`, style(sheet).borderTopWidth, '1px');
+        test(`${level} footer adds no side border`, style(sheet).borderLeftWidth, '0px');
+      }
+      for (const child of sheet.querySelectorAll('#pr-bar, #pr-comments-panel')) {
+        test(`${level} ${child.id} shares footer fill`, style(child).backgroundColor, 'rgba(0, 0, 0, 0)');
+        test(`${level} ${child.id} adds no blur`, style(child).backdropFilter, 'none');
+      }
+      if (sheet.id === 'git-panel') {
+        const group = sheet.querySelector('.input-group');
+        test(`${level} Git composer shares panel fill`, style(group).backgroundColor, 'rgba(0, 0, 0, 0)');
+        test(`${level} Git composer adds no blur`, style(group).backdropFilter, 'none');
+        test(`${level} Git panel preserves divider`, style(sheet).borderTopWidth, '1px');
+      }
       const header = sheet.querySelector('header');
       if (header) {
         test(`${level} nested header has no blur`, style(header).backdropFilter, 'none');

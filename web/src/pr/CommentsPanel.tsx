@@ -17,7 +17,7 @@ export function CommentsPanel(props: { ref?: (element: HTMLDivElement) => void }
     <div
       ref={props.ref}
       id="pr-comments-panel"
-      class="[body:not(.in-review-mode)_&]:hidden! group/comments relative flex min-h-min shrink flex-col overflow-hidden bg-sidebar [&.collapsed]:h-auto!"
+      class="[body:not(.in-review-mode)_&]:hidden! group/comments relative flex min-h-min shrink flex-col overflow-hidden [&.collapsed]:h-auto!"
       classList={{ collapsed: panel().collapsed }}
       style={{ height: panel().collapsed ? 'auto' : panel().height + 'px' }}
     >

@@ -16,7 +16,7 @@ export function GitPanel(): JSX.Element {
     <Show when={meta()?.git}>
       <section
         id="git-panel"
-        class="git-panel relative flex h-96 min-h-8 max-h-[80vh] shrink-0 flex-col border-t bg-sidebar [&.collapsed]:h-auto! [&.collapsed_.git-panel-body]:hidden"
+        class="git-panel relative flex h-96 min-h-8 max-h-[80vh] shrink-0 flex-col border-t [&.collapsed]:h-auto! [&.collapsed_.git-panel-body]:hidden"
         classList={{ collapsed: git.state.collapsed }}
         style={{ height: git.state.collapsed ? 'auto' : `${git.state.height}px` }}
       >

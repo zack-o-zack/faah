@@ -17,7 +17,7 @@ export function PRPanels(): JSX.Element {
     <Show when={editor.pr.available() && editor.review.state.mode === 'review'}>
       <div
         id="pr-footer"
-        class="[body:not(.in-review-mode)_&]:hidden! relative flex min-h-0 shrink flex-col border-t border-border bg-sidebar"
+        class="[body:not(.in-review-mode)_&]:hidden! relative flex min-h-0 shrink flex-col border-t border-border"
       >
         <SplitHandle
           vertical

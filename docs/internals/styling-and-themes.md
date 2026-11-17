@@ -615,3 +615,15 @@ with transparent in OKLab, uses the shared blur with 1.4 saturation and retains
 its shadow with a line border. Nested cards, fields and headers are transparent
 and do not add a second blur. Modal backdrops retain their existing treatment.
 `prefers-reduced-transparency: reduce` forces 100% / 0px at every setting.
+
+
+The review header (`#review-sub-bar`), PR footer (`#pr-footer`) and editor status
+footer (`#main > #status`) use the same transparency and OS override. The header
+mixes `--background`; the two footers mix `--sidebar`. Existing border widths,
+spacing and shadows stay intact. The PR bar and comments panel have transparent
+fills so the footer reads as one glass sheet. These bars retain their existing
+layout positions; scrolling content does not extend underneath them.
+
+The Git section (`#git-panel`), including its branch row, commit composer and
+recent commits, also mixes `--sidebar` with the same glass variables. Its inner
+composer stays transparent without an additional blur; the tree remains solid.
