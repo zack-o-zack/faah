@@ -11,6 +11,13 @@ function SettingsThemeProvider(props: { children?: JSX.Element }): JSX.Element {
     <ThemeProvider
       options={{
         configured: () => app.settings.preferences().colorTheme,
+        // The server injects the stored choices before first paint; the
+        // settings take over once they have loaded.
+        codeThemes: () => {
+          if (!app.settings.state.loaded) return undefined;
+          const prefs = app.settings.preferences();
+          return { light: prefs.codeThemeLight, dark: prefs.codeThemeDark };
+        },
         save: (id) => void app.settings.actions.setSetting('workbench.colorTheme', id),
       }}
     >

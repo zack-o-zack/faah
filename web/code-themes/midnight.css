@@ -1,0 +1,18 @@
+/* Midnight: a deep neutral palette, for code surfaces only. Token reference: docs/internals/styling-and-themes.md. */
+:root[data-code-theme="midnight"] .code-surface {
+  --theme-name: "Midnight";
+  color-scheme: dark;
+
+  /* Surface and text. */
+  --background: #0d1117; --foreground: #e6edf3; --muted-foreground: #99a3ae; --faint: #99a3ae; --border: #30363d;
+  /* Selection, current line and search. */
+  --sel: rgba(56, 139, 253, 0.25); --cur: #161b22; --mark: rgba(187, 128, 9, 0.4); --mark-active: #d29922; --on-mark-active: var(--background);
+  /* Diffs and status. */
+  --gi: #3fb950; --gd: #f85149; --gi-bg: rgba(46, 160, 67, 0.15); --gd-bg: rgba(248, 81, 73, 0.15);
+  --gi-word: #162f21; --gd-word: #432022; --err: #fa7770; --warn: #e3b341;
+  /* Syntax. */
+  --k: #ff7b72; --kt: #ff7b72; --nf: #d2a8ff; --nc: #ffa657; --nb: #79c0ff;
+  --nv: #ffa657; --no: #79c0ff; --na: #79c0ff; --nt: #7ee787; --nd: #d2a8ff;
+  --np: #79c0ff; --s: #a5d6ff; --m: #79c0ff; --o: #ff7b72; --p: #c9d1d9;
+  --c: #97a0a8; --cp: #ff7b72;
+}

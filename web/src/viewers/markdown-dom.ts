@@ -116,6 +116,8 @@ function sanitizeBody(html: string, docPath: string): HTMLElement {
     checkbox.classList.remove('mr-2');
     checkbox.classList.add('md-task-checkbox');
   }
+  // Every code block is a code surface, whether the app rendered it or a forge did.
+  for (const pre of body.querySelectorAll('pre')) pre.classList.add('code-surface');
   return body;
 }
 export function sanitizeHTML(html: string, path: string): string {

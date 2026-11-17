@@ -150,11 +150,8 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 		httpx.Fail(w, 500, err.Error())
 		return
 	}
-	theme := ""
-	if configured := settings.Read().WorkbenchColorTheme; configured != nil {
-		theme = *configured
-	}
-	html := s.themes.HTML(string(b), theme)
+	theme, codeLight, codeDark := settings.Choice()
+	html := s.themes.HTML(string(b), httpx.ThemeChoice{Theme: theme, CodeLight: codeLight, CodeDark: codeDark})
 	baseTag := fmt.Sprintf(`<base href="%s">`, expected)
 	if strings.Contains(html, "<base ") {
 		html = baseHrefRe.ReplaceAllString(html, baseTag)

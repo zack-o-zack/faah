@@ -31,6 +31,8 @@ type Settings struct {
 	EditorMinimapEnabled        *bool    `json:"editor.minimap.enabled,omitempty"`
 	WorkbenchTransparency       *string  `json:"workbench.transparency,omitempty"`
 	WorkbenchColorTheme         *string  `json:"workbench.colorTheme,omitempty"`
+	WorkbenchCodeThemeLight     *string  `json:"workbench.codeTheme.light,omitempty"`
+	WorkbenchCodeThemeDark      *string  `json:"workbench.codeTheme.dark,omitempty"`
 	DiffEditorRenderSideBySide  *bool    `json:"diffEditor.renderSideBySide,omitempty"`
 	MarkdownPreviewOpen         *bool    `json:"markdown.preview.open,omitempty"`
 	TablePreviewOpen            *bool    `json:"table.preview.open,omitempty"`
@@ -52,6 +54,19 @@ type Settings struct {
 }
 
 var settingsMu sync.Mutex
+
+// Choice returns the stored app theme and the two code theme preferences,
+// empty when unset. The document injects them before first paint.
+func Choice() (theme, codeLight, codeDark string) {
+	s := Read()
+	value := func(field *string) string {
+		if field == nil {
+			return ""
+		}
+		return *field
+	}
+	return value(s.WorkbenchColorTheme), value(s.WorkbenchCodeThemeLight), value(s.WorkbenchCodeThemeDark)
+}
 
 // Path mirrors stateFilePath in update.go: honour the XDG location when
 // it is set, otherwise fall back to ~/.faah.
@@ -178,6 +193,22 @@ var Schema = []SchemaItem{
 		Key:         "workbench.colorTheme",
 		Title:       "Color Theme",
 		Description: "Color theme. Empty follows the operating system; unavailable IDs also follow the system. User themes are discovered from the data directory.",
+		Category:    "Workbench",
+		Type:        "select",
+		Default:     "",
+	},
+	{
+		Key:         "workbench.codeTheme.light",
+		Title:       "Code Theme (Light)",
+		Description: "Code theme used while the app is light. Empty, the default, keeps the app theme's own code colours.",
+		Category:    "Workbench",
+		Type:        "select",
+		Default:     "",
+	},
+	{
+		Key:         "workbench.codeTheme.dark",
+		Title:       "Code Theme (Dark)",
+		Description: "Code theme used while the app is dark. Empty, the default, keeps the app theme's own code colours.",
 		Category:    "Workbench",
 		Type:        "select",
 		Default:     "",

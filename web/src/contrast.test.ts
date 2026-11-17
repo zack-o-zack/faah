@@ -37,9 +37,9 @@ function contrast(a: Color, b: Color): number {
     y = luminance(b);
   return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
 }
-function themeTokens(file: string): (name: string) => Color {
+function themeTokens(file: string, dir = 'web/themes'): (name: string) => Color {
   const tokens = new Map(
-    [...readFileSync(resolve('web/themes', file), 'utf8').matchAll(/--([\w-]+):\s*([^;]+);/g)].map(
+    [...readFileSync(resolve(dir, file), 'utf8').matchAll(/--([\w-]+):\s*([^;]+);/g)].map(
       (match) => [required(match[1]), required(match[2]).trim()],
     ),
   );
@@ -201,6 +201,86 @@ for (const theme of ['light', 'dark']) {
           );
         }
       }
+    }
+  });
+}
+
+// Code themes paint code surfaces only, so they carry the smaller token set.
+const CODE_CONTRACT = [
+  'theme-name background foreground muted-foreground faint border',
+  'sel cur mark mark-active on-mark-active',
+  'gi gd gi-bg gd-bg gi-word gd-word err warn',
+  'k kt nf nc nb nv no na nt nd np s m o p c cp',
+]
+  .flatMap((group) => group.split(' '))
+  .sort();
+const codeThemeFiles = readdirSync(resolve('web/code-themes'))
+  .filter((file) => file.endsWith('.css'))
+  .sort();
+
+test('the bundled code theme set is the approved list', () => {
+  expect(codeThemeFiles).toEqual([
+    'catppuccin-latte.css',
+    'catppuccin-mocha.css',
+    'classic-dark.css',
+    'classic-light.css',
+    'dracula.css',
+    'gruvbox-dark.css',
+    'gruvbox-light.css',
+    'midnight.css',
+    'monokai.css',
+    'nord.css',
+    'one-dark.css',
+    'rose-pine.css',
+    'solarized-dark.css',
+    'solarized-light.css',
+  ]);
+});
+
+test('code themes define only the tokens code surfaces read', () => {
+  for (const file of codeThemeFiles) {
+    const definitions = [
+      ...readFileSync(resolve('web/code-themes', file), 'utf8').matchAll(/--([\w-]+):/g),
+    ]
+      .map((match) => required(match[1]))
+      .sort();
+    expect(definitions, file).toEqual(CODE_CONTRACT);
+  }
+});
+
+for (const file of codeThemeFiles) {
+  const id = file.replace(/\.css$/, '');
+  test(`${id} keeps ink and every syntax token legible on its own surfaces`, () => {
+    const token = themeTokens(file, 'web/code-themes');
+    const background = token('background');
+    const surfaces: [string, Color][] = [
+      ['background', background],
+      ['cur', token('cur')],
+      ['sel over background', composite(token('sel'), background)],
+      ['sel over current line', composite(token('sel'), token('cur'))],
+      ['gi-bg', composite(token('gi-bg'), background)],
+      ['gd-bg', composite(token('gd-bg'), background)],
+    ];
+    for (const [label, surface] of surfaces) {
+      for (const name of ['foreground', ...SYNTAX]) {
+        expect(contrast(token(name), surface), `${id}: ${name} on ${label}`).toBeGreaterThanOrEqual(
+          4.5,
+        );
+      }
+    }
+    expect(
+      contrast(token('on-mark-active'), token('mark-active')),
+      `${id}: on-mark-active on mark-active`,
+    ).toBeGreaterThanOrEqual(4.5);
+  });
+  test(`${id} keeps its diff fills visible against the background`, () => {
+    const token = themeTokens(file, 'web/code-themes');
+    const background = token('background');
+    for (const fill of ['gi-bg', 'gd-bg', 'gi-word', 'gd-word']) {
+      const paint = fill.endsWith('-bg') ? composite(token(fill), background) : token(fill);
+      expect(contrast(paint, background), `${id}: ${fill}`).toBeGreaterThanOrEqual(
+        fill.endsWith('-word') ? 1.3 : 1.09,
+      );
     }
   });
 }

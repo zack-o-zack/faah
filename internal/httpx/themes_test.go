@@ -140,3 +140,81 @@ func TestThemeDiscoveryAndBootstrapContract(t *testing.T) {
 		t.Fatal("theme script not allowed by CSP")
 	}
 }
+
+func TestCodeThemesServedAndDiscoveredSeparately(t *testing.T) {
+	assets := fstest.MapFS{
+		"web/themes/app.css": {Data: []byte(`:root[data-theme="app"] { --ink: blue; }`)},
+		"web/code-themes/night.css": {Data: []byte(
+			`:root[data-code-theme="night"] .code-surface { --theme-name: "Night"; color-scheme: dark; }`)},
+		"web/code-themes/day.css": {Data: []byte(
+			`:root[data-code-theme="day"] .code-surface { --theme-name: "Day"; color-scheme: light; }`)},
+		"web/code-themes/plain.css": {Data: []byte(
+			`:root[data-code-theme="plain"] .code-surface { --foreground: black; }`)},
+	}
+	dir := t.TempDir()
+	writeTheme(t, dir, "user.css", `:root[data-code-theme="mine"] .code-surface { color-scheme: dark; }`)
+	writeTheme(t, dir, "app.css", `:root[data-theme="user-app"] { --ink: teal; }`)
+	themes := Themes(assets, "", dir)
+
+	body := themeResponse(t, themes)
+	for _, want := range []string{"/* code-themes/day.css */", "/* code-themes/night.css */", "/* themes/user.css */"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("stylesheet missing %q", want)
+		}
+	}
+
+	if got := strings.Join(themes.IDs(), ","); got != "app,user-app" {
+		t.Fatalf("app theme discovery %q", got)
+	}
+	if got := strings.Join(themes.CodeIDs(), ","); got != "day,mine,night,plain" {
+		t.Fatalf("code theme discovery %q", got)
+	}
+	// A code theme without color-scheme sorts into the light list.
+	if got := strings.Join(themes.CodeIDsByScheme("light"), ","); got != "day,plain" {
+		t.Fatalf("light code themes %q", got)
+	}
+	if got := strings.Join(themes.CodeIDsByScheme("dark"), ","); got != "mine,night" {
+		t.Fatalf("dark code themes %q", got)
+	}
+	if themes.Has("night") || themes.HasCode("app") {
+		t.Fatal("app and code theme namespaces must stay separate")
+	}
+	if !themes.HasCode("") || themes.HasCode("missing") {
+		t.Fatal("unknown code theme must not be aliased")
+	}
+}
+
+func TestCodeThemeHTMLInjection(t *testing.T) {
+	themes := Themes(fstest.MapFS{
+		"web/themes/app.css": {Data: []byte(`:root[data-theme="app"] { --ink: blue; }`)},
+		"web/code-themes/night.css": {Data: []byte(
+			`:root[data-code-theme="night"] .code-surface { color-scheme: dark; }`)},
+	}, "", "")
+	page := `<html data-theme=""><head></head><body></body></html>`
+
+	html := themes.HTML(page, ThemeChoice{Theme: "app", CodeLight: "day", CodeDark: "night"})
+	for _, want := range []string{
+		`data-theme="app"`,
+		`data-theme-preference="app"`,
+		`data-code-theme-light=""`, // unknown id falls back to the app theme's code colours
+		`data-code-theme-dark="night"`,
+		`<script>` + ThemeBootstrap + `</script>`,
+	} {
+		if !strings.Contains(html, want) {
+			t.Fatalf("document missing %q: %s", want, html)
+		}
+	}
+
+	// An unavailable app theme keeps its preference for the client, but the document paints the fallback.
+	html = themes.HTML(page, ThemeChoice{Theme: "gone", CodeLight: "night", CodeDark: "gone"})
+	for _, want := range []string{
+		`data-theme=""`,
+		`data-theme-preference="gone"`,
+		`data-code-theme-light="night"`,
+		`data-code-theme-dark=""`,
+	} {
+		if !strings.Contains(html, want) {
+			t.Fatalf("document missing %q: %s", want, html)
+		}
+	}
+}

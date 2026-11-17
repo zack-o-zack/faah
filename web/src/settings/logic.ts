@@ -235,6 +235,8 @@ export interface Preferences {
   gitGutter: boolean;
   minimap: boolean;
   colorTheme: string;
+  codeThemeLight: string;
+  codeThemeDark: string;
   transparency: 'off' | 'subtle' | 'strong';
   splitDiff: boolean;
   highlightChangedWords: boolean;
@@ -270,6 +272,8 @@ export function preferences(values: SettingsValues): Preferences {
     gitGutter: truthy(values['git.gutterIndicators'], true),
     minimap: truthy(values['editor.minimap.enabled'], true),
     colorTheme: String(values['workbench.colorTheme'] ?? ''),
+    codeThemeLight: String(values['workbench.codeTheme.light'] ?? ''),
+    codeThemeDark: String(values['workbench.codeTheme.dark'] ?? ''),
     transparency: transparency === 'off' || transparency === 'strong' ? transparency : 'subtle',
     splitDiff: truthy(values['diffEditor.renderSideBySide'], true),
     highlightChangedWords: truthy(values['diffEditor.highlightChangedWords'], true),

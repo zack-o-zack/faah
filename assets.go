@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-//go:embed web/index.html web/workbench.html web/dist web/themes web/vendor
+//go:embed web/index.html web/workbench.html web/dist web/themes web/code-themes web/vendor
 //go:embed web/favicon.svg
 var embedded embed.FS
 

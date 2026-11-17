@@ -58,7 +58,7 @@ function Blocks(props: BlocksProps): JSX.Element {
         <Switch>
           <Match when={block.type === 'code'}>
             <div class="thr-pre" data-lang={block.lang || undefined}>
-              <pre>
+              <pre class="code-surface">
                 <code>{block.text}</code>
               </pre>
               <MarkdownCopy text={block.text || ''} />

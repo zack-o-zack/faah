@@ -1,0 +1,18 @@
+/* Solarized Light: the Solarized palette, for code surfaces only. Token reference: docs/internals/styling-and-themes.md. */
+:root[data-code-theme="solarized-light"] .code-surface {
+  --theme-name: "Solarized Light";
+  color-scheme: light;
+
+  /* Surface and text. */
+  --background: #fdf6e3; --foreground: #40565d; --muted-foreground: #455b62; --faint: #455b62; --border: #b1aa96;
+  /* Selection, current line and search. */
+  --sel: #dfd8c2; --cur: #f5eedb; --mark: rgba(181, 137, 0, 0.16); --mark-active: #e6c35c; --on-mark-active: var(--foreground);
+  /* Diffs and status. */
+  --gi: #536000; --gd: #aa2725; --gi-bg: rgba(89, 103, 0, 0.14); --gd-bg: rgba(170, 39, 37, 0.12);
+  --gi-word: #dddab8; --gd-word: #eed1c1; --err: #aa2725; --warn: #745500;
+  /* Syntax. */
+  --k: #536000; --kt: #745500; --nf: #14638d; --nc: #745500; --nb: #a13b12;
+  --nv: #14638d; --no: #14675f; --na: #40565d; --nt: #14638d; --nd: #a13b12;
+  --np: #40565d; --s: #14675f; --m: #a32765; --o: #536000; --p: #455b62;
+  --c: #455b62; --cp: #a13b12;
+}

@@ -681,12 +681,20 @@ for (const theme of ['light', 'dark']) {
         test(`${level} footer adds no side border`, style(sheet).borderLeftWidth, '0px');
       }
       for (const child of sheet.querySelectorAll('#pr-bar, #pr-comments-panel')) {
-        test(`${level} ${child.id} shares footer fill`, style(child).backgroundColor, 'rgba(0, 0, 0, 0)');
+        test(
+          `${level} ${child.id} shares footer fill`,
+          style(child).backgroundColor,
+          'rgba(0, 0, 0, 0)',
+        );
         test(`${level} ${child.id} adds no blur`, style(child).backdropFilter, 'none');
       }
       if (sheet.id === 'git-panel') {
         const group = sheet.querySelector('.input-group');
-        test(`${level} Git composer shares panel fill`, style(group).backgroundColor, 'rgba(0, 0, 0, 0)');
+        test(
+          `${level} Git composer shares panel fill`,
+          style(group).backgroundColor,
+          'rgba(0, 0, 0, 0)',
+        );
         test(`${level} Git composer adds no blur`, style(group).backdropFilter, 'none');
         test(`${level} Git panel preserves divider`, style(sheet).borderTopWidth, '1px');
       }
@@ -727,6 +735,44 @@ check(
   token('box-shadow', '--shadow'),
 );
 legacyStyle.remove();
+// A code theme paints code surfaces only: chrome around them keeps the app theme.
+document.documentElement.dataset.theme = 'light';
+document.documentElement.classList.remove('dark');
+document.documentElement.dataset.codeTheme = 'dracula';
+const codeRoot = mount(
+  '<div class="flex">' +
+    '<aside id="code-shape-sidebar" class="bg-sidebar">Files</aside>' +
+    '<div id="viewport" class="code-surface"><div class="row"><div class="c">package main</div></div></div>' +
+    '<header id="code-shape-pr" class="bg-sidebar">Pull request</header>' +
+    '</div>',
+);
+check(
+  'code theme paints the editor background',
+  style(codeRoot.querySelector('#viewport')).backgroundColor,
+  'rgb(40, 42, 54)', // Dracula's own --background
+);
+check(
+  'code theme paints the editor ink',
+  style(codeRoot.querySelector('#viewport')).color,
+  'rgb(248, 248, 242)', // Dracula's own --foreground
+);
+check(
+  'sidebar keeps the app theme fill',
+  style(codeRoot.querySelector('#code-shape-sidebar')).backgroundColor,
+  token('background-color', '--sidebar'),
+);
+check(
+  'PR header keeps the app theme fill',
+  style(codeRoot.querySelector('#code-shape-pr')).backgroundColor,
+  token('background-color', '--sidebar'),
+);
+check(
+  'chrome is not painted by the code theme',
+  style(codeRoot.querySelector('#code-shape-sidebar')).backgroundColor ===
+    style(codeRoot.querySelector('#viewport')).backgroundColor,
+  false,
+);
+delete document.documentElement.dataset.codeTheme;
 const failures = results.filter((result) => !result.passed);
 document.getElementById('result').textContent =
   `${results.length - failures.length}/${results.length} assertions passed`;

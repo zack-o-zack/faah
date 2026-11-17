@@ -721,7 +721,8 @@ func (wb *Launcher) handleIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	html := strings.Replace(string(b), `<base href="/">`, fmt.Sprintf(`<base href="%s">`, template.HTMLEscapeString(wb.basePath)), 1)
-	html = wb.themes.HTML(html, wb.configuredTheme())
+	theme, codeLight, codeDark := settings.Choice()
+	html = wb.themes.HTML(html, httpx.ThemeChoice{Theme: theme, CodeLight: codeLight, CodeDark: codeDark})
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	io.WriteString(w, html)
 }

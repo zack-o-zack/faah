@@ -1,8 +1,8 @@
 import { afterEach, expect, test, vi } from 'vitest';
 import { render } from '@solidjs/testing-library';
 import { readFileSync } from 'node:fs';
-import { chooseThemePreference } from './theme-preference.ts';
-import { createThemeStore, listThemes } from './theme.ts';
+import { chooseCodeTheme, chooseThemePreference } from './theme-preference.ts';
+import { createThemeStore, listCodeThemes, listThemes } from './theme.ts';
 import { required } from './test-values.ts';
 
 function styles(): HTMLStyleElement {
@@ -104,4 +104,79 @@ test('a launcher pick replaces its initial configured preference, including Syst
   expect(required(store).current()).toBe('light');
   view.unmount();
   style.remove();
+});
+
+function codeStyles(): HTMLStyleElement {
+  const style = document.createElement('style');
+  style.textContent = [
+    ':root[data-code-theme="dracula"] .code-surface { --theme-name: "Dracula"; color-scheme: dark; }',
+    ':root[data-code-theme="solarized-light"] .code-surface { --theme-name: "Solarized Light"; color-scheme: light; }',
+    ':root[data-code-theme="nord"] .code-surface { --theme-name: "Nord"; color-scheme: dark; }',
+  ].join('\n');
+  document.head.append(style);
+  return style;
+}
+
+test('a code theme choice follows the active scheme and falls back to the app theme', () => {
+  const available = ['dracula', 'solarized-light'];
+  expect(chooseCodeTheme('light', 'solarized-light', 'dracula', available)).toBe('solarized-light');
+  expect(chooseCodeTheme('dark', 'solarized-light', 'dracula', available)).toBe('dracula');
+  expect(chooseCodeTheme('dark', 'solarized-light', '', available)).toBe('');
+  expect(chooseCodeTheme('light', '', 'dracula', available)).toBe('');
+  expect(chooseCodeTheme('dark', 'solarized-light', 'removed', available)).toBe('');
+  expect(chooseCodeTheme(undefined, 'solarized-light', 'dracula', available)).toBe(
+    'solarized-light',
+  );
+});
+
+test('code theme discovery keeps its own namespace and reads each scheme', () => {
+  const style = codeStyles();
+  expect(listCodeThemes()).toEqual([
+    { id: 'dracula', name: 'Dracula', scheme: 'dark' },
+    { id: 'nord', name: 'Nord', scheme: 'dark' },
+    { id: 'solarized-light', name: 'Solarized Light', scheme: 'light' },
+  ]);
+  // The app theme list never picks up a code theme, and the reverse holds too.
+  expect(listThemes().some((theme) => theme.id === 'dracula')).toBe(false);
+  expect(listCodeThemes().some((theme) => theme.id === 'light')).toBe(false);
+  style.remove();
+});
+
+test('switching the app scheme swaps the code theme', () => {
+  const appStyle = styles();
+  const codeStyle = codeStyles();
+  const prefs = { light: 'solarized-light', dark: 'dracula' };
+  let store: ReturnType<typeof createThemeStore> | undefined;
+  const view = render(() => {
+    store = createThemeStore({ codeThemes: () => prefs });
+    return null;
+  });
+  expect(document.documentElement.dataset.codeTheme).toBe('solarized-light');
+  required(store).setTheme('dark', false);
+  expect(document.documentElement.dataset.codeTheme).toBe('dracula');
+  required(store).setTheme('light', false);
+  expect(document.documentElement.dataset.codeTheme).toBe('solarized-light');
+  prefs.dark = '';
+  required(store).setTheme('dark', false);
+  expect(document.documentElement.dataset.codeTheme).toBe('');
+  view.unmount();
+  codeStyle.remove();
+  appStyle.remove();
+});
+
+test('the injected code theme stands until settings load', () => {
+  const appStyle = styles();
+  const codeStyle = codeStyles();
+  document.documentElement.dataset.codeThemeLight = 'solarized-light';
+  document.documentElement.dataset.codeThemeDark = 'dracula';
+  const view = render(() => {
+    createThemeStore();
+    return null;
+  });
+  expect(document.documentElement.dataset.codeTheme).toBe('solarized-light');
+  view.unmount();
+  delete document.documentElement.dataset.codeThemeLight;
+  delete document.documentElement.dataset.codeThemeDark;
+  codeStyle.remove();
+  appStyle.remove();
 });

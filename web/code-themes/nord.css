@@ -1,0 +1,18 @@
+/* Nord: the Nord palette, for code surfaces only. Token reference: docs/internals/styling-and-themes.md. */
+:root[data-code-theme="nord"] .code-surface {
+  --theme-name: "Nord";
+  color-scheme: dark;
+
+  /* Surface and text. */
+  --background: #2e3440; --foreground: #d8dee9; --muted-foreground: #a5aebd; --faint: #616e88; --border: #3b4252;
+  /* Selection, current line and search. */
+  --sel: #434c5e; --cur: #292e38; --mark: rgba(235, 203, 139, 0.25); --mark-active: #d08770; --on-mark-active: #2d323e;
+  /* Diffs and status. */
+  --gi: #a3be8c; --gd: #bf616a; --gi-bg: rgba(163, 190, 140, 0.15); --gd-bg: rgba(191, 97, 106, 0.15);
+  --gi-word: #40494b; --gd-word: #55404b; --err: #dfb0b4; --warn: #d18a74;
+  /* Syntax. */
+  --k: #a7bed4; --kt: #a7bed4; --nf: #8fc4d3; --nc: #9ac3c2; --nb: #8fc4d3;
+  --nv: #d8dee9; --no: #cdb4c9; --na: #9ac3c2; --nt: #a7bed4; --nd: #e0b1a1;
+  --np: #d8dee9; --s: #abc395; --m: #cdb4c9; --o: #a7bed4; --p: #eceff4;
+  --c: #b4bcca; --cp: #abbdd4;
+}

@@ -83,3 +83,78 @@ test('only extra themes appear in the user select and clear segment selection', 
   );
   expect(select.value).toBe('');
 });
+
+function codeThemeItem(scheme: 'light' | 'dark'): SettingItem {
+  return {
+    key: 'workbench.codeTheme.' + scheme,
+    title: 'Code Theme (' + (scheme === 'light' ? 'Light' : 'Dark') + ')',
+    description: '',
+    category: 'Workbench',
+    type: 'select',
+    default: '',
+    options: ['', 'dracula', 'solarized-light'],
+    secret: false,
+  };
+}
+
+async function mountCodeTheme(scheme: 'light' | 'dark') {
+  const style = document.createElement('style');
+  style.textContent = [
+    ':root[data-code-theme="dracula"] .code-surface { --theme-name: "Dracula"; color-scheme: dark; }',
+    ':root[data-code-theme="nord"] .code-surface { --theme-name: "Nord"; color-scheme: dark; }',
+    ':root[data-code-theme="solarized-light"] .code-surface { --theme-name: "Solarized Light"; color-scheme: light; }',
+  ].join('\n');
+  document.head.append(style);
+  styles.push(style);
+  const item = codeThemeItem(scheme);
+  const post = vi.fn(async (_path: string, body: unknown) => ({ settings: body, raw: '{}' }));
+  render(() => {
+    const settings = createSettingsStore({
+      request: async () => ({ settings: { [item.key]: '' }, schema: [item] }),
+      post,
+    });
+    void settings.actions.loadSettings();
+    return (
+      <SettingsProvider value={settings}>
+        <SettingControl item={item} control={{ kind: 'select', options: [] }} invalid={false} />
+      </SettingsProvider>
+    );
+  });
+  const label = scheme === 'light' ? 'Code theme · Light' : 'Code theme · Dark';
+  const select = await screen.findByRole<HTMLSelectElement>('combobox', { name: label });
+  return { post, select, item };
+}
+
+test('the light code theme select lists fibo and the light schemes only', async () => {
+  const { post, select, item } = await mountCodeTheme('light');
+  expect(Array.from(select.options).map((option) => [option.value, option.text])).toEqual([
+    ['', 'fibo'],
+    ['solarized-light', 'Solarized Light'],
+  ]);
+  expect(select.value).toBe('');
+  fireEvent.change(select, { target: { value: 'solarized-light' } });
+  await waitFor(() =>
+    expect(post).toHaveBeenLastCalledWith(
+      'api/settings',
+      { [item.key]: 'solarized-light' },
+      expect.anything(),
+    ),
+  );
+});
+
+test('the dark code theme select lists fibo and the dark schemes only', async () => {
+  const { post, select, item } = await mountCodeTheme('dark');
+  expect(Array.from(select.options).map((option) => [option.value, option.text])).toEqual([
+    ['', 'fibo'],
+    ['dracula', 'Dracula'],
+    ['nord', 'Nord'],
+  ]);
+  fireEvent.change(select, { target: { value: 'dracula' } });
+  await waitFor(() =>
+    expect(post).toHaveBeenLastCalledWith(
+      'api/settings',
+      { [item.key]: 'dracula' },
+      expect.anything(),
+    ),
+  );
+});

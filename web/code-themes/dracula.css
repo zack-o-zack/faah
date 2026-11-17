@@ -1,0 +1,18 @@
+/* Dracula: the Dracula palette, for code surfaces only. Token reference: docs/internals/styling-and-themes.md. */
+:root[data-code-theme="dracula"] .code-surface {
+  --theme-name: "Dracula";
+  color-scheme: dark;
+
+  /* Surface and text. */
+  --background: #282a36; --foreground: #f8f8f2; --muted-foreground: #bcc2cd; --faint: #bcc2cd; --border: #191a21;
+  /* Selection, current line and search. */
+  --sel: #44475a; --cur: #2e303e; --mark: rgba(241, 250, 140, 0.25); --mark-active: #ffb86c; --on-mark-active: var(--background);
+  /* Diffs and status. */
+  --gi: #50fa7b; --gd: #ffa0a0; --gi-bg: rgba(80, 250, 123, 0.14); --gd-bg: rgba(255, 85, 85, 0.14);
+  --gi-word: #2d433e; --gd-word: #463b45; --err: #ffa0a0; --warn: #ffb86c;
+  /* Syntax. */
+  --k: #ff9bd5; --kt: #8be9fd; --nf: #50fa7b; --nc: #8be9fd; --nb: #8be9fd;
+  --nv: #f8f8f2; --no: #d1b1ff; --na: #50fa7b; --nt: #ff9bd5; --nd: #50fa7b;
+  --np: #f8f8f2; --s: #f1fa8c; --m: #d1b1ff; --o: #ff9bd5; --p: #f8f8f2;
+  --c: #bcc2cd; --cp: #ff9bd5;
+}

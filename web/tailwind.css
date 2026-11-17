@@ -526,6 +526,23 @@
   .diff-row-flash {
     animation: diffFlash 1.2s ease-out;
   }
+  /* A code surface reads the code theme's ink. It paints its own fill only once
+     a code theme is chosen, so the app theme's own code colours stay untouched
+     when the choice is fibo. App chrome outside these roots keeps the app theme. */
+  .code-surface { color: var(--foreground); }
+  :root[data-code-theme]:not([data-code-theme='']) .code-surface {
+    background: var(--background);
+    scrollbar-color: var(--border) transparent;
+  }
+  /* Markdown blocks sit in a sunken app fill by default; on a code surface they
+     take the code theme's background instead. */
+  :root[data-code-theme]:not([data-code-theme='']) :is(.md pre.code-surface, .thr-body pre.code-surface) {
+    background: var(--background);
+  }
+  /* Two fills the code themes do not define follow the surface, not the app chrome. */
+  :root[data-code-theme]:not([data-code-theme='']) .code-surface .row .occ { background: var(--sel); }
+  :root[data-code-theme]:not([data-code-theme='']) .code-surface .diff-side.diff-blank { background: var(--background); }
+
   /* Syntax spans emitted by Chroma and signature rendering. */
   #hovercard [data-ui~=sig] .k {color:var(--k)} #hovercard [data-ui~=sig] .kt {color:var(--kt)}
   #hovercard [data-ui~=sig] .nf {color:var(--nf)} #hovercard [data-ui~=sig] .nc {color:var(--nc)}

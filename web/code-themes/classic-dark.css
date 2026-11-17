@@ -1,0 +1,18 @@
+/* Classic Dark: a low-glare dark palette tuned for long reading sessions, for code surfaces only. Token reference: docs/internals/styling-and-themes.md. */
+:root[data-code-theme="classic-dark"] .code-surface {
+  --theme-name: "Classic Dark";
+  color-scheme: dark;
+
+  /* Surface and text. */
+  --background: #1a1b26; --foreground: #c0caf5; --muted-foreground: #7aa2f7; --faint: #565f89; --border: #24283b;
+  /* Selection, current line and search. */
+  --sel: #283457; --cur: #11121c; --mark: rgba(224, 175, 104, 0.3); --mark-active: #ff9e64; --on-mark-active: var(--background);
+  /* Diffs and status. */
+  --gi: #9ece6a; --gd: #f7768e; --gi-bg: rgba(158, 206, 106, 0.16); --gd-bg: rgba(247, 118, 142, 0.16);
+  --gi-word: #2c3430; --gd-word: #422b39; --err: #f7768e; --warn: #ff9e64;
+  /* Syntax. */
+  --k: #bb9af7; --kt: #2ac3de; --nf: #7aa2f7; --nc: #e0af68; --nb: #7dcfff;
+  --nv: #c0caf5; --no: #ff9e64; --na: #b4f9f8; --nt: #73daca; --nd: #bb9af7;
+  --np: #7dcfff; --s: #9ece6a; --m: #ff9e64; --o: #89ddff; --p: #9aa5ce;
+  --c: #959cbd; --cp: #bb9af7;
+}

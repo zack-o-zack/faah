@@ -1,0 +1,18 @@
+/* One Dark: the One Dark palette, for code surfaces only. Token reference: docs/internals/styling-and-themes.md. */
+:root[data-code-theme="one-dark"] .code-surface {
+  --theme-name: "One Dark";
+  color-scheme: dark;
+
+  /* Surface and text. */
+  --background: #282c34; --foreground: #abb2bf; --muted-foreground: #9da5b4; --faint: #5c6370; --border: #181a1f;
+  /* Selection, current line and search. */
+  --sel: #3e4451; --cur: #22252e; --mark: rgba(229, 192, 123, 0.18); --mark-active: #d19a66; --on-mark-active: var(--background);
+  /* Diffs and status. */
+  --gi: #98c379; --gd: #e06c75; --gi-bg: rgba(152, 195, 121, 0.14); --gd-bg: rgba(224, 108, 117, 0.14);
+  --gi-word: #38413e; --gd-word: #4f3942; --err: #ea9ba1; --warn: #d19a66;
+  /* Syntax. */
+  --k: #d59ce6; --kt: #e5c07b; --nf: #70b7f1; --nc: #e5c07b; --nb: #66bdc8;
+  --nv: #ea9ba1; --no: #d7a779; --na: #d7a779; --nt: #ea9ba1; --nd: #70b7f1;
+  --np: #ea9ba1; --s: #98c379; --m: #d7a779; --o: #66bdc8; --p: #abb2bf;
+  --c: #abb1ba; --cp: #d59ce6;
+}

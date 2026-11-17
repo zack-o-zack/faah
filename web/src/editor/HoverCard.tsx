@@ -78,7 +78,7 @@ export function HoverCard(): JSX.Element {
             <Show when={hover().data.signature}>
               <div
                 data-ui="sig"
-                class="whitespace-pre-wrap wrap-anywhere px-3 py-2 font-mono text-xs"
+                class="code-surface whitespace-pre-wrap wrap-anywhere px-3 py-2 font-mono text-xs"
                 // eslint-disable-next-line solid/no-innerhtml, no-restricted-syntax -- Server-highlighted signature.
                 innerHTML={hover().data.signature || ''}
               />

@@ -82,6 +82,11 @@ settings schema derives its options from the served CSS. Before the client
 mounts, a small CSP-hashed inline script applies the configured theme or OS
 default on editor, launcher and holding pages.
 
+App themes and code themes are separate namespaces in the same stylesheet: an
+app theme selects `[data-theme="<id>"]`, a code theme selects
+`[data-code-theme="<id>"] .code-surface` (see [code themes](#code-themes-and-code-surfaces)).
+Discovery keeps them apart, so an app theme ID never matches a code theme.
+
 ### User themes and overrides
 
 Put user CSS in `~/.faah/themes/`. This data directory is independent of
@@ -204,10 +209,61 @@ scopes them to code, Markdown fences, diffs and hover signatures.
 | `--err`, `--gi`, `--gd` | Error, addition and removal ink |
 
 `web/src/contrast.test.ts` resolves token references recursively, composites
-alpha fills over `surface`, and checks text at 4.5:1 on all surfaces and `cur`.
+alpha fills over `surface`, and checks text at 4.5:1 on all surfaces and `cur`,
+for app themes and code themes alike.
 Syntax also passes on composited selection and diff fills; diff ink passes on
 its own fill; `on-spiral` passes on `spiral` at 4.5:1. Focus and control edges need
 3:1 on surfaces. Keep these checks when changing a theme.
+
+### Code themes and code surfaces
+
+A code theme paints code, never app chrome. Every file selects
+`:root[data-code-theme="<id>"] .code-surface`; the trailing descendant is part of
+the contract, and both the server (`internal/httpx/themes.go`) and the client
+(`web/src/lib/theme.ts`) use it to tell a code theme from an app theme. Built-ins
+live in `web/code-themes/`, user files in `~/.faah/themes/`, and both are served
+in `static/themes.css` after the app themes. `color-scheme` sorts the theme into
+the light or dark select, and a file without it sorts into light.
+
+The app theme decides the scheme; the code theme for that scheme paints code
+surfaces. `web/src/lib/theme.ts` derives `data-code-theme` from the resolved app
+theme's scheme and the two preferences, so a Light/Dark switch, an app theme
+change or an OS appearance change in System mode swaps the code theme live. The
+server injects the stored preferences as `data-code-theme-light` and
+`data-code-theme-dark`, and the bootstrap script picks one before first paint.
+The empty ID (`fibo`) means the app theme's own code colours and has no file.
+
+Elements that render highlighted code carry `code-surface`, and nothing else
+does:
+
+- the editor viewport (`#viewport`)
+- the diff views (`#diffview`, `#review-diff-pane`)
+- Markdown code blocks (`pre.code-surface`, including forge-rendered comments)
+- the hover card signature
+
+A code surface paints `background: var(--background)` and
+`color: var(--foreground)`, so its background, gutter, selection, current line,
+search hits, diff fills and syntax all read the code theme. Toolbars, tabs, the
+sidebar and buttons around a surface keep the app theme. Where a fill the code
+themes do not define would show app chrome inside a surface — a blank diff side,
+the occurrence highlight, the scrollbar — the stylesheet scopes it to the
+surface's own tokens instead.
+
+A code theme may set only the tokens a code surface reads:
+
+| Group | Tokens |
+| --- | --- |
+| Surface and text | `--background`, `--foreground`, `--muted-foreground`, `--faint`, `--border` |
+| Selection and highlights | `--sel`, `--cur`, `--mark`, `--mark-active`, `--on-mark-active` |
+| Diffs and status | `--gi`, `--gd`, `--gi-bg`, `--gd-bg`, `--gi-word`, `--gd-word`, `--err`, `--warn` |
+| Syntax | `--k`, `--kt`, `--nf`, `--nc`, `--nb`, `--nv`, `--no`, `--na`, `--nt`, `--nd`, `--np`, `--s`, `--m`, `--o`, `--p`, `--c`, `--cp` |
+
+App-chrome tokens (`--sidebar`, `--popover`, `--primary`, `--ring`, the shadow
+tokens) are not part of a code theme: they would repaint chrome the surface must
+not touch. `web/src/contrast.test.ts` checks every built-in code theme: foreground
+and syntax at 4.5:1 on its own background, current line, composited selection
+(over the background and the current line) and composited diff fills, plus
+`on-mark-active` on `mark-active`; all four diff fills must stay visible.
 
 ### A complete new user theme
 

@@ -30,6 +30,74 @@ OS appearance changes update the app without reloading.
 
 Floating menus, popovers, the palette, dialogs and hover cards use frosted layers, as do the review header, PR footer, editor status footer and Git panel. In **Workbench > Transparency**, choose **off**, **subtle** (default) or **strong**; the OS reduce-transparency preference always forces solid layers.
 
+## Code themes
+
+The app theme colours the whole app. A **code theme** colours only code: the
+editor, the diff views, Markdown code blocks and the hover card signature. A
+toolbar, tab, sidebar or button around those surfaces keeps the app theme.
+
+There is one choice per app scheme. Open Settings with `Cmd/Ctrl+,`, then use
+**Workbench > Code Theme (Light)** and **Workbench > Code Theme (Dark)**. Each
+select lists **fibo** plus the installed themes that declare that scheme. The
+active app scheme decides which of the two applies, so switching Light and Dark
+swaps the code theme with it; in System mode the OS appearance decides, live.
+
+**fibo** is the default and has no file: it means "use the app theme's own code
+colours". The choice is saved as `workbench.codeTheme.light` and
+`workbench.codeTheme.dark`. An empty or unavailable ID falls back to fibo, and
+the server rejects unknown IDs.
+
+Built-in code themes:
+
+| ID | Name | Scheme |
+| --- | --- | --- |
+| `catppuccin-latte` | Catppuccin Latte | light |
+| `classic-light` | Classic Light | light |
+| `gruvbox-light` | Gruvbox Light | light |
+| `solarized-light` | Solarized Light | light |
+| `catppuccin-mocha` | Catppuccin Mocha | dark |
+| `classic-dark` | Classic Dark | dark |
+| `dracula` | Dracula | dark |
+| `gruvbox-dark` | Gruvbox Dark | dark |
+| `midnight` | Midnight | dark |
+| `monokai` | Monokai | dark |
+| `nord` | Nord | dark |
+| `one-dark` | One Dark | dark |
+| `rose-pine` | Rose Pine | dark |
+| `solarized-dark` | Solarized Dark | dark |
+
+## Add a code theme
+
+Put a CSS file in `~/.faah/themes/`, the same folder as user app themes, and
+reload. A code theme is recognised by its selector: it must end in
+`.code-surface`.
+
+```css
+:root[data-code-theme="my-code"] .code-surface {
+  --theme-name: "My Code";
+  color-scheme: dark;
+
+  --background: #14161a; --foreground: #d7dae0; --muted-foreground: #9aa0ab;
+  --faint: #6f7682; --border: #262b33;
+  --sel: #2b3550; --cur: #1b1f26; --mark: rgba(240, 200, 90, 0.25);
+  --mark-active: #f0c85a; --on-mark-active: #14161a;
+  --gi: #7bd88f; --gd: #f2777a; --gi-bg: rgba(123, 216, 143, 0.15);
+  --gd-bg: rgba(242, 119, 122, 0.15); --gi-word: #2b3f2f; --gd-word: #45282a;
+  --err: #f2777a; --warn: #f0c85a;
+  --k: #c792ea; --kt: #ffcb6b; --nf: #82aaff; --nc: #ffcb6b; --nb: #89ddff;
+  --nv: #d7dae0; --no: #f78c6c; --na: #ffcb6b; --nt: #82aaff; --nd: #f78c6c;
+  --np: #89ddff; --s: #c3e88d; --m: #f78c6c; --o: #89ddff; --p: #a6accd;
+  --c: #7f848e; --cp: #c792ea;
+}
+```
+
+`color-scheme` puts the theme in the light or dark select; a file without it
+sorts into light. `--theme-name` is the option label. A code theme may set only
+the tokens above — the [styling contract](../internals/styling-and-themes.md#code-themes-and-code-surfaces)
+lists each group. App-chrome tokens such as `--sidebar` or `--primary` belong to
+app themes; a code surface ignores them. User code themes share the app theme
+limits: 256 KiB per file and 1 MiB of user CSS per request.
+
 ## Override colours or add a theme
 
 Create `~/.faah/themes/` and put CSS files there. This data folder stays under

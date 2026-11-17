@@ -53,6 +53,17 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 						return
 					}
 				}
+				for _, key := range codeThemeKeys {
+					value, exists := raw[key]
+					if !exists {
+						continue
+					}
+					var id string
+					if json.Unmarshal(value, &id) != nil || !s.themes.HasCode(id) {
+						httpx.Fail(w, 400, "unknown code theme")
+						return
+					}
+				}
 			}
 			if err := settings.SaveRawJSON([]byte(rawStr)); err != nil {
 				httpx.Fail(w, 400, "invalid JSON in settings: "+err.Error())
@@ -63,6 +74,17 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 				id, ok := value.(string)
 				if !ok || !s.themes.Has(id) {
 					httpx.Fail(w, 400, "unknown color theme")
+					return
+				}
+			}
+			for _, key := range codeThemeKeys {
+				value, exists := payload[key]
+				if !exists {
+					continue
+				}
+				id, ok := value.(string)
+				if !ok || !s.themes.HasCode(id) {
+					httpx.Fail(w, 400, "unknown code theme")
 					return
 				}
 			}
@@ -90,12 +112,20 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// codeThemeKeys are the two per-scheme code theme preferences.
+var codeThemeKeys = []string{"workbench.codeTheme.light", "workbench.codeTheme.dark"}
+
 // Each response derives theme options from the CSS currently served to this workspace.
 func (s *Server) settingsSchema() []settings.SchemaItem {
 	schema := append([]settings.SchemaItem(nil), settings.Schema...)
 	for i := range schema {
-		if schema[i].Key == "workbench.colorTheme" {
+		switch schema[i].Key {
+		case "workbench.colorTheme":
 			schema[i].Options = append([]string{""}, s.themes.IDs()...)
+		case "workbench.codeTheme.light":
+			schema[i].Options = append([]string{""}, s.themes.CodeIDsByScheme("light")...)
+		case "workbench.codeTheme.dark":
+			schema[i].Options = append([]string{""}, s.themes.CodeIDsByScheme("dark")...)
 		}
 	}
 	return schema

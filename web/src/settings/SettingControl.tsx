@@ -1,6 +1,6 @@
 import { For, Match, Show, Switch, type Component } from 'solid-js';
 import { ThemeSwitch } from '../workbench/ThemeSwitch.tsx';
-import { listThemes } from '../lib/theme.ts';
+import { listCodeThemes, listThemes } from '../lib/theme.ts';
 import { useSettings } from './context.ts';
 import { segmentValue, type SettingControl as Control, type SettingItem } from './logic.ts';
 
@@ -8,6 +8,30 @@ interface ControlProps {
   item: SettingItem;
   control: Control;
 }
+
+/** One scheme's code theme choices: the app theme's own colours, then every theme of that scheme. */
+const CodeThemeSelect: Component<{ item: SettingItem; scheme: 'light' | 'dark' }> = (props) => {
+  const settings = useSettings();
+  const options = () => [
+    { id: '', name: 'fibo' },
+    ...listCodeThemes()
+      .filter((theme) => theme.scheme === props.scheme)
+      .map((theme) => ({ id: theme.id, name: theme.name })),
+  ];
+  return (
+    <select
+      id={'setting-' + props.item.key}
+      class="select w-48"
+      aria-label={'Code theme · ' + (props.scheme === 'light' ? 'Light' : 'Dark')}
+      value={String(settings.value(props.item.key) ?? '')}
+      onChange={(event) =>
+        void settings.actions.setSetting(props.item.key, event.currentTarget.value)
+      }
+    >
+      <For each={options()}>{(option) => <option value={option.id}>{option.name}</option>}</For>
+    </select>
+  );
+};
 
 const Segments: Component<{ item: SettingItem; options: (string | number)[]; label: string }> = (
   props,
@@ -74,6 +98,12 @@ export const SettingControl: Component<ControlProps & { invalid: boolean }> = (p
             </select>
           </Show>
         </div>
+      </Match>
+      <Match when={key() === 'workbench.codeTheme.light'}>
+        <CodeThemeSelect item={props.item} scheme="light" />
+      </Match>
+      <Match when={key() === 'workbench.codeTheme.dark'}>
+        <CodeThemeSelect item={props.item} scheme="dark" />
       </Match>
       <Match when={props.control.kind === 'switch' && props.control}>
         {(control) => (
