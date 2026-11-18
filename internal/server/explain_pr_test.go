@@ -173,6 +173,32 @@ func TestExplainTurnNotes(t *testing.T) {
 	}
 }
 
+func TestAgentThreadTurnNotes(t *testing.T) {
+	root := t.TempDir()
+	writeExplainSource(t, root, explainGoSource)
+	s := fakeAgentServer(t, root, fakeReply("ok\n"))
+	_, m := agentPostJSON(t, s, "/api/threads/create", map[string]any{"message": "how does main work?"})
+	id := m["id"].(string)
+	waitThreadIdle(t, s, id)
+	saveNotes(s, toolScope{tid: id, turn: 1}, []notes.Note{
+		{Path: "main.go", Kind: "line", L1: 4, L2: 4, Text: "\thelper()", Summary: "Call"},
+	})
+	for _, url := range []string{
+		"/api/explain/notes?thread=" + id + "&turn=1",
+		"/api/explain/notes?path=main.go&thread=" + id + "&turn=1",
+	} {
+		var reply struct{ Notes []notes.View }
+		code, raw := agentGet(t, s, url)
+		if code != 200 || json.Unmarshal(raw, &reply) != nil || len(reply.Notes) != 1 || reply.Notes[0].Summary != "Call" {
+			t.Fatalf("%s = %d %s", url, code, raw)
+		}
+	}
+	// Unscoped reads still list explanation notes only.
+	if got := fileNotes(t, s, "main.go"); len(got) != 0 {
+		t.Fatalf("path mode %+v", got)
+	}
+}
+
 func TestExplainPRWithoutOverview(t *testing.T) {
 	s := fixtureExplainPR(t)
 	snap := s.pr.Snapshot()

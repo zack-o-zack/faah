@@ -29,8 +29,13 @@ export function ThreadArtifacts(props: ThreadArtifactsProps): JSX.Element {
     }
     return [...groups.values()];
   });
+  // Any thread can save notes and walkthroughs; only an explanation shows its card while it runs.
+  const visible = () =>
+    (props.thread.kind === 'explain' && props.turn.running) ||
+    !!props.turn.notes?.length ||
+    !!props.turn.walkthroughs?.length;
   return (
-    <Show when={props.turn.running || props.turn.notes?.length || props.turn.walkthroughs?.length}>
+    <Show when={visible()}>
       <section
         data-ui="thr-artifacts"
         aria-label="Explanation on the code"
