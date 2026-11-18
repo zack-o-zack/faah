@@ -62,7 +62,7 @@ export function DiffStrip(props: DiffStripProps): JSX.Element {
         data-hunk-step="-1"
         onClick={() => props.stepHunk(-1)}
       >
-        <span class="icon-[lucide--arrow-up] size-3.5" aria-hidden="true" /> Hunk
+        <span class="icon-[ph--arrow-up]" aria-hidden="true" /> Hunk
       </button>
       <button
         class="btn"
@@ -72,7 +72,7 @@ export function DiffStrip(props: DiffStripProps): JSX.Element {
         data-hunk-step="1"
         onClick={() => props.stepHunk(1)}
       >
-        <span class="icon-[lucide--arrow-down] size-3.5" aria-hidden="true" /> Hunk
+        <span class="icon-[ph--arrow-down]" aria-hidden="true" /> Hunk
       </button>
       <button
         class="btn"
@@ -85,7 +85,7 @@ export function DiffStrip(props: DiffStripProps): JSX.Element {
         aria-pressed={!!editor.store.state.viewers.viewed[props.document.path]}
         onClick={viewed}
       >
-        <span class="icon-[lucide--check] size-3.5" aria-hidden="true" /> Viewed
+        <span class="icon-[ph--check]" aria-hidden="true" /> Viewed
       </button>
       <Show when={commit.loading}>
         <span role="status">Loading commit files…</span>
@@ -107,7 +107,7 @@ export function DiffStrip(props: DiffStripProps): JSX.Element {
           disabled={commitStepTarget(files(), index(), -1) < 0}
           onClick={() => step(-1)}
         >
-          <span class="icon-[lucide--chevron-left] size-3.5" aria-hidden="true" />
+          <span class="icon-[ph--caret-left]" aria-hidden="true" />
         </button>
         <button
           class="btn"
@@ -119,7 +119,7 @@ export function DiffStrip(props: DiffStripProps): JSX.Element {
           disabled={commitStepTarget(files(), index(), 1) < 0}
           onClick={() => step(1)}
         >
-          <span class="icon-[lucide--chevron-right] size-3.5" aria-hidden="true" />
+          <span class="icon-[ph--caret-right]" aria-hidden="true" />
         </button>
       </Show>
     </div>

@@ -7,14 +7,19 @@ import { ReviewTabs } from './ReviewTabs.tsx';
 import { Walkthrough } from './Walkthrough.tsx';
 import { StageList } from './StageList.tsx';
 import { StageView } from './StageView.tsx';
+import { PRBar } from '../pr/PRBar.tsx';
 export function ReviewView(): JSX.Element {
-  const review = useEditor().review;
+  const editor = useEditor();
+  const review = editor.review;
   return (
     <Show when={review.state.mode === 'review'}>
       <div
         id="review-view"
         class={`group/review relative flex min-h-min flex-1 flex-col overflow-hidden layout-${review.state.layout}`}
       >
+        <Show when={editor.pr.available()}>
+          <PRBar />
+        </Show>
         <ReviewTabs />
         {/* Tab contents scroll within this space instead of contributing their full intrinsic height. */}
         <div class="relative flex min-h-24 flex-1 flex-col overflow-hidden [contain:size]">

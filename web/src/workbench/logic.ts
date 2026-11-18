@@ -8,6 +8,15 @@ export function fieldKind(value: string): 'empty' | 'dir' | 'pr' | 'link' {
 }
 export const tildify = (path: string, home: string, sep = '/'): string =>
   home && (path === home || path.startsWith(home + sep)) ? '~' + path.slice(home.length) : path;
+export function parentFolder(path: string, home: string, sep = '/'): string {
+  let folder = path;
+  const rootLength = sep === '\\' && folder[1] === ':' ? 3 : sep.length;
+  while (folder.length > rootLength && folder.endsWith(sep)) folder = folder.slice(0, -sep.length);
+  const at = folder.lastIndexOf(sep);
+  if (at < 0) return '';
+  const parent = at < rootLength ? folder.slice(0, rootLength) : folder.slice(0, at);
+  return tildify(parent, home, sep);
+}
 export function ago(ms: number, now = Date.now()): string {
   const seconds = Math.max(0, (now - ms) / 1000);
   if (seconds < 60) return 'just now';
@@ -16,15 +25,17 @@ export function ago(ms: number, now = Date.now()): string {
   if (seconds < 86400 * 30) return Math.floor(seconds / 86400) + 'd ago';
   return new Date(ms).toLocaleDateString();
 }
-export function recentGroups<T extends { pinned?: boolean }>(
+export function recentSections<T extends { kind?: string; pinned?: boolean; lastOpened?: number }>(
   items: T[],
   showAll: boolean,
-): { pinned: T[]; recent: T[]; total: number } {
-  const pinned = items.filter((item) => item.pinned);
-  const rest = items.filter((item) => !item.pinned);
+): { prs: T[]; folders: T[]; total: number } {
+  const newest = [...items].sort((a, b) => (b.lastOpened || 0) - (a.lastOpened || 0));
+  const pinned = newest.filter((item) => item.pinned);
+  const rest = newest.filter((item) => !item.pinned);
+  const visible = [...pinned, ...(showAll ? rest : rest.slice(0, Math.max(0, 12 - pinned.length)))];
   return {
-    pinned,
-    recent: showAll ? rest : rest.slice(0, Math.max(0, 12 - pinned.length)),
+    prs: visible.filter((item) => item.kind === 'pr'),
+    folders: visible.filter((item) => item.kind !== 'pr'),
     total: items.length,
   };
 }
@@ -51,6 +62,6 @@ export function openLabel(kind: string): string {
 export function recentSubtitle(item: RecentItem, home: string, sep: string): string {
   if (item.state === 'failed') return item.error || '';
   if (item.state === 'starting') return item.progress || '';
-  if (item.kind === 'pr') return `${item.repo}#${item.number}`;
-  return tildify(item.path, home, sep);
+  if (item.kind === 'pr') return item.repo || '';
+  return parentFolder(item.path, home, sep);
 }

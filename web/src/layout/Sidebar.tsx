@@ -15,8 +15,15 @@ export function Sidebar(): JSX.Element {
       class="flex shrink-0 flex-col overflow-hidden border-r bg-sidebar text-sidebar-foreground"
     >
       <TreeToolbar />
-      <TreeScope />
-      <Tree />
+      <div
+        id="tree-panel"
+        role="tabpanel"
+        aria-labelledby={editor.tree.mode() === 'files' ? 'btn-files' : 'btn-changed'}
+        class="flex min-h-0 flex-1 flex-col"
+      >
+        <TreeScope />
+        <Tree />
+      </div>
       <Unpushed />
       <GitPanel />
     </aside>

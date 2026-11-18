@@ -19,27 +19,26 @@ interface ComposerInput {
   delL1?: number;
   delL2?: number;
 }
-// The forge's own state colours, so a glance reads the same as on the forge.
 export const PR_STATES = {
   open: {
     label: 'Open',
-    icon: 'icon-[lucide--git-pull-request]',
-    color: 'text-[#1a7f37] dark:text-[#3fb950]',
+    icon: 'icon-[ph--git-pull-request]',
+    tone: 'open',
   },
   draft: {
     label: 'Draft',
-    icon: 'icon-[lucide--git-pull-request-draft]',
-    color: 'text-muted-foreground',
+    icon: 'icon-[ph--pencil-line]',
+    tone: 'draft',
   },
   merged: {
     label: 'Merged',
-    icon: 'icon-[lucide--git-merge]',
-    color: 'text-[#8250df] dark:text-[#a371f7]',
+    icon: 'icon-[ph--git-merge]',
+    tone: 'merged',
   },
   closed: {
     label: 'Closed',
-    icon: 'icon-[lucide--git-pull-request-closed]',
-    color: 'text-[#cf222e] dark:text-[#f85149]',
+    icon: 'icon-[ph--prohibit]',
+    tone: 'closed',
   },
 };
 
@@ -133,8 +132,26 @@ export function commentThreads(
     .sort((a, b) => a.path.localeCompare(b.path) || a.line - b.line);
 }
 
-export const sortedByTime = <T extends { createdAt?: string }>(comments: T[]): T[] =>
-  comments.slice().sort(byTime);
+export type ActivityItem =
+  { kind: 'issue'; comment: PRComment } | { kind: 'thread'; thread: CommentThread };
+
+const activityTime = (item: ActivityItem): string =>
+  item.kind === 'issue' ? item.comment.createdAt || '' : item.thread.existing[0]?.createdAt || '';
+
+/**
+ * Issue comments and review threads as one list, oldest first. A thread is timed
+ * by its first comment; entries without a time keep their input order ahead of
+ * timed ones, as `byTime` does for comments.
+ */
+export function activityItems(
+  issueComments: PRComment[],
+  threads: CommentThread[],
+): ActivityItem[] {
+  return [
+    ...issueComments.map((comment): ActivityItem => ({ kind: 'issue', comment })),
+    ...threads.map((thread): ActivityItem => ({ kind: 'thread', thread })),
+  ].sort((a, b) => activityTime(a).localeCompare(activityTime(b)));
+}
 
 /** Comment counts per diff line key, for gutter markers. */
 export function markerCounts(
@@ -278,11 +295,11 @@ export function mergePill(
 }
 
 export const PILL_ICONS: Record<string, string> & { muted: string } = {
-  err: 'icon-[lucide--triangle-alert]',
-  warn: 'icon-[lucide--circle-alert]',
-  busy: 'icon-[lucide--loader-circle] animate-spin',
-  ok: 'icon-[lucide--circle-check]',
-  muted: 'icon-[lucide--circle-dashed]',
+  err: 'icon-[ph--warning]',
+  warn: 'icon-[ph--warning-circle]',
+  busy: 'icon-[ph--circle-notch] animate-spin',
+  ok: 'icon-[ph--check-circle]',
+  muted: 'icon-[ph--circle-dashed]',
 };
 
 export interface MergeMethod {
@@ -366,7 +383,7 @@ export function splitMessage(text: string): { title: string; message: string } {
 }
 
 export const FORGE_SOURCES: Record<string, string> = {
-  settings: 'a token saved in faah Settings',
+  settings: 'a token saved in fibo settings',
   env: 'an environment variable',
   gh: 'the GitHub CLI (gh)',
   glab: 'the GitLab CLI (glab)',

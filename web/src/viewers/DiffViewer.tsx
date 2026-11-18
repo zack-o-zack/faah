@@ -163,7 +163,7 @@ export function DiffViewer(): JSX.Element {
     <div
       id="diffview"
       ref={viewport}
-      class="absolute inset-0 overflow-auto bg-background"
+      class="code-surface absolute inset-0 overflow-auto bg-background"
       hidden={!visible()}
       onScroll={() => {
         if (!viewport) return;

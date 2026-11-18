@@ -15,7 +15,7 @@ export function DiffOptions(props: { id: string }): JSX.Element {
       variant="ghost"
       size="icon-xs"
       autofocus
-      label={<span class="icon-[lucide--settings] size-3.5 shrink-0" aria-hidden="true" />}
+      label={<span class="icon-[ph--gear-six] shrink-0" aria-hidden="true" />}
     >
       <div class="flex flex-col gap-3 p-3 text-xs">
         <h3 class="font-medium">Diff options</h3>
@@ -34,11 +34,7 @@ export function DiffOptions(props: { id: string }): JSX.Element {
                   class="btn"
                   data-size="sm"
                   aria-pressed={editor.settings.preferences().splitDiff === option.split}
-                  data-variant={
-                    editor.settings.preferences().splitDiff === option.split
-                      ? 'secondary'
-                      : 'outline'
-                  }
+                  data-variant="outline"
                   onClick={() =>
                     void editor.settings.actions.setSetting(
                       'diffEditor.renderSideBySide',

@@ -230,6 +230,9 @@ test.each([false, true])(
     await waitFor(() => expect(f.editor.review.state.tab).toBe('walkthrough'));
     await screen.findByRole('button', { name: 'Why the value changes' });
     expect(f.request).toHaveBeenCalledWith('api/explain/notes', { thread: 'pr', turn: 1 });
+    const summary = screen.getByRole('button', { name: 'Why the value changes' });
+    const line = required(document.querySelector('.review-diff-row[data-new-line="2"]'));
+    expect(summary.compareDocumentPosition(line) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Show 1 note' })).toBeTruthy();
     await fireEvent.click(screen.getByRole('button', { name: 'Why the value changes' }));
     expect(screen.getByRole('region', { name: 'Explanation detail' }).textContent).toContain(
@@ -237,6 +240,13 @@ test.each([false, true])(
     );
     await fireEvent.click(screen.getByRole('button', { name: 'Why the value changes' }));
     expect(screen.queryByRole('region', { name: 'Explanation detail' })).toBeNull();
+    const ghost = required(
+      screen.getByRole('button', { name: 'Why the value changes' }).closest('[data-note]'),
+    );
+    await fireEvent.mouseEnter(ghost);
+    expect(document.querySelectorAll('.review-diff-row.opacity-30').length).toBeGreaterThan(0);
+    await fireEvent.mouseLeave(ghost);
+    expect(document.querySelectorAll('.review-diff-row.opacity-30')).toHaveLength(0);
     const reveal = vi.spyOn(f.editor.review.actions, 'revealWalkthrough');
     await fireEvent.click(screen.getByRole('button', { name: 'Start' }));
     await waitFor(() => expect(f.editor.walkthrough.surface()).toBe('review'));
@@ -244,14 +254,11 @@ test.each([false, true])(
     expect(f.editor.active()).toBeNull();
     expect(f.editor.walkthrough.outdated()).toBe(false);
     expect(document.querySelectorAll('[data-walk-title]')).toHaveLength(1);
-    const focused = required(document.querySelector('[data-new-line="2"]')) as HTMLElement;
-    expect(focused.style.opacity).toBe('1');
-    expect(
-      (required(document.querySelector('[data-new-line="1"]')) as HTMLElement).style.opacity,
-    ).toBe('0.3');
-    expect((required(document.querySelector('.diff-type-del')) as HTMLElement).style.opacity).toBe(
-      '0.3',
-    );
+    const muted = (selector: string) =>
+      required(document.querySelector(selector)).classList.contains('opacity-35');
+    expect(muted('[data-new-line="2"]')).toBe(false);
+    expect(muted('[data-new-line="1"]')).toBe(true);
+    expect(muted('.diff-type-del')).toBe(true);
     const open = vi.spyOn(f.editor.review.actions, 'openReviewReference');
     await fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     await waitFor(() => expect(reveal).toHaveBeenCalledWith('a.go', 8));
@@ -312,8 +319,17 @@ test.each([false, true])(
 test('running PR explanations disable the review action and empty-path rows show the title', async () => {
   const f = mount();
   f.editor.actions.setReviewMode('review');
+  const explain = screen.getByRole<HTMLButtonElement>('button', { name: 'Explain PR' });
+  const icon = required(explain.querySelector('.icon-\\[ph--spinner\\]'));
+  expect(icon.classList.contains('motion-safe:animate-spin')).toBe(false);
   f.editor.actions.acceptThread(decodeThread({ ...thread, turns: [{ id: 1, running: true }] }));
-  expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Explain PR' }).disabled).toBe(true);
+  expect(explain.disabled).toBe(true);
+  expect(explain.querySelector('.icon-\\[ph--spinner\\]')).toBe(icon);
+  expect(icon.classList.contains('motion-safe:animate-spin')).toBe(true);
+  expect(explain.querySelector('.fibo-spiral')).toBeNull();
+  f.editor.actions.acceptThread(thread);
+  expect(explain.disabled).toBe(false);
+  expect(icon.classList.contains('motion-safe:animate-spin')).toBe(false);
   const row = render(() => (
     <ThreadListRow
       thread={{ id: 'pr', title: 'Explain PR #7', path: '', kind: 'explain' }}
@@ -521,8 +537,9 @@ test.each([1, 2])(
     });
     const open = vi.spyOn(f.editor.review.actions, 'openReviewReference');
     await fireEvent.click(button);
-    await screen.findByRole('button', { name: 'Outside note' });
-    if (count === 2) await screen.findByRole('button', { name: 'Another outside note' });
+    await screen.findByText('Outside note', { selector: '[data-note-inline] .truncate' });
+    if (count === 2)
+      await screen.findByText('Another outside note', { selector: '[data-note-inline] .truncate' });
     expect(screen.queryByRole('button', { name: /Show \d+ notes?/ })).toBeNull();
     expect(f.editor.review.state.mode).toBe('review');
     expect(open).not.toHaveBeenCalled();

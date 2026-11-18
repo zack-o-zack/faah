@@ -18,15 +18,15 @@ export function StageTurn(props: StageTurnProps): JSX.Element {
       <Show
         when={props.first}
         fallback={
-          <div class="ml-8 min-w-0 self-end rounded-lg bg-muted px-3 py-2 text-sm">
+          <div class="ml-8 min-w-0 self-end rounded-2xl bg-muted px-3 py-2 text-sm">
             <Markdown text={props.turn.prompt || ''} onOpen={open} />
           </div>
         }
       >
-        <details class="group/instr rounded-md border px-3 py-2 text-xs text-muted-foreground">
+        <details class="group/instr rounded-xl border px-3 py-2 text-xs text-muted-foreground">
           <summary class="flex cursor-pointer list-none items-center gap-1.5">
             <span
-              class="icon-[lucide--chevron-right] size-3 shrink-0 group-open/instr:rotate-90"
+              class="icon-[ph--caret-right] shrink-0 group-open/instr:rotate-90"
               aria-hidden="true"
             />
             Instructions sent to the harness
@@ -39,14 +39,14 @@ export function StageTurn(props: StageTurnProps): JSX.Element {
       <Show when={props.turn.reply || props.turn.running}>
         <div class="flex min-w-0 flex-col gap-2">
           <span class="flex items-center gap-1.5 text-xs font-medium text-special">
-            <span class="icon-[lucide--sparkle] size-3 shrink-0" aria-hidden="true" />
+            <span class="icon-[ph--spinner] shrink-0" aria-hidden="true" />
             {props.turn.model || 'Coding harness'}
           </span>
           <Show when={props.turn.tools?.length}>
             <details class="group/steps text-xs text-muted-foreground">
               <summary class="flex cursor-pointer list-none items-center gap-1.5">
                 <span
-                  class="icon-[lucide--chevron-right] size-3 shrink-0 group-open/steps:rotate-90"
+                  class="icon-[ph--caret-right] shrink-0 group-open/steps:rotate-90"
                   aria-hidden="true"
                 />
                 {props.turn.tools?.length} step{props.turn.tools?.length === 1 ? '' : 's'}
@@ -61,7 +61,7 @@ export function StageTurn(props: StageTurnProps): JSX.Element {
             fallback={
               <span class="inline-flex items-center gap-2 text-sm text-muted-foreground">
                 <span
-                  class="icon-[lucide--loader-circle] size-3.5 animate-spin"
+                  class="icon-[ph--spinner] shrink-0 motion-safe:animate-spin"
                   aria-hidden="true"
                 />
                 Reading the changes…

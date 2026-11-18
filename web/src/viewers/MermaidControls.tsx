@@ -13,7 +13,7 @@ export function MermaidControls(props: MermaidControlsProps): JSX.Element {
       <div class="md-mermaid-controls" role="group" aria-label="Diagram zoom controls">
         <DiagramButton
           label="Zoom out diagram (or Ctrl+Scroll)"
-          icon="icon-[lucide--minus]"
+          icon="icon-[ph--minus]"
           disabled={props.zoom <= 0.25}
           onClick={() => props.step(-1)}
         />
@@ -31,23 +31,23 @@ export function MermaidControls(props: MermaidControlsProps): JSX.Element {
         </button>
         <DiagramButton
           label="Zoom in diagram (or Ctrl+Scroll)"
-          icon="icon-[lucide--plus]"
+          icon="icon-[ph--plus]"
           disabled={props.zoom >= 4}
           onClick={() => props.step(1)}
         />
         <DiagramButton
           label="Fit diagram to view"
-          icon="icon-[lucide--scan]"
+          icon="icon-[ph--scan]"
           onClick={() => props.fit()}
         />
         <DiagramButton
           label={props.fullscreen ? 'Exit full screen (Esc)' : 'Full screen'}
-          icon={props.fullscreen ? 'icon-[lucide--minimize-2]' : 'icon-[lucide--maximize-2]'}
+          icon={props.fullscreen ? 'icon-[ph--arrows-in]' : 'icon-[ph--arrows-out]'}
           onClick={() => props.toggleFullscreen()}
         />
         <DiagramButton
           label="Close full screen (Esc)"
-          icon="icon-[lucide--x]"
+          icon="icon-[ph--x]"
           class="btn md-mermaid-fs-only"
           onClick={() => props.toggleFullscreen()}
         />
@@ -62,7 +62,7 @@ export function MermaidControls(props: MermaidControlsProps): JSX.Element {
         aria-label="Close full screen"
         onClick={() => props.toggleFullscreen()}
       >
-        <span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true" />
+        <span class="icon-[ph--x] shrink-0" aria-hidden="true" />
       </button>
     </>
   );
@@ -86,7 +86,7 @@ function DiagramButton(props: {
       disabled={props.disabled}
       onClick={() => props.onClick()}
     >
-      <span class={`${props.icon} size-3.5`} aria-hidden="true" />
+      <span class={`${props.icon}`} aria-hidden="true" />
     </button>
   );
 }

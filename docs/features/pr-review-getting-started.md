@@ -34,7 +34,7 @@ You can also open a PR from a running faah (`Cmd/Ctrl+K` → **Git: Open Pull Re
 
 You can read any public PR without a token. To comment, review, push, or merge, faah needs one.
 
-**The quick way:** click **No &lt;forge&gt; token — click to connect** in the PR bar. The Connect dialog links to the token page on your forge, lists what to pick there, and checks the token when you paste it. The token is saved and takes effect immediately, so there is nothing to restart.
+**The quick way:** click **Connect &lt;forge&gt;** in the PR header. The Connect dialog links to the token page on your forge, lists what to pick there, and checks the token when you paste it. The token is saved and takes effect immediately, so there is nothing to restart.
 
 The same steps, per forge:
 
@@ -85,8 +85,8 @@ Tokens are saved in your faah settings file (`~/.faah/settings.json`, or `$XDG_C
 
 - **See the change in context.** The sidebar's **Changes** view lists the files the PR touches; `Cmd/Ctrl+D` toggles a file's diff against the PR's merge-base. Go to definition (`F12`), find references, and search all work across the whole repository, not just the diff.
 - **Comment on a line.** Select lines and press `Alt+R` (or hover a line number and pick **Add Review Comment**). Comments are drafts until you submit them, and they survive closing faah.
-- **Read and reply to the discussion.** The **Comments** panel at the bottom shows the PR's existing conversation and inline threads; reply in place.
-- **Submit.** Write an optional summary in the PR bar, then **Submit Review**, **Request Changes**, or **Approve**. Your drafts go with it. Approve and Request Changes appear when your token has push access.
+- **Read and reply to the discussion.** **Overview** lists the PR's conversation and inline review threads in time order, with a comment box underneath; reply in place.
+- **Submit.** Write an optional summary in the PR header, then **Submit Review**, **Request Changes**, or **Approve**. Your drafts go with it. Approve and Request Changes appear when your token has push access.
 
 ---
 
@@ -103,7 +103,7 @@ The checkout is a real git worktree with the full git panel:
 
 ## 5. Bring the PR up to date with its base
 
-When the base branch has moved on, the status pill in the PR bar shows **Conflicts with main** or **Behind main**, and the merge button becomes **Resolve conflicts** or **Update branch**. Click it:
+When the base branch has moved on, the status pill in the PR header shows **Conflicts with main** or **Behind main**, and the merge button becomes **Resolve conflicts** or **Update branch**. Click it:
 
 1. faah fetches the base branch and asks, in the git panel: **✨ Rebase** or **✨ Merge**? Pick the harness and model there.
 2. The harness resolves any conflicts and finishes. It never pushes.
@@ -118,7 +118,7 @@ While the rebase runs, or sits unpushed, **Approve** and **Merge** wait. Otherwi
 When the pill says **Ready to merge**, use the split button next to Approve:
 
 1. Pick the method from the caret: **Create a merge commit**, **Squash and merge**, or **Rebase and merge**. Only the methods your repository allows are listed, and faah remembers your choice.
-2. In the dialog, edit the commit title and message. **Rewrite with AI** drafts them from the PR's commits and diff, following your Commit Message Instructions (Settings → Git & Diff) and anything you type next to the button.
+2. In the dialog, edit the commit title and message. **Rewrite** drafts them from the PR's commits and diff, following your Commit Message Instructions (Settings → Git & Diff) and anything you type next to the button.
 3. **Confirm**. faah merges exactly the commit you reviewed. If the PR changed since, the merge is refused and faah asks you to pull first.
 
 ---
@@ -137,7 +137,7 @@ When the pill says **Ready to merge**, use the split button next to Approve:
 | *The PR has new commits since this checkout* | Someone pushed after you loaded the PR. | **Pull**, review the new commits, then merge. |
 | *someone else pushed … since this checkout* on force-push | The lease protected their commits; your rebase exists only in this checkout. | Reopen the PR (`faah <url>`) to pick up their commits, then **Resolve conflicts** again. |
 | *diff base unresolved* badge, empty diff | faah couldn't fetch the base branch. | Check that the token can read the repository, then **Pull** to retry. |
-| **✨ Resolve** / **Rewrite with AI** missing | No coding harness is installed. | Install one (see [Editing with Coding Agents](agent-editing.md)). |
+| **Resolve** / **Rewrite** missing | No coding harness is installed. | Install one (see [Editing with Coding Agents](agent-editing.md)). |
 
 ---
 

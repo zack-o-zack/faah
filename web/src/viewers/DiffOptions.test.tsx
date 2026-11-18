@@ -6,6 +6,7 @@ import { createEditorStore } from '../editor/store.ts';
 import { EditorProvider } from '../editor/context.tsx';
 import { FileActions } from '../editor/FileActions.tsx';
 import { ReviewTabs } from '../review/ReviewTabs.tsx';
+import { Walkthrough } from '../review/Walkthrough.tsx';
 import { WalkthroughFile } from '../review/WalkthroughFile.tsx';
 import { DiffViewer } from './DiffViewer.tsx';
 import { required } from '../lib/test-values.ts';
@@ -79,6 +80,7 @@ async function mount(working = false, walkthrough = false) {
       <FileActions />
       <DiffViewer />
       <ReviewTabs />
+      <Walkthrough />
       <Show when={walkthrough}>
         <div data-testid="walkthrough-file">
           <WalkthroughFile
@@ -130,6 +132,7 @@ test('editor and walkthrough options derive distinct switch ids and share settin
   editor.store.actions.setWorkspace({ git: true, pr: prMeta() });
   editor.actions.setReviewMode('review');
   editor.actions.setReviewTab('walkthrough');
+  await waitFor(() => expect(document.getElementById('btn-walkthrough-options')).not.toBeNull());
   fireEvent.click(required(document.getElementById('diff-options')));
   const first = screen.getByRole('switch', { name: 'Ignore whitespace' }).id;
   fireEvent.click(screen.getByRole('switch', { name: 'Ignore whitespace' }));
@@ -207,6 +210,7 @@ test('both changed-word switches have unique labels and write the shared setting
   editor.store.actions.setWorkspace({ git: true, pr: prMeta() });
   editor.actions.setReviewMode('review');
   editor.actions.setReviewTab('walkthrough');
+  await waitFor(() => expect(document.getElementById('btn-walkthrough-options')).not.toBeNull());
   fireEvent.click(required(document.getElementById('diff-options')));
   fireEvent.click(required(document.getElementById('btn-walkthrough-options')));
   const switches = screen.getAllByRole('switch', { name: 'Highlight changed words' });

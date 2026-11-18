@@ -26,6 +26,31 @@ export const keyParts = (combo: string, mac = isMac): string[] => {
   const value = combo.includes('|') ? combo.split('|')[mac ? 1 : 0] || '' : combo;
   return value ? value.split('+').map((k) => (mac ? MAC_KEYS : PC_KEYS)[k] || k) : [];
 };
+const KEY_NAMES: Record<string, string> = {
+  '⌘': 'Command',
+  '⌃': 'Control',
+  '⌥': 'Option',
+  '⇧': 'Shift',
+  '↩': 'Return',
+  '←': 'Left',
+  '→': 'Right',
+  '↑': 'Up',
+  '↓': 'Down',
+};
+/** A chord as one cap: modifiers and key together (`⌘⇧P`, `⌃D`). */
+export function keyChord(combo: string, mac = isMac): string {
+  return keyParts(combo, mac).join(mac ? '' : '+');
+}
+/** The readable name of a glyph cap, or undefined for ordinary keys. */
+export function keyGlyphName(key: string): string | undefined {
+  return KEY_NAMES[key];
+}
+/** The readable name of a whole chord, for the cap's label and title. */
+export function keyChordLabel(combo: string, mac = isMac): string {
+  return keyParts(combo, mac)
+    .map((part) => KEY_NAMES[part] || part)
+    .join(' ');
+}
 export function keyLabel(combo: string, mac = isMac): string {
   const parts = keyParts(combo, mac);
   if (!mac) return parts.join('+');

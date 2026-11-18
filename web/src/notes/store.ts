@@ -6,7 +6,7 @@ import type { Note, Citation } from '../threads/decode.ts';
 import { decodeNote, decodeCitations } from '../threads/decode.ts';
 import { record, list, text, number } from '../lib/decode.ts';
 import { GHOST_PADDING_TOP, GHOST_PADDING_BOTTOM } from './layout.ts';
-import { api, apiPostJson } from '../lib/api.ts';
+import { api } from '../lib/api.ts';
 export interface NoteView extends Note {
   thread: string;
   turn: number;
@@ -32,13 +32,12 @@ export function createNotesStore(
   source: Accessor<{ path: string; version: string } | false>,
   lineHeight: Accessor<number>,
   bubble: Accessor<OrbModel | null>,
-  options: { request?: Request; post?: Request; all?: boolean } = {},
+  options: { request?: Request; all?: boolean } = {},
 ) {
   const [hovered, setHovered] = createSignal<NoteView | null>(null);
   const [expanded, setExpanded] = createSignal('');
-  const [measurement, setMeasurement] = createSignal({ key: '', height: 0 });
   const [error, setError] = createSignal('');
-  const [notes, { refetch, mutate }] = createResource(
+  const [notes, { refetch }] = createResource(
     () => {
       const model = bubble();
       const target = source();
@@ -86,11 +85,6 @@ export function createNotesStore(
     const note = hovered();
     return note ? visible().find((item) => noteKey(item) === noteKey(note)) || null : null;
   });
-  const extraHeights = createMemo(() => {
-    const note = expandedNote();
-    const measured = measurement();
-    return note && measured.key === noteKey(note) ? { [note.l1 - 1]: measured.height } : {};
-  });
   // References are checked in the background by the server. Revisit only while notes are shown.
   const timer = setInterval(() => {
     if (bubble()?.id && source() && visible().some((n) => n.kind === 'symbol')) void refetch();
@@ -112,8 +106,7 @@ export function createNotesStore(
     rowHeight: () => lineHeight() + GHOST_PADDING_TOP + GHOST_PADDING_BOTTOM,
     heightBefore(line: number) {
       return (
-        (extraRows()[line - 1] || 0) * (lineHeight() + GHOST_PADDING_TOP + GHOST_PADDING_BOTTOM) +
-        (extraHeights()[line - 1] || 0)
+        (extraRows()[line - 1] || 0) * (lineHeight() + GHOST_PADDING_TOP + GHOST_PADDING_BOTTOM)
       );
     },
     expanded: expandedNote,
@@ -130,31 +123,14 @@ export function createNotesStore(
       const note = activeHover();
       return !!note && line >= note.l1 && line <= note.l2;
     },
-    extraRows,
-    extraHeights,
-    measureDetail(note: NoteView, height: number) {
-      if (
-        height > 0 &&
-        (measurement().key !== noteKey(note) || Math.abs(measurement().height - height) >= 0.5)
-      )
-        setMeasurement({ key: noteKey(note), height });
-    },
-    error,
-    refetch,
-    async dismiss(note: NoteView) {
-      await (options.post || apiPostJson)('api/explain/notes/dismiss', {
-        thread: note.thread,
-        turn: note.turn,
-        index: note.index,
-      });
-      if (expanded() === noteKey(note)) setExpanded('');
-      mutate((notes) => notes?.filter((n) => noteKey(n) !== noteKey(note)));
-      setHovered(null);
-    },
+    /** Lines outside the hovered note fade so its range stands out. */
     dimmed(line: number) {
       const note = activeHover();
       return !!note && (line < note.l1 || line > note.l2);
     },
+    extraRows,
+    error,
+    refetch,
     hoverLine(line: number) {
       setHovered(visible().find((n) => line >= n.l1 && line <= n.l2) || null);
     },
@@ -165,7 +141,7 @@ export function createNotesStore(
 export function createTurnNotes(
   bubble: Accessor<OrbModel | null>,
   lineHeight: Accessor<number>,
-  options: { active: Accessor<boolean>; request?: Request; post?: Request },
+  options: { active: Accessor<boolean>; request?: Request },
 ) {
   const notes = createNotesStore(
     () =>
@@ -189,10 +165,13 @@ export function createTurnNotes(
     highlighted(path: string, line: number) {
       return notes.hovered()?.path === path && notes.highlighted(line);
     },
+    dimmed(path: string, line: number) {
+      return notes.hovered()?.path === path && notes.dimmed(line);
+    },
   };
 }
 
 export type NotesAPI = Pick<
   ReturnType<typeof createNotesStore>,
-  'expanded' | 'showDetail' | 'collapse' | 'hovered' | 'setHovered' | 'dismiss' | 'measureDetail'
+  'expanded' | 'showDetail' | 'collapse' | 'hovered' | 'setHovered'
 >;

@@ -19,8 +19,10 @@ test('metrics chip and open popover follow workspace publications', () => {
     );
   });
   const button = screen.getByRole('button', { name: 'Process metrics' });
-  expect(button.textContent).toContain('2.0 KB');
+  expect(button.textContent).toBe('');
+  expect(button.querySelector('.icon-\\[ph--pulse\\]')).toBeTruthy();
   fireEvent.click(button);
+  expect(screen.getByText('2.0 KB')).toBeTruthy();
   expect(required(screen.getByText('Goroutines').nextElementSibling).textContent).toBe('4');
   required(app).actions.acceptMetrics({
     cpuUsage: 4.5,
@@ -29,9 +31,12 @@ test('metrics chip and open popover follow workspace publications', () => {
     lspEnabled: true,
     lspMemBytes: 1024,
   });
-  expect(button.textContent).toContain('4.5%');
+  expect(screen.getByText('4.5%')).toBeTruthy();
   expect(required(screen.getByText('Goroutines').nextElementSibling).textContent).toBe('8');
-  expect(button.textContent).toContain('LSP 1.0 KB');
+  expect(required(screen.getByText('Language servers').nextElementSibling).textContent).toBe(
+    '1.0 KB',
+  );
+  expect(button.textContent).toBe('');
   fireEvent.keyDown(document, { key: 'Escape' });
   expect(screen.queryByRole('dialog')).toBeNull();
 });

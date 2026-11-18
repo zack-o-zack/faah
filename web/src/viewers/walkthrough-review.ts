@@ -21,4 +21,3 @@ export function reviewRangeText(file: WalkthroughFile, l1: number, l2: number): 
 export function reviewContainsRange(file: WalkthroughFile, l1: number, l2: number): boolean {
   return reviewRangeText(file, l1, l2) !== null;
 }
-export const WALK_DIM_OPACITY = 0.3;

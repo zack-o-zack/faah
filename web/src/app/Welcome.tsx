@@ -1,5 +1,6 @@
 import { For, Show, type Component } from 'solid-js';
-import { keyCaps } from '../lib/keyboard.ts';
+import { Kbd } from '../lib/shortcuts.tsx';
+import { Brand } from '../brand/Brand.tsx';
 
 interface Hint {
   combo?: string;
@@ -34,21 +35,8 @@ export const Welcome: Component<WelcomeProps> = (props) => (
     hidden={props.hidden}
   >
     <div class="empty text-muted-foreground">
-      <div class="mb-6 flex items-end justify-center gap-2">
-        <img
-          class="hidden dark:block"
-          src="static/logo-dark.svg"
-          alt="faah"
-          width="160"
-          height="60"
-        />
-        <img
-          class="block dark:hidden"
-          src="static/logo-light.svg"
-          alt="faah"
-          width="160"
-          height="60"
-        />
+      <div class="mb-6 flex items-end justify-center gap-2 font-display">
+        <Brand size="welcome" />
         <span id="empty-ver" class="font-mono text-xs text-primary-text">
           <Show when={props.version}>v{props.version}</Show>
         </span>
@@ -57,13 +45,7 @@ export const Welcome: Component<WelcomeProps> = (props) => (
         <For each={HINTS}>
           {(hint) => (
             <>
-              <dt>
-                {hint.combo ? (
-                  <For each={keyCaps(hint.combo)}>{(key) => <kbd class="kbd">{key}</kbd>}</For>
-                ) : (
-                  hint.label
-                )}
-              </dt>
+              <dt>{hint.combo ? <Kbd combo={hint.combo} /> : hint.label}</dt>
               <dd>{hint.text}</dd>
             </>
           )}

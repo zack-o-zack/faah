@@ -18,6 +18,11 @@ test('the help lists what is described, by section, until its owner releases it'
     expect(registry.groups().map((group) => group.section)).toEqual(['General']);
     registry.actions.showHelp();
     expect(registry.helpOpen()).toBe(true);
+    expect(registry.helpTab()).toBe('standard');
+    registry.actions.showHelp('vim');
+    expect(registry.helpTab()).toBe('vim');
+    registry.setHelpTab('standard');
+    expect(registry.helpTab()).toBe('standard');
     dispose();
   });
 });

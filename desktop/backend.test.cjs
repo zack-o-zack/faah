@@ -37,7 +37,7 @@ test('desktop backend owns its port, serves workspaces and streams, and stops on
     const page = await fetch(origin);
     assert.equal(page.status, 200);
     assert.match(page.headers.get('content-security-policy'), /frame-ancestors 'none'/);
-    assert.match(await page.text(), /faah/);
+    assert.match(await page.text(), /<title>fibo workbench<\/title>/);
     const opened = await fetch(origin + '/api/wb/open', {
       method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json' },
       body: JSON.stringify({ target: workspace }),

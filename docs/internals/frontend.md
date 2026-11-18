@@ -65,7 +65,7 @@ Under `web/src`:
 | `inspector/`, `lsp/`, `search/` | Right-sidebar panes and the language-server state they share |
 | `palette/` | Command, file, symbol, line and theme palette; the command registry |
 | `settings/` | Settings store, preferences derived from it, and the settings dialog |
-| `shortcuts/` | App-wide key bindings, the shortcut help registry and help sheet |
+| `shortcuts/` | App-wide key bindings, the shortcut registry and the keyboard shortcut sheet |
 | `layout/`, `status/` | Sidebars, panel handles, persisted layout; the status bar |
 | `lib/` | Requests, keyboard, clipboard, theme, toasts, events and shared UI primitives |
 | `workbench/`, `holding/` | The other two pages |
@@ -176,10 +176,14 @@ exact modifier match. Show keys with `<Kbd combo="Mod+P" />`.
 - Feature components bind their own keys (palette, review toggle, agent sessions,
   settings dialog).
 
-The help sheet lists what is registered, not a separate table. Each binding
+`?` opens one keyboard shortcut sheet with a Standard tab and a Vim tab. The
+standard-help action lands on Standard and the Vim-help action lands on Vim; the
+Vim tab also carries the Vim navigation switch. Standard sections live in
+`shortcuts/help-entries.ts` and Vim sections in `editor/vim-help.ts`. The
+registry (`shortcuts/registry.ts`) separately records live bindings: each binding
 owner calls `editor.shortcuts.describe(entries)` with its help entries
 (`shortcuts/help.ts` holds the editor, palette, review and agent lists) and
-releases them on cleanup. `HelpSheet` groups the registry's entries by section.
+releases them on cleanup.
 
 Palette commands come from `palette/commands.ts`, a per-app registry. Features
 register their commands with cleanup; `palette/features.ts` registers the

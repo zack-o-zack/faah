@@ -20,7 +20,9 @@ export const SettingCard: Component<SettingCardProps> = (props) => {
   createEffect(() => {
     if (settings.state.dialog.focus !== key() || !card) return;
     card.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    card.querySelector<HTMLElement>('textarea, input, select')?.focus();
+    card
+      .querySelector<HTMLElement>('textarea, input, select, [role="radio"][tabindex="0"]')
+      ?.focus();
     settings.actions.settingFocused();
   });
   return (

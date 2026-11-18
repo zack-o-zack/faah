@@ -13,7 +13,6 @@ import { decodeNotes, type NoteView } from './store.ts';
 import { required } from '../lib/test-values.ts';
 import { createSourceDOM } from '../editor/source-dom.ts';
 import { findMatches } from '../editor/find.ts';
-import { refreshTarget } from './targets.ts';
 import { selectedText } from '../editor/cursor.ts';
 const notes = decodeNotes({
   notes: [
@@ -63,9 +62,11 @@ function setup(list: NoteView[] = notes, bubble = true, total = 4) {
   Object.defineProperty(Range.prototype, 'getClientRects', { configurable: true, value: () => [] });
   const originalRect = Element.prototype.getBoundingClientRect;
   vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
-    return this.hasAttribute('data-note-panel')
-      ? new DOMRect(0, 0, 400, 120)
-      : originalRect.call(this);
+    if (this.hasAttribute('data-note-panel')) return new DOMRect(0, 0, 400, 120);
+    if (this.hasAttribute('data-side')) return new DOMRect(0, 0, 400, 124);
+    if (this.hasAttribute('data-note-inline')) return new DOMRect(0, 300, 800, 32);
+    if (this.id === 'viewport') return new DOMRect(0, 100, 800, 600);
+    return originalRect.call(this);
   });
   let editor: EditorStore | undefined;
   const post = vi.fn().mockResolvedValue({ ok: true });
@@ -109,7 +110,7 @@ function setup(list: NoteView[] = notes, bubble = true, total = 4) {
   };
 }
 
-test('all note kinds keep full source width, span the gutter and only highlight on hover', async () => {
+test('all note kinds keep full source width, span the gutter and highlight on hover', async () => {
   const fixture = setup();
   const editor = fixture.editor;
   await editor.actions.openFile('a.go');
@@ -125,7 +126,7 @@ test('all note kinds keep full source width, span the gutter and only highlight 
   const before = [...editor.offsets()];
   await fireEvent.mouseEnter(required(trigger.closest('[data-note]')));
   trigger.focus();
-  expect(document.querySelector('[data-note-panel]')).toBeNull();
+  expect(document.querySelector('[data-note-panel]')).toBeTruthy();
   expect([...editor.offsets()]).toEqual(before);
   for (const line of [3, 4])
     expect(
@@ -133,7 +134,7 @@ test('all note kinds keep full source width, span the gutter and only highlight 
         .querySelector(`[data-l="${line}"] [data-note-bar]`)
         ?.classList.contains('bg-special!'),
     ).toBe(true);
-  expect(document.querySelector<HTMLElement>('[data-l="2"]')?.style.opacity).toBe('0.3');
+  expect(document.querySelector('[data-l="2"]')?.classList.contains('opacity-30')).toBe(true);
   await fireEvent.mouseLeave(required(trigger.closest('[data-note]')));
   await fireEvent.mouseEnter(required(document.querySelector('[data-l="3"]')));
   expect(editor.notes.hovered()?.index).toBe(1);
@@ -142,26 +143,31 @@ test('all note kinds keep full source width, span the gutter and only highlight 
   vi.unstubAllGlobals();
 });
 
-test('click and Enter toggle one inline detail, leaving stays open, Escape restores offsets and caret', async () => {
+test('the detail is a tooltip: hover, focus, click and Enter open one, leaving or Escape closes it, and the source never moves', async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
   const fixture = setup();
   const editor = fixture.editor;
   await editor.actions.openFile('a.go');
   const trigger = await screen.findByRole('button', { name: 'Explains the block' });
+  const note = required(trigger.closest('[data-note]'));
   editor.actions.patch({ cur: 3, col: 0 });
   const before = [...editor.offsets()];
   const caret = required(document.getElementById('caret'));
   const original = caret.style.transform;
-  await fireEvent.click(trigger);
+  await fireEvent.mouseEnter(note);
+  expect(document.querySelector('[data-note-panel]')).toBeNull();
+  await vi.advanceTimersByTimeAsync(250);
   const panel = screen.getByRole('region', { name: 'Explanation detail' });
   expect(document.getElementById('rows')?.contains(panel)).toBe(true);
-  expect(document.querySelector('[data-popover]')).toBeNull();
-  expect(editor.offsets()[3]).toBe((before[3] || 0) + 120);
-  expect(caret.style.transform).not.toBe(original);
-  await fireEvent.mouseLeave(required(trigger.closest('[data-note]')));
-  expect(document.querySelector('[data-note-panel]')).toBeTruthy();
+  expect(panel.querySelector('button')).toBeNull();
+  expect([...editor.offsets()]).toEqual(before);
+  expect(caret.style.transform).toBe(original);
+  await fireEvent.mouseLeave(note);
+  expect(document.querySelector('[data-note-panel]')).toBeNull();
+  await fireEvent.click(trigger);
+  expect(trigger.getAttribute('aria-expanded')).toBe('true');
   await fireEvent.click(trigger);
   expect(document.querySelector('[data-note-panel]')).toBeNull();
-  expect([...editor.offsets()]).toEqual(before);
   await fireEvent.keyDown(trigger, { key: 'Enter' });
   expect(trigger.getAttribute('aria-expanded')).toBe('true');
   const other = screen.getByRole('button', { name: 'Explains the call' });
@@ -171,7 +177,85 @@ test('click and Enter toggle one inline detail, leaving stays open, Escape resto
   await fireEvent.keyDown(other, { key: 'Escape' });
   expect(document.querySelector('[data-note-panel]')).toBeNull();
   expect([...editor.offsets()]).toEqual(before);
-  expect(caret.style.transform).toBe(original);
+  vi.useRealTimers();
+  fixture.view.unmount();
+  vi.unstubAllGlobals();
+});
+
+test.each([undefined, '', ' \n\t '])(
+  'a summary-only note with detail %j stays plain text on hover, focus and click',
+  async (detail) => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const fixture = setup(decodeNotes({ notes: [{ ...required(notes[0]), detail }] }));
+    await fixture.editor.actions.openFile('a.go');
+    const summary = await screen.findByText('Explains the call');
+    const note = required(summary.closest('[data-note]'));
+    const control = required(summary.closest('[data-control="note-summary"]'));
+    const showDetail = vi.spyOn(fixture.editor.notes, 'showDetail');
+    expect(control.tagName).toBe('SPAN');
+    expect(control.hasAttribute('aria-expanded')).toBe(false);
+    expect(control.hasAttribute('aria-controls')).toBe(false);
+    expect(screen.queryByRole('button', { name: 'Explains the call' })).toBeNull();
+    await fireEvent.mouseEnter(note);
+    await vi.advanceTimersByTimeAsync(250);
+    expect(showDetail).not.toHaveBeenCalled();
+    expect(document.querySelector('[data-note-panel]')).toBeNull();
+    await fireEvent.focusIn(control);
+    expect(document.querySelector('[data-note-panel]')).toBeNull();
+    await fireEvent.click(control);
+    await fireEvent.keyDown(control, { key: 'Enter' });
+    expect(showDetail).not.toHaveBeenCalled();
+    expect(document.querySelector('[data-note-panel]')).toBeNull();
+    fixture.view.unmount();
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  },
+);
+
+test('the tooltip opens above its summary with the pointer gap inside the wrapper', async () => {
+  const fixture = setup();
+  await fixture.editor.actions.openFile('a.go');
+  const trigger = await screen.findByRole('button', { name: 'Explains the call' });
+  trigger.focus();
+  const panel = screen.getByRole('region', { name: 'Explanation detail' });
+  const wrapper = required(panel.parentElement);
+  expect(wrapper.dataset.side).toBe('top');
+  expect(wrapper.classList.contains('bottom-full')).toBe(true);
+  expect(wrapper.classList.contains('pb-1')).toBe(true);
+  expect(wrapper.style.maxWidth).toBe('min(40rem, 100%)');
+  const link = screen.getByRole('button', { name: 'a.go:1' });
+  link.focus();
+  expect(document.querySelector('[data-note-panel]')).toBe(panel);
+  required(document.getElementById('viewport')).focus();
+  expect(document.querySelector('[data-note-panel]')).toBeNull();
+  fixture.view.unmount();
+  vi.unstubAllGlobals();
+});
+
+test('the tooltip flips below when its height and gap exceed the room above in the scroll viewport', async () => {
+  const fixture = setup();
+  await fixture.editor.actions.openFile('a.go');
+  const trigger = await screen.findByRole('button', { name: 'Explains the call' });
+  const inline = required(trigger.closest('[data-note-inline]'));
+  // 122px above fits the 120px card, but not its 4px pointer gap.
+  const measure = vi.fn(() => new DOMRect(0, 222, 800, 32));
+  Object.defineProperty(inline, 'getBoundingClientRect', { value: measure });
+  await fireEvent.click(trigger);
+  const wrapper = required(
+    screen.getByRole('region', { name: 'Explanation detail' }).parentElement,
+  );
+  expect(wrapper.dataset.side).toBe('bottom');
+  expect(wrapper.classList.contains('top-full')).toBe(true);
+  expect(wrapper.classList.contains('pt-1')).toBe(true);
+  measure.mockReturnValue(new DOMRect(0, 300, 800, 32));
+  await fireEvent.scroll(required(document.getElementById('viewport')));
+  expect(measure).toHaveBeenCalledTimes(1);
+  expect(wrapper.dataset.side).toBe('bottom');
+  await fireEvent.click(trigger);
+  await fireEvent.click(trigger);
+  expect(
+    screen.getByRole('region', { name: 'Explanation detail' }).parentElement?.dataset.side,
+  ).toBe('top');
   fixture.view.unmount();
   vi.unstubAllGlobals();
 });
@@ -209,31 +293,15 @@ test('inline detail is excluded from source caret, selection, copying, find and 
   vi.unstubAllGlobals();
 });
 
-test('inline footer keeps checked links, Open thread, Refresh and permanent dismissal', async () => {
+test('the tooltip keeps checked links and has no buttons of its own', async () => {
   const fixture = setup();
-  const editor = fixture.editor;
-  await editor.actions.openFile('a.go');
-  const refresh = vi.spyOn(editor.actions, 'explainSelection').mockResolvedValue();
-  const open = vi.spyOn(editor.actions, 'openThread').mockResolvedValue();
+  await fixture.editor.actions.openFile('a.go');
   await fireEvent.click(await screen.findByRole('button', { name: 'Explains the call' }));
   expect(screen.getByText('outdated')).toBeTruthy();
   expect(screen.getByRole('button', { name: 'a.go:1' })).toBeTruthy();
   expect(screen.queryByRole('button', { name: 'bad.go:99' })).toBeNull();
-  await fireEvent.click(screen.getByRole('button', { name: 'Open thread' }));
-  expect(open).toHaveBeenCalledWith('t');
-  expect(editor.store.state.explanation.model?.id).toBe('t');
-  await fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
-  expect(refresh).toHaveBeenCalledWith({ path: 'a.go', l1: 2, l2: 2 }, true);
-  await fireEvent.click(screen.getByRole('button', { name: 'Dismiss note' }));
-  await waitFor(() =>
-    expect(fixture.post).toHaveBeenCalledWith('api/explain/notes/dismiss', {
-      thread: 't',
-      turn: 1,
-      index: 0,
-    }),
-  );
-  expect(editor.notes.notes().some((note) => note.index === 0)).toBe(false);
-  expect(document.querySelector('[data-note-panel]')).toBeNull();
+  for (const name of ['Open thread', 'Refresh', 'Dismiss note'])
+    expect(screen.queryByRole('button', { name })).toBeNull();
   fixture.view.unmount();
   vi.unstubAllGlobals();
 });
@@ -258,7 +326,7 @@ test('only the open bubble thread and turn render notes; closing hides every ann
       '[data-note-inline],[data-note-bar],[data-note-panel],[data-popover]',
     ),
   ).toHaveLength(0);
-  expect(document.querySelector<HTMLElement>('[data-l="1"]')?.style.opacity).toBe('1');
+  expect(document.querySelector('[data-l="1"]')?.classList.contains('opacity-30')).toBe(false);
   editor.actions.orbOpen(decodeThread({ id: 't', turns: [{ id: 1 }, { id: 2 }] }), 2);
   await screen.findByRole('button', { name: 'Later turn' });
   expect(document.querySelectorAll('[data-note-inline]')).toHaveLength(1);
@@ -270,7 +338,7 @@ test('only the open bubble thread and turn render notes; closing hides every ann
   vi.unstubAllGlobals();
 });
 
-test('thread turn buttons open the first note file and replace the current bubble', async () => {
+test('thread turn switches open the first note file and replace the current bubble', async () => {
   const first = decodeThread({ id: 't', kind: 'explain', turns: [{ id: 1, notes }] });
   const second = decodeThread({
     id: 'other',
@@ -288,7 +356,7 @@ test('thread turn buttons open the first note file and replace the current bubbl
       <ThreadTurn thread={second} turn={required(second.turns[0])} />
     </EditorProvider>
   ));
-  const buttons = screen.getAllByRole('button', { name: 'Show on code' });
+  const buttons = screen.getAllByRole('switch', { name: 'Show in editor' });
   await fireEvent.click(required(buttons[0]));
   await screen.findByRole('button', { name: 'Explains the block' });
   expect(editor.active()?.path).toBe('a.go');
@@ -305,15 +373,6 @@ test('thread turn buttons open the first note file and replace the current bubbl
   vi.unstubAllGlobals();
 });
 
-test('symbol refresh targets current UTF-16 columns', () => {
-  expect(
-    refreshTarget(
-      { ...required(notes[0]), kind: 'symbol', symbol: 'run' },
-      () => '  runner(); run()',
-    ),
-  ).toEqual({ path: 'a.go', l1: 2, l2: 2, c1: 12, c2: 15, symbol: 'run' });
-});
-
 test('large annotated ranges stay virtualized and closing an offscreen bubble releases dimming', async () => {
   const fixture = setup([{ ...required(notes[1]), l2: 2500 }], true, 5000);
   const editor = fixture.editor;
@@ -326,28 +385,13 @@ test('large annotated ranges stay virtualized and closing an offscreen bubble re
   expect(editor.offsets().at(-1)).toBe(expandedHeight);
   expect(document.querySelector('[data-note-bar]')).toBeTruthy();
   editor.notes.hoverLine(2000);
+  expect(editor.notes.highlighted(2000)).toBe(true);
   expect(editor.notes.dimmed(1)).toBe(true);
   editor.actions.dismissOrb();
   expect(document.querySelector('[data-note-bar]')).toBeNull();
+  expect(editor.notes.highlighted(2000)).toBe(false);
   expect(editor.notes.dimmed(1)).toBe(false);
-  expect(editor.notes.extraHeights()).toEqual({});
   expect(editor.offsets().at(-1)).toBe(5000 * editor.geometry.lineHeight);
-  fixture.view.unmount();
-  vi.unstubAllGlobals();
-});
-
-test('revealing a source line scrolls past its expanded annotation', async () => {
-  const fixture = setup();
-  const editor = fixture.editor;
-  await editor.actions.openFile('a.go');
-  await fireEvent.click(await screen.findByRole('button', { name: 'Explains the block' }));
-  editor.notes.measureDetail(required(editor.notes.expanded()), 1000);
-  editor.setGeometry({ height: 200 });
-  const scroll = vi.spyOn(required(editor.services.source), 'scrollTo');
-  editor.actions.revealLine(3);
-  expect(scroll).toHaveBeenCalledWith(
-    (editor.offsets()[2] || 0) + editor.notes.heightBefore(3) - 100,
-  );
   fixture.view.unmount();
   vi.unstubAllGlobals();
 });

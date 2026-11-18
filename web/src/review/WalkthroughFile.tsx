@@ -10,7 +10,6 @@ import { movedOnly, rowLine } from './logic.ts';
 import { splitRows, unifiedRows, type PaintedRow } from '../viewers/diff-rows.ts';
 import { NoteGhost } from '../notes/GhostNotes.tsx';
 import { WalkTitleLine } from '../notes/WalkthroughTitle.tsx';
-import { WALK_DIM_OPACITY } from '../viewers/walkthrough-review.ts';
 import { pluralize } from '../pr/logic.ts';
 import { LineStats } from './LineStats.tsx';
 import { mergeRanges, missingLines } from './context.ts';
@@ -67,6 +66,7 @@ export function WalkthroughFile(props: WalkthroughFileProps): JSX.Element {
       </div>
     </Show>
   );
+  // Notes sit above their first line, as in the source editor.
   const rowNotes = (row: PaintedRow | null) => (
     <Show when={row?.newLine && row.type !== 'del'}>
       <For each={notes()?.get(row?.newLine || 0)}>
@@ -81,8 +81,10 @@ export function WalkthroughFile(props: WalkthroughFileProps): JSX.Element {
       }}
       class={`review-diff-row ${row ? ROW_TYPE[row.type] || 'diff-type-ctx' : ''}`}
       data-new-line={row?.newLine}
-      style={{ opacity: focused() && !inStep(row) ? WALK_DIM_OPACITY : 1 }}
       classList={{
+        // Like the source editor: a walkthrough step or a hovered note fades the rest.
+        'opacity-35': focused() && !inStep(row),
+        'opacity-30': !!row && editor.turnNotes.dimmed(props.file.path, row.newLine || 0),
         'diff-row-flash': !!row && targetLine() === rowLine(row),
         'bg-special/5!':
           !!row?.newLine && editor.turnNotes.highlighted(props.file.path, row.newLine),
@@ -115,15 +117,14 @@ export function WalkthroughFile(props: WalkthroughFileProps): JSX.Element {
   return (
     <div
       class="relative mb-3 overflow-clip rounded-md border"
-      classList={{ 'opacity-60': !focus() && !!review.state.viewed[props.file.path] }}
-      style={{ opacity: focus() && !focused() ? WALK_DIM_OPACITY : 1 }}
+      classList={{ 'opacity-35': !!focus() && !focused() }}
     >
       <div
         ref={header}
         class="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-2 border-b bg-sidebar px-3 py-2 text-xs"
       >
         <div class="flex min-w-0 items-center gap-2">
-          <span class="icon-[lucide--file] size-3.5 shrink-0 text-muted-foreground" />
+          <span class="icon-[ph--file] shrink-0 text-muted-foreground" />
           <span class="min-w-0 truncate font-mono font-semibold">
             {props.file.path}
             <span class="block truncate text-muted-foreground" title={props.file.oldPath}>
@@ -190,9 +191,9 @@ export function WalkthroughFile(props: WalkthroughFileProps): JSX.Element {
                   <For each={unifiedRows(hunk.rows, highlightChangedWords())}>
                     {(row) => (
                       <>
+                        {rowNotes(row)}
                         {title(row)}
                         {renderRow(row)}
-                        {rowNotes(row)}
                       </>
                     )}
                   </For>
@@ -201,6 +202,12 @@ export function WalkthroughFile(props: WalkthroughFileProps): JSX.Element {
                 <For each={splitRows(hunk.rows, highlightChangedWords())}>
                   {(pair) => (
                     <>
+                      <Show when={!!pair.right?.newLine && notes()?.has(pair.right.newLine)}>
+                        <div class="diff-row-pair">
+                          <div class="diff-side diff-side-left" />
+                          <div class="diff-side">{rowNotes(pair.right)}</div>
+                        </div>
+                      </Show>
                       <Show when={focused() && pair.right?.newLine === focus()?.l1}>
                         <div class="diff-row-pair">
                           <div class="diff-side diff-side-left" />
@@ -211,12 +218,6 @@ export function WalkthroughFile(props: WalkthroughFileProps): JSX.Element {
                         <div class="diff-side diff-side-left">{renderRow(pair.left, 'left')}</div>
                         <div class="diff-side">{renderRow(pair.right, 'right')}</div>
                       </div>
-                      <Show when={!!pair.right?.newLine && notes()?.has(pair.right.newLine)}>
-                        <div class="diff-row-pair">
-                          <div class="diff-side diff-side-left" />
-                          <div class="diff-side">{rowNotes(pair.right)}</div>
-                        </div>
-                      </Show>
                     </>
                   )}
                 </For>

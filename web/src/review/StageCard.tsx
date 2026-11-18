@@ -20,13 +20,13 @@ export function StageCard(props: StageCardProps): JSX.Element {
   const status = () => stageStatus(props.stage);
   const selected = () => review.state.active === props.index;
   return (
-    <li class="group relative flex rounded-md" classList={{ 'bg-accent': selected() }}>
+    <li class="group relative flex rounded-sm" classList={{ 'bg-accent': selected() }}>
       <ContextMenu label="Stage actions" menu={<StageMenuItems index={props.index} />}>
         <button
           type="button"
           aria-pressed={selected()}
           aria-label={`Stage ${props.index + 1}: ${title()}, ${STAGE_STATUS[status()].label}`}
-          class="flex w-full min-w-0 items-start gap-2.5 rounded-md px-2 py-2 pr-8 text-left hover:bg-accent/50 focus-visible:outline focus-visible:outline-ring"
+          class="flex w-full min-w-0 items-start gap-2.5 rounded-sm px-2 py-2 pr-8 text-left hover:bg-accent/50"
           onClick={() => editor.actions.selectReviewStage(props.index)}
         >
           <span class="relative flex w-2 shrink-0 justify-center self-stretch pt-1.5">
@@ -45,7 +45,7 @@ export function StageCard(props: StageCardProps): JSX.Element {
       </ContextMenu>
       <div class="absolute top-1.5 right-1.5 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 has-[[aria-expanded=true]]:opacity-100">
         <DropdownMenu
-          label={<span class="icon-[lucide--ellipsis] size-3.5 shrink-0" aria-hidden="true" />}
+          label={<span class="icon-[ph--dots-three] shrink-0" aria-hidden="true" />}
           accessibleLabel={`Actions for ${title()}`}
           size="icon-xs"
           control="review-stage-menu-btn"
@@ -64,14 +64,14 @@ function StageMenuItems(props: { index: number }): JSX.Element {
   return (
     <>
       <MenuItem
-        icon="icon-[lucide--sparkle] text-special"
+        icon="icon-[ph--spinner] text-special"
         disabled={review.running()}
         onSelect={() => void editor.actions.runReview(props.index)}
       >
         Run this stage
       </MenuItem>
       <MenuItem
-        icon="icon-[lucide--square-pen]"
+        icon="icon-[ph--note-pencil]"
         onSelect={() => {
           editor.actions.selectReviewStage(props.index);
           editor.actions.openStageEditor(props.index);
@@ -80,14 +80,14 @@ function StageMenuItems(props: { index: number }): JSX.Element {
         Edit
       </MenuItem>
       <MenuItem
-        icon="icon-[lucide--arrow-up]"
+        icon="icon-[ph--arrow-up]"
         disabled={review.running() || props.index === 0}
         onSelect={() => void editor.actions.mutateStage(props.index, 'up')}
       >
         Move up
       </MenuItem>
       <MenuItem
-        icon="icon-[lucide--arrow-down]"
+        icon="icon-[ph--arrow-down]"
         disabled={review.running() || props.index === count() - 1}
         onSelect={() => void editor.actions.mutateStage(props.index, 'down')}
       >
@@ -95,7 +95,7 @@ function StageMenuItems(props: { index: number }): JSX.Element {
       </MenuItem>
       <hr role="separator" class="my-1 border-border" />
       <MenuItem
-        icon="icon-[lucide--trash-2]"
+        icon="icon-[ph--trash]"
         class="text-destructive"
         disabled={review.running() || count() <= 1}
         onSelect={() => void editor.actions.mutateStage(props.index, 'remove')}

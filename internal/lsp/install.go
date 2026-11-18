@@ -158,7 +158,7 @@ func (m *Manager) Install(name string, option int) (*Job, error) {
 	}
 	in := opts[option]
 	if !in.Auto {
-		return nil, fmt.Errorf("faah does not run %q; run it in a terminal", strings.Join(in.Cmd, " "))
+		return nil, fmt.Errorf("fibo does not run %q; run it in a terminal", strings.Join(in.Cmd, " "))
 	}
 	tool, ok := lookPathIn(in.Cmd[0], binDirs())
 	if !ok {

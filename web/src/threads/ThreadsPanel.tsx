@@ -16,12 +16,12 @@ export function ThreadsPanel(): JSX.Element {
       class="flex w-96 shrink-0 flex-col overflow-hidden border-l bg-sidebar [body.threads-hidden_&]:hidden"
     >
       <header class="inspector-head desktop:min-h-[var(--titlebar-h,2.5rem)] desktop:[-webkit-app-region:drag] desktop:[&_button]:[-webkit-app-region:no-drag] desktop:[&_a]:[-webkit-app-region:no-drag] desktop:[&_[role=group]]:[-webkit-app-region:no-drag] desktop:[&_[role=tab]]:[-webkit-app-region:no-drag] flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2 threads-head">
-        <div class="threads-head-title flex items-center gap-2 font-medium [&_svg]:shrink-0 [&_svg]:text-primary">
-          <span class="icon-[lucide--message-square] size-3.5 shrink-0" aria-hidden="true" />
+        <div class="threads-head-title flex items-center gap-2 font-medium [&_svg]:shrink-0 [&_svg]:text-primary-text">
+          <span class="icon-[ph--chat-centered] shrink-0" aria-hidden="true" />
           <span class="threads-head-label text-xs font-medium">Threads</span>
           <span
             class="badge"
-            data-variant="secondary"
+            data-tone="agent"
             data-control="thr-tab-count"
             hidden={!editor.agents.state.sessions.length}
           >
@@ -43,7 +43,7 @@ export function ThreadsPanel(): JSX.Element {
             data-size="icon-xs"
             data-control="icon-action"
           >
-            <span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true" />
+            <span class="icon-[ph--x] shrink-0" aria-hidden="true" />
           </button>
         </div>
       </header>
@@ -82,11 +82,11 @@ export function ThreadsToggle(): JSX.Element {
       hidden={editor.store.state.workspace.meta?.threadsEnabled === false}
       onClick={editor.actions.toggleThreads}
     >
-      <span class="icon-[lucide--message-square] size-3 shrink-0" aria-hidden="true" />
+      <span class="icon-[ph--chat-centered] shrink-0" aria-hidden="true" />
       <span>Threads</span>
       <span
         class="badge"
-        data-variant="secondary"
+        data-tone="agent"
         data-control="thr-tab-count"
         title={`${waiting()} ${waiting() === 1 ? 'comment' : 'comments'} waiting to be applied`}
         hidden={!waiting()}

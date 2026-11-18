@@ -148,8 +148,14 @@ test('preferences derive from values with the server defaults before load', () =
     '--fs': '13.5px',
     '--lh': '21px',
     '--tab-size': '8',
-    '--mono': 'Iosevka',
+    '--editor-font-family': 'Iosevka',
   });
+});
+
+test('clearing the editor font restores the bundled code face without changing other code', () => {
+  const variables = typographyVariables(preferences({ 'editor.fontFamily': '' }));
+  expect(variables['--editor-font-family']).toBe('var(--mono)');
+  expect(variables).not.toHaveProperty('--mono');
 });
 
 test('raw settings must be JSON', () => {
@@ -164,4 +170,17 @@ test('changed-word highlighting defaults on and derives from the saved setting',
       'highlightChangedWords',
       value,
     );
+});
+
+test('transparency derives all levels and defaults unknown values to subtle', () => {
+  for (const value of ['off', 'subtle', 'strong'])
+    expect(preferences({ 'workbench.transparency': value }).transparency).toBe(value);
+  for (const value of ['unknown', '', true, 42])
+    expect(preferences({ 'workbench.transparency': value }).transparency).toBe('subtle');
+  expect(preferences({}).transparency).toBe('subtle');
+  expect(
+    settingControl(
+      item({ key: 'workbench.transparency', type: 'select', options: ['off', 'subtle', 'strong'] }),
+    ),
+  ).toEqual({ kind: 'segments', options: ['off', 'subtle', 'strong'] });
 });

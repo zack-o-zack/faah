@@ -10,6 +10,12 @@ export function PRBar(): JSX.Element {
   const pr = () => editor.pr.meta() || {};
   const forge = () => forgeInfo(editor.store.state.workspace.meta);
   const state = () => PR_STATES[prState(pr())];
+  const connectHint = () => {
+    const hint = (forge().tokenHint || '').trim().replace(/[.!?]$/, '');
+    return hint
+      ? hint.charAt(0).toUpperCase() + hint.slice(1) + '. Click to connect.'
+      : 'Click to connect.';
+  };
   const reviewShown = () => !prEnded(pr()) || editor.pr.state.drafts.length > 0;
   onMount(() => {
     const focus = () => editor.actions.refreshStaleMergeStatus();
@@ -17,60 +23,67 @@ export function PRBar(): JSX.Element {
     onCleanup(() => window.removeEventListener('focus', focus));
   });
   return (
-    <div
-      id="pr-bar"
-      class="[body:not(.in-review-mode)_&]:hidden! flex flex-none flex-wrap items-center bg-sidebar gap-x-3 gap-y-2 px-3 py-2"
-    >
-      <div class="flex min-w-0 flex-1 basis-80 flex-col gap-0.5">
+    <div id="pr-header" class="flex flex-none items-center gap-2.5 px-3.5 pt-3 pb-2">
+      <div class="flex min-w-0 flex-1 flex-col gap-1.25">
         <div class="flex min-w-0 items-center gap-2">
+          <span
+            id="pr-state-badge"
+            class="badge shrink-0 gap-1 rounded-pill px-2 py-0.5 text-11-5 font-semibold"
+            data-tone={state().tone}
+          >
+            <span class={`${state().icon} shrink-0 text-13`} aria-hidden="true" />
+            <span>{state().label}</span>
+          </span>
           <a
             id="pr-link"
-            class="group flex items-center min-w-40 gap-2 rounded-md -mx-1.5 px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            class="group flex min-w-0 items-center gap-2 rounded-sm"
             href={pr()?.url || '#'}
             title={'Open on ' + forge().label}
             target="_blank"
             rel="noopener noreferrer"
           >
             <span
-              id="pr-badge"
-              class="badge shrink-0 tabular-nums"
-              data-variant="secondary"
-              data-control="pr-badge"
-            >
-              #{pr()?.number}
-            </span>
-            <span
               id="pr-title"
-              class="min-w-0 truncate text-sm font-medium underline-offset-4 group-hover:underline group-focus-visible:underline"
+              class="min-w-0 truncate text-lg/5 font-medium underline-offset-4 group-hover:underline group-focus-visible:underline"
               title={pr()?.title}
             >
               {pr()?.title}
             </span>
-            <span class="icon-[lucide--external-link] size-3.5 shrink-0 text-muted-foreground group-hover:text-foreground group-focus-visible:text-foreground" />
+            <span id="pr-number" class="shrink-0 text-lg/5 tabular-nums text-muted-foreground">
+              #{pr().number}
+            </span>
+            <span
+              aria-hidden="true"
+              class="icon-[ph--arrow-square-out] shrink-0 text-muted-foreground group-hover:text-foreground group-focus-visible:text-foreground"
+            />
           </a>
-          <span
-            id="pr-state-badge"
-            class={`badge gap-1 border-current/30 bg-current/10 ${state().color}`}
-            data-variant="outline"
-          >
-            <span class={`${state().icon} size-3 shrink-0`} aria-hidden="true" />
-            <span class="text-foreground">{state().label}</span>
-          </span>
         </div>
-        <div class="flex min-w-0 items-center gap-3 pl-px text-xs text-muted-foreground">
-          <span id="pr-refs" class="min-w-0 shrink-[4] truncate font-mono">
-            {pr().base}{' '}
-            <span class="icon-[lucide--arrow-left] size-3 align-[-2px]" aria-hidden="true" />{' '}
-            {pr().head}
+        <div class="flex min-w-0 flex-wrap items-center gap-1.5 text-11-5 text-muted-foreground">
+          <span id="pr-refs" class="inline-flex min-w-0 shrink-[4] items-center gap-1.5">
+            <code
+              class="min-w-0 truncate rounded-[5px] border border-border bg-card px-[5px] font-mono text-foreground"
+              title={pr().head}
+            >
+              {pr().head}
+            </code>
+            <span class="icon-[ph--arrow-right] shrink-0" aria-hidden="true" />
+            <code
+              class="min-w-0 truncate rounded-[5px] border border-border bg-card px-[5px] font-mono text-foreground"
+              title={pr().base}
+            >
+              {pr().base}
+            </code>
           </span>
-          <MergePill />
+          <Show when={!prEnded(pr())}>
+            <MergePill />
+          </Show>
           <Show when={pr().diffBaseWarning}>
             <span
               id="pr-diff-warning"
               class="inline-flex shrink-0 items-center gap-1 text-destructive"
               title={pr().diffBaseWarning}
             >
-              <span class="icon-[lucide--triangle-alert] size-3.5 shrink-0" aria-hidden="true" />
+              <span class="icon-[ph--warning] shrink-0" aria-hidden="true" />
               Diff base differs
             </span>
           </Show>
@@ -81,27 +94,24 @@ export function PRBar(): JSX.Element {
               class="btn"
               data-variant="outline"
               data-size="xs"
-              title={
-                (forge().tokenHint || '').charAt(0).toUpperCase() +
-                (forge().tokenHint || '').slice(1) +
-                ' -- or click to connect'
-              }
+              title={connectHint()}
               onClick={() => editor.actions.openForgeConnect()}
               data-control="pr-readonly-note"
             >
-              No {forge().label} token — click to connect
+              <span class="icon-[ph--key] shrink-0" aria-hidden="true" />
+              Connect {forge().label}
             </button>
           </Show>
         </div>
       </div>
-      <div id="pr-review-row" class="ml-auto flex shrink-0 items-center gap-2">
+      <div id="pr-review-row" class="ml-auto flex shrink-0 items-center gap-2.5">
         <MergeFix />
         <BatchApply />
         <Show when={reviewShown()}>
           <ReviewPanel />
         </Show>
         <Show when={reviewShown() && editor.merge.canMerge()}>
-          <span class="h-5 w-px shrink-0 bg-border" aria-hidden="true" />
+          <span class="h-4.5 w-px shrink-0 bg-border" aria-hidden="true" />
         </Show>
         <Show when={editor.merge.canMerge()}>
           <MergeControls />
@@ -127,7 +137,7 @@ function MergeFix(): JSX.Element {
         onClick={editor.actions.runMergeFix}
       >
         <span
-          class={`${pill()?.act === 'resolve' ? 'icon-[lucide--sparkle]' : 'icon-[lucide--arrow-up]'} size-3.5 shrink-0`}
+          class={`${pill()?.act === 'resolve' ? 'icon-[ph--spinner]' : 'icon-[ph--arrow-up]'} shrink-0`}
           aria-hidden="true"
         />
         {pill()?.fix}
@@ -151,7 +161,7 @@ function BatchApply(): JSX.Element {
         onClick={() => void editor.actions.applyDrafts()}
         data-control="bar-action pr-btn-batch-apply"
       >
-        <span class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true" />
+        <span class="icon-[ph--spinner] shrink-0" aria-hidden="true" />
         <span>{batch().pending ? `Applying… ${batch().seconds}s` : 'Apply drafts'}</span>
       </button>
     </Show>

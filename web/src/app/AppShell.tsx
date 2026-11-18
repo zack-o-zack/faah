@@ -8,8 +8,8 @@ import { StatusBar } from '../status/StatusBar.tsx';
 import { ThreadsPanel, ThreadsToggle } from '../threads/ThreadsPanel.tsx';
 import { ReviewToggle } from '../review/ReviewToggle.tsx';
 import { ReviewView } from '../review/ReviewView.tsx';
-import { PRPanels } from '../pr/PRPanels.tsx';
 import { TabStrip } from '../editor/TabStrip.tsx';
+import { canDiff, previewKind, viewMode } from '../viewers/view.ts';
 import { FileActions } from '../editor/FileActions.tsx';
 import { Viewport } from '../editor/Viewport.tsx';
 import { EditView } from '../editor/EditView.tsx';
@@ -19,11 +19,12 @@ import { Minimap } from '../editor/Minimap.tsx';
 import { Viewers } from '../viewers/Viewers.tsx';
 import { EditorCorner } from '../viewers/EditorCorner.tsx';
 import { Welcome } from './Welcome.tsx';
+import type { DocTab } from '../editor/types.ts';
 import type { WorkspaceMeta } from './types.ts';
 
 /** What the page layout reads from the editor store. */
 interface ShellEditor {
-  active: () => object | null;
+  active: () => DocTab | null;
   store: { state: { workspace: { meta: WorkspaceMeta | null }; layout: { right: boolean } } };
   review: { state: { mode: 'code' | 'review' } };
   actions: { togglePanel: (panel: 'right') => void };
@@ -49,7 +50,7 @@ const TopBar: Component = () => {
         data-variant="ghost"
         data-size="xs"
       >
-        <span class="icon-[lucide--menu] size-3 shrink-0" aria-hidden="true" />
+        <span class="icon-[ph--list] shrink-0" aria-hidden="true" />
       </button>
       <ReviewToggle />
       <div class="main-top-bar-spacer flex-1" />
@@ -66,10 +67,10 @@ const TopBar: Component = () => {
               data-variant="ghost"
               data-size="icon-xs"
               href={href()}
-              title="Back to the faah workbench"
-              aria-label="Back to the faah workbench"
+              title="Back to the fibo workbench"
+              aria-label="Back to the fibo workbench"
             >
-              <span class="icon-[lucide--layout-grid] size-3.5" aria-hidden="true" />
+              <span class="icon-[ph--grid-four]" aria-hidden="true" />
             </a>
           )}
         </Show>
@@ -94,7 +95,7 @@ const TopBar: Component = () => {
           data-size="icon-xs"
           onClick={() => editor.actions.togglePanel('right')}
         >
-          <span class="icon-[lucide--panel-right] size-3.5 shrink-0" aria-hidden="true" />
+          <span class="icon-[ph--sidebar-simple] -scale-x-100 shrink-0" aria-hidden="true" />
         </button>
       </div>
     </header>
@@ -104,6 +105,15 @@ const TopBar: Component = () => {
 /** The page: file tree, editor column, inspector and threads, side by side. */
 export const AppShell: Component = () => {
   const editor: ShellEditor = useEditor();
+  const viewTab = () => {
+    const file = editor.active();
+    if (!file || file.isEditing) return undefined;
+    if (previewKind(file) && !file.diffMode)
+      return ['markdown', 'table'].includes(viewMode(file)) ? 'md-preview' : 'md-source';
+    if (canDiff(file, editor.store.state.workspace.meta))
+      return file.diffMode ? 'diff-btn' : 'diff-source';
+    return undefined;
+  };
   return (
     <div id="app" class="flex h-dvh overflow-hidden">
       <Sidebar />
@@ -115,6 +125,8 @@ export const AppShell: Component = () => {
         </TabStrip>
         <div
           id="editor"
+          role={viewTab() ? 'tabpanel' : undefined}
+          aria-labelledby={viewTab()}
           class="relative min-h-0 flex-1 overflow-hidden bg-background"
           hidden={editor.review.state.mode === 'review'}
         >
@@ -133,7 +145,6 @@ export const AppShell: Component = () => {
           </Show>
         </div>
         <ReviewView />
-        <PRPanels />
         <StatusBar />
       </main>
       <PanelHandle panel="right" label="Inspector width" />

@@ -112,7 +112,7 @@ export function CallNode(props: CallNodeProps): JSX.Element {
 }
 
 function arrowIcon(cycle: boolean, loading: boolean, expanded: boolean): string {
-  if (cycle) return 'icon-[lucide--repeat]';
-  if (loading) return 'icon-[lucide--loader-circle] animate-spin';
-  return expanded ? 'icon-[lucide--chevron-down]' : 'icon-[lucide--chevron-right]';
+  if (cycle) return 'icon-[ph--repeat]';
+  if (loading) return 'icon-[ph--circle-notch] animate-spin';
+  return expanded ? 'icon-[ph--caret-down]' : 'icon-[ph--caret-right]';
 }

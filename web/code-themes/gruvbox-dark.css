@@ -1,0 +1,18 @@
+/* Gruvbox Dark: the Gruvbox Dark palette, for code surfaces only. Token reference: docs/internals/styling-and-themes.md. */
+:root[data-code-theme="gruvbox-dark"] .code-surface {
+  --theme-name: "Gruvbox Dark";
+  color-scheme: dark;
+
+  /* Surface and text. */
+  --background: #282828; --foreground: #ebdbb2; --muted-foreground: #bdae93; --faint: #928374; --border: #3c3836;
+  /* Selection, current line and search. */
+  --sel: #504945; --cur: #222120; --mark: rgba(250, 189, 47, 0.25); --mark-active: #fe8019; --on-mark-active: var(--background);
+  /* Diffs and status. */
+  --gi: #b8bb26; --gd: #fb4934; --gi-bg: rgba(184, 187, 38, 0.14); --gd-bg: rgba(251, 73, 52, 0.14);
+  --gi-word: #3c3d28; --gd-word: #5b302b; --err: #fda196; --warn: #fe8019;
+  /* Syntax. */
+  --k: #fda196; --kt: #fabd2f; --nf: #98c688; --nc: #fabd2f; --nb: #fea55c;
+  --nv: #a6bfb5; --no: #e1abba; --na: #98c688; --nt: #98c688; --nd: #fea55c;
+  --np: #a6bfb5; --s: #bdc027; --m: #e1abba; --o: #fea55c; --p: #c2b8a9;
+  --c: #c0b8af; --cp: #98c688;
+}

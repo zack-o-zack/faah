@@ -1,3 +1,4 @@
+import { TabRail } from '../lib/TabRail.tsx';
 import { onCleanup, onMount, Show, type Component } from 'solid-js';
 import { useSettings } from './context.ts';
 
@@ -14,7 +15,9 @@ export const SettingsToolbar: Component = () => {
   return (
     <header class="flex-row! items-center gap-4 shrink-0">
       <div class="flex min-w-0 flex-1 flex-col gap-0.5">
-        <h2 id="settings-title">Settings</h2>
+        <h2 id="settings-title" class="font-display font-semibold tracking-[-0.01em]">
+          Settings
+        </h2>
         <button
           type="button"
           id="settings-path"
@@ -26,11 +29,10 @@ export const SettingsToolbar: Component = () => {
         </button>
       </div>
       <Show when={dialog().mode === 'ui'}>
-        <div id="settings-search-bar" data-ui="settings-search-bar" class="relative w-72">
-          <span
-            class="icon-[lucide--search] size-3.5 shrink-0 pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
-            aria-hidden="true"
-          />
+        <div id="settings-search-bar" data-ui="settings-search-bar" class="input-group w-72">
+          <span data-align="inline-start">
+            <span class="icon-[ph--magnifying-glass]" aria-hidden="true" />
+          </span>
           <input
             ref={search}
             type="search"
@@ -39,7 +41,6 @@ export const SettingsToolbar: Component = () => {
             placeholder="Search settings"
             autocomplete="off"
             spellcheck={false}
-            class="input w-full pl-8 pr-8"
             value={dialog().query}
             onInput={(event) => settings.actions.setSettingsQuery(event.currentTarget.value)}
           />
@@ -48,7 +49,8 @@ export const SettingsToolbar: Component = () => {
             type="button"
             title="Clear search"
             aria-label="Clear search"
-            class="btn absolute right-1 top-1/2 -translate-y-1/2"
+            class="btn"
+            data-align="inline-end"
             data-control="icon-action"
             data-variant="ghost"
             data-size="icon-xs"
@@ -57,19 +59,19 @@ export const SettingsToolbar: Component = () => {
               search?.focus();
             }}
           >
-            <span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true" />
+            <span class="icon-[ph--x] shrink-0" aria-hidden="true" />
           </button>
         </div>
       </Show>
-      <div class="button-group" role="group" aria-label="Settings view">
+      <TabRail label="Settings view" size="sm">
         <button
           type="button"
           id="settings-mode-ui"
           title="Settings UI"
-          class="btn"
-          data-size="sm"
-          aria-pressed={dialog().mode === 'ui'}
-          data-variant={dialog().mode === 'ui' ? 'secondary' : 'outline'}
+          role="tab"
+          aria-controls="settings-body"
+          tabindex={dialog().mode === 'ui' ? 0 : -1}
+          aria-selected={dialog().mode === 'ui'}
           onClick={() => settings.actions.setSettingsMode('ui')}
         >
           UI
@@ -78,15 +80,15 @@ export const SettingsToolbar: Component = () => {
           type="button"
           id="settings-mode-json"
           title="Edit settings.json"
-          class="btn"
-          data-size="sm"
-          aria-pressed={dialog().mode === 'json'}
-          data-variant={dialog().mode === 'json' ? 'secondary' : 'outline'}
+          role="tab"
+          aria-controls="settings-body"
+          tabindex={dialog().mode === 'json' ? 0 : -1}
+          aria-selected={dialog().mode === 'json'}
           onClick={() => settings.actions.setSettingsMode('json')}
         >
           JSON
         </button>
-      </div>
+      </TabRail>
       <button
         id="settings-close"
         type="button"
@@ -98,7 +100,7 @@ export const SettingsToolbar: Component = () => {
         data-size="icon-sm"
         onClick={settings.actions.closeSettings}
       >
-        <span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true" />
+        <span class="icon-[ph--x] shrink-0" aria-hidden="true" />
       </button>
     </header>
   );

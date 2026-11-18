@@ -6,7 +6,7 @@ import type { JSX } from 'solid-js';
 import { createMemo, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { ContextMenu } from '../lib/ContextMenu.tsx';
-import { fileKind } from './tree-logic.ts';
+import { fileIcon } from '../lib/file-icon.ts';
 export function TreeRow(props: TreeRowProps): JSX.Element {
   const editor = useEditor();
   const decoration = createMemo(() => editor.tree.decoration(props.row));
@@ -76,7 +76,7 @@ export function TreeRow(props: TreeRowProps): JSX.Element {
     >
       {(menu) => (
         <div
-          class="tr flex min-h-6 cursor-pointer select-none items-center gap-1.5 pr-2 text-xs whitespace-nowrap hover:bg-sidebar-accent focus-visible:outline focus-visible:outline-ring [&.sel]:bg-sidebar-accent [&.ignored]:opacity-50 [&.git-M]:text-primary-text [&.git-R]:text-primary-text [&.git-A]:text-gi [&.git-untracked]:text-gi [&.git-D]:text-gd [&.git-D_.nm]:line-through [&.your-change]:font-semibold [.scope-pr_&.your-change]:font-normal [&.file-viewed_.nm]:opacity-50 group"
+          class="tr flex min-h-6 cursor-pointer select-none items-center gap-1.5 pr-2 text-xs whitespace-nowrap hover:bg-sidebar-accent [&.sel]:bg-sidebar-accent [&.ignored]:text-muted-foreground [&.git-M]:text-warn [&.git-R]:text-warn [&.git-A]:text-gi [&.git-untracked]:text-gi [&.git-D]:text-gd [&.git-D_.nm]:line-through [&.your-change]:font-semibold [.scope-pr_&.your-change]:font-normal [&.file-viewed_.nm]:text-muted-foreground group"
           classList={{
             dir: !!props.row.dir,
             file: !props.row.dir,
@@ -101,25 +101,29 @@ export function TreeRow(props: TreeRowProps): JSX.Element {
           data-dir={props.row.dir ? props.row.path : undefined}
           data-file={!props.row.dir ? props.row.path : undefined}
           title={(props.row.dir ? 'Folder: ' : 'Open ') + props.row.path}
-          style={{ 'padding-left': `${8 + props.row.depth * 12 + (props.row.dir ? 0 : 12)}px` }}
+          style={{
+            'padding-left': `${8 + props.row.depth * 12 + (props.row.dir ? 0 : 12)}px`,
+            '--depth': String(props.row.depth),
+          }}
           onClick={open}
         >
           <Show
             when={props.row.dir}
             fallback={
               <span
-                class="ic size-2 shrink-0 rounded-sm bg-faint [--dot:var(--faint)] data-[t=code]:bg-[var(--nf)] data-[t=data]:bg-[var(--kt)] data-[t=web]:bg-[var(--nt)] data-[t=img]:bg-[var(--nc)]"
-                data-t={fileKind(props.row.name)}
+                class={`${fileIcon(props.row.name)} shrink-0 text-muted-foreground`}
+                aria-hidden="true"
               />
             }
           >
             <span
               data-ui="ar"
-              class="shrink-0 text-muted-foreground size-2 border-r border-t border-muted-foreground rotate-45 group-[.open]:rotate-[135deg]"
+              class="icon-[ph--caret-right] shrink-0 text-muted-foreground group-[.open]:rotate-90"
+              aria-hidden="true"
             />
           </Show>
           <button
-            class="nm min-h-6 min-w-6 text-left focus-visible:outline focus-visible:outline-ring truncate group-[.dir.dirty]:after:ml-1 group-[.dir.dirty]:after:inline-block group-[.dir.dirty]:after:size-1 group-[.dir.dirty]:after:rounded-full group-[.dir.dirty]:after:bg-primary"
+            class="nm min-h-6 min-w-6 text-left truncate group-[.dir.dirty]:after:ml-1 group-[.dir.dirty]:after:inline-block group-[.dir.dirty]:after:size-1 group-[.dir.dirty]:after:rounded-full group-[.dir.dirty]:after:bg-warn"
             tabindex="-1"
           >
             {props.row.name}
@@ -129,7 +133,7 @@ export function TreeRow(props: TreeRowProps): JSX.Element {
               <span class="gs w-3 text-center font-mono">{decoration().code}</span>
             </Show>
             <Show when={!props.row.dir && decoration().yours}>
-              <span class="text-primary" title="Your change">
+              <span class="text-primary-text" title="Your change">
                 YOU
               </span>
             </Show>
@@ -170,7 +174,7 @@ export function TreeRow(props: TreeRowProps): JSX.Element {
               aria-label="Actions"
               onClick={menu.open}
             >
-              <span class="icon-[lucide--ellipsis] size-3 shrink-0" aria-hidden="true" />
+              <span class="icon-[ph--dots-three] shrink-0" aria-hidden="true" />
             </button>
           </span>
         </div>

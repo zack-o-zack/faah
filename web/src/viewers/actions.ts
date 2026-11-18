@@ -125,8 +125,8 @@ function buildViewerActions(store: ViewerStore) {
     toggleViewed(path: string): void {
       store.actions.setViewed(path, !store.state.viewers.viewed[path]);
     },
-    walkStart(index = 0, surface: WalkPosition['surface'] = 'source') {
-      store.actions.setWalk(walkStart(model(), index, surface));
+    walkStart(index = 0, surface: WalkPosition['surface'] = 'source', step = 0) {
+      store.actions.setWalk(walkStart(model(), index, surface, step));
     },
     walkMove(delta: -1 | 1) {
       store.actions.setWalk(walkMove(model(), store.state.explanation.walk, delta));

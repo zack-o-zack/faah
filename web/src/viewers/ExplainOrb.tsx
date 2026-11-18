@@ -24,10 +24,11 @@ export function ExplainOrb(): JSX.Element {
           id="explain-orb"
           class={
             hasWalkthrough()
-              ? 'card group max-w-full bg-popover text-popover-foreground shadow-md data-[phase=done]:bg-popover/70 data-[phase=done]:backdrop-blur-sm'
+              ? 'card group max-w-full text-popover-foreground shadow-pop'
               : 'group flex max-w-full flex-col gap-1'
           }
           data-size={hasWalkthrough() ? 'sm' : undefined}
+          data-orb-sheet={hasWalkthrough() ? '' : undefined}
           style={{ width: hasWalkthrough() ? 'min(28rem, calc(100vw - 2rem))' : undefined }}
           onKeyDown={(event) => {
             if (event.key === 'Escape') {
@@ -50,15 +51,16 @@ export function ExplainOrb(): JSX.Element {
           <Dynamic
             component={hasWalkthrough() ? 'header' : 'div'}
             data-phase={state.model?.phase}
+            data-orb-sheet={hasWalkthrough() ? undefined : ''}
             class={
               hasWalkthrough()
                 ? 'group flex min-w-0 w-full items-start'
-                : 'group flex w-full items-center overflow-hidden rounded-full border bg-popover text-popover-foreground shadow-md data-[phase=done]:items-start data-[phase=done]:rounded-xl data-[phase=done]:bg-popover/70 data-[phase=done]:backdrop-blur-sm'
+                : 'group flex w-full items-center gap-1 overflow-hidden rounded-pill border p-1 text-popover-foreground shadow-pop data-[phase=done]:items-start data-[phase=failed]:items-start data-[phase=done]:rounded-[var(--radius-xl)] data-[phase=failed]:rounded-[var(--radius-xl)]'
             }
           >
             <button
               id="explain-orb-open"
-              class="btn relative min-w-0 shrink group-data-[phase=done]:h-auto group-data-[phase=done]:items-start group-data-[phase=done]:py-2 group-data-[phase=done]:text-left"
+              class="btn relative min-w-0 shrink group-data-[phase=done]:h-auto group-data-[phase=done]:items-start group-data-[phase=done]:gap-2.5 group-data-[phase=done]:rounded-[var(--radius-lg)] group-data-[phase=done]:px-3 group-data-[phase=done]:py-2 group-data-[phase=done]:text-left group-data-[phase=failed]:h-auto group-data-[phase=failed]:items-start group-data-[phase=failed]:rounded-[var(--radius-lg)] group-data-[phase=failed]:text-left"
               // Cancel the small ghost button padding to align text with the card body.
               classList={{ '-ms-2.5': hasWalkthrough() }}
               data-variant="ghost"
@@ -71,29 +73,33 @@ export function ExplainOrb(): JSX.Element {
               }}
             >
               <Show when={view()?.busy}>
-                <span
-                  data-orb="spin"
-                  class="size-3 shrink-0 rounded-full border-2 border-border border-t-primary animate-spin motion-reduce:animate-none"
-                />
+                <span data-orb="spin" class="inline-flex shrink-0">
+                  <span class="icon-[ph--spinner] motion-safe:animate-spin" aria-hidden="true" />
+                </span>
               </Show>
               <Show when={state.model?.phase === 'done'}>
-                <span
-                  data-orb="done"
-                  class="icon-[lucide--check] mt-[3px] size-3.5 shrink-0 text-primary"
-                />
+                <span data-orb="done" class="mt-px inline-flex shrink-0">
+                  <span class="icon-[ph--spinner]" aria-hidden="true" />
+                </span>
               </Show>
               <Show when={state.model?.phase === 'failed'}>
-                <span
-                  data-orb="fail"
-                  class="icon-[lucide--circle-alert] mt-[3px] size-3.5 shrink-0 text-destructive"
-                />
+                <span data-orb="fail" class="mt-px inline-flex shrink-0">
+                  <span
+                    class="icon-[ph--warning-circle] text-destructive"
+                    role="img"
+                    aria-label="Failed"
+                  />
+                </span>
               </Show>
               <span class="flex min-w-0 max-w-md flex-col gap-0.5">
                 <span data-orb="text" class="truncate">
                   {state.compact && hasWalkthrough() ? view()?.text : view()?.shown}
                 </span>
                 <Show when={view()?.snippet && !(hasWalkthrough() && state.compact)}>
-                  <span data-orb="snippet" class="line-clamp-2 whitespace-normal font-normal">
+                  <span
+                    data-orb="snippet"
+                    class="line-clamp-2 whitespace-normal font-normal text-muted-foreground"
+                  >
                     {view()?.snippet}
                   </span>
                 </Show>
@@ -113,22 +119,22 @@ export function ExplainOrb(): JSX.Element {
                 <span
                   class={
                     state.compact
-                      ? 'icon-[lucide--chevrons-up-down] size-3.5'
-                      : 'icon-[lucide--chevrons-down-up] size-3.5'
+                      ? 'icon-[ph--caret-up-down]'
+                      : 'icon-[ph--arrows-in-line-vertical]'
                   }
                 />
               </button>
             </Show>
             <button
               id="explain-orb-close"
-              class="btn shrink-0"
+              class="btn shrink-0 group-data-[phase=done]:self-start group-data-[phase=failed]:self-start"
               classList={{ 'ml-auto': !hasWalkthrough() }}
               data-variant="ghost"
               data-size="icon-sm"
               aria-label="Close explanation"
               onClick={actions.dismissOrb}
             >
-              <span class="icon-[lucide--x] size-3.5" />
+              <span class="icon-[ph--x]" />
             </button>
           </Dynamic>
           <Show

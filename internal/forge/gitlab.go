@@ -40,7 +40,7 @@ func (g *gitlab) TokenSetup(host string) TokenSetup {
 	return TokenSetup{
 		URL: "https://" + host + "/-/user_settings/personal_access_tokens",
 		Steps: []string{
-			"Select Add new token, name it (e.g. faah) and pick an expiration date.",
+			"Select Add new token, name it (e.g. fibo) and pick an expiration date.",
 			"Under Select scopes, check api.",
 			"Create the token and copy it.",
 		},

@@ -1,0 +1,18 @@
+/* Gruvbox Light: the Gruvbox Light palette, for code surfaces only. Token reference: docs/internals/styling-and-themes.md. */
+:root[data-code-theme="gruvbox-light"] .code-surface {
+  --theme-name: "Gruvbox Light";
+  color-scheme: light;
+
+  /* Surface and text. */
+  --background: #fbf1c7; --foreground: #3c3836; --muted-foreground: #665c54; --faint: #928374; --border: #d5c4a1;
+  /* Selection, current line and search. */
+  --sel: #d5c4a1; --cur: #f5eac0; --mark: rgba(215, 153, 33, 0.25); --mark-active: #fabd2f; --on-mark-active: var(--foreground);
+  /* Diffs and status. */
+  --gi: #79740e; --gd: #9d0006; --gi-bg: rgba(121, 116, 14, 0.15); --gd-bg: rgba(157, 0, 6, 0.12);
+  --gi-word: #ddd49c; --gd-word: #edcdaa; --err: #9d0006; --warn: #8f6503;
+  /* Syntax. */
+  --k: #9d0006; --kt: #714a0d; --nf: #325b42; --nc: #714a0d; --nb: #953103;
+  --nv: #065b6b; --no: #813966; --na: #325b42; --nt: #325b42; --nd: #953103;
+  --np: #065b6b; --s: #58550b; --m: #813966; --o: #953103; --p: #5b5049;
+  --c: #5b5148; --cp: #325b42;
+}

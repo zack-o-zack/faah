@@ -1,0 +1,18 @@
+/* Catppuccin Mocha: the Catppuccin Mocha palette, for code surfaces only. Token reference: docs/internals/styling-and-themes.md. */
+:root[data-code-theme="catppuccin-mocha"] .code-surface {
+  --theme-name: "Catppuccin Mocha";
+  color-scheme: dark;
+
+  /* Surface and text. */
+  --background: #1e1e2e; --foreground: #cdd6f4; --muted-foreground: #b5bdd7; --faint: #b5bdd7; --border: #11111b;
+  /* Selection, current line and search. */
+  --sel: rgba(147, 153, 178, 0.25); --cur: #272738; --mark: rgba(249, 226, 175, 0.25); --mark-active: #fab387; --on-mark-active: var(--background);
+  /* Diffs and status. */
+  --gi: #a6e3a1; --gd: #f9a8be; --gi-bg: rgba(166, 227, 161, 0.15); --gd-bg: rgba(243, 139, 168, 0.15);
+  --gi-word: #2e363c; --gd-word: #3d3142; --err: #f9a8be; --warn: #fab387;
+  /* Syntax. */
+  --k: #d1b1ff; --kt: #f9e2af; --nf: #9fc5ff; --nc: #f9e2af; --nb: #f9a8be;
+  --nv: #cdd6f4; --no: #fab387; --na: #f9e2af; --nt: #9fc5ff; --nd: #fab387;
+  --np: #b4befe; --s: #a6e3a1; --m: #fab387; --o: #89dceb; --p: #bac2de;
+  --c: #b5bdd7; --cp: #f5c2e7;
+}

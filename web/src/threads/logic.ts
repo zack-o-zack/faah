@@ -63,9 +63,3 @@ export function turnDuration(ms = 0): string {
   if (ms < 60000) return (ms / 1000).toFixed(1) + 's';
   return Math.floor(ms / 60000) + 'm ' + Math.round((ms % 60000) / 1000) + 's';
 }
-
-// These labels mirror agents.StepLabel; the Go label test guards their exact wording.
-export const EXPLAIN_STEP_LABELS = {
-  notes: 'Show notes',
-  walkthrough: 'Show a walkthrough',
-} as const;

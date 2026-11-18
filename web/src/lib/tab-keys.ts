@@ -1,5 +1,6 @@
 // Activate and focus the adjacent enabled tab. Solid owns the selection via onClick.
 export function handleTabKeys(event: KeyboardEvent & { currentTarget: HTMLElement }): void {
+  if (event.altKey || event.ctrlKey || event.metaKey) return;
   if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
   const tabs = [
     ...event.currentTarget.querySelectorAll<HTMLButtonElement>(
@@ -8,6 +9,7 @@ export function handleTabKeys(event: KeyboardEvent & { currentTarget: HTMLElemen
   ];
   if (!tabs.length) return;
   event.preventDefault();
+  event.stopPropagation();
   const target = event.target;
   const active = tabs.findIndex(
     (tab) => tab === document.activeElement || (target instanceof Node && tab.contains(target)),

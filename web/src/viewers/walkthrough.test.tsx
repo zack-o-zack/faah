@@ -121,37 +121,36 @@ async function start(fixture: ReturnType<typeof setup>) {
   await waitFor(() => expect(fixture.editor.walkthrough.focus()?.l1).toBe(2));
 }
 
-test('recorded tool steps expose turn actions without toggling their details', async () => {
+test.each([1, 2])('walkthrough counts pluralize %i steps and files', async (count) => {
   const fixture = setup();
-  const tools = render(() => (
-    <EditorProvider value={fixture.editor}>
-      <ThreadSteps thread={thread} turn={required(thread.turns[0])} />
-    </EditorProvider>
-  ));
+  const walkthrough = {
+    ...flow,
+    steps: [required(flow.steps[0]), required(flow.steps[2])].slice(0, count),
+  };
+  const counted = decodeThread({
+    id: 'counts',
+    kind: 'explain',
+    turns: [{ id: 1, walkthroughs: [walkthrough] }],
+  });
+  await fixture.editor.actions.showExplanation(counted, 1);
+  expect(screen.getByText(count === 1 ? '1 step · 1 file' : '2 steps · 2 files')).toBeTruthy();
+  fixture.editor.actions.setWalkCompact(true);
+  expect(screen.getByText(count === 1 ? '1 step' : '2 steps')).toBeTruthy();
+  fixture.view.unmount();
+});
+
+test('recorded tool steps describe the run without duplicate editor actions', () => {
+  render(() => <ThreadSteps turn={required(thread.turns[0])} />);
   const details = required(
     document.querySelector<HTMLDetailsElement>('details[data-ui="thr-steps"]'),
   );
   details.open = true;
-  const list = within(details);
-  expect(list.getAllByRole('button')).toHaveLength(2);
-  await fireEvent.click(list.getByRole('button', { name: 'Show on code' }));
-  expect(details.open).toBe(true);
-  expect(fixture.editor.store.state.explanation.model).toMatchObject({ id: 'walk', turn: 1 });
-  expect(fixture.editor.store.state.explanation.walk).toBeNull();
-  await fireEvent.click(list.getByRole('button', { name: 'Open walkthrough' }));
-  await waitFor(() => expect(fixture.editor.walkthrough.focus()?.title).toBe('Collect input'));
-  expect(fixture.editor.store.state.explanation.walk).toEqual({
-    index: 0,
-    step: 0,
-    surface: 'source',
-  });
-  expect(fixture.editor.active()).toMatchObject({ path: 'a.go', cur: 2 });
-  expect(details.open).toBe(true);
-  tools.unmount();
-  fixture.view.unmount();
+  expect(within(details).getByText('Show notes')).toBeTruthy();
+  expect(within(details).getByText('Show a walkthrough')).toBeTruthy();
+  expect(within(details).queryAllByRole('button')).toHaveLength(0);
 });
 
-test('refused calls have no action, and a walkthrough-only running turn opens and starts', async () => {
+test('refused calls have no action, and a walkthrough-only running turn starts from its card', async () => {
   const fixture = setup();
   const empty = decodeThread({
     id: 'empty',
@@ -160,7 +159,7 @@ test('refused calls have no action, and a walkthrough-only running turn opens an
   });
   const refused = render(() => (
     <EditorProvider value={fixture.editor}>
-      <ThreadSteps thread={empty} turn={required(empty.turns[0])} />
+      <ThreadSteps turn={required(empty.turns[0])} />
     </EditorProvider>
   ));
   expect(refused.container.querySelector('button')).toBeNull();
@@ -175,15 +174,13 @@ test('refused calls have no action, and a walkthrough-only running turn opens an
       <ThreadTurn thread={walkOnly} turn={required(walkOnly.turns[0])} />
     </EditorProvider>
   ));
-  await fireEvent.click(turn.getByRole('button', { name: 'Show on code' }));
+  expect(turn.queryByRole('switch')).toBeNull();
+  await fireEvent.click(turn.getByRole('button', { name: /Collect input/ }));
   expect(fixture.editor.store.state.explanation.model).toMatchObject({
     id: 'only',
     turn: 2,
     phase: 'running',
   });
-  expect(fixture.editor.store.state.explanation.walk).toBeNull();
-  expect(screen.getByRole('button', { name: 'Start' })).toBeTruthy();
-  await fixture.editor.actions.showExplanation(walkOnly, 2, { walkthrough: true });
   await waitFor(() => expect(fixture.editor.walkthrough.focus()?.l1).toBe(2));
   expect(fixture.editor.active()?.path).toBe('a.go');
   turn.unmount();
@@ -340,11 +337,11 @@ test('section arrows start and move once, while controls and modified arrows are
   fixture.view.unmount();
 });
 
-test('focus mode dims only the step file, virtualizes its title, and keeps source operations outside annotations', async () => {
+test('focus mode highlights the step file, virtualizes its title, and keeps source operations outside annotations', async () => {
   const fixture = setup();
   const editor = fixture.editor;
   await editor.actions.showExplanation(thread, 1);
-  await screen.findByRole('button', { name: 'The earlier note' });
+  await screen.findByText('The earlier note', { selector: '[data-note-inline] .truncate' });
   await start(fixture);
   const rows = required(document.getElementById('rows'));
   const title = required(rows.querySelector<HTMLElement>('[data-walk-title]'));
@@ -352,8 +349,8 @@ test('focus mode dims only the step file, virtualizes its title, and keeps sourc
   expect(title.textContent).toContain('1/3');
   expect(rows.querySelector('[data-note-inline]')).toBeNull();
   expect(rows.querySelector('[data-note-panel]')).toBeNull();
-  expect(document.querySelector<HTMLElement>('[data-l="1"]')?.style.opacity).toBe('0.3');
-  expect(document.querySelector<HTMLElement>('[data-l="2"]')?.style.opacity).toBe('1');
+  expect(document.querySelector<HTMLElement>('[data-l="1"]')?.style.opacity).toBe('');
+  expect(document.querySelector<HTMLElement>('[data-l="2"]')?.style.opacity).toBe('');
   expect(document.querySelector('[data-l="2"] [data-note-bar]')).toBeTruthy();
   const dom = createSourceDOM(rows, () => ({ path: 'a.go' }));
   expect(dom.toPos(title, 0)).toBeNull();
@@ -373,17 +370,22 @@ test('focus mode dims only the step file, virtualizes its title, and keeps sourc
   expect(editor.store.state.explanation.walk?.step).toBe(0);
   await editor.actions.openFile('b.go', { view: 'source' });
   expect(editor.walkthrough.focus()).toBeNull();
-  expect(editor.dimmed(1)).toBe(false);
+  expect(editor.walkContains(1)).toBe(false);
   await editor.actions.openFile('a.go', { view: 'source' });
   expect(editor.walkthrough.focus()?.l1).toBe(2);
+  expect(editor.walkMuted(1)).toBe(true);
+  expect(editor.walkMuted(2)).toBe(false);
+  expect(document.querySelector('[data-l="1"]')?.classList.contains('opacity-35')).toBe(true);
+  expect(document.querySelector('[data-l="2"]')?.classList.contains('opacity-35')).toBe(false);
   editor.actions.walkStop();
-  await screen.findByRole('button', { name: 'The earlier note' });
+  await screen.findByText('The earlier note', { selector: '[data-note-inline] .truncate' });
   expect(document.querySelector('[data-walk-title]')).toBeNull();
   editor.actions.walkStart();
   await waitFor(() => expect(editor.walkthrough.focus()?.l1).toBe(2));
   editor.actions.dismissOrb();
   expect(editor.walkthrough.focus()).toBeNull();
-  expect(editor.dimmed(1)).toBe(false);
+  expect(editor.walkContains(1)).toBe(false);
+  expect(editor.walkMuted(1)).toBe(false);
   fixture.view.unmount();
 });
 
@@ -429,7 +431,7 @@ test('changed, past-end and missing step ranges remain visible in the widget wit
   await fixture.editor.actions.showExplanation(missing, 1, { walkthrough: true });
   await screen.findByText('file not found');
   expect(fixture.editor.walkthrough.focus()).toBeNull();
-  expect(fixture.editor.dimmed(1)).toBe(false);
+  expect(fixture.editor.walkContains(1)).toBe(false);
   expect(
     within(screen.getByRole('region', { name: 'Walkthrough' })).getByText('Collect input'),
   ).toBeTruthy();
@@ -491,6 +493,9 @@ test('compact view keeps toggle focus, hides expanded content, and completes the
   });
   await fixture.editor.actions.showExplanation(rich, 1);
   expect(document.querySelector('[data-orb="done"]')?.classList.contains('shrink-0')).toBe(true);
+  const icon = required(document.querySelector('[data-orb="done"] .icon-\\[ph--spinner\\]'));
+  expect(icon.classList.contains('motion-safe:animate-spin')).toBe(false);
+  expect(document.querySelector('#explain-orb .fibo-spiral')).toBeNull();
   expect(document.querySelector('[data-orb="text"]')?.textContent).not.toContain('walkthrough');
   expect(document.getElementById('explain-orb-open')?.getAttribute('aria-label')).toContain(
     '1 walkthrough',
@@ -561,10 +566,19 @@ test('compact preference loads at startup and tolerates unavailable storage', ()
   restricted.view.unmount();
 });
 
-test('failure status icons cannot shrink beside their text', () => {
+test('busy and failed explanation icons retain their hooks and cannot shrink beside their text', () => {
   const fixture = setup();
   fixture.editor.actions.orbBegin();
+  const busy = required(document.querySelector('[data-orb="spin"] .icon-\\[ph--spinner\\]'));
+  expect(busy.classList.contains('motion-safe:animate-spin')).toBe(true);
+  expect(document.querySelector('[data-orb="spin"]')?.classList.contains('shrink-0')).toBe(true);
+  expect(document.querySelector('#explain-orb .fibo-spiral')).toBeNull();
   fixture.editor.actions.orbFailed('Could not explain');
+  const failed = screen.getByRole('img', { name: 'Failed' });
+  expect(failed.classList.contains('icon-[ph--warning-circle]')).toBe(true);
+  expect(failed.classList.contains('text-destructive')).toBe(true);
+  expect(document.querySelector('[data-orb=spin]')).toBeNull();
+  expect(document.querySelector('#explain-orb .fibo-spiral')).toBeNull();
   expect(document.querySelector('[data-orb="fail"]')?.classList.contains('shrink-0')).toBe(true);
   expect(document.querySelector('#explain-orb-compact')).toBeNull();
   fixture.view.unmount();

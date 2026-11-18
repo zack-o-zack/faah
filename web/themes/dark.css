@@ -1,30 +1,99 @@
-/* Tokyo Night inspired: a low-glare dark palette tuned for long reading sessions.
-   Token reference and how to write your own theme: docs/internals/styling-and-themes.md. */
+/* Dark. Theme contract: docs/internals/styling-and-themes.md. */
 :root[data-theme="dark"] {
-  --image-dark: #121214;
-  --image-light: #ffffff;
-  --theme-name: "Tokyo Night";
+  --theme-name: "Dark";
   color-scheme: dark;
 
-  /* surfaces, from the editor out to raised hover states */
-  --background: #1a1b26; --sidebar: #16161e; --card: #16161e; --popover: #1f2335; --secondary: #292e42; --muted: #1f2335; --sidebar-accent: #1f2335; --accent: #292e42;
-  /* text: primary, secondary, tertiary */
-  --foreground: #c0caf5; --card-foreground: #c0caf5; --popover-foreground: #c0caf5; --secondary-foreground: #c0caf5; --accent-foreground: #c0caf5; --sidebar-foreground: #c0caf5; --sidebar-accent-foreground: #c0caf5; --muted-foreground: #7aa2f7; --faint: #565f89;
-  /* borders and accent */
-  --border: #24283b; --input: #292e42; --sidebar-border: #24283b; --primary: #7aa2f7; --ring: #7aa2f7; --sidebar-primary: #7aa2f7; --sidebar-ring: #7aa2f7; --primary-text: #7dcfff;
-  --primary-foreground: #1a1b26; --sidebar-primary-foreground: #1a1b26;
-  /* selection, search matches, current line */
-  --sel: #283457; --mark: rgba(224, 175, 104, 0.3); --mark-active: #ff9e64; --cur: #1e2030;
-  /* elevation */
-  --shadow: 0 4px 16px rgba(15, 17, 26, 0.88);
+  /* Neutral surfaces and readable ink; green is reserved for agent send, brand marks and Open PR status. */
+  --surface: #1c1c1b;
+  --surface-raised: #262624;
+  --surface-sunken: #171716;
+  --ink: #ececea;
+  --ink-muted: #a3a29d;
+  --line: #33332f;
+  --line-strong: #76756f;
+  --on-spiral: #1c1c1b;
+  --spiral: #a8dc8c;
+  /* Pull request states use the familiar open/merged/closed/draft colours. */
+  --state-open: #238636;
+  --state-merged: #8957e5;
+  --state-closed: #da3633;
+  --state-draft: #6e7681;
+  --on-state: #ffffff;
+  --danger: #ff8796;
+  --danger-soft: #5a2530;
+  --focus: #7aa7f0;
+  --hover: #2c2c2a;
 
-  /* syntax */
-  --k: #bb9af7; --kt: #2ac3de; --nf: #7aa2f7; --nc: #e0af68; --nb: #7dcfff;
-  --nv: #c0caf5; --no: #ff9e64; --na: #b4f9f8; --nt: #73daca; --nd: #bb9af7;
-  --np: #7dcfff; --s: #9ece6a; --m: #ff9e64; --o: #89ddff; --p: #9aa5ce;
-  --c: #565f89; --cp: #bb9af7; --destructive: #f7768e; --err: #f7768e;
+  /* Basecoat aliases follow the fibo colours. */
+  --background: var(--surface);
+  --foreground: var(--ink);
+  --card: var(--surface-raised);
+  --card-foreground: var(--ink);
+  --popover: var(--surface-raised);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--surface);
+  --secondary: var(--surface-sunken);
+  --secondary-foreground: var(--ink);
+  --muted: var(--surface-sunken);
+  --muted-foreground: var(--ink-muted);
+  --accent: var(--hover);
+  --accent-foreground: var(--ink);
+  --border: var(--line);
+  --input: var(--line-strong);
+  --ring: var(--focus);
+  --sidebar: var(--surface-sunken);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--ink);
+  --sidebar-primary-foreground: var(--surface);
+  --sidebar-accent: var(--hover);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--line);
+  --sidebar-ring: var(--focus);
 
-  /* diffs and status */
-  --gi: #9ece6a; --gd: #f7768e;
-  --gi-bg: rgba(158, 206, 106, 0.16); --gd-bg: rgba(247, 118, 142, 0.16);
+  /* Selection, search, status, image surfaces and elevation. */
+  --image-dark: #1c1c1b;
+  --image-light: #faf9f6;
+  --faint: var(--ink-muted);
+  --primary-text: var(--ink);
+  --link: #4493f8;
+  --special: #a9b0f0;
+  --cur: var(--hover);
+  /* Blue selection preserves syntax contrast. */
+  --sel: rgba(122, 167, 240, 0.30);
+  --mark: rgba(227, 197, 83, 0.20);
+  --mark-active: #e3c553;
+  --on-mark-active: #1c1c1b;
+  --warn: #d29922;
+  --gi: #7ee787;
+  --gi-bg: #1f3021;
+  --gi-word: #235129;
+  --gd: #ff7b72;
+  --gd-bg: #322120;
+  --gd-word: #74312d;
+  --destructive: var(--danger);
+  --destructive-foreground: var(--surface);
+  --err: #ffabb5;
+  --shadow-raise: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-pop: 0 8px 20px -4px rgba(0, 0, 0, 0.55);
+  --shadow-dialog: 0 24px 56px -8px rgba(0, 0, 0, 0.7);
+
+  /* Syntax: indigo keywords, blue functions/tags, amber types, rose constants. */
+  --k: #d0d2ff;
+  --kt: #f1df9b;
+  --nf: #b5d8ff;
+  --nc: #f1df9b;
+  --nb: #b2ddec;
+  --nv: var(--ink);
+  --no: #f6c6da;
+  --na: #b2ddec;
+  --nt: #b5d8ff;
+  --nd: #d0d2ff;
+  --np: #d3d2ce;
+  --s: #b2ddec;
+  --m: #f6c6da;
+  --o: #d3d2ce;
+  --p: #d3d2ce;
+  --c: #d3d2ce;
+  --cp: #d0d2ff;
 }

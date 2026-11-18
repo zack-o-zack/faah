@@ -1,0 +1,154 @@
+export function fileIcon(name: string): string {
+  const lower = name.toLowerCase();
+  if (
+    (lower.startsWith('.') && lower.endsWith('rc')) ||
+    ['.env', '.gitignore', '.dockerignore', '.editorconfig', '.npmrc'].some((prefix) =>
+      lower.startsWith(prefix),
+    )
+  )
+    return 'icon-[ph--file-ini]';
+  switch (lower) {
+    case 'go.sum':
+    case 'package-lock.json':
+    case 'bun.lockb':
+      return 'icon-[ph--file-lock]';
+    case 'dockerfile':
+    case 'makefile':
+      return 'icon-[ph--file-code]';
+  }
+  const dot = lower.lastIndexOf('.');
+  switch (dot > 0 ? lower.slice(dot + 1) : '') {
+    case 'ts':
+    case 'mts':
+    case 'cts':
+      return 'icon-[ph--file-ts]';
+    case 'tsx':
+      return 'icon-[ph--file-tsx]';
+    case 'js':
+    case 'mjs':
+    case 'cjs':
+      return 'icon-[ph--file-js]';
+    case 'jsx':
+      return 'icon-[ph--file-jsx]';
+    case 'py':
+    case 'pyi':
+      return 'icon-[ph--file-py]';
+    case 'rs':
+      return 'icon-[ph--file-rs]';
+    case 'c':
+    case 'h':
+      return 'icon-[ph--file-c]';
+    case 'cpp':
+    case 'cc':
+    case 'cxx':
+    case 'hpp':
+    case 'hh':
+      return 'icon-[ph--file-cpp]';
+    case 'css':
+    case 'scss':
+    case 'sass':
+    case 'less':
+      return 'icon-[ph--file-css]';
+    case 'html':
+    case 'htm':
+      return 'icon-[ph--file-html]';
+    case 'md':
+    case 'mdx':
+    case 'markdown':
+      return 'icon-[ph--file-md]';
+    case 'vue':
+      return 'icon-[ph--file-vue]';
+    case 'sql':
+      return 'icon-[ph--file-sql]';
+    case 'csv':
+    case 'tsv':
+      return 'icon-[ph--file-csv]';
+    case 'svg':
+      return 'icon-[ph--file-svg]';
+    case 'png':
+      return 'icon-[ph--file-png]';
+    case 'jpg':
+    case 'jpeg':
+      return 'icon-[ph--file-jpg]';
+    case 'gif':
+    case 'webp':
+    case 'avif':
+    case 'ico':
+    case 'bmp':
+    case 'tiff':
+      return 'icon-[ph--file-image]';
+    case 'pdf':
+      return 'icon-[ph--file-pdf]';
+    case 'zip':
+    case 'tar':
+    case 'gz':
+    case 'tgz':
+    case 'bz2':
+    case 'xz':
+    case '7z':
+    case 'rar':
+      return 'icon-[ph--file-zip]';
+    case 'txt':
+    case 'log':
+      return 'icon-[ph--file-txt]';
+    case 'doc':
+    case 'docx':
+    case 'rtf':
+    case 'odt':
+      return 'icon-[ph--file-doc]';
+    case 'xls':
+    case 'xlsx':
+    case 'ods':
+      return 'icon-[ph--file-xls]';
+    case 'ppt':
+    case 'pptx':
+    case 'odp':
+      return 'icon-[ph--file-ppt]';
+    case 'ini':
+    case 'conf':
+    case 'cfg':
+    case 'toml':
+    case 'env':
+      return 'icon-[ph--file-ini]';
+    case 'lock':
+      return 'icon-[ph--file-lock]';
+    case 'mp3':
+    case 'wav':
+    case 'flac':
+    case 'ogg':
+    case 'm4a':
+      return 'icon-[ph--file-audio]';
+    case 'mp4':
+    case 'mov':
+    case 'webm':
+    case 'mkv':
+    case 'avi':
+      return 'icon-[ph--file-video]';
+    case 'go':
+    case 'rb':
+    case 'java':
+    case 'kt':
+    case 'kts':
+    case 'swift':
+    case 'php':
+    case 'sh':
+    case 'bash':
+    case 'zsh':
+    case 'fish':
+    case 'lua':
+    case 'ex':
+    case 'exs':
+    case 'scala':
+    case 'dart':
+    case 'cs':
+    case 'json':
+    case 'jsonc':
+    case 'yaml':
+    case 'yml':
+    case 'xml':
+    case 'mod':
+      return 'icon-[ph--file-code]';
+    default:
+      return 'icon-[ph--file-text]';
+  }
+}

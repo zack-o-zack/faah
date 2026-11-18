@@ -7,6 +7,7 @@ import { ErrorNotice } from '../lib/ErrorNotice.tsx';
 import { errorMessage } from '../lib/decode.ts';
 import { safeMarkdownURL } from '../lib/markdown-model.ts';
 import { OverviewDescription } from './OverviewDescription.tsx';
+import { Activity } from '../pr/Activity.tsx';
 import {
   CHECK_LABELS,
   CHECK_ORDER,
@@ -19,17 +20,17 @@ import {
 } from './overview-logic.ts';
 
 const CHECK_ICONS: Record<PRCheckState, string> = {
-  passed: 'icon-[lucide--circle-check] text-gi',
-  failed: 'icon-[lucide--circle-x] text-destructive',
-  running: 'icon-[lucide--loader-circle] text-warn motion-safe:animate-spin',
-  skipped: 'icon-[lucide--circle-minus] text-muted-foreground',
-  neutral: 'icon-[lucide--circle] text-muted-foreground',
+  passed: 'icon-[ph--check-circle] text-gi',
+  failed: 'icon-[ph--x-circle] text-destructive',
+  running: 'icon-[ph--circle-notch] text-warn motion-safe:animate-spin',
+  skipped: 'icon-[ph--minus-circle] text-muted-foreground',
+  neutral: 'icon-[ph--circle] text-muted-foreground',
 };
 const REVIEW_ICONS: Record<PRReviewState, string> = {
-  approved: 'icon-[lucide--check]',
-  changes_requested: 'icon-[lucide--circle-alert]',
-  commented: 'icon-[lucide--message-circle]',
-  pending: 'icon-[lucide--clock-3]',
+  approved: 'icon-[ph--check]',
+  changes_requested: 'icon-[ph--warning-circle]',
+  commented: 'icon-[ph--chat-circle]',
+  pending: 'icon-[ph--clock]',
 };
 const CHECK_TONES: Record<PRCheckState, string> = {
   passed: 'text-gi',
@@ -80,23 +81,23 @@ function OverviewSkeleton(): JSX.Element {
       <OverviewLayout
         sidebar={
           <div aria-hidden="true" class="space-y-6">
-            <div class="skeleton h-4 w-24 rounded motion-reduce:animate-none" />
+            <div class="skeleton h-4 w-24 motion-reduce:animate-none" />
             <For each={[0, 1, 2, 3]}>
-              {() => <div class="skeleton h-6 w-full rounded motion-reduce:animate-none" />}
+              {() => <div class="skeleton h-6 w-full motion-reduce:animate-none" />}
             </For>
             <hr role="separator" class="border-border" />
-            <div class="skeleton h-4 w-24 rounded motion-reduce:animate-none" />
+            <div class="skeleton h-4 w-24 motion-reduce:animate-none" />
             <For each={[0, 1, 2]}>
-              {() => <div class="skeleton h-7 w-full rounded motion-reduce:animate-none" />}
+              {() => <div class="skeleton h-7 w-full motion-reduce:animate-none" />}
             </For>
           </div>
         }
       >
         <div aria-hidden="true" class="space-y-5">
-          <div class="skeleton h-7 w-40 rounded motion-reduce:animate-none" />
-          <div class="skeleton h-9 w-3/4 rounded motion-reduce:animate-none" />
+          <div class="skeleton h-7 w-40 motion-reduce:animate-none" />
+          <div class="skeleton h-9 w-3/4 motion-reduce:animate-none" />
           <For each={[0, 1, 2, 3, 4, 5]}>
-            {() => <div class="skeleton h-4 w-full rounded motion-reduce:animate-none" />}
+            {() => <div class="skeleton h-4 w-full motion-reduce:animate-none" />}
           </For>
         </div>
       </OverviewLayout>
@@ -136,10 +137,7 @@ function CheckRow(props: { check: PRCheck; grouped?: boolean }): JSX.Element {
       </section>
       <Show when={safeMarkdownURL(props.check.url)}>
         <aside class="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">
-          <span
-            class="icon-[lucide--external-link] size-3 text-muted-foreground"
-            aria-hidden="true"
-          />
+          <span class="icon-[ph--arrow-square-out] text-muted-foreground" aria-hidden="true" />
         </aside>
       </Show>
     </li>
@@ -202,21 +200,10 @@ function Checks(props: { checks: PRCheck[]; truncated: boolean; total: number })
     counts()
       .map((row) => `${row.count} ${row.state}`)
       .join(', ');
-  const segments = () =>
-    counts().map((row) => ({
-      count: row.count,
-      color: {
-        failed: 'bg-destructive',
-        running: 'bg-warn',
-        passed: 'bg-gi',
-        neutral: 'bg-muted-foreground',
-        skipped: 'bg-muted-foreground',
-      }[row.state],
-    }));
   return (
     <section aria-label="Checks" class="min-w-0">
       <header class="mb-3 space-y-2">
-        <h2 class="flex items-center gap-2 text-sm font-semibold">
+        <h2 class="flex items-center gap-2 font-display text-sm font-semibold">
           Checks
           <span class="badge" data-variant="secondary">
             {props.checks.length}
@@ -233,16 +220,14 @@ function Checks(props: { checks: PRCheck[]; truncated: boolean; total: number })
             </For>
           </div>
           <div
-            class="flex h-1.5 overflow-hidden rounded-full"
+            class="progress"
+            data-checks
             role="img"
             aria-label={'Check proportions: ' + summary()}
           >
-            <For each={segments()}>
+            <For each={counts()}>
               {(segment) => (
-                <span
-                  class={segment.color}
-                  style={{ width: `${(segment.count / props.checks.length) * 100}%` }}
-                />
+                <span data-state={segment.state} style={{ 'flex-grow': segment.count }} />
               )}
             </For>
           </div>
@@ -291,7 +276,7 @@ function Reviewers(props: { reviewers: PRReviewer[] }): JSX.Element {
   return (
     <section aria-label="Reviewers" class="min-w-0">
       <header class="mb-3 space-y-1">
-        <h2 class="text-sm font-semibold">Reviewers</h2>
+        <h2 class="font-display text-sm font-semibold">Reviewers</h2>
         <Show when={props.reviewers.length}>
           <p class="text-xs text-muted-foreground">{reviewSummary(props.reviewers)}</p>
         </Show>
@@ -409,6 +394,9 @@ export function Overview(): JSX.Element {
                 }
               >
                 <Description data={data()} url={editor.store.state.workspace.meta?.pr?.url || ''} />
+                <Show when={editor.pr.available()}>
+                  <Activity />
+                </Show>
               </OverviewLayout>
             )}
           </Show>

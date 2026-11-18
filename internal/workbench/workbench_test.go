@@ -3,6 +3,7 @@ package workbench
 import (
 	"context"
 	"encoding/json"
+	"faah/internal/httpx"
 	"faah/internal/httpx/httpxtest"
 	"io"
 	"net/http"
@@ -321,16 +322,6 @@ func TestWorkbenchRunsChildThroughProxy(t *testing.T) {
 	if len(metrics.Parts) != 2 || metrics.RSSBytes != metrics.Parts[0].RSSBytes+metrics.Parts[1].RSSBytes || metrics.Parts[1].RSSBytes == 0 {
 		t.Fatalf("metrics: %+v", metrics)
 	}
-
-	if m := post("/base/api/wb/stop", `{"id":"`+id+`"}`); m["ok"] != true {
-		t.Fatalf("stop: %v", m)
-	}
-	wb.mu.Lock()
-	state := wb.children[id].state
-	wb.mu.Unlock()
-	if state != "stopped" {
-		t.Fatalf("after stop: %s", state)
-	}
 }
 
 // A target that fails on its first open leaves the list; the holding page
@@ -493,10 +484,10 @@ func TestWorkbenchSettingsOnlyTakesTheme(t *testing.T) {
 	if w := httpxtest.PostJSON(t, wb, "/api/settings", `{"github.token":"x"}`); w.Code != http.StatusBadRequest {
 		t.Fatalf("token accepted: %d", w.Code)
 	}
-	if w := httpxtest.PostJSON(t, wb, "/api/settings", `{"workbench.colorTheme":"rose-pine"}`); w.Code != http.StatusOK {
+	if w := httpxtest.PostJSON(t, wb, "/api/settings", `{"workbench.colorTheme":"dark"}`); w.Code != http.StatusOK {
 		t.Fatalf("theme refused: %d %s", w.Code, w.Body.String())
 	}
-	if got := wb.theme(); got != "rose-pine" {
+	if got := wb.theme(); got != "dark" {
 		t.Fatalf("theme %q", got)
 	}
 }
@@ -505,12 +496,17 @@ func TestWorkbenchPagesResolveMissingThemes(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	newTestStore(t)
 	wb := newTestLauncher("/", t.TempDir(), "", nil)
+	dataDir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dataDir, "themes"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dataDir, "themes", "custom.css"), []byte(`:root[data-theme="custom-night"] { --theme-name: "Custom night"; color-scheme: dark; }`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	wb.themes = httpx.Themes(wb.assets, "", dataDir)
 	for _, tc := range []struct{ theme, want string }{
-		{"faah", "catppuccin-mocha"},
-		{"missing-theme", "catppuccin-mocha"},
-		{"", "catppuccin-mocha"},
-		{"nord", "nord"},
-		{"catppuccin-latte", "catppuccin-latte"},
+		{"removed-theme", ""}, {"missing-theme", ""}, {"", ""},
+		{"dark", "dark"}, {"light", "light"}, {"custom-night", "custom-night"},
 	} {
 		t.Run(tc.theme, func(t *testing.T) {
 			if err := settings.UpdateMap(map[string]any{"workbench.colorTheme": tc.theme}); err != nil {
@@ -532,6 +528,12 @@ func TestWorkbenchPagesResolveMissingThemes(t *testing.T) {
 						wb.renderHolding(w, *page.hold)
 					}
 					body := w.Body.String()
+					if !strings.Contains(body, "<script>"+httpx.ThemeBootstrap+"</script>") {
+						t.Fatal("missing OS theme bootstrap")
+					}
+					if !strings.Contains(body, `data-theme-preference="`+tc.theme+`"`) {
+						t.Fatal("missing explicit preference")
+					}
 					if !strings.Contains(body, `data-theme="`+tc.want+`"`) {
 						t.Fatalf("page does not use available theme %q", tc.want)
 					}

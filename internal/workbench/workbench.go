@@ -84,8 +84,8 @@ func stateDir() string {
 	if xdg := os.Getenv("XDG_STATE_HOME"); xdg != "" {
 		return filepath.Join(xdg, "faah")
 	}
-	if home, err := os.UserHomeDir(); err == nil && home != "" {
-		return filepath.Join(home, ".faah")
+	if dir := settings.DataDir(); dir != "" {
+		return dir
 	}
 	return filepath.Join(os.TempDir(), "faah")
 }
@@ -330,13 +330,13 @@ func (c *child) failure() string {
 			return s
 		}
 	}
-	return "faah exited unexpectedly"
+	return "fibo exited unexpectedly"
 }
 
 type Launcher struct {
 	store     *store
 	assets    fs.FS
-	devRoot   string
+	themes    *httpx.ThemeStyles
 	version   string
 	resolve   func(string) (string, string, int, error)
 	basePath  string
@@ -352,10 +352,10 @@ type Launcher struct {
 }
 
 type Options struct {
-	BasePath, CWD, Executable, Version, DevRoot string
-	ChildArgs                                   []string
-	Assets                                      fs.FS
-	ResolveTarget                               func(string) (root, initialFile string, line int, err error)
+	BasePath, CWD, Executable, Version, DevRoot, DataDir string
+	ChildArgs                                            []string
+	Assets                                               fs.FS
+	ResolveTarget                                        func(string) (root, initialFile string, line int, err error)
 }
 
 func New(opts Options) *Launcher {
@@ -366,7 +366,7 @@ func New(opts Options) *Launcher {
 		exe:       opts.Executable,
 		childArgs: opts.ChildArgs,
 		assets:    opts.Assets,
-		devRoot:   opts.DevRoot,
+		themes:    httpx.Themes(opts.Assets, opts.DevRoot, opts.DataDir),
 		version:   opts.Version,
 		resolve:   opts.ResolveTarget,
 		children:  map[string]*child{},
@@ -387,7 +387,7 @@ func (wb *Launcher) routes() {
 	sub, _ := fs.Sub(wb.assets, "web")
 	staticPrefix := wb.route("/static/")
 	wb.mux.Handle(staticPrefix, httpx.Static(sub, staticPrefix))
-	wb.mux.HandleFunc(wb.route("/static/themes.css"), httpx.Themes(wb.assets, wb.devRoot))
+	wb.mux.HandleFunc(wb.route("/static/themes.css"), wb.themes.ServeHTTP)
 	wb.mux.HandleFunc(wb.route("/api/wb/ping"), wb.handlePing)
 	wb.mux.HandleFunc(wb.route("/api/wb/state"), wb.handleState)
 	wb.mux.HandleFunc(wb.route("/api/wb/browse"), wb.handleBrowse)
@@ -396,7 +396,6 @@ func (wb *Launcher) routes() {
 	wb.mux.HandleFunc(wb.route("/api/metrics"), wb.handleMetrics)
 	wb.mux.HandleFunc(wb.route("/api/settings"), wb.handleSettings)
 	wb.mux.HandleFunc(wb.route("/api/wb/open"), wb.handleOpen)
-	wb.mux.HandleFunc(wb.route("/api/wb/stop"), wb.handleStop)
 	wb.mux.HandleFunc(wb.route("/api/wb/pin"), wb.handlePin)
 	wb.mux.HandleFunc(wb.route("/api/wb/remove"), wb.handleRemove)
 	wb.mux.HandleFunc(wb.route("/w/"), wb.handleWorkspace)
@@ -438,7 +437,7 @@ func (wb *Launcher) start(it item, forget bool) *child {
 		ctx: ctx, cancel: cancel, lastActive: time.Now()}
 	wb.children[it.ID] = c
 	if wb.closing {
-		c.state, c.err = "failed", "faah is shutting down"
+		c.state, c.err = "failed", "fibo is shutting down"
 		cancel()
 		close(c.done)
 		return c
@@ -564,7 +563,7 @@ func (wb *Launcher) run(c *child, it item, forget bool) {
 	case err := <-exited:
 		msg := c.failure()
 		if err == nil && msg == "" {
-			msg = "faah exited before it was ready"
+			msg = "fibo exited before it was ready"
 		}
 		failed(msg)
 		return
@@ -705,7 +704,7 @@ func trustedGet(w http.ResponseWriter, r *http.Request) bool {
 	}
 	host = strings.Trim(host, "[]")
 	if host != "localhost" && net.ParseIP(host) == nil {
-		httpx.Fail(w, http.StatusForbidden, "open faah by IP address or localhost")
+		httpx.Fail(w, http.StatusForbidden, "open fibo by IP address or localhost")
 		return false
 	}
 	return true
@@ -722,19 +721,25 @@ func (wb *Launcher) handleIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	html := strings.Replace(string(b), `<base href="/">`, fmt.Sprintf(`<base href="%s">`, template.HTMLEscapeString(wb.basePath)), 1)
-	html = strings.Replace(html, `data-theme="catppuccin-mocha"`, fmt.Sprintf(`data-theme="%s"`, template.HTMLEscapeString(wb.theme())), 1)
+	theme, codeLight, codeDark := settings.Choice()
+	html = wb.themes.HTML(html, httpx.ThemeChoice{Theme: theme, CodeLight: codeLight, CodeDark: codeDark})
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	io.WriteString(w, html)
 }
 
-func (wb *Launcher) theme() string {
-	if t := settings.Read().WorkbenchColorTheme; t != nil && *t != "" && !strings.ContainsAny(*t, `/\`) {
-		// Holding pages do not run the app's client-side theme initialization.
-		if info, err := fs.Stat(wb.assets, "web/themes/"+*t+".css"); err == nil && !info.IsDir() {
-			return *t
-		}
+func (wb *Launcher) configuredTheme() string {
+	if t := settings.Read().WorkbenchColorTheme; t != nil {
+		return *t
 	}
-	return "catppuccin-mocha"
+	return ""
+}
+
+func (wb *Launcher) theme() string {
+	theme := wb.configuredTheme()
+	if wb.themes.Has(theme) {
+		return theme
+	}
+	return ""
 }
 
 func (wb *Launcher) handlePing(w http.ResponseWriter, r *http.Request) {
@@ -1014,6 +1019,10 @@ func (wb *Launcher) handleSettings(w http.ResponseWriter, r *http.Request) {
 		httpx.Fail(w, http.StatusBadRequest, "only workbench.colorTheme can be set here")
 		return
 	}
+	if !wb.themes.Has(theme) {
+		httpx.Fail(w, http.StatusBadRequest, "unknown color theme")
+		return
+	}
 	if err := settings.UpdateMap(map[string]any{"workbench.colorTheme": theme}); err != nil {
 		httpx.Fail(w, http.StatusInternalServerError, err.Error())
 		return
@@ -1116,7 +1125,7 @@ func (wb *Launcher) resolveTarget(target string) (item, error) {
 	}
 	if _, pt, ok := forge.DetectPRURL(target); ok {
 		if git.Disabled() {
-			return item{}, errors.New("git is required for PR review; restart faah without -no-git")
+			return item{}, errors.New("git is required for PR review; restart fibo without -no-git")
 		}
 		return prItem(pt), nil
 	}
@@ -1132,21 +1141,6 @@ func (wb *Launcher) resolveTarget(target string) (item, error) {
 		return item{}, err
 	}
 	return dirItem(root), nil
-}
-
-func (wb *Launcher) handleStop(w http.ResponseWriter, r *http.Request) {
-	if !httpx.LocalPost(w, r) {
-		return
-	}
-	var body struct {
-		ID string `json:"id"`
-	}
-	if readJSONBody(r, &body) != nil || body.ID == "" {
-		httpx.Fail(w, http.StatusBadRequest, "id is required")
-		return
-	}
-	wb.stop(body.ID)
-	httpx.WriteJSON(w, map[string]any{"ok": true})
 }
 
 func (wb *Launcher) handlePin(w http.ResponseWriter, r *http.Request) {
@@ -1312,17 +1306,17 @@ func itemTitle(it item) string {
 }
 
 type holdingPage struct {
-	Base, Theme, Title, Error, Retry, Self, Progress string
-	Sub                                              string // the PR's repo#number, or the folder's path
-	PR                                               bool
-	Choose                                           string // Launcher URL that asks where the PR's clone is
-	Starting                                         bool
+	Base, Theme, Preference, Title, Error, Retry, Self, Progress string
+	Sub                                                          string // the PR's repo#number, or the folder's path
+	PR                                                           bool
+	Choose                                                       string // Launcher URL that asks where the PR's clone is
+	Starting                                                     bool
 }
 
 var holdingTmpl = template.Must(template.New("holding").Funcs(template.FuncMap{
 	"pageData": func(p holdingPage) (string, error) { b, err := json.Marshal(p); return string(b), err },
 }).Parse(`<!doctype html>
-<html lang="en" data-theme="{{.Theme}}">
+<html lang="en" data-theme="{{.Theme}}" data-theme-preference="{{.Preference}}">
 <head>
 <meta charset="utf-8">
 <base href="{{.Base}}">
@@ -1330,10 +1324,12 @@ var holdingTmpl = template.Must(template.New("holding").Funcs(template.FuncMap{
 {{if .Starting}}<noscript><meta http-equiv="refresh" content="1; url={{.Self}}"></noscript>
 {{end}}
 <script defer src="static/holding.js"></script>
-<title>{{if .Starting}}Opening…{{else}}faah{{end}}</title>
+<title>{{if .Starting}}Opening…{{else}}fibo{{end}}</title>
 <link rel="icon" type="image/svg+xml" href="static/favicon.svg">
+<link rel="preload" href="static/fonts/figtree-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="static/app.css">
 <link rel="stylesheet" href="static/themes.css">
+<script>` + httpx.ThemeBootstrap + `</script>
 </head>
 <body><div id="root" data-page="{{pageData .}}"></div>
 </body>
@@ -1341,7 +1337,7 @@ var holdingTmpl = template.Must(template.New("holding").Funcs(template.FuncMap{
 `))
 
 func (wb *Launcher) renderHolding(w http.ResponseWriter, p holdingPage) {
-	p.Base, p.Theme = wb.basePath, wb.theme()
+	p.Base, p.Theme, p.Preference = wb.basePath, wb.theme(), wb.configuredTheme()
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	holdingTmpl.Execute(w, p)
 }

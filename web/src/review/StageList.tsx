@@ -13,7 +13,7 @@ export function StageList(): JSX.Element {
     >
       <div class="flex flex-col gap-0.5 px-3 pt-3 pb-2">
         <div class="flex min-w-0 items-center gap-1.5">
-          <span class="icon-[lucide--sparkle] size-3.5 shrink-0 text-special" aria-hidden="true" />
+          <span class="icon-[ph--spinner] shrink-0 text-special" aria-hidden="true" />
           <WorkflowName />
           <div class="-my-1 flex shrink-0 items-center">
             <button
@@ -30,7 +30,7 @@ export function StageList(): JSX.Element {
               }
             >
               <span
-                class={`${review.state.layout === 'vertical' ? 'icon-[lucide--columns-2]' : 'icon-[lucide--rows-2]'} size-3.5 shrink-0`}
+                class={`${review.state.layout === 'vertical' ? 'icon-[ph--columns]' : 'icon-[ph--rows]'} shrink-0`}
                 aria-hidden="true"
               />
             </button>
@@ -43,7 +43,7 @@ export function StageList(): JSX.Element {
               data-size="icon-xs"
               onClick={() => editor.actions.openStageEditor(-1)}
             >
-              <span class="icon-[lucide--plus] size-3.5 shrink-0" aria-hidden="true" />
+              <span class="icon-[ph--plus] shrink-0" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -85,7 +85,7 @@ export function StageList(): JSX.Element {
               disabled={review.state.pending === 'run' || !review.stages().length}
               onClick={() => void editor.actions.runReview(0)}
             >
-              <span class="icon-[lucide--sparkle] size-3.5 shrink-0" aria-hidden="true" />
+              <span class="icon-[ph--spinner] shrink-0" aria-hidden="true" />
               <span>{review.state.pending === 'run' ? 'Starting…' : 'Run pipeline'}</span>
             </button>
           }

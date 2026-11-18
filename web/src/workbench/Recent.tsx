@@ -7,17 +7,29 @@ export function Recent(): JSX.Element {
   const { state, groups, actions } = useWorkbench();
   return (
     <>
-      <ul id="wb-recent" class="item-group gap-0.5">
-        <Show when={groups().pinned.length}>
-          <li class="text-xs text-muted-foreground">Pinned</li>
-        </Show>
-        <For each={groups().pinned}>{(item) => <RecentRow item={item} />}</For>
-        <Show when={groups().pinned.length && groups().recent.length}>
-          <li class="text-xs text-muted-foreground">Recent</li>
-        </Show>
-        <For each={groups().recent}>{(item) => <RecentRow item={item} />}</For>
-      </ul>
-      <Show when={groups().pinned.length + groups().recent.length < groups().total}>
+      <div id="wb-recent">
+        <For each={['prs', 'folders'] as const}>
+          {(kind) => (
+            <Show when={groups()[kind].length}>
+              <section aria-labelledby={`wb-recent-${kind}`}>
+                <h2
+                  id={`wb-recent-${kind}`}
+                  class="flex items-center gap-1.5 px-2.5 pt-2.5 pb-1 text-xs font-medium text-muted-foreground"
+                >
+                  {kind === 'prs' ? 'Pull requests' : 'Folders'}{' '}
+                  <span class="rounded-full bg-(--hover) px-1.5 text-[11px]">
+                    {groups()[kind].length}
+                  </span>
+                </h2>
+                <ul class="flex flex-col gap-0.5">
+                  <For each={groups()[kind]}>{(item) => <RecentRow item={item} />}</For>
+                </ul>
+              </section>
+            </Show>
+          )}
+        </For>
+      </div>
+      <Show when={groups().prs.length + groups().folders.length < groups().total}>
         <button class="btn" data-variant="ghost" onClick={actions.showAll}>
           Show all {groups().total}
         </button>
@@ -25,8 +37,8 @@ export function Recent(): JSX.Element {
       <Show when={!state.items.length}>
         <div class="empty py-12">
           <header>
-            <figure class="flex size-10 items-center justify-center rounded-lg bg-muted">
-              <span class="icon-[lucide--folder-open] size-5" aria-hidden="true" />
+            <figure class="flex size-10 items-center justify-center rounded-md bg-muted">
+              <span class="icon-[ph--folder-open]" aria-hidden="true" />
             </figure>
             <h2>Nothing opened yet</h2>
             <p>Paste a pull request URL or a folder path above, or find the folder in Browse.</p>

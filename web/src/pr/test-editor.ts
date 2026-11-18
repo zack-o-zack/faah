@@ -41,6 +41,7 @@ function buildPREditor({ meta = prMeta(), forge = null, request, post }: PREdito
     refreshTree: vi.fn(async () => {}),
     setSelection: vi.fn(),
     setReviewMode: vi.fn(),
+    setReviewTab: vi.fn(),
     openFile: vi.fn(async () => {}),
     centerLine: vi.fn(),
     reloadWorkspace: vi.fn(async () => {}),

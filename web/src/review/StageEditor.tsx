@@ -34,7 +34,7 @@ export function StageEditor(): JSX.Element {
                 data-size="icon-xs"
                 onClick={editor.actions.cancelStageEditor}
               >
-                <span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true" />
+                <span class="icon-[ph--x] shrink-0" aria-hidden="true" />
               </button>
             </div>
           </header>

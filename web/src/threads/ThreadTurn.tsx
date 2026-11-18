@@ -27,7 +27,7 @@ export function ThreadTurn(props: ThreadTurnProps): JSX.Element {
     <>
       <div
         data-ui="thr-msg"
-        class="thr-user ml-8 self-end min-w-0 rounded-lg bg-muted px-3 py-2 text-sm"
+        class="thr-user ml-8 self-end min-w-0 rounded-2xl bg-muted px-3 py-2 text-sm"
       >
         <Markdown text={props.turn.prompt || ''} onOpen={open} />
       </div>
@@ -52,27 +52,7 @@ export function ThreadTurn(props: ThreadTurnProps): JSX.Element {
             </span>
           </Show>
         </div>
-        <Show
-          when={
-            props.thread?.kind === 'explain' &&
-            (props.turn.notes?.length || props.turn.walkthroughs?.length)
-          }
-        >
-          <button
-            class="btn self-start"
-            data-variant="ghost"
-            data-size="xs"
-            data-control="show-explanation"
-            onClick={() => {
-              const thread = props.thread;
-              if (thread) void editor.actions.showExplanation(thread, props.turn.id);
-            }}
-          >
-            <span class="icon-[lucide--sparkle] size-3" aria-hidden="true" />
-            Show on code
-          </button>
-        </Show>
-        <ThreadSteps turn={props.turn} thread={props.thread} />
+        <ThreadSteps turn={props.turn} workspace={editor.store.state.workspace.meta} />
         <Markdown
           text={props.turn.reply || ''}
           refs={
@@ -80,7 +60,9 @@ export function ThreadTurn(props: ThreadTurnProps): JSX.Element {
           }
           onOpen={open}
         />
-        <ThreadArtifacts thread={props.thread?.id} turn={props.turn} onOpen={open} />
+        <Show when={props.thread?.kind === 'explain' && props.thread}>
+          {(thread) => <ThreadArtifacts thread={thread()} turn={props.turn} />}
+        </Show>
         <ErrorNotice title="The run failed" error={props.turn.error} />
         <Show when={props.thread?.kind === 'explain' && props.turn.id === 1 && !props.turn.running}>
           <footer

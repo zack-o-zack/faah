@@ -1,3 +1,4 @@
+import { TabRail } from '../lib/TabRail.tsx';
 import type { JSX } from 'solid-js';
 import { DiffOptions } from '../viewers/DiffOptions.tsx';
 import { Show } from 'solid-js';
@@ -41,14 +42,15 @@ export function FileActions(): JSX.Element {
   return (
     <div id="file-actions" class="flex shrink-0 items-center gap-1 px-1">
       <Show when={kind() && !document()?.isEditing && !document()?.diffMode}>
-        <div id="md-switch" class="button-group" role="group" aria-label="Preview or source">
+        <TabRail id="md-switch" label="Preview or source">
           <button
+            id="md-preview"
             data-md="preview"
             title={withKeys('Rendered view ({Alt+M})')}
-            class="btn"
-            data-variant={preview() ? 'secondary' : 'outline'}
-            data-size="xs"
-            aria-pressed={preview()}
+            role="tab"
+            aria-controls="editor"
+            tabindex={preview() ? 0 : -1}
+            aria-selected={preview()}
             onClick={() => {
               if (!preview()) actions.togglePreview(document(), document()?.cur);
             }}
@@ -56,42 +58,43 @@ export function FileActions(): JSX.Element {
             {kind() === 'table' ? 'Table' : 'Preview'}
           </button>
           <button
+            id="md-source"
             data-md="source"
-            class="btn"
-            data-variant={!preview() ? 'secondary' : 'outline'}
-            data-size="xs"
-            aria-pressed={!preview()}
+            role="tab"
+            aria-controls="editor"
+            tabindex={!preview() ? 0 : -1}
+            aria-selected={!preview()}
             onClick={source}
           >
             Source
           </button>
-        </div>
+        </TabRail>
       </Show>
       <Show when={canDiff(document(), editor.store.state.workspace.meta) && !document()?.isEditing}>
-        <div id="diff-switch" class="button-group" role="group" aria-label="File or changes">
+        <TabRail id="diff-switch" label="File or changes">
           <button
             id="diff-source"
             title={withKeys('Show the file ({Mod+D})')}
-            class="btn"
-            data-size="xs"
-            aria-pressed={!document()?.diffMode}
+            role="tab"
+            aria-controls="editor"
+            tabindex={!document()?.diffMode ? 0 : -1}
+            aria-selected={!document()?.diffMode}
             onClick={source}
-            data-variant={!document()?.diffMode ? 'secondary' : 'outline'}
           >
             File
           </button>
           <button
             id="diff-btn"
             title={withKeys('Show what changed ({Mod+D})')}
-            class="btn"
-            data-size="xs"
-            aria-pressed={!!document()?.diffMode}
+            role="tab"
+            aria-controls="editor"
+            tabindex={document()?.diffMode ? 0 : -1}
+            aria-selected={!!document()?.diffMode}
             onClick={() => actions.setDiffMode(document(), true)}
-            data-variant={document()?.diffMode ? 'secondary' : 'outline'}
           >
             Changes
           </button>
-        </div>
+        </TabRail>
         <Show when={document()?.diffMode}>
           <DiffOptions id="diff-options" />
         </Show>
@@ -115,7 +118,7 @@ export function FileActions(): JSX.Element {
               });
           }}
         >
-          <span class="icon-[lucide--sparkle] size-3.5 text-special" aria-hidden="true" />
+          <span class="icon-[ph--spinner] text-special" aria-hidden="true" />
         </button>
       </Show>
     </div>

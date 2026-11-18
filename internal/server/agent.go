@@ -208,7 +208,7 @@ func (m *agentManager) selectAgent(name string, modelOpt ...string) error {
 	m.mu.Lock()
 	if m.pinned {
 		m.mu.Unlock()
-		return errors.New("faah was started with -agent, so the harness is fixed for this run")
+		return errors.New("fibo was started with -agent, so the harness is fixed for this run")
 	}
 	m.mu.Unlock()
 

@@ -56,7 +56,7 @@ export function MergeDialog(): JSX.Element {
               aria-label="Close (Esc)"
               onClick={editor.actions.closeMergeDialog}
             >
-              <span class="icon-[lucide--x] size-3.5" aria-hidden="true" />
+              <span class="icon-[ph--x]" aria-hidden="true" />
             </button>
           </header>
           <section class="flex min-h-0 flex-col gap-4 overflow-y-auto">
@@ -115,7 +115,7 @@ export function MergeDialog(): JSX.Element {
                     variant="primary"
                     size="sm"
                     disabled={dialog().pending || dialog().rewriting.pending}
-                    label={<span class="icon-[lucide--chevron-down] size-3.5" aria-hidden="true" />}
+                    label={<span class="icon-[ph--caret-down]" aria-hidden="true" />}
                     panelClass="fixed z-[70] m-0 w-[min(24rem,calc(100vw-1rem))] min-w-0 top-auto left-auto gap-0"
                   >
                     <For each={merge.allowed()}>
@@ -124,12 +124,12 @@ export function MergeDialog(): JSX.Element {
                           type="button"
                           role="menuitemradio"
                           aria-checked={value === dialog().method}
-                          class="flex w-full items-start gap-2 rounded-md p-2 text-left hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
+                          class="flex w-full items-start gap-2 p-2 text-left hover:bg-accent focus-visible:bg-accent"
                           onClick={() => editor.actions.chooseMergeMethod(value)}
                         >
                           <span class="size-4 shrink-0">
                             <Show when={value === dialog().method}>
-                              <span class="icon-[lucide--check] size-4" aria-hidden="true" />
+                              <span class="icon-[ph--check]" aria-hidden="true" />
                             </Show>
                           </span>
                           <span class="min-w-0 space-y-1">
@@ -194,6 +194,8 @@ function CommitFields(props: CommitFieldsProps): JSX.Element {
           <button
             type="button"
             id="pr-merge-ai-toggle"
+            title="Rewrite the commit message"
+            aria-label="Rewrite the commit message"
             class="btn"
             data-variant="special"
             data-size="xs"
@@ -202,8 +204,8 @@ function CommitFields(props: CommitFieldsProps): JSX.Element {
             disabled={rewriting().pending}
             onClick={() => editor.actions.setMergeAIOpen(!dialog().aiOpen)}
           >
-            <span class="icon-[lucide--sparkle] size-3.5" aria-hidden="true" />
-            Rewrite with AI
+            <span class="icon-[ph--spinner]" aria-hidden="true" />
+            Rewrite
           </button>
           <button
             type="button"
@@ -217,7 +219,7 @@ function CommitFields(props: CommitFieldsProps): JSX.Element {
             data-size="icon-xs"
             onClick={editor.actions.resetMergeMessage}
           >
-            <span class="icon-[lucide--rotate-ccw] size-3.5" aria-hidden="true" />
+            <span class="icon-[ph--arrow-counter-clockwise]" aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -260,7 +262,8 @@ function CommitFields(props: CommitFieldsProps): JSX.Element {
             onClick={() => void editor.actions.rewriteMergeMessage()}
           >
             <span
-              class={`${rewriting().pending ? 'icon-[lucide--loader-circle] animate-spin' : 'icon-[lucide--sparkle]'} size-3.5 shrink-0`}
+              class="icon-[ph--spinner] shrink-0"
+              classList={{ 'motion-safe:animate-spin': rewriting().pending }}
               aria-hidden="true"
             />
             {rewriting().pending ? `Rewriting... (${rewriting().seconds}s)` : 'Rewrite'}
@@ -272,7 +275,7 @@ function CommitFields(props: CommitFieldsProps): JSX.Element {
           Your{' '}
           <button
             type="button"
-            class="text-primary-text underline"
+            class="text-link underline decoration-link/40 underline-offset-2 hover:decoration-link"
             onClick={() => {
               editor.actions.closeMergeDialog();
               editor.actions.openSettings('ui', 'Git & Diff', 'git.commitMessageInstruction');

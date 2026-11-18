@@ -27,7 +27,9 @@ test('initializing loads drafts, posted comments and merge status', async () => 
   const { editor, dispose } = fixture({ request: routes(comments) });
   editor.actions.initializePR();
   await vi.waitFor(() => expect(editor.merge.state.info).not.toBe(null));
-  expect(editor.pr.commentCount()).toBe(3);
+  expect(editor.pr.state.issueComments).toHaveLength(1);
+  expect(editor.pr.state.reviewComments).toHaveLength(1);
+  expect(editor.pr.state.drafts).toHaveLength(1);
   expect(editor.pr.marker('a.go', 'RIGHT', 3)).toBe(2);
   expect(editor.merge.canMerge()).toBe(true);
   dispose();
@@ -127,13 +129,23 @@ test('applying drafts reports progress and keeps the harness error', async () =>
   dispose();
 });
 
-test('replying to an author prefixes the mention once and opens the panel', () => {
+test('replying to an author prefixes the mention once and opens Overview', () => {
   const { editor, dispose } = fixture();
   editor.actions.replyToAuthor('ann');
   editor.actions.replyToAuthor('ann');
   expect(editor.pr.state.issue.body).toBe('@ann ');
-  expect(editor.pr.state.panel.collapsed).toBe(false);
-  editor.actions.setPRPanelHeight(10);
-  expect(editor.pr.state.panel.height).toBe(80);
+  expect(editor.actions.setReviewTab).toHaveBeenCalledWith('overview');
+  dispose();
+});
+
+test('revealing a thread opens it in Overview and bumps the scroll request', () => {
+  const { editor, dispose } = fixture();
+  editor.actions.revealPRThread('thread:a.go|RIGHT:3');
+  expect(editor.actions.setReviewMode).toHaveBeenCalledWith('review');
+  expect(editor.actions.setReviewTab).toHaveBeenCalledWith('overview');
+  expect(editor.pr.state.expanded['thread:a.go|RIGHT:3']).toBe(true);
+  expect(editor.pr.state.reveal).toEqual({ key: 'thread:a.go|RIGHT:3', sequence: 1 });
+  editor.actions.revealPRThread('thread:a.go|RIGHT:3');
+  expect(editor.pr.state.reveal.sequence).toBe(2);
   dispose();
 });

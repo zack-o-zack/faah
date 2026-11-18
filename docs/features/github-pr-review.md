@@ -68,7 +68,7 @@ From inside a running faah browser session, the Command Palette (`Cmd/Ctrl+K` �
 
 Public repositories open, diff and navigate without any token. Posting comments, submitting reviews, pushing, and merging need one.
 
-When faah has no token, the PR bar shows **No &lt;forge&gt; token — click to connect**. Clicking it, or trying anything that needs a token (posting a comment, replying, submitting a review), opens the **Connect** dialog:
+When faah has no token, the PR header shows **Connect &lt;forge&gt;**. Clicking it, or trying anything that needs a token (posting a comment, replying, submitting a review), opens the **Connect** dialog:
 1. A link to the token page on the PR's own host, for example `gitlab.example.com/-/user_settings/personal_access_tokens`.
 2. What to choose on that page: the scopes or permissions faah needs.
 3. A field to paste the token into (for a Bitbucket API token, also the account email).
@@ -131,19 +131,19 @@ When hovering over code lines or diff lines:
 - Alternatively, select any range of lines and press **`Alt+R`** (or click **Comment** on the selection bar) to open the review comment composer.
 
 ### 4. Batch Applying Comments Locally (`⚡ Batch Apply`)
-Drafted review comments appear in the PR top bar and inline across files:
+Drafted review comments appear in the PR header and inline across files:
 - **⚡ Batch Apply** applies all drafted review comments across the whole pull request in one go, using your configured coding agent harness. The agent reads your comments as instructions and changes the code directly in the PR worktree.
 - Comments stay drafts until they are batch-applied or submitted. Drafts are saved outside the repository, per pull request, so reopening the same PR, with `faah <pr-url>` or from the [workbench](workbench.md), brings them back.
 
 ### 5. Submitting Reviews
-The PR review bar at the bottom of the screen (right above the comments panel) holds the review summary and the verdict buttons:
+The review panel in the PR header, beside the title, holds the review summary and the verdict buttons:
 - **Submit Review**: feedback without an approval status (available to every reviewer with a token).
 - **Approve** / **Request Changes**: available when your token has push access to the repository.
 - Submitting sends every draft comment and the summary together. How each forge records them is in [Forge Differences](#forge-differences).
 - The verdict follows the branch. While a rebase is running or stopped halfway in the checkout, every verdict button is disabled. Once the checkout is rebased but not yet force-pushed, **Approve** stays disabled: the forge still holds the old commits, and approving now would approve those. When the forge reports conflicts, **Approve** still works but shows a dashed border and a tooltip saying the PR can't merge until the conflicts are resolved.
 
 ### 6. Merge Status, Resolving Conflicts, and Merging
-Under the PR title, next to the branch names, faah shows a **merge status** with the forge's answer to "can this merge?": *Ready to merge*, *Checks failing*, *Conflicts with main*, *Behind main*, *Merge blocked*, or *Checking…* (faah asks again a few times while the forge computes it). Draft, merged and closed show in the state badge beside the title instead. The checkout's own state takes priority over the forge's: *Rebasing...*, *Rebase unfinished*, or *Rebased, not pushed*. When there is a next step, a button beside **Review** takes it: *Resolve conflicts*, *Update branch* or *Finish* has your coding harness do it, *Force-push* updates the PR.
+Under the PR title, next to the branch names, faah shows a **merge status** with the forge's answer to "can this merge?": *Ready to merge*, *Checks failing*, *Conflicts with main*, *Behind main*, *Merge blocked*, or *Checking…* (faah asks again a few times while the forge computes it). A filled state pill comes before the title, followed by the PR number in plain text. Branch chips read from head to base. Merged and closed PRs hide the merge status. The checkout's own state takes priority over the forge's: *Rebasing...*, *Rebase unfinished*, or *Rebased, not pushed*. When there is a next step, a button beside **Review** takes it: *Resolve conflicts*, *Update branch* or *Finish* has your coding harness do it, *Force-push* updates the PR.
 
 **Resolving conflicts / updating the branch.** When the PR conflicts with its base, or is behind it, click **✦ Resolve conflicts** beside Review. This opens the git panel's [agent rebase flow](git-integration.md#catching-up-with-a-moving-remote), aimed at the PR's base:
 1. faah fetches the base branch itself, with your forge token, so the harness never needs credentials and never fetches.
@@ -154,7 +154,7 @@ Under the PR title, next to the branch names, faah shows a **merge status** with
 **Merging.** With push access, a split merge button sits next to **Approve**. The main button runs the method you used last (e.g. **Squash and merge**). The caret lists every method the repository allows, with a one-line description of each: **Create a merge commit**, **Squash and merge**, **Rebase and merge**. Clicking the merge button opens the merge dialog:
 - A method switcher. Edits made under one method are kept when you switch to another.
 - When **Squash and merge** is selected, a checkbox lets you **Rewrite commit message with AI** to automatically generate an informative commit summary and description using your coding harness.
-- For a merge commit or a squash: an editable **commit title** and **message**, prefilled with the usual defaults (`Title (#N)` and a list of the PR's commits for a squash; `Merge pull request #N from branch` for a merge commit). **Rewrite with AI** can also rewrite them from the PR's commits and diff on demand. It follows your [Commit Message Instructions](settings-and-configuration.md) from Settings plus any one-off instruction you type next to the button, and it rewrites the current text rather than starting from scratch. The result only fills the fields. Nothing merges until you confirm.
+- For a merge commit or a squash: an editable **commit title** and **message**, prefilled with the usual defaults (`Title (#N)` and a list of the PR's commits for a squash; `Merge pull request #N from branch` for a merge commit). **Rewrite** can also rewrite them from the PR's commits and diff on demand. It follows your [Commit Message Instructions](settings-and-configuration.md) from Settings plus any one-off instruction you type next to the button, and it rewrites the current text rather than starting from scratch. The result only fills the fields. Nothing merges until you confirm.
 - For a rebase merge: the list of commits that will be replayed.
 - Anything that makes merging now wrong blocks **Confirm**: a rebase in progress, a rebase not yet pushed, commits on the PR this checkout hasn't seen, or conflicts. Warnings that don't block are listed too: failing checks, and local commits that aren't pushed and won't be part of the merge.
 - The merge is tied to the head commit you reviewed. If the PR moved since then, the merge is refused.
@@ -163,7 +163,7 @@ Under the PR title, next to the branch names, faah shows a **merge status** with
 A PR checkout is a real git worktree, and the git panel works inside it exactly as it does in a plain workspace:
 - **Edit and commit**: Make a change (by hand, or by dispatching a coding agent on the checkout), stage it, and either write a commit message yourself or click **✨ Commit** (empty message).
 - **Push**: Sends the checkout's `HEAD` to the pull request's *actual* head branch on its actual repository — a fork included — not wherever the checkout happens to live locally.
-- **Pull**: Re-fetches the PR's current head. If new commits landed on it since you opened the review and your checkout can fast-forward onto them cleanly, faah updates the worktree and refreshes the diff, the PR bar, and the comments panel automatically. If your checkout has diverged — you made local commits that aren't on the PR head yet, or the head was force-pushed — faah refuses with a clear message rather than merging; commit and push first, or resolve it in a terminal. (Bringing the PR up to date with its *base* branch is the separate **Resolve conflicts** flow above.)
+- **Pull**: Re-fetches the PR's current head. If new commits landed on it since you opened the review and your checkout can fast-forward onto them cleanly, faah updates the worktree and refreshes the diff, the PR header, and the activity list automatically. If your checkout has diverged — you made local commits that aren't on the PR head yet, or the head was force-pushed — faah refuses with a clear message rather than merging; commit and push first, or resolve it in a terminal. (Bringing the PR up to date with its *base* branch is the separate **Resolve conflicts** flow above.)
 
 > [!IMPORTANT]
 > A PR checkout lives in a temporary directory for the life of the faah process (see [Multi-Session Isolation](#multi-session-isolation) above). Any edits you make there — committed or not — are gone once the session closes, unless you've pushed them back to the PR's branch first.

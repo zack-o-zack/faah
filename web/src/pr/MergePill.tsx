@@ -2,7 +2,12 @@ import type { JSX } from 'solid-js';
 import { Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { PILL_ICONS } from './logic.ts';
-const TONES: Record<string, string> = { err: 'text-destructive', warn: 'text-warn', ok: 'text-gi' };
+const TONES: Record<string, string> = {
+  err: 'text-destructive',
+  warn: 'text-warn',
+  ok: 'text-gi',
+  muted: 'text-muted-foreground',
+};
 export function MergePill(): JSX.Element {
   const editor = useEditor();
   const pill = () => editor.merge.pill();
@@ -11,10 +16,10 @@ export function MergePill(): JSX.Element {
       <span
         id="pr-merge-state"
         role="status"
-        class={`inline-flex shrink-0 items-center gap-1 ${TONES[pill()?.tone || ''] || ''}`}
+        class={`inline-flex shrink-0 items-center gap-1 ${TONES[pill()?.tone || ''] || TONES.muted}`}
         title={pill()?.title}
       >
-        <span class={`${PILL_ICONS[pill()?.tone || ''] || PILL_ICONS.muted} size-3.5 shrink-0`} />
+        <span class={`${PILL_ICONS[pill()?.tone || ''] || PILL_ICONS.muted} shrink-0`} />
         <span>{pill()?.text}</span>
       </span>
     </Show>

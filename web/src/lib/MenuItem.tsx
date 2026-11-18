@@ -18,11 +18,11 @@ export function MenuItem(props: MenuItemProps): JSX.Element {
       role={props.role || 'menuitem'}
       aria-checked={props.checked}
       disabled={props.disabled}
-      class={`flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent focus-visible:bg-accent focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 ${props.class || ''}`}
+      class={`flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm hover:bg-accent focus-visible:bg-accent disabled:pointer-events-none disabled:opacity-50 ${props.class || ''}`}
       onClick={() => props.onSelect()}
     >
       <Show when={props.icon}>
-        <span class={`${props.icon} size-3.5 shrink-0`} aria-hidden="true" />
+        <span class={`${props.icon} shrink-0`} aria-hidden="true" />
       </Show>
       {props.children}
     </button>

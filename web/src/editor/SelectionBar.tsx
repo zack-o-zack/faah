@@ -89,10 +89,7 @@ export function SelectionBar(): JSX.Element {
                 <span class="bar-action-label text-xs font-medium desktop:hidden">
                   {label(item)}
                 </span>
-                <Kbd
-                  combo={item.keys}
-                  class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1"
-                />
+                <Kbd combo={item.keys} class="desktop:hidden" />
               </button>
             )}
           </For>
@@ -123,7 +120,7 @@ export function SelectionBar(): JSX.Element {
                     onClick={() => run(item.sel)}
                   >
                     <span>{item.label}</span>
-                    <Kbd combo={item.keys} />
+                    <Kbd combo={item.keys} menu />
                   </button>
                 )}
               </For>

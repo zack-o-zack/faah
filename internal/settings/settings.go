@@ -29,7 +29,10 @@ type Settings struct {
 	EditorVimMode               *bool    `json:"editor.vimMode,omitempty"`
 	EditorRenderWhitespace      *string  `json:"editor.renderWhitespace,omitempty"`
 	EditorMinimapEnabled        *bool    `json:"editor.minimap.enabled,omitempty"`
+	WorkbenchTransparency       *string  `json:"workbench.transparency,omitempty"`
 	WorkbenchColorTheme         *string  `json:"workbench.colorTheme,omitempty"`
+	WorkbenchCodeThemeLight     *string  `json:"workbench.codeTheme.light,omitempty"`
+	WorkbenchCodeThemeDark      *string  `json:"workbench.codeTheme.dark,omitempty"`
 	DiffEditorRenderSideBySide  *bool    `json:"diffEditor.renderSideBySide,omitempty"`
 	MarkdownPreviewOpen         *bool    `json:"markdown.preview.open,omitempty"`
 	TablePreviewOpen            *bool    `json:"table.preview.open,omitempty"`
@@ -52,17 +55,38 @@ type Settings struct {
 
 var settingsMu sync.Mutex
 
+// Choice returns the stored app theme and the two code theme preferences,
+// empty when unset. The document injects them before first paint.
+func Choice() (theme, codeLight, codeDark string) {
+	s := Read()
+	value := func(field *string) string {
+		if field == nil {
+			return ""
+		}
+		return *field
+	}
+	return value(s.WorkbenchColorTheme), value(s.WorkbenchCodeThemeLight), value(s.WorkbenchCodeThemeDark)
+}
+
 // Path mirrors stateFilePath in update.go: honour the XDG location when
 // it is set, otherwise fall back to ~/.faah.
 func Path() string {
 	if xdg := os.Getenv("XDG_CONFIG_HOME"); xdg != "" {
 		return filepath.Join(xdg, "faah", "settings.json")
 	}
+	if dir := DataDir(); dir != "" {
+		return filepath.Join(dir, "settings.json")
+	}
+	return ""
+}
+
+// DataDir holds user themes and the default per-user state, independently of XDG config.
+func DataDir() string {
 	home, err := os.UserHomeDir()
 	if err != nil || home == "" {
 		return ""
 	}
-	return filepath.Join(home, ".faah", "settings.json")
+	return filepath.Join(home, ".faah")
 }
 
 // SchemaItem describes a configurable setting for dynamic rendering in the settings modal.
@@ -100,7 +124,7 @@ var Schema = []SchemaItem{
 		Description: "Controls the font family used in the code viewer.",
 		Category:    "Text Editor",
 		Type:        "string",
-		Default:     "ui-monospace, monospace",
+		Default:     "",
 	},
 	{
 		Key:         "editor.lineHeight",
@@ -168,17 +192,35 @@ var Schema = []SchemaItem{
 	{
 		Key:         "workbench.colorTheme",
 		Title:       "Color Theme",
-		Description: "Specifies the color theme used in the workbench.",
+		Description: "Color theme. Empty follows the operating system; unavailable IDs also follow the system. User themes are discovered from the data directory.",
 		Category:    "Workbench",
 		Type:        "select",
-		Default:     "catppuccin-mocha",
-		Options: []string{
-			"catppuccin-mocha", "catppuccin-latte",
-			"github-dark", "dark", "light",
-			"dracula", "gruvbox-dark", "gruvbox-light",
-			"monokai", "nord", "one-dark", "rose-pine",
-			"solarized-dark", "solarized-light",
-		},
+		Default:     "",
+	},
+	{
+		Key:         "workbench.codeTheme.light",
+		Title:       "Code Theme (Light)",
+		Description: "Code theme used while the app is light. Empty, the default, keeps the app theme's own code colours.",
+		Category:    "Workbench",
+		Type:        "select",
+		Default:     "",
+	},
+	{
+		Key:         "workbench.codeTheme.dark",
+		Title:       "Code Theme (Dark)",
+		Description: "Code theme used while the app is dark. Empty, the default, keeps the app theme's own code colours.",
+		Category:    "Workbench",
+		Type:        "select",
+		Default:     "",
+	},
+	{
+		Key:         "workbench.transparency",
+		Title:       "Transparency",
+		Description: "Frosted glass on menus, popovers, the palette and dialogs. Off keeps them solid.",
+		Category:    "Workbench",
+		Type:        "select",
+		Default:     "subtle",
+		Options:     []string{"off", "subtle", "strong"},
 	},
 	{
 		Key:         "diffEditor.renderSideBySide",
@@ -436,7 +478,7 @@ var Schema = []SchemaItem{
 	{
 		Key:         "server.basePath",
 		Title:       "Base Path",
-		Description: "Base URL path prefix for the faah server and web interface (e.g. /rev-123/).",
+		Description: "Base URL path prefix for the fibo server and web interface (e.g. /rev-123/).",
 		Category:    "Server",
 		Type:        "string",
 		Default:     "/",
@@ -444,7 +486,7 @@ var Schema = []SchemaItem{
 	{
 		Key:         "explain.agent",
 		Title:       "Explain Agent",
-		Description: "The coding harness that writes explanations (claude, codex, agy, opencode or cursor-agent). Leave empty to use the harness selected for editing. Ignored when faah is started with -agent.",
+		Description: "The coding harness that writes explanations (claude, codex, agy, opencode or cursor-agent). Leave empty to use the harness selected for editing. Ignored when fibo is started with -agent.",
 		Category:    "Explain",
 		Type:        "string",
 		Default:     "",

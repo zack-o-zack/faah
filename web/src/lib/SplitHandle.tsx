@@ -42,7 +42,7 @@ export function SplitHandle(props: SplitHandleProps): JSX.Element {
       aria-valuenow={props.value}
       aria-valuemin={props.min ?? 0}
       aria-valuemax={props.max}
-      class={`split-handle shrink-0 hover:bg-primary focus-visible:bg-primary data-[dragging]:bg-primary aria-disabled:pointer-events-none ${props.vertical ? 'h-1 w-full' : 'h-full w-1'} ${props.class || ''}`}
+      class={`split-handle shrink-0 hover:bg-primary-text focus-visible:bg-primary-text data-[dragging]:bg-primary-text aria-disabled:pointer-events-none ${props.vertical ? 'h-1 w-full' : 'h-full w-1'} ${props.class || ''}`}
       style={{
         'touch-action': 'none',
         cursor: props.disabled ? 'default' : undefined,

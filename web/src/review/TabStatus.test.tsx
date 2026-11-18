@@ -2,6 +2,22 @@ import { render, screen } from '@solidjs/testing-library';
 import { expect, test } from 'vitest';
 import { TabStatus, tabStatus, type TabStatusState } from './TabStatus.tsx';
 
+const pillClasses = [
+  'rounded-full',
+  'bg-(--hover)',
+  'px-1.5',
+  'text-11',
+  'leading-4',
+  'tabular-nums',
+  'text-muted-foreground',
+];
+
+function expectCountPill(pill: Element | null | undefined, text: string): void {
+  expect(pill?.tagName).toBe('SPAN');
+  expect(pill?.textContent).toBe(text);
+  for (const name of pillClasses) expect(pill?.classList.contains(name), name).toBe(true);
+}
+
 test.each([
   ['failed', 'failed'],
   ['running', 'running'],
@@ -21,13 +37,13 @@ for (const noun of ['checks', 'stages'] as const) {
     {
       statuses: ['failed', 'running'],
       text: '1',
-      icon: 'circle-x',
+      icon: 'x-circle',
       breakdown: '1 failed, 1 running',
     },
     {
       statuses: ['passed', 'running', 'queued'],
       text: '1/3',
-      icon: 'loader-circle',
+      icon: 'circle-notch',
       breakdown: '1 running, 1 queued, 1 passed',
     },
     {
@@ -47,13 +63,13 @@ for (const noun of ['checks', 'stages'] as const) {
       expect(count.getAttribute('title')).toBe(title);
       expect(count.classList.contains('badge')).toBe(false);
       expect(count.hasAttribute('data-variant')).toBe(false);
-      expect(count.classList.contains('tabular-nums')).toBe(true);
+      expect(count.children).toHaveLength(icon ? 2 : 1);
       if (icon) {
-        expect(count.children).toHaveLength(1);
-        expect(count.firstElementChild?.className).toContain(`icon-[lucide--${icon}]`);
-        if (icon === 'loader-circle')
+        expect(count.firstElementChild?.className).toContain(`icon-[ph--${icon}]`);
+        if (icon === 'circle-notch')
           expect(count.firstElementChild?.className).toContain('motion-safe:animate-spin');
-      } else expect(count.children).toHaveLength(0);
+      }
+      expectCountPill(count.lastElementChild, text);
     },
   );
 }
@@ -67,20 +83,23 @@ test('finished mixtures and large lists show only the total', () => {
   ));
   const count = screen.getByLabelText('Checks: 5 passed, 1 skipped');
   expect(count.textContent).toBe('6');
-  expect(count.children).toHaveLength(0);
+  expectCountPill(count.lastElementChild, '6');
   unmount();
   render(() => (
     <TabStatus noun="checks" statuses={Array.from({ length: 500 }, () => tabStatus('passed'))} />
   ));
-  expect(screen.getByLabelText('Checks: 500 passed').textContent).toBe('500');
+  const large = screen.getByLabelText('Checks: 500 passed');
+  expect(large.textContent).toBe('500');
+  expectCountPill(large.lastElementChild, '500');
 });
 
 test.each([0, 1, 34])('Changed files uses the same plain count component for %i files', (count) => {
   render(() => <TabStatus noun="files" count={count} />);
   const value = screen.getByLabelText(`Changed files: ${count}`);
   expect(value.textContent).toBe(String(count));
-  expect(value.children).toHaveLength(0);
+  expect(value.children).toHaveLength(1);
   expect(value.classList.contains('badge')).toBe(false);
+  expectCountPill(value.lastElementChild, String(count));
 });
 
 test.each(['checks', 'stages'] as const)('%s renders nothing when loading or empty', (noun) => {
@@ -98,7 +117,7 @@ test('a load error is only an accessible destructive icon', () => {
   const value = screen.getByLabelText("Checks: couldn't load");
   expect(value.textContent).toBe('');
   expect(value.children).toHaveLength(1);
-  expect(value.firstElementChild?.className).toContain('icon-[lucide--circle-x] text-destructive');
+  expect(value.firstElementChild?.className).toContain('icon-[ph--x-circle] text-destructive');
 });
 
 test('Changed files hides its count while loading', () => {

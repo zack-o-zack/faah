@@ -1,6 +1,5 @@
 import { WalkthroughTitle } from '../notes/WalkthroughTitle.tsx';
 import { GhostNotes } from '../notes/GhostNotes.tsx';
-import { WALK_DIM_OPACITY } from '../viewers/walkthrough-review.ts';
 import type { createHighlights } from './highlights.ts';
 interface EditorRowProps {
   index: number;
@@ -79,7 +78,7 @@ export function EditorRow(props: EditorRowProps): JSX.Element {
       <WalkthroughTitle line={line()} />
       <div
         ref={row}
-        class="row group/line relative flex h-[var(--lh)] [body.word-wrap_&]:h-auto [body.word-wrap_&]:min-h-[var(--lh)] font-mono text-[length:var(--fs)] leading-[var(--lh)] [font-feature-settings:normal]"
+        class="row group/line relative flex h-[var(--lh)] [body.word-wrap_&]:h-auto [body.word-wrap_&]:min-h-[var(--lh)] [font-family:var(--editor-font-family,var(--mono))] text-[length:var(--fs)] leading-[var(--lh)] [font-feature-settings:normal]"
         onClick={(event) => {
           if (event.target instanceof Element && !event.target.closest('button'))
             editor.actions.focusAgentAt(editor.active()?.path || '', line());
@@ -87,10 +86,11 @@ export function EditorRow(props: EditorRowProps): JSX.Element {
         data-l={line()}
         onMouseEnter={() => editor.notes.hoverLine(line())}
         onMouseLeave={() => editor.notes.setHovered(null)}
-        style={{ opacity: editor.dimmed(line()) ? WALK_DIM_OPACITY : 1 }}
         classList={{
           cur: current(),
           'bg-special/5!': editor.walkContains(line()),
+          'opacity-35': editor.walkMuted(line()),
+          'opacity-30': editor.notes.dimmed(line()),
           'agent-sel': agent(),
           'agent-anchor': editor.agents
             .targets()
@@ -102,7 +102,7 @@ export function EditorRow(props: EditorRowProps): JSX.Element {
         }}
       >
         <div
-          class="g sticky left-0 [body.word-wrap_&]:self-stretch [body.word-wrap_&]:h-auto z-[2] shrink-0 pl-4 pr-3.5 text-right text-faint bg-background group-[.cur]/line:bg-cur group-[.cur]/line:text-foreground group-[.ref-range]/line:bg-sel group-[.agent-sel]/line:text-primary group-[.agent-sel]/line:font-semibold group-[.agent-anchor]/line:relative select-none cursor-pointer tabular-nums"
+          class="g sticky left-0 [body.word-wrap_&]:self-stretch [body.word-wrap_&]:h-auto z-[2] shrink-0 pl-4 pr-3.5 text-right text-faint bg-background group-[.cur]/line:bg-cur group-[.cur]/line:text-foreground group-[.ref-range]/line:bg-sel group-[.agent-sel]/line:text-primary-text group-[.agent-sel]/line:font-semibold group-[.agent-anchor]/line:relative select-none cursor-pointer tabular-nums"
           classList={{ 'gut-add': gutter() === 'add', 'gut-mod': gutter() === 'mod' }}
           style={{ width: `calc(${String(editor.active()?.total || 1).length}ch + 30px)` }}
         >

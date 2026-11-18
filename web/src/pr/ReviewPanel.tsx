@@ -34,14 +34,14 @@ export function ReviewPanel(): JSX.Element {
       size="sm"
       label={
         <>
-          <span class="icon-[lucide--message-square-text] size-3.5 shrink-0" aria-hidden="true" />
+          <span class="icon-[ph--chat-centered-text] shrink-0" aria-hidden="true" />
           Review
           <Show when={pr().drafts.length}>
             <span class="badge tabular-nums" data-variant="secondary">
               {pr().drafts.length}
             </span>
           </Show>
-          <span class="icon-[lucide--chevron-down] size-3.5 shrink-0 text-muted-foreground" />
+          <span class="icon-[ph--caret-down] shrink-0 text-muted-foreground" />
         </>
       }
       accessibleLabel="Send a review"
@@ -70,7 +70,7 @@ export function ReviewPanel(): JSX.Element {
           <OptionButton
             selected={selected() === 'COMMENT'}
             label="Comment"
-            icon="icon-[lucide--message-square]"
+            icon="icon-[ph--chat-centered]"
             disabled={!!gate().all || !!pr().review.pending}
             title={
               gate().all ||
@@ -84,7 +84,7 @@ export function ReviewPanel(): JSX.Element {
             <OptionButton
               selected={selected() === 'APPROVE'}
               label="Approve"
-              icon="icon-[lucide--check] text-gi"
+              icon="icon-[ph--check] text-gi"
               disabled={!!gate().all || !!gate().approve || !!pr().review.pending}
               title={gate().all || gate().approve || gate().approveNote || 'Approve this PR'}
               onClick={() => setSelected('APPROVE')}
@@ -92,7 +92,7 @@ export function ReviewPanel(): JSX.Element {
             <OptionButton
               selected={selected() === 'REQUEST_CHANGES'}
               label="Request changes"
-              icon="icon-[lucide--file-diff] text-destructive"
+              icon="icon-[ph--git-diff] text-destructive"
               disabled={!!gate().all || !!pr().review.pending}
               title={gate().all || 'Request changes on this PR'}
               onClick={() => setSelected('REQUEST_CHANGES')}

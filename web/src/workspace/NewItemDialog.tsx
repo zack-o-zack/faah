@@ -32,7 +32,7 @@ export function NewItemDialog(): JSX.Element {
                   data-size="icon-xs"
                   onClick={editor.actions.closeNewItem}
                 >
-                  <span class="icon-[lucide--x] size-3.5 shrink-0" aria-hidden="true" />
+                  <span class="icon-[ph--x] shrink-0" aria-hidden="true" />
                 </button>
               </header>
               <section class="flex flex-col gap-2">

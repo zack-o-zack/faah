@@ -5,6 +5,8 @@ export interface Theme {
 }
 export interface ThemeOptions {
   configured?: () => string | undefined;
+  /** One code theme per app scheme; undefined until the settings have loaded. */
+  codeThemes?: () => { light: string; dark: string } | undefined;
   save?: (id: string) => void;
 }
 export interface ThemeStore {
@@ -21,11 +23,14 @@ function isGroup(rule: CSSRule): rule is CSSGroupingRule {
 }
 import { createEffect, createSignal, onCleanup } from 'solid-js';
 import { apiPostJson } from './api.ts';
-import { DEFAULT_THEME, chooseThemePreference } from './theme-preference.ts';
-export { DEFAULT_THEME, chooseThemePreference };
+import { chooseCodeTheme, chooseThemePreference } from './theme-preference.ts';
+export { chooseCodeTheme, chooseThemePreference };
 const KEY = 'faah.theme';
-// Discover themes from CSS so adding one needs no JavaScript change.
+// Discover themes from CSS so adding one needs no JavaScript change. A code
+// theme only reaches code surfaces, so its selector always ends in .code-surface.
 const THEME_SELECTOR = /^(?::root|html)?\[data-theme=["']?([\w-]+)["']?\]$/;
+const CODE_THEME_SELECTOR =
+  /^(?::root|html)?\[data-code-theme=["']?([\w-]+)["']?\]\s+\.code-surface$/;
 
 function getStoredTheme(): string | null {
   try {
@@ -35,7 +40,7 @@ function getStoredTheme(): string | null {
   }
 }
 
-function listThemes(): Theme[] {
+function discover(selector: RegExp): Theme[] {
   const found = new Map<string, Theme>();
   const walk = (rules: CSSRuleList): void => {
     for (const r of rules) {
@@ -52,7 +57,7 @@ function listThemes(): Theme[] {
         continue;
       } // @media, @layer
       for (const part of r.selectorText.split(',')) {
-        const m = part.trim().match(THEME_SELECTOR);
+        const m = part.trim().match(selector);
         if (!m?.[1]) continue;
         const t = found.get(m[1]) || { id: m[1], name: m[1], scheme: '' };
         const name = r.style
@@ -76,36 +81,56 @@ function listThemes(): Theme[] {
   return [...found.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 
-export { listThemes, getStoredTheme };
+/** The app themes: they paint the whole app. */
+export const listThemes = (): Theme[] => discover(THEME_SELECTOR);
+
+/** The code themes: they paint code surfaces only, sorted by the scheme they declare. */
+export const listCodeThemes = (): Theme[] => discover(CODE_THEME_SELECTOR);
+
+export { getStoredTheme };
 /**
- * The theme follows the configured setting (options.configured) unless this browser picked
- * another; a preview (setTheme with persist false) shows over both until it is cleared.
+ * The configured setting wins over the browser preference; empty follows the OS.
+ * A preview (setTheme with persist false) shows over both until it is cleared.
  * options.save persists a pick as the setting; without it the pick goes to /api/settings.
  */
 export function createThemeStore(options: ThemeOptions = {}): ThemeStore {
-  const [stored, setStored] = createSignal(getStoredTheme());
-  const initial = document.documentElement.dataset.theme;
+  const initial = document.documentElement.dataset.themePreference;
+  const [stored, setStored] = createSignal(initial || getStoredTheme());
   const [preview, setPreview] = createSignal<string | null>(null);
-  const chosen = () =>
-    chooseThemePreference(stored(), options.configured ? options.configured() : initial);
-  const preference = () => preview() ?? chosen();
   const media = window.matchMedia('(prefers-color-scheme: dark)');
   const [dark, setDark] = createSignal(media.matches);
   const changed = (event: MediaQueryListEvent) => setDark(event.matches);
   media.addEventListener('change', changed);
   onCleanup(() => media.removeEventListener('change', changed));
-  function resolve(id: string): Theme | undefined {
-    const all = listThemes();
-    if (id === 'system') id = dark() ? 'dark' : 'light';
-    return (
-      all.find((t) => t.id === id) ||
-      all.find((t) => t.scheme === id) ||
-      all.find((t) => t.id === DEFAULT_THEME)
+  // Until the settings arrive the server-injected choices stand, so the code
+  // theme painted by the bootstrap script is not replaced by a default.
+  const injected = {
+    light: document.documentElement.dataset.codeThemeLight ?? '',
+    dark: document.documentElement.dataset.codeThemeDark ?? '',
+  };
+  const chosen = () => {
+    const id = options.configured?.() || stored() || '';
+    return listThemes().some((theme) => theme.id === id) ? id : '';
+  };
+  const preference = () => preview() ?? chosen();
+  const current = () =>
+    chooseThemePreference(
+      preference(),
+      null,
+      dark(),
+      listThemes().map((theme) => theme.id),
     );
-  }
-  const current = () => resolve(preference())?.id || preference();
+  const resolve = () => listThemes().find((theme) => theme.id === current());
   createEffect(() => {
-    const theme = resolve(preference());
+    const theme = resolve();
+    const code = options.codeThemes?.() ?? injected;
+    // The app scheme decides which of the two code theme choices applies.
+    document.documentElement.dataset.codeTheme = chooseCodeTheme(
+      theme?.scheme,
+      code.light,
+      code.dark,
+      listCodeThemes().map((option) => option.id),
+    );
     if (!theme) return;
     document.documentElement.dataset.theme = theme.id;
     document.documentElement.classList.toggle('dark', theme.scheme === 'dark');
@@ -115,8 +140,7 @@ export function createThemeStore(options: ThemeOptions = {}): ThemeStore {
     current,
     themes: listThemes,
     setTheme(id: string, persist = true) {
-      if (!['system', 'light', 'dark'].includes(id) && !listThemes().some((t) => t.id === id))
-        return false;
+      if (id !== '' && !listThemes().some((t) => t.id === id)) return false;
       if (!persist) {
         setPreview(id === chosen() ? null : id);
         return true;

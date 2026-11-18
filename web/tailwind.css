@@ -7,21 +7,78 @@
 @source "./src";
 @source "../internal/workbench/workbench.go";
 
+@font-face {
+  font-family: "Figtree";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 300 900;
+  src: url("fonts/figtree-latin-wght-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+
+@font-face {
+  font-family: "Figtree";
+  font-style: italic;
+  font-display: swap;
+  font-weight: 300 900;
+  src: url("fonts/figtree-latin-wght-italic.woff2") format("woff2");
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("fonts/fraunces-latin-wght-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 800;
+  src: url("fonts/jetbrains-mono-latin-wght-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: italic;
+  font-display: swap;
+  font-weight: 100 800;
+  src: url("fonts/jetbrains-mono-latin-wght-italic.woff2") format("woff2");
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+
 @custom-variant dark (&:where(.dark, .dark *));
 @custom-variant desktop (&:where([data-shell], [data-shell] *));
 @custom-variant win-linux (&:where([data-platform="win"], [data-platform="linux"], [data-platform="win"] *, [data-platform="linux"] *));
 
 @theme inline {
+  /* Inline bridges use the values owned by :root, not Basecoat's radius math. */
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
+  --radius-pill: var(--radius-pill);
+  --shadow-raise: var(--shadow-raise);
+  --shadow-pop: var(--shadow-pop);
+  --shadow-dialog: var(--shadow-dialog);
   --font-sans: var(--ui);
   --font-mono: var(--mono);
+  --font-display: var(--font-display);
   --color-faint: var(--faint);
   --color-primary-text: var(--primary-text);
+  --color-link: var(--link);
   --color-sel: var(--sel);
   --color-mark: var(--mark);
   --color-mark-active: var(--mark-active);
   --color-cur: var(--cur);
   --color-gi: var(--gi);
-  --color-special: var(--nf);
+  --color-special: var(--special);
   --color-gd: var(--gd);
   --color-gi-bg: var(--gi-bg);
   --color-gd-bg: var(--gd-bg);
@@ -37,15 +94,51 @@
 
 @layer base {
   :root {
+    /* Subtle is the default level; strong is more see-through. */
+    --glass-alpha: 92%;
+    --glass-blur: 0px;
+
+    /* Brand shape and motion are shared by every theme. */
+    --radius: 0.625rem;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 20px;
+    --radius-2xl: 24px;
+    --radius-pill: 999px;
+    --duration-fast: 120ms;
+    --duration-base: 200ms;
+    --duration-slow: 300ms;
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    /* Existing user themes can keep their original colour and shadow contract. */
+    --spiral: var(--primary-text);
+    --link: var(--primary-text);
+    --on-spiral: var(--background);
+    --state-open: var(--gi);
+    --state-merged: var(--k);
+    --state-closed: var(--destructive);
+    --state-draft: var(--muted-foreground);
+    --on-state: var(--background);
+    --danger: var(--destructive);
+    --shadow-raise: var(--shadow, 0 1px 2px color-mix(in oklab, var(--foreground) 10%, transparent));
+    --shadow-pop: var(--shadow, 0 6px 16px -4px color-mix(in oklab, var(--foreground) 18%, transparent));
+    --shadow-dialog: var(--shadow, 0 24px 48px -12px color-mix(in oklab, var(--foreground) 25%, transparent));
+
+    --icon-size: 16px;
     --lh: 21px;
-    --mono: ui-monospace, monospace;
-    --ui: system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+    --ui: "Figtree", system-ui, sans-serif;
+    --font-display: "Fraunces", Georgia, serif;
     --fs: 13.5px;
 
     --t-8-5: 8.5px; --t-9: 9px; --t-9-5: 9.5px; --t-10: 10px; --t-10-5: 10.5px; --t-11: 11px; --t-11-5: 11.5px; --t-12: 12px; --t-12-5: 12.5px; --t-13: 13px; --t-13-5: 13.5px; --t-14: 14px; --t-14-5: 14.5px; --t-15: 15px; --t-16: 16px; --t-18: 18px;
     --on-badge: var(--background);
     --on-mark-active: var(--background);
     --warn: var(--mark-active);
+    --special: var(--nf);
   }
 
   :root[data-shell] {
@@ -73,15 +166,265 @@
   * { scrollbar-width: thin; scrollbar-color: var(--accent) transparent; }
 }
 
+/* Root preferences remain derived from settings; the OS can force solid layers. */
+@layer base {
+  :root[data-transparency='off'] { --glass-alpha: 100%; }
+  :root[data-transparency='strong'] {
+    /* Lowest alpha that keeps muted text at 4.5:1 over a half-text backdrop; light blur. */
+    --glass-alpha: 82%;
+    --glass-blur: 8px;
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    :root, :root[data-transparency] { --glass-alpha: 100%; --glass-blur: 0px; }
+  }
+}
+
 @layer components {
-  /* Special: actions that stand apart from ordinary ones (today, the ones the
-     coding harness carries out). Tinted with the theme's function colour, the
-     way destructive is tinted red: themes rarely make functions red, so it
-     stays apart from errors. */
-  .btn[data-variant='special'] {
-    @apply border border-special/30 bg-special/10 text-special hover:bg-special/20 focus-visible:border-special/50 focus-visible:ring-special/25 aria-expanded:bg-special/20 disabled:opacity-50;
+  /* fibo layer: type, shape, depth and focus. Keep this in components, after Vega,
+     so explicit Tailwind utilities still win. No new specificity outside this layer. */
+
+  /* The spiral: one line, coloured by state. Sized by its width. */
+  .fibo-spiral { display: inline-block; height: auto; flex: none; vertical-align: middle; overflow: visible; }
+  .fibo-spiral path { fill: none; stroke: var(--spiral); stroke-linecap: round; stroke-linejoin: round; }
+  .fibo-spiral[data-state='error'] path { stroke: var(--danger); }
+  .btn[data-variant='special'] .fibo-spiral path { stroke: currentColor; }
+
+  /* Match Vega's card-title aliases so its medium weight cannot win. */
+  :is(.card > header, .dialog > * > header, .empty > header) > :is(h2, h3),
+  .card > header > :is(h2, h3, [data-title], .card-title) {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  /* One key per cap. Keep Basecoat's UI font for readable system modifier glyphs. */
+  .kbd {
+    --kbd-size: 22px;
+    --kbd-padding: 6px;
+    height: var(--kbd-size);
+    min-width: var(--kbd-size);
+    padding-inline: var(--kbd-padding);
+    border-radius: var(--radius-sm);
+    /* A step darker than row hover, so caps stay visible on a hovered menu item. */
+    background-color: color-mix(in oklab, var(--foreground) 12%, var(--hover, var(--muted)));
+    color: color-mix(in oklab, var(--foreground) 70%, var(--muted-foreground));
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .kbd[data-single] { width: var(--kbd-size); --kbd-padding: 0px; }
+  .kbd[data-variant='button'] { --kbd-size: 20px; }
+  .compact-keycaps .kbd {
+    --kbd-size: 18px;
+    --kbd-padding: 4px;
+    border-radius: 5px;
+    font-size: 11px;
+  }
+  /* Vega's shortcut slot owns menu spacing, never the last cap. Match its specificity. */
+  .dropdown-menu [data-control='shortcut'] .kbd:last-child {
+    padding-inline: var(--kbd-padding);
+    margin: 0;
+    letter-spacing: normal;
   }
 
+  /* Match Vega's size selectors, including its compact and icon buttons. */
+  .btn, .btn[data-size], .badge { border-radius: var(--radius-pill); }
+
+  /* One group, one pill. Vega's last-end rule is important; supply its token
+     locally rather than adding another important declaration. The other ends
+     match Basecoat's structural selectors, including wrapped menu triggers. */
+  .button-group > .btn,
+  .button-group > :is(.dropdown-menu, .popover, .select) > .btn { border-radius: 0; }
+  .button-group:not([data-orientation='vertical']) > .btn:first-child,
+  .button-group:not([data-orientation='vertical']) > :is(.dropdown-menu, .popover, .select):first-child > .btn {
+    border-start-start-radius: var(--radius-pill);
+    border-end-start-radius: var(--radius-pill);
+  }
+  .button-group:not([data-orientation='vertical']) > .btn:last-child,
+  .button-group:not([data-orientation='vertical']) > :is(.dropdown-menu, .popover, .select):last-child > .btn { --radius-md: var(--radius-pill); }
+  .button-group[data-orientation='vertical'] > .btn:first-child,
+  .button-group[data-orientation='vertical'] > :is(.dropdown-menu, .popover, .select):first-child > .btn { border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+  .button-group[data-orientation='vertical'] > .btn:last-child,
+  .button-group[data-orientation='vertical'] > :is(.dropdown-menu, .popover, .select):last-child > .btn { --radius-md: var(--radius-lg); }
+  .button-group:is([data-orientation='vertical'], :not([data-orientation='vertical'])) > .btn:only-child,
+  .button-group:is([data-orientation='vertical'], :not([data-orientation='vertical'])) > :is(.dropdown-menu, .popover, .select):only-child > .btn {
+    --radius-md: var(--radius-pill);
+    border-radius: var(--radius-pill);
+  }
+  /* Ink selection keeps both states distinct without mixing button variants. */
+  .button-group > .btn:is([aria-pressed], [aria-checked]),
+  .button-group > .btn[data-variant='outline'],
+  .button-group > :is(.dropdown-menu, .popover, .select) > .btn[data-variant='outline'] { border-color: var(--input); }
+  .button-group > .btn:is([aria-pressed='true'], [aria-checked='true']) { background-color: var(--foreground); color: var(--background); }
+  .button-group > .btn[aria-pressed='false'] { color: var(--muted-foreground); }
+  .button-group > .btn[aria-pressed='false']:hover { color: var(--foreground); }
+
+  /* Flat controls; Tailwind's composed shadow keeps structural rings intact. */
+  .btn, .btn[data-variant], .card, .input-group { --tw-shadow: 0 0 transparent; }
+  /* Vega nests every input alias under its most specific header exclusion. */
+  :is(.input, .textarea, .field > :is(input, select, textarea),
+      .field > input[type='text']:not(:is(.command > header input, .dialog > * > header input))) { --tw-shadow: 0 0 transparent; }
+  .tabs > [role='tablist']:not([data-variant='line']) { border: 1px solid var(--input); }
+  .tabs > [role='tablist']:not([data-variant='line']) > [role='tab'][aria-selected='true'] {
+    background-color: var(--foreground);
+    color: var(--background);
+    border-color: var(--foreground);
+    --tw-shadow: var(--shadow-raise);
+  }
+  /* Toolbar rails preserve the previous xs/sm control and toolbar heights. */
+  .tabs:is([data-size='xs'], [data-size='sm']) > [role='tablist'] {
+    height: var(--tab-rail-height);
+    padding: 2px;
+  }
+  .tabs[data-size='xs'] { --tab-rail-height: 1.5rem; }
+  .tabs[data-size='sm'] { --tab-rail-height: 2rem; }
+  .tabs:is([data-size='xs'], [data-size='sm']) > [role='tablist'] > [role='tab'] {
+    height: 100%;
+    padding-block: 0;
+  }
+  .tabs[data-size] > [role='tablist'] > [role='tab'] { font-size: var(--text-xs); }
+  .tab.active { @apply shadow-raise; }
+  [data-popover], .dropdown-menu > [data-popover], .combobox [data-popover],
+  .select:not(select) [data-popover], .toast-content { --tw-shadow: var(--shadow-pop); }
+  .dialog > *, .alert-dialog > *, .command-dialog > .command { --tw-shadow: var(--shadow-dialog); }
+  /* Flatten nested modal surfaces. Selected tabs and focused field groups
+     keep their own focus elevation. */
+  :is(.dialog, .alert-dialog, .command-dialog) :is([data-popover], .toast-content, .card, .tab.active) { --tw-shadow: 0 0 transparent; }
+
+  /* The group owns the fill and focus mark for its chromeless text controls.
+     Basecoat already makes direct input/textarea/select children transparent,
+     borderless and outline-free. Buttons remain separate keyboard stops. */
+  .command > header { background-color: var(--card); border-color: var(--input); }
+  .input-group { border-radius: var(--radius-xl); background-color: var(--card); }
+  .input-group:focus-within {
+    border-color: var(--focus, var(--ring));
+    --tw-ring-shadow: 0 0 transparent;
+    --tw-shadow: var(--shadow-raise);
+  }
+  /* A group with its own clear button hides the browser's built-in one. */
+  .input-group:has(> [data-control='icon-action']) > input[type='search']::-webkit-search-cancel-button {
+    appearance: none;
+    display: none;
+  }
+
+  /* Structural tab/field selectors match Vega's focus rule specificity.
+     .textarea is Basecoat's standalone multiline field alias. Bare text
+     controls get their focus mark from their field or containing group. */
+  :is(.btn, .badge, .input, .textarea, .field > :is(input, select, textarea),
+      .field > input[type='text']:not(:is(.command > header input, .dialog > * > header input)),
+      .tabs > [role='tablist'] > [role='tab'], a.item, .item[role='button'],
+      .item[role='option'], [role='menuitem']):focus-visible,
+  :where(button, a[href], summary, [tabindex], [role='menuitem'],
+      [role='menuitemcheckbox'], [role='menuitemradio'],
+      input:is([type='checkbox'], [type='radio'])):focus-visible,
+  :is(.field > input, .input):is([type='checkbox'], [type='radio']):not([disabled]):focus-visible {
+    outline: 2px solid var(--focus, var(--ring));
+    outline-offset: 2px;
+    --tw-ring-shadow: 0 0 transparent;
+    --tw-inset-ring-shadow: 0 0 transparent;
+  }
+
+  /* Neutral controls keep colour reserved for agent send and brand marks. */
+  :is(.field > input, .input):is([type='checkbox'], [type='radio']):not([role='switch']):checked,
+  :is(.field > input, .input):is([type='checkbox'], [type='radio']):not([role='switch']):checked[aria-invalid='true'],
+  .field > input[type='checkbox'][role='switch']:checked,
+  .input[type='checkbox'][role='switch']:checked { border-color: var(--ink, var(--foreground)); }
+  .btn[data-variant='special'] {
+    background-color: var(--hover, var(--accent));
+    color: var(--ink, var(--foreground));
+    box-shadow: inset 0 0 0 1px var(--line, var(--border));
+    border-color: transparent;
+    transition-duration: var(--duration-fast);
+    transition-timing-function: var(--ease-out);
+  }
+  .btn[data-variant='special']:hover,
+  .btn[data-variant='special'][aria-expanded='true'] { background-color: color-mix(in oklab, var(--hover, var(--accent)) 92%, var(--ink, var(--foreground))); }
+  .field > input[type='checkbox'][role='switch']:checked,
+  .input[type='checkbox'][role='switch']:checked { background-color: var(--ink, var(--foreground)); }
+  .btn[data-variant='send'] {
+    background-color: var(--spiral);
+    color: var(--on-spiral);
+  }
+  .btn[data-variant='send']:hover { background-color: color-mix(in oklab, var(--spiral) 92%, var(--ink, var(--foreground))); }
+  .theme-switch { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--line, var(--border)); border-radius: var(--radius-pill); background: var(--surface, var(--background)); }
+  .theme-switch > .btn { width: 28px; height: 28px; padding: 0; color: var(--ink-muted, var(--muted-foreground)); }
+  .theme-switch > .btn[aria-checked='true'] { background: var(--hover, var(--accent)); color: var(--ink, var(--foreground)); box-shadow: inset 0 0 0 1px var(--line, var(--border)); }
+  /* Badge surfaces must read independently of the surrounding panel. */
+  .btn[data-variant='outline'], .badge { border-color: var(--input); }
+  :is(.input, .textarea, .field > :is(input, select, textarea),
+      .field > input[type='text']:not(:is(.command > header input, .dialog > * > header input)))[aria-invalid='true'] { border-color: var(--danger); }
+  .badge[data-variant='secondary'] {
+    background-color: var(--foreground); color: var(--background); border-color: var(--foreground);
+  }
+  .badge[data-variant='outline'] { border-color: var(--input); }
+  .badge[data-variant='destructive'] {
+    background-color: var(--destructive); color: var(--destructive-foreground); border-color: var(--destructive);
+  }
+  .badge:is([data-variant='ghost'], [data-variant='link']) { border-color: transparent; }
+  .badge[data-tone], .badge[data-k], a.badge[data-tone]:hover {
+    background-color: var(--surface-sunken, var(--muted)); color: var(--ink, var(--foreground)); border-color: var(--line, var(--border));
+  }
+  .badge:is([data-tone='open'], [data-tone='merged'], [data-tone='closed'], [data-tone='draft']),
+  a.badge:is([data-tone='open'], [data-tone='merged'], [data-tone='closed'], [data-tone='draft']):hover {
+    background-color: var(--state); color: var(--on-state); border-color: var(--state);
+  }
+  .badge[data-tone='open'] { --state: var(--state-open); }
+  .badge[data-tone='merged'] { --state: var(--state-merged); }
+  .badge[data-tone='closed'] { --state: var(--state-closed); }
+  .badge[data-tone='draft'] { --state: var(--state-draft); }
+  .btn[data-variant='link'], .badge[data-variant='link'], a.badge[data-variant='link']:hover,
+  :is(.empty > header > p, .item p, .field > p) > a:hover { color: var(--link); }
+  .badge[data-variant='link'], a.badge[data-variant='link']:hover { background-color: transparent; border-color: transparent; }
+  /* A gap and outlined neutral segments distinguish status without colour alone. */
+  .progress[data-checks] { height: 0.5rem; gap: 2px; background-color: var(--background); }
+  .progress[data-checks] > span { flex-basis: 0; min-width: 2px; border-radius: var(--radius-pill); }
+  .progress[data-checks] > span[data-state='passed'] { background-color: var(--gi); }
+  .progress[data-checks] > span[data-state='failed'] { background-color: var(--destructive); }
+  .progress[data-checks] > span[data-state='running'] { background-color: var(--warn); }
+  .progress[data-checks] > span:is([data-state='neutral'], [data-state='skipped']) {
+    background-color: var(--background); outline: 1px solid var(--input); outline-offset: -1px;
+  }
+  /* Floating sheets take the transparency level's fill. Match the Basecoat fill selectors. */
+  [data-popover], .dropdown-menu > [data-popover], .combobox [data-popover],
+  .select:not(select) [data-popover], .toast-content, .toaster .toast .toast-content,
+  .dialog > *, .alert-dialog > *, .command-dialog > .command, .command > header,
+  #hovercard, #commitcard, [data-note-panel], #explain-orb[data-orb-sheet],
+  #explain-orb > [data-orb-sheet] {
+    background-color: color-mix(in oklab, var(--popover) var(--glass-alpha), transparent);
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--line, var(--border));
+  }
+  #hovercard, #commitcard {
+    background-color: color-mix(in oklab, var(--card) var(--glass-alpha), transparent);
+  }
+  /* A command header outside a dialog uses its existing card fill. */
+  .command > header {
+    background-color: color-mix(in oklab, var(--card) var(--glass-alpha), transparent);
+  }
+  /* Children read as one sheet; interactive states retain their own fills.
+     Field selectors mirror Basecoat's header exclusions for specificity. */
+  :is(.dialog > *, .alert-dialog > *, .command-dialog > .command,
+      [data-popover], #hovercard, #commitcard, [data-note-panel], .toast-content, #git-panel)
+    :is(.card, .input-group, .input:not([type='checkbox'], [type='radio']), .textarea,
+        .field > :is(input:not([type='checkbox'], [type='radio']), select, textarea),
+        .field > input[type='text']:not(:is(.command > header input, .dialog > * > header input)),
+        .command > header, [data-popover], .toast-content),
+  :is(.dialog, .alert-dialog) > * > :is(header, footer) {
+    background-color: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  /* Review chrome and the Git panel share glass without changing geometry. */
+  #review-sub-bar, #main > #status, #git-panel {
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    backdrop-filter: blur(var(--glass-blur));
+  }
+  #review-sub-bar {
+    background-color: color-mix(in oklab, var(--background) var(--glass-alpha), transparent);
+  }
+  #main > #status, #git-panel {
+    background-color: color-mix(in oklab, var(--sidebar) var(--glass-alpha), transparent);
+  }
+  /* End fibo layer. */
 
   /* A shared 4px split bar with a transparent 8px grab area. Positioning utilities
      on docked handles override relative without changing their hit area. */
@@ -94,18 +437,25 @@
 
   ::selection { background: var(--sel); }
 
+  /* Tree indent guides: one line per ancestor folder, through the centre of its
+     16px caret. Rows indent 12px per level from 8px (TreeRow), so the lines
+     repeat every 12px, 8px into each step, and cover depth × 12px. Hover and selection fills sit under them. */
+  [role='treeitem'].tr {
+    background-image: repeating-linear-gradient(to right, transparent 0 7.5px, var(--border) 7.5px 8.5px, transparent 8.5px 12px);
+    background-repeat: no-repeat;
+    background-position: 8px 0;
+    background-size: calc(var(--depth, 0) * 12px) 100%;
+  }
+
   /* An empty state that is only a sentence flows as text, so inline keys and code stay in the line. */
   .empty:not(:has(> :is(header, section, footer, figure))) { @apply block; }
-
-  /* Segmented toggles: the off segments recede so the chosen one reads at a glance. */
-  .button-group > .btn[aria-pressed='false'] { @apply text-muted-foreground hover:text-foreground; }
 
   @keyframes explorer-progress { 50% { opacity: .45; } }
 
   /* Code selection, gutters, caret and wrapping. */
   #caret {
     @apply absolute top-0 left-0; z-index: 1; width: 2px; height: var(--lh);
-    background: var(--primary); pointer-events: none; will-change: transform;
+    background: var(--focus); pointer-events: none; will-change: transform;
   }
   #caret.blink { animation: caret-blink 1.06s steps(1) infinite; }
   @keyframes caret-blink { 50% { opacity: 0; } }
@@ -124,7 +474,7 @@
   body.word-wrap .g { align-self: flex-start; height: var(--lh); }
 
   .g.gut-add { box-shadow: inset 2px 0 0 var(--gi); }
-  .g.gut-mod { box-shadow: inset 2px 0 0 var(--primary); }
+  .g.gut-mod { box-shadow: inset 2px 0 0 var(--warn); }
   .row.gut-del .g::after {
     content: ""; position: absolute; left: 0; bottom: -3px; z-index: 3;
     border-left: 4px solid var(--gd);
@@ -138,7 +488,7 @@
 
   .row .link {
     text-decoration: underline;
-    text-decoration-color: var(--primary);
+    text-decoration-color: var(--primary-text);
     text-decoration-thickness: 1px;
     text-underline-offset: 3px;
     cursor: pointer;
@@ -152,6 +502,23 @@
   .diff-row-flash {
     animation: diffFlash 1.2s ease-out;
   }
+  /* A code surface reads the code theme's ink. It paints its own fill only once
+     a code theme is chosen, so the app theme's own code colours stay untouched
+     when the choice is fibo. App chrome outside these roots keeps the app theme. */
+  .code-surface { color: var(--foreground); }
+  :root[data-code-theme]:not([data-code-theme='']) .code-surface {
+    background: var(--background);
+    scrollbar-color: var(--border) transparent;
+  }
+  /* Markdown blocks sit in a sunken app fill by default; on a code surface they
+     take the code theme's background instead. */
+  :root[data-code-theme]:not([data-code-theme='']) :is(.md pre.code-surface, .thr-body pre.code-surface) {
+    background: var(--background);
+  }
+  /* Two fills the code themes do not define follow the surface, not the app chrome. */
+  :root[data-code-theme]:not([data-code-theme='']) .code-surface .row .occ { background: var(--sel); }
+  :root[data-code-theme]:not([data-code-theme='']) .code-surface .diff-side.diff-blank { background: var(--background); }
+
   /* Syntax spans emitted by Chroma and signature rendering. */
   #hovercard [data-ui~=sig] .k {color:var(--k)} #hovercard [data-ui~=sig] .kt {color:var(--kt)}
   #hovercard [data-ui~=sig] .nf {color:var(--nf)} #hovercard [data-ui~=sig] .nc {color:var(--nc)}
@@ -197,11 +564,11 @@
   .diff-row.diff-del .diff-mk, .diff-side.diff-del .diff-mk { color: var(--gd); }
   .diff-side.diff-blank { background: var(--sidebar); }
   .diff-char-add {
-    background: color-mix(in srgb, var(--gi) 38%, transparent);
+    background: var(--gi-word);
     border-radius: 2px;
   }
   .diff-char-del {
-    background: color-mix(in srgb, var(--gd) 38%, transparent);
+    background: var(--gd-word);
     border-radius: 2px;
   }
   .diff-char-bar-del, .diff-char-bar-add {
@@ -213,10 +580,10 @@
     border-radius: 1px;
   }
   .diff-char-bar-del {
-    background: color-mix(in srgb, var(--gd) 50%, transparent);
+    background: var(--gd);
   }
   .diff-char-bar-add {
-    background: color-mix(in srgb, var(--gi) 50%, transparent);
+    background: var(--gi);
   }
 
   .diff-row-pair { display: flex; }
@@ -240,8 +607,9 @@
   .md h4 { font-size: 1.05em; }
   .md h5 { font-size: .95em; }
   .md h6 { font-size: .9em; color: var(--muted-foreground); }
-  .md a { color: var(--primary-text); text-decoration: none; }
-  .md a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .md a { color: var(--link); text-decoration: underline; text-decoration-color: color-mix(in oklab, var(--link) 40%, transparent); text-underline-offset: 2px; }
+  .md a:hover { text-decoration-color: var(--link); }
+
   .md strong, .md b { font-weight: 600; }
   .md hr { height: 1px; margin: 28px 0; border: 0; background: var(--border); }
   .md ul, .md ol { padding-left: 2em; }
@@ -311,11 +679,11 @@
     position: sticky; top: 8px; left: 8px; z-index: 2; grid-area: 1 / 1;
     align-self: start; justify-self: start; display: inline-flex; overflow: hidden;
     background: var(--muted); border: 1px solid var(--border); border-radius: var(--radius-sm);
-    opacity: 0; transition: opacity .12s; box-shadow: var(--shadow);
+    opacity: 0; transition: opacity .12s; box-shadow: var(--shadow-pop);
   }
   .md-mermaid.is-fullscreen .md-mermaid-controls {
     position: fixed; top: 14px; left: 14px;
-    opacity: 1; box-shadow: var(--shadow);
+    opacity: 1; box-shadow: var(--shadow-pop);
   }
   .md-pre:hover .md-mermaid-controls, .md-mermaid:hover .md-mermaid-controls, .md-mermaid-controls:focus-within { opacity: 1; }
 
@@ -365,10 +733,10 @@
   .csv-open-source:hover { text-decoration: underline; }
   .csv-empty { padding: 40px 24px; font: var(--t-13) var(--ui); color: var(--faint); }
 
-  .md-alert { --alert: var(--primary); }
+  .md-alert { --alert: var(--primary-text); }
   .md-alert-tip { --alert: var(--gi); }
   .md-alert-important { --alert: var(--nc); }
-  .md-alert-warning { --alert: var(--mark-active); }
+  .md-alert-warning { --alert: var(--warn); }
   .md-alert-caution { --alert: var(--destructive); }
   .md blockquote.md-alert { padding: 8px 16px; color: var(--foreground); border-left-color: var(--alert); }
   .md .md-alert-title { margin: 0 0 4px; font-weight: 600; color: var(--alert); }
@@ -377,7 +745,7 @@
   .editview-gutter {
     flex: none; width: 45px;
     background: var(--background); border-right: 1px solid var(--border);
-    color: var(--faint); font: var(--fs)/var(--lh) var(--mono);
+    color: var(--faint); font: var(--fs)/var(--lh) var(--editor-font-family, var(--mono));
     text-align: right; padding: 0 8px 40vh 0;
     user-select: none; overflow: hidden; box-sizing: border-box;
     white-space: pre;
@@ -389,11 +757,11 @@
     padding: 0 8px 40vh 8px; margin: 0;
     border: none; outline: none; resize: none;
     background: transparent; color: var(--foreground);
-    font: var(--fs)/var(--lh) var(--mono);
+    font: var(--fs)/var(--lh) var(--editor-font-family, var(--mono));
     tab-size: var(--tab-size, 4);
     -moz-tab-size: var(--tab-size, 4);
     white-space: pre; overflow: auto;
-    box-sizing: border-box; caret-color: var(--primary);
+    box-sizing: border-box; caret-color: var(--primary-text);
   }
   body.word-wrap #editview-textarea { white-space: pre-wrap; overflow-wrap: break-word; overflow-x: hidden; }
   body.word-wrap .editview-gutter { white-space: normal; }
@@ -401,7 +769,7 @@
 
 
   .md img.md-zoomable { cursor: zoom-in; transition: transform 0.15s ease, box-shadow 0.15s ease; border-radius: var(--radius-sm); max-width: 100%; }
-  .md img.md-zoomable:hover { box-shadow: 0 0 0 2px var(--primary), var(--shadow); }
+  .md img.md-zoomable:hover { box-shadow: 0 0 0 2px var(--primary-text), var(--shadow-pop); }
   .md-img-broken { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--sidebar); border: 1px dashed var(--border); border-radius: var(--radius-md); color: var(--faint); font-size: var(--t-12); margin: 8px 0; font-family: var(--font-mono); }
   .md-img-broken svg { color: var(--destructive); width: 16px; height: 16px; flex-shrink: 0; }
 
@@ -461,29 +829,16 @@
     background: var(--sidebar); border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   }
   .thr-body blockquote > :last-child { margin-bottom: 0; }
-  /* GitHub alerts: GitHub's icons, colours from the theme. */
+  /* Markdown alerts: Phosphor regular masks, colours from the theme. */
   .thr-body blockquote.thr-alert { padding: 6px 10px; color: var(--foreground); background: transparent; border-left-color: var(--alert); }
   .thr-body .thr-alert-title { display: flex; align-items: center; gap: 6px; margin: 0 0 4px; font-weight: 500; color: var(--alert); }
   .thr-body .thr-alert-title::before { content: ""; width: 1em; height: 1em; flex: none; background: currentColor; mask: var(--alert-icon) center / contain no-repeat; }
-  .thr-body .thr-alert-note { --alert: var(--primary); --alert-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 16v-4'/%3E%3Cpath d='M12 8h.01'/%3E%3C/svg%3E"); }
-  .thr-body .thr-alert-tip { --alert: var(--gi); --alert-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5'/%3E%3Cpath d='M9 18h6'/%3E%3Cpath d='M10 22h4'/%3E%3C/svg%3E"); }
-  .thr-body .thr-alert-important { --alert: var(--nc); --alert-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'/%3E%3Cpath d='M12 7v2'/%3E%3Cpath d='M12 13h.01'/%3E%3C/svg%3E"); }
-  .thr-body .thr-alert-warning { --alert: var(--mark-active); --alert-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3'/%3E%3Cpath d='M12 9v4'/%3E%3Cpath d='M12 17h.01'/%3E%3C/svg%3E"); }
-  .thr-body .thr-alert-caution { --alert: var(--destructive); --alert-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 16h.01'/%3E%3Cpath d='M12 8v4'/%3E%3Cpath d='M15.312 2a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586l-4.688-4.688A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2z'/%3E%3C/svg%3E"); }
-  /* The sparkle marks an action the coding harness runs; it turns a quarter
-     on hover, which leaves the four-point star looking the same at rest. */
-  [class~="icon-[lucide--sparkle]"] { transition: transform 450ms cubic-bezier(.16, 1, .3, 1); }
-  :is(button, a):hover:not(:disabled) [class~="icon-[lucide--sparkle]"] { transform: rotate(90deg); }
-  @media (prefers-reduced-motion: reduce) {
-    [class~="icon-[lucide--sparkle]"] { transition: none; }
-  }
+  .thr-body .thr-alert-note { --alert: var(--primary-text); --alert-icon: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 256 256%22%3E%3Cpath fill=%22black%22 d=%22M128 24a104 104 0 1 0 104 104A104.11 104.11 0 0 0 128 24m0 192a88 88 0 1 1 88-88a88.1 88.1 0 0 1-88 88m16-40a8 8 0 0 1-8 8a16 16 0 0 1-16-16v-40a8 8 0 0 1 0-16a16 16 0 0 1 16 16v40a8 8 0 0 1 8 8m-32-92a12 12 0 1 1 12 12a12 12 0 0 1-12-12%22/%3E%3C/svg%3E"); }
+  .thr-body .thr-alert-tip { --alert: var(--gi); --alert-icon: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 256 256%22%3E%3Cpath fill=%22black%22 d=%22M176 232a8 8 0 0 1-8 8H88a8 8 0 0 1 0-16h80a8 8 0 0 1 8 8m40-128a87.55 87.55 0 0 1-33.64 69.21A16.24 16.24 0 0 0 176 186v6a16 16 0 0 1-16 16H96a16 16 0 0 1-16-16v-6a16 16 0 0 0-6.23-12.66A87.59 87.59 0 0 1 40 104.49C39.74 56.83 78.26 17.14 125.88 16A88 88 0 0 1 216 104m-16 0a72 72 0 0 0-73.74-72c-39 .92-70.47 33.39-70.26 72.39a71.65 71.65 0 0 0 27.64 56.3A32 32 0 0 1 96 186v6h64v-6a32.15 32.15 0 0 1 12.47-25.35A71.65 71.65 0 0 0 200 104m-16.11-9.34a57.6 57.6 0 0 0-46.56-46.55a8 8 0 0 0-2.66 15.78c16.57 2.79 30.63 16.85 33.44 33.45A8 8 0 0 0 176 104a9 9 0 0 0 1.35-.11a8 8 0 0 0 6.54-9.23%22/%3E%3C/svg%3E"); }
+  .thr-body .thr-alert-important { --alert: var(--nc); --alert-icon: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 256 256%22%3E%3Cpath fill=%22black%22 d=%22M88 104a8 8 0 0 1 8-8h64a8 8 0 0 1 0 16H96a8 8 0 0 1-8-8m8 40h64a8 8 0 0 0 0-16H96a8 8 0 0 0 0 16m136-88v128a16 16 0 0 1-16 16h-60.43l-13.68 23.94a16 16 0 0 1-27.78 0L100.43 200H40a16 16 0 0 1-16-16V56a16 16 0 0 1 16-16h176a16 16 0 0 1 16 16m-16 0H40v128h65.07a8 8 0 0 1 7 4l16 28l16-28a8 8 0 0 1 7-4H216Z%22/%3E%3C/svg%3E"); }
+  .thr-body .thr-alert-warning { --alert: var(--warn); --alert-icon: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 256 256%22%3E%3Cpath fill=%22black%22 d=%22M236.8 188.09L149.35 36.22a24.76 24.76 0 0 0-42.7 0L19.2 188.09a23.51 23.51 0 0 0 0 23.72A24.35 24.35 0 0 0 40.55 224h174.9a24.35 24.35 0 0 0 21.33-12.19a23.51 23.51 0 0 0 .02-23.72m-13.87 15.71a8.5 8.5 0 0 1-7.48 4.2H40.55a8.5 8.5 0 0 1-7.48-4.2a7.59 7.59 0 0 1 0-7.72l87.45-151.87a8.75 8.75 0 0 1 15 0l87.45 151.87a7.59 7.59 0 0 1-.04 7.72M120 144v-40a8 8 0 0 1 16 0v40a8 8 0 0 1-16 0m20 36a12 12 0 1 1-12-12a12 12 0 0 1 12 12%22/%3E%3C/svg%3E"); }
+  .thr-body .thr-alert-caution { --alert: var(--destructive); --alert-icon: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 256 256%22%3E%3Cpath fill=%22black%22 d=%22M120 136V80a8 8 0 0 1 16 0v56a8 8 0 0 1-16 0m112-44.45v72.9a15.86 15.86 0 0 1-4.69 11.31l-51.55 51.55a15.86 15.86 0 0 1-11.31 4.69h-72.9a15.86 15.86 0 0 1-11.31-4.69l-51.55-51.55A15.86 15.86 0 0 1 24 164.45v-72.9a15.86 15.86 0 0 1 4.69-11.31l51.55-51.55A15.86 15.86 0 0 1 91.55 24h72.9a15.86 15.86 0 0 1 11.31 4.69l51.55 51.55A15.86 15.86 0 0 1 232 91.55m-16 0L164.45 40h-72.9L40 91.55v72.9L91.55 216h72.9L216 164.45ZM128 160a12 12 0 1 0 12 12a12 12 0 0 0-12-12%22/%3E%3C/svg%3E"); }
 
-  /* Text links that leave the app say so. */
-  a[target="_blank"]:not(.btn, #pr-link, [data-ui~=cc-who], :has(img))::after {
-    content: ""; display: inline-block; width: .8em; height: .8em; margin-left: .2em; vertical-align: -.05em;
-    background: currentColor; opacity: .7;
-    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E") center / contain no-repeat;
-  }
   /* PR comments come as forge HTML: blocks need their own rhythm. */
   .pr-md > * + *, .pr-md :is(blockquote, details, li) > * + * { margin-top: 8px; }
   .pr-md summary { display: list-item; list-style: disclosure-closed inside; cursor: pointer; }
@@ -504,8 +859,8 @@
   }
 
   .thr-body hr { height: 1px; margin: 8px 0; border: 0; background: var(--border); }
-  .thr-body a { color: var(--primary-text); text-decoration: underline; text-underline-offset: 2px; }
-  .thr-body a:hover { opacity: 0.85; }
+  .thr-body a { color: var(--link); text-decoration: underline; text-decoration-color: color-mix(in oklab, var(--link) 40%, transparent); text-underline-offset: 2px; }
+  .thr-body a:hover { text-decoration-color: var(--link); }
   .thr-body del { text-decoration: line-through; color: var(--muted-foreground); }
   .thr-body strong { font-weight: 600; }
   .thr-body table { display: block; width: max-content; max-width: 100%; overflow-x: auto; border-collapse: collapse; font-size: var(--t-11-5); }
@@ -523,11 +878,11 @@
     content: attr(data-diag);
     margin-left: 2rem;
     font-size: var(--t-11);
-    color: color-mix(in srgb, var(--destructive) 75%, transparent);
+    color: var(--destructive);
     pointer-events: none;
     white-space: pre;
   }
-  .row-has-warn .c[data-diag]::after, .diff-code[data-diag-warn]::after { color: color-mix(in srgb, var(--warn) 75%, transparent); }
+  .row-has-warn .c[data-diag]::after, .diff-code[data-diag-warn]::after { color: var(--warn); }
 
   .g.gut-diag-err {
     color: var(--destructive) !important;
@@ -593,7 +948,7 @@
 
 /* Global highlight rules make every explorer node compute highlight inheritance. */
 #rows ::highlight(editor-find) { background: var(--mark); color: inherit; }
-#rows ::highlight(editor-link) { text-decoration: underline; color: var(--primary-text); }
+#rows ::highlight(editor-link) { text-decoration: underline; color: var(--link); }
 #rows ::highlight(editor-active) { background: var(--mark-active); color: var(--on-mark-active); }
 
 @layer components {
@@ -602,4 +957,18 @@
   #imgview-canvas.bg-light { background: var(--image-light); }
   #imgview-img.render-pixelated { image-rendering: pixelated; }
   #imgview-viewport.panning { cursor: grabbing; }
+}
+
+/* Custom floating cards use the same utility as popovers. Keep them flat when
+   rendered inside a modal, in the utility layer that owns their elevation. */
+@utility shadow-pop {
+  &:where(.dialog *, .alert-dialog *, .command-dialog *) { --tw-shadow: 0 0 transparent; }
+}
+
+/* Icons: one size app-wide, never shrunk by a flex row. Unlayered so it wins
+   over the Iconify utility's 1em box and any leftover size utility. */
+[class*='icon-[ph--'], [class*='icon-[simple-icons--'] {
+  width: var(--icon-size);
+  height: var(--icon-size);
+  flex-shrink: 0;
 }

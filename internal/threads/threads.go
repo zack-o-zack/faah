@@ -206,7 +206,7 @@ func (tm *Manager) load() {
 			if tr.Running {
 				tr.Running = false
 				if tr.Error == "" {
-					tr.Error = "interrupted: faah exited before this reply finished"
+					tr.Error = "interrupted: fibo exited before this reply finished"
 				}
 			}
 		}

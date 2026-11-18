@@ -33,7 +33,7 @@ export function ThreadDetail(): JSX.Element {
           aria-label="All threads"
           onClick={editor.actions.backToThreads}
         >
-          <span class="icon-[lucide--arrow-left] size-3.5 shrink-0" aria-hidden="true" />
+          <span class="icon-[ph--arrow-left] shrink-0" aria-hidden="true" />
         </button>
         <span id="thr-title" class="min-w-0 flex-1 truncate text-sm font-medium">
           {editor.threads.current()?.title || 'New thread'}
@@ -48,7 +48,7 @@ export function ThreadDetail(): JSX.Element {
             aria-label="Delete current thread"
             onClick={() => void editor.actions.deleteThread()}
           >
-            <span class="icon-[lucide--trash-2] size-3.5 shrink-0" aria-hidden="true" />
+            <span class="icon-[ph--trash] shrink-0" aria-hidden="true" />
           </button>
         </Show>
       </div>
@@ -78,12 +78,12 @@ export function ThreadDetail(): JSX.Element {
                 type="button"
                 id="thr-anchor"
                 data-ui="thr-anchor"
-                class="inline-flex max-w-full min-w-0 items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground [&.jump]:cursor-pointer [&.jump]:hover:text-foreground jump"
+                class="inline-flex max-w-full min-w-0 items-center gap-1 rounded-pill bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground [&.jump]:cursor-pointer [&.jump]:hover:text-foreground jump"
                 onClick={() =>
                   editor.actions.openFile(thread()?.path || '', { line: thread()?.l1 })
                 }
               >
-                <span class="icon-[lucide--file-code] size-3 shrink-0" aria-hidden="true" />
+                <span class="icon-[ph--file-code] shrink-0" aria-hidden="true" />
                 <span data-ui="thr-anchor-text" class="truncate">
                   {targetRef(thread() || {})}
                 </span>
@@ -99,7 +99,7 @@ export function ThreadDetail(): JSX.Element {
                 <For each={['pr', 'mine', 'selection']}>
                   {(scope) => (
                     <button
-                      class="btn h-6 px-2 text-xs"
+                      class="btn"
                       data-variant="outline"
                       data-size="xs"
                       data-scope={scope}
@@ -147,16 +147,16 @@ export function ThreadDetail(): JSX.Element {
               <AgentPicker
                 id="thr-agent"
                 compact
-                triggerClass="btn max-w-full h-7! text-foreground! border-transparent! bg-transparent! px-2! text-xs! shadow-none! hover:bg-accent!"
+                triggerClass="btn max-w-full h-7! text-foreground! border-transparent! bg-transparent! px-2! text-xs! hover:bg-accent!"
                 disabled={editor.threads.running()}
               />
             </div>
             <span class="flex-1" />
             <button
               id="thr-send"
-              class="btn rounded-full gap-1.5"
+              class="btn gap-1.5"
               data-control="agent-send"
-              data-variant="primary"
+              data-variant={editor.threads.running() ? 'primary' : 'send'}
               data-size="sm"
               title={editor.threads.running() ? 'Stop this reply' : 'Send (Enter)'}
               aria-keyshortcuts={editor.threads.running() ? undefined : 'Enter'}
@@ -171,11 +171,7 @@ export function ThreadDetail(): JSX.Element {
               }}
             >
               <span
-                class={
-                  editor.threads.running()
-                    ? 'icon-[lucide--square] size-4'
-                    : 'icon-[lucide--arrow-up] size-4'
-                }
+                class={editor.threads.running() ? 'icon-[ph--square]' : 'icon-[ph--arrow-up]'}
                 aria-hidden="true"
               />
               <Show when={!editor.threads.running()}>

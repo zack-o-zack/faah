@@ -26,7 +26,7 @@ export function EditControls(): JSX.Element {
         data-variant="ghost"
         data-size="icon-xs"
       >
-        <span class="icon-[lucide--square-pen] size-3.5" />
+        <span class="icon-[ph--note-pencil]" />
       </button>
       <button
         id="btn-cancel-edit"

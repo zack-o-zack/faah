@@ -7,10 +7,7 @@ export function CommitForm(): JSX.Element {
   return (
     <Show when={editor.git.counts().hasChanges}>
       <div id="git-commit-section" class="git-commit-section flex flex-col gap-2">
-        <div
-          class="input-group border-border bg-background shadow-none dark:bg-background focus-within:border-ring focus-within:ring-1 focus-within:ring-ring/40"
-          data-orientation="vertical"
-        >
+        <div class="input-group" data-orientation="vertical">
           <textarea
             id="git-commit-msg"
             class="max-h-40 min-h-9 text-sm"
@@ -43,10 +40,7 @@ export function CommitForm(): JSX.Element {
                 editor.actions.openSettings('ui', 'Git & Diff', 'git.commitMessageInstruction')
               }
             >
-              <span
-                class="icon-[lucide--sliders-horizontal] size-3.5 shrink-0"
-                aria-hidden="true"
-              />
+              <span class="icon-[ph--sliders-horizontal] shrink-0" aria-hidden="true" />
             </button>
             <button
               id="git-generate-msg"
@@ -59,11 +53,7 @@ export function CommitForm(): JSX.Element {
               disabled={!!editor.git.state.pending}
               onClick={() => void editor.actions.generateCommitMessage()}
             >
-              <span
-                data-ui="icon"
-                class="icon-[lucide--sparkle] size-3.5 shrink-0"
-                aria-hidden="true"
-              />
+              <span data-ui="icon" class="icon-[ph--spinner] shrink-0" aria-hidden="true" />
             </button>
           </footer>
         </div>

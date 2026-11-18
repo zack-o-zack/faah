@@ -13,9 +13,9 @@ export function CommitFiles(props: CommitFilesProps): JSX.Element {
   const [shown, setShown] = createSignal(100);
   const [files] = createResource(() => props.sha, editor.actions.loadCommitFiles);
   return (
-    <div class={props.unpushed ? 'up-files' : 'git-commit-files ml-3 flex flex-col border-l pl-1'}>
+    <div class={props.unpushed ? 'up-files' : 'git-commit-files flex flex-col'}>
       <Show when={!props.unpushed}>
-        <div class="git-commit-meta truncate px-3 py-1 text-xs text-muted-foreground">
+        <div class="git-commit-meta truncate px-2 py-1 text-xs text-muted-foreground">
           {props.author} · {props.date}
         </div>
       </Show>
@@ -30,7 +30,7 @@ export function CommitFiles(props: CommitFilesProps): JSX.Element {
           <div
             role="button"
             tabindex="0"
-            class="flex min-w-0 items-center gap-2 rounded px-2 py-1 text-xs cursor-pointer hover:bg-accent [&.sel]:bg-accent"
+            class="flex min-w-0 items-center gap-2 rounded-sm px-2 py-1 text-xs cursor-pointer hover:bg-accent [&.sel]:bg-accent"
             data-commit-file
             data-path={file.path}
             classList={{
@@ -58,7 +58,7 @@ export function CommitFiles(props: CommitFilesProps): JSX.Element {
               </Show>
             </span>
             <span
-              class="gs w-3 shrink-0 text-center font-mono [&.git-M]:text-primary-text [&.git-R]:text-primary-text [&.git-A]:text-gi [&.git-untracked]:text-gi [&.git-D]:text-gd"
+              class="gs w-3 shrink-0 text-center font-mono [&.git-M]:text-warn [&.git-R]:text-warn [&.git-A]:text-gi [&.git-untracked]:text-gi [&.git-D]:text-gd"
               classList={{
                 'git-M': file.status === 'M',
                 'git-A': file.status === 'A',

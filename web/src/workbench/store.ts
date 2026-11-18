@@ -1,5 +1,5 @@
 import type { Request } from '../lib/api.ts';
-import type { Directory, RecentItem } from './decode.ts';
+import type { Directory, DirectoryEntry, RecentItem } from './decode.ts';
 import { decodeWorkbench, decodeDirectory, decodeOpen, decodeMkdir } from './decode.ts';
 import { errorMessage } from '../lib/decode.ts';
 interface WorkbenchState {
@@ -14,13 +14,15 @@ interface WorkbenchState {
   hidden: boolean;
   directory: Directory;
   selected: number;
+  selectionSource: 'navigation' | 'user';
+  preview: { path: string; entries: DirectoryEntry[]; busy: boolean; error: string };
   clone: { target: string; repo: string; managed: string; previousTab: string } | null;
   busy: boolean;
 }
 import { createStore, reconcile } from 'solid-js/store';
 import { api, apiPostJson } from '../lib/api.ts';
-import { createMemo } from 'solid-js';
-import { recentGroups } from './logic.ts';
+import { batch, createMemo, getOwner, onCleanup } from 'solid-js';
+import { recentSections } from './logic.ts';
 
 function initialState(): WorkbenchState {
   return {
@@ -35,6 +37,8 @@ function initialState(): WorkbenchState {
     hidden: false,
     directory: { path: '', parent: '', entries: [] },
     selected: -1,
+    selectionSource: 'navigation',
+    preview: { path: '', entries: [], busy: false, error: '' },
     clone: null,
     busy: false,
   };
@@ -61,10 +65,65 @@ function buildWorkbenchStore(
   let browseSequence = 0;
   let refreshSequence = 0;
   let openSequence = 0;
-  const groups = createMemo(() => recentGroups(state.items, state.showAll));
+  let previewSequence = 0;
+  let previewTimer: ReturnType<typeof setTimeout> | undefined;
+  const previewCache = new Map<string, DirectoryEntry[]>();
+  function cancelPreview() {
+    ++previewSequence;
+    clearTimeout(previewTimer);
+  }
+  function invalidatePreview() {
+    cancelPreview();
+    previewCache.clear();
+    set('preview', { path: '', entries: [], busy: false, error: '' });
+  }
+  function previewSelection() {
+    const path = state.directory.entries[state.selected]?.path || '';
+    if (path === state.preview.path && !state.preview.error) return;
+    cancelPreview();
+    const cached = previewCache.get(path);
+    set('preview', { path, entries: cached || [], busy: !!path && !cached, error: '' });
+    if (!path) return;
+    if (cached) {
+      previewCache.delete(path);
+      previewCache.set(path, cached);
+      return;
+    }
+    const sequence = previewSequence;
+    const hidden = state.hidden;
+    previewTimer = setTimeout(async () => {
+      try {
+        const result = decodeDirectory(
+          await request('api/wb/browse', { path, hidden: hidden ? '1' : undefined }),
+        );
+        if (sequence !== previewSequence) return;
+        previewCache.set(path, result.entries);
+        if (previewCache.size > 20) {
+          const oldest = previewCache.keys().next().value;
+          if (oldest !== undefined) previewCache.delete(oldest);
+        }
+        set('preview', { path, entries: result.entries, busy: false, error: '' });
+      } catch (err) {
+        if (sequence === previewSequence)
+          set('preview', { path, entries: [], busy: false, error: errorMessage(err) });
+      }
+    }, 80);
+  }
+  if (getOwner()) onCleanup(cancelPreview);
+  const groups = createMemo(() => recentSections(state.items, state.showAll));
+  // Only an explicit selection changes the Open target.
+  const openEntry = createMemo(() =>
+    state.selectionSource === 'user' ? state.directory.entries[state.selected] : undefined,
+  );
   const actions = {
     selectTab: (tab: string) => set('tab', tab),
-    selectDirectory: (index: number) => set('selected', index),
+    selectDirectory: (index: number) => {
+      batch(() => {
+        set('selected', index);
+        set('selectionSource', 'user');
+        previewSelection();
+      });
+    },
     showAll: () => set('showAll', true),
     clearError: () => set('error', ''),
     async refresh() {
@@ -93,8 +152,21 @@ function buildWorkbenchStore(
           }),
         );
         if (seq !== browseSequence) return;
-        set('directory', reconcile(result));
-        set('selected', select ? result.entries.findIndex((e) => e.path === select) : -1);
+        const sameDirectory = result.path === state.directory.path;
+        const selection =
+          select ||
+          (sameDirectory ? state.directory.entries[state.selected]?.path : '') ||
+          (result.path === state.directory.parent ? state.directory.path : '');
+        const index = result.entries.findIndex((entry) => entry.path === selection);
+        let source = state.selectionSource;
+        if (select) source = 'user';
+        else if (!sameDirectory) source = 'navigation';
+        batch(() => {
+          set('directory', reconcile(result));
+          set('selected', index);
+          set('selectionSource', source);
+          previewSelection();
+        });
       } catch (err) {
         if (seq === browseSequence) set('error', errorMessage(err));
       } finally {
@@ -129,7 +201,7 @@ function buildWorkbenchStore(
       set('clone', null);
       if (tab) set('tab', tab);
     },
-    async itemAction(action: string, item: RecentItem): Promise<void> {
+    async itemAction(action: 'pin' | 'remove', item: RecentItem): Promise<void> {
       try {
         await post(
           `api/wb/${action}`,
@@ -142,13 +214,15 @@ function buildWorkbenchStore(
     },
     toggleHidden() {
       set('hidden', !state.hidden);
-      return actions.browse(state.directory.path, state.directory.entries[state.selected]?.path);
+      invalidatePreview();
+      return actions.browse(state.directory.path);
     },
     async mkdir(path: string): Promise<boolean> {
       try {
         const result = decodeMkdir(
           await post('api/wb/mkdir', { path, base: state.directory.path }),
         );
+        invalidatePreview();
         const at = result.path.lastIndexOf(state.sep);
         await actions.browse(at > 0 ? result.path.slice(0, at) : state.sep, result.path);
         set('error', '');
@@ -159,5 +233,5 @@ function buildWorkbenchStore(
       }
     },
   };
-  return { state, groups, actions };
+  return { state, groups, openEntry, actions };
 }

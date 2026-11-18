@@ -14,7 +14,7 @@ func TestToolLabel(t *testing.T) {
 	}
 }
 
-func TestExplainStepLabelsMatchThreadControls(t *testing.T) {
+func TestExplainStepLabels(t *testing.T) {
 	for tool, label := range map[string]string{"annotate": "Show notes", "walkthrough": "Show a walkthrough"} {
 		for _, call := range []string{tool, "mcp__faah__" + tool, "Run mcp_faah_" + tool} {
 			if got := StepLabel(call); got != label {

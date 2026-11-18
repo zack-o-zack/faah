@@ -11,15 +11,16 @@ import { CommentBody } from './CommentBody.tsx';
 export function IssueComment(props: IssueCommentProps): JSX.Element {
   const editor = useEditor();
   const key = () => 'issue:' + props.comment.id;
+  // Bodies read by default; a reader can still fold a comment away.
   return (
     <details
       class="card group/accordion flex flex-col gap-0! px-3! py-2!"
-      open={!!editor.pr.state.expanded[key()]}
+      open={editor.pr.state.expanded[key()] !== false}
       onToggle={(event) => editor.actions.setThreadExpanded(key(), event.currentTarget.open)}
     >
       <summary class="flex min-w-0 cursor-pointer items-center gap-2">
         <span
-          class="icon-[lucide--chevron-right] size-3.5 shrink-0 text-muted-foreground group-open/accordion:rotate-90"
+          class="icon-[ph--caret-right] shrink-0 text-muted-foreground group-open/accordion:rotate-90"
           aria-hidden="true"
         />
         <span class="shrink-0 font-medium">{props.comment.author || 'unknown'}</span>
@@ -40,7 +41,7 @@ export function IssueComment(props: IssueCommentProps): JSX.Element {
             props.onReply(props.comment.author || '');
           }}
         >
-          <span class="icon-[lucide--reply] size-3.5 shrink-0" aria-hidden="true" />
+          <span class="icon-[ph--arrow-u-up-left] shrink-0" aria-hidden="true" />
         </button>
       </summary>
       <div class="mt-2 flex flex-col gap-2">

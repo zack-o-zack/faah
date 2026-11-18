@@ -23,27 +23,28 @@ export function CommentThread(props: CommentThreadProps): JSX.Element {
   const total = () => props.thread.existing.length + props.thread.drafts.length;
   const revealed = () => pr.state.reveal.key === key();
   let item: HTMLDetailsElement | undefined;
-  // Native scroll for a gutter marker's request to show this thread.
+  // Native scroll for a gutter marker's request to show this thread. It runs on mount too,
+  // because the thread may first appear with the request that opened its tab.
   createEffect(
     on(
       () => pr.state.reveal.sequence,
       () => {
         if (revealed()) item?.scrollIntoView({ block: 'center', behavior: 'smooth' });
       },
-      { defer: true },
     ),
   );
+  // Threads read by default; a reader can still fold one away.
   return (
     <details
       ref={item}
       class="card group/accordion flex flex-col gap-2! p-3!"
       classList={{ 'diff-row-flash': revealed() }}
-      open={!!pr.state.expanded[key()]}
+      open={pr.state.expanded[key()] !== false}
       onToggle={(event) => editor.actions.setThreadExpanded(key(), event.currentTarget.open)}
     >
       <summary class="flex min-w-0 cursor-pointer items-center gap-2">
         <span
-          class="icon-[lucide--chevron-right] size-3.5 shrink-0 text-muted-foreground group-open/accordion:rotate-90"
+          class="icon-[ph--caret-right] shrink-0 text-muted-foreground group-open/accordion:rotate-90"
           aria-hidden="true"
         />
         <button
@@ -109,7 +110,7 @@ function DraftCard(props: DraftCardProps): JSX.Element {
             if (props.draft.id !== undefined) void editor.actions.deleteDraft(props.draft.id);
           }}
         >
-          <span class="icon-[lucide--trash-2] size-3.5 shrink-0" aria-hidden="true" />
+          <span class="icon-[ph--trash] shrink-0" aria-hidden="true" />
         </button>
       </div>
     </div>

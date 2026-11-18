@@ -1,31 +1,20 @@
+import { TabRail } from '../lib/TabRail.tsx';
 import type { JSX } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
+import { Brand } from '../brand/Brand.tsx';
 export function TreeToolbar(): JSX.Element {
   const editor = useEditor();
   const tree = editor.tree;
   return (
-    <header class="panel-head desktop:min-h-[var(--titlebar-h,2.5rem)] desktop:[-webkit-app-region:drag] desktop:[&_button]:[-webkit-app-region:no-drag] desktop:[&_a]:[-webkit-app-region:no-drag] desktop:[&_[role=group]]:[-webkit-app-region:no-drag] desktop:[&_[role=tab]]:[-webkit-app-region:no-drag] desktop:pl-[calc(0.75rem+var(--titlebar-left,0px))] desktop:flex-wrap desktop:pt-0 [&_.panel-actions]:desktop:w-[calc(100%+var(--titlebar-left,0px))] [&_.panel-actions]:desktop:-ml-[var(--titlebar-left,0px)] flex shrink-0 items-center gap-2 border-b px-3 py-2 text-xs font-medium">
+    <header class="panel-head desktop:min-h-[var(--titlebar-h,2.5rem)] desktop:[-webkit-app-region:drag] desktop:[&_button]:[-webkit-app-region:no-drag] desktop:[&_a]:[-webkit-app-region:no-drag] desktop:[&_[role=group]]:[-webkit-app-region:no-drag] desktop:[&_[role=tab]]:[-webkit-app-region:no-drag] desktop:pl-[calc(0.75rem+var(--titlebar-left,0px))] desktop:pt-0 [&_.panel-actions]:desktop:w-[calc(100%+var(--titlebar-left,0px))] [&_.panel-actions]:desktop:-ml-[var(--titlebar-left,0px)] flex flex-wrap shrink-0 items-center gap-1 border-b px-3 py-2 text-xs font-medium">
       <span
-        class="side-logo flex min-w-0 flex-1 items-center gap-2 overflow-hidden [&_img]:shrink-0 desktop:h-[var(--titlebar-h,38px)] [&_img]:h-4 [&_img]:w-auto"
-        title="faah"
+        class="side-logo flex shrink-0 items-center gap-2 desktop:h-[var(--titlebar-h,38px)]"
+        title="fibo"
       >
-        <img
-          class="hidden dark:block"
-          src="static/logo-dark.svg"
-          alt="faah"
-          width="35"
-          height="13"
-        />
-        <img
-          class="block dark:hidden"
-          src="static/logo-light.svg"
-          alt="faah"
-          width="35"
-          height="13"
-        />
+        <Brand />
         <button
           id="st-ver"
-          class="status-ver min-w-0 truncate cursor-pointer rounded px-1 font-mono text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+          class="status-ver shrink-0 whitespace-nowrap cursor-pointer rounded-sm px-1 font-mono text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
           title="Keyboard shortcuts"
           onClick={() => editor.actions.showHelp()}
         >
@@ -34,33 +23,33 @@ export function TreeToolbar(): JSX.Element {
             : ''}
         </button>
       </span>
-      <span class="panel-actions ml-auto flex shrink-0 items-center gap-1">
-        <div class="button-group mr-1" role="group" aria-label="Explorer view mode">
+      <span class="panel-actions ml-auto flex min-w-0 flex-wrap items-center gap-1">
+        <TabRail label="Explorer view mode" size="xs">
           <button
             id="btn-files"
-            class="btn"
-            aria-pressed={tree.mode() === 'files'}
-            data-variant={tree.mode() === 'files' ? 'secondary' : 'outline'}
+            role="tab"
+            aria-controls="tree-panel"
+            tabindex={tree.mode() === 'files' ? 0 : -1}
+            aria-selected={tree.mode() === 'files'}
             onClick={() => void editor.actions.setTreeMode('files')}
-            data-size="xs"
             data-control="view-choice"
           >
-            <span class="icon-[lucide--folder] size-3 shrink-0" aria-hidden="true" />
+            <span class="icon-[ph--folder] shrink-0" aria-hidden="true" />
             <span>Files</span>
           </button>
           <button
             id="btn-changed"
-            class="btn"
-            aria-pressed={tree.mode() === 'git'}
-            data-variant={tree.mode() === 'git' ? 'secondary' : 'outline'}
+            role="tab"
+            aria-controls="tree-panel"
+            tabindex={tree.mode() === 'git' ? 0 : -1}
+            aria-selected={tree.mode() === 'git'}
             onClick={() => void editor.actions.setTreeMode('git')}
-            data-size="xs"
             data-control="view-choice"
           >
-            <span class="icon-[lucide--git-branch] size-3 shrink-0" aria-hidden="true" />
+            <span class="icon-[ph--git-branch] shrink-0" aria-hidden="true" />
             <span>Diff</span>
           </button>
-        </div>
+        </TabRail>
         <button
           id="btn-new-file"
           class="btn ml-auto"
@@ -71,7 +60,7 @@ export function TreeToolbar(): JSX.Element {
           data-size="icon-xs"
           data-control="icon-action"
         >
-          <span class="icon-[lucide--file-plus] size-3.5" />
+          <span class="icon-[ph--file-plus]" />
         </button>
         <button
           id="btn-new-folder"
@@ -83,7 +72,7 @@ export function TreeToolbar(): JSX.Element {
           data-size="icon-xs"
           data-control="icon-action"
         >
-          <span class="icon-[lucide--folder-plus] size-3.5" />
+          <span class="icon-[ph--folder-plus]" />
         </button>
         <button
           id="btn-collapse-tree"
@@ -94,7 +83,7 @@ export function TreeToolbar(): JSX.Element {
           data-size="icon-xs"
           data-control="icon-action"
         >
-          <span class="icon-[lucide--chevrons-up] size-3.5" />
+          <span class="icon-[ph--caret-double-up]" />
         </button>
         <button
           id="btn-expand-tree"
@@ -107,7 +96,7 @@ export function TreeToolbar(): JSX.Element {
           data-size="icon-xs"
           data-control="icon-action"
         >
-          <span class="icon-[lucide--chevrons-down] size-3.5" />
+          <span class="icon-[ph--caret-double-down]" />
         </button>
         <button
           id="btn-reindex"
@@ -119,7 +108,7 @@ export function TreeToolbar(): JSX.Element {
           data-size="icon-xs"
           data-control="icon-action"
         >
-          <span class="icon-[lucide--rotate-cw] size-3.5" />
+          <span class="icon-[ph--arrow-clockwise]" />
         </button>
       </span>
     </header>

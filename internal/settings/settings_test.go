@@ -21,8 +21,8 @@ func TestSettingsDefaults(t *testing.T) {
 	if m["editor.fontSize"] != 13.5 {
 		t.Errorf("expected editor.fontSize 13.5, got %v", m["editor.fontSize"])
 	}
-	if m["workbench.colorTheme"] != "catppuccin-mocha" {
-		t.Errorf("expected workbench.colorTheme catppuccin-mocha, got %v", m["workbench.colorTheme"])
+	if m["workbench.colorTheme"] != "" {
+		t.Errorf("expected workbench.colorTheme to follow the OS, got %v", m["workbench.colorTheme"])
 	}
 	if m["editor.wordWrap"] != "on" {
 		t.Errorf("expected editor.wordWrap on, got %v", m["editor.wordWrap"])
@@ -114,7 +114,7 @@ func TestSettingsPreserveNonAgentValues(t *testing.T) {
 	// Step 1: Update editor settings
 	err := UpdateMap(map[string]any{
 		"editor.fontSize":      16.0,
-		"workbench.colorTheme": "gruvbox-dark",
+		"workbench.colorTheme": "dark",
 		"custom.property":      "hello",
 	})
 	if err != nil {
@@ -137,8 +137,8 @@ func TestSettingsPreserveNonAgentValues(t *testing.T) {
 	if m["editor.fontSize"] != 16.0 {
 		t.Errorf("editor.fontSize was overwritten: got %v, want 16", m["editor.fontSize"])
 	}
-	if m["workbench.colorTheme"] != "gruvbox-dark" {
-		t.Errorf("workbench.colorTheme was overwritten: got %v, want gruvbox-dark", m["workbench.colorTheme"])
+	if m["workbench.colorTheme"] != "dark" {
+		t.Errorf("workbench.colorTheme was overwritten: got %v, want dark", m["workbench.colorTheme"])
 	}
 	if m["custom.property"] != "hello" {
 		t.Errorf("custom.property was lost: got %v, want hello", m["custom.property"])
@@ -272,4 +272,43 @@ func TestAgentNamesOnly(t *testing.T) {
 	if err := Write(Settings{Agent: "echo {prompt}"}); err == nil {
 		t.Fatal("Write accepted a command")
 	}
+}
+
+func TestDataDirIsIndependentOfConfig(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	if got := DataDir(); got != filepath.Join(home, ".faah") {
+		t.Fatalf("data directory %q", got)
+	}
+	t.Setenv("XDG_CONFIG_HOME", "")
+	if got := Path(); got != filepath.Join(DataDir(), "settings.json") {
+		t.Fatalf("settings path %q", got)
+	}
+}
+
+func TestTransparencySchema(t *testing.T) {
+	isolateSettings(t)
+	if got := ReadMergedMap()["workbench.transparency"]; got != "subtle" {
+		t.Fatalf("default transparency = %v", got)
+	}
+	for _, item := range Schema {
+		if item.Key != "workbench.transparency" {
+			continue
+		}
+		if item.Title != "Transparency" || item.Category != "Workbench" || item.Type != "select" || item.Default != "subtle" || strings.Join(item.Options, ",") != "off,subtle,strong" {
+			t.Fatalf("unexpected schema: %+v", item)
+		}
+		for _, value := range item.Options {
+			if err := UpdateMap(map[string]any{item.Key: value}); err != nil {
+				t.Fatal(err)
+			}
+			got := Read()
+			if got.WorkbenchTransparency == nil || *got.WorkbenchTransparency != value {
+				t.Fatalf("saved transparency = %v, want %s", got.WorkbenchTransparency, value)
+			}
+		}
+		return
+	}
+	t.Fatal("transparency schema missing")
 }

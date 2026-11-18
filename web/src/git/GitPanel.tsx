@@ -10,11 +10,13 @@ export function GitPanel(): JSX.Element {
   const editor = useEditor();
   const git = editor.git;
   const meta = () => editor.store.state.workspace.meta;
+  // An empty message makes Commit ask the agent to write one first.
+  const writesMessage = () => !git.state.message.trim();
   return (
     <Show when={meta()?.git}>
       <section
         id="git-panel"
-        class="git-panel relative flex h-96 min-h-8 max-h-[80vh] shrink-0 flex-col border-t bg-sidebar [&.collapsed]:h-auto! [&.collapsed_.git-panel-body]:hidden"
+        class="git-panel relative flex h-96 min-h-8 max-h-[80vh] shrink-0 flex-col border-t [&.collapsed]:h-auto! [&.collapsed_.git-panel-body]:hidden"
         classList={{ collapsed: git.state.collapsed }}
         style={{ height: git.state.collapsed ? 'auto' : `${git.state.height}px` }}
       >
@@ -29,7 +31,7 @@ export function GitPanel(): JSX.Element {
         />
         <div class="git-panel-head flex shrink-0 items-center gap-2 border-b px-3 py-2 text-xs font-medium">
           <span
-            class="icon-[lucide--git-branch] size-3.5 shrink-0 git-panel-icon text-primary"
+            class="icon-[ph--git-branch] shrink-0 git-panel-icon text-primary-text"
             title="Git Panel"
             aria-hidden="true"
           />
@@ -51,7 +53,7 @@ export function GitPanel(): JSX.Element {
             aria-label="Collapse Git panel"
             onClick={() => editor.actions.setGitPanelCollapsed(!git.state.collapsed)}
           >
-            <span class="icon-[lucide--chevron-down] size-3.5 shrink-0" aria-hidden="true" />
+            <span class="icon-[ph--caret-down] shrink-0" aria-hidden="true" />
           </button>
         </div>
         <Show when={!git.state.collapsed}>
@@ -68,7 +70,7 @@ export function GitPanel(): JSX.Element {
                 data-size="xs"
                 onClick={() => editor.actions.openForgeConnect()}
               >
-                <span class="icon-[lucide--circle-alert] size-3 shrink-0" aria-hidden="true" />
+                <span class="icon-[ph--warning-circle] shrink-0" aria-hidden="true" />
                 <span>No forge token configured — add one</span>
               </button>
             </Show>
@@ -80,9 +82,9 @@ export function GitPanel(): JSX.Element {
                 fallback={
                   <div
                     id="git-clean-state"
-                    class="git-clean-state flex min-w-0 flex-1 items-center justify-center gap-2 rounded border border-dashed px-3 py-1.5 text-xs text-muted-foreground [&_svg]:shrink-0 [&_svg]:text-primary"
+                    class="git-clean-state flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg border border-dashed px-3 py-1.5 text-xs text-muted-foreground [&_svg]:shrink-0 [&_svg]:text-primary-text"
                   >
-                    <span class="icon-[lucide--check] size-3.5 shrink-0" aria-hidden="true" />
+                    <span class="icon-[ph--check] shrink-0" aria-hidden="true" />
                     <span>Working tree clean</span>
                   </div>
                 }
@@ -91,14 +93,15 @@ export function GitPanel(): JSX.Element {
                   id="git-commit"
                   type="button"
                   class="btn min-w-0 flex-1"
-                  data-variant="primary"
+                  data-variant={writesMessage() ? 'special' : 'primary'}
                   data-size="sm"
+                  title={writesMessage() ? 'Write a message and commit' : 'Commit'}
                   disabled={!!git.state.pending}
                   onClick={() => void editor.actions.commit()}
                 >
                   <span
                     data-ui="icon"
-                    class="icon-[lucide--sparkle] size-3.5 shrink-0"
+                    class={`${writesMessage() ? 'icon-[ph--spinner]' : 'icon-[ph--check]'} shrink-0`}
                     aria-hidden="true"
                   />
                   <span data-ui="label">{git.state.pending || 'Commit'}</span>
@@ -131,7 +134,7 @@ export function GitPanel(): JSX.Element {
                     }
                   }}
                 >
-                  <span class="icon-[lucide--external-link] size-3.5 shrink-0" aria-hidden="true" />
+                  <span class="icon-[ph--arrow-square-out] shrink-0" aria-hidden="true" />
                 </a>
               </div>
               <div id="git-commits-list" class="git-commits-list flex flex-col gap-1">

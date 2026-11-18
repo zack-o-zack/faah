@@ -1,3 +1,4 @@
+import { Spiral } from '../brand/Spiral.tsx';
 import type { JSX } from 'solid-js';
 import type { ThreadSummary } from './decode.ts';
 import { Show } from 'solid-js';
@@ -33,24 +34,20 @@ export function ThreadListRow(props: ThreadListRowProps): JSX.Element {
     >
       <div data-ui="thr-item-title" class="flex min-w-0 items-center gap-2 text-sm font-medium">
         <Show when={props.thread.running}>
-          <span
-            data-ui="thr-spin"
-            class="icon-[lucide--loader-circle] size-3.5 shrink-0 animate-spin text-muted-foreground"
-            title="Working"
-          />
+          <span data-ui="thr-spin" class="inline-flex shrink-0" title="Working">
+            <Spiral state="thinking" size={18} />
+          </span>
         </Show>
         <Show when={!props.thread.running && props.thread.failed}>
-          <span
-            data-ui="thr-fail"
-            class="icon-[lucide--circle-alert] size-3.5 shrink-0 text-destructive"
-            title="Last reply failed"
-          />
+          <span data-ui="thr-fail" class="inline-flex shrink-0" title="Last reply failed">
+            <Spiral state="error" size={18} label="Failed" />
+          </span>
         </Show>
         <span data-ui="thr-item-title-text" class="min-w-0 flex-1 truncate">
           {props.thread.title}
         </span>
         <Show when={props.thread.kind}>
-          <span class="badge" data-variant="secondary" data-control="thr-kind">
+          <span class="badge" data-tone="agent" data-control="thr-kind">
             {['batch', 'explain'].includes(props.thread.kind || '') ? props.thread.kind : 'inline'}
           </span>
         </Show>
@@ -67,7 +64,7 @@ export function ThreadListRow(props: ThreadListRowProps): JSX.Element {
             props.onDelete();
           }}
         >
-          <span class="icon-[lucide--trash-2] size-3 shrink-0" aria-hidden="true" />
+          <span class="icon-[ph--trash] shrink-0" aria-hidden="true" />
         </button>
       </div>
       <div data-ui="thr-item-meta" class="flex justify-between gap-2 text-xs text-muted-foreground">

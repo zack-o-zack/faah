@@ -8,16 +8,16 @@ export function ThreadList(): JSX.Element {
   return (
     <section id="thr-list-view" class="flex flex-1 min-h-0 flex-col">
       <header class="inspector-bar flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2 text-xs">
-        <div class="button-group" id="thr-filter" role="group">
+        <div class="button-group" id="thr-filter" role="group" aria-label="Threads to show">
           <For each={['all', 'file']}>
             {(filter) => (
               <button
                 class="btn"
                 data-control="opt"
                 data-size="xs"
-                data-variant={editor.threads.state.filter === filter ? 'secondary' : 'outline'}
+                data-variant="outline"
                 data-thr-filter={filter}
-                aria-pressed={editor.threads.state.filter === filter ? true : undefined}
+                aria-pressed={editor.threads.state.filter === filter}
                 onClick={() => editor.actions.setThreadFilter(filter)}
               >
                 {filter === 'all' ? 'All' : 'This file'}
@@ -33,7 +33,7 @@ export function ThreadList(): JSX.Element {
           data-size="xs"
           data-control="thr-btn-primary"
         >
-          <span class="icon-[lucide--plus] size-3.5" aria-hidden="true" />
+          <span class="icon-[ph--plus]" aria-hidden="true" />
           New
         </button>
       </header>

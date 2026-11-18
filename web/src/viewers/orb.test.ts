@@ -126,6 +126,8 @@ test('walkthrough helpers clamp movement and bubble replacement resets the posit
   };
   expect(walkStart(null)).toBeNull();
   expect(walkStart(model, 1)).toBeNull();
+  expect(walkStart(model, 0, 'source', 2)).toBeNull();
+  expect(walkStart(model, 0, 'review', 1)).toEqual({ index: 0, step: 1, surface: 'review' });
   const start = walkStart(model);
   expect(start).toEqual({ index: 0, step: 0, surface: 'source' });
   expect(walkMove(model, start, -1)).toEqual(start);

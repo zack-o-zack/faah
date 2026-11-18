@@ -15,20 +15,54 @@ export function NoteGhost(props: {
 }): JSX.Element {
   const editor = useEditor();
   const id = createUniqueId();
-  const open = () => props.notes.expanded() === props.note;
+  const hasDetail = () => !!props.note.detail.trim();
+  const open = () => hasDetail() && props.notes.expanded() === props.note;
   function clearHover() {
     const current = props.notes.hovered();
     if (current && noteKey(current) === noteKey(props.note)) props.notes.setHovered(null);
   }
-  function toggle() {
-    if (open()) props.notes.collapse();
+  // The detail is a tooltip: it opens after a short hover or on focus, and
+  // closes when the pointer or focus leaves the note.
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  function show(delay = 0) {
+    clearTimeout(timer);
+    if (!hasDetail()) return;
+    if (delay) timer = setTimeout(() => props.notes.showDetail(props.note), delay);
     else props.notes.showDetail(props.note);
   }
-  onCleanup(clearHover);
+  function hide() {
+    clearTimeout(timer);
+    if (open()) props.notes.collapse();
+  }
+  function toggle() {
+    if (open()) hide();
+    else show();
+  }
+  onCleanup(() => {
+    clearTimeout(timer);
+    clearHover();
+  });
+  // Only a note with detail is a control; a summary-only note is plain text.
+  const label = () => (
+    <>
+      <span
+        class="icon-[ph--spinner] shrink-0"
+        role="img"
+        title="AI explanation"
+        aria-label="AI explanation"
+      />
+      <span class="truncate">{props.note.summary}</span>
+      <Show when={props.note.stale}>
+        <span class="shrink-0 text-10 text-warn">
+          {props.note.stale === 'refs' ? 'may be outdated' : 'outdated'}
+        </span>
+      </Show>
+    </>
+  );
   return (
     <div
       data-note
-      class="select-none min-w-0 pr-4"
+      class="relative select-none min-w-0 pr-4"
       style={{
         'max-width': props.width ? `${props.width}px` : undefined,
         'padding-left': `${props.indent || 0}px`,
@@ -36,8 +70,18 @@ export function NoteGhost(props: {
       onMouseEnter={() => {
         editor.actions.hideHover();
         props.notes.setHovered(props.note);
+        show(250);
       }}
-      onMouseLeave={clearHover}
+      onMouseLeave={() => {
+        clearHover();
+        hide();
+      }}
+      onFocusOut={(event) => {
+        if (!(
+          event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)
+        ))
+          hide();
+      }}
       onMouseDown={(event) => {
         if (!(event.target instanceof Element) || !event.target.closest('button'))
           event.preventDefault();
@@ -51,38 +95,40 @@ export function NoteGhost(props: {
           'padding-bottom': `${GHOST_PADDING_BOTTOM}px`,
         }}
       >
-        <button
-          type="button"
-          class="btn h-full! max-w-full justify-start! gap-1.5 px-0! font-mono! text-xs! font-normal! text-special/75 hover:text-special"
-          data-variant="ghost"
-          data-control="note-summary"
-          aria-label={props.note.summary}
-          aria-expanded={open()}
-          aria-controls={id}
-          onClick={toggle}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              event.preventDefault();
-              toggle();
-            }
-          }}
-        >
-          <span
-            class="icon-[lucide--sparkle] size-3 shrink-0"
-            role="img"
-            title="AI explanation"
-            aria-label="AI explanation"
-          />
-          <span class="truncate">{props.note.summary}</span>
-          <Show when={props.note.stale}>
-            <span class="shrink-0 text-10 text-warn">
-              {props.note.stale === 'refs' ? 'may be outdated' : 'outdated'}
+        <Show
+          when={hasDetail()}
+          fallback={
+            <span
+              class="inline-flex h-full max-w-full items-center gap-1.5 font-mono text-xs text-special"
+              data-control="note-summary"
+            >
+              {label()}
             </span>
-          </Show>
-        </button>
+          }
+        >
+          <button
+            type="button"
+            class="btn h-full! max-w-full justify-start! gap-1.5 px-0! font-mono! text-xs! font-normal! text-special"
+            data-variant="ghost"
+            data-control="note-summary"
+            aria-label={props.note.summary}
+            aria-expanded={open()}
+            aria-controls={id}
+            onClick={toggle}
+            onFocus={() => show()}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                toggle();
+              }
+            }}
+          >
+            {label()}
+          </button>
+        </Show>
       </div>
       <Show when={open()}>
-        <NotePanel id={id} note={props.note} notes={props.notes} review={props.review} />
+        <NotePanel id={id} note={props.note} review={props.review} />
       </Show>
     </div>
   );

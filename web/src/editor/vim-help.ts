@@ -1,4 +1,6 @@
-export const VIM_SHORTCUT_SECTIONS: { title: string; items: [string[], string][] }[] = [
+import type { SheetSection } from '../shortcuts/help-entries.ts';
+
+export const VIM_SHORTCUT_SECTIONS: SheetSection[] = [
   {
     title: 'Modes & Motions',
     items: [
@@ -6,8 +8,8 @@ export const VIM_SHORTCUT_SECTIONS: { title: string; items: [string[], string][]
       [['w', 'b'], 'Next / previous word boundary'],
       [['0', '^', '$'], 'Start of line / first non-blank / end of line'],
       [['gg', 'G'], 'First line / last line (or [count]gg / [count]G)'],
-      [['Ctrl+d', 'Ctrl+u'], 'Scroll half-page down / up'],
-      [['Ctrl+f', 'Ctrl+b'], 'Scroll full-page down / up'],
+      [['Ctrl+D', 'Ctrl+U'], 'Scroll half-page down / up'],
+      [['Ctrl+F', 'Ctrl+B'], 'Scroll full-page down / up'],
       [['zz', 'zt', 'zb'], 'Center line / line to top / line to bottom'],
       [['H', 'M', 'L'], 'Move to top, middle, bottom visible line'],
     ],
@@ -19,7 +21,7 @@ export const VIM_SHORTCUT_SECTIONS: { title: string; items: [string[], string][]
       [['gr'], 'Find References across workspace (replaces Shift+F12)'],
       [['K'], 'Show hover documentation & signatures'],
       [['gh'], 'Call Trail (callers / callees)'],
-      [['Ctrl+o', 'Ctrl+i'], 'Jump back / forward in navigation history'],
+      [['Ctrl+O', 'Ctrl+I'], 'Jump back / forward in navigation history'],
     ],
   },
   {

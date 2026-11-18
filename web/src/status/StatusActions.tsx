@@ -66,8 +66,8 @@ export function StatusActions(): JSX.Element {
                 <span
                   class={
                     action.icon === 'zap'
-                      ? 'icon-[lucide--zap] size-3.5 shrink-0 shell-ico hidden desktop:block'
-                      : 'icon-[lucide--search] size-3.5 shrink-0 shell-ico hidden desktop:block'
+                      ? 'icon-[ph--lightning] shrink-0 shell-ico hidden desktop:block'
+                      : 'icon-[ph--magnifying-glass] shrink-0 shell-ico hidden desktop:block'
                   }
                   aria-hidden="true"
                 />
@@ -77,10 +77,7 @@ export function StatusActions(): JSX.Element {
                   ? 'Table'
                   : action.label}
               </span>
-              <Kbd
-                combo={action.keys}
-                class="kbd desktop:hidden has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1"
-              />
+              <Kbd combo={action.keys} class="desktop:hidden" />
             </button>
           </Show>
         )}

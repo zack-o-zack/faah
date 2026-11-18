@@ -162,24 +162,24 @@ export function stageDefinition(draft: StageDraft, id: string, isNew: boolean): 
 }
 
 export const FILE_GROUPS: { id: FileGroup; label: string; icon: string; title: string }[] = [
-  { id: 'core', label: 'Core', icon: 'icon-[lucide--code]', title: 'Production source files' },
+  { id: 'core', label: 'Core', icon: 'icon-[ph--code]', title: 'Production source files' },
   {
     id: 'tests',
     label: 'Tests',
-    icon: 'icon-[lucide--flask-conical]',
+    icon: 'icon-[ph--flask]',
     title: 'Test files and fixtures',
   },
   {
     id: 'config',
     label: 'Config',
-    icon: 'icon-[lucide--sliders-horizontal]',
+    icon: 'icon-[ph--sliders-horizontal]',
     title: 'Configuration files',
   },
-  { id: 'docs', label: 'Docs', icon: 'icon-[lucide--book-open]', title: 'Documentation files' },
+  { id: 'docs', label: 'Docs', icon: 'icon-[ph--book-open]', title: 'Documentation files' },
   {
     id: 'generated',
     label: 'Generated',
-    icon: 'icon-[lucide--file-cog]',
+    icon: 'icon-[ph--gear]',
     title: 'Generated files and lockfiles',
   },
 ];

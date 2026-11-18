@@ -39,7 +39,10 @@ faah stores all configuration in a single per-user global file (`~/.faah/setting
 | `editor.scrollBeyondLastLine` | Text Editor | `true` | `true`, `false` | Enable scrolling beyond document end |
 | `editor.bracketPairColorization` | Text Editor | `true` | `true`, `false` | Rainbow bracket pairs & matching |
 | `editor.vimMode` | Text Editor | `false` | `true`, `false` | Modal Vim navigation keybindings |
-| `workbench.colorTheme` | Workbench | `"catppuccin-mocha"` | 14 built-in theme IDs | Active color theme |
+| `workbench.colorTheme` | Workbench | `""` (System) | `light`, `dark`, or a discovered user theme ID | Empty or unavailable IDs follow OS appearance; configured IDs win over browser preferences |
+| `workbench.codeTheme.light` | Workbench | `""` (fibo light) | `""` or a discovered light code theme ID | Code theme used while the app is light; empty keeps the app theme's own code colours |
+| `workbench.codeTheme.dark` | Workbench | `""` (fibo dark) | `""` or a discovered dark code theme ID | Code theme used while the app is dark; empty keeps the app theme's own code colours |
+| `workbench.transparency` | Workbench | `subtle` | `off`, `subtle`, `strong` | Frosted glass on floating layers; OS reduce-transparency forces solid fills |
 | `markdown.preview.open` | Workbench | `true` | `true`, `false` | Open Markdown files in rendered preview |
 | `table.preview.open` | Workbench | `true` | `true`, `false` | Open CSV and TSV files as a table |
 | `diffEditor.renderSideBySide` | Diff Editor | `true` | `true`, `false` | Split vs. unified diff view default |
@@ -84,7 +87,7 @@ For automated machine setup, dotfile repositories, or scripting, you can directl
   "editor.fontSize": 14,
   "editor.fontFamily": "ui-monospace, monospace",
   "editor.lineHeight": 22,
-  "workbench.colorTheme": "tokyo-night",
+  "workbench.colorTheme": "dark",
   "diffEditor.renderSideBySide": true,
   "agent.harness": "claude",
   "agent.timeoutSeconds": 180
@@ -94,3 +97,27 @@ For automated machine setup, dotfile repositories, or scripting, you can directl
 The file is stored at:
 - `~/.faah/settings.json`
 - Or `$XDG_CONFIG_HOME/faah/settings.json` (if `XDG_CONFIG_HOME` is set).
+
+
+## Theme files
+
+User themes, code themes and token overrides live in `~/.faah/themes/`, independently of the
+settings location. Built-ins load first, then user CSS in filename order. Reload
+to apply file edits. Each regular CSS file is limited to 256 KiB and the combined
+user CSS content to 1 MiB; unreadable or oversized files are skipped with a log
+line. The settings theme options come from discovery, including user themes.
+An unavailable saved ID follows the OS with no migration or alias. See
+[themes and styling](themes-and-styling.md) for examples and the full contract.
+
+Code Theme (Light) and Code Theme (Dark) are two selects under the Color Theme
+control. Each lists fibo light or fibo dark plus the installed code themes of that scheme; the
+active app scheme decides which one applies, so a change previews immediately
+when its scheme is active. User code themes are discovered from the same folder
+and must select `:root[data-code-theme="<id>"] .code-surface`. See
+[code themes](themes-and-styling.md#code-themes).
+
+Color Theme uses the same System / Light / Dark icon switcher as the footer.
+Arrow keys change the choice. An extra select appears only for installed user
+themes; selecting one leaves the three built-in segments unchecked. Green is
+reserved for the logo, the threads panel's thinking spiral, agent send buttons and Open PR status.
+Other AI busy states use a rotating starburst in the idle icon's colour and size.

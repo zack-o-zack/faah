@@ -90,8 +90,8 @@ export const GlobalShortcuts: Component = () => {
   });
   bind('Alt+M', actions.toggleActivePreview);
   // ? is a shifted key on most layouts and a plain one on some.
-  bind('?', actions.showHelp, false);
-  bind('Shift+?', actions.showHelp, false);
+  bind('?', () => actions.showHelp(), false);
+  bind('Shift+?', () => actions.showHelp(), false);
 
   // Escape closes the innermost thing open; dialogs and menus close themselves first.
   createShortcut(

@@ -32,7 +32,12 @@ export const SettingsDialog: Component<SettingsDialogProps> = (props) => {
           }}
         >
           <SettingsToolbar />
-          <section class="-mx-6 flex min-h-0 flex-1 flex-col overflow-hidden border-y border-border">
+          <section
+            id="settings-body"
+            role="tabpanel"
+            aria-labelledby={dialog().mode === 'ui' ? 'settings-mode-ui' : 'settings-mode-json'}
+            class="-mx-6 flex min-h-0 flex-1 flex-col overflow-hidden border-y border-border"
+          >
             <Show when={dialog().mode === 'ui'} fallback={<SettingsJson />}>
               <div
                 id="settings-ui-container"

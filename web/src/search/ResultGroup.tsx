@@ -36,11 +36,11 @@ export function ResultGroup(props: ResultGroupProps): JSX.Element {
       >
         <span
           data-ui="ar"
-          class="icon-[lucide--chevron-down] size-3 shrink-0 text-muted-foreground"
+          class="icon-[ph--caret-down] shrink-0 text-muted-foreground"
           aria-hidden="true"
         />
         <Show when={props.file.ext}>
-          <span data-ui="ext" class="badge">
+          <span data-ui="ext" class="badge" data-tone="file">
             {props.file.ext}
           </span>
         </Show>

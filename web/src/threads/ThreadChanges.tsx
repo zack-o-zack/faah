@@ -62,7 +62,7 @@ export function ThreadChanges(props: { turn: ThreadTurn; thread?: Thread | null 
                 title={`Review changes in ${path}`}
                 onClick={() => editor.actions.openThreadFile(props.turn, path)}
               >
-                <span class="icon-[lucide--file-diff] size-3" aria-hidden="true" />
+                <span class="icon-[ph--git-diff]" aria-hidden="true" />
                 <span class="truncate">{path}</span>
               </button>
             )}

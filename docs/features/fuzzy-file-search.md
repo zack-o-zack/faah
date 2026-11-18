@@ -35,6 +35,17 @@ When reading code or debugging an issue, you often need to jump between an imple
 In modern web applications or microservices architectures, repositories often have dozens of files named `index.ts`, `mod.rs`, or `types.go`. Typing only `index` produces an overwhelming list. In faah, typing `auth/idx` or `billing/types` isolates the exact module in a fraction of a second.
 
 ### Keyboard-First Ergonomics
+The empty picker shows **Open files**, with the active tab first and up to five
+files in tab order, then **Jump to**. Choose an open file to switch tabs, or choose
+Symbol in this file (`@`), Line (`:`), Run a command (`>`), or Open a pull request
+to change mode without closing the picker. Line also shows `Cmd/Ctrl+G`; Run a
+command shows `Cmd/Ctrl+Shift+K`.
+
+The search field uses a mode icon instead of a badge. Typing shows plain results
+with file names, bold matched characters, and muted folders beside the names.
+The footer shows Up/Down to move and Enter to open, plus the current mode's hint.
+When the file query is empty, it reads "Type to search every file".
+
 The file picker is fully accessible from the keyboard:
 1. Press `Cmd/Ctrl+P`.
 2. Type a short abbreviation of the target file.

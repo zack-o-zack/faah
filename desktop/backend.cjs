@@ -21,7 +21,7 @@ function startBackend(executable, { cwd, env = process.env, timeout = 30_000 } =
   });
   const ready = new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
-      reject(new Error('The faah backend did not start within 30 seconds.'));
+      reject(new Error('The fibo backend did not start within 30 seconds.'));
       void stop();
     }, timeout);
     const lines = createInterface({ input: child.stdout });
@@ -44,7 +44,7 @@ function startBackend(executable, { cwd, env = process.env, timeout = 30_000 } =
     exit.then(result => {
       clearTimeout(timer);
       lines.close();
-      reject(result.error || new Error(`The faah backend exited (${result.code ?? result.signal}).\n${diagnostic}`));
+      reject(result.error || new Error(`The fibo backend exited (${result.code ?? result.signal}).\n${diagnostic}`));
     });
   });
 

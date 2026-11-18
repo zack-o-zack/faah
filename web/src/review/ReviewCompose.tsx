@@ -37,12 +37,12 @@ export function ReviewCompose(): JSX.Element {
             title="Send (Enter)"
             aria-keyshortcuts="Enter"
             aria-label="Send"
-            class="btn rounded-full gap-1.5"
-            data-variant="primary"
+            class="btn gap-1.5"
+            data-variant="send"
             data-size="sm"
             onClick={() => void editor.actions.sendReviewFollowup()}
           >
-            <span class="icon-[lucide--arrow-up] size-4" aria-hidden="true" />
+            <span class="icon-[ph--arrow-up]" aria-hidden="true" />
             <ButtonKbd combo="Enter" />
           </button>
         </footer>

@@ -12,6 +12,7 @@ import { createSignal, onCleanup, onMount, Show } from 'solid-js';
 import { api } from '../lib/api.ts';
 import { createPolling } from '../lib/events.ts';
 import { holdingUpdate } from './logic.ts';
+import { Brand } from '../brand/Brand.tsx';
 export function Holding(props: HoldingProps): JSX.Element {
   const data = () => props.data;
   const [polledProgress, setProgress] = createSignal<string>();
@@ -47,28 +48,27 @@ export function Holding(props: HoldingProps): JSX.Element {
         class="btn desktop-menu-btn hidden! win-linux:inline-flex!"
         aria-label="Application menu"
       >
-        <span class="icon-[lucide--menu] size-4" />
+        <span class="icon-[ph--list]" />
       </button>
       <main
         class={`mx-auto flex min-h-dvh w-full max-w-[560px] flex-col
         justify-center gap-6 px-4 pb-[12vh]`}
       >
         <header class="flex">
-          <img class="hidden h-5 dark:block" src="static/logo-dark.svg" alt="faah" />
-          <img class="h-5 dark:hidden" src="static/logo-light.svg" alt="faah" />
+          <Brand />
         </header>
         <section class="flex items-center gap-3">
-          <figure class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+          <figure class="flex size-10 shrink-0 items-center justify-center rounded-md bg-muted">
             <span
               class={
                 data().PR
-                  ? 'icon-[lucide--git-pull-request] size-5 text-gi'
-                  : 'icon-[lucide--folder] size-5 text-muted-foreground'
+                  ? 'icon-[ph--git-pull-request] text-gi'
+                  : 'icon-[ph--folder] text-muted-foreground'
               }
             />
           </figure>
           <div class="flex min-w-0 flex-col">
-            <h1 class="truncate font-medium">{data().Title}</h1>
+            <h1 class="truncate font-display font-semibold tracking-[-0.01em]">{data().Title}</h1>
             <Show when={data().Sub}>
               <p class="truncate font-mono text-xs text-muted-foreground">{data().Sub}</p>
             </Show>
@@ -83,7 +83,7 @@ export function Holding(props: HoldingProps): JSX.Element {
               role="alert"
             >
               <span
-                class="icon-[lucide--circle-alert] row-span-2 size-4 translate-y-0.5"
+                class="icon-[ph--warning-circle] row-span-2 translate-y-0.5"
                 aria-hidden="true"
               />
               <h2 class="col-start-2">Could not open it</h2>
@@ -95,7 +95,7 @@ export function Holding(props: HoldingProps): JSX.Element {
         >
           <p class="flex items-start gap-2 text-sm text-muted-foreground" role="status">
             <span
-              class={`icon-[lucide--loader-circle] size-4 shrink-0 animate-spin
+              class={`icon-[ph--circle-notch] shrink-0 animate-spin
         motion-reduce:animate-none`}
               aria-hidden="true"
             />
@@ -116,7 +116,7 @@ export function Holding(props: HoldingProps): JSX.Element {
             </a>
           </Show>
           <a class="btn first:-ms-2.5" data-variant="ghost" data-size="sm" href={data().Base}>
-            <span class="icon-[lucide--arrow-left] size-4" aria-hidden="true" />
+            <span class="icon-[ph--arrow-left]" aria-hidden="true" />
             Back to workbench
           </a>
         </footer>

@@ -159,6 +159,11 @@ const NUMBER_PRESETS: Record<string, number[]> = {
 
 /** Which control edits a setting: on/off choices are switches, short choices are segments. */
 export function settingControl(item: SettingItem): SettingControl {
+  if (item.key === 'workbench.colorTheme')
+    return {
+      kind: 'select',
+      options: item.options.map((option) => ({ value: option, label: option || 'System' })),
+    };
   if (item.type === 'boolean') return { kind: 'switch', on: true, off: false };
   if (item.key === 'agent.harness' || item.key === 'explain.agent') {
     const none = item.key === 'explain.agent' ? 'Use editing agent' : 'No agent';
@@ -230,6 +235,9 @@ export interface Preferences {
   gitGutter: boolean;
   minimap: boolean;
   colorTheme: string;
+  codeThemeLight: string;
+  codeThemeDark: string;
+  transparency: 'off' | 'subtle' | 'strong';
   splitDiff: boolean;
   highlightChangedWords: boolean;
   markdownPreview: boolean;
@@ -248,6 +256,7 @@ const numeric = (value: SettingValue | undefined, fallback: number): number => {
 export function preferences(values: SettingsValues): Preferences {
   const cursor = values['editor.cursorStyle'];
   const blinking = values['editor.cursorBlinking'];
+  const transparency = values['workbench.transparency'];
   return {
     fontSize: numeric(values['editor.fontSize'], 13.5),
     fontFamily: String(values['editor.fontFamily'] ?? ''),
@@ -263,6 +272,9 @@ export function preferences(values: SettingsValues): Preferences {
     gitGutter: truthy(values['git.gutterIndicators'], true),
     minimap: truthy(values['editor.minimap.enabled'], true),
     colorTheme: String(values['workbench.colorTheme'] ?? ''),
+    codeThemeLight: String(values['workbench.codeTheme.light'] ?? ''),
+    codeThemeDark: String(values['workbench.codeTheme.dark'] ?? ''),
+    transparency: transparency === 'off' || transparency === 'strong' ? transparency : 'subtle',
     splitDiff: truthy(values['diffEditor.renderSideBySide'], true),
     highlightChangedWords: truthy(values['diffEditor.highlightChangedWords'], true),
     markdownPreview: truthy(values['markdown.preview.open'], true),
@@ -295,8 +307,8 @@ export function typographyVariables(prefs: Preferences): Record<string, string> 
     '--fs': `${prefs.fontSize}px`,
     '--lh': `${prefs.lineHeight}px`,
     '--tab-size': String(prefs.tabSize),
+    '--editor-font-family': prefs.fontFamily || 'var(--mono)',
   };
-  if (prefs.fontFamily) variables['--mono'] = prefs.fontFamily;
   return variables;
 }
 

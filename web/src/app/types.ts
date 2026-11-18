@@ -4,6 +4,8 @@ import type { Harness } from '../agents/decode.ts';
 export interface WorkspaceMeta {
   /** Absolute root path. */
   root: string;
+  /** Absolute home path, used to shorten tool step paths. */
+  home?: string;
   name: string;
   version?: string;
   /** The workbench page that opened this workspace, linked from the top bar. */

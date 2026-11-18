@@ -3,6 +3,7 @@ import { createSignal, For, onCleanup, onMount, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
 import { ButtonKbd } from '../lib/ButtonKbd.tsx';
 import { Markdown } from '../lib/Markdown.tsx';
+import { pluralize } from '../pr/logic.ts';
 
 export function WalkthroughPanel(): JSX.Element {
   const editor = useEditor();
@@ -61,11 +62,11 @@ export function WalkthroughPanel(): JSX.Element {
         id="walkthrough-panel"
         tabindex="-1"
         aria-label="Walkthrough"
-        class="flex min-w-0 flex-col gap-3 border-t pt-3 focus-visible:outline-2 focus-visible:outline-ring"
+        class="flex min-w-0 flex-col gap-3 border-t pt-3"
         onKeyDown={onArrow}
       >
         <div class="flex min-w-0 items-center gap-2">
-          <span class="icon-[lucide--route] size-3.5 shrink-0 text-special" aria-hidden="true" />
+          <span class="icon-[ph--path] shrink-0 text-special" aria-hidden="true" />
           <Show
             when={!state.compact && (state.model?.walkthroughs.length || 0) > 1}
             fallback={
@@ -102,7 +103,7 @@ export function WalkthroughPanel(): JSX.Element {
           </Show>
           <Show when={state.compact && !step()}>
             <span class="shrink-0 text-xs tabular-nums text-muted-foreground">
-              {walkthrough()?.steps.length || 0} steps
+              {pluralize(walkthrough()?.steps.length || 0, 'step')}
             </span>
           </Show>
           <Show when={step()}>
@@ -115,7 +116,7 @@ export function WalkthroughPanel(): JSX.Element {
           <Show when={state.compact}>
             <Show when={warning()}>
               <span title={warning()} class="flex shrink-0 items-center text-warn">
-                <span class="icon-[lucide--triangle-alert] size-3.5" aria-hidden="true" />
+                <span class="icon-[ph--warning]" aria-hidden="true" />
                 <span class="sr-only">{warning()}</span>
               </span>
             </Show>
@@ -128,7 +129,7 @@ export function WalkthroughPanel(): JSX.Element {
               disabled={!step() || step()?.n === 1}
               onClick={() => move(-1)}
             >
-              <span class="icon-[lucide--chevron-left] size-3.5" />
+              <span class="icon-[ph--caret-left]" />
             </button>
             <button
               class="btn shrink-0"
@@ -141,9 +142,7 @@ export function WalkthroughPanel(): JSX.Element {
             >
               <span
                 class={
-                  step() && step()?.n === step()?.of
-                    ? 'icon-[lucide--check] size-3.5'
-                    : 'icon-[lucide--chevron-right] size-3.5'
+                  step() && step()?.n === step()?.of ? 'icon-[ph--check]' : 'icon-[ph--caret-right]'
                 }
               />
             </button>
@@ -154,8 +153,7 @@ export function WalkthroughPanel(): JSX.Element {
           fallback={
             <Show when={!state.compact}>
               <p class="text-xs text-muted-foreground">
-                {walkthrough()?.steps.length || 0} steps · {files()}{' '}
-                {files() === 1 ? 'file' : 'files'}
+                {pluralize(walkthrough()?.steps.length || 0, 'step')} · {pluralize(files(), 'file')}
               </p>
             </Show>
           }
@@ -193,18 +191,14 @@ export function WalkthroughPanel(): JSX.Element {
                       {step().path}:{step().l1}-{step().l2}
                     </span>
                   </button>
-                  {/* Vega has no warning badge variant; add the existing warning tokens to its outline badge. */}
+                  {/* Warning badges use the shared waiting tone and its paired text colour. */}
                   <Show when={editor.walkthrough.missing()}>
-                    <span
-                      class="badge border-warn/20 bg-warn/10 text-warn"
-                      data-variant="outline"
-                      role="status"
-                    >
+                    <span class="badge" data-tone="waiting" data-variant="outline" role="status">
                       file not found
                     </span>
                   </Show>
                   <Show when={editor.walkthrough.outdated()}>
-                    <span class="badge border-warn/20 bg-warn/10 text-warn" data-variant="outline">
+                    <span class="badge" data-tone="waiting" data-variant="outline">
                       may be outdated
                     </span>
                   </Show>

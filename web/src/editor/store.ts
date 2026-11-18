@@ -68,7 +68,6 @@ function initialState(): EditorUI {
     menu: null,
     hover: null,
     hoverPosition: null,
-    vimHelp: false,
     vim: initialVimState(),
   };
 }
@@ -163,9 +162,9 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
     const step = walkthrough.focus();
     return !!step && line >= step.l1 && line <= step.l2;
   }
-  function dimmed(line: number) {
-    const step = walkthrough.focus();
-    return step ? line < step.l1 || line > step.l2 : notes.dimmed(line);
+  /** While a walkthrough step is focused, lines outside it are muted. */
+  function walkMuted(line: number) {
+    return !!walkthrough.focus() && !walkContains(line);
   }
   function offsets() {
     revision();
@@ -174,7 +173,6 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
       buffer()?.layout({
         wrap: store.settings.preferences().wrap,
         extraRows: extraRows(),
-        extraHeights: notes.extraHeights(),
         extraRowHeight: notes.rowHeight(),
         width: codeWidth(
           geometry.width,
@@ -299,11 +297,12 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
     ...store.settings.actions,
     ...store.actions,
     ...shortcutRegistry.actions,
-    walkStart(index = 0) {
+    walkStart(index = 0, step = 0) {
       store.actions.walkStart(
         index,
         store.state.explanation.walk?.surface ||
           (review.state.mode === 'review' ? 'review' : 'source'),
+        step,
       );
     },
     openLink: openFile,
@@ -324,14 +323,23 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
       if (index >= 0 && active()?.path !== from.path && from.diffRef === ref) closeTabs([index]);
     },
     closeTabs,
-    async showExplanation(thread: Thread, turn: number, options: { walkthrough?: boolean } = {}) {
+    async showExplanation(
+      thread: Thread,
+      turn: number,
+      options: {
+        walkthrough?: boolean;
+        index?: number;
+        step?: number;
+        note?: { path: string; l1: number };
+      } = {},
+    ) {
       store.actions.orbOpen(thread, turn);
       store.actions.walkStop();
       if (options.walkthrough) {
-        baseActions.walkStart();
+        baseActions.walkStart(options.index, options.step);
         queueMicrotask(() => services.walkthrough?.focus());
       } else {
-        const note = thread.turns.find((item) => item.id === turn)?.notes?.[0];
+        const note = options.note || thread.turns.find((item) => item.id === turn)?.notes?.[0];
         const review = reviewAccess();
         if (review?.state.mode === 'review') {
           review.actions.setReviewTab('walkthrough');
@@ -377,6 +385,7 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
     refreshMergeStatus: () => merge.actions.refreshMergeStatus(),
     runAgentJob: (...args) => agents.actions.runAgentJob(...args),
     setReviewMode: (...args) => review.actions.setReviewMode(...args),
+    setReviewTab: (...args) => review.actions.setReviewTab(...args),
     refreshPRMeta: () => pr.actions.refreshPRMeta(),
     resolvePRBase: () => git.actions.resolvePRBase(),
     confirmForcePush: () => git.actions.confirmForcePush(),
@@ -426,6 +435,7 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
     active,
     buffer,
     offsets,
+    shortcuts: shortcutRegistry,
   };
 
   const selectionActions = createSelectionActions(editor);
@@ -512,7 +522,7 @@ function buildEditorStore(store: AppStore, options: EditorOptions) {
     walkthrough,
     annotationHeight,
     walkContains,
-    dimmed,
+    walkMuted,
     notes,
     ...prEditor,
     merge,

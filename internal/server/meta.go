@@ -2,6 +2,7 @@ package server
 
 import (
 	"net/http"
+	"os"
 	"path/filepath"
 
 	"faah/internal/git"
@@ -12,8 +13,10 @@ func (s *Server) handleMeta(w http.ResponseWriter, r *http.Request) {
 	n, at, ms := s.ix.Stats()
 	inGit := git.Available(s.ix.Root())
 	gitCount, gitFiles := s.ix.MetaGitChanges(inGit)
+	home, _ := os.UserHomeDir()
 	meta := map[string]any{
 		"root":           s.ix.Root(),
+		"home":           home,
 		"name":           filepath.Base(s.ix.Root()),
 		"files":          n,
 		"indexMs":        ms,

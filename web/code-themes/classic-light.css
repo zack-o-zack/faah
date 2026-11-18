@@ -1,0 +1,18 @@
+/* Classic Light: a clean, high-contrast light palette, for code surfaces only. Token reference: docs/internals/styling-and-themes.md. */
+:root[data-code-theme="classic-light"] .code-surface {
+  --theme-name: "Classic Light";
+  color-scheme: light;
+
+  /* Surface and text. */
+  --background: #ffffff; --foreground: #24292f; --muted-foreground: #57606a; --faint: #57606a; --border: #d0d7de;
+  /* Selection, current line and search. */
+  --sel: #b8e4ff; --cur: #f3f6f9; --mark: #fff8c5; --mark-active: #fae17d; --on-mark-active: var(--foreground);
+  /* Diffs and status. */
+  --gi: #116329; --gd: #82071e; --gi-bg: rgba(17, 99, 41, 0.12); --gd-bg: rgba(130, 7, 30, 0.12);
+  --gi-word: #d4e3d8; --gd-word: #ecdadd; --err: #ba1c28; --warn: #7a5b00;
+  /* Syntax. */
+  --k: #ba1c28; --kt: #0550ae; --nf: #7544cb; --nc: #953800; --nb: #0550ae;
+  --nv: #953800; --no: #0550ae; --na: #0550ae; --nt: #116329; --nd: #7544cb;
+  --np: #0550ae; --s: #0a3069; --m: #0550ae; --o: #ba1c28; --p: #57606a;
+  --c: #57606a; --cp: #ba1c28;
+}

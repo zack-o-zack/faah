@@ -39,7 +39,7 @@ export function DiffSection(props: DiffSectionProps): JSX.Element {
             data-size="icon-xs"
             aria-label="Collapse or expand diff section"
           >
-            <span class="icon-[lucide--chevron-down] size-3.5" />
+            <span class="icon-[ph--caret-down]" />
           </button>
         </div>
       </Show>
@@ -78,8 +78,7 @@ export function DiffSection(props: DiffSectionProps): JSX.Element {
                         data-hunk-expand={index()}
                         onClick={() => props.actions.expand(hunk())}
                       >
-                        <span class="icon-[lucide--chevrons-up-down] size-3" aria-hidden="true" />{' '}
-                        Expand
+                        <span class="icon-[ph--caret-up-down]" aria-hidden="true" /> Expand
                       </button>
                     </Show>
                     <Show when={props.canAct && exact()}>

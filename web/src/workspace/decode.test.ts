@@ -35,12 +35,16 @@ test('workspace boundaries decode the Go tree, snapshot and metrics fields', () 
 test('metadata retains feature-owned payloads while checking workspace fields', () => {
   const result = decodeMeta({
     root: '/repo',
+    home: '/home/me',
     name: 'repo',
     pr: { number: 7, files: { 'one.go': 'M' } },
     agents: [{ name: 'agent' }],
   });
   expect(result.pr).toMatchObject({ number: 7, files: { 'one.go': 'M' } });
   expect(result.agents).toMatchObject([{ name: 'agent' }]);
+  expect(result.home).toBe('/home/me');
+  expect(decodeMeta({}).home).toBe('');
+  expect(() => decodeMeta({ home: 42 })).toThrow('text');
   expect(() => decodeMeta({ git: 'yes' })).toThrow('boolean');
   expect(decodeNewItem({ ok: true, path: 'new.go', type: 'file' })).toEqual({ path: 'new.go' });
   expect(decodeReindex({ files: 20, indexMs: 10, gitChanges: 1, gitFiles: ['new.go'] })).toEqual({

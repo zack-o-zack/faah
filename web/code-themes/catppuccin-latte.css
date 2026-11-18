@@ -1,0 +1,18 @@
+/* Catppuccin Latte: the Catppuccin Latte palette, for code surfaces only. Token reference: docs/internals/styling-and-themes.md. */
+:root[data-code-theme="catppuccin-latte"] .code-surface {
+  --theme-name: "Catppuccin Latte";
+  color-scheme: light;
+
+  /* Surface and text. */
+  --background: #eff1f5; --foreground: #4c4f69; --muted-foreground: #5c5f77; --faint: #8c8fa1; --border: #ccd0da;
+  /* Selection, current line and search. */
+  --sel: rgba(124, 127, 147, 0.25); --cur: #fafbfc; --mark: rgba(223, 142, 29, 0.22); --mark-active: #df8e1d; --on-mark-active: #343648;
+  /* Diffs and status. */
+  --gi: #3a9127; --gd: #d20f39; --gi-bg: rgba(64, 160, 43, 0.13); --gd-bg: rgba(210, 15, 57, 0.11);
+  --gi-word: #c2d9c2; --gd-word: #eacbd5; --err: #b90d32; --warn: #996114;
+  /* Syntax. */
+  --k: #761ced; --kt: #865008; --nf: #0a4fdc; --nc: #865008; --nb: #b90d32;
+  --nv: #4c4f69; --no: #9f3e08; --na: #865008; --nt: #0a4fdc; --nd: #9f3e08;
+  --np: #3049e1; --s: #2a691d; --m: #9f3e08; --o: #02638b; --p: #595b6d;
+  --c: #595b6c; --cp: #99337f;
+}

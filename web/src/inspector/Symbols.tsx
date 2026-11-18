@@ -61,11 +61,7 @@ export function Symbols(): JSX.Element {
               title={`Jump to ${symbol.name} at line ${symbol.line}`}
               onClick={() => jump(symbol)}
             >
-              <span
-                class="badge text-[var(--on-badge)]! bg-[var(--m)]! data-[k=func]:bg-[var(--nf)]! data-[k=method]:bg-[var(--nf)]! data-[k=fn]:bg-[var(--nf)]! data-[k=def]:bg-[var(--nf)]! data-[k=defp]:bg-[var(--nf)]! data-[k=class]:bg-[var(--nc)]! data-[k=struct]:bg-[var(--nc)]! data-[k=interface]:bg-[var(--nc)]! data-[k=type]:bg-[var(--nc)]! data-[k=enum]:bg-[var(--nc)]! data-[k=trait]:bg-[var(--nc)]! data-[k=record]:bg-[var(--nc)]! data-[k=protocol]:bg-[var(--nc)]! data-[k=const]:bg-[var(--kt)]! data-[k=var]:bg-[var(--kt)]! data-[k=let]:bg-[var(--kt)]! data-[k=val]:bg-[var(--kt)]! data-[k=module]:bg-[var(--nt)]! data-[k=mod]:bg-[var(--nt)]! data-[k=namespace]:bg-[var(--nt)]! data-[k=defmodule]:bg-[var(--nt)]! data-[k=impl]:bg-[var(--nt)]! data-[k=extension]:bg-[var(--nt)]!"
-                data-variant="secondary"
-                data-k={symbol.kind}
-              >
+              <span class="badge" data-variant="secondary" data-k={symbol.kind}>
                 {shortKind(symbol.kind)}
               </span>
               <span data-ui="sn" class="truncate">

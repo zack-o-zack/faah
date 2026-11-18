@@ -35,9 +35,9 @@ func (b *bitbucket) TokenSetup(host string) TokenSetup {
 	return TokenSetup{
 		URL: "https://id.atlassian.com/manage-profile/security/api-tokens",
 		Steps: []string{
-			"Select Create API token with scopes, name it (e.g. faah) and pick an expiry.",
+			"Select Create API token with scopes, name it (e.g. fibo) and pick an expiry.",
 			"Choose Bitbucket as the app.",
-			"Grant read and write access to repositories and pull requests, and read access to your account (faah uses it to check push access).",
+			"Grant read and write access to repositories and pull requests, and read access to your account (fibo uses it to check push access).",
 			"Create the token, copy it, and enter your Atlassian account email below.",
 		},
 		Env: "BITBUCKET_TOKEN",

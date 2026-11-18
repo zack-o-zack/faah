@@ -1,4 +1,6 @@
 import { For, Match, Show, Switch, type Component } from 'solid-js';
+import { ThemeSwitch } from '../workbench/ThemeSwitch.tsx';
+import { listCodeThemes, listThemes } from '../lib/theme.ts';
 import { useSettings } from './context.ts';
 import { segmentValue, type SettingControl as Control, type SettingItem } from './logic.ts';
 
@@ -6,6 +8,30 @@ interface ControlProps {
   item: SettingItem;
   control: Control;
 }
+
+/** One scheme's code theme choices: the app theme's own colours, then every theme of that scheme. */
+const CodeThemeSelect: Component<{ item: SettingItem; scheme: 'light' | 'dark' }> = (props) => {
+  const settings = useSettings();
+  const options = () => [
+    { id: '', name: 'fibo ' + props.scheme },
+    ...listCodeThemes()
+      .filter((theme) => theme.scheme === props.scheme)
+      .map((theme) => ({ id: theme.id, name: theme.name })),
+  ];
+  return (
+    <select
+      id={'setting-' + props.item.key}
+      class="select w-48"
+      aria-label={'Code theme · ' + (props.scheme === 'light' ? 'Light' : 'Dark')}
+      value={String(settings.value(props.item.key) ?? '')}
+      onChange={(event) =>
+        void settings.actions.setSetting(props.item.key, event.currentTarget.value)
+      }
+    >
+      <For each={options()}>{(option) => <option value={option.id}>{option.name}</option>}</For>
+    </select>
+  );
+};
 
 const Segments: Component<{ item: SettingItem; options: (string | number)[]; label: string }> = (
   props,
@@ -21,7 +47,7 @@ const Segments: Component<{ item: SettingItem; options: (string | number)[]; lab
             class="btn"
             data-size="sm"
             aria-pressed={current() === String(option)}
-            data-variant={current() === String(option) ? 'secondary' : 'outline'}
+            data-variant="outline"
             onClick={() =>
               void settings.actions.setSetting(
                 props.item.key,
@@ -44,8 +70,41 @@ export const SettingControl: Component<ControlProps & { invalid: boolean }> = (p
   const id = () => 'setting-' + key();
   const current = () => settings.value(key());
   const edited = () => settings.state.edits[key()];
+  const userThemes = () => listThemes().filter((theme) => !['light', 'dark'].includes(theme.id));
   return (
     <Switch>
+      <Match when={key() === 'workbench.colorTheme'}>
+        <div class="flex flex-wrap items-center gap-2">
+          <ThemeSwitch
+            id={id()}
+            value={String(current() ?? '')}
+            onChange={(value) => void settings.actions.setSetting(key(), value)}
+          />
+          <Show when={userThemes().length}>
+            <select
+              class="select w-48"
+              aria-label="User theme"
+              value={userThemes().some((theme) => theme.id === current()) ? String(current()) : ''}
+              onChange={(event) =>
+                void settings.actions.setSetting(key(), event.currentTarget.value)
+              }
+            >
+              <option value="" disabled>
+                User themes
+              </option>
+              <For each={userThemes()}>
+                {(theme) => <option value={theme.id}>{theme.name}</option>}
+              </For>
+            </select>
+          </Show>
+        </div>
+      </Match>
+      <Match when={key() === 'workbench.codeTheme.light'}>
+        <CodeThemeSelect item={props.item} scheme="light" />
+      </Match>
+      <Match when={key() === 'workbench.codeTheme.dark'}>
+        <CodeThemeSelect item={props.item} scheme="dark" />
+      </Match>
       <Match when={props.control.kind === 'switch' && props.control}>
         {(control) => (
           <input

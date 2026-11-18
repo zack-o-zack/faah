@@ -139,8 +139,9 @@ export function walkStart(
   model: OrbModel | null,
   index = 0,
   surface: WalkPosition['surface'] = 'source',
+  step = 0,
 ): WalkPosition | null {
-  return model?.walkthroughs[index]?.steps.length ? { index, step: 0, surface } : null;
+  return model?.walkthroughs[index]?.steps[step] ? { index, step, surface } : null;
 }
 export function walkMove(
   model: OrbModel | null,

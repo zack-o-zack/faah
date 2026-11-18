@@ -22,7 +22,11 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
-    "@iconify-json/lucide": "1.2.153",
+    "@fontsource-variable/figtree": "5.3.0",
+    "@fontsource-variable/fraunces": "5.3.0",
+    "@fontsource-variable/jetbrains-mono": "5.3.0",
+    "@iconify-json/ph": "1.2.2",
+    "@iconify-json/simple-icons": "1.2.103",
     "@iconify/tailwind4": "1.2.3",
     "@solidjs/testing-library": "0.8.10",
     "@tailwindcss/cli": "4.3.5",

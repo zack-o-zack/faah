@@ -33,7 +33,6 @@ interface PRState {
   replies: Record<number, ReplyState>;
   deleting: Record<number, boolean>;
   expanded: Record<string, boolean>;
-  panel: { collapsed: boolean; height: number };
   reveal: { key: string; sequence: number };
   batch: { pending: boolean; seconds: number; error: string };
 }
@@ -51,6 +50,7 @@ interface PRHost {
     | 'runAgentJob'
     | 'reloadWorkspace'
     | 'setReviewMode'
+    | 'setReviewTab'
   >;
 }
 import { batch, createMemo, onCleanup } from 'solid-js';
@@ -85,7 +85,6 @@ function initialState(): PRState {
     replies: {},
     deleting: {},
     expanded: {},
-    panel: { collapsed: true, height: 288 },
     reveal: { key: '', sequence: 0 },
     batch: { pending: false, seconds: 0, error: '' },
   };
@@ -111,8 +110,6 @@ function buildPRStore(editor: PRHost, options: PROptions = {}) {
   const threads = createMemo(() => commentThreads(state.reviewComments, state.drafts));
   const markers = createMemo(() => markerCounts(state.reviewComments, state.drafts));
   const applicable = createMemo(() => applicableDrafts(state.drafts));
-  const commentCount = () =>
-    state.issueComments.length + state.reviewComments.length + state.drafts.length;
 
   async function owned<T>(call: (signal: AbortSignal) => Promise<T>): Promise<T> {
     const controller = new AbortController();
@@ -427,7 +424,6 @@ function buildPRStore(editor: PRHost, options: PROptions = {}) {
     threads,
     markers,
     applicable,
-    commentCount,
     marker: (path: string, side: string, line: number) =>
       markers().get(threadKey(path, side, line)) || 0,
     composersAt: (path: string, side: string, line: number) =>
@@ -464,21 +460,17 @@ function buildPRStore(editor: PRHost, options: PROptions = {}) {
       replyToAuthor(author: string): void {
         const prefix = author ? '@' + author + ' ' : '';
         if (!state.issue.body.startsWith(prefix)) set('issue', 'body', prefix + state.issue.body);
-        set('panel', 'collapsed', false);
+        editor.actions.setReviewTab('overview');
       },
       setThreadExpanded: (key: string, open: boolean) => set('expanded', key, open),
-      // The comments panel shows with the review, so a gutter marker opens it there.
+      // Threads live in Overview, so a gutter marker opens that tab and shows the thread.
       revealPRThread(key: string): void {
         batch(() => {
           editor.actions.setReviewMode('review');
-          set('panel', 'collapsed', false);
+          editor.actions.setReviewTab('overview');
           set('expanded', key, true);
           set('reveal', { key, sequence: state.reveal.sequence + 1 });
         });
-      },
-      togglePRPanel: () => set('panel', 'collapsed', (collapsed) => !collapsed),
-      setPRPanelHeight(height: number): void {
-        set('panel', { collapsed: false, height: Math.max(80, height) });
       },
     },
   };

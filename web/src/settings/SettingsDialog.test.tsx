@@ -100,7 +100,7 @@ test('a switch saves its boolean and the JSON view shows the file', async () => 
       expect.anything(),
     ),
   );
-  fireEvent.click(screen.getByRole('button', { name: 'JSON' }));
+  fireEvent.click(screen.getByRole('tab', { name: 'JSON' }));
   expect(screen.getByRole('textbox', { name: 'Settings JSON' })).toHaveProperty('value', '{}');
   expect(screen.getByRole('button', { name: 'Save' })).toBeTruthy();
   const writes = post.mock.calls.length;
@@ -110,6 +110,24 @@ test('a switch saves its boolean and the JSON view shows the file', async () => 
   expect(post).toHaveBeenCalledTimes(writes);
   fireEvent.click(screen.getByRole('button', { name: 'Save' }));
   await waitFor(() => expect(post).toHaveBeenCalledTimes(writes + 1));
-  fireEvent.click(screen.getByRole('button', { name: 'UI' }));
+  fireEvent.click(screen.getByRole('tab', { name: 'UI' }));
   expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+});
+
+test('settings rail labels its shared panel and activates views from the keyboard', async () => {
+  const { settings } = mount();
+  settings.actions.openSettings();
+  await waitFor(() => expect(settings.state.loaded).toBe(true));
+  const ui = screen.getByRole<HTMLButtonElement>('tab', { name: 'UI' });
+  const json = screen.getByRole<HTMLButtonElement>('tab', { name: 'JSON' });
+  expect(ui.tabIndex).toBe(0);
+  expect(json.tabIndex).toBe(-1);
+  expect(screen.getByRole('tabpanel').getAttribute('aria-labelledby')).toBe(ui.id);
+  expect(ui.getAttribute('aria-controls')).toBe(screen.getByRole('tabpanel').id);
+  ui.focus();
+  fireEvent.keyDown(ui, { key: 'ArrowRight' });
+  expect(document.activeElement).toBe(json);
+  expect(json.getAttribute('aria-selected')).toBe('true');
+  expect(screen.getByRole('tabpanel').getAttribute('aria-labelledby')).toBe(json.id);
+  expect(screen.getByRole('textbox', { name: 'Settings JSON' })).toBeTruthy();
 });

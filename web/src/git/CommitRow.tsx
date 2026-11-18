@@ -34,10 +34,9 @@ export function CommitRow(props: CommitRowProps): JSX.Element {
             tabindex="0"
             class={
               props.unpushed
-                ? 'up-row flex cursor-pointer select-none items-center gap-2 rounded px-2 py-1 text-xs hover:bg-accent focus-visible:outline-ring focus-visible:outline'
-                : 'git-commit-row flex cursor-pointer select-none items-center gap-2 rounded px-2 py-1 text-xs hover:bg-accent focus-visible:outline-ring focus-visible:outline'
+                ? 'up-row flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1 text-xs hover:bg-accent'
+                : 'git-commit-row flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1 text-xs hover:bg-accent'
             }
-            title={props.commit.subject || ''}
             aria-expanded={expanded()}
             onMouseEnter={hover.onMouseEnter}
             onMouseLeave={hover.onMouseLeave}
@@ -60,17 +59,20 @@ export function CommitRow(props: CommitRowProps): JSX.Element {
               fallback={
                 <>
                   <span
-                    class="icon-[lucide--chevron-right] size-2 shrink-0 git-commit-caret text-muted-foreground [.git-commit.expanded_&]:rotate-90"
+                    class="icon-[ph--caret-right] shrink-0 git-commit-caret text-muted-foreground [.git-commit.expanded_&]:rotate-90"
                     aria-hidden="true"
                   />
                   <span
-                    class="icon-[lucide--git-commit-vertical] size-3 shrink-0 git-commit-icon text-primary"
+                    class="icon-[ph--git-commit] shrink-0 git-commit-icon text-primary-text"
                     aria-hidden="true"
                   />
                 </>
               }
             >
-              <span class="up-ar size-2 shrink-0 border-r border-t border-muted-foreground rotate-45 [.up-commit.open_&]:rotate-[135deg]" />
+              <span
+                class="up-ar icon-[ph--caret-right] shrink-0 text-muted-foreground [.up-commit.open_&]:rotate-90"
+                aria-hidden="true"
+              />
             </Show>
             <span
               class={

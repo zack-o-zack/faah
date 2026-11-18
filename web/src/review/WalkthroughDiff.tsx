@@ -46,7 +46,7 @@ export function WalkthroughDiff(props: WalkthroughDiffProps): JSX.Element {
       id="review-diff-pane"
       tabindex="-1"
       ref={pane}
-      class="relative h-full min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain px-3 pb-3"
+      class="code-surface relative h-full min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain px-3 pb-3"
       onScroll={onScroll}
     >
       <div class="pt-3" style={{ 'padding-right': `${padding()}px` }}>

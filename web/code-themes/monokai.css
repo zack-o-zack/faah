@@ -1,0 +1,18 @@
+/* Monokai: the Monokai palette, for code surfaces only. Token reference: docs/internals/styling-and-themes.md. */
+:root[data-code-theme="monokai"] .code-surface {
+  --theme-name: "Monokai";
+  color-scheme: dark;
+
+  /* Surface and text. */
+  --background: #272822; --foreground: #f8f8f2; --muted-foreground: #cfcfc2; --faint: #75715e; --border: #414339;
+  /* Selection, current line and search. */
+  --sel: #3e3d35; --cur: #3e3d32; --mark: rgba(230, 219, 116, 0.25); --mark-active: #fd971f; --on-mark-active: var(--background);
+  /* Diffs and status. */
+  --gi: #a6e22e; --gd: #f92672; --gi-bg: rgba(166, 226, 46, 0.12); --gd-bg: rgba(249, 38, 114, 0.14);
+  --gi-word: #363e23; --gd-word: #622738; --err: #f88585; --warn: #fd971f;
+  /* Syntax. */
+  --k: #fb7eab; --kt: #66d9ef; --nf: #a6e22e; --nc: #a6e22e; --nb: #66d9ef;
+  --nv: #f8f8f2; --no: #b993ff; --na: #a6e22e; --nt: #fb7eab; --nd: #a6e22e;
+  --np: #f8f8f2; --s: #e6db74; --m: #b993ff; --o: #fb7eab; --p: #f8f8f2;
+  --c: #aaa795; --cp: #fb7eab;
+}

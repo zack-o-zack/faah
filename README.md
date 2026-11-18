@@ -1,8 +1,4 @@
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="web/logo-dark.svg">
-  <source media="(prefers-color-scheme: light)" srcset="web/logo-light.svg">
-  <img alt="faah" src="web/logo-dark.svg" width="120">
-</picture>
+<img alt="fibo" src="web/mark.svg" width="120">
 
 ---
 

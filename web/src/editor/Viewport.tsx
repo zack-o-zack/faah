@@ -195,8 +195,8 @@ export function Viewport(): JSX.Element {
       id="viewport"
       ref={viewport}
       tabindex="0"
-      class={`absolute inset-0 overflow-auto [body.word-wrap_&]:overflow-x-hidden [contain:strict]
-        cursor-text`}
+      class={`code-surface absolute inset-0 overflow-auto [body.word-wrap_&]:overflow-x-hidden [contain:strict]
+        cursor-text focus-visible:-outline-offset-2`}
       hidden={editor.active()?.isEditing}
       inert={covered()}
       style={{ visibility: covered() ? 'hidden' : undefined }}

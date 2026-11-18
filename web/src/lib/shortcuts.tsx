@@ -1,7 +1,9 @@
 import type { JSX } from 'solid-js';
 interface KbdProps {
   combo: string;
-  caps?: boolean;
+  menu?: boolean;
+  variant?: 'button';
+  chord?: boolean;
   class?: string;
 }
 export interface ShortcutOptions {
@@ -12,23 +14,33 @@ export interface ShortcutOptions {
   stopPropagation?: boolean;
   capture?: boolean;
 }
-import { Index, onCleanup, Show } from 'solid-js';
-import { keyLabel, keyCaps, matchesShortcut } from './keyboard.ts';
+import { Index, onCleanup } from 'solid-js';
+import { keyCaps, keyChord, keyChordLabel, keyGlyphName, matchesShortcut } from './keyboard.ts';
 export function Kbd(props: KbdProps): JSX.Element {
+  const caps = (): string[] => (props.chord ? [keyChord(props.combo)] : keyCaps(props.combo));
+  const name = (key: string): string | undefined =>
+    props.chord ? keyChordLabel(props.combo) : keyGlyphName(key);
   return (
-    <kbd
-      class={props.class || 'kbd has-[>kbd]:bg-transparent has-[>kbd]:p-0 has-[>kbd]:gap-1'}
+    <span
+      class={`inline-flex items-center gap-1 ${props.class || ''}`}
       data-control="shortcut"
+      data-shortcut={props.menu ? '' : undefined}
+      aria-hidden={props.variant === 'button' ? 'true' : undefined}
     >
-      <ShowCaps combo={props.combo} caps={props.caps} />
-    </kbd>
-  );
-}
-function ShowCaps(props: KbdProps): JSX.Element {
-  return (
-    <Show when={props.caps} fallback={keyLabel(props.combo)}>
-      <Index each={keyCaps(props.combo)}>{(key) => <kbd class="kbd">{key()}</kbd>}</Index>
-    </Show>
+      <Index each={caps()}>
+        {(key) => (
+          <kbd
+            class={props.variant === 'button' ? 'kbd bg-current/15 text-current' : 'kbd'}
+            data-variant={props.variant}
+            data-single={key().length === 1 ? '' : undefined}
+            aria-label={name(key())}
+            title={name(key())}
+          >
+            {key()}
+          </kbd>
+        )}
+      </Index>
+    </span>
   );
 }
 export function createShortcut(

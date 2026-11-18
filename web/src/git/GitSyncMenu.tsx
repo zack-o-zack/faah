@@ -18,21 +18,21 @@ export function GitSyncMenu(): JSX.Element {
       id: 'git-sync-item',
       name: 'git sync',
       description: 'Pull new commits, then push yours',
-      icon: 'icon-[lucide--refresh-cw]',
+      icon: 'icon-[ph--arrows-clockwise]',
       run: () => editor.actions.syncGit(),
     },
     {
       id: 'git-pull',
       name: 'git pull',
       description: 'Bring in new commits from the remote',
-      icon: 'icon-[lucide--arrow-down]',
+      icon: 'icon-[ph--arrow-down]',
       run: () => editor.actions.pullGit(),
     },
     {
       id: 'git-push',
       name: 'git push',
       description: 'Send your commits to the remote',
-      icon: 'icon-[lucide--arrow-up]',
+      icon: 'icon-[ph--arrow-up]',
       run: () => editor.actions.pushGit(),
     },
   ];
@@ -44,16 +44,12 @@ export function GitSyncMenu(): JSX.Element {
         title="git sync: pull, then push"
         aria-label="git sync"
         class="btn gap-1 px-2!"
-        data-variant="secondary"
+        data-variant="outline"
         data-size="sm"
         disabled={!!editor.git.state.pending}
         onClick={() => void editor.actions.syncGit()}
       >
-        <span
-          data-ui="icon"
-          class="icon-[lucide--refresh-cw] size-3.5 shrink-0"
-          aria-hidden="true"
-        />
+        <span data-ui="icon" class="icon-[ph--arrows-clockwise] shrink-0" aria-hidden="true" />
         <span
           id="git-sync-counts"
           class="font-mono tabular-nums text-muted-foreground empty:hidden"
@@ -63,12 +59,12 @@ export function GitSyncMenu(): JSX.Element {
       </button>
       <DropdownMenu
         triggerId="git-sync-caret"
-        triggerClass="btn border-l border-background"
-        variant="secondary"
+        triggerClass="btn"
+        variant="outline"
         size="icon-sm"
         panelId="git-sync-menu"
         accessibleLabel="Sync actions"
-        label={<span class="icon-[lucide--chevron-down] size-3.5 shrink-0" aria-hidden="true" />}
+        label={<span class="icon-[ph--caret-down] shrink-0" aria-hidden="true" />}
       >
         <For each={items}>
           {(item) => (

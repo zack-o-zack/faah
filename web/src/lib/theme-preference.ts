@@ -1,16 +1,26 @@
-export const DEFAULT_THEME = 'catppuccin-mocha';
-
+/** Configured wins over saved. Unknown IDs follow the OS without aliases. */
 export function chooseThemePreference(
   savedTheme: string | null | undefined,
   configuredTheme: string | null | undefined,
-  fallbackTheme = DEFAULT_THEME,
+  systemDark: boolean,
+  available: readonly string[] = ['light', 'dark'],
 ): string {
-  // Existing profiles may still refer to the removed built-in theme.
-  if (savedTheme === 'faah') savedTheme = null;
-  if (configuredTheme === 'faah') configuredTheme = null;
-  const explicit = configuredTheme && configuredTheme !== fallbackTheme ? configuredTheme : null;
-  const saved = savedTheme && savedTheme !== fallbackTheme ? savedTheme : null;
-  if (explicit) return explicit;
-  if (saved) return saved;
-  return fallbackTheme;
+  const id = configuredTheme || savedTheme;
+  if (id && available.includes(id)) return id;
+  return systemDark ? 'dark' : 'light';
+}
+
+/**
+ * The code theme the active app scheme asks for. One choice per scheme, so
+ * switching Light/Dark swaps the code theme with it. Empty keeps the app
+ * theme's own code colours; an unknown or missing choice falls back to empty.
+ */
+export function chooseCodeTheme(
+  scheme: string | undefined,
+  lightTheme: string | null | undefined,
+  darkTheme: string | null | undefined,
+  available: readonly string[],
+): string {
+  const id = scheme === 'dark' ? darkTheme : lightTheme;
+  return id && available.includes(id) ? id : '';
 }

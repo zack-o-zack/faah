@@ -8,10 +8,8 @@ interface ReviewTabProps {
 import { isThreadRunning } from '../threads/logic.ts';
 import { handleTabKeys } from '../lib/tab-keys.ts';
 import type { JSX } from 'solid-js';
-import { createMemo, For, Show } from 'solid-js';
+import { createMemo, Show } from 'solid-js';
 import { useEditor } from '../editor/context.tsx';
-import { FILE_GROUPS, groupCounts } from './logic.ts';
-import { DiffOptions } from '../viewers/DiffOptions.tsx';
 import { TabStatus, tabStatus } from './TabStatus.tsx';
 export function ReviewTabs(): JSX.Element {
   const editor = useEditor();
@@ -29,42 +27,43 @@ export function ReviewTabs(): JSX.Element {
         isThreadRunning(thread),
     );
   return (
-    <div id="review-sub-bar" class="flex shrink-0 flex-wrap items-center gap-2 p-3 select-none">
+    <div
+      id="review-sub-bar"
+      class="flex shrink-0 flex-wrap items-center gap-2 border-b px-3 select-none"
+    >
       <div class="tabs min-w-0 overflow-x-auto">
         <nav
           role="tablist"
           aria-orientation="horizontal"
           aria-label="Review"
-          class="[&>[role=tab]]:flex-none"
+          data-variant="line"
+          class="h-9 items-stretch gap-4.5 rounded-none bg-transparent p-0 [&>[role=tab]]:flex-none"
           onKeyDown={handleTabKeys}
         >
           <ReviewTab
             id="overview"
             name="Overview"
-            icon="icon-[lucide--layout-dashboard]"
+            icon="icon-[ph--squares-four]"
             title="PR description, checks and approvals"
             info={<ChecksStatus />}
           />
           <ReviewTab
             id="walkthrough"
             name="Changed files"
-            icon="icon-[lucide--zap]"
+            icon="icon-[ph--git-diff]"
             title="Changed files grouped by kind"
             info={<FilesStatus />}
           />
           <ReviewTab
             id="stages"
             name="Review pipeline"
-            icon="icon-[lucide--sparkle] text-special"
+            icon="icon-[ph--list-checks]"
             title="Your coding harness answers each review question in turn"
             info={<PipelineStatus />}
           />
         </nav>
       </div>
       <div class="flex-1" />
-      <Show when={review.state.tab === 'walkthrough'}>
-        <WalkthroughToolbar />
-      </Show>
       <button
         class="btn"
         data-variant="special"
@@ -78,7 +77,8 @@ export function ReviewTabs(): JSX.Element {
         }}
       >
         <span
-          class={`${explaining() ? 'icon-[lucide--loader-circle] animate-spin motion-reduce:animate-none' : 'icon-[lucide--sparkle]'} size-3.5 shrink-0`}
+          class="icon-[ph--spinner] shrink-0"
+          classList={{ 'motion-safe:animate-spin': explaining() }}
           aria-hidden="true"
         />
         Explain PR
@@ -97,7 +97,7 @@ export function ReviewTabs(): JSX.Element {
           onClick={editor.actions.refreshReview}
         >
           <span
-            class="icon-[lucide--rotate-cw] size-3.5 shrink-0"
+            class="icon-[ph--arrow-clockwise] shrink-0"
             classList={{
               'animate-spin':
                 review.state.tab === 'overview'
@@ -127,11 +127,11 @@ function ReviewTab(props: ReviewTabProps): JSX.Element {
       }
       aria-selected={selected()}
       title={props.title}
-      class="group/tab text-xs!"
+      class="px-0 py-0 text-12-5! text-muted-foreground aria-selected:text-foreground after:-bottom-px"
       onClick={() => editor.actions.setReviewTab(props.id)}
     >
       <span data-tab-label class="flex items-center gap-1.5">
-        <span class={`${props.icon} size-3.5 shrink-0`} aria-hidden="true" />
+        <span class={`${props.icon} shrink-0`} aria-hidden="true" />
         {props.name}
       </span>
       {props.info}
@@ -167,39 +167,5 @@ function PipelineStatus(): JSX.Element {
   );
   return (
     <TabStatus noun="stages" statuses={statuses()} loading={review.state.pending === 'load'} />
-  );
-}
-function WalkthroughToolbar(): JSX.Element {
-  const editor = useEditor();
-  const review = editor.review;
-  const counts = () => groupCounts(review.walkthroughData()?.files || []);
-  const chips: { id: string; label: string; title: string; icon?: string }[] = [
-    { id: 'all', label: 'All', title: 'Show all files' },
-    ...FILE_GROUPS,
-  ];
-  return (
-    <div class="flex items-center gap-2">
-      <div class="flex flex-wrap items-center gap-1" role="group" aria-label="Filter file groups">
-        <For each={chips.filter((chip) => chip.id === 'all' || counts()[chip.id])}>
-          {(chip) => (
-            <button
-              title={chip.title}
-              class="btn"
-              data-variant={review.groupFilter() === chip.id ? 'secondary' : 'ghost'}
-              data-size="xs"
-              aria-pressed={review.groupFilter() === chip.id}
-              onClick={() => editor.actions.setGroupFilter(chip.id)}
-            >
-              <Show when={chip.icon}>
-                <span class={`${chip.icon} size-3 shrink-0`} aria-hidden="true" />
-              </Show>
-              {chip.label}
-              <span class="tabular-nums text-muted-foreground">{counts()[chip.id]}</span>
-            </button>
-          )}
-        </For>
-      </div>
-      <DiffOptions id="btn-walkthrough-options" />
-    </div>
   );
 }

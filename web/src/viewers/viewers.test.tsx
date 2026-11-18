@@ -457,7 +457,7 @@ test('running, finished and failed bubbles persist until explicit close or focus
       const orb = required(document.getElementById('explain-orb'));
       expect(orb.dataset.phase).toBe(phase);
       expect(orb.classList.contains('card')).toBe(false);
-      expect(orb.firstElementChild?.classList.contains('rounded-full')).toBe(true);
+      expect(orb.firstElementChild?.classList.contains('rounded-pill')).toBe(true);
       expect(orb.querySelector('section')).toBeNull();
       await fireEvent.keyDown(window, { key: 'Escape' });
       expect(document.getElementById('explain-orb')).toBeTruthy();
