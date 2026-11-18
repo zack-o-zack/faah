@@ -230,6 +230,9 @@ test.each([false, true])(
     await waitFor(() => expect(f.editor.review.state.tab).toBe('walkthrough'));
     await screen.findByRole('button', { name: 'Why the value changes' });
     expect(f.request).toHaveBeenCalledWith('api/explain/notes', { thread: 'pr', turn: 1 });
+    const summary = screen.getByRole('button', { name: 'Why the value changes' });
+    const line = required(document.querySelector('.review-diff-row[data-new-line="2"]'));
+    expect(summary.compareDocumentPosition(line) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Show 1 note' })).toBeTruthy();
     await fireEvent.click(screen.getByRole('button', { name: 'Why the value changes' }));
     expect(screen.getByRole('region', { name: 'Explanation detail' }).textContent).toContain(

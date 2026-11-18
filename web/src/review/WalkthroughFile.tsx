@@ -66,6 +66,7 @@ export function WalkthroughFile(props: WalkthroughFileProps): JSX.Element {
       </div>
     </Show>
   );
+  // Notes sit above their first line, as in the source editor.
   const rowNotes = (row: PaintedRow | null) => (
     <Show when={row?.newLine && row.type !== 'del'}>
       <For each={notes()?.get(row?.newLine || 0)}>
@@ -190,9 +191,9 @@ export function WalkthroughFile(props: WalkthroughFileProps): JSX.Element {
                   <For each={unifiedRows(hunk.rows, highlightChangedWords())}>
                     {(row) => (
                       <>
+                        {rowNotes(row)}
                         {title(row)}
                         {renderRow(row)}
-                        {rowNotes(row)}
                       </>
                     )}
                   </For>
@@ -201,6 +202,12 @@ export function WalkthroughFile(props: WalkthroughFileProps): JSX.Element {
                 <For each={splitRows(hunk.rows, highlightChangedWords())}>
                   {(pair) => (
                     <>
+                      <Show when={!!pair.right?.newLine && notes()?.has(pair.right.newLine)}>
+                        <div class="diff-row-pair">
+                          <div class="diff-side diff-side-left" />
+                          <div class="diff-side">{rowNotes(pair.right)}</div>
+                        </div>
+                      </Show>
                       <Show when={focused() && pair.right?.newLine === focus()?.l1}>
                         <div class="diff-row-pair">
                           <div class="diff-side diff-side-left" />
@@ -211,12 +218,6 @@ export function WalkthroughFile(props: WalkthroughFileProps): JSX.Element {
                         <div class="diff-side diff-side-left">{renderRow(pair.left, 'left')}</div>
                         <div class="diff-side">{renderRow(pair.right, 'right')}</div>
                       </div>
-                      <Show when={!!pair.right?.newLine && notes()?.has(pair.right.newLine)}>
-                        <div class="diff-row-pair">
-                          <div class="diff-side diff-side-left" />
-                          <div class="diff-side">{rowNotes(pair.right)}</div>
-                        </div>
-                      </Show>
                     </>
                   )}
                 </For>
